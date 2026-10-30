@@ -10,10 +10,14 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+import '../support/srs_review_ui_harness.dart' show srsRealIoStream;
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
@@ -40,6 +44,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     // SharedPreferences mock removed — SrsService dependency eliminated (Phase 0 W14-15).
   });
 
@@ -51,7 +57,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(db.close);
+      _closeDatabaseAfterUnmount(tester, db);
       final owners = DriftLocalOwnerRepository(
         db,
         generateId: () => 'source',
@@ -80,12 +86,14 @@ void main() {
           home: SrsFlashcardsScreen(
             sourceWordIds: const ['banana'],
             learning: learning,
+            ownerChanges: _watchOwner(db, owners),
             voice: VoiceUseCases(FakeVoiceProvider()),
           ),
         ),
       );
       await _pumpUntil(tester, find.text('บัตรคำจากเนื้อหานี้'));
 
+      await _pumpUntil(tester, find.byKey(const Key('srs-card')));
       expect(find.text('banana'), findsOneWidget);
       expect(find.text('apple'), findsNothing);
       final session = await tester.runAsync(
@@ -121,7 +129,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
-    addTearDown(db.close);
+    _closeDatabaseAfterUnmount(tester, db);
     final owners = DriftLocalOwnerRepository(
       db,
       generateId: () => 'source-result',
@@ -148,6 +156,7 @@ void main() {
                   builder: (_) => SrsFlashcardsScreen(
                     sourceWordIds: const ['apple', 'banana'],
                     learning: learning,
+                    ownerChanges: _watchOwner(db, owners),
                     voice: VoiceUseCases(FakeVoiceProvider()),
                   ),
                 ),
@@ -187,7 +196,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
-    addTearDown(db.close);
+    _closeDatabaseAfterUnmount(tester, db);
     final owners = DriftLocalOwnerRepository(
       db,
       generateId: () => 'source-load-failure',
@@ -205,11 +214,14 @@ void main() {
       buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
     );
 
+    await tester.runAsync(() => _seedVocabularyWords(db, owners, ['banana']));
+
     await tester.pumpWidget(
       MaterialApp(
         home: SrsFlashcardsScreen(
           sourceWordIds: const ['banana'],
           learning: learning,
+          ownerChanges: _watchOwner(db, owners),
           voice: VoiceUseCases(FakeVoiceProvider()),
         ),
       ),
@@ -230,7 +242,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(db.close);
+      _closeDatabaseAfterUnmount(tester, db);
       final owners = DriftLocalOwnerRepository(
         db,
         generateId: () => 'large',
@@ -270,6 +282,7 @@ void main() {
           ),
           home: SrsFlashcardsScreen(
             learning: learning,
+            ownerChanges: _watchOwner(db, owners),
             voice: VoiceUseCases(FakeVoiceProvider()),
           ),
         ),
@@ -306,7 +319,7 @@ void main() {
     'SRS double rating waits for acknowledgement and Next never writes',
     (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(db.close);
+      _closeDatabaseAfterUnmount(tester, db);
       final acknowledgement = Completer<void>();
       addTearDown(() {
         if (!acknowledgement.isCompleted) acknowledgement.complete();
@@ -335,6 +348,7 @@ void main() {
         MaterialApp(
           home: SrsFlashcardsScreen(
             learning: learning,
+            ownerChanges: _watchOwner(db, owners),
             voice: VoiceUseCases(FakeVoiceProvider()),
           ),
         ),
@@ -383,7 +397,7 @@ void main() {
       'SRS retries $rating evidence after ${afterCommit ? 'lost ack' : 'failed write'}',
       (tester) async {
         final db = AppDatabase(NativeDatabase.memory());
-        addTearDown(db.close);
+        _closeDatabaseAfterUnmount(tester, db);
         var sequence = 0;
         final owners = DriftLocalOwnerRepository(
           db,
@@ -407,6 +421,7 @@ void main() {
             home: SrsFlashcardsScreen(
               voice: VoiceUseCases(FakeVoiceProvider()),
               learning: learning,
+              ownerChanges: _watchOwner(db, owners),
             ),
           ),
         );
@@ -437,6 +452,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.pump(const Duration(seconds: 5));
         await tester.pumpAndSettle();
+        await _revealSrsAction(tester, find.text(selectedText));
         await tester.tap(find.text(selectedText));
         await _pumpUntil(tester, find.text('บันทึกแล้ว'));
         expect(find.text('1/2'), findsOneWidget);
@@ -447,6 +463,7 @@ void main() {
         await tester.tap(find.text('คำถัดไป'));
         await _pumpUntil(tester, find.text('2/2'));
         final second = failing.commands.last;
+        expect(identical(failing.intents[0], failing.intents[1]), isTrue);
         expect(second.id, first.id);
         expect(second.occurredAtUtc, first.occurredAtUtc);
         expect(second.responseTimeMs, first.responseTimeMs);
@@ -513,6 +530,32 @@ void main() {
             throwsStateError,
           ),
         );
+        final original = failing.intents.first;
+        await tester.runAsync(
+          () => expectLater(
+            delegate.commitSrsRating(
+              SrsReviewAnswerIntent(
+                review: original.review,
+                cardIndex: original.cardIndex,
+                command: RecordAnswerCommand(
+                  id: first.id,
+                  ownerId: first.ownerId,
+                  sessionId: first.sessionId,
+                  wordId: first.wordId,
+                  promptMode: first.promptMode,
+                  isCorrect: !first.isCorrect,
+                  responseTimeMs: first.responseTimeMs,
+                  attemptNumber: first.attemptNumber,
+                  occurredAtUtc: first.occurredAtUtc,
+                  providerProvenance: first.providerProvenance,
+                  evidenceContext: first.evidenceContext,
+                ),
+              ),
+              stillCurrent: () => true,
+            ),
+            throwsStateError,
+          ),
+        );
         await tester.tap(find.text('banana'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('จำได้แล้ว'));
@@ -542,7 +585,7 @@ void main() {
       'SRS retains last attempt when finish ${afterCommit ? 'ack is lost' : 'fails'}',
       (tester) async {
         final db = AppDatabase(NativeDatabase.memory());
-        addTearDown(db.close);
+        _closeDatabaseAfterUnmount(tester, db);
         var sequence = 0;
         final owners = DriftLocalOwnerRepository(
           db,
@@ -567,6 +610,7 @@ void main() {
             home: SrsFlashcardsScreen(
               voice: VoiceUseCases(FakeVoiceProvider()),
               learning: learning,
+              ownerChanges: _watchOwner(db, owners),
             ),
           ),
         );
@@ -586,8 +630,18 @@ void main() {
         await tester.pumpAndSettle();
         await tester.pump(const Duration(seconds: 5));
         await tester.pumpAndSettle();
+        await _revealSrsAction(tester, find.byKey(const Key('srs-next')));
         await tester.tap(find.text('จบการทบทวน'));
         await _pumpUntil(tester, find.text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว'));
+        expect(failing.finishIntents, hasLength(2));
+        expect(
+          identical(failing.finishIntents[0], failing.finishIntents[1]),
+          isTrue,
+        );
+        expect(
+          failing.finishIntents[1].endedAtUtc,
+          failing.finishIntents[0].endedAtUtc,
+        );
         expect(failing.commands, hasLength(1));
         expect(failing.commands.last.id, failing.commands.first.id);
         expect(
@@ -666,9 +720,11 @@ void main() {
       expect(find.text('ยังจำไม่ได้'), findsOneWidget);
 
       // Tap Good — compatibility deck: no-op (SrsService removed Phase 0 W14-15)
+      await _revealSrsAction(tester, find.byKey(const Key('srs-got')));
       await tester.tap(find.text('จำได้แล้ว'));
       await tester.pumpAndSettle();
       expect(find.text('ชุดตัวอย่างนี้ไม่บันทึกผล'), findsOneWidget);
+      expect(find.text('บันทึกแล้ว'), findsNothing);
     },
   );
 }
@@ -689,6 +745,7 @@ Future<void> _seedDueWords(
   DriftLocalOwnerRepository owners,
   List<String> words,
 ) async {
+  _ownerIoZones[db] = Zone.current;
   final owner = await owners.getOrCreateActiveOwner();
   await db
       .into(db.vocabularyCategories)
@@ -738,6 +795,7 @@ Future<void> _seedVocabularyWords(
   DriftLocalOwnerRepository owners,
   List<String> words,
 ) async {
+  _ownerIoZones[db] = Zone.current;
   final owner = await owners.getOrCreateActiveOwner();
   await db
       .into(db.vocabularyCategories)
@@ -771,7 +829,7 @@ Future<void> _seedVocabularyWords(
   }
 }
 
-class _FailOnceRepository implements LearningRepository {
+class _FailOnceRepository implements LearningRepository, SrsReviewRepository {
   _FailOnceRepository(
     this.delegate, {
     required this.afterCommit,
@@ -787,17 +845,76 @@ class _FailOnceRepository implements LearningRepository {
   bool finishFailed = false;
   final commands = <RecordAnswerCommand>[];
 
+  final intents = <SrsReviewAnswerIntent>[];
+  final finishIntents = <SrsReviewFinishIntent>[];
+  SrsReviewRepository get srs => delegate as SrsReviewRepository;
+
   @override
-  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
-    commands.add(command);
+  Future<SrsReviewSession?> prepareSrsReview({
+    required LearningSessionDraft session,
+    required SrsReviewSelection selection,
+    Iterable<String>? sourceWordIds,
+    int limit = 20,
+    required bool Function() stillCurrent,
+  }) {
+    if (failOnListQuizWords) {
+      return Future.error(StateError('synthetic source load failure'));
+    }
+    return srs.prepareSrsReview(
+      session: session,
+      selection: selection,
+      sourceWordIds: sourceWordIds,
+      limit: limit,
+      stillCurrent: stillCurrent,
+    );
+  }
+
+  @override
+  Future<SrsReviewStartResult> startSrsReview(
+    SrsReviewSession review, {
+    required bool Function() stillCurrent,
+  }) => srs.startSrsReview(review, stillCurrent: stillCurrent);
+
+  @override
+  Future<AnswerRecordResult> commitSrsRating(
+    SrsReviewAnswerIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    intents.add(intent);
+    commands.add(intent.command);
     if (commands.length == 1 && !failOnFinish && acknowledgement == null) {
-      if (afterCommit) await delegate.recordAnswer(command);
+      if (afterCommit) {
+        await srs.commitSrsRating(intent, stillCurrent: stillCurrent);
+      }
       throw StateError('synthetic acknowledgement/storage failure');
     }
-    final result = await delegate.recordAnswer(command);
+    final result = await srs.commitSrsRating(
+      intent,
+      stillCurrent: stillCurrent,
+    );
     await acknowledgement;
     return result;
   }
+
+  @override
+  Future<SrsReviewFinishResult> finishSrsReview(
+    SrsReviewFinishIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    finishIntents.add(intent);
+    if (failOnFinish && !finishFailed) {
+      finishFailed = true;
+      if (afterCommit) {
+        await srs.finishSrsReview(intent, stillCurrent: stillCurrent);
+      }
+      throw StateError('synthetic finish failure');
+    }
+    return srs.finishSrsReview(intent, stillCurrent: stillCurrent);
+  }
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
+      delegate.recordAnswer(command);
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -833,24 +950,11 @@ class _FailOnceRepository implements LearningRepository {
     required String ownerId,
     required String sessionId,
     required DateTime endedAtUtc,
-  }) async {
-    if (failOnFinish && !finishFailed) {
-      finishFailed = true;
-      if (afterCommit) {
-        await delegate.finishSession(
-          ownerId: ownerId,
-          sessionId: sessionId,
-          endedAtUtc: endedAtUtc,
-        );
-      }
-      throw StateError('synthetic finish failure');
-    }
-    return delegate.finishSession(
-      ownerId: ownerId,
-      sessionId: sessionId,
-      endedAtUtc: endedAtUtc,
-    );
-  }
+  }) => delegate.finishSession(
+    ownerId: ownerId,
+    sessionId: sessionId,
+    endedAtUtc: endedAtUtc,
+  );
 
   @override
   Future<ReadingProgressSnapshot?> readReadingProgress({
@@ -866,4 +970,46 @@ class _FailOnceRepository implements LearningRepository {
   Future<ReadingProgressSnapshot> saveReadingProgress(
     ReadingProgressCommand command,
   ) => delegate.saveReadingProgress(command);
+}
+
+final _ownerIoZones = Expando<Zone>();
+final _ownerIoStreams = Expando<Stream<String?>>();
+
+Stream<String?> _watchOwner(
+  AppDatabase database,
+  DriftLocalOwnerRepository owners,
+) => _ownerIoStreams[database] ??= srsRealIoStream(
+  ProgressUseCases(
+    owners: owners,
+    queries: DriftProgressQueries(database),
+    nowUtc: () => DateTime.utc(2026, 10, 30),
+  ).watchActiveOwnerId(),
+  ioZone: _ownerIoZones[database]!,
+);
+
+void _closeDatabaseAfterUnmount(WidgetTester tester, AppDatabase database) {
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.runAsync(database.close);
+  });
+}
+
+Future<void> _revealSrsAction(WidgetTester tester, Finder target) async {
+  await tester.pump();
+  final outer = find
+      .descendant(
+        of: find.byType(SrsFlashcardsScreen),
+        matching: find.byType(Scrollable),
+      )
+      .first;
+  await tester.scrollUntilVisible(
+    target,
+    120,
+    scrollable: outer,
+    maxScrolls: 40,
+  );
+  await tester.ensureVisible(target);
+  await tester.pump();
+  expect(target.hitTestable(), findsOneWidget);
 }

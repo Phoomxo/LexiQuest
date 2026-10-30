@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
@@ -18,18 +20,96 @@ class WeaknessClinicScreen extends StatefulWidget {
     this.loader,
     this.learning,
     this.featureRegistry,
+    this.ownerChanges,
   });
 
   final ProgressLoader? loader;
   final LearningUseCases? learning;
   final FieldFeatureRegistry? featureRegistry;
+  final Stream<String?>? ownerChanges;
 
   @override
   State<WeaknessClinicScreen> createState() => _WeaknessClinicScreenState();
 }
 
-class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
+class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
+    with WidgetsBindingObserver {
   Future<ProgressSnapshot>? _load;
+  AppDependencies? _dependencies;
+  StreamSubscription<String?>? _owners;
+  String? _ownerId;
+  int _generation = 0;
+  int _ownerBinding = 0;
+  bool _bound = false;
+  bool _redrawScheduled = false;
+  bool _openingReview = false;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    unawaited(_owners?.cancel());
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _generation++;
+  }
+
+  void _bindOwners({bool force = false}) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!force && _bound && identical(_dependencies, dependencies)) return;
+    _bound = true;
+    _generation++;
+    _ownerId = null;
+    _dependencies = dependencies;
+    unawaited(_owners?.cancel());
+    final binding = ++_ownerBinding;
+    final source =
+        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+    void changed(String? owner) {
+      if (!mounted ||
+          !identical(_dependencies, dependencies) ||
+          binding != _ownerBinding) {
+        return;
+      }
+      _generation++;
+      _ownerId = owner;
+      if (_redrawScheduled) return;
+      _redrawScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _redrawScheduled = false;
+        if (mounted) setState(() {});
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+    }
+
+    _owners = source?.listen(
+      changed,
+      onError: (Object _, StackTrace _) => changed(null),
+      onDone: () => changed(null),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant WeaknessClinicScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.ownerChanges, widget.ownerChanges)) {
+      _bindOwners(force: true);
+    }
+    if (!identical(oldWidget.learning, widget.learning) ||
+        !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
+      _generation++;
+    }
+  }
 
   ProgressLoader? get _loader =>
       widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
@@ -54,6 +134,11 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final visible =
+        ModalRoute.isCurrentOf(context) == true && Visibility.of(context);
+    if (_visible && !visible && !_openingReview) _generation++;
+    _visible = visible;
+    _bindOwners();
     if (_load != null) return;
     _load = _loadProgress();
   }
@@ -103,6 +188,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
               learning: widget.learning,
               canQuiz: features.isVisible(FieldFeature.quiz),
               canReview: features.isVisible(FieldFeature.srs),
+              onReview: _reviewAction(features),
               onReturn: () {
                 if (!mounted) return;
                 _retry();
@@ -113,6 +199,55 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
       ),
     );
   }
+
+  VoidCallback? _reviewAction(FieldFeatureRegistry features) {
+    final generation = _generation;
+    final ownerId = _ownerId;
+    final dependencies = _dependencies;
+    final learning = widget.learning ?? dependencies?.learning;
+    if (ownerId == null || learning == null) return null;
+    bool current() =>
+        mounted &&
+        generation == _generation &&
+        ownerId == _ownerId &&
+        identical(dependencies, _dependencies) &&
+        identical(learning, widget.learning ?? _dependencies?.learning) &&
+        features.isVisible(FieldFeature.srs) &&
+        Visibility.of(context) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    return () async {
+      if (_openingReview ||
+          !current() ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      final owners =
+          widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+      if (owners == null) return;
+      _openingReview = true;
+      try {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'learning/weakness-srs',
+            builder: (_) => current()
+                ? SrsFlashcardsScreen(
+                    expectedOwnerId: ownerId,
+                    ownerChanges: owners,
+                    learning: learning,
+                    voice: dependencies?.voice,
+                  )
+                : const Scaffold(
+                    body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
+                  ),
+          ),
+        );
+      } finally {
+        _openingReview = false;
+        if (mounted) _retry();
+      }
+    };
+  }
 }
 
 class _WeaknessBody extends StatelessWidget {
@@ -122,6 +257,7 @@ class _WeaknessBody extends StatelessWidget {
     required this.canQuiz,
     required this.canReview,
     required this.onReturn,
+    required this.onReview,
   });
 
   final ProgressSnapshot progress;
@@ -129,6 +265,7 @@ class _WeaknessBody extends StatelessWidget {
   final bool canQuiz;
   final bool canReview;
   final VoidCallback onReturn;
+  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
@@ -191,16 +328,7 @@ class _WeaknessBody extends StatelessWidget {
               if (canQuiz && canReview) const SizedBox(height: 8),
               if (canReview)
                 OutlinedButton.icon(
-                  onPressed: progress.dueReviewCount == 0
-                      ? null
-                      : () => AppNavigator.pushPage<void>(
-                          context,
-                          AppPage<void>(
-                            name: 'learning/weakness-srs',
-                            builder: (_) =>
-                                SrsFlashcardsScreen(learning: learning),
-                          ),
-                        ).then((_) => onReturn()),
+                  onPressed: progress.dueReviewCount == 0 ? null : onReview,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                   ),

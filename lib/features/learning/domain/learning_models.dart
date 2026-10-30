@@ -113,6 +113,105 @@ final class RecordAnswerCommand {
       LearningEvidenceContract.frozenV13LegacyEvidenceContext();
 }
 
+enum SrsReviewSelection { due, source }
+
+final class SrsReviewSession {
+  SrsReviewSession({
+    required this.session,
+    required Iterable<QuizWord> words,
+    required this.selection,
+  }) : words = List<QuizWord>.unmodifiable(words) {
+    final started = session.startedAtUtc;
+    if (!session.id.startsWith(idPrefix) ||
+        session.id.length == idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        !LearningEvidenceContract.validIdentifier(session.ownerId) ||
+        session.activityType != 'srsReview' ||
+        started == null ||
+        !_srsMillisecondUtc(started) ||
+        this.words.isEmpty ||
+        this.words.length > 20) {
+      throw ArgumentError('Invalid owned SRS review');
+    }
+    final ids = <String>{};
+    for (final word in this.words) {
+      if (!ids.add(word.id) ||
+          !LearningEvidenceContract.validIdentifier(word.id) ||
+          !LearningEvidenceContract.validIdentifier(word.categoryId) ||
+          word.spelling.trim().isEmpty ||
+          word.meaning.trim().isEmpty ||
+          word.contentRevision == null ||
+          !LearningEvidenceContract.validIdentifier(word.contentRevision!)) {
+        throw ArgumentError('Invalid owned SRS target');
+      }
+    }
+  }
+
+  static const idPrefix = 'session:srs-review-v1:';
+  final LearningSessionDraft session;
+  final List<QuizWord> words;
+  final SrsReviewSelection selection;
+
+  String get id => session.id;
+  String get ownerId => session.ownerId;
+  DateTime get startedAtUtc => session.startedAtUtc!;
+}
+
+final class SrsReviewAnswerIntent {
+  SrsReviewAnswerIntent({
+    required this.review,
+    required this.cardIndex,
+    required this.command,
+  }) {
+    if (cardIndex < 0 ||
+        cardIndex >= review.words.length ||
+        command.id != 'attempt:srs:${review.id}:$cardIndex' ||
+        command.ownerId != review.ownerId ||
+        command.sessionId != review.id ||
+        command.wordId != review.words[cardIndex].id ||
+        command.promptMode != 'srsRecall' ||
+        command.attemptNumber != cardIndex + 1 ||
+        command.providerProvenance != null ||
+        !_srsMillisecondUtc(command.occurredAtUtc) ||
+        command.occurredAtUtc.isBefore(review.startedAtUtc)) {
+      throw ArgumentError('SRS rating does not match its original card');
+    }
+  }
+
+  final SrsReviewSession review;
+  final int cardIndex;
+  final RecordAnswerCommand command;
+}
+
+final class SrsReviewFinishIntent {
+  SrsReviewFinishIntent({required this.review, required this.endedAtUtc}) {
+    if (!_srsMillisecondUtc(endedAtUtc) ||
+        endedAtUtc.isBefore(review.startedAtUtc)) {
+      throw ArgumentError('Invalid original SRS end');
+    }
+  }
+
+  final SrsReviewSession review;
+  final DateTime endedAtUtc;
+}
+
+final class SrsReviewStartResult {
+  const SrsReviewStartResult({required this.review, required this.inserted});
+  final SrsReviewSession review;
+  final bool inserted;
+}
+
+final class SrsReviewFinishResult {
+  const SrsReviewFinishResult({required this.summary, required this.inserted});
+  final LearningSessionSummary summary;
+  final bool inserted;
+}
+
+bool _srsMillisecondUtc(DateTime value) =>
+    value.isUtc &&
+    value.microsecondsSinceEpoch >= 0 &&
+    value.microsecondsSinceEpoch % 1000 == 0;
+
 final class SrsSnapshot {
   const SrsSnapshot({
     required this.intervalDays,

@@ -17,6 +17,8 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/source_practice.dart';
@@ -54,6 +56,7 @@ final class _FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     await (FontLoader('NotoSansThai')
           ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
@@ -71,6 +74,7 @@ void main() {
   var id = 0;
 
   setUp(() async {
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     database = AppDatabase(NativeDatabase.memory());
     owners = DriftLocalOwnerRepository(
       database,
@@ -154,6 +158,7 @@ void main() {
     String? text,
     double textScale = 1,
     bool withTutor = true,
+    bool withSrsOwnerScope = false,
     Size size = const Size(360, 800),
     double keyboardInset = 0,
     bool reducedMotion = false,
@@ -170,6 +175,13 @@ void main() {
       guestSessionService: _UnusedGuestSession(),
       geminiTutor: withTutor ? tutor : null,
       speechPractice: speech,
+      progress: withSrsOwnerScope
+          ? ProgressUseCases(
+              owners: owners,
+              queries: DriftProgressQueries(database),
+              nowUtc: () => DateTime.utc(2026, 10, 21, 1),
+            )
+          : null,
     ),
     child: MaterialApp(
       theme: ThemeData(fontFamily: 'NotoSansThai'),
@@ -1786,52 +1798,123 @@ void main() {
   testWidgets(
     'confirmed Flashcards targets zero-due matches and saves real feedback',
     (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
-      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
-      expect(await database.select(database.srsStates).get(), isEmpty);
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('confirm-source')),
-      );
-      await tester.tap(find.byKey(const ValueKey('confirm-source')));
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('start-source-flashcards')),
-      );
-      await tester.tap(find.byKey(const ValueKey('start-source-flashcards')));
-      await _pumpUntilFound(tester, find.text('บัตรคำจากเนื้อหานี้'));
+      try {
+        await tester.pumpWidget(screen(withSrsOwnerScope: true));
+        await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('source-text')),
+        );
+        expect(await database.select(database.srsStates).get(), isEmpty);
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('confirm-source')),
+        );
+        await tester.tap(find.byKey(const ValueKey('confirm-source')));
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('start-source-flashcards')),
+        );
+        await tester.tap(find.byKey(const ValueKey('start-source-flashcards')));
+        await _pumpUntilFound(tester, find.byKey(const ValueKey('srs-card')));
+        expect(find.text('บัตรคำจากเนื้อหานี้'), findsOneWidget);
 
-      expect(find.text('station').hitTestable(), findsOneWidget);
-      final session = await database
-          .select(database.learningSessions)
-          .getSingle();
-      expect(session.activityType, 'srsReview');
-      await tester.ensureVisible(find.text('ดูคำแปล'));
-      await tester.tap(find.text('ดูคำแปล'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('จำได้แล้ว'));
-      await tester.tap(find.text('จำได้แล้ว'));
-      await _pumpUntilFound(tester, find.text('บันทึกแล้ว'));
+        expect(find.text('station').hitTestable(), findsOneWidget);
+        final session = await database
+            .select(database.learningSessions)
+            .getSingle();
+        expect(session.activityType, 'srsReview');
+        await tester.ensureVisible(find.text('ดูคำแปล'));
+        await tester.tap(find.text('ดูคำแปล'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('จำได้แล้ว'));
+        await tester.tap(find.text('จำได้แล้ว'));
+        await _pumpUntilFound(tester, find.text('บันทึกแล้ว'));
 
-      expect(
-        await database.select(database.answerAttempts).get(),
-        hasLength(1),
-      );
-      expect(await database.select(database.srsStates).get(), hasLength(1));
-      final rewards = await database.select(database.rewardTransactions).get();
-      expect(rewards, hasLength(1));
-      expect(rewards.single.transactionType, 'creditQuizCorrectV1');
-      expect(rewards.single.amount, 1);
-      expect(find.text('จบการฝึก'), findsOneWidget);
-      expect(await database.select(database.vocabularyImports).get(), isEmpty);
-      await tester.tap(find.text('จบการฝึก'));
-      await _pumpUntilFound(tester, find.byType(ScoreScreen));
-      final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
-      expect(score.correctAnswers, 1);
-      expect(score.wrongAnswers, 0);
-      expect(score.mistakes, isEmpty);
-      expect(score.onPracticeMistakes, isNull);
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(await database.select(database.srsStates).get(), hasLength(1));
+        final rewards = await database
+            .select(database.rewardTransactions)
+            .get();
+        expect(rewards, hasLength(1));
+        expect(rewards.single.transactionType, 'creditQuizCorrectV1');
+        expect(rewards.single.amount, 1);
+        expect(find.text('จบการฝึก'), findsOneWidget);
+        expect(
+          await database.select(database.vocabularyImports).get(),
+          isEmpty,
+        );
+        await tester.tap(find.text('จบการฝึก'));
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+        expect(score.correctAnswers, 1);
+        expect(score.wrongAnswers, 0);
+        expect(score.mistakes, isEmpty);
+        expect(score.onPracticeMistakes, isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    },
+  );
+
+  testWidgets(
+    'source SRS owner ABA hides the old card and refuses retained flip',
+    (tester) async {
+      try {
+        await tester.pumpWidget(screen(withSrsOwnerScope: true));
+        await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('source-text')),
+        );
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('confirm-source')),
+        );
+        await tester.tap(find.byKey(const ValueKey('confirm-source')));
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('start-source-flashcards')),
+        );
+        await tester.tap(find.byKey(const ValueKey('start-source-flashcards')));
+        await _pumpUntilFound(tester, find.byKey(const ValueKey('srs-card')));
+        final retained = tester
+            .widget<TextButton>(find.byKey(const ValueKey('srs-flip')))
+            .onPressed!;
+        // One commit proves coalesced A-to-B-to-A invalidation from the real owner stream.
+        await tester.runAsync(
+          () => database
+              .transaction(() async {
+                await _switchOwner(database, ownerId);
+                await database.customStatement(
+                  'UPDATE local_owners SET is_active = (id = ?)',
+                  [ownerId],
+                );
+              })
+              .timeout(const Duration(seconds: 5)),
+        );
+        retained();
+        await _pumpUntilFound(tester, find.text('กิจกรรมไม่พร้อมใช้งาน'));
+        expect(find.byKey(const ValueKey('srs-card')), findsNothing);
+        expect(find.byType(ScoreScreen), findsNothing);
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        final session = await database
+            .select(database.learningSessions)
+            .getSingle();
+        expect(session.ownerId, ownerId);
+        expect(session.state, 'active');
+        expect(
+          await database.select(database.rewardTransactions).get(),
+          isEmpty,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
     },
   );
 
@@ -2046,30 +2129,36 @@ void main() {
   testWidgets('rapid Flashcards taps create one source session', (
     tester,
   ) async {
-    await tester.pumpWidget(screen());
-    await tester.tap(find.byKey(const ValueKey('choose-source-file')));
-    await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
-    await _scrollUntilFound(
-      tester,
-      find.byKey(const ValueKey('confirm-source')),
-    );
-    await tester.tap(find.byKey(const ValueKey('confirm-source')));
-    await _scrollUntilFound(
-      tester,
-      find.byKey(const ValueKey('start-source-flashcards')),
-    );
-    final start = tester.widget<OutlinedButton>(
-      find.byKey(const ValueKey('start-source-flashcards')),
-    );
+    try {
+      await tester.pumpWidget(screen(withSrsOwnerScope: true));
+      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
+      await _scrollUntilFound(
+        tester,
+        find.byKey(const ValueKey('confirm-source')),
+      );
+      await tester.tap(find.byKey(const ValueKey('confirm-source')));
+      await _scrollUntilFound(
+        tester,
+        find.byKey(const ValueKey('start-source-flashcards')),
+      );
+      final start = tester.widget<OutlinedButton>(
+        find.byKey(const ValueKey('start-source-flashcards')),
+      );
 
-    start.onPressed!();
-    start.onPressed!();
-    await _pumpUntilFound(tester, find.text('บัตรคำจากเนื้อหานี้'));
+      start.onPressed!();
+      start.onPressed!();
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('srs-card')));
+      expect(find.text('บัตรคำจากเนื้อหานี้'), findsOneWidget);
 
-    expect(
-      await database.select(database.learningSessions).get(),
-      hasLength(1),
-    );
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(1),
+      );
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    }
   });
 
   testWidgets(
@@ -2210,71 +2299,79 @@ void main() {
   testWidgets(
     'editing while Flashcards launch awaits requires fresh confirmation',
     (tester) async {
-      final delayedOwners = useDelayedOwners();
-      await tester.pumpWidget(screen());
-      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
-      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('confirm-source')),
-      );
-      await tester.tap(find.byKey(const ValueKey('confirm-source')));
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('start-source-flashcards')),
-      );
+      try {
+        final delayedOwners = useDelayedOwners();
+        await tester.pumpWidget(screen(withSrsOwnerScope: true));
+        await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('source-text')),
+        );
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('confirm-source')),
+        );
+        await tester.tap(find.byKey(const ValueKey('confirm-source')));
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('start-source-flashcards')),
+        );
 
-      delayedOwners.delayNextLookup();
-      tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('start-source-flashcards')),
-          )
-          .onPressed!();
-      await delayedOwners.waitUntilDelayed;
-      await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('source-text')),
-        -200,
-        scrollable: find.byType(Scrollable).first,
-        maxScrolls: 20,
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('source-text')),
-        'The station is busy and ready for every learner today.',
-      );
-      delayedOwners.release();
-      await _pumpAsyncWork(tester);
+        delayedOwners.delayNextLookup();
+        tester
+            .widget<OutlinedButton>(
+              find.byKey(const ValueKey('start-source-flashcards')),
+            )
+            .onPressed!();
+        await delayedOwners.waitUntilDelayed;
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('source-text')),
+          -200,
+          scrollable: find.byType(Scrollable).first,
+          maxScrolls: 20,
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('source-text')),
+          'The station is busy and ready for every learner today.',
+        );
+        delayedOwners.release();
+        await _pumpAsyncWork(tester);
 
-      expect(find.text('บัตรคำจากเนื้อหานี้'), findsNothing);
-      expect(find.text('ฝึกจากไฟล์ในเครื่อง'), findsOneWidget);
-      await _expectNoPracticeWrites(database);
+        expect(find.text('บัตรคำจากเนื้อหานี้'), findsNothing);
+        expect(find.text('ฝึกจากไฟล์ในเครื่อง'), findsOneWidget);
+        await _expectNoPracticeWrites(database);
 
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('review-source-text')),
-      );
-      final review = tester.widget<OutlinedButton>(
-        find.byKey(const ValueKey('review-source-text')),
-      );
-      expect(review.onPressed, isNotNull);
-      review.onPressed!();
-      await _pumpAsyncWork(tester);
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('confirm-source')),
-      );
-      await tester.tap(find.byKey(const ValueKey('confirm-source')));
-      await _scrollUntilFound(
-        tester,
-        find.byKey(const ValueKey('start-source-flashcards')),
-      );
-      await tester.tap(find.byKey(const ValueKey('start-source-flashcards')));
-      await _pumpUntilFound(tester, find.text('บัตรคำจากเนื้อหานี้'));
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('review-source-text')),
+        );
+        final review = tester.widget<OutlinedButton>(
+          find.byKey(const ValueKey('review-source-text')),
+        );
+        expect(review.onPressed, isNotNull);
+        review.onPressed!();
+        await _pumpAsyncWork(tester);
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('confirm-source')),
+        );
+        await tester.tap(find.byKey(const ValueKey('confirm-source')));
+        await _scrollUntilFound(
+          tester,
+          find.byKey(const ValueKey('start-source-flashcards')),
+        );
+        await tester.tap(find.byKey(const ValueKey('start-source-flashcards')));
+        await _pumpUntilFound(tester, find.byKey(const ValueKey('srs-card')));
 
-      expect(find.text('บัตรคำจากเนื้อหานี้'), findsOneWidget);
-      expect(
-        await database.select(database.learningSessions).get(),
-        hasLength(1),
-      );
+        expect(find.text('บัตรคำจากเนื้อหานี้'), findsOneWidget);
+        expect(
+          await database.select(database.learningSessions).get(),
+          hasLength(1),
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
     },
   );
 

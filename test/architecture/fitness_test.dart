@@ -526,7 +526,7 @@ void main() {
       isEmpty,
       reason:
           'SrsService is deprecated (SharedPreferences-backed). '
-          'Use LearningUseCases.startDueReview() instead:\n'
+          'Use the owner-bound LearningUseCases SRS review commands instead:\n'
           '${violations.join('\n')}',
     );
   });

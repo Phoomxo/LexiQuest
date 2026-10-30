@@ -24,7 +24,7 @@ void main() {
 
   for (final activity in ['shadowing', 'srsReview', 'pronunciation']) {
     test(
-      '$activity keeps ordinary legacy capture without a configured plan',
+      '$activity keeps ordinary capture without a configured quiz plan',
       () async {
         await h.database.customStatement(
           'INSERT INTO learning_sessions '
@@ -46,16 +46,23 @@ void main() {
           ],
         );
         final prior = await h.session('synthetic-unchanged-prior-session');
-        final QuizSession session;
+        QuizSession? session;
+        SrsReviewSession? review;
         final String promptMode;
         switch (activity) {
           case 'shadowing':
             session = await useCases.startShadowing(limit: 1);
             promptMode = 'shadowing';
           case 'srsReview':
-            session = await useCases.startSourceReviewForWords(
-              wordIds: configuredWordIds.take(1),
+            final prepared = await useCases.prepareSrsReview(
+              expectedOwnerId: configuredOwnerId,
+              sourceWordIds: configuredWordIds.take(1),
               limit: 1,
+              stillCurrent: () => true,
+            );
+            review = await useCases.startSrsReview(
+              prepared!,
+              stillCurrent: () => true,
             );
             promptMode = 'srsRecall';
           case 'pronunciation':
@@ -67,31 +74,47 @@ void main() {
           default:
             throw StateError('unreachable synthetic activity');
         }
-        final created = await h.session(session.id);
+        final sessionId = review?.id ?? session!.id;
+        final created = await h.session(sessionId);
         expect(created['activity_type'], activity);
         expect(created['accepted_plan_id'], isNull);
         expect(created['accepted_plan_json'], isNull);
         expect(created['checkpoint_revision'], 0);
         expect(created['checkpoint_json'], isNull);
         h.now = h.now.add(const Duration(seconds: 3));
-        final word = session.questions.single.word;
-        final recorded = await useCases.recordAnswer(
-          sessionId: session.id,
-          wordId: word.id,
-          promptMode: promptMode,
-          isCorrect: true,
-          responseTimeMs: 3000,
-          attemptNumber: 1,
-          attemptId: 'synthetic-legacy-$activity-answer',
-          occurredAtUtc: h.now,
-          evidenceContext: captureCurrentActivityEvidence(
-            promptMode: promptMode,
-            contentRevision: word.contentRevision,
-          ),
-        );
+        final word = review?.words.single ?? session!.questions.single.word;
+        final recorded = review != null
+            ? await useCases.commitSrsRating(
+                useCases.prepareSrsRating(
+                  review: review,
+                  cardIndex: 0,
+                  recalled: true,
+                  responseTimeMs: 3000,
+                ),
+                stillCurrent: () => true,
+              )
+            : await useCases.recordAnswer(
+                sessionId: sessionId,
+                wordId: word.id,
+                promptMode: promptMode,
+                isCorrect: true,
+                responseTimeMs: 3000,
+                attemptNumber: 1,
+                attemptId: 'synthetic-legacy-$activity-answer',
+                occurredAtUtc: h.now,
+                evidenceContext: captureCurrentActivityEvidence(
+                  promptMode: promptMode,
+                  contentRevision: word.contentRevision,
+                ),
+              );
         h.now = h.now.add(const Duration(seconds: 1));
-        final summary = await useCases.finishSession(session.id);
-        final completed = await h.session(session.id);
+        final summary = review != null
+            ? await useCases.finishSrsReview(
+                useCases.prepareSrsFinish(review),
+                stillCurrent: () => true,
+              )
+            : await useCases.finishSession(sessionId);
+        final completed = await h.session(sessionId);
         expect(recorded.inserted, isTrue);
         expect(summary.state, 'completed');
         expect(summary.correctCount, 1);

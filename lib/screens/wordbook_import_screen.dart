@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/custom_wordbook_importer.dart';
+import '../runtime/app_dependencies.dart';
 import 'srs_flashcards_screen.dart';
 import '../navigation/app_routes.dart';
 
@@ -169,8 +170,10 @@ class _WordbookImportScreenState extends State<WordbookImportScreen> {
                     context,
                     AppPage<void>(
                       name: 'learning/import-srs',
-                      builder: (context) =>
-                          SrsFlashcardsScreen(wordList: _parsedWords),
+                      builder: (context) => SrsFlashcardsScreen(
+                        wordList: _parsedWords,
+                        voice: AppDependenciesScope.maybeOf(context)?.voice,
+                      ),
                     ),
                   );
                 },

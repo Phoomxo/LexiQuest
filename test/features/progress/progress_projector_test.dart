@@ -89,7 +89,36 @@ void main() {
       occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 0, sequence),
       providerProvenance: 'local:synthetic-skill-test:v1',
     );
-    await learning.recordAnswer(command);
+    if (mode == 'srsRecall') {
+      // This mixed-session fixture represents historical rows, not a live SRS entry.
+      await database.customStatement(
+        'INSERT INTO answer_attempts '
+        '(id,owner_id,session_id,word_id,prompt_mode,is_correct,response_time_ms,attempt_number,occurred_at_utc_ms,provider_provenance,evidence_class,evidence_context_json) '
+        'VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+        [
+          command.id,
+          command.ownerId,
+          command.sessionId,
+          command.wordId,
+          command.promptMode,
+          command.isCorrect ? 1 : 0,
+          command.responseTimeMs,
+          command.attemptNumber,
+          command.occurredAtUtc.millisecondsSinceEpoch,
+          command.providerProvenance,
+          command.evidenceContext.evidenceClass.name,
+          jsonEncode(command.evidenceContext.toJson()),
+        ],
+      );
+      await learning.projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+      await learning.projections.rebuildSession(
+        ownerId: ownerId,
+        sessionId: command.sessionId,
+      );
+      await learning.projections.rebuildAchievements(ownerId);
+    } else {
+      await learning.recordAnswer(command);
+    }
     return command;
   }
 

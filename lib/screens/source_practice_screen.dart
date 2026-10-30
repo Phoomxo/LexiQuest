@@ -428,15 +428,27 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
       final words = preview.matchedWords.take(_maxPracticeWords).toList();
       final resultContext = _captureResultContext(preview, words);
       if (resultContext == null) return;
+      final dependencies = AppDependenciesScope.maybeOf(context);
+      final owners = dependencies?.progress?.watchActiveOwnerId();
       final result = await AppNavigator.pushPage<LearningSessionResult>(
         context,
         AppPage<LearningSessionResult>(
           name: 'learning/source-flashcards',
-          builder: (_) => SrsFlashcardsScreen(
-            sourceWordIds: words.map((word) => word.id).toList(growable: false),
-            learning: resultContext.learning,
-            voice: widget.voice,
-          ),
+          builder: (_) =>
+              _resultContextCurrent(resultContext) &&
+                  identical(dependencies, AppDependenciesScope.maybeOf(context))
+              ? SrsFlashcardsScreen(
+                  sourceWordIds: words
+                      .map((word) => word.id)
+                      .toList(growable: false),
+                  expectedOwnerId: resultContext.ownerId,
+                  ownerChanges: owners,
+                  learning: resultContext.learning,
+                  voice: widget.voice ?? dependencies?.voice,
+                )
+              : const Scaffold(
+                  body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
+                ),
         ),
       );
       await _showSourceResult(

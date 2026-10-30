@@ -1,10 +1,12 @@
 # Make owned SRS review safe before Review Center
 
-**State:** Root-approved bounded API after [Wave19](../../field/2026-10-30-remaining-systems-wave19.md). Application `f33014037073c97ff039a9427a7402504f980571` is attested (Flutter4297/analysis0/CLI23/backend390+one existing opt-in skip/normal APK120.3s); checkpoint `e22f9f638a7c7c9ff67e6ade1f4d3d7ac5a27b6f` is pushed. Worktree cycle12-release, branch `codex/remaining-system-readiness`. D-only test-first drafts follow this API; root owns C promotion and serialized checks. Schema20/37 and v21+ stay unchanged/unreserved.
+**State:** Wave20 implementation integrated on C; focused core50, combined UI40, Source SRS4 and analysis0 passed. Root is the sole C writer in cycle12-release on codex/remaining-system-readiness. Full current-source regression, CLI/backend and APK/source attestation remain pending. Schema20/37 and v21+ stay unchanged/unreserved.
+
+**Predecessor:** [Wave19](../../field/2026-10-30-remaining-systems-wave19.md), application f33014037073c97ff039a9427a7402504f980571 and pushed attestation e22f9f638a7c7c9ff67e6ade1f4d3d7ac5a27b6f.
 
 ## Review board
 
-Root accepted shape B and the six-method API below after source review. This revision records the explicit capability-interface exception and preserves the existing autoplay UX under current-scope guards. The D implementation has not started. Root owns publishing the C plan with W19 metadata and will release bounded D test-first work after the predecessor push. This document does not authorize a parallel C writer.
+Root accepted shape B and the six-method API below after source review. This revision records the explicit capability-interface exception and preserves the existing autoplay UX under current-scope guards. Core and UI workers froze tests before their D implementations. Root reviewed and promoted those drafts, migrated all callers/fixtures and ran serialized checks. This document does not authorize a parallel C writer.
 
 ## Grounded choice
 
@@ -95,6 +97,25 @@ Research remains optional/default-off. No new grant, Research event, or efficacy
 
 
 
+## Execution checkpoint
+
+The planning-state notes above record the approved baseline. Wave20 C integration is now in progress; no completion or new APK is claimed. Root is the only C writer. Frozen test-first core/UI drafts were prepared on D before their respective implementations. The focused usecase API RED failed compilation as expected because the six methods did not exist yet (`wave20-srs-usecase-api-red.log`); this is API evidence, not a behavioral failure reproduction. Actual SQL/UI assertions remain integration gates.
+
+All six production launch sites have C drafts: captured owner/generation for due entries, confirmed source owner/IDs, and raw-map previews with borrowed runtime voice. `test/screens/srs_review_callers_test.dart` checks all three due-entry paths and both preview callers. Existing Source Practice assertions now wait for the actual acknowledged card, retain result/reward checks, and add actual owner ABA coverage.
+
+The earlier explicit obsolete-file cleanup request also covers two proven disconnected predecessors: `lib/services/srs_service.dart` and `weakness_clinic_service.dart`. Their only callers were retired implementation tests. All four removed files matched the pushed `9d1886ff` blobs; the bounded target/path/hash receipt is `wave20-retired-srs-files.json` on D. Before retirement all five legacy tests passed; all three still-relevant SrsItem model tests were copied unchanged to `test/services/srs_item_test.dart` and passed. The SharedPreferences persistence and obsolete box/ease ranking tests were retired with their unused implementations, not removed to make a failing check green. SrsItem and its other prototype consumers remain. No measured disk-space gain is claimed, and previously denied cleanup targets remain untouched.
+
+Schema20/37, the frozen catalog/contracts, dependencies and production authority remain unchanged. Next: freeze the current source, run full regression and the release verification checks, then attest the normal APK before advancing the next card.
+
+## Integrated focused evidence
+
+- Core50 pass: original deck/intents, all37-table rollback, ambient/cross-database/generic bypass rejection,20-card ordering and exact ACK replay. A real failing purged-projection replay was fixed by returning nullable current SRS without rebuilding. The additional fixture control detects an actual inherited transaction, while canonical notifications remain outside commit.
+- Combined UI40 pass: all14 legacy executions,17 scope/audio/ACK cases and9 caller/preview/keyboard cases. Source SRS4 separately pass, including zero-due practice and real coalesced A-to-B-to-A invalidation. The captured due actions stay disabled before a first owner observation; readiness waits are observable rather than timed.
+- Analysis0 on the final lint-clean source; retained model3 and historical Progress11 pass. No full regression, CLI/backend, APK or physical-device completion is implied by these focused results.
+- The independent D receipt is srs-review-ui-clean-validation-review.md (SHA3a364f874f86ce7610853fa0b62712c8eb291b9727313ffea380cbed2b5ceba4). The following lint-only edits remove an unnecessary bang/import and add braces; final full verification must bind their current source.
+- Recovery evidence remains on D. The first API compile RED was expected; migrated Thai test literals were restored exactly. Real owner stream cleanup uses its real IO zone. Notification probe scheduling preserves the caller transaction zone and has a positive control, so it cannot hide an early notification. Temporary phase probes were removed after matching retained D copies. Partial caller runs were cancelled only after verifying their synthetic task process tree; they are not recorded as full passes.
+- Confirmed follow-up: ChooseMode, Clinic and Mastery cache ownerless Progress futures and can retain old-owner read data. This is separate from the completed focused SRS write protection. The next Review Center/read-scope plan must fix all three hosts and the Clinic Quiz handoff before claiming those reads ready. D grounding weakness-owner-read-grounding.md SHA0b941250c34310e2726067d8c80731bfed3bfd848341b9e700d178c1342baa4a records the source path; no runtime RED is claimed for that next card yet.
+
 ## Root review and execution board
 
 - Root read the current SRS UI, actual start/rating/finish calls, generic DAO boundaries, the frozen srsRecall classifier and all six caller references. Shape B is approved; the narrow SrsReviewRepository capability interface is an explicit refinement of the initial no-extra-ports grounding suggestion. It uses the house Native/Configured capability pattern and the same DAO/private canonical writer, without a second store or unsafe generic fallback.
@@ -102,4 +123,4 @@ Research remains optional/default-off. No new grant, Research event, or efficacy
 - Replay preserves immutable attempt identity/context/outbox and creates no projection writes. There is no persisted per-attempt posterior SRS receipt: a returned SRS state is the current saved canonical projection, which may legitimately include later facts. Do not invent a frozen posterior cache or rebuild projections merely to acknowledge replay.
 - Cover commit-then-lost-ACK before application notification, not only after the whole usecase returned. Deliver mutation/optional hooks at most once on the first confirmed original operation receipt, even when that receipt arrives through retry; never notify before top-level commit. The original in-process handle bounds this delivery state. No cross-process/external exactly-once-delivery promise or new event store is introduced.
 - Keep the original prepare/usecase scope for that in-process handle; replacing LearningUseCases is a dependency invalidation, not permission to adopt its pending operations or redispatch effects. Delivery tracking may use weak original-handle state; it must not become a second learning/reward authority.
-- Root owns final C integration/caller migration. Core and UI D workers have disjoint paths; repository/usecase tests precede actual UI and source/preview caller checks. Current source is unchanged at this planning checkpoint; no implementation, new table, migration reservation or production authority exists yet.
+- Root owns final C integration/caller migration. Core and UI D workers have disjoint paths; repository/usecase tests precede actual UI and source/preview caller checks. The implementation and caller migration are integrated; no new table, migration reservation or production authority is introduced.

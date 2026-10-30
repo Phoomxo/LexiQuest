@@ -60,12 +60,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   StreamSubscription<String?>? _nativeOwners;
   String? _nativeOwnerId;
   int _nativeGeneration = 0;
+  int _nativeOwnerBinding = 0;
   final _nativeChanges = ValueNotifier<int>(0);
   bool _nativeNoticeScheduled = false;
   bool _nativeBound = false;
   bool _nativeRouteVisible = false;
   bool _openingNative = false;
   bool _choosingNativeOverlay = false;
+  bool _openingSrs = false;
 
   @override
   void initState() {
@@ -109,7 +111,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     _studyRouteVisible = visible;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _replaceStudyBinding(dependencies);
-    if (_nativeRouteVisible && !visible && !_choosingNativeOverlay) {
+    if (_nativeRouteVisible &&
+        !visible &&
+        !_choosingNativeOverlay &&
+        !_openingSrs) {
       _invalidateNative();
     }
     _nativeRouteVisible = visible;
@@ -121,6 +126,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.ownerChanges, widget.ownerChanges)) {
       _replaceStudyBinding(AppDependenciesScope.maybeOf(context), force: true);
+      _replaceNativeBinding(AppDependenciesScope.maybeOf(context), force: true);
     }
     if (!identical(oldWidget.learning, widget.learning) ||
         !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
@@ -128,8 +134,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
   }
 
-  void _replaceNativeBinding(AppDependencies? dependencies) {
-    if (_nativeBound && identical(_nativeDependencies, dependencies)) {
+  void _replaceNativeBinding(
+    AppDependencies? dependencies, {
+    bool force = false,
+  }) {
+    if (!force &&
+        _nativeBound &&
+        identical(_nativeDependencies, dependencies)) {
       return;
     }
     _nativeBound = true;
@@ -137,10 +148,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     _nativeOwnerId = null;
     _nativeDependencies = dependencies;
     _nativeOwners?.cancel();
-    final source = dependencies?.progress?.watchActiveOwnerId();
+    final binding = ++_nativeOwnerBinding;
+    final source =
+        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
     _nativeOwners = source?.listen(
       (ownerId) {
-        if (!mounted || !identical(_nativeDependencies, dependencies)) {
+        if (!mounted ||
+            !identical(_nativeDependencies, dependencies) ||
+            binding != _nativeOwnerBinding) {
           return;
         }
         if (_nativeOwnerId != ownerId) {
@@ -149,13 +164,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         }
       },
       onError: (Object _, StackTrace _) {
-        if (mounted && identical(_nativeDependencies, dependencies)) {
+        if (mounted &&
+            identical(_nativeDependencies, dependencies) &&
+            binding == _nativeOwnerBinding) {
           _invalidateNative();
           _nativeOwnerId = null;
         }
       },
       onDone: () {
-        if (mounted && identical(_nativeDependencies, dependencies)) {
+        if (mounted &&
+            identical(_nativeDependencies, dependencies) &&
+            binding == _nativeOwnerBinding) {
           _invalidateNative();
           _nativeOwnerId = null;
         }
@@ -305,18 +324,18 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   if (queueSummary.isNotEmpty) const SizedBox(height: 12),
                   if (hasRecommendation)
                     FilledButton.icon(
-                      onPressed: () => _push(
-                        context,
-                        hasDue
-                            ? SrsFlashcardsScreen(learning: _learning)
-                            : hasWeakness
-                            ? WeaknessClinicScreen(
-                                loader: widget.loader,
-                                learning: _learning,
-                                featureRegistry: _features,
-                              )
-                            : QuizScreen(learning: _learning),
-                      ),
+                      onPressed: hasDue
+                          ? _dueReviewAction()
+                          : () => _push(
+                              context,
+                              hasWeakness
+                                  ? WeaknessClinicScreen(
+                                      loader: widget.loader,
+                                      learning: _learning,
+                                      featureRegistry: _features,
+                                    )
+                                  : QuizScreen(learning: _learning),
+                            ),
                       icon: Icon(
                         hasDue
                             ? Icons.event_repeat_outlined
@@ -362,8 +381,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               icon: Icons.event_repeat_outlined,
               title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
               subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
-              onTap: () =>
-                  _push(context, SrsFlashcardsScreen(learning: _learning)),
+              onTap: _dueReviewAction(),
             ),
           if (canQuiz)
             _LearningTile(
@@ -443,9 +461,61 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     _nativeNoticeScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _nativeNoticeScheduled = false;
-      if (mounted) _nativeChanges.value = _nativeGeneration;
+      if (mounted) {
+        _nativeChanges.value = _nativeGeneration;
+        setState(() {});
+      }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  VoidCallback? _dueReviewAction() {
+    final generation = _nativeGeneration;
+    final ownerId = _nativeOwnerId;
+    final learning = _learning;
+    final dependencies = _nativeDependencies;
+    if (ownerId == null || learning == null) return null;
+    bool current() =>
+        mounted &&
+        generation == _nativeGeneration &&
+        ownerId == _nativeOwnerId &&
+        identical(learning, _learning) &&
+        identical(dependencies, _nativeDependencies) &&
+        _features.isVisible(FieldFeature.srs) &&
+        Visibility.of(context) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    return () async {
+      if (_openingSrs ||
+          !current() ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      final owners =
+          widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+      if (owners == null) return;
+      _openingSrs = true;
+      try {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'learning/due-srs',
+            builder: (_) => current()
+                ? SrsFlashcardsScreen(
+                    expectedOwnerId: ownerId,
+                    ownerChanges: owners,
+                    learning: learning,
+                    voice: dependencies?.voice,
+                  )
+                : const Scaffold(
+                    body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
+                  ),
+          ),
+        );
+      } finally {
+        _openingSrs = false;
+        _refresh();
+      }
+    };
   }
 
   bool _nativeContextCurrent(
@@ -940,7 +1010,7 @@ class _LearningTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

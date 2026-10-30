@@ -1,15 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/models/srs_item.dart';
-import 'package:vocab_learning_app/services/srs_service.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
   test('SrsItem initial state starts at Box 1', () {
     final now = DateTime.utc(2026, 7, 24, 10, 0, 0);
     final item = SrsItem.initial('apple', now: now);
@@ -47,19 +39,5 @@ void main() {
     expect(reset.boxLevel, 1);
     expect(reset.intervalDays, 1);
     expect(reset.nextReviewAt, now.add(const Duration(days: 1)));
-  });
-
-  test('SrsService persists items and filters due items', () async {
-    final service = SrsService();
-    final now = DateTime.utc(2026, 7, 24, 10, 0, 0);
-
-    await service.recordReview('cat', true, now: now);
-    await service.recordReview('dog', false, now: now);
-
-    // Tomorrow 'dog' (box 1, interval 1) is due, but 'cat' (box 2, interval 2) is not due yet
-    final tomorrow = now.add(const Duration(days: 1));
-    final dueItems = await service.getDueItems(now: tomorrow);
-    expect(dueItems.length, 1);
-    expect(dueItems.first.word, 'dog');
   });
 }

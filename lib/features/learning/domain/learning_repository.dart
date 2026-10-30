@@ -91,3 +91,28 @@ abstract interface class ConfiguredQuizRepository {
     required int expectedRevision,
   });
 }
+
+abstract interface class SrsReviewRepository {
+  Future<SrsReviewSession?> prepareSrsReview({
+    required LearningSessionDraft session,
+    required SrsReviewSelection selection,
+    Iterable<String>? sourceWordIds,
+    int limit = 20,
+    required bool Function() stillCurrent,
+  });
+
+  Future<SrsReviewStartResult> startSrsReview(
+    SrsReviewSession review, {
+    required bool Function() stillCurrent,
+  });
+
+  Future<AnswerRecordResult> commitSrsRating(
+    SrsReviewAnswerIntent intent, {
+    required bool Function() stillCurrent,
+  });
+
+  Future<SrsReviewFinishResult> finishSrsReview(
+    SrsReviewFinishIntent intent, {
+    required bool Function() stillCurrent,
+  });
+}

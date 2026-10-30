@@ -17,7 +17,7 @@ import 'learning_use_cases.dart';
 ///
 /// **Relationship to [LearningUseCases]:**
 /// SRS scheduling for production vocabulary words must go through
-/// [LearningUseCases.startDueReview] / [LearningUseCases.recordAnswer].
+/// the owner-bound LearningUseCases SRS prepare/start/rating/finish commands.
 /// This port handles supplementary associative-memory data only — it does
 /// not replace the core SRS authority.
 abstract interface class AssociativeLearningPort {

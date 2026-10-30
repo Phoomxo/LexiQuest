@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../services/cefr_service.dart';
+import '../runtime/app_dependencies.dart';
 import 'srs_flashcards_screen.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -201,8 +202,12 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
                                 context,
                                 AppPage<void>(
                                   name: 'learning/cefr-srs',
-                                  builder: (context) =>
-                                      SrsFlashcardsScreen(wordList: wordMaps),
+                                  builder: (context) => SrsFlashcardsScreen(
+                                    wordList: wordMaps,
+                                    voice: AppDependenciesScope.maybeOf(
+                                      context,
+                                    )?.voice,
+                                  ),
                                 ),
                               );
                             }

@@ -66,20 +66,33 @@ void main() {
 
   Future<void> recordReviews(int count) async {
     for (var index = 0; index < count; index++) {
-      await learning.recordAnswer(
-        RecordAnswerCommand(
-          id: 'synthetic-attempt-$index',
-          ownerId: 'synthetic-owner',
-          sessionId: 'synthetic-session',
-          wordId: 'synthetic-word',
-          promptMode: 'srsRecall',
-          isCorrect: true,
-          responseTimeMs: 500,
-          attemptNumber: index + 1,
-          occurredAtUtc: firstReview.add(Duration(days: index * 15)),
-        ),
+      // Historical migrated SRS rows remain readable after the old writer retires.
+      await database.customStatement(
+        'INSERT INTO answer_attempts '
+        '(id,owner_id,session_id,word_id,prompt_mode,is_correct,response_time_ms,attempt_number,occurred_at_utc_ms) '
+        'VALUES (?,?,?,?,?,?,?,?,?)',
+        [
+          'synthetic-attempt-$index',
+          'synthetic-owner',
+          'synthetic-session',
+          'synthetic-word',
+          'srsRecall',
+          1,
+          500,
+          index + 1,
+          firstReview.add(Duration(days: index * 15)).millisecondsSinceEpoch,
+        ],
       );
     }
+    await learning.projections.rebuildWord(
+      ownerId: 'synthetic-owner',
+      wordId: 'synthetic-word',
+    );
+    await learning.projections.rebuildSession(
+      ownerId: 'synthetic-owner',
+      sessionId: 'synthetic-session',
+    );
+    await learning.projections.rebuildAchievements('synthetic-owner');
   }
 
   Future<void> deleteWord() => DriftVocabularyRepository(database).deleteWord(

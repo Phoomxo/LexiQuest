@@ -542,13 +542,240 @@ final class LearningUseCases {
     if (!stillCurrent()) throw StateError('Dictation is no longer current');
   }
 
+  SrsReviewRepository get _srsReviews => switch (repository) {
+    SrsReviewRepository capability => capability,
+    _ => throw StateError('Owned SRS review persistence is unavailable'),
+  };
+
+  final _srsScopes = Expando<_SrsUseCaseScope>();
+
+  Future<SrsReviewSession?> prepareSrsReview({
+    required String expectedOwnerId,
+    Iterable<String>? sourceWordIds,
+    int limit = 20,
+    required bool Function() stillCurrent,
+  }) async {
+    if (!stillCurrent()) throw StateError('SRS review is no longer current');
+    final owner = _requiredId(expectedOwnerId, 'expectedOwnerId');
+    if (limit < 1 || limit > 20) {
+      throw RangeError.range(limit, 1, 20, 'limit');
+    }
+    final selected = sourceWordIds
+        ?.map((id) => _requiredId(id, 'wordId'))
+        .toList(growable: false);
+    if (selected != null &&
+        (selected.length > limit ||
+            selected.toSet().length != selected.length)) {
+      throw ArgumentError('SRS source selection must contain unique owned IDs');
+    }
+    if (selected?.isEmpty ?? false) return null;
+    final review = await _srsReviews.prepareSrsReview(
+      session: LearningSessionDraft(
+        id: '${SrsReviewSession.idPrefix}${_nextId()}',
+        ownerId: owner,
+        activityType: 'srsReview',
+        startedAtUtc: _srsNow(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      selection: selected == null
+          ? SrsReviewSelection.due
+          : SrsReviewSelection.source,
+      sourceWordIds: selected == null ? null : List.unmodifiable(selected),
+      limit: limit,
+      stillCurrent: stillCurrent,
+    );
+    if (!stillCurrent()) throw StateError('SRS review is no longer current');
+    if (review != null) {
+      if (review.ownerId != owner) {
+        throw StateError('SRS review owner changed');
+      }
+      _srsScopes[review] = _SrsUseCaseScope(stillCurrent);
+    }
+    return review;
+  }
+
+  _SrsUseCaseScope _srsScope(SrsReviewSession review) {
+    final scope = _srsScopes[review];
+    if (scope == null) {
+      throw StateError('SRS review requires its original preparing usecase');
+    }
+    if (scope.invalidated || !scope.current()) {
+      scope.invalidated = true;
+      throw StateError('SRS review is no longer current');
+    }
+    return scope;
+  }
+
+  bool _currentSrs(SrsReviewSession review, bool Function() stillCurrent) {
+    final scope = _srsScope(review);
+    if (!stillCurrent()) {
+      scope.invalidated = true;
+      return false;
+    }
+    return true;
+  }
+
+  Future<SrsReviewSession> startSrsReview(
+    SrsReviewSession review, {
+    required bool Function() stillCurrent,
+  }) async {
+    final scope = _srsScope(review);
+    final result = await _srsReviews.startSrsReview(
+      review,
+      stillCurrent: () => _currentSrs(review, stillCurrent),
+    );
+    if (!_currentSrs(review, stillCurrent) ||
+        !identical(result.review, review)) {
+      throw StateError('SRS start receipt changed');
+    }
+    scope.started = true;
+    if (!scope.startNotified) {
+      scope.startNotified = true;
+      _notifySrsReceipt();
+    }
+    return review;
+  }
+
+  SrsReviewAnswerIntent prepareSrsRating({
+    required SrsReviewSession review,
+    required int cardIndex,
+    required bool recalled,
+    required int? responseTimeMs,
+  }) {
+    final scope = _srsScope(review);
+    if (!scope.started || scope.closing != null) {
+      throw StateError('SRS rating requires its original active start receipt');
+    }
+    if (cardIndex < 0 || cardIndex >= review.words.length) {
+      throw RangeError.range(
+        cardIndex,
+        0,
+        review.words.length - 1,
+        'cardIndex',
+      );
+    }
+    if (responseTimeMs != null &&
+        (responseTimeMs < 0 ||
+            responseTimeMs > LearningEvidenceContract.maxResponseTimeMs)) {
+      throw ArgumentError.value(responseTimeMs, 'responseTimeMs');
+    }
+    final original = scope.answers[cardIndex];
+    if (original != null) {
+      if (original.command.isCorrect != recalled ||
+          original.command.responseTimeMs != responseTimeMs) {
+        throw StateError('SRS pending rating changed');
+      }
+      return original;
+    }
+    if (cardIndex != scope.confirmed.length) {
+      throw StateError('SRS requires the previous original rating receipt');
+    }
+    final word = review.words[cardIndex];
+    final intent = SrsReviewAnswerIntent(
+      review: review,
+      cardIndex: cardIndex,
+      command: RecordAnswerCommand(
+        id: 'attempt:srs:${review.id}:$cardIndex',
+        ownerId: review.ownerId,
+        sessionId: review.id,
+        wordId: word.id,
+        promptMode: 'srsRecall',
+        isCorrect: recalled,
+        responseTimeMs: responseTimeMs,
+        attemptNumber: cardIndex + 1,
+        occurredAtUtc: _srsNow(),
+        evidenceContext: captureCurrentActivityEvidence(
+          promptMode: 'srsRecall',
+          contentRevision: word.contentRevision,
+        ),
+      ),
+    );
+    scope.answers[cardIndex] = intent;
+    return intent;
+  }
+
+  Future<AnswerRecordResult> commitSrsRating(
+    SrsReviewAnswerIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    final review = intent.review;
+    final scope = _srsScope(review);
+    if (!scope.started || !identical(scope.answers[intent.cardIndex], intent)) {
+      throw StateError('SRS rating requires its original pending intent');
+    }
+    final result = await _srsReviews.commitSrsRating(
+      intent,
+      stillCurrent: () => _currentSrs(review, stillCurrent),
+    );
+    if (!_currentSrs(review, stillCurrent)) {
+      throw StateError('SRS rating receipt is no longer current');
+    }
+    scope.confirmed.add(intent.cardIndex);
+    if (scope.notifiedAnswers.add(intent.cardIndex)) {
+      _notifySrsReceipt();
+      await _afterAnswerSinks(intent.command);
+    }
+    return result;
+  }
+
+  SrsReviewFinishIntent prepareSrsFinish(SrsReviewSession review) {
+    final scope = _srsScope(review);
+    if (!scope.started || scope.confirmed.length != review.words.length) {
+      throw StateError('SRS completion requires every original rating receipt');
+    }
+    final original = scope.closing;
+    if (original != null) return original;
+    final endedAt = _srsNow();
+    if (scope.answers.values.any(
+      (answer) => endedAt.isBefore(answer.command.occurredAtUtc),
+    )) {
+      throw ArgumentError('SRS end precedes its original ratings');
+    }
+    return scope.closing = SrsReviewFinishIntent(
+      review: review,
+      endedAtUtc: endedAt,
+    );
+  }
+
+  Future<LearningSessionSummary> finishSrsReview(
+    SrsReviewFinishIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    final review = intent.review;
+    final scope = _srsScope(review);
+    if (!identical(scope.closing, intent)) {
+      throw StateError('SRS completion requires its original close intent');
+    }
+    final result = await _srsReviews.finishSrsReview(
+      intent,
+      stillCurrent: () => _currentSrs(review, stillCurrent),
+    );
+    if (!_currentSrs(review, stillCurrent)) {
+      throw StateError('SRS completion receipt is no longer current');
+    }
+    if (!scope.finishNotified) {
+      scope.finishNotified = true;
+      _notifySrsReceipt();
+    }
+    return result.summary;
+  }
+
+  DateTime _srsNow() => DateTime.fromMillisecondsSinceEpoch(
+    _now().millisecondsSinceEpoch,
+    isUtc: true,
+  );
+
+  void _notifySrsReceipt() {
+    try {
+      onLocalMutation?.call();
+    } on Object {
+      // A committed original receipt remains valid if optional notification fails.
+    }
+  }
+
   Future<QuizSession> startShadowing({int limit = 1}) =>
       _startVocabularySession(null, limit, 'shadowing');
-
-  Future<QuizSession> startSourceReviewForWords({
-    required Iterable<String> wordIds,
-    int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'srsReview');
 
   Future<QuizSession> startSourcePronunciationForWords({
     required Iterable<String> wordIds,
@@ -595,35 +822,6 @@ final class LearningUseCases {
       id: sessionId,
       startedAtUtc: now,
       questions: _questions(words),
-    );
-  }
-
-  Future<QuizSession> startDueReview({int limit = 20}) async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final words = await repository.listDueWords(
-      ownerId: owner.id,
-      nowUtc: now,
-      limit: limit,
-    );
-    if (words.isEmpty) {
-      return const QuizSession(id: '', questions: [], startedAtUtc: null);
-    }
-    final sessionId = 'session:${_nextId()}';
-    await repository.startSession(
-      LearningSessionDraft(
-        id: sessionId,
-        ownerId: owner.id,
-        activityType: 'srsReview',
-        startedAtUtc: now,
-        appVersion: buildInfo.version,
-        buildId: buildInfo.buildId,
-      ),
-    );
-    return QuizSession(
-      id: sessionId,
-      questions: _questions(words),
-      startedAtUtc: now,
     );
   }
 
@@ -752,7 +950,10 @@ final class LearningUseCases {
   ) async {
     if (!result.inserted) return;
     onLocalMutation?.call();
+    await _afterAnswerSinks(command);
+  }
 
+  Future<void> _afterAnswerSinks(RecordAnswerCommand command) async {
     // Shadow V2 reward pipeline — runs after production succeeds.
     // Errors are swallowed: shadow mode must never break production.
     final shadow = shadowOrchestrator;
@@ -1286,4 +1487,17 @@ final class LearningUseCases {
   String? _optionalId(String? value, String field) {
     return value == null ? null : _requiredId(value, field);
   }
+}
+
+final class _SrsUseCaseScope {
+  _SrsUseCaseScope(this.current);
+  final bool Function() current;
+  bool invalidated = false;
+  bool started = false;
+  bool startNotified = false;
+  bool finishNotified = false;
+  final answers = <int, SrsReviewAnswerIntent>{};
+  final confirmed = <int>{};
+  final notifiedAnswers = <int>{};
+  SrsReviewFinishIntent? closing;
 }

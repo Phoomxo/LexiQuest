@@ -19,7 +19,8 @@ final class DriftLearningRepository
     implements
         LearningRepository,
         ConfiguredQuizRepository,
-        NativeExerciseRepository {
+        NativeExerciseRepository,
+        SrsReviewRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -111,7 +112,9 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
-    if (session.activityType == 'sentenceScramble' ||
+    if (_srsActivities.contains(session.activityType) ||
+        session.id.startsWith(SrsReviewSession.idPrefix) ||
+        session.activityType == 'sentenceScramble' ||
         session.id.startsWith(SentenceScrambleSession.idPrefix) ||
         session.id.startsWith(DictationSession.idPrefix) ||
         session.id.startsWith(WordScrambleSession.idPrefix) ||
@@ -179,7 +182,9 @@ final class DriftLearningRepository
   Future<AnswerRecordResult> recordAnswer(
     RecordAnswerCommand command,
   ) => database.transaction(() async {
-    if (command.promptMode == 'sentenceScramble' ||
+    if (command.promptMode == 'srsRecall' ||
+        command.sessionId.startsWith(SrsReviewSession.idPrefix) ||
+        command.promptMode == 'sentenceScramble' ||
         command.sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
         command.sessionId.startsWith(DictationSession.idPrefix) ||
         command.sessionId.startsWith(WordScrambleSession.idPrefix) ||
@@ -190,7 +195,7 @@ final class DriftLearningRepository
     }
     if (await _requiresDedicatedWriter(command.sessionId)) {
       throw StateError(
-        'Configured quiz or Sentence Scramble answers require their dedicated writer',
+        'Configured quiz, SRS, or Sentence Scramble answers require their dedicated writer',
       );
     }
     return _recordAnswer(command);
@@ -330,7 +335,8 @@ final class DriftLearningRepository
     required String sessionId,
     required DateTime endedAtUtc,
   }) => database.transaction(() async {
-    if (sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
+    if (sessionId.startsWith(SrsReviewSession.idPrefix) ||
+        sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
         sessionId.startsWith(DictationSession.idPrefix) ||
         sessionId.startsWith(WordScrambleSession.idPrefix) ||
         sessionId.startsWith(ClozeSession.idPrefix)) {
@@ -340,7 +346,7 @@ final class DriftLearningRepository
     }
     if (await _requiresDedicatedWriter(sessionId)) {
       throw StateError(
-        'Configured quiz or Sentence Scramble completion requires its dedicated writer',
+        'Configured quiz, SRS, or Sentence Scramble completion requires its dedicated writer',
       );
     }
     return _finishSession(
@@ -447,6 +453,426 @@ final class DriftLearningRepository
 
   @override
   Future<bool> hasAmbientTransaction() => _ownerWrites.hasAmbientTransaction();
+
+  final _srsBindings = Expando<_SrsReviewBinding>();
+
+  @override
+  Future<SrsReviewSession?> prepareSrsReview({
+    required LearningSessionDraft session,
+    required SrsReviewSelection selection,
+    Iterable<String>? sourceWordIds,
+    int limit = 20,
+    required bool Function() stillCurrent,
+  }) async {
+    if (!session.id.startsWith(SrsReviewSession.idPrefix) ||
+        session.id.length == SrsReviewSession.idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        !LearningEvidenceContract.validIdentifier(session.ownerId) ||
+        session.activityType != 'srsReview' ||
+        session.startedAtUtc == null ||
+        !session.startedAtUtc!.isUtc ||
+        session.startedAtUtc!.microsecondsSinceEpoch < 0 ||
+        session.startedAtUtc!.microsecondsSinceEpoch % 1000 != 0 ||
+        session.appVersion.trim().isEmpty ||
+        session.buildId.trim().isEmpty ||
+        limit < 1 ||
+        limit > 20) {
+      throw ArgumentError('Invalid original SRS preparation');
+    }
+    final ids = sourceWordIds?.toList(growable: false);
+    if ((selection == SrsReviewSelection.due && ids != null) ||
+        (selection == SrsReviewSelection.source &&
+            (ids == null ||
+                ids.isEmpty ||
+                ids.length > limit ||
+                ids.toSet().length != ids.length ||
+                ids.any(
+                  (id) => !LearningEvidenceContract.validIdentifier(id),
+                )))) {
+      throw ArgumentError('Invalid original SRS selection');
+    }
+    final review = await _writeSrsBoundary<SrsReviewSession?>(
+      session.ownerId,
+      stillCurrent,
+      write: () async {
+        if (await _session(session.id) != null) {
+          throw StateError('SRS preparation cannot adopt a persisted session');
+        }
+        final words = selection == SrsReviewSelection.due
+            ? await listDueWords(
+                ownerId: session.ownerId,
+                nowUtc: session.startedAtUtc!,
+                limit: limit,
+              )
+            : await listQuizWords(
+                ownerId: session.ownerId,
+                wordIds: ids,
+                limit: limit,
+              );
+        if (selection == SrsReviewSelection.source &&
+            (words.length != ids!.length ||
+                words.any((word) => !ids.contains(word.id)))) {
+          throw StateError('Original SRS source target unavailable');
+        }
+        if (words.isEmpty) return null;
+        return SrsReviewSession(
+          session: session,
+          words: selection == SrsReviewSelection.due
+              ? words
+              : [
+                  for (final id in ids!)
+                    words.singleWhere((word) => word.id == id),
+                ],
+          selection: selection,
+        );
+      },
+      verify: (review) async {
+        if (review != null) await _requireSrsTargets(review);
+      },
+    );
+    if (review != null) {
+      _srsBindings[review] = _SrsReviewBinding(stillCurrent);
+    }
+    return review;
+  }
+
+  @override
+  Future<SrsReviewStartResult> startSrsReview(
+    SrsReviewSession review, {
+    required bool Function() stillCurrent,
+  }) async {
+    final binding = _srsBinding(review);
+    final result = await _writeSrsBoundary<SrsReviewStartResult>(
+      review.ownerId,
+      () => _srsCurrent(review, stillCurrent),
+      write: () async {
+        final saved = await _session(review.id);
+        var inserted = false;
+        if (saved == null) {
+          if (binding.started) {
+            throw StateError('Original acknowledged SRS session is missing');
+          }
+          await _requireSrsTargets(review);
+          if (review.selection == SrsReviewSelection.due) {
+            final placeholders = List.filled(
+              review.words.length,
+              '?',
+            ).join(',');
+            final rows = await database
+                .customSelect(
+                  'SELECT word_id FROM srs_states WHERE owner_id = ? '
+                  'AND word_id IN ($placeholders) AND due_at_utc_ms <= ?',
+                  variables: [
+                    Variable<String>(review.ownerId),
+                    ...review.words.map((word) => Variable<String>(word.id)),
+                    Variable<int>(review.startedAtUtc.millisecondsSinceEpoch),
+                  ],
+                )
+                .get();
+            if (rows.length != review.words.length) {
+              throw StateError('Original SRS due selection changed');
+            }
+          }
+          binding.startAttempted = true;
+          await _startSession(review.session);
+          inserted = true;
+        } else if (!binding.startAttempted) {
+          throw StateError('SRS start requires its original prepared handle');
+        }
+        await _requireSrsFacts(review, binding);
+        return SrsReviewStartResult(review: review, inserted: inserted);
+      },
+      verify: (result) async {
+        await _requireSrsFacts(review, binding);
+        if (result.inserted) await _requireSrsTargets(review);
+      },
+    );
+    binding.started = true;
+    return result;
+  }
+
+  @override
+  Future<AnswerRecordResult> commitSrsRating(
+    SrsReviewAnswerIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    final review = intent.review;
+    final binding = _srsBinding(review);
+    if (!binding.started) {
+      throw StateError('SRS rating requires its original start receipt');
+    }
+    _validateSrsRating(intent);
+    final original = binding.answers[intent.cardIndex];
+    if (original != null && !identical(original, intent)) {
+      throw StateError('Original SRS rating intent changed');
+    }
+    return _writeSrsBoundary<AnswerRecordResult>(
+      review.ownerId,
+      () => _srsCurrent(review, stillCurrent),
+      write: () async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (intent.cardIndex < facts.attempts.length) {
+          if (!_sameAttempt(facts.attempts[intent.cardIndex], intent.command)) {
+            throw StateError('Original saved SRS rating changed');
+          }
+          final saved = await _readSavedSrs(
+            review.ownerId,
+            intent.command.wordId,
+          );
+          return AnswerRecordResult(inserted: false, srs: saved);
+        }
+        if (facts.session.state != 'active' ||
+            binding.closing != null ||
+            intent.cardIndex != facts.attempts.length) {
+          throw StateError('SRS rating is not the next original card');
+        }
+        if (facts.attempts.isNotEmpty &&
+            intent.command.occurredAtUtc.millisecondsSinceEpoch <
+                facts.attempts.last.occurredAtUtcMs) {
+          throw StateError('SRS rating time precedes the previous card');
+        }
+        await _requireSrsTargets(review, [intent.cardIndex]);
+        binding.answers[intent.cardIndex] = intent;
+        return _recordAnswer(intent.command);
+      },
+      verify: (result) async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (facts.attempts.length <= intent.cardIndex ||
+            !_sameAttempt(facts.attempts[intent.cardIndex], intent.command)) {
+          throw StateError('SRS rating readback changed');
+        }
+        if (result.inserted) {
+          await _requireSrsTargets(review, [intent.cardIndex]);
+        }
+      },
+    );
+  }
+
+  @override
+  Future<SrsReviewFinishResult> finishSrsReview(
+    SrsReviewFinishIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    final review = intent.review;
+    final binding = _srsBinding(review);
+    if (!binding.started) {
+      throw StateError('SRS finish requires its original start receipt');
+    }
+    if (binding.closing != null && !identical(binding.closing, intent)) {
+      throw StateError('Original SRS closing intent changed');
+    }
+    return _writeSrsBoundary<SrsReviewFinishResult>(
+      review.ownerId,
+      () => _srsCurrent(review, stillCurrent),
+      write: () async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (facts.attempts.length != review.words.length ||
+            intent.endedAtUtc.millisecondsSinceEpoch <
+                facts.attempts.last.occurredAtUtcMs) {
+          throw StateError('SRS completion requires every original rating');
+        }
+        if (facts.session.state == 'completed') {
+          if (!binding.finishAttempted ||
+              facts.session.endedAtUtcMs !=
+                  intent.endedAtUtc.millisecondsSinceEpoch) {
+            throw StateError('Saved SRS end differs from its original intent');
+          }
+          return SrsReviewFinishResult(
+            summary: _nativeSummary(facts.session),
+            inserted: false,
+          );
+        }
+        binding.closing = intent;
+        await _requireSrsTargets(review);
+        binding.finishAttempted = true;
+        final summary = await _finishSession(
+          ownerId: review.ownerId,
+          sessionId: review.id,
+          endedAtUtc: intent.endedAtUtc,
+        );
+        return SrsReviewFinishResult(summary: summary, inserted: true);
+      },
+      verify: (result) async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (facts.session.state != 'completed' ||
+            facts.session.endedAtUtcMs !=
+                intent.endedAtUtc.millisecondsSinceEpoch) {
+          throw StateError('SRS completion readback changed');
+        }
+        if (result.inserted) await _requireSrsTargets(review);
+      },
+    );
+  }
+
+  Future<T> _writeSrsBoundary<T>(
+    String ownerId,
+    bool Function() stillCurrent, {
+    required Future<T> Function() write,
+    required Future<void> Function(T result) verify,
+  }) async {
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('SRS review requires its own committed transaction');
+    }
+    if (!stillCurrent()) throw StateError('SRS review is no longer current');
+    return _ownerWrites.writeForActiveOwner(
+      expectedOwnerId: ownerId,
+      write: () async {
+        final result = await write();
+        await verify(result);
+        return _ownerWrites.writeForActiveOwner(
+          expectedOwnerId: ownerId,
+          write: () async {
+            if (!stillCurrent()) {
+              throw StateError('SRS review is no longer current');
+            }
+            return result;
+          },
+        );
+      },
+    );
+  }
+
+  _SrsReviewBinding _srsBinding(SrsReviewSession review) {
+    final binding = _srsBindings[review];
+    if (binding == null) {
+      throw StateError('SRS review requires its original prepared instance');
+    }
+    if (binding.invalidated || !binding.current()) {
+      binding.invalidated = true;
+      throw StateError('Original SRS review scope is no longer current');
+    }
+    return binding;
+  }
+
+  bool _srsCurrent(SrsReviewSession review, bool Function() stillCurrent) {
+    final binding = _srsBinding(review);
+    if (!stillCurrent()) {
+      binding.invalidated = true;
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _requireSrsTargets(
+    SrsReviewSession review, [
+    Iterable<int>? cardIndices,
+  ]) async {
+    for (final index
+        in cardIndices ?? List.generate(review.words.length, (i) => i)) {
+      final target = review.words[index];
+      final row = await database
+          .customSelect(
+            'SELECT w.category_id,w.spelling,w.meaning,w.part_of_speech,w.local_revision '
+            'FROM vocabulary_words w JOIN vocabulary_categories c '
+            'ON c.id = w.category_id AND c.owner_id = w.owner_id '
+            'WHERE w.id = ? AND w.owner_id = ? AND w.is_deleted = 0 '
+            'AND c.is_deleted = 0',
+            variables: [
+              Variable<String>(target.id),
+              Variable<String>(review.ownerId),
+            ],
+          )
+          .getSingleOrNull();
+      if (row == null ||
+          row.read<String>('category_id') != target.categoryId ||
+          row.read<String>('spelling') != target.spelling ||
+          row.read<String>('meaning') != target.meaning ||
+          row.read<String>('part_of_speech') != target.partOfSpeech ||
+          'local-vocabulary-v1:${row.read<int>('local_revision')}' !=
+              target.contentRevision) {
+        throw StateError('Original SRS target changed');
+      }
+    }
+  }
+
+  void _validateSrsRating(SrsReviewAnswerIntent intent) {
+    final review = intent.review;
+    final command = intent.command;
+    _validateAnswer(command);
+    final index = intent.cardIndex;
+    if (index < 0 || index >= review.words.length) {
+      throw ArgumentError('SRS rating index is outside its original deck');
+    }
+    final expected = EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'srs-recall',
+      hintLevel: 0,
+      contentRevision: review.words[index].contentRevision!,
+      rolloutMode: EvidencePolicyRolloutMode.legacy,
+    );
+    if (command.id != 'attempt:srs:${review.id}:$index' ||
+        command.ownerId != review.ownerId ||
+        command.sessionId != review.id ||
+        command.wordId != review.words[index].id ||
+        command.attemptNumber != index + 1 ||
+        command.promptMode != 'srsRecall' ||
+        command.providerProvenance != null ||
+        command.occurredAtUtc.microsecondsSinceEpoch % 1000 != 0 ||
+        command.occurredAtUtc.isBefore(review.startedAtUtc) ||
+        jsonEncode(command.evidenceContext.toJson()) !=
+            jsonEncode(expected.toJson())) {
+      throw ArgumentError(
+        'SRS rating differs from its original target/profile',
+      );
+    }
+  }
+
+  Future<({db.LearningSession session, List<db.AnswerAttempt> attempts})>
+  _requireSrsFacts(SrsReviewSession review, _SrsReviewBinding binding) async {
+    final row = await _session(review.id);
+    final original = review.session;
+    if (row == null ||
+        row.ownerId != review.ownerId ||
+        row.activityType != 'srsReview' ||
+        row.startedAtUtcMs != review.startedAtUtc.millisecondsSinceEpoch ||
+        row.appVersion != original.appVersion ||
+        row.buildId != original.buildId ||
+        row.acceptedPlanId != null ||
+        row.acceptedPlanJson != null ||
+        row.checkpointJson != null ||
+        row.checkpointRevision != 0 ||
+        (row.state != 'active' && row.state != 'completed')) {
+      throw StateError('Original SRS session facts changed');
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)
+              ..where((attempt) => attempt.sessionId.equals(review.id))
+              ..orderBy([(attempt) => OrderingTerm.asc(attempt.attemptNumber)]))
+            .get();
+    if (attempts.length > review.words.length) {
+      throw StateError('SRS session contains extra ratings');
+    }
+    var previous = review.startedAtUtc.millisecondsSinceEpoch;
+    for (var index = 0; index < attempts.length; index++) {
+      final intent = binding.answers[index];
+      final attempt = attempts[index];
+      if (intent == null ||
+          attempt.id != intent.command.id ||
+          !_sameAttempt(attempt, intent.command) ||
+          attempt.attemptNumber != index + 1 ||
+          attempt.occurredAtUtcMs < previous) {
+        throw StateError('SRS session contains a different original rating');
+      }
+      _validateSrsRating(intent);
+      previous = attempt.occurredAtUtcMs;
+    }
+    final correct = attempts.where((attempt) => attempt.isCorrect).length;
+    final score = attempts.isEmpty
+        ? 0
+        : ((correct * 100) / attempts.length).round();
+    if (row.correctCount != correct ||
+        row.wrongCount != attempts.length - correct ||
+        (row.state == 'active' &&
+            (row.endedAtUtcMs != null || row.score != null)) ||
+        (row.state == 'completed' &&
+            (attempts.length != review.words.length ||
+                row.endedAtUtcMs == null ||
+                row.endedAtUtcMs! < previous ||
+                row.score != score))) {
+      throw StateError('SRS outcome differs from its original ratings');
+    }
+    return (session: row, attempts: attempts);
+  }
 
   @override
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
@@ -1106,7 +1532,9 @@ final class DriftLearningRepository
           .entries
           .any(
             (entry) => switch (entry.key) {
-              'activity_type' => entry.value == 'sentenceScramble',
+              'activity_type' =>
+                entry.value == 'sentenceScramble' ||
+                    _srsActivities.contains(entry.value),
               'checkpoint_revision' => entry.value != 0,
               _ => entry.value != null,
             },
@@ -1503,26 +1931,36 @@ final class DriftLearningRepository
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
+    final words = database.vocabularyWords;
+    final srs = database.srsStates;
+    final categories = database.vocabularyCategories;
     final query =
-        database.select(database.vocabularyWords).join([
+        database.select(words).join([
             innerJoin(
-              database.srsStates,
-              database.srsStates.wordId.equalsExp(database.vocabularyWords.id) &
-                  database.srsStates.ownerId.equals(ownerId) &
-                  database.srsStates.dueAtUtcMs.isSmallerOrEqualValue(
+              srs,
+              srs.wordId.equalsExp(words.id) &
+                  srs.ownerId.equals(ownerId) &
+                  srs.dueAtUtcMs.isSmallerOrEqualValue(
                     nowUtc.millisecondsSinceEpoch,
                   ),
             ),
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equalsExp(words.ownerId) &
+                  categories.isDeleted.equals(false),
+              useColumns: false,
+            ),
           ])
-          ..where(
-            database.vocabularyWords.ownerId.equals(ownerId) &
-                database.vocabularyWords.isDeleted.equals(false),
-          )
-          ..orderBy([OrderingTerm.asc(database.srsStates.dueAtUtcMs)])
+          ..where(words.ownerId.equals(ownerId) & words.isDeleted.equals(false))
+          ..orderBy([
+            OrderingTerm.asc(srs.dueAtUtcMs),
+            OrderingTerm.asc(words.id),
+          ])
           ..limit(limit);
     final rows = await query.get();
     return rows
-        .map((row) => row.readTable(database.vocabularyWords))
+        .map((row) => row.readTable(words))
         .map(
           (word) => QuizWord(
             id: word.id,
@@ -1769,4 +2207,17 @@ final class _NativeBinding {
   bool finishAttempted = false;
   RecordAnswerCommand? answer;
   NativeFinishIntent? closing;
+}
+
+const _srsActivities = <String>{'srsReview', 'flashcard', 'flashcards'};
+
+final class _SrsReviewBinding {
+  _SrsReviewBinding(this.current);
+  final bool Function() current;
+  bool invalidated = false;
+  bool startAttempted = false;
+  bool started = false;
+  bool finishAttempted = false;
+  final answers = <int, SrsReviewAnswerIntent>{};
+  SrsReviewFinishIntent? closing;
 }
