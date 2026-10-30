@@ -4,7 +4,7 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 
 | Item | Location | Disposition |
 | --- | --- | --- |
-| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, history, LM serving, research export, motion controls, owner coordination, signed measurement/linkage storage, exact quiz recovery, durable switching, v18 controlled Assessment, owned Dictation, typed/choice Cloze, Word/Sentence Scramble, local Saved Words and queued word reports and local Typed Cloze scratchpad with scoped projections, immutable retries and bounded owned-word pagination. |
+| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes and continuing integration through owned SRS review. History, LM serving, research export, motion controls, owner coordination, signed measurements, exact quiz recovery, controlled Assessment, owned native modes, local Saved Words/reports and ephemeral Typed Cloze ink retain their recorded boundaries. |
 | Completed audit baseline | Branch `codex/cycle12-release`, commit `1aa189a3` | Historical audit/cleanup checkpoint retained before the continuing integration branch. |
 | Remaining-system plan | [Complete the remaining LexiQuest systems](../superpowers/plans/2026-10-28-unfinished-system-integration.md) | Current execution board and acceptance checks. |
 | Capability coverage | [44-capability runtime matrix](../field/2026-10-28-feature-readiness-matrix.md) | Source-backed connected/partial/missing states; not production or UAT certification. |
@@ -32,7 +32,8 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 | Verified local owned-word reports | [Wave17 checkpoint](../field/2026-10-30-remaining-systems-wave17.md) | Source158d2115: schema20/37, Flutter4029, analysis0, CLI23, offline backend390/one existing opt-in skip and normal APK. All731 Dart hashes match; independent storage/UI/artifact reviews accepted. Actual review/queue/retry/history/restart and immutable historical owner lifecycle are verified. Coverage12 connected/19 partial/13 missing; f21 remains partial without other targets/transport. |
 | Verified owned Sentence Scramble | [Wave18 checkpoint](../field/2026-10-30-remaining-systems-wave18.md) | Source29038b4a: schema20/37, Flutter4262, analysis0, CLI23, offline backend390/one existing opt-in skip and normal APK. All745 Dart hashes match; independent production/source/artifact reviews accepted. Actual owned category/provider, indexed or typed native ACK, guarded P23 and history are verified under a recreational floor. f13 remains partial without durable native resume/shared shell. |
 | Verified local Handwriting Scratchpad | [Wave19 checkpoint](../field/2026-10-30-remaining-systems-wave19.md) | Sourcef3301403: Flutter4297, analysis0, CLI23, offline backend390/one existing opt-in skip and normal APK. All748 Dart hashes match; source/focused/artifact reviews accepted. Typed Cloze hosts ephemeral64-stroke/4096-point ink with Undo/Clear and its original typed ACK. Actual parent-frame and gesture RED/GREEN are verified; no OCR/ink score/storage. Coverage13 connected/19 partial/12 missing; schema20/37 unchanged. |
-| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `f3301403`, debug `1.0.0+1`; compiled kernel identity verified, not installed or published. Hash/source trees are recorded in the wave19 checkpoint. |
+| Verified owned SRS review | [Wave20 checkpoint](../field/2026-10-30-remaining-systems-wave20.md) | Source`dd45f862`: Flutter4372 in11m06s, analysis0, CLI23 and offline backend390/one existing opt-in skip. All751 Dart,54CLI and92backend hashes match. Core50/UI40/Source4 and cross-module29 retain the original three goldens. Original1-20-card start/rating/finish intents use the existing canonical writer; preview writes no learning facts. Coverage13 connected/19 partial/12 missing; schema20/37 unchanged. |
+| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `dd45f862`, debug `1.0.0+1`,252273727 bytes; compiled kernel and source binding accepted. Native build exits0 in122.8s. The wrapper exits1 at its environment postcheck; its original false restore flag and separate recovery remain recorded in the [Wave20 checkpoint](../field/2026-10-30-remaining-systems-wave20.md). Not installed or published. |
 | Reduced Motion | Commit `0eedc90b` | Theme/motion persistence, OS accessibility settings, route/card/chat/sheet consumers; focused 153 tests and analysis pass. Android light 100% settings fixture is readable; dark/200% native checks remain unverified after emulator failure. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
@@ -44,6 +45,16 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 | Primary checkout | `C:\Users\Phet\Documents\LexiQuest`, branch `feature/associative-reading-loop` | Retain unique uncommitted work. Do not build it as the audit-fixed source. |
 | Earlier UX checkout | `C:\Users\Phet\.codex\worktrees\lexiquest-current\LexiQuest` | Retain unique uncommitted work. The directory name does not imply newer source. |
 | Prior storage archive | `D:\LexiQuest-Storage\archives\lexiquest-current\2026-10-26` | Retain hash-verified archives and migration manifests. |
+
+Wave20 preserves the original wrapper failure. Its exited child changed absent
+`GRADLE_OPTS` to empty during the restore postcheck. A fresh process still inherited
+absence, and the separate recovery verifies absent, empty and nonempty provider
+cases exactly without rebuilding the APK. Native exit0 is not wrapper exit0.
+
+The immediate next card is the combined Review Center and owner-bound reads for
+ChooseMode, Clinic and Mastery, including Clinic's Quiz handoff. Existing cached
+Progress reads remain a known gap. The [SRS plan](../superpowers/plans/2026-10-30-srs-review-safety-integration.md)
+records that boundary; no combined hub or all-Progress readiness is claimed.
 
 The latest cleanup follows the user's explicit instruction to delete superseded versions after Git backup. Old generated evidence, packages and inactive Python environments may be removed; current source, +18 baseline, model sources and signing material remain. Link-related approval blocks leave 30 archived old checkouts in place. The 56 native build runs whose removal was previously denied remain outside the cleanup allowlist. See the round-2 report for exact retained and blocked paths.
 

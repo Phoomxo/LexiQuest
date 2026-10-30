@@ -13,18 +13,30 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: local Typed Cloze scratchpad source `f3301403` ผ่าน Flutter4297, analysis0,
+Current attestation: source `dd45f862` passes Flutter4372 in11m06s,
+analysis0, CLI23 and offline backend390 with the same one opt-in skip.
+All751 Dart,54CLI and92backend hashes remain unchanged. The normal APK native
+build exits0 in122.8s; the original wrapper exits1 at its absent-to-empty
+environment postcheck. Its false restore flag and separate recovery are retained.
+See the [Wave20 checkpoint](../../field/2026-10-30-remaining-systems-wave20.md).
+
+Wave19 historical attestation: local Typed Cloze scratchpad source `f3301403` ผ่าน Flutter4297, analysis0,
 CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave19).
 Ephemeral ink/Undo/Clear/typed fallback, privacy/frame/gesture fixes และ canonical ACK ผ่าน;
 schema20/37 ไม่เปลี่ยน. f12 เชื่อม locally แล้ว; f03/f05/f11/f13 ยัง Partial.
 Saved Words/reports/Sentence Scramble คงหลักฐาน wave16/17/18; Quest runtime/grants ยังไม่เปิด.
-หน่วยถัดไปคือ [owner-bound SRS safety](2026-10-30-srs-review-safety-integration.md) ก่อน Review Center: คง self-rated SRS authority,
-รวมคิว due/incorrect/saved/local-report พร้อมเหตุผล และไม่ฝึกจาก report snapshot.
-SRS API ต้องมี owner/current/fence ที่ commit boundary; แผน bounded อ่านจาก source ก่อนเริ่ม.
-สามหน่วยเสนอเดิมด้านล่างเป็น grounding เดิม; ใช้แผนแม่และ checkpoint ล่าสุดเป็นบอร์ดปัจจุบัน.
+
+Owned SRS safety is now verified through the same canonical writer, original
+deck/rating/finish intents and actual six launch sites. Preview remains unsaved
+presentation data. The immediate next card is the combined Review Center with
+reason-preserving due/incorrect/saved/local-report queues. It must also fix cached
+owner reads in ChooseMode, Clinic and Mastery and the Clinic Quiz handoff.
+Use the current [SRS plan](2026-10-30-srs-review-safety-integration.md) for that
+boundary; no next C plan is published here. Do not train from report snapshots.
+The three proposed units below remain historical grounding, not the current queue.
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `f3301403`: 13 connected / 19 partial / 12 missing ไม่ใช่ production/UAT
+  `dd45f862`: 13 connected / 19 partial / 12 missing ไม่ใช่ production/UAT
   certification แม้ Dictation/Cloze/Word+Sentence Scramble verified แล้ว f13 ยังขาด durable resume/shared shell
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
@@ -42,8 +54,9 @@ SRS API ต้องมี owner/current/fence ที่ commit boundary; แผ
 การ์ด [Saved Words](2026-10-30-saved-words-integration.md) และ
 [รายงานคำศัพท์ของผู้ใช้](2026-10-30-local-word-reports.md) ปิดด้วย wave16/17 แล้ว
 report ครอบคลุม local owned word เท่านั้น ไม่อ้างว่าส่งออก/moderation หรือ AI/chat/document targets พร้อม
-ถัดไปคือ [Sentence Scramble P34](2026-10-30-sentence-scramble-integration.md)
-ตาม grounded native lifecycle เดิม: ไม่เพิ่มตาราง ไม่จอง v21 ไม่เปิด Pair Matching
+[Sentence Scramble P34](2026-10-30-sentence-scramble-integration.md) and local
+scratchpad are recorded in wave18/19; wave20 then hardens owned SRS. No new table,
+v21 reservation or Pair Matching task is opened by this sequence.
 
 ## สามหน่วยถัดไปที่เสนอ
 

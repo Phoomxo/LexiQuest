@@ -1,9 +1,13 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `f3301403` (v20/37),
-updated2026-10-30. Latest full suite/APK: Flutter4297, analysis0, CLI23/23 and
-normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All748 Dart hashes match through checks/build.
+Source: `codex/remaining-system-readiness`, through `dd45f862` (v20/37),
+updated2026-10-30. Latest full suite: Flutter4372 in11m06s, analysis0 and CLI23/23.
+Offline backend CPU390 passes with the same one opt-in real Firebase/OmniVoice
+E2E skipped. All751 Dart,54CLI and92backend hashes match through checks/build.
+The normal debug APK native build exits0. Its original wrapper exits1 at the
+environment postcheck; the false restore flag and separate recovery remain
+recorded in the Wave20 checkpoint. APK source/marker peer review accepts the
+artifact; no install, publication or physical UAT is claimed.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
@@ -27,7 +31,14 @@ Saved Words connects owned save/unsave, offline restart/list and targeted practi
 with exact retries, owner merge/export/purge and unchanged learning projections.
 Owned-word reports now connect editable review, immutable local queue and restart/history,
 preserving original content/version through owner merge and target deletion. Other report
-targets and production transport remain separate. See
+targets and production transport remain separate.
+Owned SRS now retains one original1-20-card deck and original rating/end intents
+through the existing canonical writer. Cards/audio and Next wait for canonical
+ACKs; raw previews create no learning facts. This hardens the already-connected
+f06. The combined Review Center is still absent. Cached owner reads in ChooseMode,
+Clinic and Mastery and the Clinic Quiz handoff remain required next-card work;
+the SRS write checks do not certify all Progress reads. See
+[wave20 evidence](2026-10-30-remaining-systems-wave20.md),
 [wave19 evidence](2026-10-30-remaining-systems-wave19.md),
 [wave18 evidence](2026-10-30-remaining-systems-wave18.md),
 [wave17 evidence](2026-10-30-remaining-systems-wave17.md),
@@ -63,7 +74,7 @@ capability still needs the applicable acceptance and release checks.
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f05 | Unified Lesson Shell | Partial | Meaning Quiz has a durable accepted plan/checkpoint and canonical finish. Other modes still use their separate screens; a common lesson shell is absent. |
-| f06 | Flashcard Mode | Connected | Learn, Weakness and Source open `SrsFlashcardsScreen`; reveal/rating/save/finish persist learning. Owner-bound handoff hardening is the next prerequisite before Review Center due practice. |
+| f06 | Flashcard Mode | Connected | Learn, Weakness and Source open owner-bound SrsFlashcardsScreen through the same canonical writer. Original1-20-card deck/rating/end intents, start/save/finish ACKs, owner/fence/current checks and guarded autoplay are verified at`dd45f862`. Raw previews are labelled unsaved and create no learning facts. Durable SRS restart/resume and host Progress read corrections remain separate. |
 | f07 | Meaning Quiz | Connected | `QuizScreen` persists exact questions/options, sticky assistance, pending answer and original finish. History resumes the same owner/session without duplicate answers or rewards; drift/legacy data has an explicit unavailable path. |
 | f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
 | f09 | Cloze Test | Connected | Owned category and explicit typed/three-choice variant use the configured existing ContentProvider, immutable accepted gap/choices and canonical answer/finish/history. Guided/recognition facts gain no SRS/mastery or engagement. Invalid/unavailable content creates no session. Both actual UI flows and owner/lifecycle/retry isolation pass at55f9c407. A2/content efficacy and real service availability are not certified. |
@@ -89,7 +100,7 @@ capability still needs the applicable acceptance and release checks.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f22 | Review Center | Partial | Weakness Clinic and SRS use actual due/mistake facts. Saved Words has offline list/targeted practice and local word reports have restart/history/details. A combined Review Center and broader reported targets remain incomplete. |
+| f22 | Review Center | Partial | Separate Weakness/SRS, Saved Words and local report history exist. The combined reason-preserving due/incorrect/saved/local-report hub is still missing. The next card must also fix cached owner reads in ChooseMode, Clinic and Mastery and the Clinic Quiz handoff. W20 hardens f06 without implementing or promoting this hub; broader reported targets remain incomplete. |
 | f23 | Focus Timer | Missing | No connected timer configuration, pause and resume. |
 | f24 | Automatic Learning-Time Capture | Missing | Timestamps and answer response times exist. Foreground active-time capture is absent. Session elapsed time is not treated as learning time. |
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |

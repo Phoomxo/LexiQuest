@@ -1,6 +1,6 @@
 # Make owned SRS review safe before Review Center
 
-**State:** Wave20 implementation integrated on C; focused core50, combined UI40, Source SRS4 and analysis0 passed. Root is the sole C writer in cycle12-release on codex/remaining-system-readiness. Full current-source regression, CLI/backend and APK/source attestation remain pending. Schema20/37 and v21+ stay unchanged/unreserved.
+**State:** Wave20 is locally attested on source`dd45f862`. Full Flutter4372, analysis0, CLI23, offline backend390/one existing opt-in skip and source/artifact reviews pass. The normal APK native build exits0; its original wrapper exit1 and false environment-restore flag remain preserved with separate recovery. [Wave20 checkpoint](../../field/2026-10-30-remaining-systems-wave20.md) binds the evidence. Root remains the sole C writer. Schema20/37 is unchanged; v21+ remains unreserved.
 
 **Predecessor:** [Wave19](../../field/2026-10-30-remaining-systems-wave19.md), application f33014037073c97ff039a9427a7402504f980571 and pushed attestation e22f9f638a7c7c9ff67e6ade1f4d3d7ac5a27b6f.
 
@@ -105,7 +105,7 @@ All six production launch sites have C drafts: captured owner/generation for due
 
 The earlier explicit obsolete-file cleanup request also covers two proven disconnected predecessors: `lib/services/srs_service.dart` and `weakness_clinic_service.dart`. Their only callers were retired implementation tests. All four removed files matched the pushed `9d1886ff` blobs; the bounded target/path/hash receipt is `wave20-retired-srs-files.json` on D. Before retirement all five legacy tests passed; all three still-relevant SrsItem model tests were copied unchanged to `test/services/srs_item_test.dart` and passed. The SharedPreferences persistence and obsolete box/ease ranking tests were retired with their unused implementations, not removed to make a failing check green. SrsItem and its other prototype consumers remain. No measured disk-space gain is claimed, and previously denied cleanup targets remain untouched.
 
-Schema20/37, the frozen catalog/contracts, dependencies and production authority remain unchanged. Next: freeze the current source, run full regression and the release verification checks, then attest the normal APK before advancing the next card.
+Schema20/37, the frozen catalog/contracts, dependencies and production authority remain unchanged. Current-source verification and the normal APK are now recorded in the Wave20 attestation below. The next card remains the combined Review Center and required host read/handoff corrections.
 
 ## Integrated focused evidence
 
@@ -120,7 +120,47 @@ Schema20/37, the frozen catalog/contracts, dependencies and production authority
 
 The first full run on source 2ecc0da39d6d925be97b2504c84615d3f08212ae completed with4366 passes and6 failures in13m10s. Five were old integration fixture preconditions/cleanup; the sixth was a secondary test-binding failure after the failed Mastery teardown. This is failed full-run evidence, not a completion claim. The original751-file snapshot and raw wave20-full-flutter-final.log remain unchanged on D.
 
-Root integrated test-only corrections in learning_loop_layout_test, reduced_motion_consumers_test and mastery_dashboard_screen_test. Layout supplies real learning plus an observed persistent owner; all three original golden comparisons and image files stay unchanged. Motion establishes resumed/card-ready conditions and retains its one-frame versus animated assertions. Mastery's existing read-count/XP/full-database-no-write assertions remain intact, with widget unmount/stream drain before database close. The three modules pass29 cases; fresh analysis is0. No production source or assertion was weakened. A new source commit,751-file snapshot and full4372-case run are required before CLI/backend/APK attestation; the first wave20 drivers remain unexecuted and bound to the failed source.
+Root integrated test-only corrections in learning_loop_layout_test, reduced_motion_consumers_test and mastery_dashboard_screen_test. Layout supplies real learning plus an observed persistent owner; all three original golden comparisons and image files stay unchanged. Motion establishes resumed/card-ready conditions and retains its one-frame versus animated assertions. Mastery's existing read-count/XP/full-database-no-write assertions remain intact, with widget unmount/stream drain before database close. The three modules pass29 cases; fresh analysis is0. No production source or assertion was weakened. That checkpoint required a new source commit,751-file snapshot and full4372-case run before CLI/backend/APK attestation. The first wave20 drivers remain unexecuted and bound to the failed source.
+
+
+## Wave20 current-source attestation
+
+Source `dd45f8626add6d08c8e442fd3b54752023e30323` closes the cross-module
+checkpoint above. Its lib tree is unchanged from2ecc; only the three fixture
+corrections and plan changed. The fresh full run passes4372 in11m06s, analysis
+reports no issues, CLI passes23, and offline backend passes390 with the same
+one opt-in E2E skip. All751 Dart,54CLI and92backend raw hashes match.
+The earlier4366/-6 full run remains failed historical evidence.
+
+The current local validation review is `wave20b-independent-validation-review.json`,
+SHA`8eb89b497dc2c08e090acf1c241dadd4415a677aafdf53e41e0a275afd8f3943`.
+The cross-module review binds29 passing cases and the unchanged three golden
+images. Core50, UI40 and Source4 remain focused evidence rather than substitutes
+for the new full run.
+
+The normal `lib/main.dart` debug1.0.0+1 APK has build ID `dd45f862`,
+252273727 bytes and SHA`420ff7e1f4705b7da07d6ec0f9c586ae344e259552df545d17cfe514ad388e43`.
+Native build exits0 in122.8s. The original wrapper exits1 because its exited child
+turns absent `GRADLE_OPTS` into empty during the restore postcheck; the original
+restore flag stays false. Recovery receipt `wave20b-gradle-env-recovery.json`
+SHA`555cee8b6edfa232ee13d1c84e7406edbcf4aa6ac0bc1e52c0113aee0fc74662`
+records fresh inherited absence and exact absent/empty/nonempty provider cases.
+No rebuild was required. Do not report that every command exited0 or that the
+original wrapper restored its environment.
+
+APK peer review `wave20b-artifact-proof-review.json`,
+SHA`c397be68636b541ae9b25a0639062ca3fbc9e99d78f7ac7bd34a5b99c1140165`,
+accepts the actual archive/kernel marker and current-source binding. See the
+[Wave20 checkpoint](../../field/2026-10-30-remaining-systems-wave20.md) for the
+manifest/source proof and retained failure/recovery receipts. Nothing was
+installed or published. Physical UAT, deployment and Research authority remain
+separate; Research stays default-off.
+
+The immediate next card composes Review Center and fixes owner-bound reads in
+ChooseMode, Clinic and Mastery plus the Clinic Quiz handoff. W20 does not certify
+all Progress reads. Existing bootstrap owner initialization stays at its current
+boundary; the new view reads must not create an owner. No next C plan is linked
+before it exists.
 
 ## Root review and execution board
 
