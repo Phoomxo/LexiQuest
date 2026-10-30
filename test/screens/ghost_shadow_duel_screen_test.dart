@@ -12,12 +12,17 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/ghost_shadow_duel_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 void main() {
   testWidgets('fresh account shows zero evidence and no sample words', (
@@ -495,34 +500,71 @@ void main() {
       testWidgets('historical Weakness CTA respects feature gate=$visible', (
         tester,
       ) async {
-        await _open(
-          tester,
-          fixture,
-          features: BuildFieldFeatureRegistry({
-            FieldFeature.weakness: visible
-                ? FieldFeatureState.enabled
-                : FieldFeatureState.hidden,
-          }),
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
         );
-        await tester.enterText(find.byType(TextField), 'wrong');
-        await tester.tap(find.text('ตอบ'));
-        await _until(tester, find.text('จบรอบและบันทึกผล'));
-        expect(find.text('ฝึกคำที่ผิดจากประวัติ'), findsNothing);
-        await tester.tap(find.text('จบรอบและบันทึกผล'));
-        await _until(tester, find.text('บันทึกผลรอบนี้แล้ว'));
-        expect(
-          find.text('ฝึกคำที่ผิดจากประวัติ'),
-          visible ? findsOneWidget : findsNothing,
+        await tester.runAsync(
+          () => fixture.db.customStatement(
+            'UPDATE local_owners SET is_active = (id = ?)',
+            ['a'],
+          ),
         );
-        if (visible) {
-          await tester.tap(find.text('ฝึกคำที่ผิดจากประวัติ'));
-          await _until(tester, find.byType(WeaknessClinicScreen));
-          await tester.pumpAndSettle();
-          expect(find.text('apple'), findsOneWidget);
-          expect(
-            await fixture.db.select(fixture.db.answerAttempts).get(),
-            hasLength(1),
+        final features = BuildFieldFeatureRegistry({
+          FieldFeature.weakness: visible
+              ? FieldFeatureState.enabled
+              : FieldFeatureState.hidden,
+        });
+        final dependencies = AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _UnusedGuest(),
+          fieldFeatures: features,
+          database: fixture.db,
+          localOwners: fixture.owners,
+          learning: fixture.learning,
+          progress: ProgressUseCases(
+            owners: fixture.owners,
+            queries: DriftProgressQueries(fixture.db),
+            nowUtc: fixture.learning.nowUtc,
+          ),
+        );
+        try {
+          await _open(
+            tester,
+            fixture,
+            features: features,
+            dependencies: dependencies,
           );
+          await tester.enterText(find.byType(TextField), 'wrong');
+          await tester.tap(find.text('ตอบ'));
+          await _until(tester, find.text('จบรอบและบันทึกผล'));
+          expect(find.text('ฝึกคำที่ผิดจากประวัติ'), findsNothing);
+          await tester.tap(find.text('จบรอบและบันทึกผล'));
+          await _until(tester, find.text('บันทึกผลรอบนี้แล้ว'));
+          expect(
+            find.text('ฝึกคำที่ผิดจากประวัติ'),
+            visible ? findsOneWidget : findsNothing,
+          );
+          if (visible) {
+            await tester.tap(find.text('ฝึกคำที่ผิดจากประวัติ'));
+            await _until(tester, find.byType(WeaknessClinicScreen));
+            await _until(tester, find.text('apple'));
+            await tester.pumpAndSettle();
+            expect(find.text('apple'), findsOneWidget);
+            expect(
+              await fixture.db.select(fixture.db.answerAttempts).get(),
+              hasLength(1),
+            );
+          }
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          await tester.runAsync(fixture.db.close);
         }
       });
     }
@@ -585,15 +627,19 @@ Future<void> _open(
   _Fixture fixture, {
   GhostProgressLoader? loader,
   FieldFeatureRegistry? features,
+  AppDependencies? dependencies,
 }) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: GhostShadowDuelScreen(
-        learning: fixture.learning,
-        progressLoader: loader ?? () async => _history,
-        featureRegistry: features,
-      ),
+  final app = MaterialApp(
+    home: GhostShadowDuelScreen(
+      learning: fixture.learning,
+      progressLoader: loader ?? () async => _history,
+      featureRegistry: features,
     ),
+  );
+  await tester.pumpWidget(
+    dependencies == null
+        ? app
+        : AppDependenciesScope(dependencies: dependencies, child: app),
   );
   await _until(tester, find.byType(TextField));
 }
@@ -641,6 +687,12 @@ Object _evidence(RecordAnswerCommand c) => (
   c.providerProvenance,
   jsonEncode(c.evidenceContext.toJson()),
 );
+
+final class _UnusedGuest implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      throw StateError('Synthetic guest entry must not run in this fixture');
+}
 
 final class _Owners implements LocalOwnerRepository {
   String id = 'a';

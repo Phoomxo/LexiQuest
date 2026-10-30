@@ -22,6 +22,8 @@ Three incomplete entry-fixture runs are retained. A phase-only probe completed e
 
 f22 remains Partial and matrix counts remain13Connected/19Partial/12Missing until the later full-source attestation. Physical-device/UAT, broader report targets/transport, Research authority and other remaining capabilities are separate work.
 
+The first full run on committed c650a4f197646cae852c9bdd313aa1f89baa07dc completed naturally with4460PASS/1FAIL in11m22s, with all763 raw Dart hashes unchanged before/after (log SHA9556bc8473d9a4dbf3856a23c88eff6f8e8936b2a0d7c0eeda008c3c80faaae5; result SHA0a4633a5f95ca3429272470353c93060bf036dd58268f0b4c24c94298e173e0b). Only the Ghost historical-Clinic fixture failed: its standalone MaterialApp omitted the runtime Progress dependency and its synthetic setup left two owners active. The bounded fixture correction supplies the actual same-database runtime scope with one active owner and retains the existing Ghost loader, feature-gate and one-answer assertions. The entire Ghost module now passes24/24 in8s. No production source changed in this correction. Preserve the first freeze/run and the five unexecuted c650-bound drivers; a new test-source commit, freeze and verification prefix must attest the corrected source.
+
 ## Current facts that determine the design
 
 - Current SRS listDueWords at drift_learning_repository.dart:1925 joins the owned active category and orders by due time then ID. Review loading must not call prepareSrsReview/startSrsReview, or the removed ownerless wrappers, merely to obtain a count. The new SRS repository capability is an approved writer-specific exception; this hub needs no new repository port or writer.
