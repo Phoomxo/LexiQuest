@@ -13,13 +13,13 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Quest integrity source `2702e008` ผ่าน Flutter3700, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave14)
-รวม canonical identity/atomic Quest boundary; schema ยัง18/35 และ Quest runtime/grants ยังไม่เปิด
+Current attestation: Word Scramble source `d995ffc2` ผ่าน Flutter3820, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave15)
+รวม owned native lifecycle/Unicode cue/bounded pagination; schema ยัง18/35 และ Quest runtime/grants ยังไม่เปิด
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `2702e008`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
-  certification แม้ Dictation verified แล้ว f13 ยังไม่ครบทุก native mode
+  `d995ffc2`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
+  certification แม้ Dictation/Cloze/Word Scramble verified แล้ว f13 ยังไม่ครบทุก native mode
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ
@@ -34,8 +34,8 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   f13/f05 ก็ยังไม่ครบทุก mode/shell
 
 การ์ดถัดไปที่พร้อมดำเนินการคือ
-[owned Word Scramble](2026-10-30-word-scramble-integration.md) บน source2702e008;
-ร่าง D ของ core/floor/UI ยังไม่อยู่ใน APK ที่ตรวจแล้ว ตามด้วย Bookmark/saved review
+[Saved Words](2026-10-30-saved-words-integration.md) ต่อจาก source d995ffc2
+ที่รวม Word Scramble ใน APK และตรวจแล้ว; ต้องเก็บ genuine v18 ก่อนจอง/เพิ่ม v19
 
 ## สามหน่วยถัดไปที่เสนอ
 
@@ -84,10 +84,13 @@ recurrence/grant/UI composition แยกตาม prerequisite ไม่ตี 
 
 ### 2. Word Scramble หนึ่งคำจริงผ่าน canonical native lifecycle
 
+**สถานะ:** verified source d995ffc2, Flutter3820/analysis0/CLI23/backend390/normal APK
+ผ่าน independent review และ hash695Dart คงเดิม ดู [wave15](../../field/2026-10-30-remaining-systems-wave15.md)
+
 **รหัส/ข้อกำหนด:** f13, f05, f11 และ f38; TOR P33 คือเรียงตัวอักษรเป็นคำ,
 P23 คือผลสรุปจริง ต้องมี keyboard/tap alternative และ feedback หลัง ACK
 
-**ช่องว่างจริง:** `WordScrambleScreen` รับ raw String, ตรวจถูกใน widget และ
+**ช่องว่างก่อน wave15:** `WordScrambleScreen` รับ raw String, ตรวจถูกใน widget และ
 เปลี่ยนไป FillInTheBlanks ด้วย delayed navigation ไม่มี canonical evidence
 มี legacy reference จาก non-source branch ใน `SpeakToTextScreen` แต่ current
 `SourcePracticeScreen` ส่ง sourceOwnerId จึงใช้ source finish/exit branch;
