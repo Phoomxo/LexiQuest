@@ -6,6 +6,7 @@ import 'accepted_quiz_plan.dart';
 import 'cloze_content.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
+import 'sentence_scramble_content.dart';
 import 'word_scramble_letters.dart';
 
 final class QuizWord {
@@ -246,6 +247,66 @@ final class WordScrambleSession extends AcceptedNativeExercise {
   final String evidenceContentRevision;
 }
 
+final class SentenceScrambleSession extends AcceptedNativeExercise {
+  factory SentenceScrambleSession({
+    required LearningSessionDraft session,
+    required QuizWord word,
+    required SentenceScrambleContent content,
+  }) {
+    if (!session.id.startsWith(idPrefix) ||
+        session.id.length == idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        !LearningEvidenceContract.validIdentifier(session.ownerId) ||
+        session.activityType != 'sentenceScramble' ||
+        session.startedAtUtc?.isUtc != true ||
+        !LearningEvidenceContract.validIdentifier(word.id) ||
+        !LearningEvidenceContract.validIdentifier(word.categoryId) ||
+        !SentenceScrambleContent.supportsTarget(word.spelling) ||
+        word.contentRevision == null ||
+        RegExp(
+              r'local-vocabulary-v1:[1-9][0-9]*',
+            ).stringMatch(word.contentRevision!) !=
+            word.contentRevision ||
+        content.targetSpelling != word.spelling) {
+      throw ArgumentError(
+        'Sentence Scramble requires its original session, owned anchor and admitted sentence',
+      );
+    }
+    return SentenceScrambleSession._(
+      session: session,
+      word: word,
+      content: content,
+    );
+  }
+
+  SentenceScrambleSession._({
+    required this.session,
+    required this.word,
+    required this.content,
+  }) : providerProvenance =
+           'sentence-scramble-model-v1:${sha256.convert(utf8.encode(content.modelVersion))}',
+       evidenceContentRevision =
+           'sentence-scramble-v1:${sha256.convert(utf8.encode(jsonEncode([
+             'sentence-scramble-v1',
+             [word.id, word.categoryId, word.spelling, word.meaning, word.partOfSpeech, word.contentRevision],
+             [content.sentence, content.tokens, content.tokenOrder, content.kind.wire, content.cefr.wire, content.language, content.modelVersion, content.cached],
+           ])))}';
+
+  static const idPrefix = 'session:sentence-scramble-v1:';
+
+  @override
+  final LearningSessionDraft session;
+  @override
+  final QuizWord word;
+  final SentenceScrambleContent content;
+  final String providerProvenance;
+  @override
+  final String evidenceContentRevision;
+  @override
+  String get wordContentRevision => word.contentRevision!;
+  List<int> get tokenOrder => content.tokenOrder;
+}
+
 sealed class NativeAnswerInput {
   const NativeAnswerInput();
 
@@ -428,6 +489,20 @@ final class WordScrambleAnswerInput extends NativeAnswerInput {
 
   @override
   final WordScrambleSession exercise;
+  final String response;
+  @override
+  final Duration responseTime;
+}
+
+final class SentenceScrambleAnswerInput extends NativeAnswerInput {
+  const SentenceScrambleAnswerInput({
+    required this.exercise,
+    required this.response,
+    required this.responseTime,
+  });
+
+  @override
+  final SentenceScrambleSession exercise;
   final String response;
   @override
   final Duration responseTime;

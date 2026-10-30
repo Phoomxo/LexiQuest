@@ -111,7 +111,9 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
-    if (session.id.startsWith(DictationSession.idPrefix) ||
+    if (session.activityType == 'sentenceScramble' ||
+        session.id.startsWith(SentenceScrambleSession.idPrefix) ||
+        session.id.startsWith(DictationSession.idPrefix) ||
         session.id.startsWith(WordScrambleSession.idPrefix) ||
         session.id.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
@@ -174,22 +176,25 @@ final class DriftLearningRepository
   }
 
   @override
-  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
-      database.transaction(() async {
-        if (command.sessionId.startsWith(DictationSession.idPrefix) ||
-            command.sessionId.startsWith(WordScrambleSession.idPrefix) ||
-            command.sessionId.startsWith(ClozeSession.idPrefix)) {
-          throw StateError(
-            'Native Dictation answers require their original capability',
-          );
-        }
-        if (await _isConfigured(command.sessionId)) {
-          throw StateError(
-            'configured quiz answers require a durable pending checkpoint',
-          );
-        }
-        return _recordAnswer(command);
-      });
+  Future<AnswerRecordResult> recordAnswer(
+    RecordAnswerCommand command,
+  ) => database.transaction(() async {
+    if (command.promptMode == 'sentenceScramble' ||
+        command.sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
+        command.sessionId.startsWith(DictationSession.idPrefix) ||
+        command.sessionId.startsWith(WordScrambleSession.idPrefix) ||
+        command.sessionId.startsWith(ClozeSession.idPrefix)) {
+      throw StateError(
+        'Native Dictation answers require their original capability',
+      );
+    }
+    if (await _requiresDedicatedWriter(command.sessionId)) {
+      throw StateError(
+        'Configured quiz or Sentence Scramble answers require their dedicated writer',
+      );
+    }
+    return _recordAnswer(command);
+  });
 
   Future<AnswerRecordResult> _recordAnswer(RecordAnswerCommand command) {
     _validateAnswer(command);
@@ -325,16 +330,17 @@ final class DriftLearningRepository
     required String sessionId,
     required DateTime endedAtUtc,
   }) => database.transaction(() async {
-    if (sessionId.startsWith(DictationSession.idPrefix) ||
+    if (sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
+        sessionId.startsWith(DictationSession.idPrefix) ||
         sessionId.startsWith(WordScrambleSession.idPrefix) ||
         sessionId.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
         'Native Dictation completion requires its original close intent',
       );
     }
-    if (await _isConfigured(sessionId)) {
+    if (await _requiresDedicatedWriter(sessionId)) {
       throw StateError(
-        'configured quiz completion requires a durable closing checkpoint',
+        'Configured quiz or Sentence Scramble completion requires its dedicated writer',
       );
     }
     return _finishSession(
@@ -450,6 +456,7 @@ final class DriftLearningRepository
     final prefix = switch (session) {
       DictationSession() => DictationSession.idPrefix,
       WordScrambleSession() => WordScrambleSession.idPrefix,
+      SentenceScrambleSession() => SentenceScrambleSession.idPrefix,
       ClozeSession() => ClozeSession.idPrefix,
     };
     if (!session.id.startsWith(prefix)) {
@@ -643,6 +650,7 @@ final class DriftLearningRepository
     final activity = switch (session) {
       DictationSession() => 'dictation',
       WordScrambleSession() => 'wordScramble',
+      SentenceScrambleSession() => 'sentenceScramble',
       ClozeSession() => 'cloze',
     };
     if (row.ownerId != session.ownerId ||
@@ -663,6 +671,9 @@ final class DriftLearningRepository
     final pins = switch (session) {
       DictationSession() => [(session.word, session.wordContentRevision)],
       WordScrambleSession() => [(session.word, session.wordContentRevision)],
+      SentenceScrambleSession() => [
+        (session.word, session.wordContentRevision),
+      ],
       TypedClozeSession() => [(session.word, session.wordContentRevision)],
       ChoiceClozeSession() => [
         for (final choice in session.choices) (choice, choice.contentRevision!),
@@ -681,7 +692,9 @@ final class DriftLearningRepository
       if (word == null ||
           word.read<String>('category_id') != target.categoryId ||
           word.read<String>('spelling') != target.spelling ||
-          ((session is ClozeSession || session is WordScrambleSession) &&
+          ((session is ClozeSession ||
+                  session is WordScrambleSession ||
+                  session is SentenceScrambleSession) &&
               (word.read<String>('meaning') != target.meaning ||
                   word.read<String>('part_of_speech') !=
                       target.partOfSpeech)) ||
@@ -737,6 +750,12 @@ final class DriftLearningRepository
         command.promptMode == 'wordScramble' &&
             command.providerProvenance == null &&
             context.skillId == 'word-scramble' &&
+            context.hintLevel == 0 &&
+            context.evidenceClass == EvidenceClass.recreational,
+      SentenceScrambleSession() =>
+        command.promptMode == 'sentenceScramble' &&
+            command.providerProvenance == session.providerProvenance &&
+            context.skillId == 'sentence-scramble' &&
             context.hintLevel == 0 &&
             context.evidenceClass == EvidenceClass.recreational,
       TypedClozeSession() =>
@@ -1074,10 +1093,10 @@ final class DriftLearningRepository
     database.learningSessions,
   )..where((row) => row.id.equals(id))).getSingleOrNull();
 
-  Future<bool> _isConfigured(String sessionId) async =>
+  Future<bool> _requiresDedicatedWriter(String sessionId) async =>
       (await database
               .customSelect(
-                'SELECT accepted_plan_id, accepted_plan_json, checkpoint_revision, checkpoint_json '
+                'SELECT activity_type, accepted_plan_id, accepted_plan_json, checkpoint_revision, checkpoint_json '
                 'FROM learning_sessions WHERE id = ?',
                 variables: [Variable<String>(sessionId)],
                 readsFrom: {database.learningSessions},
@@ -1086,9 +1105,11 @@ final class DriftLearningRepository
           ?.data
           .entries
           .any(
-            (entry) => entry.key == 'checkpoint_revision'
-                ? entry.value != 0
-                : entry.value != null,
+            (entry) => switch (entry.key) {
+              'activity_type' => entry.value == 'sentenceScramble',
+              'checkpoint_revision' => entry.value != 0,
+              _ => entry.value != null,
+            },
           ) ??
       false;
 

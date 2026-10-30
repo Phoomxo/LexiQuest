@@ -13,6 +13,8 @@ EvidenceContext captureCurrentActivityEvidence({
     throw ArgumentError(switch (promptMode) {
       'dictation' => 'Dictation requires its actual content revision',
       'wordScramble' => 'Word Scramble requires its actual content revision',
+      'sentenceScramble' =>
+        'Sentence Scramble requires its actual content revision',
       _ => 'Cloze requires its actual content revision',
     });
   }
@@ -26,6 +28,7 @@ EvidenceContext captureCurrentActivityEvidence({
     'clozeTyped' => (EvidenceClass.guidedPractice, 'cloze-context'),
     'clozeChoice' => (EvidenceClass.recognition, 'cloze-context'),
     'wordScramble' => (EvidenceClass.recreational, 'word-scramble'),
+    'sentenceScramble' => (EvidenceClass.recreational, 'sentence-scramble'),
     'meaningChoice' => (
       hintLevel == 0 ? EvidenceClass.recognition : EvidenceClass.guidedPractice,
       'meaning-recall',
@@ -51,7 +54,7 @@ EvidenceContext captureCurrentActivityEvidence({
     skillId: declaration.$2,
     hintLevel: switch (promptMode) {
       'clozeTyped' => 1,
-      'clozeChoice' || 'wordScramble' => 0,
+      'clozeChoice' || 'wordScramble' || 'sentenceScramble' => 0,
       _ => hintLevel,
     },
     contentRevision: contentRevision,

@@ -11,31 +11,36 @@ import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 
 void main() {
-  testWidgets(
-    'history labels saved recreational Scramble without inventing resume',
-    (tester) async {
-      final entry = LearningHistoryEntry(
-        sessionId: 'synthetic-scramble-history',
-        activityType: 'wordScramble',
-        state: 'completed',
-        startedAtUtc: DateTime.utc(2026, 10, 30),
-        endedAtUtc: DateTime.utc(2026, 10, 30, 0, 1),
-        answerCount: 1,
-        correctCount: 1,
-      );
-      await tester.pumpWidget(
-        _app(
-          LearningHistoryScreen(
-            loader: ({before}) async => _history(entries: [entry]),
+  for (final (activity, title) in [
+    ('wordScramble', 'เกมเรียงตัวอักษร'),
+    ('sentenceScramble', 'เกมเรียงประโยค'),
+  ]) {
+    testWidgets(
+      'history labels saved recreational $activity without inventing resume',
+      (tester) async {
+        final entry = LearningHistoryEntry(
+          sessionId: 'synthetic-$activity-history',
+          activityType: activity,
+          state: 'completed',
+          startedAtUtc: DateTime.utc(2026, 10, 30),
+          endedAtUtc: DateTime.utc(2026, 10, 30, 0, 1),
+          answerCount: 1,
+          correctCount: 1,
+        );
+        await tester.pumpWidget(
+          _app(
+            LearningHistoryScreen(
+              loader: ({before}) async => _history(entries: [entry]),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('เกมเรียงตัวอักษร'), findsOneWidget);
-      expect(find.text('ฝึกต่อรอบนี้'), findsNothing);
-      expect(find.text('ถูก 1 จาก 1 คำตอบ'), findsOneWidget);
-    },
-  );
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(title), findsOneWidget);
+        expect(find.text('ฝึกต่อรอบนี้'), findsNothing);
+        expect(find.text('ถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+      },
+    );
+  }
 
   testWidgets('history labels saved Cloze rounds without inventing resume', (
     tester,

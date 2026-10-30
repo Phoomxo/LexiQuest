@@ -14,6 +14,7 @@ import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/sentence_scramble_content.dart';
 import 'current_activity_evidence.dart';
 
 typedef LearningIdGenerator = String Function();
@@ -158,6 +159,80 @@ final class LearningUseCases {
         buildId: buildInfo.buildId,
       ),
       word: target,
+    );
+  }
+
+  Future<SentenceScrambleSession?> prepareSentenceScramble({
+    String? categoryId,
+    required bool Function() stillCurrent,
+  }) async {
+    _requireCurrentNativeExercise(stillCurrent);
+    final provider = contentProvider;
+    if (provider == null) return null;
+    if (await _nativeExercises.hasAmbientTransaction()) {
+      throw StateError(
+        'Sentence Scramble generation requires an independent read boundary',
+      );
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireCurrentNativeExercise(stillCurrent);
+    final candidates = await _nativeWordCandidates(
+      ownerId: owner.id,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      supports: (word) => SentenceScrambleContent.supportsTarget(word.spelling),
+      count: 1,
+      stillCurrent: stillCurrent,
+    );
+    final target = candidates.firstOrNull;
+    if (target == null) return null;
+    if (await _nativeExercises.hasAmbientTransaction()) {
+      throw StateError(
+        'Sentence Scramble generation requires an independent read boundary',
+      );
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final beforeGenerationOwner = await owners.getOrCreateActiveOwner();
+    if (beforeGenerationOwner.id != owner.id) {
+      throw StateError('Sentence Scramble owner changed');
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final response = await provider.generate(
+      ContentRequest.create(
+        text: target.spelling,
+        kind: ContentKind.sentence,
+        cefr: CefrLevel.a2,
+        language: 'en',
+      ),
+    );
+    _requireCurrentNativeExercise(stillCurrent);
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) {
+      throw StateError('Sentence Scramble owner changed');
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final SentenceScrambleContent content;
+    try {
+      content = SentenceScrambleContent.parse(
+        targetSpelling: target.spelling,
+        response: response,
+      );
+    } on FormatException {
+      return null;
+    }
+    final draft = LearningSessionDraft(
+      id: '${SentenceScrambleSession.idPrefix}${_nextId()}',
+      ownerId: owner.id,
+      activityType: 'sentenceScramble',
+      startedAtUtc: _now(),
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
+    _requireCurrentNativeExercise(stillCurrent);
+    return SentenceScrambleSession(
+      session: draft,
+      word: target,
+      content: content,
     );
   }
 
@@ -376,6 +451,11 @@ final class LearningUseCases {
             exercise.word.spelling.trim().toLowerCase(),
         0,
       ),
+      SentenceScrambleAnswerInput(:final exercise, :final response) => (
+        'sentenceScramble',
+        exercise.content.matchesResponse(response),
+        0,
+      ),
       TypedClozeAnswerInput(:final exercise, :final response) => (
         'clozeTyped',
         response.trim().toLowerCase() == exercise.word.spelling.toLowerCase(),
@@ -403,6 +483,7 @@ final class LearningUseCases {
       providerProvenance: switch (exercise) {
         DictationSession() => null,
         WordScrambleSession() => null,
+        SentenceScrambleSession() => exercise.providerProvenance,
         ClozeSession() => exercise.providerProvenance,
       },
       evidenceContext: captureCurrentActivityEvidence(

@@ -17,6 +17,8 @@ import 'mastery_dashboard_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'word_scramble_screen.dart';
+import 'sentence_scramble_screen.dart';
+import 'score_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
@@ -43,7 +45,7 @@ class ChooseModeScreen extends StatefulWidget {
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
 }
 
-enum _NativeMode { dictation, cloze, wordScramble }
+enum _NativeMode { dictation, cloze, wordScramble, sentenceScramble }
 
 class _ChooseModeScreenState extends State<ChooseModeScreen>
     with WidgetsBindingObserver {
@@ -58,6 +60,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   StreamSubscription<String?>? _nativeOwners;
   String? _nativeOwnerId;
   int _nativeGeneration = 0;
+  final _nativeChanges = ValueNotifier<int>(0);
+  bool _nativeNoticeScheduled = false;
   bool _nativeBound = false;
   bool _nativeRouteVisible = false;
   bool _openingNative = false;
@@ -73,6 +77,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   void dispose() {
     _studyEntryGeneration++;
     _nativeGeneration++;
+    _nativeChanges.dispose();
     _nativeOwners?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -82,7 +87,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
     if (state != AppLifecycleState.resumed) {
-      _nativeGeneration++;
+      _invalidateNative();
     }
   }
 
@@ -105,7 +110,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     _replaceStudyBinding(dependencies);
     if (_nativeRouteVisible && !visible && !_choosingNativeOverlay) {
-      _nativeGeneration++;
+      _invalidateNative();
     }
     _nativeRouteVisible = visible;
     _replaceNativeBinding(dependencies);
@@ -119,7 +124,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
     if (!identical(oldWidget.learning, widget.learning) ||
         !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
-      _nativeGeneration++;
+      _invalidateNative();
     }
   }
 
@@ -128,7 +133,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       return;
     }
     _nativeBound = true;
-    _nativeGeneration++;
+    _invalidateNative();
     _nativeOwnerId = null;
     _nativeDependencies = dependencies;
     _nativeOwners?.cancel();
@@ -139,19 +144,19 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           return;
         }
         if (_nativeOwnerId != ownerId) {
-          _nativeGeneration++;
+          _invalidateNative();
           _nativeOwnerId = ownerId;
         }
       },
       onError: (Object _, StackTrace _) {
         if (mounted && identical(_nativeDependencies, dependencies)) {
-          _nativeGeneration++;
+          _invalidateNative();
           _nativeOwnerId = null;
         }
       },
       onDone: () {
         if (mounted && identical(_nativeDependencies, dependencies)) {
-          _nativeGeneration++;
+          _invalidateNative();
           _nativeOwnerId = null;
         }
       },
@@ -384,6 +389,15 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               subtitle: 'เลือกหมวดหมู่ แล้วเรียงตัวอักษรหรือพิมพ์คำตอบ',
               onTap: _openWordScramble,
             ),
+          if (canQuiz)
+            _LearningTile(
+              key: const ValueKey('sentence-scramble-entry'),
+              icon: Icons.reorder_outlined,
+              title: 'เกมเรียงประโยค',
+              subtitle:
+                  'เลือกหมวดหมู่ แล้วเรียงคำหรือพิมพ์ประโยคที่สร้างด้วย AI',
+              onTap: _openSentenceScramble,
+            ),
           if (canReading)
             _LearningTile(
               icon: Icons.menu_book_outlined,
@@ -423,7 +437,18 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     );
   }
 
-  bool _canOpenNative(
+  void _invalidateNative() {
+    _nativeGeneration++;
+    if (_nativeNoticeScheduled) return;
+    _nativeNoticeScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nativeNoticeScheduled = false;
+      if (mounted) _nativeChanges.value = _nativeGeneration;
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  bool _nativeContextCurrent(
     int generation,
     String ownerId,
     LearningUseCases learning,
@@ -435,9 +460,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       identical(_nativeDependencies, dependencies) &&
       identical(_learning, learning) &&
       _features.isVisible(FieldFeature.quiz) &&
-      ModalRoute.of(context)?.isCurrent == true &&
       Visibility.of(context) &&
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  bool _canOpenNative(
+    int generation,
+    String ownerId,
+    LearningUseCases learning,
+    AppDependencies dependencies,
+  ) =>
+      _nativeContextCurrent(generation, ownerId, learning, dependencies) &&
+      ModalRoute.of(context)?.isCurrent == true;
 
   Future<void> _openDictation() => _openNative(_NativeMode.dictation);
 
@@ -445,11 +478,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
 
   Future<void> _openWordScramble() => _openNative(_NativeMode.wordScramble);
 
+  Future<void> _openSentenceScramble() =>
+      _openNative(_NativeMode.sentenceScramble);
+
   Widget _nativeOverlay(Widget child) => Builder(
     builder: (overlayContext) {
       final current = ModalRoute.isCurrentOf(overlayContext);
       if (ModalRoute.of(overlayContext)?.isActive == true && current != true) {
-        _nativeGeneration++;
+        _invalidateNative();
       }
       return child;
     },
@@ -482,6 +518,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                       'ยังเปิดกิจกรรมเติมคำไม่ได้ กรุณาลองใหม่ภายหลัง',
                     _NativeMode.wordScramble =>
                       'ยังเปิดเกมเรียงตัวอักษรไม่ได้ กรุณาลองใหม่ภายหลัง',
+                    _NativeMode.sentenceScramble =>
+                      'ยังเปิดเกมเรียงประโยคไม่ได้ กรุณาลองใหม่ภายหลัง',
                     _NativeMode.dictation =>
                       'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง',
                   },
@@ -552,6 +590,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           name: switch (mode) {
             _NativeMode.cloze => 'learning/cloze-category',
             _NativeMode.wordScramble => 'learning/word-scramble-category',
+            _NativeMode.sentenceScramble =>
+              'learning/sentence-scramble-category',
             _NativeMode.dictation => 'learning/dictation-category',
           },
           builder: (_) => _nativeOverlay(
@@ -577,6 +617,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           stillCurrent: () =>
               _canOpenNative(generation, ownerId, learning, dependencies),
         ),
+        _NativeMode.sentenceScramble => await learning.prepareSentenceScramble(
+          categoryId: categoryId,
+          stillCurrent: () =>
+              _canOpenNative(generation, ownerId, learning, dependencies),
+        ),
         _NativeMode.dictation => await learning.prepareDictation(
           categoryId: categoryId,
           stillCurrent: () =>
@@ -594,12 +639,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         return;
       }
       final screenOwners = dependencies.progress!.watchActiveOwnerId();
-      await AppNavigator.pushPage<LearningSessionSummary>(
+      final summary = await AppNavigator.pushPage<LearningSessionSummary>(
         context,
         AppPage<LearningSessionSummary>(
           name: switch (mode) {
             _NativeMode.cloze => 'learning/cloze',
             _NativeMode.wordScramble => 'learning/word-scramble',
+            _NativeMode.sentenceScramble => 'learning/sentence-scramble',
             _NativeMode.dictation => 'learning/dictation',
           },
           builder: (_) => switch (session) {
@@ -614,6 +660,12 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               learning: learning,
               ownerChanges: screenOwners,
             ),
+            final SentenceScrambleSession exercise => SentenceScrambleScreen(
+              session: exercise,
+              learning: learning,
+              ownerChanges: screenOwners,
+              voice: dependencies.voice,
+            ),
             final ClozeSession exercise => FillInTheBlanksScreen(
               session: exercise,
               learning: learning,
@@ -622,6 +674,23 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           },
         ),
       );
+      if (mode == _NativeMode.sentenceScramble &&
+          summary != null &&
+          summary.id == session.id &&
+          summary.state == 'completed' &&
+          summary.correctCount >= 0 &&
+          summary.wrongCount >= 0 &&
+          summary.correctCount + summary.wrongCount == 1 &&
+          summary.score == summary.correctCount * 100 &&
+          _canOpenNative(generation, ownerId, learning, dependencies)) {
+        await _showNativeSummary(
+          summary,
+          generation: generation,
+          ownerId: ownerId,
+          learning: learning,
+          dependencies: dependencies,
+        );
+      }
       if (mounted) {
         _refresh();
       }
@@ -634,6 +703,64 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       _openingNative = false;
     }
   }
+
+  Future<void> _showNativeSummary(
+    LearningSessionSummary summary, {
+    required int generation,
+    required String ownerId,
+    required LearningUseCases learning,
+    required AppDependencies dependencies,
+  }) => AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(
+      name: 'learning/sentence-scramble-result',
+      builder: (scoreContext) => ValueListenableBuilder<int>(
+        valueListenable: _nativeChanges,
+        builder: (_, _, _) {
+          final current = ModalRoute.isCurrentOf(scoreContext);
+          final route = ModalRoute.of(scoreContext);
+          if (route?.isActive == true &&
+              current != true &&
+              generation == _nativeGeneration) {
+            _invalidateNative();
+          }
+          bool valid() => _nativeContextCurrent(
+            generation,
+            ownerId,
+            learning,
+            dependencies,
+          );
+          void close() {
+            if (mounted &&
+                route?.isCurrent == true &&
+                route?.isActive == true) {
+              Navigator.of(scoreContext).pop();
+            }
+          }
+
+          if (!valid()) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('ผลการเรียน'),
+                leading: BackButton(onPressed: close),
+              ),
+              body: const Center(
+                child: Text('ข้อมูลเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'),
+              ),
+            );
+          }
+          return ScoreScreen(
+            correctAnswers: summary.correctCount,
+            wrongAnswers: summary.wrongCount,
+            score: summary.score,
+            onBack: () {
+              if (valid()) close();
+            },
+          );
+        },
+      ),
+    ),
+  );
 
   Future<void> _openCategoryQuiz(BuildContext context) async {
     final categoryId = await AppNavigator.pushPage<String>(

@@ -12,6 +12,7 @@ class ScoreScreen extends StatelessWidget {
     this.selectedCategoryId,
     this.mistakes = const [],
     this.onPracticeMistakes,
+    this.onBack,
   });
 
   final int correctAnswers;
@@ -19,6 +20,7 @@ class ScoreScreen extends StatelessWidget {
   final int? score;
   final List<QuizWord> mistakes;
   final VoidCallback? onPracticeMistakes;
+  final VoidCallback? onBack;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -30,7 +32,10 @@ class ScoreScreen extends StatelessWidget {
     final resolvedScore =
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return Scaffold(
-      appBar: AppBar(title: const Text('ผลการเรียน')),
+      appBar: AppBar(
+        title: const Text('ผลการเรียน'),
+        leading: onBack == null ? null : BackButton(onPressed: onBack),
+      ),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
         child: SafeArea(
@@ -81,7 +86,7 @@ class ScoreScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                 ],
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: onBack ?? () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
                   label: const Text('กลับไปเลือกกิจกรรม'),
                 ),

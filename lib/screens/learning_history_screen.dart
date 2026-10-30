@@ -414,6 +414,7 @@ String _mode(String value) => switch (value) {
   'dictation' => 'เขียนตามเสียง',
   'cloze' => 'เติมคำในบริบท',
   'wordScramble' => 'เกมเรียงตัวอักษร',
+  'sentenceScramble' => 'เกมเรียงประโยค',
   'pronunciation' || 'pronunciationTranscript' => 'ฝึกออกเสียง',
   'shadowing' => 'ฝึกพูดตาม',
   'ghostSpelling' => 'ฝึกสะกดคำ',
