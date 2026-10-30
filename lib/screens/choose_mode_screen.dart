@@ -336,17 +336,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           const SizedBox(height: 8),
           if (canQuiz) ...[
             _LearningTile(
-              key: const ValueKey('dictation-entry'),
-              icon: Icons.hearing_outlined,
-              title: Localizations.localeOf(context).languageCode == 'th'
-                  ? 'ฟังแล้วพิมพ์คำศัพท์'
-                  : 'Listen and spell',
-              subtitle: Localizations.localeOf(context).languageCode == 'th'
-                  ? 'เลือกหมวดหมู่ แล้วฝึกสะกดจากเสียงทีละคำ'
-                  : 'Choose a category and spell one spoken word',
-              onTap: _openDictation,
-            ),
-            _LearningTile(
               icon: Icons.quiz_outlined,
               title: 'ฝึกคำศัพท์',
               subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
@@ -366,6 +355,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
               onTap: () =>
                   _push(context, SrsFlashcardsScreen(learning: _learning)),
+            ),
+          if (canQuiz)
+            _LearningTile(
+              key: const ValueKey('dictation-entry'),
+              icon: Icons.hearing_outlined,
+              title: 'ฟังแล้วพิมพ์คำศัพท์',
+              subtitle: 'เลือกหมวดหมู่ แล้วฝึกสะกดจากเสียงทีละคำ',
+              onTap: _openDictation,
             ),
           if (canReading)
             _LearningTile(
@@ -434,18 +431,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     final dependencies = _dictationDependencies;
     final learning = _learning;
     final ownerId = _dictationOwnerId;
-    final thai = Localizations.localeOf(context).languageCode == 'th';
     void unavailable({bool empty = false}) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            thai
-                ? empty
-                      ? 'หมวดหมู่นี้ยังไม่มีคำที่พร้อมฝึก'
-                      : 'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง'
-                : empty
-                ? 'This category has no available words.'
-                : 'Listen and spell is unavailable. Please try again later.',
+            empty
+                ? 'หมวดหมู่นี้ยังไม่มีคำที่พร้อมฝึก'
+                : 'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง',
           ),
         ),
       );
@@ -502,7 +494,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             learning: learning,
             voice: dependencies.voice,
             ownerChanges: screenOwners,
-            languageCode: thai ? 'th' : 'en',
           ),
         ),
       );

@@ -61,7 +61,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey('dictation-entry')));
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('dictation-entry')),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('ฟังแล้วพิมพ์คำศัพท์').hitTestable(), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('dictation-entry')));
       await tester.pump();
       expect(find.byType(DictationQuizScreen), findsNothing);
@@ -98,8 +103,14 @@ void main() {
           }
           final voice = _DictationEntryVoice();
           await _pumpDictationEntry(tester, h, voice);
-          await tester.ensureVisible(
+          await tester.scrollUntilVisible(
             find.byKey(const ValueKey('dictation-entry')),
+            200,
+            scrollable: find.byType(Scrollable).last,
+          );
+          expect(
+            find.text('ฟังแล้วพิมพ์คำศัพท์').hitTestable(),
+            findsOneWidget,
           );
           await tester.tap(find.byKey(const ValueKey('dictation-entry')));
           await _dictationEntryUntil(
@@ -134,6 +145,7 @@ void main() {
             final screen = tester.widget<DictationQuizScreen>(
               find.byType(DictationQuizScreen),
             );
+            expect(screen.languageCode, 'th');
             expect(screen.session.ownerId, configuredOwnerId);
             expect(
               screen.session.contentRevision,
@@ -149,6 +161,56 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'Thai hub reaches actual Dictation at 200 percent on 320 pixels',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final h = (await tester.runAsync(DictationSessionHarness.open))!;
+      try {
+        final voice = _DictationEntryVoice();
+        await _pumpDictationEntry(tester, h, voice, textScale: 2);
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('dictation-entry')),
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(find.text('ฟังแล้วพิมพ์คำศัพท์').hitTestable(), findsOneWidget);
+        expect(find.text('Listen and spell'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text('ฟังแล้วพิมพ์คำศัพท์').hitTestable());
+        await _dictationEntryUntil(
+          tester,
+          () => find.text('Synthetic travel').evaluate().isNotEmpty,
+        );
+        await tester.tap(find.text('Synthetic travel'));
+        await _dictationEntryUntil(tester, () => voice.requests.isNotEmpty);
+        await tester.pumpAndSettle();
+        final screen = tester.widget<DictationQuizScreen>(
+          find.byType(DictationQuizScreen),
+        );
+        expect(screen.languageCode, 'th');
+        expect(screen.session.ownerId, configuredOwnerId);
+        expect(
+          screen.session.contentRevision,
+          startsWith('local-vocabulary-v1:'),
+        );
+        expect(voice.requests.single.text, screen.session.word.spelling);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          1,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    },
+  );
 
   for (final invalidation in [
     'owner',
@@ -640,8 +702,9 @@ final class _DictationEntryVoice implements VoiceProvider {
 Future<void> _pumpDictationEntry(
   WidgetTester tester,
   DictationSessionHarness h,
-  _DictationEntryVoice voice,
-) async {
+  _DictationEntryVoice voice, {
+  double textScale = 1,
+}) async {
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   final dependencies = AppDependencies(
     runtimeStatus: const AppRuntimeStatus(
@@ -672,6 +735,12 @@ Future<void> _pumpDictationEntry(
     AppDependenciesScope(
       dependencies: dependencies,
       child: MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: ChooseModeScreen(loader: () async => snapshot()),
       ),
     ),
