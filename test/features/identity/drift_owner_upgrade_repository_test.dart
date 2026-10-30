@@ -11,6 +11,7 @@ import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 import '../../support/saved_word_owner_fixture.dart';
+import '../../support/word_report_owner_fixture.dart';
 
 void main() {
   late AppDatabase database;
@@ -676,6 +677,7 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "0, 1722844800000, 'v1.0.0')",
   );
   await insertOwnerSavedWord(database, 'guest-owner', wordId: 'word-1');
+  await insertOwnerWordReport(database, 'guest-owner', wordId: 'word-1');
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

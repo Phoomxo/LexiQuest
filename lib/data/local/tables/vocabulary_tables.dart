@@ -78,6 +78,44 @@ class SavedWords extends Table {
   ];
 }
 
+@DataClassName('WordReportRow')
+class WordReports extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId =>
+      text().references(LocalOwners, #id, onDelete: KeyAction.restrict)();
+  TextColumn get wordId => text()();
+  TextColumn get categoryId => text()();
+  IntColumn get wordRevision => integer()();
+  TextColumn get snapshotJson => text()();
+  TextColumn get snapshotSha256 => text()();
+  TextColumn get reason => text()();
+  TextColumn get comment => text().nullable()();
+  IntColumn get queuedAtUtcMs => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (substr(id, 1, 12) = 'word-report:' "
+        'AND length(CAST(id AS BLOB)) BETWEEN 13 AND 256 '
+        'AND length(trim(substr(id, 13))) > 0)',
+    'CHECK (length(word_id) BETWEEN 1 AND 256 AND length(trim(word_id)) > 0)',
+    'CHECK (length(category_id) BETWEEN 1 AND 256 AND length(trim(category_id)) > 0)',
+    "CHECK (typeof(word_revision) = 'integer' AND word_revision > 0)",
+    'CHECK (length(CAST(snapshot_json AS BLOB)) BETWEEN 1 AND 8192)',
+    'CHECK (length(snapshot_sha256) = 64 '
+        "AND snapshot_sha256 NOT GLOB '*[^0-9a-f]*')",
+    "CHECK (reason IN ('incorrectMeaning','spelling','partOfSpeech','inappropriate','other'))",
+    'CHECK (comment IS NULL OR (length(comment) BETWEEN 1 AND 500 '
+        'AND length(CAST(comment AS BLOB)) <= 2048 '
+        'AND length(trim(comment)) > 0 AND comment = trim(comment)))',
+    "CHECK (reason <> 'other' OR comment IS NOT NULL)",
+    "CHECK (typeof(queued_at_utc_ms) = 'integer' "
+        'AND queued_at_utc_ms BETWEEN 0 AND 8640000000000000)',
+  ];
+}
+
 class VocabularyImports extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().references(LocalOwners, #id)();

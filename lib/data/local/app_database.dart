@@ -35,6 +35,7 @@ final _productionNativeOptions = DriftNativeOptions(
     VocabularyCategories,
     VocabularyWords,
     SavedWords,
+    WordReports,
     VocabularyImports,
     VocabularyImportRows,
     LearningSessions,
@@ -71,7 +72,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -248,6 +249,9 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 19) {
         await _createMissingTables(migrator);
       }
+      if (from < 20) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -337,6 +341,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('saved_words')) {
       await migrator.createTable(savedWords);
+    }
+    if (!await _tableExists('word_reports')) {
+      await migrator.createTable(wordReports);
     }
     if (!await _tableExists('vocabulary_imports')) {
       await migrator.createTable(vocabularyImports);

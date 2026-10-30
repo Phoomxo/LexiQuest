@@ -9,6 +9,7 @@ import '../../learning/domain/learning_evidence_contract.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../vocabulary/domain/saved_words.dart';
+import '../../vocabulary/domain/word_report.dart';
 import '../domain/owner_upgrade.dart';
 import 'drift_owner_write_coordinator.dart';
 
@@ -77,6 +78,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
         await _requireActiveOwnersUnfenced();
         await _requireTransferableResearchOwner(source.id);
+        final reportsBefore = await _wordReportsBeforeMerge(
+          source.id,
+          target.id,
+        );
         await _validateSavedWordRelations(source.id);
         await _validateSavedWordRelations(target.id);
         var conflicts = 0;
@@ -128,6 +133,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           ],
           updates: {_database.localOwners},
         );
+        await _verifyWordReportsMoved(source.id, target.id, reportsBefore);
         return OwnerUpgradeResult(
           targetOwnerId: target.id,
           mode: OwnerUpgradeMode.mergedExisting,
@@ -344,6 +350,39 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       );
     }
     return collisions.length;
+  }
+
+  Future<Map<String, StoredWordReport>> _wordReportsBeforeMerge(
+    String sourceId,
+    String targetId,
+  ) async {
+    final rows = await _database
+        .customSelect(
+          'SELECT * FROM word_reports WHERE owner_id IN (?, ?) ORDER BY id',
+          variables: [Variable<String>(sourceId), Variable<String>(targetId)],
+        )
+        .get();
+    final reports = rows.map((row) => StoredWordReport.fromStorage(row.data));
+    return {for (final report in reports) report.id: report};
+  }
+
+  Future<void> _verifyWordReportsMoved(
+    String sourceId,
+    String targetId,
+    Map<String, StoredWordReport> before,
+  ) async {
+    final after = await _wordReportsBeforeMerge(sourceId, targetId);
+    if (after.length != before.length) {
+      throw StateError('Word-report inventory changed during owner merge');
+    }
+    for (final report in after.values) {
+      final original = before[report.id];
+      if (original == null ||
+          report.ownerId != targetId ||
+          !original.sameHistoricalPayload(report)) {
+        throw StateError('Word-report history changed during owner merge');
+      }
+    }
   }
 
   Future<List<StoredSavedWordState>> _savedWordsFor(String ownerId) async =>

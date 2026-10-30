@@ -26,6 +26,7 @@ import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/saved_words_use_cases.dart';
+import '../features/vocabulary/application/word_report_use_cases.dart';
 import '../features/vocabulary/application/source_practice.dart';
 import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
@@ -61,6 +62,7 @@ final class AppDependencies {
     this.rewards,
     this.vocabulary,
     this.savedWords,
+    this.wordReports,
     this.vocabularyImporter,
     this.vocabularyImportFilePicker,
     this.sourcePracticeFilePicker,
@@ -103,6 +105,7 @@ final class AppDependencies {
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final SavedWordsUseCases? savedWords;
+  final WordReportUseCases? wordReports;
   final ImportVocabulary? vocabularyImporter;
   final VocabularyImportFilePicker? vocabularyImportFilePicker;
   final SourcePracticeFilePicker? sourcePracticeFilePicker;

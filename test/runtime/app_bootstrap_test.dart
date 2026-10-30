@@ -18,6 +18,8 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/learning_session_lifecycle_observer.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_saved_words_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_word_report_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/word_report.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -61,7 +63,7 @@ AppDatabase _testDatabase() {
 
 void main() {
   test(
-    'saved words compose on the real local database without backend or sync work',
+    'saved words and local reports compose on the real database without backend or sync work',
     () async {
       final database = _testDatabase();
       final dependencies = await AppBootstrap(
@@ -87,6 +89,16 @@ void main() {
         same(database),
       );
       final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(dependencies.wordReports, isNotNull);
+      expect(
+        dependencies.wordReports!.repository,
+        isA<DriftWordReportRepository>(),
+      );
+      expect(
+        (dependencies.wordReports!.repository as DriftWordReportRepository)
+            .database,
+        same(database),
+      );
       final category = await dependencies.vocabulary!.createCategory(
         'Synthetic saved category',
       );
@@ -141,6 +153,27 @@ void main() {
       expect(await effects(), before);
       final saved = await dependencies.savedWords!.watchOwner(owner.id).first;
       expect(saved.savedItems.single.word!.spelling, 'station');
+      final reportCommand = dependencies.wordReports!.prepareSubmit(
+        expectedOwnerId: owner.id,
+        target: WordReportTarget.fromWord(word),
+        reason: ReportReason.incorrectMeaning,
+        comment: 'Synthetic local report from the real bootstrap',
+      );
+      final report = await dependencies.wordReports!.submit(reportCommand);
+      expect(report.status, SubmitStatus.queued);
+      expect(report.report.matchesCommand(reportCommand), isTrue);
+      expect(
+        (await dependencies.wordReports!.watchOwner(owner.id).first).single
+            .sameFacts(report.report),
+        isTrue,
+      );
+      expect(
+        (await dependencies.savedWords!.watchOwner(owner.id).first)
+            .stateFor(word.id)
+            .sameFacts(result.state),
+        isTrue,
+      );
+      expect(await effects(), before);
     },
   );
 

@@ -34,6 +34,13 @@ void main() {
         try {
           await _mount(tester, h);
           final before = await tester.runAsync(h.storage.snapshot);
+          final menu = find.byKey(
+            ValueKey('vocab-word-menu:${configuredWordIds.first}'),
+          );
+          await tester.ensureVisible(menu);
+          await tester.pump();
+          await tester.tap(menu.hitTestable());
+          await tester.pumpAndSettle();
           final remove = find.byKey(
             ValueKey('vocab-delete:${configuredWordIds.first}'),
           );
@@ -133,11 +140,13 @@ void main() {
         );
         expect(
           tester
-              .widget<IconButton>(
-                find.byKey(ValueKey('vocab-delete:${configuredWordIds.first}')),
+              .widget<PopupMenuButton<String>>(
+                find.byKey(
+                  ValueKey('vocab-word-menu:${configuredWordIds.first}'),
+                ),
               )
-              .onPressed,
-          isNull,
+              .enabled,
+          isFalse,
         );
         await tester.tap(
           find.byKey(ValueKey('vocab-save-retry:${configuredWordIds.first}')),
@@ -146,7 +155,7 @@ void main() {
         expect(h.repository.commands, hasLength(2));
         expect(h.repository.commands.last, same(first));
         expect(h.repository.states[configuredWordIds.first]!.localRevision, 1);
-        expect(find.byTooltip('ลบคำศัพท์ station'), findsOneWidget);
+        expect(find.byTooltip('ตัวเลือกคำศัพท์ station'), findsOneWidget);
         expect(find.byKey(const ValueKey('add-word')), findsOneWidget);
       } finally {
         await closeSavedUi(tester, h);

@@ -5,15 +5,19 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/saved_words_use_cases.dart';
+import '../features/vocabulary/application/word_report_use_cases.dart';
+import '../features/vocabulary/domain/word_report.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
+import '../widgets/word_report_sheet.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
 import 'saved_words_screen.dart';
 import 'source_practice_screen.dart';
+import 'word_reports_screen.dart';
 
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
@@ -23,6 +27,7 @@ class VocabListScreen extends StatefulWidget {
     this.vocabulary,
     this.importer,
     this.savedWords,
+    this.wordReports,
     this.ownerChanges,
     this.languageCode = 'th',
   });
@@ -32,6 +37,7 @@ class VocabListScreen extends StatefulWidget {
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? importer;
   final SavedWordsUseCases? savedWords;
+  final WordReportUseCases? wordReports;
   final Stream<String?>? ownerChanges;
   final String languageCode;
 
@@ -45,10 +51,13 @@ class _VocabListScreenState extends State<VocabListScreen>
   String _query = '';
   int _retryEpoch = 0;
   int _bindingGeneration = -1;
+  int _reportGeneration = -1;
   int _lifecycleGeneration = 0;
   AppDependencies? _dependencies;
   VocabularyUseCases? _vocabulary;
   SavedWordsUseCases? _savedWords;
+  WordReportUseCases? _wordReports;
+  WordReportOwnerScope? _reportScope;
   Stream<String?>? _owners;
   Stream<List<VocabularyWord>>? _words;
   SavedWordsViewBinding? _binding;
@@ -59,6 +68,8 @@ class _VocabListScreenState extends State<VocabListScreen>
   bool _invalidated = false;
   bool _confirmingDelete = false;
   bool _dialogInvalidated = false;
+  bool _ownedReportOverlay = false;
+  bool _reportOverlayInvalidated = false;
 
   String _text(String th, String en) => widget.languageCode == 'en' ? en : th;
   bool get _visible =>
@@ -67,9 +78,12 @@ class _VocabListScreenState extends State<VocabListScreen>
       _foreground &&
       Visibility.of(context) &&
       (_route?.isCurrent == true && _paneVisible ||
-          _confirmingDelete && !_dialogInvalidated);
+          _confirmingDelete && !_dialogInvalidated ||
+          _ownedReportOverlay && !_reportOverlayInvalidated);
   bool get _mayAct =>
-      !_invalidated && (_savedWords == null || _binding?.ready == true);
+      !_invalidated &&
+      (_savedWords == null || _binding?.ready == true) &&
+      (_wordReports == null || _reportScope?.current == true);
 
   @override
   void initState() {
@@ -87,11 +101,13 @@ class _VocabListScreenState extends State<VocabListScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
     final savedWords = widget.savedWords ?? dependencies?.savedWords;
+    final wordReports = widget.wordReports ?? dependencies?.wordReports;
     if (!_bound) {
       _bound = true;
       _dependencies = dependencies;
       _vocabulary = vocabulary;
       _savedWords = savedWords;
+      _wordReports = wordReports;
       _owners =
           widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
       if (savedWords != null && _owners != null) {
@@ -101,12 +117,20 @@ class _VocabListScreenState extends State<VocabListScreen>
           visible: () => _visible,
         )..addListener(_changed);
       }
+      if (wordReports != null && _owners != null) {
+        _reportScope = WordReportOwnerScope(
+          ownerChanges: _owners!,
+          visible: () => _visible,
+        )..addListener(_changed);
+      }
     } else if (!identical(_dependencies, dependencies) ||
         !identical(_vocabulary, vocabulary) ||
-        !identical(_savedWords, savedWords)) {
+        !identical(_savedWords, savedWords) ||
+        !identical(_wordReports, wordReports)) {
       _invalidateBinding();
     }
     _binding?.syncVisibility();
+    _reportScope?.synchronize();
   }
 
   @override
@@ -115,6 +139,7 @@ class _VocabListScreenState extends State<VocabListScreen>
     if (oldWidget.categoryId != widget.categoryId ||
         !identical(oldWidget.vocabulary, widget.vocabulary) ||
         !identical(oldWidget.savedWords, widget.savedWords) ||
+        !identical(oldWidget.wordReports, widget.wordReports) ||
         !identical(oldWidget.ownerChanges, widget.ownerChanges)) {
       _invalidateBinding();
     }
@@ -125,8 +150,11 @@ class _VocabListScreenState extends State<VocabListScreen>
       return;
     }
     final generation = _binding?.generation ?? -1;
-    if (generation != _bindingGeneration) {
+    final reportGeneration = _reportScope?.generation ?? -1;
+    if (generation != _bindingGeneration ||
+        reportGeneration != _reportGeneration) {
       _bindingGeneration = generation;
+      _reportGeneration = reportGeneration;
       _words = null;
       _retryEpoch++;
     }
@@ -140,6 +168,10 @@ class _VocabListScreenState extends State<VocabListScreen>
     _binding = null;
     binding?.removeListener(_changed);
     unawaited(binding?.close());
+    final reportScope = _reportScope;
+    _reportScope = null;
+    reportScope?.removeListener(_changed);
+    unawaited(reportScope?.close());
   }
 
   @override
@@ -149,6 +181,7 @@ class _VocabListScreenState extends State<VocabListScreen>
       _lifecycleGeneration++;
     }
     _binding?.syncVisibility();
+    _reportScope?.synchronize();
     _changed();
   }
 
@@ -170,12 +203,18 @@ class _VocabListScreenState extends State<VocabListScreen>
         useCases != null && learning != null && sourcePicker != null;
     final binding = _binding;
     final epoch = binding?.generation;
+    final reportScope = _reportScope;
+    final reportEpoch = reportScope?.generation;
     final guardedUnavailable =
         _invalidated ||
         _savedWords != null &&
             (binding == null ||
                 binding.blocked ||
-                !binding.current && binding.ownerObserved);
+                !binding.current && binding.ownerObserved) ||
+        _wordReports != null &&
+            (reportScope == null ||
+                reportScope.blocked ||
+                !reportScope.current && reportScope.observed);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -208,7 +247,8 @@ class _VocabListScreenState extends State<VocabListScreen>
                   ),
                 ),
               )
-            : _savedWords != null && binding?.ready != true
+            : _savedWords != null && binding?.ready != true ||
+                  _wordReports != null && reportScope?.current != true
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
@@ -227,12 +267,25 @@ class _VocabListScreenState extends State<VocabListScreen>
                         ),
                         if (canPracticeSource ||
                             importer != null ||
-                            binding != null) ...[
+                            binding != null ||
+                            reportScope != null) ...[
                           const SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
+                              if (reportScope != null)
+                                OutlinedButton.icon(
+                                  key: const ValueKey('word-reports-history'),
+                                  onPressed: () => _openReportHistory(
+                                    reportScope,
+                                    reportEpoch!,
+                                  ),
+                                  icon: const Icon(Icons.flag_outlined),
+                                  label: Text(
+                                    _text('รายงานในเครื่อง', 'Local reports'),
+                                  ),
+                                ),
                               if (binding != null)
                                 OutlinedButton.icon(
                                   key: const ValueKey('saved-words'),
@@ -351,6 +404,8 @@ class _VocabListScreenState extends State<VocabListScreen>
                               (word) =>
                                   (binding == null ||
                                       word.ownerId == binding.ownerId) &&
+                                  (reportScope == null ||
+                                      word.ownerId == reportScope.ownerId) &&
                                   (_query.isEmpty ||
                                       word.normalizedSpelling.contains(
                                         _query,
@@ -432,22 +487,75 @@ class _VocabListScreenState extends State<VocabListScreen>
                                                 )
                                               : null,
                                         ),
-                                      IconButton(
+                                      PopupMenuButton<String>(
                                         key: ValueKey(
-                                          'vocab-delete:${word.id}',
+                                          'vocab-word-menu:${word.id}',
                                         ),
                                         tooltip: _text(
-                                          'ลบคำศัพท์ ${word.spelling}',
-                                          'Delete word ${word.spelling}',
+                                          'ตัวเลือกคำศัพท์ ${word.spelling}',
+                                          'Word options ${word.spelling}',
                                         ),
-                                        icon: const Icon(Icons.delete_outline),
-                                        onPressed: rowEnabled
-                                            ? () => _deleteWord(
-                                                context,
-                                                useCases,
-                                                word,
-                                              )
-                                            : null,
+                                        enabled: rowEnabled && _mayAct,
+                                        onOpened: () {
+                                          _ownedReportOverlay = true;
+                                          _reportOverlayInvalidated = false;
+                                        },
+                                        onCanceled: _endOwnedReportOverlay,
+                                        onSelected: (action) {
+                                          final overlayValid =
+                                              !_reportOverlayInvalidated;
+                                          _endOwnedReportOverlay();
+                                          if (!overlayValid ||
+                                              !_mayAct ||
+                                              binding != null &&
+                                                  !binding.isCurrent(epoch!) ||
+                                              reportScope != null &&
+                                                  !reportScope.isCurrent(
+                                                    reportEpoch!,
+                                                  )) {
+                                            return;
+                                          }
+                                          if (action == 'report') {
+                                            _openReport(word);
+                                          } else if (action == 'delete') {
+                                            _deleteWord(
+                                              context,
+                                              useCases,
+                                              word,
+                                            );
+                                          }
+                                        },
+                                        itemBuilder: (_) => [
+                                          if (_wordReports != null)
+                                            PopupMenuItem(
+                                              value: 'report',
+                                              key: ValueKey(
+                                                'vocab-report:${word.id}',
+                                              ),
+                                              child: _ownedOverlayChild(
+                                                Text(
+                                                  _text(
+                                                    'รายงานคำศัพท์',
+                                                    'Report word',
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          PopupMenuItem(
+                                            value: 'delete',
+                                            key: ValueKey(
+                                              'vocab-delete:${word.id}',
+                                            ),
+                                            child: _ownedOverlayChild(
+                                              Text(
+                                                _text(
+                                                  'ลบคำศัพท์',
+                                                  'Delete word',
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -552,6 +660,119 @@ class _VocabListScreenState extends State<VocabListScreen>
     );
   }
 
+  Widget _ownedOverlayChild(Widget child) => Builder(
+    builder: (overlayContext) {
+      if (ModalRoute.of(overlayContext)?.isActive == true &&
+          ModalRoute.isCurrentOf(overlayContext) != true) {
+        _reportOverlayInvalidated = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _binding?.syncVisibility();
+            _reportScope?.synchronize();
+            _changed();
+          }
+        });
+      }
+      return _reportOverlayInvalidated ? const SizedBox.shrink() : child;
+    },
+  );
+
+  void _endOwnedReportOverlay() {
+    _ownedReportOverlay = false;
+    if (!mounted) {
+      return;
+    }
+    _paneVisible = _route?.isCurrent == true && Visibility.of(context);
+    _binding?.syncVisibility();
+    _reportScope?.synchronize();
+  }
+
+  Future<void> _openReport(VocabularyWord word) async {
+    final scope = _reportScope;
+    final reports = _wordReports;
+    if (!_mayAct ||
+        scope == null ||
+        reports == null ||
+        !scope.current ||
+        word.ownerId != scope.ownerId) {
+      return;
+    }
+    final epoch = scope.generation;
+    final owner = scope.ownerId!;
+    final dependencies = _dependencies;
+    final WordReportTarget target;
+    try {
+      target = WordReportTarget.fromWord(word);
+    } on Object {
+      return;
+    }
+    _ownedReportOverlay = true;
+    _reportOverlayInvalidated = false;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => _ownedOverlayChild(
+          !mounted ||
+                  _invalidated ||
+                  !identical(dependencies, _dependencies) ||
+                  !identical(reports, _wordReports) ||
+                  !scope.isCurrent(epoch)
+              ? const SizedBox.shrink()
+              : WordReportSheet(
+                  expectedOwnerId: owner,
+                  target: target,
+                  wordReports: reports,
+                  ownerChanges: _owners,
+                  languageCode: widget.languageCode,
+                ),
+        ),
+      );
+    } finally {
+      _endOwnedReportOverlay();
+    }
+  }
+
+  void _openReportHistory(WordReportOwnerScope scope, int epoch) {
+    if (!_mayAct || !scope.isCurrent(epoch)) {
+      return;
+    }
+    final owner = scope.ownerId!;
+    final ownerGeneration = scope.ownerGeneration;
+    final lifecycleGeneration = _lifecycleGeneration;
+    final reports = _wordReports;
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/local-reports',
+        builder: (_) {
+          if (!mounted ||
+              _invalidated ||
+              !identical(scope, _reportScope) ||
+              !scope.known ||
+              scope.blocked ||
+              scope.ownerId != owner ||
+              scope.ownerGeneration != ownerGeneration ||
+              !_foreground ||
+              lifecycleGeneration != _lifecycleGeneration ||
+              !identical(reports, _wordReports)) {
+            return const Scaffold(
+              body: Center(
+                child: Text('รายการไม่พร้อมใช้งาน / List unavailable'),
+              ),
+            );
+          }
+          return WordReportsScreen(
+            expectedOwnerId: owner,
+            wordReports: reports,
+            ownerChanges: _owners,
+            languageCode: widget.languageCode,
+          );
+        },
+      ),
+    );
+  }
+
   void _openWordEditor(
     BuildContext context,
     VocabularyUseCases useCases, {
@@ -580,7 +801,11 @@ class _VocabListScreenState extends State<VocabListScreen>
     VocabularyWord word,
   ) async {
     final binding = _binding;
-    if (!_mayAct || binding != null && word.ownerId != binding.ownerId) {
+    final reportScope = _reportScope;
+    final reportEpoch = reportScope?.generation;
+    if (!_mayAct ||
+        binding != null && word.ownerId != binding.ownerId ||
+        reportScope != null && word.ownerId != reportScope.ownerId) {
       return;
     }
     final epoch = binding?.generation;
@@ -593,15 +818,22 @@ class _VocabListScreenState extends State<VocabListScreen>
         if (ModalRoute.of(dialogContext)?.isActive == true &&
             ModalRoute.isCurrentOf(dialogContext) != true) {
           _dialogInvalidated = true;
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _binding?.syncVisibility(),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _binding?.syncVisibility();
+              _reportScope?.synchronize();
+              _changed();
+            }
+          });
           return const SizedBox.shrink();
         }
         return AnimatedBuilder(
-          animation: binding ?? _searchController,
+          animation: binding == null && reportScope == null
+              ? _searchController
+              : Listenable.merge([binding, reportScope]),
           builder: (_, _) {
-            if (binding != null && !binding.isCurrent(epoch!)) {
+            if (binding != null && !binding.isCurrent(epoch!) ||
+                reportScope != null && !reportScope.isCurrent(reportEpoch!)) {
               return const SizedBox.shrink();
             }
             return AlertDialog(
@@ -633,11 +865,15 @@ class _VocabListScreenState extends State<VocabListScreen>
     }
     _paneVisible = _route?.isCurrent == true && Visibility.of(context);
     _binding?.syncVisibility();
+    _reportScope?.synchronize();
     if (accepted != true ||
         !mounted ||
         _dialogInvalidated ||
         _lifecycleGeneration != lifecycleGeneration ||
         !_mayAct ||
+        reportScope != null &&
+            (!identical(reportScope, _reportScope) ||
+                !reportScope.isCurrent(reportEpoch!)) ||
         binding != null &&
             (!identical(binding, _binding) || !binding.isCurrent(epoch!))) {
       return;
@@ -647,6 +883,8 @@ class _VocabListScreenState extends State<VocabListScreen>
     } on Object {
       if (context.mounted &&
           _mayAct &&
+          _lifecycleGeneration == lifecycleGeneration &&
+          (reportScope == null || reportScope.isCurrent(reportEpoch!)) &&
           (binding == null || binding.isCurrent(epoch!))) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

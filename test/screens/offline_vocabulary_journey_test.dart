@@ -501,7 +501,7 @@ void main() {
 
       expect(find.text('station'), findsOneWidget);
       expect(find.textContaining('สถานี'), findsOneWidget);
-      expect(find.byTooltip('ลบคำศัพท์ station'), findsOneWidget);
+      expect(find.byTooltip('ตัวเลือกคำศัพท์ station'), findsOneWidget);
 
       final word = await tester.runAsync(
         () => database.select(database.vocabularyWords).getSingle(),

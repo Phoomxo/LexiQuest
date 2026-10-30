@@ -21,8 +21,12 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 19);
-      expect(database.allTables, hasLength(36));
+      expect(database.schemaVersion, 20);
+      expect(database.allTables, hasLength(37));
+      expect(
+        await database.customSelect('SELECT * FROM word_reports').get(),
+        isEmpty,
+      );
       final columns = await database
           .customSelect('PRAGMA table_info(assessment_runs)')
           .get();
@@ -230,7 +234,8 @@ void main() {
         await source.participation.ownerWrites.markPending(token);
         oldRows = (await ownerMigrationRows(source.database))
           ..remove('assessment_runs')
-          ..remove('saved_words');
+          ..remove('saved_words')
+          ..remove('word_reports');
         expect(oldRows, hasLength(34));
         for (final table in oldRows.entries) {
           expect(
@@ -297,13 +302,17 @@ void main() {
         );
         await Directory(resolved).delete(recursive: true);
       });
-      expect(database.schemaVersion, 19);
+      expect(database.schemaVersion, 20);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        19,
+        20,
       );
-      expect(database.allTables, hasLength(36));
+      expect(database.allTables, hasLength(37));
+      expect(
+        await database.customSelect('SELECT * FROM word_reports').get(),
+        isEmpty,
+      );
       expect(before, oldRows);
       final after = await ownerMigrationRows(database);
       expect(
@@ -315,7 +324,8 @@ void main() {
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
           ..remove('assessment_runs')
-          ..remove('saved_words'),
+          ..remove('saved_words')
+          ..remove('word_reports'),
         before,
       );
       final newObjects = await database

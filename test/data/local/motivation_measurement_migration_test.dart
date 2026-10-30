@@ -161,10 +161,14 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      19,
+      20,
     );
     expect(before, hasLength(31));
-    expect(database.allTables, hasLength(36));
+    expect(database.allTables, hasLength(37));
+    expect(
+      await database.customSelect('SELECT * FROM word_reports').get(),
+      isEmpty,
+    );
     for (final table in [
       'motivation_measurement_runs',
       'motivation_responses',

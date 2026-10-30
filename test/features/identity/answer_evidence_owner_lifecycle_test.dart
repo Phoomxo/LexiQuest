@@ -42,8 +42,9 @@ void main() {
       final data = document['data'] as Map<String, dynamic>;
       final attempt =
           (data['answer_attempts'] as List).single as Map<String, dynamic>;
-      expect(document['schemaVersion'], 19);
+      expect(document['schemaVersion'], 20);
       expect(data['saved_words'], isEmpty);
+      expect(data['word_reports'], isEmpty);
       expect(data['assessment_runs'], isEmpty);
       expect(attempt['evidence_class'], 'recognition');
       expect(

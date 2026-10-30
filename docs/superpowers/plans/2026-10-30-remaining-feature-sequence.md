@@ -23,7 +23,8 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ
-- `docs/database/schema_ledger.md` และ executable database อยู่ v19/36 tables;
+- `docs/database/schema_ledger.md` และ executable database อยู่ v20/37 ระหว่างรวม local reports;
+  baseline ที่ attested ล่าสุดยังเป็น Wave16 v19/36
   v20 จองสำหรับ local word reports หลัง genuine19 capture แล้ว; v21+ ยังไม่จอง จำนวน44 capabilities ไม่ใช่จำนวนตาราง
 - แผนแม่ `docs/superpowers/plans/2026-10-28-unfinished-system-integration.md`
   ยัง queue Motivation integration และ remaining catalog integration ไว้

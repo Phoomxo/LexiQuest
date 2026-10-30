@@ -17,11 +17,15 @@ import '../../support/populated_owner_migration_fixture.dart';
 import '../../support/configured_quiz_harness.dart';
 
 void main() {
-  test('fresh v19 has one empty seven-column SavedWords relation', () async {
+  test('fresh v20 has one empty seven-column SavedWords relation', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    expect(database.schemaVersion, 19);
-    expect(database.allTables, hasLength(36));
+    expect(database.schemaVersion, 20);
+    expect(database.allTables, hasLength(37));
+    expect(
+      await database.customSelect('SELECT * FROM word_reports').get(),
+      isEmpty,
+    );
     final columns = await database
         .customSelect('PRAGMA table_info(saved_words)')
         .get();
@@ -191,6 +195,7 @@ void main() {
         await source.participation.ownerWrites.markPending(token);
         oldRows = await ownerMigrationRows(source.database);
         expect(oldRows.remove('saved_words'), isEmpty);
+        expect(oldRows.remove('word_reports'), isEmpty);
         expect(oldRows, hasLength(35));
         for (final table in oldRows.entries) {
           expect(
@@ -261,15 +266,21 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        19,
+        20,
       );
-      expect(database.allTables, hasLength(36));
+      expect(database.allTables, hasLength(37));
+      expect(
+        await database.customSelect('SELECT * FROM word_reports').get(),
+        isEmpty,
+      );
       expect(before, oldRows);
       final after = await ownerMigrationRows(database);
       expect(after['saved_words'], isEmpty);
+      expect(after['word_reports'], isEmpty);
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
-          ..remove('saved_words'),
+          ..remove('saved_words')
+          ..remove('word_reports'),
         before,
       );
       final newObjects = await database
@@ -281,7 +292,11 @@ void main() {
         for (final row in newObjects)
           row.read<String>('name'): row.read<String>('sql'),
       };
-      expect(byName.keys.toSet(), {...oldObjects.keys, 'saved_words'});
+      expect(byName.keys.toSet(), {
+        ...oldObjects.keys,
+        'saved_words',
+        'word_reports',
+      });
       for (final object in oldObjects.entries) {
         expect(
           byName[object.key],

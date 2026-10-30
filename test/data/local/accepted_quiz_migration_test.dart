@@ -62,7 +62,11 @@ void main() {
       expect(column.read<int>('notnull'), 0);
       expect(column.read<String>('type'), 'TEXT');
     }
-    expect(database.allTables, hasLength(36));
+    expect(database.allTables, hasLength(37));
+    expect(
+      await database.customSelect('SELECT * FROM word_reports').get(),
+      isEmpty,
+    );
   });
 
   test('v15 facts and deletion intent survive accepted quiz migration', () async {
@@ -295,10 +299,14 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      19,
+      20,
     );
     expect(before, hasLength(34));
-    expect(database.allTables, hasLength(36));
+    expect(database.allTables, hasLength(37));
+    expect(
+      await database.customSelect('SELECT * FROM word_reports').get(),
+      isEmpty,
+    );
     expect(
       await database.customSelect('SELECT * FROM assessment_runs').get(),
       isEmpty,

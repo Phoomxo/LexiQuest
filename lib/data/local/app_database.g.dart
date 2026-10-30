@@ -7365,6 +7365,636 @@ class SavedWordsCompanion extends UpdateCompanion<SavedWord> {
   }
 }
 
+class $WordReportsTable extends WordReports
+    with TableInfo<$WordReportsTable, WordReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WordReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _wordIdMeta = const VerificationMeta('wordId');
+  @override
+  late final GeneratedColumn<String> wordId = GeneratedColumn<String>(
+    'word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _wordRevisionMeta = const VerificationMeta(
+    'wordRevision',
+  );
+  @override
+  late final GeneratedColumn<int> wordRevision = GeneratedColumn<int>(
+    'word_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _snapshotJsonMeta = const VerificationMeta(
+    'snapshotJson',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotJson = GeneratedColumn<String>(
+    'snapshot_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _snapshotSha256Meta = const VerificationMeta(
+    'snapshotSha256',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotSha256 = GeneratedColumn<String>(
+    'snapshot_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _commentMeta = const VerificationMeta(
+    'comment',
+  );
+  @override
+  late final GeneratedColumn<String> comment = GeneratedColumn<String>(
+    'comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _queuedAtUtcMsMeta = const VerificationMeta(
+    'queuedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> queuedAtUtcMs = GeneratedColumn<int>(
+    'queued_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    wordId,
+    categoryId,
+    wordRevision,
+    snapshotJson,
+    snapshotSha256,
+    reason,
+    comment,
+    queuedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'word_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WordReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('word_id')) {
+      context.handle(
+        _wordIdMeta,
+        wordId.isAcceptableOrUnknown(data['word_id']!, _wordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordIdMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('word_revision')) {
+      context.handle(
+        _wordRevisionMeta,
+        wordRevision.isAcceptableOrUnknown(
+          data['word_revision']!,
+          _wordRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_wordRevisionMeta);
+    }
+    if (data.containsKey('snapshot_json')) {
+      context.handle(
+        _snapshotJsonMeta,
+        snapshotJson.isAcceptableOrUnknown(
+          data['snapshot_json']!,
+          _snapshotJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotJsonMeta);
+    }
+    if (data.containsKey('snapshot_sha256')) {
+      context.handle(
+        _snapshotSha256Meta,
+        snapshotSha256.isAcceptableOrUnknown(
+          data['snapshot_sha256']!,
+          _snapshotSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotSha256Meta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('comment')) {
+      context.handle(
+        _commentMeta,
+        comment.isAcceptableOrUnknown(data['comment']!, _commentMeta),
+      );
+    }
+    if (data.containsKey('queued_at_utc_ms')) {
+      context.handle(
+        _queuedAtUtcMsMeta,
+        queuedAtUtcMs.isAcceptableOrUnknown(
+          data['queued_at_utc_ms']!,
+          _queuedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_queuedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WordReportRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WordReportRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      wordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_id'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      )!,
+      wordRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}word_revision'],
+      )!,
+      snapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot_json'],
+      )!,
+      snapshotSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot_sha256'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      comment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comment'],
+      ),
+      queuedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}queued_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $WordReportsTable createAlias(String alias) {
+    return $WordReportsTable(attachedDatabase, alias);
+  }
+}
+
+class WordReportRow extends DataClass implements Insertable<WordReportRow> {
+  final String id;
+  final String ownerId;
+  final String wordId;
+  final String categoryId;
+  final int wordRevision;
+  final String snapshotJson;
+  final String snapshotSha256;
+  final String reason;
+  final String? comment;
+  final int queuedAtUtcMs;
+  const WordReportRow({
+    required this.id,
+    required this.ownerId,
+    required this.wordId,
+    required this.categoryId,
+    required this.wordRevision,
+    required this.snapshotJson,
+    required this.snapshotSha256,
+    required this.reason,
+    this.comment,
+    required this.queuedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['word_id'] = Variable<String>(wordId);
+    map['category_id'] = Variable<String>(categoryId);
+    map['word_revision'] = Variable<int>(wordRevision);
+    map['snapshot_json'] = Variable<String>(snapshotJson);
+    map['snapshot_sha256'] = Variable<String>(snapshotSha256);
+    map['reason'] = Variable<String>(reason);
+    if (!nullToAbsent || comment != null) {
+      map['comment'] = Variable<String>(comment);
+    }
+    map['queued_at_utc_ms'] = Variable<int>(queuedAtUtcMs);
+    return map;
+  }
+
+  WordReportsCompanion toCompanion(bool nullToAbsent) {
+    return WordReportsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      wordId: Value(wordId),
+      categoryId: Value(categoryId),
+      wordRevision: Value(wordRevision),
+      snapshotJson: Value(snapshotJson),
+      snapshotSha256: Value(snapshotSha256),
+      reason: Value(reason),
+      comment: comment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(comment),
+      queuedAtUtcMs: Value(queuedAtUtcMs),
+    );
+  }
+
+  factory WordReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WordReportRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      wordId: serializer.fromJson<String>(json['wordId']),
+      categoryId: serializer.fromJson<String>(json['categoryId']),
+      wordRevision: serializer.fromJson<int>(json['wordRevision']),
+      snapshotJson: serializer.fromJson<String>(json['snapshotJson']),
+      snapshotSha256: serializer.fromJson<String>(json['snapshotSha256']),
+      reason: serializer.fromJson<String>(json['reason']),
+      comment: serializer.fromJson<String?>(json['comment']),
+      queuedAtUtcMs: serializer.fromJson<int>(json['queuedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'wordId': serializer.toJson<String>(wordId),
+      'categoryId': serializer.toJson<String>(categoryId),
+      'wordRevision': serializer.toJson<int>(wordRevision),
+      'snapshotJson': serializer.toJson<String>(snapshotJson),
+      'snapshotSha256': serializer.toJson<String>(snapshotSha256),
+      'reason': serializer.toJson<String>(reason),
+      'comment': serializer.toJson<String?>(comment),
+      'queuedAtUtcMs': serializer.toJson<int>(queuedAtUtcMs),
+    };
+  }
+
+  WordReportRow copyWith({
+    String? id,
+    String? ownerId,
+    String? wordId,
+    String? categoryId,
+    int? wordRevision,
+    String? snapshotJson,
+    String? snapshotSha256,
+    String? reason,
+    Value<String?> comment = const Value.absent(),
+    int? queuedAtUtcMs,
+  }) => WordReportRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    wordId: wordId ?? this.wordId,
+    categoryId: categoryId ?? this.categoryId,
+    wordRevision: wordRevision ?? this.wordRevision,
+    snapshotJson: snapshotJson ?? this.snapshotJson,
+    snapshotSha256: snapshotSha256 ?? this.snapshotSha256,
+    reason: reason ?? this.reason,
+    comment: comment.present ? comment.value : this.comment,
+    queuedAtUtcMs: queuedAtUtcMs ?? this.queuedAtUtcMs,
+  );
+  WordReportRow copyWithCompanion(WordReportsCompanion data) {
+    return WordReportRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      wordId: data.wordId.present ? data.wordId.value : this.wordId,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      wordRevision: data.wordRevision.present
+          ? data.wordRevision.value
+          : this.wordRevision,
+      snapshotJson: data.snapshotJson.present
+          ? data.snapshotJson.value
+          : this.snapshotJson,
+      snapshotSha256: data.snapshotSha256.present
+          ? data.snapshotSha256.value
+          : this.snapshotSha256,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      comment: data.comment.present ? data.comment.value : this.comment,
+      queuedAtUtcMs: data.queuedAtUtcMs.present
+          ? data.queuedAtUtcMs.value
+          : this.queuedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordReportRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordId: $wordId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('wordRevision: $wordRevision, ')
+          ..write('snapshotJson: $snapshotJson, ')
+          ..write('snapshotSha256: $snapshotSha256, ')
+          ..write('reason: $reason, ')
+          ..write('comment: $comment, ')
+          ..write('queuedAtUtcMs: $queuedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    wordId,
+    categoryId,
+    wordRevision,
+    snapshotJson,
+    snapshotSha256,
+    reason,
+    comment,
+    queuedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WordReportRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.wordId == this.wordId &&
+          other.categoryId == this.categoryId &&
+          other.wordRevision == this.wordRevision &&
+          other.snapshotJson == this.snapshotJson &&
+          other.snapshotSha256 == this.snapshotSha256 &&
+          other.reason == this.reason &&
+          other.comment == this.comment &&
+          other.queuedAtUtcMs == this.queuedAtUtcMs);
+}
+
+class WordReportsCompanion extends UpdateCompanion<WordReportRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> wordId;
+  final Value<String> categoryId;
+  final Value<int> wordRevision;
+  final Value<String> snapshotJson;
+  final Value<String> snapshotSha256;
+  final Value<String> reason;
+  final Value<String?> comment;
+  final Value<int> queuedAtUtcMs;
+  final Value<int> rowid;
+  const WordReportsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.wordId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.wordRevision = const Value.absent(),
+    this.snapshotJson = const Value.absent(),
+    this.snapshotSha256 = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.comment = const Value.absent(),
+    this.queuedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WordReportsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String wordId,
+    required String categoryId,
+    required int wordRevision,
+    required String snapshotJson,
+    required String snapshotSha256,
+    required String reason,
+    this.comment = const Value.absent(),
+    required int queuedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       wordId = Value(wordId),
+       categoryId = Value(categoryId),
+       wordRevision = Value(wordRevision),
+       snapshotJson = Value(snapshotJson),
+       snapshotSha256 = Value(snapshotSha256),
+       reason = Value(reason),
+       queuedAtUtcMs = Value(queuedAtUtcMs);
+  static Insertable<WordReportRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? wordId,
+    Expression<String>? categoryId,
+    Expression<int>? wordRevision,
+    Expression<String>? snapshotJson,
+    Expression<String>? snapshotSha256,
+    Expression<String>? reason,
+    Expression<String>? comment,
+    Expression<int>? queuedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (wordId != null) 'word_id': wordId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (wordRevision != null) 'word_revision': wordRevision,
+      if (snapshotJson != null) 'snapshot_json': snapshotJson,
+      if (snapshotSha256 != null) 'snapshot_sha256': snapshotSha256,
+      if (reason != null) 'reason': reason,
+      if (comment != null) 'comment': comment,
+      if (queuedAtUtcMs != null) 'queued_at_utc_ms': queuedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WordReportsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? wordId,
+    Value<String>? categoryId,
+    Value<int>? wordRevision,
+    Value<String>? snapshotJson,
+    Value<String>? snapshotSha256,
+    Value<String>? reason,
+    Value<String?>? comment,
+    Value<int>? queuedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return WordReportsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      wordId: wordId ?? this.wordId,
+      categoryId: categoryId ?? this.categoryId,
+      wordRevision: wordRevision ?? this.wordRevision,
+      snapshotJson: snapshotJson ?? this.snapshotJson,
+      snapshotSha256: snapshotSha256 ?? this.snapshotSha256,
+      reason: reason ?? this.reason,
+      comment: comment ?? this.comment,
+      queuedAtUtcMs: queuedAtUtcMs ?? this.queuedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (wordId.present) {
+      map['word_id'] = Variable<String>(wordId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (wordRevision.present) {
+      map['word_revision'] = Variable<int>(wordRevision.value);
+    }
+    if (snapshotJson.present) {
+      map['snapshot_json'] = Variable<String>(snapshotJson.value);
+    }
+    if (snapshotSha256.present) {
+      map['snapshot_sha256'] = Variable<String>(snapshotSha256.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (comment.present) {
+      map['comment'] = Variable<String>(comment.value);
+    }
+    if (queuedAtUtcMs.present) {
+      map['queued_at_utc_ms'] = Variable<int>(queuedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordReportsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordId: $wordId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('wordRevision: $wordRevision, ')
+          ..write('snapshotJson: $snapshotJson, ')
+          ..write('snapshotSha256: $snapshotSha256, ')
+          ..write('reason: $reason, ')
+          ..write('comment: $comment, ')
+          ..write('queuedAtUtcMs: $queuedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VocabularyImportsTable extends VocabularyImports
     with TableInfo<$VocabularyImportsTable, VocabularyImport> {
   @override
@@ -25680,6 +26310,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $SavedWordsTable savedWords = $SavedWordsTable(this);
+  late final $WordReportsTable wordReports = $WordReportsTable(this);
   late final $VocabularyImportsTable vocabularyImports =
       $VocabularyImportsTable(this);
   late final $VocabularyImportRowsTable vocabularyImportRows =
@@ -25742,6 +26373,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vocabularyCategories,
     vocabularyWords,
     savedWords,
+    wordReports,
     vocabularyImports,
     vocabularyImportRows,
     learningSessions,
@@ -26016,6 +26648,24 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_savedWordsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$WordReportsTable, List<WordReportRow>>
+  _wordReportsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.wordReports,
+    aliasName: 'local_owners__id__word_reports__owner_id',
+  );
+
+  $$WordReportsTableProcessedTableManager get wordReportsRefs {
+    final manager = $$WordReportsTableTableManager(
+      $_db,
+      $_db.wordReports,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_wordReportsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -26705,6 +27355,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$SavedWordsTableFilterComposer(
             $db: $db,
             $table: $db.savedWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> wordReportsRefs(
+    Expression<bool> Function($$WordReportsTableFilterComposer f) f,
+  ) {
+    final $$WordReportsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wordReports,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WordReportsTableFilterComposer(
+            $db: $db,
+            $table: $db.wordReports,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -27553,6 +28228,31 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> wordReportsRefs<T extends Object>(
+    Expression<T> Function($$WordReportsTableAnnotationComposer a) f,
+  ) {
+    final $$WordReportsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wordReports,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WordReportsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.wordReports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> vocabularyImportsRefs<T extends Object>(
     Expression<T> Function($$VocabularyImportsTableAnnotationComposer a) f,
   ) {
@@ -28137,6 +28837,7 @@ class $$LocalOwnersTableTableManager
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
             bool savedWordsRefs,
+            bool wordReportsRefs,
             bool vocabularyImportsRefs,
             bool learningSessionsRefs,
             bool answerAttemptsRefs,
@@ -28226,6 +28927,7 @@ class $$LocalOwnersTableTableManager
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
                 savedWordsRefs = false,
+                wordReportsRefs = false,
                 vocabularyImportsRefs = false,
                 learningSessionsRefs = false,
                 answerAttemptsRefs = false,
@@ -28262,6 +28964,7 @@ class $$LocalOwnersTableTableManager
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (savedWordsRefs) db.savedWords,
+                    if (wordReportsRefs) db.wordReports,
                     if (vocabularyImportsRefs) db.vocabularyImports,
                     if (learningSessionsRefs) db.learningSessions,
                     if (answerAttemptsRefs) db.answerAttempts,
@@ -28451,6 +29154,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).savedWordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (wordReportsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          WordReportRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._wordReportsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).wordReportsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -28948,6 +29672,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
         bool savedWordsRefs,
+        bool wordReportsRefs,
         bool vocabularyImportsRefs,
         bool learningSessionsRefs,
         bool answerAttemptsRefs,
@@ -35110,6 +35835,428 @@ typedef $$SavedWordsTableProcessedTableManager =
       (SavedWord, $$SavedWordsTableReferences),
       SavedWord,
       PrefetchHooks Function({bool ownerId, bool wordId})
+    >;
+typedef $$WordReportsTableCreateCompanionBuilder =
+    WordReportsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String wordId,
+      required String categoryId,
+      required int wordRevision,
+      required String snapshotJson,
+      required String snapshotSha256,
+      required String reason,
+      Value<String?> comment,
+      required int queuedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$WordReportsTableUpdateCompanionBuilder =
+    WordReportsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> wordId,
+      Value<String> categoryId,
+      Value<int> wordRevision,
+      Value<String> snapshotJson,
+      Value<String> snapshotSha256,
+      Value<String> reason,
+      Value<String?> comment,
+      Value<int> queuedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$WordReportsTableReferences
+    extends BaseReferences<_$AppDatabase, $WordReportsTable, WordReportRow> {
+  $$WordReportsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('word_reports__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WordReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $WordReportsTable> {
+  $$WordReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get wordId => $composableBuilder(
+    column: $table.wordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get wordRevision => $composableBuilder(
+    column: $table.wordRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshotSha256 => $composableBuilder(
+    column: $table.snapshotSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WordReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WordReportsTable> {
+  $$WordReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get wordId => $composableBuilder(
+    column: $table.wordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get wordRevision => $composableBuilder(
+    column: $table.wordRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snapshotSha256 => $composableBuilder(
+    column: $table.snapshotSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WordReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WordReportsTable> {
+  $$WordReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get wordId =>
+      $composableBuilder(column: $table.wordId, builder: (column) => column);
+
+  GeneratedColumn<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get wordRevision => $composableBuilder(
+    column: $table.wordRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get snapshotJson => $composableBuilder(
+    column: $table.snapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get snapshotSha256 => $composableBuilder(
+    column: $table.snapshotSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get comment =>
+      $composableBuilder(column: $table.comment, builder: (column) => column);
+
+  GeneratedColumn<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WordReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WordReportsTable,
+          WordReportRow,
+          $$WordReportsTableFilterComposer,
+          $$WordReportsTableOrderingComposer,
+          $$WordReportsTableAnnotationComposer,
+          $$WordReportsTableCreateCompanionBuilder,
+          $$WordReportsTableUpdateCompanionBuilder,
+          (WordReportRow, $$WordReportsTableReferences),
+          WordReportRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$WordReportsTableTableManager(_$AppDatabase db, $WordReportsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WordReportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WordReportsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WordReportsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> wordId = const Value.absent(),
+                Value<String> categoryId = const Value.absent(),
+                Value<int> wordRevision = const Value.absent(),
+                Value<String> snapshotJson = const Value.absent(),
+                Value<String> snapshotSha256 = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
+                Value<int> queuedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WordReportsCompanion(
+                id: id,
+                ownerId: ownerId,
+                wordId: wordId,
+                categoryId: categoryId,
+                wordRevision: wordRevision,
+                snapshotJson: snapshotJson,
+                snapshotSha256: snapshotSha256,
+                reason: reason,
+                comment: comment,
+                queuedAtUtcMs: queuedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String wordId,
+                required String categoryId,
+                required int wordRevision,
+                required String snapshotJson,
+                required String snapshotSha256,
+                required String reason,
+                Value<String?> comment = const Value.absent(),
+                required int queuedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => WordReportsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                wordId: wordId,
+                categoryId: categoryId,
+                wordRevision: wordRevision,
+                snapshotJson: snapshotJson,
+                snapshotSha256: snapshotSha256,
+                reason: reason,
+                comment: comment,
+                queuedAtUtcMs: queuedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WordReportsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$WordReportsTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$WordReportsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WordReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WordReportsTable,
+      WordReportRow,
+      $$WordReportsTableFilterComposer,
+      $$WordReportsTableOrderingComposer,
+      $$WordReportsTableAnnotationComposer,
+      $$WordReportsTableCreateCompanionBuilder,
+      $$WordReportsTableUpdateCompanionBuilder,
+      (WordReportRow, $$WordReportsTableReferences),
+      WordReportRow,
+      PrefetchHooks Function({bool ownerId})
     >;
 typedef $$VocabularyImportsTableCreateCompanionBuilder =
     VocabularyImportsCompanion Function({
@@ -48933,6 +50080,8 @@ class $AppDatabaseManager {
       $$VocabularyWordsTableTableManager(_db, _db.vocabularyWords);
   $$SavedWordsTableTableManager get savedWords =>
       $$SavedWordsTableTableManager(_db, _db.savedWords);
+  $$WordReportsTableTableManager get wordReports =>
+      $$WordReportsTableTableManager(_db, _db.wordReports);
   $$VocabularyImportsTableTableManager get vocabularyImports =>
       $$VocabularyImportsTableTableManager(_db, _db.vocabularyImports);
   $$VocabularyImportRowsTableTableManager get vocabularyImportRows =>

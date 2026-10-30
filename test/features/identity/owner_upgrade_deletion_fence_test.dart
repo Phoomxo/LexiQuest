@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coor
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
 import '../../support/saved_word_owner_fixture.dart';
+import '../../support/word_report_owner_fixture.dart';
 
 final _now = DateTime.utc(2026, 10, 29, 12);
 const _key = 'delete:00000000-0000-4000-8000-000000000001';
@@ -445,6 +446,12 @@ Future<void> _seed(AppDatabase database) async {
       owner,
       categoryId: 'category-$owner',
       isSaved: owner != 'guest-source',
+    );
+    await insertOwnerWordReport(
+      database,
+      owner,
+      wordId: 'synthetic-saved-word:$owner',
+      categoryId: 'category-$owner',
     );
   }
 }

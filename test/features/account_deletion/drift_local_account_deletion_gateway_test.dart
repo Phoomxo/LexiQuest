@@ -21,6 +21,7 @@ import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 import '../../support/saved_word_owner_fixture.dart';
+import '../../support/word_report_owner_fixture.dart';
 
 void main() {
   late AppDatabase database;
@@ -44,6 +45,7 @@ void main() {
         'measurement_opportunities',
         'events_v2',
         'saved_words',
+        'word_reports',
       ]) {
         retained[table] =
             (await database
@@ -113,6 +115,7 @@ void main() {
         'measurement_opportunities',
         'events_v2',
         'saved_words',
+        'word_reports',
         'outbox_operations',
       ]) {
         expect(
@@ -591,6 +594,18 @@ Future<void> _seed(AppDatabase database) async {
     isSaved: false,
   );
   await insertOwnerSavedWord(
+    database,
+    'owner-b',
+    wordId: 'saved-word-b',
+    categoryId: 'category-b',
+  );
+  await insertOwnerWordReport(
+    database,
+    'owner-a',
+    wordId: 'word-a',
+    categoryId: 'category-a',
+  );
+  await insertOwnerWordReport(
     database,
     'owner-b',
     wordId: 'saved-word-b',

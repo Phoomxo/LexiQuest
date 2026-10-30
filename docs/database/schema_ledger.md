@@ -189,7 +189,7 @@ claimed.
 | v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
 | v18 | Remaining-system integration | One local Assessment run table with37 durable pins; canonical assessment-only sessions/answers remain in existing tables. | Implemented locally atfabc990f; full Flutter3266, analysis0 and normal debug APK pass |
 | v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Attested597187e5 at19/36; Flutter3922, analysis0 and normal debug APK pass |
-| v20 | Local owned-word reports | One immutable ten-column local queue with original target snapshot/revision, current owner and stable report identity; no report transport or learning authority. | Reserved before migration code; genuine19 DDL and populated36-table capture retained |
+| v20 | Local owned-word reports | One immutable ten-column local queue with original target snapshot/revision, current owner and stable report identity; no report transport or learning authority. | Implemented locally20/37 after reservationf09df594;3 migration,95 legacy/phase,59 data and97 owner checks pass; UI/whole-feature attestation pending |
 | v21+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17, v18, v19 or v20. Reserve the next available version, starting at v21,
@@ -627,7 +627,10 @@ Plan: [local saved words](../superpowers/plans/2026-10-30-saved-words-integratio
 ### v20 — Immutable local owned-word reports
 
 **Reserved:** 2026-10-30, root integration, branch `codex/remaining-system-readiness`.
-**Status:** Reserved before any migration code. Executable baseline remains19/36.
+**Status:** Storage implemented locally20/37 after separate reservationf09df594.
+Three storage/migration checks,95 legacy schema/phase checks,59 data and97 owner
+checks pass. Independent storage review accepted; UI and whole-feature attestation
+remain pending. Executable baseline was19/36 when reserved; v21+ is unreserved.
 **Predecessor:** SavedWords source597187e5, attestation/pushed checkpointb06be6e8.
 **Plan:** [local owned-word reports](../superpowers/plans/2026-10-30-local-word-reports.md).
 
