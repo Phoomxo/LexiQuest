@@ -13,12 +13,12 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Native source `bfa766b3` ผ่าน Flutter3350, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave12)
-การเปลี่ยนหลัง b86 เป็น lifetime/lint3ไฟล์ ไม่เปลี่ยน Quest/schema/เนื้อหาในบอร์ดนี้
+Current attestation: Cloze source `55f9c407` ผ่าน Flutter3633, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave13)
+รวม shared native lifecycle และ owner-watch ABA repair; Quest/schema ในบอร์ดนี้ยังไม่เปลี่ยน
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `bfa766b3`: 10 connected / 19 partial / 15 missing ไม่ใช่ production/UAT
+  `55f9c407`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
   certification แม้ Dictation verified แล้ว f13 ยังไม่ครบทุก native mode
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
@@ -32,6 +32,10 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   `cloze-architecture-refinement.md` เป็นแบบเสนอ sealed native lifecycle
   ไม่ใช่หลักฐานว่า API นั้นอยู่ใน C แล้ว และแม้ Dictation/Cloze ผ่านทั้งคู่
   f13/f05 ก็ยังไม่ครบทุก mode/shell
+
+การ์ดถัดไปที่พร้อมดำเนินการคือ
+[canonical Quest integrity](2026-10-30-quest-integrity.md) บน source55f9c407;
+ร่าง D ของ domain/adapter/storage ยังไม่อยู่ใน APK ที่ตรวจแล้ว
 
 ## สามหน่วยถัดไปที่เสนอ
 

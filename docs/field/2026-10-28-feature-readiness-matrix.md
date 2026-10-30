@@ -1,9 +1,9 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `bfa766b3` (v18/35),
-updated2026-10-30. Latest full suite/APK: Flutter3350, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `55f9c407` (v18/35),
+updated2026-10-30. Latest full suite/APK: Flutter3633, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All661 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All679 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
@@ -11,7 +11,11 @@ pre/post Study UI are verified with strict ordinary isolation. Production author
 gateway/lifecycle and collection/upload integration remain prerequisites.
 Research remains default-off. Owned one-word Dictation now connects category,
 voice, immutable save/finish and its declared projection floor, with old evidence
-and remote SRS preserved. See [wave12 evidence](2026-10-30-remaining-systems-wave12.md)
+and remote SRS preserved. Typed/choice Cloze now connects owned category/content,
+immutable answer/finish and history, without new mastery or engagement eligibility.
+Real owner-update invalidation closes coalesced ABA continuations. See
+[wave13 evidence](2026-10-30-remaining-systems-wave13.md),
+[Dictation evidence](2026-10-30-remaining-systems-wave12.md)
 and the earlier [Assessment evidence](2026-10-30-remaining-systems-wave11.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
@@ -21,7 +25,7 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 10 connected runtime capabilities, 19 partial capabilities and 15
+There are 11 connected runtime capabilities, 18 partial capabilities and 15
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
@@ -42,11 +46,11 @@ capability still needs the applicable acceptance and release checks.
 | f06 | Flashcard Mode | Connected | Learn, Weakness and Source open `SrsFlashcardsScreen`; reveal/rating/save/finish persist learning. |
 | f07 | Meaning Quiz | Connected | `QuizScreen` persists exact questions/options, sticky assistance, pending answer and original finish. History resumes the same owner/session without duplicate answers or rewards; drift/legacy data has an explicit unavailable path. |
 | f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
-| f09 | Cloze Test | Partial | `FillInTheBlanksScreen` remains a legacy flow without canonical learning persistence. |
+| f09 | Cloze Test | Connected | Owned category and explicit typed/three-choice variant use the configured existing ContentProvider, immutable accepted gap/choices and canonical answer/finish/history. Guided/recognition facts gain no SRS/mastery or engagement. Invalid/unavailable content creates no session. Both actual UI flows and owner/lifecycle/retry isolation pass at55f9c407. A2/content efficacy and real service availability are not certified. |
 | f10 | Matching Mode | Missing | No current route. Follow the approved Research completion sequence before this unit. |
-| f11 | Typed Recall / Writing | Partial | Associative reading, Ghost and owned one-word Dictation save typed recall/spelling. Dictation freezes answer/finish retries and supports IME without duplicates. Shared typed lesson/draft/IME contract remains incomplete. |
+| f11 | Typed Recall / Writing | Partial | Associative reading, Ghost, owned Dictation and typed Cloze save canonical answers with immutable retries/IME guards. Cloze is explicitly assisted and does not claim independent mastery. Shared typed lesson/draft/IME contract remains incomplete. |
 | f12 | Handwriting Scratchpad | Missing | No scratchpad with undo, clear and text fallback. |
-| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech and owned Dictation have persisted paths. Dictation normal/slow evidence, legacy/SRS isolation, exact retries and actual Thai/English200% UI pass atbfa766b3. Cloze, Scramble, durable native restart/resume and shared results remain incomplete. |
+| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech, owned Dictation and typed/choice Cloze have persisted paths. Dictation/Cloze share one sealed native lifecycle with exact retries, owner/deletion pins, legacy/SRS isolation and actual UI checks through55f9c407. Scramble, durable native restart/resume and shared results remain incomplete. |
 
 ## Feedback
 
@@ -91,7 +95,7 @@ capability still needs the applicable acceptance and release checks.
 | f35 | Learning Preference & Goal Quiz | Missing | No optional onboarding for goals, available time and interests. |
 | f36 | Personal Learning Profile | Partial | Profile settings contain display name and metrics. Editable learning preferences/goals are absent. |
 | f37 | Recommendation Panel | Connected | Choose Mode and Weakness offer rule-based due/weakness/quiz recommendations and targeted practice. |
-| f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Dictation has reachable Thai/English200% keyboard flows and the actual Thai320px hub entry. Coverage remains incomplete; physical TalkBack is unverified. |
+| f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Dictation has reachable Thai/English200% keyboard flows and the actual Thai320px hub entry. Cloze adds masked meaning semantics and an English320px/200% keyboard flow. Coverage remains incomplete; physical TalkBack is unverified. |
 | f39 | Motion & Theme Controls | Connected | Commit `0eedc90b` wires saved theme/Reduced Motion, OS accessibility propagation and route/card/chat/sheet consumers. Focused 153 tests and Android light 100% settings fixture pass; native dark/200% and hardware gestures remain release checks. |
 
 ## Local operation and rollout

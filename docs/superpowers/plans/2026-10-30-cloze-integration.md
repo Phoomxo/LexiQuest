@@ -55,8 +55,12 @@ the original RED, then14 actual owner/shared-stream/history cases pass. The same
 production source passed1675 wider learning/sync/reward/Assessment/Research/UI
 checks and41 hub/history cases. The initial serial cancellation attempt exposed
 a widget teardown wait; parallel cancellation fixes it without skipping cases.
-Final frozen full-suite/build attestation remains pending; the retained normal
-APK is still the wave12 Dictation build. No whole-catalog readiness claim.
+Final source55f9c407 is now attested: full Flutter3633, analysis0, CLI23,
+offline backend390/one existing opt-in skip and a normal debug APK pass. All679
+Dart plus54 CLI and92 backend input hashes match through verification/build.
+Independent review accepted the final watch/source/test proof. See
+[wave13](../../field/2026-10-30-remaining-systems-wave13.md); no whole-catalog
+readiness claim. Next is the existing canonical Quest integrity card.
 Evidence: cloze-ui-api-red.log; cloze-hub-routes-green.log;
 cloze-runtime-api-red.log; cloze-runtime-lifecycle-green.log;
 cloze-composition-ui-green.log; cloze-ui-runtime-final-analysis.log.
