@@ -50,7 +50,9 @@ final class QuestUseCases {
     await repository.upsertDefinition(def);
 
     final existing = await repository.getActiveInstances(owner.id);
-    if (existing.any((i) => i.questId == def.questId)) return null;
+    if (existing.any((i) => i.questId == def.questId)) {
+      return null;
+    }
 
     final now = _now();
     final instance = QuestInstance(
@@ -87,32 +89,13 @@ final class QuestUseCases {
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
   ) async {
-    final active = await repository.getActiveInstances(event.ownerIdentity);
-    if (active.isEmpty) return const [];
-
-    final completed = <QuestCompletedEvent>[];
-    final now = _now();
-
-    for (final instance in active) {
-      final def = catalog.firstWhere(
-        (d) => d.questId == instance.questId,
-        orElse: () => throw StateError(
-          'QuestUseCases.processEvent: no catalog entry for '
-          'questId=${instance.questId}',
-        ),
-      );
-
-      final updated = instance.advanceIfMatches(event, def.objectives);
-      if (identical(updated, instance)) continue; // no change
-
-      await repository.saveProgress(instance.instanceId, updated.progress);
-
-      if (updated.isAllObjectivesComplete) {
-        await repository.markCompleted(instance.instanceId, now);
-        final completedEvent = updated.complete(now: now);
-        completed.add(completedEvent);
-        _forwardToShadow(completedEvent, event);
-      }
+    final completed = await repository.applyCanonicalAnswer(
+      ownerId: event.ownerIdentity,
+      event: event,
+      catalog: catalog,
+    );
+    for (final completion in completed) {
+      _forwardToShadow(completion, event);
     }
     return completed;
   }
@@ -130,15 +113,24 @@ final class QuestUseCases {
   Future<void> expireStale() async {
     final owner = await owners.getOrCreateActiveOwner();
     final active = await repository.getActiveInstances(owner.id);
-    if (active.isEmpty) return;
+    if (active.isEmpty) {
+      return;
+    }
 
     final now = _now();
     for (final instance in active) {
       final def = await repository.getDefinition(instance.questId);
-      if (def == null) continue;
+      if (def == null) {
+        continue;
+      }
+      if (def.catalogVersion != instance.catalogVersion) {
+        throw StateError('Quest expiry has no matching catalog revision');
+      }
 
       final expiresIn = def.expiresIn;
-      if (expiresIn == null) continue;
+      if (expiresIn == null) {
+        continue;
+      }
 
       final deadline = instance.assignedAtUtc.add(expiresIn);
       if (now.isAfter(deadline)) {
@@ -153,7 +145,9 @@ final class QuestUseCases {
 
   DateTime _now() {
     final value = nowUtc();
-    if (!value.isUtc) throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
+    if (!value.isUtc) {
+      throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
+    }
     return value;
   }
 
@@ -162,7 +156,9 @@ final class QuestUseCases {
     EventEnvelopeV2 sourceEvent,
   ) {
     final orchestrator = shadowOrchestrator;
-    if (orchestrator == null) return;
+    if (orchestrator == null) {
+      return;
+    }
     // Build a synthetic V2 envelope for the QuestCompleted event so that
     // the reward shadow pipeline can evaluate eligibility.
     try {

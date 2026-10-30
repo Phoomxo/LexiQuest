@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/assessment/domain/assessment_instrument_catalog.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_repository.dart';
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -443,13 +444,21 @@ final class _Owners implements LocalOwnerRepository {
 
 final class _Fixture {
   _Fixture(this.database) {
-    learning = DriftLearningRepository(database);
+    final ownerWrites = DriftOwnerWriteCoordinator(
+      database,
+      nowUtc: () => questNow,
+    );
+    learning = DriftLearningRepository(database, ownerWrites: ownerWrites);
     rewards = DriftRewardRepository(database);
     quests = QuestUseCases(
-      repository: DriftQuestRepository(database),
+      repository: DriftQuestRepository(
+        database,
+        ownerWrites: ownerWrites,
+        nowUtc: () => questNow,
+      ),
       owners: owners,
       generateId: () => 'quest-${++sequence}',
-      nowUtc: () => _now,
+      nowUtc: () => questNow,
       timezoneId: 'Asia/Bangkok',
     );
     final streak = StreakUseCases(
@@ -488,6 +497,7 @@ final class _Fixture {
   late final QuestUseCases quests;
   late final LearningUseCases useCases;
   int sequence = 0;
+  DateTime questNow = _now;
   int questCalls = 0;
   int streakCalls = 0;
   final quest = QuestDefinition(
@@ -518,7 +528,9 @@ final class _Fixture {
   }
 
   Future<void> seedOrdinary() async {
+    questNow = _now.subtract(const Duration(minutes: 1));
     await quests.startQuest(quest);
+    questNow = _now;
     await learning.startSession(
       LearningSessionDraft(
         id: 'ordinary-session',

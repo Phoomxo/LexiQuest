@@ -50,7 +50,8 @@ enum QuestInstanceState {
 /// Filter that decides whether a given [EventEnvelopeV2] counts toward an
 /// objective.
 final class ObjectiveCriteria {
-  const ObjectiveCriteria({required this.eventType, this.filters});
+  ObjectiveCriteria({required this.eventType, Map<String, dynamic>? filters})
+    : filters = filters == null ? null : Map.unmodifiable(filters);
 
   /// The V2 event type that this criterion listens for.
   final String eventType;
@@ -103,17 +104,19 @@ final class RewardSpec {
 /// [QuestDefinition]s are shipped with the app (catalog) or downloaded as
 /// content updates.  They are never mutated at runtime.
 final class QuestDefinition {
-  const QuestDefinition({
+  QuestDefinition({
     required this.questId,
     required this.catalogVersion,
     required this.title,
     required this.description,
     required this.type,
-    required this.objectives,
+    required List<QuestObjective> objectives,
     required this.reward,
     this.expiresIn,
-    this.tags = const [],
-  }) : assert(objectives.length > 0, 'quest must have at least one objective');
+    List<String> tags = const [],
+  }) : assert(objectives.isNotEmpty, 'quest must have at least one objective'),
+       objectives = List.unmodifiable(objectives),
+       tags = List.unmodifiable(tags);
 
   final String questId;
   final int catalogVersion;
@@ -134,12 +137,12 @@ final class QuestDefinition {
 ///
 /// Immutable; a new [ObjectiveProgress] is created whenever progress advances.
 final class ObjectiveProgress {
-  const ObjectiveProgress({
+  ObjectiveProgress({
     required this.objectiveId,
     required this.currentCount,
     required this.targetCount,
-    this.sourceEventIds = const [],
-  });
+    List<String> sourceEventIds = const [],
+  }) : sourceEventIds = List.unmodifiable(sourceEventIds);
 
   final String objectiveId;
   final int currentCount;
@@ -151,25 +154,28 @@ final class ObjectiveProgress {
 
   bool get isComplete => currentCount >= targetCount;
 
-  /// Returns a copy with [currentCount] incremented and [eventId] appended.
-  ObjectiveProgress advance(String eventId) => ObjectiveProgress(
-    objectiveId: objectiveId,
-    currentCount: currentCount + 1,
-    targetCount: targetCount,
-    sourceEventIds: [...sourceEventIds, eventId],
-  );
+  /// Counts a canonical source once and never advances a completed objective.
+  ObjectiveProgress advance(String eventId) {
+    if (isComplete || sourceEventIds.contains(eventId)) return this;
+    return ObjectiveProgress(
+      objectiveId: objectiveId,
+      currentCount: currentCount + 1,
+      targetCount: targetCount,
+      sourceEventIds: [...sourceEventIds, eventId],
+    );
+  }
 }
 
 /// The completion event emitted when a [QuestInstance] reaches all objectives.
 final class QuestCompletedEvent {
-  const QuestCompletedEvent({
+  QuestCompletedEvent({
     required this.eventId,
     required this.questInstanceId,
     required this.ownerId,
     required this.completedAtUtc,
-    required this.objectiveEventIds,
+    required List<String> objectiveEventIds,
     required this.idempotencyKey,
-  });
+  }) : objectiveEventIds = List.unmodifiable(objectiveEventIds);
 
   final String eventId;
   final String questInstanceId;
@@ -189,17 +195,17 @@ final class QuestCompletedEvent {
 /// Immutable.  Call [advanceIfMatches] to get a new instance with updated
 /// progress, and [complete] to obtain the completion event.
 final class QuestInstance {
-  const QuestInstance({
+  QuestInstance({
     required this.instanceId,
     required this.questId,
     required this.ownerId,
     required this.catalogVersion,
     required this.assignedAtUtc,
     required this.state,
-    required this.progress,
+    required List<ObjectiveProgress> progress,
     this.completedAtUtc,
     this.expiredAtUtc,
-  });
+  }) : progress = List.unmodifiable(progress);
 
   final String instanceId;
   final String questId;
@@ -216,11 +222,12 @@ final class QuestInstance {
 
   // ── Derived ──────────────────────────────────────────────────────────────
 
-  bool get isAllObjectivesComplete => progress.every((p) => p.isComplete);
+  bool get isAllObjectivesComplete =>
+      progress.isNotEmpty && progress.every((p) => p.isComplete);
 
   /// Collects all source event IDs across all objectives.
   List<String> get allSourceEventIds =>
-      progress.expand((p) => p.sourceEventIds).toList(growable: false);
+      List.unmodifiable(progress.expand((p) => p.sourceEventIds));
 
   // ── Projection helpers ────────────────────────────────────────────────────
 
@@ -232,6 +239,12 @@ final class QuestInstance {
     EventEnvelopeV2 event,
     List<QuestObjective> objectives,
   ) {
+    if (state != QuestInstanceState.active ||
+        event.ownerIdentity != ownerId ||
+        event.actorIdentity != ownerId ||
+        event.occurredAtUtc.isBefore(assignedAtUtc)) {
+      return this;
+    }
     var changed = false;
     final updated = <ObjectiveProgress>[];
     for (final p in progress) {
@@ -244,8 +257,9 @@ final class QuestInstance {
         orElse: () => null,
       );
       if (obj != null && obj.criteria.matches(event)) {
-        updated.add(p.advance(event.eventId));
-        changed = true;
+        final next = p.advance(event.eventId);
+        updated.add(next);
+        if (!identical(next, p)) changed = true;
       } else {
         updated.add(p);
       }
@@ -269,7 +283,15 @@ final class QuestInstance {
   /// The [idempotencyKey] is deterministic — calling this twice returns equal
   /// keys, so reward grant is idempotent.
   QuestCompletedEvent complete({DateTime? now}) {
-    final completedAt = now ?? DateTime.now().toUtc();
+    if (!isAllObjectivesComplete ||
+        state == QuestInstanceState.expired ||
+        state == QuestInstanceState.abandoned) {
+      throw StateError('Quest has no completed active objectives');
+    }
+    final completedAt = state == QuestInstanceState.completed
+        ? completedAtUtc ??
+              (throw StateError('Quest completion has no original time'))
+        : now ?? DateTime.now().toUtc();
     return QuestCompletedEvent(
       eventId: 'qcomplete-$instanceId',
       questInstanceId: instanceId,

@@ -1,6 +1,39 @@
 # Implement canonical Quest answer integrity
 
-2026-10-30. Worktree `C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest`, branch `codex/remaining-system-readiness`. Baseline `55f9c407`; Quest, event adapter, and Quest tables are unchanged from their pre-Cloze state. This executes the Quest card in `docs/superpowers/plans/2026-10-30-remaining-feature-sequence.md` after the verified Cloze checkpoint. Cloze is verified at that baseline: Flutter3633, analysis0, CLI23, offline backend390/one opt-in skip and a normal debug APK. Unit A domain/port and Unit C adapter drafts are frozen on D; Unit B storage/use-case draft is in progress. No Quest draft is promoted yet. This card proceeds under the existing authorization.
+2026-10-30. Worktree `C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest`, branch `codex/remaining-system-readiness`. Verified Cloze baseline `55f9c407`, attested/pushed at `f9f83f2e`: Flutter3633, analysis0, CLI23, offline backend390/one opt-in skip and a normal debug APK. This executes the next card under the existing authorization.
+
+## Execution board
+
+The three units are now integrated locally. Domain replay/owner/terminal rules
+reproduced19 real REDs plus2 controls, then33 domain checks passed. Four further
+catalog-aliasing REDs proved caller filters/objectives/tags could mutate the
+definition across startQuest's owner await. Both catalog constructors now copy
+their collections; all actual const callers migrate without changing assertions.
+
+The adapter first reproduced its missing API, then9 actual identity failures
+with3 payload controls. Required attemptId and both actual command.id hook
+callers now agree. The combined initial adapter/domain/learning/Assessment95
+checks pass. The Assessment fixture assigns its quest before its existing
+ordinary answers, preserving count1 and every isolation assertion.
+
+The atomic repository's API RED preceded its real implementation. Canonical
+attempt/session metadata and prior chains, matching catalog/window pins,
+owner/deletion fencing, same-database construction, outer-transaction rejection
+and terminal CAS are integrated; split public progress/completion ports are gone.
+A real microsecond-clock RED additionally showed returned completion time
+differed from persisted milliseconds. Only completedAt is quantized and shared
+by event/state/SQL; validation clocks retain their full precision.
+
+Current integration138 checks and wider learning/projection1121 checks pass;
+analysis reports0 issues on the current integrated source.
+Independent reviews accept adapter/core/storage after those corrections. Final
+whole-app regression/build attestation remains pending. The retained APK is
+still the verified Cloze55f9c407 build. No Quest activation or grant is enabled.
+Evidence is under the existing remaining-systems D root: quest-domain-red.log,
+quest-catalog-aliasing-red.log, quest-canonical-adapter-behavior-red.log,
+quest-canonical-adapter-domain-final-green.log, quest-canonical-atomic-api-red.log,
+quest-completion-precision-red.log, quest-integration-first-run.log and
+quest-learning-projection-regression.log.
 
 ## Outcome and fixed scope
 

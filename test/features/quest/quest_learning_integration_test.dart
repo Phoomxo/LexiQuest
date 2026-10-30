@@ -4,6 +4,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
@@ -42,7 +43,7 @@ QuestDefinition _quizDef({int targetCount = 1}) => QuestDefinition(
       objectiveId: 'obj-correct',
       description: 'Correct answers',
       targetCount: targetCount,
-      criteria: const ObjectiveCriteria(
+      criteria: ObjectiveCriteria(
         eventType: 'QuizCompleted',
         filters: {'correct': true},
       ),
@@ -59,6 +60,7 @@ void main() {
   late QuestUseCases questUseCases;
   late DriftQuestRepository questRepo;
   late LocalOwner owner;
+  late List<QuestDefinition> catalog;
   int idCount = 0;
 
   setUp(() async {
@@ -104,7 +106,14 @@ void main() {
           ),
         );
 
-    questRepo = DriftQuestRepository(database);
+    questRepo = DriftQuestRepository(
+      database,
+      ownerWrites: DriftOwnerWriteCoordinator(
+        database,
+        nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+      ),
+      nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+    );
     questUseCases = QuestUseCases(
       repository: questRepo,
       owners: _FakeOwners(owner),
@@ -116,7 +125,7 @@ void main() {
     final adapter = EventV1ToV2Adapter(appVersion: '1.0', buildId: 'sha-test');
 
     // Wire QuestEventSink: forward V2 events to questUseCases.processEvent.
-    final catalog = [_quizDef()];
+    catalog = [_quizDef()];
     learningUseCases = LearningUseCases(
       owners: _FakeOwners(owner),
       repository: DriftLearningRepository(database),
@@ -134,10 +143,15 @@ void main() {
 
   tearDown(() async => database.close());
 
+  Future<void> startQuest(QuestDefinition definition) async {
+    catalog = [definition];
+    await questUseCases.startQuest(definition);
+  }
+
   group('QuestEventSink — D7.1 Quest-Learning integration', () {
     test('correct answer advances matching quest objective', () async {
       // targetCount: 2 so quest advances but does not complete after 1 answer.
-      await questUseCases.startQuest(_quizDef(targetCount: 2));
+      await startQuest(_quizDef(targetCount: 2));
       final session = await learningUseCases.startQuiz(limit: 10);
       expect(session.questions, isNotEmpty);
 
@@ -159,7 +173,7 @@ void main() {
     });
 
     test('incorrect answer does NOT advance quest', () async {
-      await questUseCases.startQuest(_quizDef());
+      await startQuest(_quizDef());
       final session = await learningUseCases.startQuiz(limit: 10);
 
       await _answerQuiz(
@@ -179,7 +193,7 @@ void main() {
     });
 
     test('quest completes when target count reached', () async {
-      await questUseCases.startQuest(_quizDef(targetCount: 1));
+      await startQuest(_quizDef(targetCount: 1));
       final session = await learningUseCases.startQuiz(limit: 10);
 
       await _answerQuiz(

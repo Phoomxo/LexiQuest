@@ -12,18 +12,6 @@ library;
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/learning/learning_event.dart';
 
-// ─── ID generation helper ─────────────────────────────────────────────────────
-
-/// Simple pseudo-UUID generator that doesn't require an external package.
-/// Uses timestamp + counter to ensure uniqueness within a process lifetime.
-int _counter = 0;
-
-String _generateEventId(DateTime now) {
-  final ts = now.millisecondsSinceEpoch;
-  final seq = ++_counter;
-  return 'evt_v2_${ts}_$seq';
-}
-
 /// Adapts a legacy [LearningEvent] (schema version 1) to [EventEnvelopeV2].
 final class EventV1ToV2Adapter {
   const EventV1ToV2Adapter({
@@ -119,9 +107,10 @@ final class EventV1ToV2Adapter {
   /// raw parameters of [LearningUseCases.recordAnswer], bypassing the
   /// intermediate [LearningEvent] DTO.
   ///
-  /// Used exclusively by the shadow reward orchestrator hook so that the
-  /// shadow path does not need to reconstruct a [LearningEvent] externally.
+  /// Optional shadow and Quest hooks share the persisted [attemptId] identity.
+  /// No process counter or timestamp can distinguish retries of one answer.
   EventEnvelopeV2 adaptFromCommand({
+    required String attemptId,
     required String ownerId,
     required String sessionId,
     required String wordId,
@@ -134,12 +123,13 @@ final class EventV1ToV2Adapter {
     required String buildId,
     String? providerProvenance,
   }) {
+    if (attemptId.trim().isEmpty) {
+      throw ArgumentError.value(attemptId, 'attemptId', 'must not be blank');
+    }
     final now = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
-    final eventId = _generateEventId(now);
-    final idemKey = 'v2_${ownerId}_${now.millisecondsSinceEpoch}_$sessionId';
 
     return EventEnvelopeV2(
-      eventId: eventId,
+      eventId: attemptId,
       eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
       eventVersion: 1,
       occurredAtUtc: now,
@@ -148,7 +138,7 @@ final class EventV1ToV2Adapter {
       ownerIdentity: ownerId,
       aggregateType: 'LearningSession',
       aggregateId: sessionId,
-      idempotencyKey: idemKey,
+      idempotencyKey: 'answer-attempt:$attemptId',
       consentContext: consentContext,
       appVersion: appVersion,
       buildId: buildId,

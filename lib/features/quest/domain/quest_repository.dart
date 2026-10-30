@@ -1,17 +1,17 @@
 import '../domain/quest_models.dart';
+import '../../events/domain/event_envelope_v2.dart';
 
 /// Repository port for the V2 Quest domain.
 ///
-/// Implementations must be idempotent: inserting the same [QuestInstance]
-/// twice (same [QuestInstance.instanceId]) must be a no-op rather than an
-/// error, supporting safe replay and cold-start recovery.
+/// Exact instance-identity replays preserve existing progress; conflicting
+/// identities are rejected.
 abstract interface class QuestRepository {
   // ── Definitions ────────────────────────────────────────────────────────────
 
   /// Persist a [QuestDefinition] from the catalog.
   ///
-  /// Uses insertOrReplace semantics — a newer [catalogVersion] overwrites the
-  /// existing row; the same version is a no-op via insertOrIgnore.
+  /// Exact same-version content is a no-op. Changed same-version content and
+  /// revision downgrades are rejected; a newer version replaces the definition.
   Future<void> upsertDefinition(QuestDefinition def);
 
   /// Return the stored definition for [questId], or null if absent.
@@ -21,7 +21,7 @@ abstract interface class QuestRepository {
 
   /// Insert a new [QuestInstance] with state [QuestInstanceState.active].
   ///
-  /// Idempotent: if [instance.instanceId] already exists, the call is ignored.
+  /// An exact identity replay preserves existing state and objective rows.
   Future<void> startInstance(QuestInstance instance);
 
   /// Return all instances with state 'active' for [ownerId].
@@ -32,19 +32,19 @@ abstract interface class QuestRepository {
 
   // ── Progress ───────────────────────────────────────────────────────────────
 
-  /// Persist updated [progress] list for the given [instanceId].
-  ///
-  /// Overwrites existing progress rows for the same
-  /// `(instanceId, objectiveId)` pair (upsert semantics).
-  Future<void> saveProgress(
-    String instanceId,
-    List<ObjectiveProgress> progress,
-  );
+  /// Applies one persisted answer under a top-level current-owner transaction.
+  /// [EventEnvelopeV2.eventId] is its canonical attempt ID, not proof itself. Load
+  /// the actual owned attempt/session, validate eligibility and every prior
+  /// objective source, and pin catalog/window facts before advancing. Persist
+  /// progress and first completion together; replay emits no new completion.
+  /// Returned completions follow durable commit. No grants or event-row writes.
+  Future<List<QuestCompletedEvent>> applyCanonicalAnswer({
+    required String ownerId,
+    required EventEnvelopeV2 event,
+    required List<QuestDefinition> catalog,
+  });
 
   // ── State transitions ─────────────────────────────────────────────────────
-
-  /// Mark [instanceId] as completed at [completedAtUtc].
-  Future<void> markCompleted(String instanceId, DateTime completedAtUtc);
 
   /// Mark [instanceId] as expired at [expiredAtUtc].
   Future<void> markExpired(String instanceId, DateTime expiredAtUtc);

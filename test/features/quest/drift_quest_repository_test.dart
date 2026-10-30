@@ -1,212 +1,170 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart' as db;
-import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-QuestDefinition _dailyVocabDef({
-  int catalogVersion = 1,
-  String questId = 'q-daily-vocab',
-}) => QuestDefinition(
-  questId: questId,
-  catalogVersion: catalogVersion,
-  title: 'Daily Vocabulary',
-  description: 'Review 10 words today',
-  type: QuestType.daily,
-  objectives: const [
-    QuestObjective(
-      objectiveId: 'obj-review',
-      description: 'Review words',
-      targetCount: 3,
-      criteria: ObjectiveCriteria(
-        eventType: 'QuizCompleted',
-        filters: {'correct': true},
-      ),
-    ),
-  ],
-  reward: const RewardSpec(xpAmount: 50),
-);
-
-QuestInstance _newInstance({
-  String instanceId = 'inst-001',
-  String ownerId = 'owner-test',
-  String? questId,
-  QuestInstanceState state = QuestInstanceState.active,
-}) {
-  final def = _dailyVocabDef();
-  final qid = questId ?? def.questId;
-  return QuestInstance(
-    instanceId: instanceId,
-    questId: qid,
-    ownerId: ownerId,
-    catalogVersion: def.catalogVersion,
-    assignedAtUtc: DateTime.utc(2026, 8, 4, 8, 0),
-    state: state,
-    progress: [
-      const ObjectiveProgress(
-        objectiveId: 'obj-review',
-        currentCount: 0,
-        targetCount: 3,
-      ),
-    ],
-  );
-}
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
+import 'support/quest_repository_harness.dart';
 
 void main() {
-  late db.AppDatabase database;
-  late DriftQuestRepository repo;
+  late QuestHarness h;
+  setUp(() async => h = await QuestHarness.open());
+  tearDown(() => h.close());
 
-  setUp(() async {
-    database = db.AppDatabase(NativeDatabase.memory());
-    repo = DriftQuestRepository(database);
-    // Seed required owner FK.
-    await database.customInsert(
-      "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
-      "VALUES ('owner-test', 'localGuest', 1722758400000)",
-    );
-  });
-
-  tearDown(() async => database.close());
+  QuestInstance instance({String id = 'inst-001', String? questId}) =>
+      QuestInstance(
+        instanceId: id,
+        questId: questId ?? questDefinition().questId,
+        ownerId: configuredOwnerId,
+        catalogVersion: 1,
+        assignedAtUtc: h.now,
+        state: QuestInstanceState.active,
+        progress: [
+          ObjectiveProgress(
+            objectiveId: 'synthetic-objective',
+            currentCount: 0,
+            targetCount: 3,
+          ),
+        ],
+      );
 
   group('DriftQuestRepository', () {
-    // ── Definition CRUD ──────────────────────────────────────────────────────
-
     test('upsertDefinition persists catalog row', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      final def = await repo.getDefinition('q-daily-vocab');
-      expect(def, isNotNull);
-      expect(def!.title, 'Daily Vocabulary');
-      expect(def.type, QuestType.daily);
-      expect(def.objectives, hasLength(1));
-      expect(def.objectives.first.targetCount, 3);
-      expect(def.reward.xpAmount, 50);
+      await h.repository.upsertDefinition(questDefinition());
+      final definition = await h.repository.getDefinition(
+        questDefinition().questId,
+      );
+      expect(definition, isNotNull);
+      expect(definition!.title, 'Synthetic Quest');
+      expect(definition.type, QuestType.daily);
+      expect(definition.objectives, hasLength(1));
+      expect(definition.objectives.single.targetCount, 3);
+      expect(definition.reward.xpAmount, 50);
     });
 
     test('upsertDefinition with higher catalogVersion overwrites', () async {
-      await repo.upsertDefinition(_dailyVocabDef(catalogVersion: 1));
-      await repo.upsertDefinition(_dailyVocabDef(catalogVersion: 2));
-      final def = await repo.getDefinition('q-daily-vocab');
-      expect(def!.catalogVersion, 2);
+      await h.repository.upsertDefinition(questDefinition());
+      await h.repository.upsertDefinition(questDefinition(version: 2));
+      expect(
+        (await h.repository.getDefinition(
+          questDefinition().questId,
+        ))!.catalogVersion,
+        2,
+      );
     });
 
     test('getDefinition returns null for unknown questId', () async {
-      final def = await repo.getDefinition('does-not-exist');
-      expect(def, isNull);
+      expect(await h.repository.getDefinition('does-not-exist'), isNull);
     });
-
-    // ── Instance CRUD ────────────────────────────────────────────────────────
 
     test('startInstance persists instance with initial progress', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-
-      final active = await repo.getActiveInstances('owner-test');
+      await h.repository.upsertDefinition(questDefinition());
+      await h.repository.startInstance(instance());
+      final active = await h.repository.getActiveInstances(configuredOwnerId);
       expect(active, hasLength(1));
-      expect(active.first.instanceId, 'inst-001');
-      expect(active.first.state, QuestInstanceState.active);
-      expect(active.first.progress, hasLength(1));
-      expect(active.first.progress.first.currentCount, 0);
-      expect(active.first.progress.first.targetCount, 3);
+      expect(active.single.instanceId, 'inst-001');
+      expect(active.single.state, QuestInstanceState.active);
+      expect(active.single.progress, hasLength(1));
+      expect(active.single.progress.single.currentCount, 0);
+      expect(active.single.progress.single.targetCount, 3);
     });
 
-    test('startInstance is idempotent — duplicate call is ignored', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-      await repo.startInstance(_newInstance()); // second call — no-op
-      final active = await repo.getActiveInstances('owner-test');
-      expect(active, hasLength(1));
+    test('startInstance is idempotent - duplicate call is ignored', () async {
+      await h.repository.upsertDefinition(questDefinition());
+      await h.repository.startInstance(instance());
+      final before = await h.storage.snapshot();
+      await h.repository.startInstance(instance());
+      expect(
+        await h.repository.getActiveInstances(configuredOwnerId),
+        hasLength(1),
+      );
+      expect(await h.storage.snapshot(), before);
     });
 
     test('getActiveInstances excludes completed instances', () async {
-      // Two separate quest definitions so unique(owner_id, quest_id) is satisfied.
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.upsertDefinition(_dailyVocabDef(questId: 'q-daily-vocab-2'));
-
-      await repo.startInstance(_newInstance(instanceId: 'inst-active'));
-      await repo.startInstance(
-        _newInstance(instanceId: 'inst-done', questId: 'q-daily-vocab-2'),
+      final activeDefinition = questDefinition(id: 'quest-active');
+      final completedDefinition = questDefinition(
+        id: 'quest-completed',
+        target: 1,
       );
-      await repo.markCompleted('inst-done', DateTime.utc(2026, 8, 4, 12));
-
-      final active = await repo.getActiveInstances('owner-test');
+      await h.useCases.startQuest(activeDefinition);
+      await h.useCases.startQuest(completedDefinition);
+      final answer = await h.answer();
+      await h.repository.applyCanonicalAnswer(
+        ownerId: configuredOwnerId,
+        event: answer,
+        catalog: [activeDefinition, completedDefinition],
+      );
+      final active = await h.repository.getActiveInstances(configuredOwnerId);
       expect(active, hasLength(1));
-      expect(active.first.instanceId, 'inst-active');
+      expect(active.single.questId, activeDefinition.questId);
     });
 
     test('getAllInstances returns all states', () async {
-      // Two separate quest definitions so unique(owner_id, quest_id) is satisfied.
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.upsertDefinition(_dailyVocabDef(questId: 'q-daily-vocab-b'));
-
-      await repo.startInstance(_newInstance(instanceId: 'inst-a'));
-      await repo.startInstance(
-        _newInstance(instanceId: 'inst-b', questId: 'q-daily-vocab-b'),
+      await h.repository.upsertDefinition(questDefinition());
+      await h.repository.upsertDefinition(questDefinition(id: 'quest-b'));
+      await h.repository.startInstance(instance(id: 'inst-a'));
+      await h.repository.startInstance(
+        instance(id: 'inst-b', questId: 'quest-b'),
       );
-      await repo.markExpired('inst-b', DateTime.utc(2026, 8, 5));
-
-      final all = await repo.getAllInstances('owner-test');
-      expect(all, hasLength(2));
+      await h.repository.markExpired(
+        'inst-b',
+        h.now.add(const Duration(days: 1)),
+      );
+      expect(
+        await h.repository.getAllInstances(configuredOwnerId),
+        hasLength(2),
+      );
     });
 
-    // ── Progress updates ─────────────────────────────────────────────────────
+    test(
+      'canonical answers persist objective counters and complete source chain',
+      () async {
+        final definition = questDefinition();
+        await h.useCases.startQuest(definition);
+        final a = await h.answer(id: 'evt-a');
+        final b = await h.answer(id: 'evt-b');
+        await h.apply(a, definition);
+        await h.apply(b, definition);
+        final progress = (await h.repository.getActiveInstances(
+          configuredOwnerId,
+        )).single.progress.single;
+        expect(progress.currentCount, 2);
+        expect(progress.sourceEventIds, ['evt-a', 'evt-b']);
+      },
+    );
 
-    test('saveProgress updates objective counters', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-
-      final updated = [
-        const ObjectiveProgress(
-          objectiveId: 'obj-review',
-          currentCount: 2,
-          targetCount: 3,
-          sourceEventIds: ['evt-a', 'evt-b'],
-        ),
-      ];
-      await repo.saveProgress('inst-001', updated);
-
-      final instances = await repo.getActiveInstances('owner-test');
-      final progress = instances.first.progress.first;
-      expect(progress.currentCount, 2);
-      expect(progress.sourceEventIds, ['evt-a', 'evt-b']);
-    });
-
-    // ── State transitions ────────────────────────────────────────────────────
-
-    test('markCompleted sets state and completedAtUtc', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-
-      final completedAt = DateTime.utc(2026, 8, 4, 14, 30);
-      await repo.markCompleted('inst-001', completedAt);
-
-      final all = await repo.getAllInstances('owner-test');
-      expect(all.first.state, QuestInstanceState.completed);
-      expect(all.first.completedAtUtc, completedAt);
-    });
+    test(
+      'canonical completion persists state and completedAtUtc atomically',
+      () async {
+        final definition = questDefinition(target: 1);
+        await h.useCases.startQuest(definition);
+        await h.apply(await h.answer(), definition);
+        final completed = (await h.repository.getAllInstances(
+          configuredOwnerId,
+        )).single;
+        expect(completed.state, QuestInstanceState.completed);
+        expect(completed.completedAtUtc, h.now);
+        expect(completed.progress.single.currentCount, 1);
+        expect(completed.progress.single.sourceEventIds, [
+          'synthetic-answer-1',
+        ]);
+      },
+    );
 
     test('markExpired sets state and expiredAtUtc', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-
-      final expiredAt = DateTime.utc(2026, 8, 5, 0, 0);
-      await repo.markExpired('inst-001', expiredAt);
-
-      final all = await repo.getAllInstances('owner-test');
-      expect(all.first.state, QuestInstanceState.expired);
-      expect(all.first.expiredAtUtc, expiredAt);
+      final started = (await h.useCases.startQuest(questDefinition()))!;
+      final expired = h.now.add(const Duration(days: 1));
+      await h.repository.markExpired(started.instanceId, expired);
+      final all = await h.repository.getAllInstances(configuredOwnerId);
+      expect(all.single.state, QuestInstanceState.expired);
+      expect(all.single.expiredAtUtc, expired);
     });
 
     test('markAbandoned sets state to abandoned', () async {
-      await repo.upsertDefinition(_dailyVocabDef());
-      await repo.startInstance(_newInstance());
-      await repo.markAbandoned('inst-001');
-
-      final all = await repo.getAllInstances('owner-test');
-      expect(all.first.state, QuestInstanceState.abandoned);
+      final started = (await h.useCases.startQuest(questDefinition()))!;
+      await h.repository.markAbandoned(started.instanceId);
+      expect(
+        (await h.repository.getAllInstances(configuredOwnerId)).single.state,
+        QuestInstanceState.abandoned,
+      );
     });
   });
 }

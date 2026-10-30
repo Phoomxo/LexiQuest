@@ -568,6 +568,7 @@ final class LearningUseCases {
         _allowsProjection(command, LearningProjection.coins)) {
       try {
         final v2Event = adapter.adaptFromCommand(
+          attemptId: command.id,
           ownerId: command.ownerId,
           sessionId: command.sessionId,
           wordId: command.wordId,
@@ -587,13 +588,14 @@ final class LearningUseCases {
     }
 
     // Quest pipeline hook — forward answer event to quest use cases.
-    // Uses the same V2 event produced for shadow mode when available;
-    // builds a fresh event otherwise.  Errors are swallowed.
+    // Both optional sinks use the canonical persisted answer identity.
+    // Errors are swallowed.
     final questSink = questEventSink;
     if (questSink != null &&
         _allowsProjection(command, LearningProjection.quest)) {
       try {
         final questEvent = adapter?.adaptFromCommand(
+          attemptId: command.id,
           ownerId: command.ownerId,
           sessionId: command.sessionId,
           wordId: command.wordId,

@@ -24,7 +24,7 @@ abstract final class QuestCatalogProvider {
     title: 'Daily Vocabulary Practice',
     description: 'Answer 5 vocabulary questions correctly today.',
     type: QuestType.daily,
-    objectives: const [
+    objectives: [
       QuestObjective(
         objectiveId: 'obj-daily-correct',
         description: 'Correct answers',
@@ -48,7 +48,7 @@ abstract final class QuestCatalogProvider {
     title: 'Weekly Vocabulary Champion',
     description: 'Answer 20 vocabulary questions correctly this week.',
     type: QuestType.weekly,
-    objectives: const [
+    objectives: [
       QuestObjective(
         objectiveId: 'obj-weekly-correct',
         description: 'Correct answers this week',

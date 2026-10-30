@@ -37,7 +37,7 @@ QuestDefinition _makeQuestDef({int targetCount = 3}) => QuestDefinition(
       objectiveId: 'obj-1',
       description: 'Complete correct quizzes',
       targetCount: targetCount,
-      criteria: const ObjectiveCriteria(
+      criteria: ObjectiveCriteria(
         eventType: 'QuizCompleted',
         filters: {'correct': true},
       ),
@@ -68,7 +68,7 @@ QuestInstance _makeInstance(QuestDefinition def) => QuestInstance(
 
 void main() {
   group('ObjectiveCriteria — matching', () {
-    const criteria = ObjectiveCriteria(
+    final criteria = ObjectiveCriteria(
       eventType: 'QuizCompleted',
       filters: {'correct': true},
     );
@@ -97,7 +97,7 @@ void main() {
     });
 
     test('criteria with no filters matches any event of the right type', () {
-      const noFilter = ObjectiveCriteria(eventType: 'SrsReviewCompleted');
+      final noFilter = ObjectiveCriteria(eventType: 'SrsReviewCompleted');
       final event = _makeEvent(
         eventId: 'e4',
         eventType: 'SrsReviewCompleted',
@@ -239,7 +239,7 @@ void main() {
           title: type.name,
           description: '',
           type: type,
-          objectives: const [
+          objectives: [
             QuestObjective(
               objectiveId: 'o1',
               description: 'd',
