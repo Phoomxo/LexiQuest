@@ -4,7 +4,7 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 
 | Item | Location | Disposition |
 | --- | --- | --- |
-| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, history, LM serving, research export, motion controls, owner coordination, signed measurement/linkage storage, exact quiz recovery, durable switching and v18 controlled Assessment writer/comparison/actual Study caller. |
+| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, history, LM serving, research export, motion controls, owner coordination, signed measurement/linkage storage, exact quiz recovery, durable switching, v18 controlled Assessment and owned Dictation with isolated projections and immutable retries. |
 | Completed audit baseline | Branch `codex/cycle12-release`, commit `1aa189a3` | Historical audit/cleanup checkpoint retained before the continuing integration branch. |
 | Remaining-system plan | [Complete the remaining LexiQuest systems](../superpowers/plans/2026-10-28-unfinished-system-integration.md) | Current execution board and acceptance checks. |
 | Capability coverage | [44-capability runtime matrix](../field/2026-10-28-feature-readiness-matrix.md) | Source-backed connected/partial/missing states; not production or UAT certification. |
@@ -24,7 +24,8 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 | Study opening order correction | [Opening-order checkpoint](../field/2026-10-29-study-opening-order.md) | Durable preparation before either real renderer, same-process pre-frame retry and fail-closed uncertain exposure; inherited outer transactions denied. Four behavioral RED cases,117 focused/1147 expanded integration cases, analysis0 and independent review pass. Included in wave10, which also verifies presentation switching. |
 | Verified switching and Assessment isolation | [Wave 10 checkpoint](../field/2026-10-30-remaining-systems-wave10.md) | Application source `853d4c13`: schema v17/34; full Flutter3054, analysis0, CLI23/23 and normal debug APK pass; backend CPU390 pass/one existing opt-in E2E skipped. All620 Dart hashes remain unchanged through checks/build. Independent reviews accepted; Assessment writer/UI and genuine production authority composition remain separate. |
 | Verified controlled Assessment | [Wave11 checkpoint](../field/2026-10-30-remaining-systems-wave11.md) | Source fabc990f: schema18/35, Flutter3266, analysis0, CLI23, backend CPU390 pass/one existing opt-in skip and normal debug APK. All654 Dart hashes unchanged; independent review accepted. Production gateway/upload and physical UAT remain separate. |
-| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `fabc990f`, debug `1.0.0+1`; not installed or published. Its hash and source trees are recorded in the wave11 checkpoint. |
+| Verified owned Dictation | [Wave12 checkpoint](../field/2026-10-30-remaining-systems-wave12.md) | Sourcebfa766b3: Flutter3350, analysis0, CLI23, backend CPU390 pass/one existing opt-in skip and normal debug APK. All661 Dart hashes match; independent reviews accepted. Schema18/35 and frozen8/44 remain; no durable native restart/resume or production readiness claim. |
+| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `bfa766b3`, debug `1.0.0+1`; compiled kernel identity verified, not installed or published. Hash/source trees are recorded in the wave12 checkpoint. |
 | Reduced Motion | Commit `0eedc90b` | Theme/motion persistence, OS accessibility settings, route/card/chat/sheet consumers; focused 153 tests and analysis pass. Android light 100% settings fixture is readable; dark/200% native checks remain unverified after emulator failure. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
@@ -40,6 +41,11 @@ Updated 2026-10-30. This index identifies the audit fixes and continuing system 
 The latest cleanup follows the user's explicit instruction to delete superseded versions after Git backup. Old generated evidence, packages and inactive Python environments may be removed; current source, +18 baseline, model sources and signing material remain. Link-related approval blocks leave 30 archived old checkouts in place. The 56 native build runs whose removal was previously denied remain outside the cleanup allowlist. See the round-2 report for exact retained and blocked paths.
 
 Engineering tests, a signed field build, human UAT, production infrastructure and research authorization have separate completion states. Research enrollment/upload and production rollout remain disabled until their existing gates are satisfied.
+
+Wave12 cleanup of four task-generated hub feedback PNGs was also rejected by
+automatic approval with `blocked by policy`. No command executed or retry was
+made. They remain in `test/screens/failures/`, with hash-matched evidence copies
+under the existing D maintenance folder. They are not included in space savings.
 
 The disposable `emulator-5568` session failed after its light settings capture.
 Automatic tool approval rejected the combined command to stop its two owned

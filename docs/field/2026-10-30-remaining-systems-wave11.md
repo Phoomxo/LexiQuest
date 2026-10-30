@@ -1,5 +1,8 @@
 # Wave11: controlled Assessment and actual Study flow
 
+Historical checkpoint. The normal debug output at the shared path below has
+been replaced by [wave12's verified Dictation build](2026-10-30-remaining-systems-wave12.md).
+
 2026-10-30. Verified application source `fabc990f8064c8f6959ea2420469270aca952353`,
 branch `codex/remaining-system-readiness`, existing cycle12-release worktree.
 Core:977f7448; concrete database binding:e307912a; actual caller:db065b2f;

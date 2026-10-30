@@ -1,5 +1,11 @@
 # One-word Dictation integration
 
+Final integration: source `bfa766b3`, Flutter3350, analysis0, CLI23,
+backend390 pass/one existing opt-in E2E skip and normal debug APK pass.
+All661 Dart hashes remain unchanged through checks/build. The actual owned route
+uses existing ChooseMode tests, avoiding a duplicate integration test file.
+See [wave12 evidence](../../field/2026-10-30-remaining-systems-wave12.md).
+
 Execution checkpoint2026-10-30: the owned entry, immutable capability, projection
 floor and actual UI are integrated. Focused learning/sync377 and UI/voice238
 checks pass. Independent review accepted the generic-path, corrupt-carry,

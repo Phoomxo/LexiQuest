@@ -1,15 +1,18 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `fabc990f` (v18/35),
-updated2026-10-30. Latest full suite/APK: Flutter3266, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `bfa766b3` (v18/35),
+updated2026-10-30. Latest full suite/APK: Flutter3350, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All654 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All661 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
 pre/post Study UI are verified with strict ordinary isolation. Production authority
 gateway/lifecycle and collection/upload integration remain prerequisites.
-Research remains default-off. See [wave11 evidence](2026-10-30-remaining-systems-wave11.md).
+Research remains default-off. Owned one-word Dictation now connects category,
+voice, immutable save/finish and its declared projection floor, with old evidence
+and remote SRS preserved. See [wave12 evidence](2026-10-30-remaining-systems-wave12.md)
+and the earlier [Assessment evidence](2026-10-30-remaining-systems-wave11.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -41,9 +44,9 @@ capability still needs the applicable acceptance and release checks.
 | f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
 | f09 | Cloze Test | Partial | `FillInTheBlanksScreen` remains a legacy flow without canonical learning persistence. |
 | f10 | Matching Mode | Missing | No current route. Follow the approved Research completion sequence before this unit. |
-| f11 | Typed Recall / Writing | Partial | Associative reading and Ghost save typed recall/spelling. Shared typed lesson/draft/IME contract is incomplete. |
+| f11 | Typed Recall / Writing | Partial | Associative reading, Ghost and owned one-word Dictation save typed recall/spelling. Dictation freezes answer/finish retries and supports IME without duplicates. Shared typed lesson/draft/IME contract remains incomplete. |
 | f12 | Handwriting Scratchpad | Missing | No scratchpad with undo, clear and text fallback. |
-| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing and Source/speech have persisted paths. Cloze/Dictation/Scramble and shared results remain incomplete. |
+| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech and owned Dictation have persisted paths. Dictation normal/slow evidence, legacy/SRS isolation, exact retries and actual Thai/English200% UI pass atbfa766b3. Cloze, Scramble, durable native restart/resume and shared results remain incomplete. |
 
 ## Feedback
 
@@ -88,7 +91,7 @@ capability still needs the applicable acceptance and release checks.
 | f35 | Learning Preference & Goal Quiz | Missing | No optional onboarding for goals, available time and interests. |
 | f36 | Personal Learning Profile | Partial | Profile settings contain display name and metrics. Editable learning preferences/goals are absent. |
 | f37 | Recommendation Panel | Connected | Choose Mode and Weakness offer rule-based due/weakness/quiz recommendations and targeted practice. |
-| f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Coverage is incomplete; physical TalkBack is unverified. |
+| f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Dictation has reachable Thai/English200% keyboard flows and the actual Thai320px hub entry. Coverage remains incomplete; physical TalkBack is unverified. |
 | f39 | Motion & Theme Controls | Connected | Commit `0eedc90b` wires saved theme/Reduced Motion, OS accessibility propagation and route/card/chat/sheet consumers. Focused 153 tests and Android light 100% settings fixture pass; native dark/200% and hardware gestures remain release checks. |
 
 ## Local operation and rollout
@@ -108,11 +111,13 @@ capability still needs the applicable acceptance and release checks.
 
 ## Current engineering boundaries
 
-The v11 unit stores ordinary activity class, cumulative hint use and the content
-revision actually shown. It preserves immutable retry identity and sync metadata.
-It does not activate eligibility policy, change score/SRS/reward projections or
-collect research. All research pins are rejected at the current ordinary write
-and sync boundaries.
+The v11 metadata retains activity class, cumulative hint use, shown revision and
+immutable retry/sync identity. Wave12 applies the existing eligibility policy
+only to current declared Dictation: assisted practice retains session/history,
+normal independent recall can update SRS, and the current false engagement flag
+denies motivation for both. Other admitted ordinary/inferred prompts retain
+compatibility. No Research collection is activated; ordinary write/sync reject
+Research pins.
 
 The distinct P256 participation validator, supplied instrument contracts and
 frozen catalog remain foundations. Default bootstrap still denies Research
