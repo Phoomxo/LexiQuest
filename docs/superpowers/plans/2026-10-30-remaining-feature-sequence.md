@@ -13,19 +13,18 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Saved Words source `597187e5` ผ่าน Flutter3922, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave16)
-รวม offline bookmark/list/targeted practice และ owner lifecycle; schema19/36 และ Quest runtime/grants ยังไม่เปิด
+Current attestation: local word reports source `158d2115` ผ่าน Flutter4029, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave17)
+รวม review/immutable queue/restart/history และ owner lifecycle; schema20/37 และ Quest runtime/grants ยังไม่เปิด
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `597187e5`: 12 connected / 18 partial / 14 missing ไม่ใช่ production/UAT
+  `158d2115`: 12 connected / 19 partial / 13 missing ไม่ใช่ production/UAT
   certification แม้ Dictation/Cloze/Word Scramble verified แล้ว f13 ยังไม่ครบทุก native mode
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ
-- `docs/database/schema_ledger.md` และ executable database อยู่ v20/37 ระหว่างรวม local reports;
-  baseline ที่ attested ล่าสุดยังเป็น Wave16 v19/36
-  v20 จองสำหรับ local word reports หลัง genuine19 capture แล้ว; v21+ ยังไม่จอง จำนวน44 capabilities ไม่ใช่จำนวนตาราง
+- `docs/database/schema_ledger.md` และ executable database อยู่ v20/37 ที่ attested แล้ว;
+  v20 จองหลัง genuine19 capture ก่อน code; v21+ ยังไม่จอง จำนวน44 capabilities ไม่ใช่จำนวนตาราง
 - แผนแม่ `docs/superpowers/plans/2026-10-28-unfinished-system-integration.md`
   ยัง queue Motivation integration และ remaining catalog integration ไว้
   งานที่ปิดได้ต้องมี caller จริง ไม่ใช่เพียง class หรือ catalog entry
@@ -34,11 +33,11 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   ไม่ใช่หลักฐานว่า API นั้นอยู่ใน C แล้ว และแม้ Dictation/Cloze ผ่านทั้งคู่
   f13/f05 ก็ยังไม่ครบทุก mode/shell
 
-การ์ด [Saved Words](2026-10-30-saved-words-integration.md) ปิดด้วย wave16 แล้ว
-ถัดไปคือ [รายงานคำศัพท์ของผู้ใช้](2026-10-30-local-word-reports.md): form→review/edit→immutable local queue→restart/list
-แบบที่ผ่าน boundary review แล้ว เก็บ genuine v19/ข้อมูลครบ36ตารางก่อนจอง v20 แล้ว;
-ยังไม่มี migration code และ executable ยัง19/36 (v21+ ยังไม่จอง)
-ไม่อ้างว่าส่งรายงานออกหรือ moderation พร้อม และยังไม่รวม AI/chat/document targets
+การ์ด [Saved Words](2026-10-30-saved-words-integration.md) และ
+[รายงานคำศัพท์ของผู้ใช้](2026-10-30-local-word-reports.md) ปิดด้วย wave16/17 แล้ว
+report ครอบคลุม local owned word เท่านั้น ไม่อ้างว่าส่งออก/moderation หรือ AI/chat/document targets พร้อม
+ถัดไปคือ [Sentence Scramble P34](2026-10-30-sentence-scramble-integration.md)
+ตาม grounded native lifecycle เดิม: ไม่เพิ่มตาราง ไม่จอง v21 ไม่เปิด Pair Matching
 
 ## สามหน่วยถัดไปที่เสนอ
 
