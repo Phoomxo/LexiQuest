@@ -188,9 +188,10 @@ claimed.
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
 | v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
 | v18 | Remaining-system integration | One local Assessment run table with37 durable pins; canonical assessment-only sessions/answers remain in existing tables. | Implemented locally atfabc990f; full Flutter3266, analysis0 and normal debug APK pass |
-| v19+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Reserved2026-10-30 after genuine v18 capture; executable schema still18/35 |
+| v20+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17 or v18. Reserve the next available version, starting at v19,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17, v18 or v19. Reserve the next available version, starting at v20,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -584,6 +585,43 @@ upload type, rollout authority or efficacy claim is created. Downgrade requires
 a pre-upgrade backup or a separately tested downgrade.
 
 ---
+
+### v19 — Owner-scoped local Saved Words
+
+**Reserved:** 2026-10-30, root integration, branch `codex/remaining-system-readiness`.
+**Status:** RESERVED before migration code. Executable schema remains18/35 at reservation.
+**Baseline:** application `d995ffc2040ba2019a09542be4db549ad92094eb`, attestation
+`0461d695a950328ed4e90295d8b703ece204b1a8`; Flutter3820, analysis0, CLI23,
+offline backend390/one opt-in skip and compiled normal APK verified.
+
+One new local-only table `saved_words` (`SavedWords`), planned total36:
+`owner_id`, `word_id`, `is_saved`, `local_revision`, `first_saved_at_utc_ms`,
+`updated_at_utc_ms`, `last_mutation_id`. Composite primary key owner/word;
+restrictive foreign keys to existing owners/words. Revisions are positive integers,
+times nonnegative integer milliseconds and mutation IDs nonblank, at most256 UTF-8 bytes.
+Keep unsaved rows as tombstones; no backfill or copied vocabulary text.
+
+Genuine v18 capture ran through the current AppDatabase/NativeDatabase before this
+reservation: schema18,35 actual tables, Assessment37 columns, opportunity19 and
+learning-session15. Captured SQL SHA256
+`9cff95c607a68bf6960ec451148280526bf902e3249d2767b7ebee2925c221c1`;
+test source SHA256 `81b0e6e4ca3ec0c6ff78b1b569cfe78f0104d04644e074121a9f604c0752c3d8`.
+Evidence: `saved-words-capture-schema-v18.log` under the existing D maintenance root.
+
+Before merge, validate saved owner/word/category relationships. Remap/coalesce saved
+intent before `_mergeWords` physically deletes duplicate guest words; use a dedicated
+remaining-row merge and invalidate old CAS receipts. Add inventory after words for
+full export, reverse purge and deletion-core residual proof. Preserve same-owner
+binding, logout state and restrictive guest rollback. The sole writer needs same-DB,
+independent transaction, final owner/fence/parent/readback checks after SQL and exact
+latest ACK replay; no fresh retry after conflict.
+
+Required acceptance: populated genuine-v18 migration/reopen preserves every old
+table/quiz/pending presentation/deletion intent; real FK/constraint tests; unchanged
+non-bookmark projections/outbox; actual save/restart/list/sourcePractice UI; race,
+merge, export, two-owner purge and residual-tombstone rejection. No SyncCollection,
+cloud policy, Research facts, deployment or real upload is added.
+Plan: [local saved words](../superpowers/plans/2026-10-30-saved-words-integration.md).
 
 ## Conflict Register
 

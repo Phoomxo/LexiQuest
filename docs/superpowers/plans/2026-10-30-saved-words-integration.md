@@ -74,3 +74,9 @@ Required boundary regressions intercept the real saved INSERT and UPDATE: change
 Run new focused repository/use-case/migration/UI/lifecycle tests first, then existing vocabulary_recreate_test, source_practice_test, deleted_vocabulary_progress_test, weakness_clinic_screen_test, owner/export/delete suites, sync_contract_test and cloud_sync_policy_test. No new server rule is needed; prove the new relation never enters existing explicit sync collections. Final independent review + analysis/full Flutter/CLI/APK remains root-owned. Physical-device UAT stays separately unverified.
 
 Independent boundary review accepted the seven-column/local-only/remap approach; its final-verification and absent-no-op refinements are incorporated here. Review source: `bookmark-boundary-review.md` (SHA256 `BFE956B57C0BDA4BC73786273DC42FFE299D8C9ADB880A0332D16B91912AF56E`). This is a reviewed plan, not executed verification evidence.
+
+## Execution board
+
+- Predecessor attested/pushed at0461d695; application source d995ffc2 remains the verified APK.
+- Genuine v18 capture passed on the current AppDatabase before any version bump:35 tables, Assessment37/opportunity19/session15 columns. SQL SHA2569cff95c607a68bf6960ec451148280526bf902e3249d2767b7ebee2925c221c1; no SavedWords table exists yet.
+- Ledger now reserves v19 for the seven-column relation, with mutation IDs bounded to256 UTF-8 bytes. Executable schema is still18/35; v20+ is unreserved. Migration implementation/generation and feature verification follow this reservation.
