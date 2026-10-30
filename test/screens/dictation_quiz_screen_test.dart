@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -94,8 +93,8 @@ void main() {
             .isNotEmpty,
       );
       final command = f.repository.answers.single;
-      expect(command.evidenceContext!.evidenceClass.name, 'guidedPractice');
-      expect(command.evidenceContext!.hintLevel, 1);
+      expect(command.evidenceContext.evidenceClass.name, 'guidedPractice');
+      expect(command.evidenceContext.hintLevel, 1);
       expect(await f.count(tester, 'srs_states'), 0);
       expect(await f.count(tester, 'points_ledger_entries'), 0);
     } finally {
@@ -505,7 +504,7 @@ void main() {
         f.navigator.currentState!.pushReplacement<void, void>(
           PageRouteBuilder<void>(
             transitionDuration: const Duration(seconds: 10),
-            pageBuilder: (_, __, ___) => _ReplacementSpeaker(
+            pageBuilder: (_, _, _) => _ReplacementSpeaker(
               voice: voice,
               allowed: nextAllowed.future,
               onResult: (value) => nextResult = value,

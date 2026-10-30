@@ -139,7 +139,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           _dictationOwnerId = ownerId;
         }
       },
-      onError: (Object _, StackTrace __) {
+      onError: (Object _, StackTrace _) {
         if (mounted && identical(_dictationDependencies, dependencies)) {
           _dictationGeneration++;
           _dictationOwnerId = null;
@@ -481,7 +481,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         unavailable(empty: true);
         return;
       }
-      if (session.ownerId != ownerId) {
+      if (!mounted || session.ownerId != ownerId) {
         return;
       }
       final screenOwners = dependencies.progress!.watchActiveOwnerId();

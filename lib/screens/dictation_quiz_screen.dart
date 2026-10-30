@@ -118,7 +118,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
         setState(() => _ownerId = ownerId);
         _tryStart();
       },
-      onError: (Object _, StackTrace __) => _invalidate(),
+      onError: (Object _, StackTrace _) => _invalidate(),
       onDone: _invalidate,
     );
   }
@@ -330,7 +330,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
         _pendingFinish!,
         stillCurrent: () => _current(epoch),
       );
-      if (!_current(epoch)) {
+      if (!mounted || !_current(epoch)) {
         return;
       }
       Navigator.of(context).pop(summary);
