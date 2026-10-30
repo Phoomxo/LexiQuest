@@ -188,10 +188,11 @@ claimed.
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
 | v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
 | v18 | Remaining-system integration | One local Assessment run table with37 durable pins; canonical assessment-only sessions/answers remain in existing tables. | Implemented locally atfabc990f; full Flutter3266, analysis0 and normal debug APK pass |
-| v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Storage implemented locally19/36 after reservation69f9f176;109 combined core checks pass; full feature attestation pending |
-| v20+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Attested597187e5 at19/36; Flutter3922, analysis0 and normal debug APK pass |
+| v20 | Local owned-word reports | One immutable ten-column local queue with original target snapshot/revision, current owner and stable report identity; no report transport or learning authority. | Reserved before migration code; genuine19 DDL and populated36-table capture retained |
+| v21+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17, v18 or v19. Reserve the next available version, starting at v20,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17, v18, v19 or v20. Reserve the next available version, starting at v21,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -622,6 +623,44 @@ non-bookmark projections/outbox; actual save/restart/list/sourcePractice UI; rac
 merge, export, two-owner purge and residual-tombstone rejection. No SyncCollection,
 cloud policy, Research facts, deployment or real upload is added.
 Plan: [local saved words](../superpowers/plans/2026-10-30-saved-words-integration.md).
+
+### v20 — Immutable local owned-word reports
+
+**Reserved:** 2026-10-30, root integration, branch `codex/remaining-system-readiness`.
+**Status:** Reserved before any migration code. Executable baseline remains19/36.
+**Predecessor:** SavedWords source597187e5, attestation/pushed checkpointb06be6e8.
+**Plan:** [local owned-word reports](../superpowers/plans/2026-10-30-local-word-reports.md).
+
+One proposed local-only `word_reports` (`WordReports`), total37 tables, exactly10
+columns: `id`, `owner_id`, `word_id`, `category_id`, `word_revision`, `snapshot_json`,
+`snapshot_sha256`, `reason`, nullable `comment`, `queued_at_utc_ms`.
+Global opaque prefixed primary key; restrictive FK to current owner only.
+Historical word/category IDs deliberately have no live FK: edit/delete/recreation
+and guest duplicate-word hard deletion must preserve the original report evidence.
+The canonical snapshot has nine exact ownerless keys; immutable payload and digest
+survive owner merge byte-for-byte. Do not remap/rewrite target pins.
+
+ID <=256 UTF-8 bytes, historical IDs <=256 runes, positive integer revision,
+snapshot <=8192 UTF-8 bytes, lowercase64-hex digest, known five-reason enum,
+canonical optional comment <=500 runes/2048 bytes (`other` requires comment),
+nonnegative integer UTC-ms time. SQL scalar checks plus one strict domain parser.
+No status/worker/lease/outbox/cloud collection, copied learning facts or backfill.
+
+Before reservation, actual AppDatabase/NativeDatabase19 captured all36 tables/indexes
+to `test/fixtures/schema_v19.sql`, canonical LF SHA256
+`ea30538113a7837ecf3c896513c71cfe96fd1e62ab2340d051414e6cf87dbd92`.
+The actual v19 runtime separately captured synthetic populated facts in every36
+tables, including SavedWords saved+tombstone receipts, Assessment pin19, pending
+quiz/presentation and persistent deletion fence, in
+`test/fixtures/populated_schema_v19.json`, canonical LF SHA256
+`c6e03a6f30ed047c31ace45d9aff368da46d1a3a7f104d006c84178a30cdf605`.
+Both capture tests passed before bump; source checkpointb06be6e8 is recorded in JSON.
+
+Acceptance: genuine populated19→20 migration/reopen retains every old row/DDL;
+new queue empty; exact replay/lost ACK/collision and final owner/fence/target/readback;
+historical replay after target edit/delete; owner-only move/export/reverse purge/core
+residual proof; real form→editable review→local queue→restart/history UI. Preserve
+ordinary learning, SavedWords and default-off Research; no production send claim.
 
 ## Conflict Register
 

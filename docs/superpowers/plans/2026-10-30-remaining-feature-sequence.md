@@ -24,7 +24,7 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ
 - `docs/database/schema_ledger.md` และ executable database อยู่ v19/36 tables;
-  v20+ ยังไม่ถูกจอง จำนวน 44 capabilities ไม่ใช่จำนวนตาราง
+  v20 จองสำหรับ local word reports หลัง genuine19 capture แล้ว; v21+ ยังไม่จอง จำนวน44 capabilities ไม่ใช่จำนวนตาราง
 - แผนแม่ `docs/superpowers/plans/2026-10-28-unfinished-system-integration.md`
   ยัง queue Motivation integration และ remaining catalog integration ไว้
   งานที่ปิดได้ต้องมี caller จริง ไม่ใช่เพียง class หรือ catalog entry
@@ -34,8 +34,9 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   f13/f05 ก็ยังไม่ครบทุก mode/shell
 
 การ์ด [Saved Words](2026-10-30-saved-words-integration.md) ปิดด้วย wave16 แล้ว
-ถัดไปคือรายงานคำศัพท์ของผู้ใช้: form→review/edit→immutable local queue→restart/list
-แบบที่ผ่าน boundary review บน D แล้ว ต้องเก็บ genuine v19 ก่อนจอง/เพิ่ม v20
+ถัดไปคือ [รายงานคำศัพท์ของผู้ใช้](2026-10-30-local-word-reports.md): form→review/edit→immutable local queue→restart/list
+แบบที่ผ่าน boundary review แล้ว เก็บ genuine v19/ข้อมูลครบ36ตารางก่อนจอง v20 แล้ว;
+ยังไม่มี migration code และ executable ยัง19/36 (v21+ ยังไม่จอง)
 ไม่อ้างว่าส่งรายงานออกหรือ moderation พร้อม และยังไม่รวม AI/chat/document targets
 
 ## สามหน่วยถัดไปที่เสนอ
