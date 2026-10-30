@@ -61,6 +61,48 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets(
+    'non-source matching speech returns to existing quiz without raw Scramble route',
+    (tester) async {
+      final gateway = _LifecycleSpeechGateway();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SpeakToTextScreen(
+                      correctWord: 'cat',
+                      voice: VoiceUseCases(FakeVoiceProvider()),
+                      speechPractice: SpeechPracticeUseCases(gateway),
+                    ),
+                  ),
+                ),
+                child: const Text('Existing quiz'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Existing quiz'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pumpAndSettle();
+      gateway.emit('cat');
+      await tester.pumpAndSettle();
+      expect(find.text('ความเหมือนของข้อความ: 100%'), findsOneWidget);
+      expect(find.text('ไปเกมเรียงคำ'), findsNothing);
+      final back = find.text('กลับไปแบบทดสอบ');
+      await tester.ensureVisible(back);
+      await tester.tap(back.hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.byType(SpeakToTextScreen), findsNothing);
+      expect(find.text('Existing quiz'), findsOneWidget);
+    },
+  );
+
   for (final correct in [true, false]) {
     testWidgets('source returns acknowledged typed result correct=$correct', (
       tester,
@@ -1398,11 +1440,13 @@ final class _LostAckRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) => delegate.listQuizWords(
     ownerId: ownerId,
     categoryId: categoryId,
     wordIds: wordIds,
+    afterWordId: afterWordId,
     limit: limit,
   );
   @override

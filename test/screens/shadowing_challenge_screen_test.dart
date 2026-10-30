@@ -339,6 +339,7 @@ final class _RecordingLearningRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) async => const [
     QuizWord(

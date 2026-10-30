@@ -6,6 +6,7 @@ abstract interface class LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   });
 

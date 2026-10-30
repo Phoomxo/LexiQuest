@@ -62,6 +62,7 @@ final class DriftLearningRepository
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) async {
     if (limit < 1 || limit > 100) {
@@ -86,7 +87,10 @@ final class DriftLearningRepository
                     : words.categoryId.equals(categoryId)) &
                 (wordIds == null
                     ? const Constant(true)
-                    : words.id.isIn(wordIds)),
+                    : words.id.isIn(wordIds)) &
+                (afterWordId == null
+                    ? const Constant(true)
+                    : words.id.isBiggerThanValue(afterWordId)),
           )
           ..orderBy([OrderingTerm.asc(words.id)])
           ..limit(limit);
@@ -108,6 +112,7 @@ final class DriftLearningRepository
   @override
   Future<void> startSession(LearningSessionDraft session) async {
     if (session.id.startsWith(DictationSession.idPrefix) ||
+        session.id.startsWith(WordScrambleSession.idPrefix) ||
         session.id.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
         'Native Dictation requires its original launch capability',
@@ -172,6 +177,7 @@ final class DriftLearningRepository
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
       database.transaction(() async {
         if (command.sessionId.startsWith(DictationSession.idPrefix) ||
+            command.sessionId.startsWith(WordScrambleSession.idPrefix) ||
             command.sessionId.startsWith(ClozeSession.idPrefix)) {
           throw StateError(
             'Native Dictation answers require their original capability',
@@ -320,6 +326,7 @@ final class DriftLearningRepository
     required DateTime endedAtUtc,
   }) => database.transaction(() async {
     if (sessionId.startsWith(DictationSession.idPrefix) ||
+        sessionId.startsWith(WordScrambleSession.idPrefix) ||
         sessionId.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
         'Native Dictation completion requires its original close intent',
@@ -442,6 +449,7 @@ final class DriftLearningRepository
   }) async {
     final prefix = switch (session) {
       DictationSession() => DictationSession.idPrefix,
+      WordScrambleSession() => WordScrambleSession.idPrefix,
       ClozeSession() => ClozeSession.idPrefix,
     };
     if (!session.id.startsWith(prefix)) {
@@ -634,6 +642,7 @@ final class DriftLearningRepository
     final original = session.session;
     final activity = switch (session) {
       DictationSession() => 'dictation',
+      WordScrambleSession() => 'wordScramble',
       ClozeSession() => 'cloze',
     };
     if (row.ownerId != session.ownerId ||
@@ -653,6 +662,7 @@ final class DriftLearningRepository
   Future<void> _requireNativeTargets(AcceptedNativeExercise session) async {
     final pins = switch (session) {
       DictationSession() => [(session.word, session.wordContentRevision)],
+      WordScrambleSession() => [(session.word, session.wordContentRevision)],
       TypedClozeSession() => [(session.word, session.wordContentRevision)],
       ChoiceClozeSession() => [
         for (final choice in session.choices) (choice, choice.contentRevision!),
@@ -671,7 +681,7 @@ final class DriftLearningRepository
       if (word == null ||
           word.read<String>('category_id') != target.categoryId ||
           word.read<String>('spelling') != target.spelling ||
-          (session is ClozeSession &&
+          ((session is ClozeSession || session is WordScrambleSession) &&
               (word.read<String>('meaning') != target.meaning ||
                   word.read<String>('part_of_speech') !=
                       target.partOfSpeech)) ||
@@ -723,6 +733,12 @@ final class DriftLearningRepository
                     context.evidenceClass == EvidenceClass.independentRecall) ||
                 (context.hintLevel == 1 &&
                     context.evidenceClass == EvidenceClass.guidedPractice)),
+      WordScrambleSession() =>
+        command.promptMode == 'wordScramble' &&
+            command.providerProvenance == null &&
+            context.skillId == 'word-scramble' &&
+            context.hintLevel == 0 &&
+            context.evidenceClass == EvidenceClass.recreational,
       TypedClozeSession() =>
         command.promptMode == 'clozeTyped' &&
             command.providerProvenance == session.providerProvenance &&

@@ -127,6 +127,40 @@ final class LearningUseCases {
     );
   }
 
+  Future<WordScrambleSession?> prepareWordScramble({
+    String? categoryId,
+    required bool Function() stillCurrent,
+  }) async {
+    _requireCurrentNativeExercise(stillCurrent);
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireCurrentNativeExercise(stillCurrent);
+    final candidates = await _nativeWordCandidates(
+      ownerId: owner.id,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      supports: WordScrambleSession.supportsTarget,
+      count: 1,
+      stillCurrent: stillCurrent,
+    );
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) {
+      throw StateError('Word Scramble owner changed');
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final target = candidates.firstOrNull;
+    if (target == null) return null;
+    return WordScrambleSession(
+      session: LearningSessionDraft(
+        id: '${WordScrambleSession.idPrefix}${_nextId()}',
+        ownerId: owner.id,
+        activityType: 'wordScramble',
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      word: target,
+    );
+  }
+
   Future<ClozeSession?> prepareCloze({
     String? categoryId,
     required ClozeVariant variant,
@@ -143,46 +177,72 @@ final class LearningUseCases {
     _requireCurrentNativeExercise(stillCurrent);
     final owner = await owners.getOrCreateActiveOwner();
     _requireCurrentNativeExercise(stillCurrent);
-    final words = await repository.listQuizWords(
-      ownerId: owner.id,
-      categoryId: _optionalId(categoryId, 'categoryId'),
-      limit: 100,
-    );
-    _requireCurrentNativeExercise(stillCurrent);
-    final supported = words
-        .where((word) => ClozeContent.supportsTarget(word.spelling))
-        .toList(growable: false);
-    if (supported.isEmpty) return null;
+    final selectedCategory = _optionalId(categoryId, 'categoryId');
+    bool supports(QuizWord word) => ClozeContent.supportsTarget(word.spelling);
     QuizWord? target;
     var choices = <QuizWord>[];
+    List<QuizWord> candidates;
     if (variant == ClozeVariant.typed) {
-      target = supported.first;
+      candidates = await _nativeWordCandidates(
+        ownerId: owner.id,
+        categoryId: selectedCategory,
+        supports: supports,
+        count: 1,
+        stillCurrent: stillCurrent,
+      );
+    } else if (selectedCategory != null) {
+      candidates = await _nativeWordCandidates(
+        ownerId: owner.id,
+        categoryId: selectedCategory,
+        supports: supports,
+        count: 3,
+        distinctSpellings: true,
+        stillCurrent: stillCurrent,
+      );
     } else {
-      for (final candidate in supported) {
-        final ids = <String>{};
-        final spellings = <String>{};
-        final sameCategory = <QuizWord>[];
-        for (final option in supported.where(
-          (word) => word.categoryId == candidate.categoryId,
-        )) {
-          if (ids.add(option.id) &&
-              spellings.add(option.spelling.trim().toLowerCase())) {
-            sameCategory.add(option);
-          }
-          if (sameCategory.length == 3) break;
-        }
-        if (sameCategory.length == 3) {
-          target = sameCategory.first;
-          final offset =
-              target.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
-              sameCategory.length;
-          choices = [
-            ...sameCategory.skip(offset),
-            ...sameCategory.take(offset),
-          ];
+      // Preserve the first eligible category in global lexical ID order,
+      // retaining only its three choices rather than all categories' words.
+      candidates = <QuizWord>[];
+      String? afterCandidateId;
+      final rejectedCategories = <String>{};
+      while (candidates.isEmpty) {
+        final next = await _nativeWordCandidates(
+          ownerId: owner.id,
+          categoryId: null,
+          afterWordId: afterCandidateId,
+          supports: (word) =>
+              !rejectedCategories.contains(word.categoryId) && supports(word),
+          count: 1,
+          stillCurrent: stillCurrent,
+        );
+        if (next.isEmpty) {
           break;
         }
+        final candidate = next.single;
+        final sameCategory = await _nativeWordCandidates(
+          ownerId: owner.id,
+          categoryId: candidate.categoryId,
+          supports: supports,
+          count: 3,
+          distinctSpellings: true,
+          stillCurrent: stillCurrent,
+        );
+        if (sameCategory.length == 3) {
+          candidates = sameCategory;
+        } else {
+          rejectedCategories.add(candidate.categoryId);
+        }
+        afterCandidateId = candidate.id;
       }
+    }
+    if (variant == ClozeVariant.typed && candidates.isNotEmpty) {
+      target = candidates.single;
+    } else if (candidates.length == 3) {
+      target = candidates.first;
+      final offset =
+          target.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+          candidates.length;
+      choices = [...candidates.skip(offset), ...candidates.take(offset)];
     }
     if (target == null) return null;
     if (await _nativeExercises.hasAmbientTransaction()) {
@@ -241,6 +301,53 @@ final class LearningUseCases {
     };
   }
 
+  Future<List<QuizWord>> _nativeWordCandidates({
+    required String ownerId,
+    required String? categoryId,
+    required bool Function(QuizWord word) supports,
+    required int count,
+    required bool Function() stillCurrent,
+    bool distinctSpellings = false,
+    String? afterWordId,
+  }) async {
+    final candidates = <QuizWord>[];
+    var cursor = afterWordId;
+    while (candidates.length < count) {
+      final page = await repository.listQuizWords(
+        ownerId: ownerId,
+        categoryId: categoryId,
+        afterWordId: cursor,
+        limit: 100,
+      );
+      _requireCurrentNativeExercise(stillCurrent);
+      for (final word in page) {
+        if (!supports(word) ||
+            candidates.any((saved) => saved.id == word.id) ||
+            (distinctSpellings &&
+                candidates.any(
+                  (saved) =>
+                      saved.spelling.trim().toLowerCase() ==
+                      word.spelling.trim().toLowerCase(),
+                ))) {
+          continue;
+        }
+        candidates.add(word);
+        if (candidates.length == count) {
+          return candidates;
+        }
+      }
+      if (page.length < 100) {
+        return candidates;
+      }
+      final nextCursor = page.last.id;
+      if (nextCursor == cursor) {
+        throw StateError('Native word page did not advance');
+      }
+      cursor = nextCursor;
+    }
+    return candidates;
+  }
+
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
     T exercise, {
     required bool Function() stillCurrent,
@@ -263,6 +370,12 @@ final class LearningUseCases {
               exercise.word.spelling.trim().toLowerCase(),
           assisted ? 1 : 0,
         ),
+      WordScrambleAnswerInput(:final exercise, :final response) => (
+        'wordScramble',
+        response.trim().toLowerCase() ==
+            exercise.word.spelling.trim().toLowerCase(),
+        0,
+      ),
       TypedClozeAnswerInput(:final exercise, :final response) => (
         'clozeTyped',
         response.trim().toLowerCase() == exercise.word.spelling.toLowerCase(),
@@ -289,6 +402,7 @@ final class LearningUseCases {
       occurredAtUtc: occurredAt,
       providerProvenance: switch (exercise) {
         DictationSession() => null,
+        WordScrambleSession() => null,
         ClozeSession() => exercise.providerProvenance,
       },
       evidenceContext: captureCurrentActivityEvidence(

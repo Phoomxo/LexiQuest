@@ -21,6 +21,7 @@ import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
@@ -33,6 +34,102 @@ import '../support/dictation_session_harness.dart';
 import '../support/cloze_session_harness.dart' as cloze;
 
 void main() {
+  testWidgets(
+    'Scramble category selection accepts one real round only after owned category confirmation',
+    (tester) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      try {
+        await _pumpClozeEntry(tester, h);
+        final entry = find.text('เกมเรียงตัวอักษร').hitTestable();
+        await tester.scrollUntilVisible(
+          entry,
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(entry);
+        await _dictationEntryUntil(
+          tester,
+          () => find.text('Synthetic travel').evaluate().isNotEmpty,
+        );
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+        expect(h.provider.requests, isEmpty);
+        await tester.tap(find.text('Synthetic travel'));
+        await _dictationEntryUntil(
+          tester,
+          () => find
+              .byKey(const ValueKey('scramble-response'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        final screen = tester.widget<WordScrambleScreen>(
+          find.byType(WordScrambleScreen),
+        );
+        expect(screen.session.ownerId, configuredOwnerId);
+        expect(screen.session.word.categoryId, configuredCategoryId);
+        expect(screen.languageCode, 'th');
+        expect(
+          screen.session.letters,
+          createStableScramble(screen.session.word.spelling),
+        );
+        expect(h.provider.requests, isEmpty);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          1,
+        );
+        expect(
+          await tester.runAsync(() => h.storage.count('answer_attempts')),
+          0,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    },
+  );
+
+  testWidgets(
+    'Scramble without real owner dependencies fails closed without accepting a round',
+    (tester) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      try {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ChooseModeScreen(
+              loader: () async => snapshot(),
+              learning: h.learning,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final tile = find.text('เกมเรียงตัวอักษร').hitTestable();
+        await tester.scrollUntilVisible(
+          tile,
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(tile);
+        await tester.pump();
+        expect(find.byType(WordScrambleScreen), findsNothing);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    },
+  );
+
   for (final variant in ClozeVariant.values) {
     testWidgets('Cloze selects explicit $variant before any generation', (
       tester,
@@ -287,6 +384,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('dictation-entry')), findsNothing);
     expect(find.byKey(const ValueKey('cloze-entry')), findsNothing);
+    expect(find.byKey(const ValueKey('word-scramble-entry')), findsNothing);
   });
 
   testWidgets('dictation entry without real owner dependencies fails closed', (

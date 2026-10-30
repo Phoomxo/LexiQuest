@@ -11,7 +11,6 @@ import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
 import '../widgets/adaptive_content_pane.dart';
-import 'word_scramble_screen.dart';
 import '../navigation/app_routes.dart';
 import 'device_permission_center_screen.dart';
 
@@ -662,22 +661,8 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                   ),
                 ] else
                   OutlinedButton(
-                    onPressed: assessment?.isExactMatch == true
-                        ? () => AppNavigator.pushPage<void>(
-                            context,
-                            AppPage<void>(
-                              name: 'learning/word-scramble',
-                              builder: (_) =>
-                                  WordScrambleScreen(word: widget.correctWord),
-                            ),
-                            replace: true,
-                          )
-                        : () => Navigator.maybePop(context),
-                    child: Text(
-                      assessment?.isExactMatch == true
-                          ? 'ไปเกมเรียงคำ'
-                          : 'กลับไปแบบทดสอบ',
-                    ),
+                    onPressed: () => Navigator.maybePop(context),
+                    child: const Text('กลับไปแบบทดสอบ'),
                   ),
               ],
             ),

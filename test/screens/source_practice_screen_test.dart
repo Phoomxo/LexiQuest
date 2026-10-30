@@ -2508,6 +2508,7 @@ final class _SourceVoiceStartRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) => wordIds != null && selected != null
       ? Future.value(selected)
@@ -2515,6 +2516,7 @@ final class _SourceVoiceStartRepository implements LearningRepository {
           ownerId: ownerId,
           categoryId: categoryId,
           wordIds: wordIds,
+          afterWordId: afterWordId,
           limit: limit,
         );
   @override

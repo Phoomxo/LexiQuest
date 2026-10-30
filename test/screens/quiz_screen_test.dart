@@ -1348,11 +1348,13 @@ class _FailOnceRepository
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) => delegate.listQuizWords(
     ownerId: ownerId,
     categoryId: categoryId,
     wordIds: wordIds,
+    afterWordId: afterWordId,
     limit: limit,
   );
   @override

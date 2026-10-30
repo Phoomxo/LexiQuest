@@ -6,6 +6,7 @@ import 'accepted_quiz_plan.dart';
 import 'cloze_content.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
+import 'word_scramble_letters.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -181,6 +182,70 @@ final class DictationSession extends AcceptedNativeExercise {
   String get evidenceContentRevision => wordContentRevision;
 }
 
+final class WordScrambleSession extends AcceptedNativeExercise {
+  factory WordScrambleSession({
+    required LearningSessionDraft session,
+    required QuizWord word,
+  }) {
+    if (!session.id.startsWith(idPrefix) ||
+        session.id.length == idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        !LearningEvidenceContract.validIdentifier(session.ownerId) ||
+        session.activityType != 'wordScramble' ||
+        session.startedAtUtc?.isUtc != true ||
+        !supportsTarget(word)) {
+      throw ArgumentError(
+        'Word Scramble requires its original session and a supported pinned target',
+      );
+    }
+    return WordScrambleSession._(
+      session: session,
+      word: word,
+      letters: List<String>.unmodifiable(createStableScramble(word.spelling)),
+    );
+  }
+
+  WordScrambleSession._({
+    required this.session,
+    required this.word,
+    required this.letters,
+  }) : evidenceContentRevision =
+           'word-scramble-v1:${sha256.convert(utf8.encode(jsonEncode([
+             'word-scramble-v1',
+             [word.id, word.categoryId, word.spelling, word.meaning, word.partOfSpeech, word.contentRevision],
+             letters,
+           ])))}';
+
+  static const idPrefix = 'session:word-scramble-v1:';
+
+  static bool supportsTarget(QuizWord word) {
+    if (!LearningEvidenceContract.validIdentifier(word.id) ||
+        !LearningEvidenceContract.validIdentifier(word.categoryId) ||
+        word.spelling.isEmpty ||
+        word.spelling.length > 120 ||
+        RegExp(r'[\s\x00-\x1f\x7f]').hasMatch(word.spelling) ||
+        word.contentRevision == null ||
+        RegExp(
+              r'local-vocabulary-v1:[1-9][0-9]*',
+            ).stringMatch(word.contentRevision!) !=
+            word.contentRevision) {
+      return false;
+    }
+    final letters = createStableScramble(word.spelling);
+    return letters.length >= 2 && letters.join() != word.spelling;
+  }
+
+  @override
+  final LearningSessionDraft session;
+  @override
+  final QuizWord word;
+  final List<String> letters;
+  @override
+  String get wordContentRevision => word.contentRevision!;
+  @override
+  final String evidenceContentRevision;
+}
+
 sealed class NativeAnswerInput {
   const NativeAnswerInput();
 
@@ -350,6 +415,20 @@ final class ChoiceClozeAnswerInput extends NativeAnswerInput {
   @override
   final ChoiceClozeSession exercise;
   final String optionId;
+  @override
+  final Duration responseTime;
+}
+
+final class WordScrambleAnswerInput extends NativeAnswerInput {
+  const WordScrambleAnswerInput({
+    required this.exercise,
+    required this.response,
+    required this.responseTime,
+  });
+
+  @override
+  final WordScrambleSession exercise;
+  final String response;
   @override
   final Duration responseTime;
 }

@@ -13,6 +13,7 @@ abstract final class LearningEvidenceContract {
     'dictation',
     'clozeTyped',
     'clozeChoice',
+    'wordScramble',
   };
 
   // Frozen archived v13 sentinel is reused by the current-lineage v11 migration.

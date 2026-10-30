@@ -419,11 +419,13 @@ final class _AckRepository extends Fake
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) => (delegate as LearningRepository).listQuizWords(
     ownerId: ownerId,
     categoryId: categoryId,
     wordIds: wordIds,
+    afterWordId: afterWordId,
     limit: limit,
   );
   @override

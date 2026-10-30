@@ -804,6 +804,7 @@ class _FailOnceRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
+    String? afterWordId,
     required int limit,
   }) {
     if (failOnListQuizWords) {
@@ -813,6 +814,7 @@ class _FailOnceRepository implements LearningRepository {
       ownerId: ownerId,
       categoryId: categoryId,
       wordIds: wordIds,
+      afterWordId: afterWordId,
       limit: limit,
     );
   }

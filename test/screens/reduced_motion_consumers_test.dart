@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/cloze_session_harness.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
@@ -51,25 +54,62 @@ void main() {
   testWidgets(
     'reduced-motion scramble shows the drop colour without tweening',
     (tester) async {
-      await tester.pumpWidget(
-        _app(reducedMotion: true, child: const WordScrambleScreen(word: 'cat')),
-      );
-      await tester.pumpAndSettle();
-      final source = find.byType(Draggable<int>).first;
-      final target = find.byType(DragTarget<int>).first;
-      final gesture = await tester.startGesture(tester.getCenter(source));
-      await gesture.moveBy(const Offset(0, -30));
-      await gesture.moveTo(tester.getCenter(target));
-      await tester.pump();
-      await gesture.up();
-      await tester.pump();
-      final box = tester.widget<DecoratedBox>(
-        find.descendant(of: target, matching: find.byType(DecoratedBox)).first,
-      );
-      expect(
-        (box.decoration as BoxDecoration).color,
-        Theme.of(tester.element(target)).colorScheme.primaryContainer,
-      );
+      final h = (await tester.runAsync(ClozeSessionHarness.open))!;
+      final owners = StreamController<String?>.broadcast(sync: true);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      try {
+        final session = (await tester.runAsync(
+          () => h.learning.prepareWordScramble(
+            categoryId: configuredCategoryId,
+            stillCurrent: () => true,
+          ),
+        ))!;
+        await tester.pumpWidget(
+          _app(
+            reducedMotion: true,
+            child: WordScrambleScreen(
+              session: session,
+              learning: h.learning,
+              ownerChanges: owners.stream,
+            ),
+          ),
+        );
+        await tester.pump();
+        owners.add(configuredOwnerId);
+        for (var i = 0; i < 100; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump();
+          final response = find.byKey(const ValueKey('scramble-response'));
+          if (response.evaluate().isNotEmpty &&
+              tester.widget<TextField>(response).enabled == true) {
+            break;
+          }
+        }
+        final source = find.byType(Draggable<int>).first;
+        final target = find.byType(DragTarget<int>).first;
+        final gesture = await tester.startGesture(tester.getCenter(source));
+        await gesture.moveBy(const Offset(0, -30));
+        await gesture.moveTo(tester.getCenter(target));
+        await tester.pump();
+        await gesture.up();
+        await tester.pump();
+        final box = tester.widget<DecoratedBox>(
+          find
+              .descendant(of: target, matching: find.byType(DecoratedBox))
+              .first,
+        );
+        expect(
+          (box.decoration as BoxDecoration).color,
+          Theme.of(tester.element(target)).colorScheme.primaryContainer,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(owners.close);
+        await tester.runAsync(h.close);
+      }
     },
   );
 }

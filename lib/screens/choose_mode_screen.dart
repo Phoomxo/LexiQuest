@@ -16,6 +16,7 @@ import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
+import 'word_scramble_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
@@ -41,6 +42,8 @@ class ChooseModeScreen extends StatefulWidget {
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
 }
+
+enum _NativeMode { dictation, cloze, wordScramble }
 
 class _ChooseModeScreenState extends State<ChooseModeScreen>
     with WidgetsBindingObserver {
@@ -373,6 +376,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               subtitle: 'เลือกพิมพ์หรือเลือกคำจากประโยคที่สร้างด้วย AI',
               onTap: _openCloze,
             ),
+          if (canQuiz)
+            _LearningTile(
+              key: const ValueKey('word-scramble-entry'),
+              icon: Icons.sort_by_alpha_outlined,
+              title: 'เกมเรียงตัวอักษร',
+              subtitle: 'เลือกหมวดหมู่ แล้วเรียงตัวอักษรหรือพิมพ์คำตอบ',
+              onTap: _openWordScramble,
+            ),
           if (canReading)
             _LearningTile(
               icon: Icons.menu_book_outlined,
@@ -428,9 +439,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       Visibility.of(context) &&
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
-  Future<void> _openDictation() => _openNative();
+  Future<void> _openDictation() => _openNative(_NativeMode.dictation);
 
-  Future<void> _openCloze() => _openNative(cloze: true);
+  Future<void> _openCloze() => _openNative(_NativeMode.cloze);
+
+  Future<void> _openWordScramble() => _openNative(_NativeMode.wordScramble);
 
   Widget _nativeOverlay(Widget child) => Builder(
     builder: (overlayContext) {
@@ -442,7 +455,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     },
   );
 
-  Future<void> _openNative({bool cloze = false}) async {
+  Future<void> _openNative(_NativeMode mode) async {
+    final cloze = mode == _NativeMode.cloze;
     if (_openingNative ||
         !mounted ||
         ModalRoute.of(context)?.isCurrent != true ||
@@ -455,14 +469,22 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     final learning = _learning;
     final ownerId = _nativeOwnerId;
     void unavailable({bool empty = false}) {
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            cloze
-                ? 'ยังเปิดกิจกรรมเติมคำไม่ได้ กรุณาลองใหม่ภายหลัง'
-                : empty
+            empty
                 ? 'หมวดหมู่นี้ยังไม่มีคำที่พร้อมฝึก'
-                : 'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง',
+                : switch (mode) {
+                    _NativeMode.cloze =>
+                      'ยังเปิดกิจกรรมเติมคำไม่ได้ กรุณาลองใหม่ภายหลัง',
+                    _NativeMode.wordScramble =>
+                      'ยังเปิดเกมเรียงตัวอักษรไม่ได้ กรุณาลองใหม่ภายหลัง',
+                    _NativeMode.dictation =>
+                      'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง',
+                  },
           ),
         ),
       );
@@ -527,9 +549,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       final categoryId = await AppNavigator.pushPage<String>(
         context,
         AppPage<String>(
-          name: cloze
-              ? 'learning/cloze-category'
-              : 'learning/dictation-category',
+          name: switch (mode) {
+            _NativeMode.cloze => 'learning/cloze-category',
+            _NativeMode.wordScramble => 'learning/word-scramble-category',
+            _NativeMode.dictation => 'learning/dictation-category',
+          },
           builder: (_) => _nativeOverlay(
             SelectCategoryForQuiz(vocabulary: dependencies.vocabulary),
           ),
@@ -541,18 +565,24 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         return;
       }
       _nativeRouteVisible = true;
-      final session = cloze
-          ? await learning.prepareCloze(
-              categoryId: categoryId,
-              variant: variant!,
-              stillCurrent: () =>
-                  _canOpenNative(generation, ownerId, learning, dependencies),
-            )
-          : await learning.prepareDictation(
-              categoryId: categoryId,
-              stillCurrent: () =>
-                  _canOpenNative(generation, ownerId, learning, dependencies),
-            );
+      final AcceptedNativeExercise? session = switch (mode) {
+        _NativeMode.cloze => await learning.prepareCloze(
+          categoryId: categoryId,
+          variant: variant!,
+          stillCurrent: () =>
+              _canOpenNative(generation, ownerId, learning, dependencies),
+        ),
+        _NativeMode.wordScramble => await learning.prepareWordScramble(
+          categoryId: categoryId,
+          stillCurrent: () =>
+              _canOpenNative(generation, ownerId, learning, dependencies),
+        ),
+        _NativeMode.dictation => await learning.prepareDictation(
+          categoryId: categoryId,
+          stillCurrent: () =>
+              _canOpenNative(generation, ownerId, learning, dependencies),
+        ),
+      };
       if (!_canOpenNative(generation, ownerId, learning, dependencies)) {
         return;
       }
@@ -567,12 +597,21 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       await AppNavigator.pushPage<LearningSessionSummary>(
         context,
         AppPage<LearningSessionSummary>(
-          name: cloze ? 'learning/cloze' : 'learning/dictation',
+          name: switch (mode) {
+            _NativeMode.cloze => 'learning/cloze',
+            _NativeMode.wordScramble => 'learning/word-scramble',
+            _NativeMode.dictation => 'learning/dictation',
+          },
           builder: (_) => switch (session) {
             final DictationSession exercise => DictationQuizScreen(
               session: exercise,
               learning: learning,
               voice: dependencies.voice,
+              ownerChanges: screenOwners,
+            ),
+            final WordScrambleSession exercise => WordScrambleScreen(
+              session: exercise,
+              learning: learning,
               ownerChanges: screenOwners,
             ),
             final ClozeSession exercise => FillInTheBlanksScreen(
