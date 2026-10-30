@@ -53,8 +53,8 @@ cases exactly without rebuilding the APK. Native exit0 is not wrapper exit0.
 
 The immediate next card is the combined Review Center and owner-bound reads for
 ChooseMode, Clinic and Mastery, including Clinic's Quiz handoff. Existing cached
-Progress reads remain a known gap. The [SRS plan](../superpowers/plans/2026-10-30-srs-review-safety-integration.md)
-records that boundary; no combined hub or all-Progress readiness is claimed.
+Progress reads remain a known gap. The approved [Review Center/read-scope plan](../superpowers/plans/2026-10-30-review-center-integration.md)
+is now the active next card; no combined hub or all-Progress readiness is claimed.
 
 The latest cleanup follows the user's explicit instruction to delete superseded versions after Git backup. Old generated evidence, packages and inactive Python environments may be removed; current source, +18 baseline, model sources and signing material remain. Link-related approval blocks leave 30 archived old checkouts in place. The 56 native build runs whose removal was previously denied remain outside the cleanup allowlist. See the round-2 report for exact retained and blocked paths.
 

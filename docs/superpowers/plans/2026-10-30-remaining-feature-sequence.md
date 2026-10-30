@@ -31,8 +31,8 @@ deck/rating/finish intents and actual six launch sites. Preview remains unsaved
 presentation data. The immediate next card is the combined Review Center with
 reason-preserving due/incorrect/saved/local-report queues. It must also fix cached
 owner reads in ChooseMode, Clinic and Mastery and the Clinic Quiz handoff.
-Use the current [SRS plan](2026-10-30-srs-review-safety-integration.md) for that
-boundary; no next C plan is published here. Do not train from report snapshots.
+Use the approved [Review Center/read-scope plan](2026-10-30-review-center-integration.md)
+for this active card. Do not train from report snapshots or create an owner on view reads.
 The three proposed units below remain historical grounding, not the current queue.
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง

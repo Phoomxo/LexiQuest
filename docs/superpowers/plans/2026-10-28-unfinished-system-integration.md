@@ -81,9 +81,9 @@ Run the smallest relevant Flutter tests first, then touched subsystem tests. At 
 Saved Words, local reports, Sentence Scramble, local Typed Cloze scratchpad and
 owned SRS safety are attested. Next is the combined Review Center and owner-bound
 read correction in ChooseMode, Clinic and Mastery, including Clinic's Quiz handoff.
-The existing [SRS plan](2026-10-30-srs-review-safety-integration.md) and
+The approved [Review Center/read-scope plan](2026-10-30-review-center-integration.md) and
 [remaining-feature sequence](2026-10-30-remaining-feature-sequence.md) record that
-boundary. No new table or v21 reservation is required. Cached host Progress data
+active card. No new table or v21 reservation is required. Cached host Progress data
 must not be described as owner-safe merely because SRS writes are guarded.
 
 The decision trail is [the remaining-system decision log](../../field/2026-10-28-remaining-system-decisions.tsv). Logs for this wave are in `D:\LexiQuest-Storage\maintenance\2026-10-28\remaining-systems`. Earlier LM CPU logs are in the parent maintenance directory. Results on this board describe individual units until the integration suite attests the combined source.
