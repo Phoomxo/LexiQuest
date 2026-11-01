@@ -26,9 +26,21 @@ class MainActivity : FlutterActivity() {
 
     private var pendingExportResult: MethodChannel.Result? = null
     private var selectedExportDestination: SelectedExportDestination? = null
+    private var achievementShareBridge: AchievementShareBridge? = null
+    private var studyReminderBridge: StudyReminderBridge? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        achievementShareBridge?.dispose()
+        achievementShareBridge = AchievementShareBridge(
+            this,
+            flutterEngine.dartExecutor.binaryMessenger,
+        )
+        studyReminderBridge?.dispose()
+        studyReminderBridge = StudyReminderBridge(
+            this,
+            flutterEngine.dartExecutor.binaryMessenger,
+        )
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             exportChannelName,
@@ -40,6 +52,14 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onDestroy() {
+        achievementShareBridge?.dispose()
+        achievementShareBridge = null
+        studyReminderBridge?.dispose()
+        studyReminderBridge = null
+        super.onDestroy()
     }
 
     private fun selectExportDestination(

@@ -386,13 +386,13 @@ void main() {
         stillCurrent: () => true,
       );
       final payload = jsonDecode(utf8.decode(prepared.artifact.bytes));
-      expect(database.schemaVersion, 23);
+      expect(database.schemaVersion, 25);
       expect(
         payload['databaseSchemaVersion'],
         original['database_schema_version'],
       );
       expect(await _allRows(database), before);
-      for (final schema in [13, 24, 999]) {
+      for (final schema in [13, 25, 999]) {
         await database.customStatement(
           'UPDATE motivation_measurement_runs SET database_schema_version = ? WHERE id = ?',
           [schema, original['id']],

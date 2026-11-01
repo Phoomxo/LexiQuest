@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -5,6 +6,9 @@ import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../identity/data/drift_owner_write_coordinator.dart';
+import '../../learning_packs/data/drift_learning_pack_repository.dart';
+import '../../learning_packs/domain/learning_pack_repository.dart';
+import '../../motivation/data/drift_learning_day_recorder.dart';
 import '../../account_deletion/domain/account_deletion_contracts.dart';
 import '../domain/learning_time_admission.dart';
 import '../domain/accepted_quiz_plan.dart';
@@ -17,11 +21,15 @@ import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
+import '../domain/matching_exercise.dart';
+
+part 'drift_matching_repository.dart';
 
 final class DriftLearningRepository
     implements
         LearningRepository,
         ConfiguredQuizRepository,
+        LexicalQuizRepository,
         NativeExerciseRepository,
         SrsReviewRepository,
         CanonicalLearningTimeAdmissionRepository,
@@ -31,6 +39,7 @@ final class DriftLearningRepository
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
     this.lifecycleObserver,
     DriftOwnerWriteCoordinator? ownerWrites,
+    this.lexicalContent,
   }) : _ownerWrites =
            ownerWrites ??
            DriftOwnerWriteCoordinator(
@@ -56,12 +65,34 @@ final class DriftLearningRepository
   }
 
   final db.AppDatabase database;
+  final DriftLearningPackRepository? lexicalContent;
+  final Expando<_LexicalIssuance> _lexicalBindings =
+      Expando<_LexicalIssuance>();
+  StreamSubscription<Set<TableUpdate>>? _configuredOwnerChanges;
+  int _configuredOwnerEpoch = 0;
+  final Expando<_DriftConfiguredQuizReadBinding> _quizCheckpointBindings =
+      Expando<_DriftConfiguredQuizReadBinding>();
+
+  void _trackConfiguredOwner() {
+    // A read lease must outlive the transaction-local streams Drift closes at commit.
+    _configuredOwnerChanges ??= Zone.root
+        .run(
+          () => database.tableUpdates(
+            TableUpdateQuery.onTable(database.localOwners),
+          ),
+        )
+        .listen(
+          (_) => _configuredOwnerEpoch++,
+          onError: (Object _) => _configuredOwnerEpoch++,
+          onDone: () => _configuredOwnerEpoch++,
+        );
+  }
+
   final DriftOwnerWriteCoordinator _ownerWrites;
   final LearningSessionLifecycleObserver? lifecycleObserver;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
-  // shortcut: Dictation retry handles are in-process; restart resume needs a canonical versioned checkpoint.
-  final Expando<_NativeBinding> _nativeBindings = Expando<_NativeBinding>();
+  final Expando<_NativeIssuance> _nativeBindings = Expando<_NativeIssuance>();
 
   final Expando<_DriftSourceBoundVocabularyStart>
   _sourceBoundVocabularyLinkReceipts =
@@ -321,6 +352,42 @@ final class DriftLearningRepository
       late Map<String, Object?> source;
       late Map<String, Object?> context;
       switch (request) {
+        case MatchingTimeAdmission(:final state):
+          if (state is! _DriftMatchingState ||
+              !identical(state.issuer.canonical, this) ||
+              !state.lease.current) {
+            throw StateError('Original matching time context is unavailable');
+          }
+          final saved = await state.issuer._read(
+            state.plan.session.id,
+            expectedOwnerId,
+            state.lease,
+          );
+          if (saved.checkpoint.phase != MatchingPhase.selecting ||
+              saved.revision != state.revision ||
+              saved.plan.id != state.plan.id ||
+              saved.checkpoint.stableSerialization !=
+                  state.checkpoint.stableSerialization) {
+            throw StateError('Original matching board changed');
+          }
+          row = (await _session(saved.plan.session.id))!;
+          kind = CanonicalLearningTimeSourceKind.matching;
+          evidence = saved.plan.evidence;
+          source = {
+            'schemaVersion': 1,
+            'kind': kind.name,
+            'sessionId': row.id,
+            'activityType': row.activityType,
+            'acceptedPlanId': saved.plan.id,
+          };
+          context = {
+            'schemaVersion': 1,
+            'checkpointRevision': saved.revision,
+            'attemptCount': saved.checkpoint.attemptCount,
+            'phase': MatchingPhase.selecting.name,
+            'promptMode': MatchingPlan.promptMode,
+            'evidenceContext': evidence.toJson(),
+          };
         case ConfiguredQuizTimeAdmission(:final state):
           final saved = await _loadQuiz(state.sessionId, expectedOwnerId);
           if (saved.state != 'active' ||
@@ -336,18 +403,19 @@ final class DriftLearningRepository
           }
           row = (await _session(saved.sessionId))!;
           final ordinal = saved.checkpoint.questionOrdinal;
-          final word = saved.plan.questions[ordinal].word;
+          final question = saved.plan.questions[ordinal];
+          final word = question.word;
           final hint = saved.checkpoint.assistance.hintFirstShownAtUtcMs == null
               ? 0
               : 1;
           kind = CanonicalLearningTimeSourceKind.configuredQuiz;
           evidence = EvidenceContext.forNewEvidence(
             evidenceClass: hint == 0
-                ? EvidenceClass.recognition
+                ? question.unassistedEvidenceClass
                 : EvidenceClass.guidedPractice,
-            skillId: 'meaning-recall',
+            skillId: question.skillId,
             hintLevel: hint,
-            contentRevision: word.contentRevision!,
+            contentRevision: question.evidenceContentRevision,
             rolloutMode: EvidencePolicyRolloutMode.legacy,
           );
           source = {
@@ -362,8 +430,8 @@ final class DriftLearningRepository
             'questionOrdinal': ordinal,
             'checkpointRevision': saved.checkpointRevision,
             'wordId': word.id,
-            'contentRevision': word.contentRevision,
-            'promptMode': 'meaningChoice',
+            'contentRevision': question.evidenceContentRevision,
+            'promptMode': question.promptMode,
             'phase': 'awaitingAnswer',
             'evidenceContext': evidence.toJson(),
           };
@@ -459,13 +527,18 @@ final class DriftLearningRepository
             'evidenceContext': evidence.toJson(),
           };
         case NativeLearningTimeAdmission(:final exercise, :final hintLevel):
-          final binding = _requireNativeBinding(exercise);
+          _requireNativeBinding(exercise);
+          final saved = await _loadNative(
+            exercise.id,
+            expectedOwnerId,
+            issued: exercise,
+          );
           if (exercise is WordScrambleSession ||
               exercise is SentenceScrambleSession ||
               hintLevel < 0 ||
               hintLevel > 2 ||
-              binding.answer != null ||
-              binding.closing != null) {
+              saved.checkpoint is! AwaitingNativeAnswer ||
+              !_nativeCurrent(exercise, stillCurrent)) {
             throw StateError('Native learning-time context is unavailable');
           }
           row = await _requireNativeSession(exercise);
@@ -481,11 +554,11 @@ final class DriftLearningRepository
           final (prompt, evidenceClass, skill, actualHint) = switch (exercise) {
             DictationSession() => (
               'dictation',
-              hintLevel == 0
+              hintLevel == 0 && !saved.checkpoint.draft.assisted
                   ? EvidenceClass.independentRecall
                   : EvidenceClass.guidedPractice,
               'dictation-spelling',
-              hintLevel,
+              hintLevel == 0 && !saved.checkpoint.draft.assisted ? 0 : 1,
             ),
             TypedClozeSession() => (
               'clozeTyped',
@@ -520,7 +593,8 @@ final class DriftLearningRepository
             'evidenceContentRevision': exercise.evidenceContentRevision,
           };
           context = {
-            'schemaVersion': 1,
+            'schemaVersion': 2,
+            'checkpointRevision': saved.checkpointRevision,
             'wordId': exercise.word.id,
             'promptMode': prompt,
             'evidenceContext': evidence.toJson(),
@@ -610,6 +684,8 @@ final class DriftLearningRepository
     // immutable window was admitted before closing. The time writer checks its
     // captured owner and preference epoch, independently of the new live slot.
     switch (binding.request) {
+      case MatchingTimeAdmission():
+        break;
       case ConfiguredQuizTimeAdmission():
         break;
       case OwnedSrsTimeAdmission(:final review):
@@ -760,7 +836,9 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
-    if (_srsActivities.contains(session.activityType) ||
+    if (session.activityType == MatchingPlan.activityType ||
+        session.id.startsWith(MatchingPlan.sessionPrefix) ||
+        _srsActivities.contains(session.activityType) ||
         session.id.startsWith(SrsReviewSession.idPrefix) ||
         session.activityType == 'sentenceScramble' ||
         session.id.startsWith(SentenceScrambleSession.idPrefix) ||
@@ -830,7 +908,11 @@ final class DriftLearningRepository
   Future<AnswerRecordResult> recordAnswer(
     RecordAnswerCommand command,
   ) => database.transaction(() async {
-    if (command.promptMode == 'srsRecall' ||
+    if (command.promptMode == MatchingPlan.promptMode ||
+        command.sessionId.startsWith(MatchingPlan.sessionPrefix) ||
+        command.promptMode == 'srsRecall' ||
+        command.promptMode == 'definitionChoice' ||
+        command.promptMode == 'definitionTyped' ||
         command.sessionId.startsWith(SrsReviewSession.idPrefix) ||
         command.promptMode == 'sentenceScramble' ||
         command.sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
@@ -937,6 +1019,10 @@ final class DriftLearningRepository
               ),
             ),
           );
+      await DriftLearningDayRecorder(
+        database,
+        ownerWrites: _ownerWrites,
+      ).recordAnswer(command.id);
       final next = masteryEligible
           ? await projections.rebuildWord(
               ownerId: command.ownerId,
@@ -983,7 +1069,8 @@ final class DriftLearningRepository
     required String sessionId,
     required DateTime endedAtUtc,
   }) => database.transaction(() async {
-    if (sessionId.startsWith(SrsReviewSession.idPrefix) ||
+    if (sessionId.startsWith(MatchingPlan.sessionPrefix) ||
+        sessionId.startsWith(SrsReviewSession.idPrefix) ||
         sessionId.startsWith(SentenceScrambleSession.idPrefix) ||
         sessionId.startsWith(DictationSession.idPrefix) ||
         sessionId.startsWith(WordScrambleSession.idPrefix) ||
@@ -1524,88 +1611,236 @@ final class DriftLearningRepository
 
   @override
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
-    T session, {
+    T exercise, {
     required bool Function() stillCurrent,
   }) async {
-    final prefix = switch (session) {
-      DictationSession() => DictationSession.idPrefix,
-      WordScrambleSession() => WordScrambleSession.idPrefix,
-      SentenceScrambleSession() => SentenceScrambleSession.idPrefix,
-      ClozeSession() => ClozeSession.idPrefix,
-    };
-    if (!session.id.startsWith(prefix)) {
-      throw ArgumentError('Dictation requires its native session ID');
-    }
-    final binding = _nativeBindings[session] ??= _NativeBinding();
+    final plan = AcceptedNativePlan(exercise);
+    final binding = _nativeBindings[exercise] ??= _NativeIssuance(stillCurrent);
     await _writeNativeExercise<void>(
-      session,
+      exercise,
       stillCurrent,
       write: () async {
-        final existing = await _session(session.id);
+        final existing = await _session(exercise.id);
         if (existing != null && !binding.startAttempted) {
           throw StateError(
-            'A bare Dictation session has no original launch handle',
+            'A bare native session has no original launch handle',
           );
         }
         if (existing == null) {
-          await _requireNativeTargets(session);
+          if (binding.started) {
+            throw StateError('Acknowledged native session is missing');
+          }
+          await _requireNativeTargets(exercise);
           binding.startAttempted = true;
-          await _startSession(session.session);
+          await _startSession(
+            exercise.session,
+            beforeObserved: () => _writeNativeStorage(
+              exercise.id,
+              plan: plan,
+              expectedRevision: 0,
+              checkpoint: AwaitingNativeAnswer(NativeExerciseDraft()),
+            ),
+          );
         } else {
-          _sameNativeSession(existing, session);
+          _sameNativeSession(existing, exercise);
         }
       },
       verify: (_) async {
-        await _requireNativeSession(session);
-        if (!binding.started) await _requireNativeTargets(session);
+        await _loadNative(exercise.id, exercise.ownerId, issued: exercise);
       },
     );
     binding.started = true;
-    return session;
+    return exercise;
+  }
+
+  @override
+  Future<NativeExerciseState> resumeNativeExercise({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('Native resume requires committed source facts');
+    }
+    return database.transaction(() async {
+      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
+      final state = await _loadNative(sessionId, expectedOwnerId);
+      await _requireTimeOrdinarySession(sessionId);
+      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
+      _nativeBindings[state.exercise] = _NativeIssuance(stillCurrent)
+        ..startAttempted = true
+        ..started = true;
+      return state;
+    });
+  }
+
+  @override
+  Future<NativeExerciseState> readNativeExerciseState(
+    AcceptedNativeExercise exercise, {
+    required bool Function() stillCurrent,
+  }) async {
+    _requireNativeBinding(exercise);
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError(
+        'Native checkpoint read requires committed source facts',
+      );
+    }
+    return database.transaction(() async {
+      await _requireTimeReadOwner(
+        exercise.ownerId,
+        () => _nativeCurrent(exercise, stillCurrent),
+      );
+      final state = await _loadNative(
+        exercise.id,
+        exercise.ownerId,
+        issued: exercise,
+      );
+      await _requireTimeReadOwner(
+        exercise.ownerId,
+        () => _nativeCurrent(exercise, stillCurrent),
+      );
+      return state;
+    });
+  }
+
+  @override
+  Future<NativeExerciseState> saveNativeCheckpoint(
+    NativeExerciseState state,
+    NativeCheckpoint checkpoint, {
+    required bool Function() stillCurrent,
+  }) async {
+    if (state is! _DriftNativeState || !identical(state.issuer, this)) {
+      throw StateError('Native checkpoint requires its issued state');
+    }
+    final exercise = state.exercise;
+    _requireNativeBinding(exercise);
+    checkpoint.validate(state.plan);
+    if (checkpoint.answer case final command?) {
+      _validateNativeAnswer(exercise, command);
+    }
+    return _writeNativeExercise<NativeExerciseState>(
+      exercise,
+      stillCurrent,
+      write: () async {
+        final saved = await _loadNative(
+          exercise.id,
+          exercise.ownerId,
+          issued: exercise,
+        );
+        if (_reconcilesNativeStage(state, saved, checkpoint)) return saved;
+        if (saved.checkpointRevision == state.checkpointRevision + 1 &&
+            saved.checkpoint.stableSerialization ==
+                checkpoint.stableSerialization) {
+          _requireNativeTransition(state.checkpoint, checkpoint);
+          return saved;
+        }
+        if (saved.checkpointRevision != state.checkpointRevision ||
+            saved.plan.id != state.plan.id ||
+            saved.checkpoint.stableSerialization !=
+                state.checkpoint.stableSerialization) {
+          throw NativeExerciseUnavailable(
+            NativeExerciseUnavailableReason.revisionChanged,
+          );
+        }
+        _requireNativeTransition(saved.checkpoint, checkpoint);
+        if (checkpoint is AbandonedNativeExercise) {
+          final changed = await database.customUpdate(
+            "UPDATE learning_sessions SET state = 'abandoned', ended_at_utc_ms = ?, score = 0 "
+            "WHERE id = ? AND owner_id = ? AND state = 'active' AND checkpoint_revision = ?",
+            variables: [
+              Variable<int>(checkpoint.endedAtUtc.millisecondsSinceEpoch),
+              Variable<String>(exercise.id),
+              Variable<String>(exercise.ownerId),
+              Variable<int>(saved.checkpointRevision),
+            ],
+            updates: {database.learningSessions},
+          );
+          if (changed != 1) throw StateError('Native abandon identity changed');
+        }
+        await _writeNativeStorage(
+          exercise.id,
+          plan: saved.plan,
+          expectedRevision: saved.checkpointRevision,
+          checkpoint: checkpoint,
+        );
+        return _loadNative(exercise.id, exercise.ownerId, issued: exercise);
+      },
+      verify: (_) async {
+        await _loadNative(exercise.id, exercise.ownerId, issued: exercise);
+      },
+    );
   }
 
   @override
   Future<AnswerRecordResult> commitNativeAnswer(
-    AcceptedNativeExercise session,
+    AcceptedNativeExercise exercise,
     RecordAnswerCommand command, {
     required bool Function() stillCurrent,
   }) async {
-    final binding = _requireNativeBinding(session);
-    _validateNativeAnswer(session, command);
-    if (binding.answer case final original?) {
-      if (!_sameNativeCommand(original, command)) {
-        throw StateError('Dictation pending answer identity changed');
-      }
-    } else {
-      binding.answer = command;
-    }
+    _requireNativeBinding(exercise);
+    _validateNativeAnswer(exercise, command);
     return _writeNativeExercise<AnswerRecordResult>(
-      session,
+      exercise,
       stillCurrent,
       write: () async {
-        final row = await _requireNativeSession(session);
-        final attempts = await _nativeAttempts(session);
-        if (attempts.isNotEmpty) {
-          _sameNativeAnswer(attempts, command);
-          _sameNativeOutcome(row, command);
-          final srs = await _readSavedSrs(session.ownerId, session.word.id);
-          if (srs == null &&
-              _allowsAnswerProjection(command, LearningProjection.masterySrs)) {
-            throw StateError('ordinary answer has no ordinary SRS evidence');
+        var current = await _loadNative(
+          exercise.id,
+          exercise.ownerId,
+          issued: exercise,
+        );
+        if (current.checkpoint is AwaitingNativeAnswer) {
+          final pending = PendingNativeAnswer(command.nativeDraft!, command);
+          _requireNativeTransition(current.checkpoint, pending);
+          await _writeNativeStorage(
+            exercise.id,
+            plan: current.plan,
+            expectedRevision: current.checkpointRevision,
+            checkpoint: pending,
+          );
+          current = await _loadNative(
+            exercise.id,
+            exercise.ownerId,
+            issued: exercise,
+          );
+        }
+        final original = current.checkpoint.answer;
+        if (original == null || !_sameNativeCommand(original, command)) {
+          throw StateError('Native pending answer identity changed');
+        }
+        if (current.checkpoint is! PendingNativeAnswer) {
+          if (current.checkpoint is! AnsweredNativeExercise &&
+              current.checkpoint is! ClosingNativeExercise &&
+              current.checkpoint is! CompletedNativeExercise) {
+            throw StateError('Native answer phase is unavailable');
           }
-          return AnswerRecordResult(inserted: false, srs: srs);
+          return AnswerRecordResult(
+            inserted: false,
+            srs: await _readSavedSrs(exercise.ownerId, exercise.word.id),
+          );
         }
-        if (row.state != 'active') {
-          throw StateError('Dictation is already completed');
-        }
-        await _requireNativeTargets(session);
-        return _recordAnswer(command);
+        final result = await _recordAnswer(original);
+        await _writeNativeStorage(
+          exercise.id,
+          plan: current.plan,
+          expectedRevision: current.checkpointRevision,
+          checkpoint: AnsweredNativeExercise(
+            current.checkpoint.draft,
+            original,
+          ),
+        );
+        return result;
       },
-      verify: (result) async {
-        final row = await _requireNativeSession(session);
-        _sameNativeAnswer(await _nativeAttempts(session), command);
-        _sameNativeOutcome(row, command);
-        if (result.inserted) await _requireNativeTargets(session);
+      verify: (_) async {
+        final current = await _loadNative(
+          exercise.id,
+          exercise.ownerId,
+          issued: exercise,
+        );
+        if (current.checkpoint is PendingNativeAnswer ||
+            current.checkpoint.answer == null ||
+            !_sameNativeCommand(current.checkpoint.answer!, command)) {
+          throw StateError('Native answer acknowledgement changed');
+        }
       },
     );
   }
@@ -1615,129 +1850,420 @@ final class DriftLearningRepository
     NativeFinishIntent intent, {
     required bool Function() stillCurrent,
   }) async {
-    final session = intent.exercise;
-    final binding = _requireNativeBinding(session);
-    _validateNativeAnswer(session, intent.answer);
-    if (binding.answer == null ||
-        !_sameNativeCommand(binding.answer!, intent.answer)) {
-      throw StateError(
-        'Dictation completion requires its original pending answer',
-      );
-    }
+    final exercise = intent.exercise;
+    _requireNativeBinding(exercise);
+    _validateNativeAnswer(exercise, intent.answer);
     _requiredUtc(intent.endedAtUtc, 'endedAtUtc');
-    if (intent.endedAtUtc.isBefore(intent.answer.occurredAtUtc)) {
-      throw ArgumentError('Dictation completion precedes its answer');
+    if (intent.endedAtUtc.isBefore(intent.answer.occurredAtUtc) ||
+        intent.endedAtUtc.microsecondsSinceEpoch % 1000 != 0) {
+      throw ArgumentError('Native completion precedes its answer');
     }
-    if (binding.closing case final original?) {
-      if (original.endedAtUtc != intent.endedAtUtc ||
-          !_sameNativeCommand(original.answer, intent.answer)) {
-        throw StateError('Dictation close identity changed');
-      }
-    } else {
-      binding.closing = intent;
-    }
-    var historical = false;
+    var newlyCompleted = false;
     return _writeNativeExercise<LearningSessionSummary>(
-      session,
+      exercise,
       stillCurrent,
       write: () async {
-        final row = await _requireNativeSession(session);
-        _sameNativeAnswer(await _nativeAttempts(session), intent.answer);
-        _sameNativeOutcome(row, intent.answer);
-        if (row.state == 'completed') {
-          if (!binding.finishAttempted ||
-              row.endedAtUtcMs != intent.endedAtUtc.millisecondsSinceEpoch) {
-            throw StateError(
-              'Dictation completion has no original close handle',
-            );
-          }
-          historical = true;
-          return _nativeSummary(row);
-        }
-        await _requireNativeTargets(session);
-        binding.finishAttempted = true;
-        return _finishSession(
-          ownerId: session.ownerId,
-          sessionId: session.id,
-          endedAtUtc: intent.endedAtUtc,
+        var current = await _loadNative(
+          exercise.id,
+          exercise.ownerId,
+          issued: exercise,
         );
+        if (current.checkpoint is AnsweredNativeExercise) {
+          final closing = ClosingNativeExercise(
+            current.checkpoint.draft,
+            intent.answer,
+            intent.endedAtUtc,
+          );
+          _requireNativeTransition(current.checkpoint, closing);
+          await _writeNativeStorage(
+            exercise.id,
+            plan: current.plan,
+            expectedRevision: current.checkpointRevision,
+            checkpoint: closing,
+          );
+          current = await _loadNative(
+            exercise.id,
+            exercise.ownerId,
+            issued: exercise,
+          );
+        }
+        final checkpoint = current.checkpoint;
+        if ((checkpoint is! ClosingNativeExercise &&
+                checkpoint is! CompletedNativeExercise) ||
+            checkpoint.answer == null ||
+            !_sameNativeCommand(checkpoint.answer!, intent.answer) ||
+            checkpoint.endedAtUtc != intent.endedAtUtc) {
+          throw StateError('Native close identity changed');
+        }
+        if (checkpoint is CompletedNativeExercise) {
+          return _nativeSummary((await _session(exercise.id))!);
+        }
+        newlyCompleted = true;
+        final summary = await _finishSession(
+          ownerId: exercise.ownerId,
+          sessionId: exercise.id,
+          endedAtUtc: intent.endedAtUtc,
+          observe: false,
+        );
+        await _writeNativeStorage(
+          exercise.id,
+          plan: current.plan,
+          expectedRevision: current.checkpointRevision,
+          checkpoint: CompletedNativeExercise(
+            checkpoint.draft,
+            intent.answer,
+            intent.endedAtUtc,
+          ),
+        );
+        final observer = lifecycleObserver;
+        if (observer != null) {
+          final row = (await _session(exercise.id))!;
+          await _observe(
+            () => observer.completed(LearningSessionLifecycleFact.fromRow(row)),
+          );
+        }
+        return summary;
       },
       verify: (_) async {
-        final row = await _requireNativeSession(session);
-        _sameNativeAnswer(await _nativeAttempts(session), intent.answer);
-        _sameNativeOutcome(row, intent.answer);
-        if (row.state != 'completed' ||
-            row.endedAtUtcMs != intent.endedAtUtc.millisecondsSinceEpoch) {
-          throw StateError('Dictation completion changed');
+        final current = await _loadNative(
+          exercise.id,
+          exercise.ownerId,
+          issued: exercise,
+        );
+        if (current.checkpoint is! CompletedNativeExercise ||
+            current.checkpoint.endedAtUtc != intent.endedAtUtc) {
+          throw StateError('Native completion acknowledgement changed');
         }
-        if (!historical) await _requireNativeTargets(session);
+        if (newlyCompleted) await _requireNativeTargets(exercise);
       },
     );
   }
 
   Future<T> _writeNativeExercise<T>(
-    AcceptedNativeExercise session,
+    AcceptedNativeExercise exercise,
     bool Function() stillCurrent, {
     required Future<T> Function() write,
     required Future<void> Function(T result) verify,
   }) async {
     if (await _ownerWrites.hasAmbientTransaction()) {
-      throw StateError('Dictation requires its own committed transaction');
+      throw StateError(
+        'Native learning requires its own committed transaction',
+      );
     }
-    if (!stillCurrent()) throw StateError('Dictation is no longer current');
+    if (!_nativeCurrent(exercise, stillCurrent)) {
+      throw StateError('Native exercise is no longer current');
+    }
     return _ownerWrites.writeForActiveOwner(
-      expectedOwnerId: session.ownerId,
+      expectedOwnerId: exercise.ownerId,
       write: () async {
         final result = await write();
         await _ownerWrites.writeForActiveOwner(
-          expectedOwnerId: session.ownerId,
+          expectedOwnerId: exercise.ownerId,
           write: () => verify(result),
         );
-        if (!stillCurrent()) throw StateError('Dictation is no longer current');
+        if (!_nativeCurrent(exercise, stillCurrent)) {
+          throw StateError('Native exercise is no longer current');
+        }
         return result;
       },
     );
   }
 
-  _NativeBinding _requireNativeBinding(AcceptedNativeExercise session) {
-    final binding = _nativeBindings[session];
+  bool _nativeCurrent(
+    AcceptedNativeExercise exercise,
+    bool Function() stillCurrent,
+  ) {
+    final issued = _nativeBindings[exercise];
+    if (issued == null || issued.retired) return false;
+    if (!issued.current() || !stillCurrent()) {
+      issued.retired = true;
+      return false;
+    }
+    return true;
+  }
+
+  _NativeIssuance _requireNativeBinding(AcceptedNativeExercise exercise) {
+    final binding = _nativeBindings[exercise];
     if (binding == null || !binding.started) {
-      throw StateError('Dictation requires its original acknowledged launch');
+      throw StateError(
+        'Native exercise requires its original acknowledged launch',
+      );
     }
     return binding;
   }
 
+  Future<_DriftNativeState> _loadNative(
+    String sessionId,
+    String ownerId, {
+    AcceptedNativeExercise? issued,
+  }) async {
+    final row = await _session(sessionId);
+    if (row == null) {
+      throw NativeExerciseUnavailable(NativeExerciseUnavailableReason.notFound);
+    }
+    if (row.ownerId != ownerId) {
+      throw NativeExerciseUnavailable(
+        NativeExerciseUnavailableReason.ownerChanged,
+      );
+    }
+    final planId = row.acceptedPlanId;
+    final planJson = row.acceptedPlanJson;
+    final checkpointJson = row.checkpointJson;
+    if (planId != null &&
+        planId.startsWith('native-plan-') &&
+        !planId.startsWith(AcceptedNativePlan.idPrefix)) {
+      throw NativeExerciseUnavailable(
+        NativeExerciseUnavailableReason.unsupportedPolicy,
+      );
+    }
+    if (planId == null ||
+        planJson == null ||
+        checkpointJson == null ||
+        !planId.startsWith(AcceptedNativePlan.idPrefix)) {
+      throw NativeExerciseUnavailable(NativeExerciseUnavailableReason.legacy);
+    }
+    late AcceptedNativePlan plan;
+    late NativeCheckpoint checkpoint;
+    try {
+      plan = AcceptedNativePlan.parse(id: planId, json: planJson);
+      if (plan.exercise.ownerId != row.ownerId) {
+        throw NativeExerciseUnavailable(
+          NativeExerciseUnavailableReason.ownerChanged,
+        );
+      }
+      checkpoint = NativeCheckpoint.parse(checkpointJson, plan: plan);
+      _sameNativeSession(row, plan.exercise);
+      if (issued != null) _sameNativeSession(row, issued);
+      if (checkpoint.answer case final command?) {
+        _validateNativeAnswer(plan.exercise, command);
+      }
+      final attempts = await _nativeAttempts(plan.exercise);
+      if (checkpoint.answer case final command?) {
+        if (checkpoint is PendingNativeAnswer) {
+          if (attempts.isNotEmpty ||
+              row.correctCount != 0 ||
+              row.wrongCount != 0) {
+            throw StateError(
+              'Pending native answer has unacknowledged canonical facts',
+            );
+          }
+        } else {
+          _sameNativeAnswer(attempts, command);
+          _sameNativeOutcome(row, command);
+        }
+      } else if (attempts.isNotEmpty ||
+          row.correctCount != 0 ||
+          row.wrongCount != 0) {
+        throw StateError('Native checkpoint omitted canonical answers');
+      }
+      final expectedState = switch (checkpoint) {
+        CompletedNativeExercise() => 'completed',
+        AbandonedNativeExercise() => 'abandoned',
+        _ => 'active',
+      };
+      if (row.state != expectedState ||
+          (row.state == 'abandoned' && row.score != 0) ||
+          (row.state == 'active' &&
+              (row.endedAtUtcMs != null || row.score != null)) ||
+          (row.state != 'active' &&
+              row.endedAtUtcMs !=
+                  checkpoint.endedAtUtc!.millisecondsSinceEpoch) ||
+          row.checkpointRevision < 1) {
+        throw StateError('Native checkpoint contradicts canonical session');
+      }
+    } on NativeExerciseUnavailable {
+      rethrow;
+    } on Object {
+      throw NativeExerciseUnavailable(NativeExerciseUnavailableReason.corrupt);
+    }
+    if (row.state == 'active') {
+      try {
+        await _requireNativeTargets(plan.exercise);
+      } on Object {
+        throw NativeExerciseUnavailable(
+          NativeExerciseUnavailableReason.contentChanged,
+        );
+      }
+    }
+    return _DriftNativeState(
+      issuer: this,
+      exercise: issued ?? plan.exercise,
+      plan: plan,
+      checkpoint: checkpoint,
+      checkpointRevision: row.checkpointRevision,
+      completedSummary: checkpoint is CompletedNativeExercise
+          ? _nativeSummary(row)
+          : null,
+    );
+  }
+
   Future<db.LearningSession> _requireNativeSession(
-    AcceptedNativeExercise session,
+    AcceptedNativeExercise exercise,
   ) async {
-    final row = await _session(session.id);
-    if (row == null) throw StateError('Dictation session is missing');
-    _sameNativeSession(row, session);
+    final row = await _session(exercise.id);
+    if (row == null) throw StateError('Native session is missing');
+    _sameNativeSession(row, exercise);
     return row;
   }
 
   void _sameNativeSession(
     db.LearningSession row,
-    AcceptedNativeExercise session,
+    AcceptedNativeExercise exercise,
   ) {
-    final original = session.session;
-    final activity = switch (session) {
-      DictationSession() => 'dictation',
-      WordScrambleSession() => 'wordScramble',
-      SentenceScrambleSession() => 'sentenceScramble',
-      ClozeSession() => 'cloze',
+    final plan = AcceptedNativePlan(exercise);
+    if (row.id != exercise.id ||
+        row.ownerId != exercise.ownerId ||
+        row.activityType != exercise.session.activityType ||
+        row.startedAtUtcMs != exercise.startedAtUtc.millisecondsSinceEpoch ||
+        row.appVersion != exercise.session.appVersion ||
+        row.buildId != exercise.session.buildId ||
+        row.acceptedPlanId != plan.id ||
+        row.acceptedPlanJson != plan.stableSerialization ||
+        row.checkpointJson == null ||
+        row.checkpointRevision < 1 ||
+        !{'active', 'completed', 'abandoned'}.contains(row.state)) {
+      throw StateError('Native launch identity changed');
+    }
+    NativeCheckpoint.parse(row.checkpointJson!, plan: plan);
+  }
+
+  bool _reconcilesNativeStage(
+    _DriftNativeState original,
+    _DriftNativeState saved,
+    NativeCheckpoint requested,
+  ) {
+    if (original.plan.id != saved.plan.id ||
+        original.plan.stableSerialization != saved.plan.stableSerialization) {
+      return false;
+    }
+    final before = original.checkpoint;
+    final current = saved.checkpoint;
+    final distance = saved.checkpointRevision - original.checkpointRevision;
+    bool sameDraft(NativeCheckpoint left, NativeCheckpoint right) =>
+        jsonEncode(left.draft.toJson()) == jsonEncode(right.draft.toJson());
+    int? answerPosition(NativeCheckpoint checkpoint) => switch (checkpoint) {
+      AwaitingNativeAnswer() => 0,
+      PendingNativeAnswer() => 1,
+      AnsweredNativeExercise() => 2,
+      ClosingNativeExercise() => 3,
+      CompletedNativeExercise() => 4,
+      AbandonedNativeExercise() => null,
     };
-    if (row.ownerId != session.ownerId ||
-        row.activityType != activity ||
-        row.startedAtUtcMs != session.startedAtUtc.millisecondsSinceEpoch ||
-        row.appVersion != original.appVersion ||
-        row.buildId != original.buildId ||
-        row.acceptedPlanId != null ||
-        row.acceptedPlanJson != null ||
-        row.checkpointJson != null ||
-        row.checkpointRevision != 0 ||
-        (row.state != 'active' && row.state != 'completed')) {
-      throw StateError('Dictation launch identity changed');
+    if (requested is PendingNativeAnswer) {
+      final originPosition = answerPosition(before);
+      final currentPosition = answerPosition(current);
+      final answer = current.answer;
+      if (originPosition == null ||
+          currentPosition == null ||
+          currentPosition < 1 ||
+          currentPosition < originPosition ||
+          distance != currentPosition - originPosition ||
+          answer == null ||
+          !sameDraft(requested, current)) {
+        return false;
+      }
+      if (before is AwaitingNativeAnswer) {
+        _requireNativeTransition(before, requested);
+      } else if (before.answer == null ||
+          !_sameNativeCommand(before.answer!, answer) ||
+          !sameDraft(before, current)) {
+        return false;
+      }
+      final expected = nativeAnswerJson(answer)
+        ..remove('id')
+        ..remove('occurredAtUtcMs');
+      final proposed = nativeAnswerJson(requested.answer)
+        ..remove('id')
+        ..remove('occurredAtUtcMs');
+      return jsonEncode(expected) == jsonEncode(proposed);
+    }
+    if (requested is ClosingNativeExercise) {
+      final originPosition = answerPosition(before);
+      final currentPosition = answerPosition(current);
+      if (originPosition == null ||
+          originPosition < 2 ||
+          currentPosition == null ||
+          currentPosition < 3 ||
+          currentPosition < originPosition ||
+          distance != currentPosition - originPosition ||
+          before.answer == null ||
+          current.answer == null ||
+          !_sameNativeCommand(before.answer!, current.answer!) ||
+          !_sameNativeCommand(requested.answer, current.answer!) ||
+          !sameDraft(before, current) ||
+          !sameDraft(requested, current)) {
+        return false;
+      }
+      if (before is AnsweredNativeExercise) {
+        _requireNativeTransition(before, requested);
+      } else if (before.endedAtUtc != requested.endedAtUtc) {
+        return false;
+      }
+      return true;
+    }
+    if (requested is AbandonedNativeExercise &&
+        current is AbandonedNativeExercise) {
+      if (!sameDraft(before, current) || !sameDraft(requested, current)) {
+        return false;
+      }
+      if (before is AwaitingNativeAnswer && distance == 1) {
+        _requireNativeTransition(before, requested);
+        return true;
+      }
+      return before is AbandonedNativeExercise &&
+          distance == 0 &&
+          before.endedAtUtc == requested.endedAtUtc;
+    }
+    return false;
+  }
+
+  void _requireNativeTransition(
+    NativeCheckpoint previous,
+    NativeCheckpoint next,
+  ) {
+    final sameDraft = previous.draft.toJson();
+    final draft = next.draft;
+    if ((previous.draft.assisted && !draft.assisted) ||
+        draft.responseTimeMs < previous.draft.responseTimeMs) {
+      throw StateError('Native assistance or response time cannot be reset');
+    }
+    final allowed =
+        (previous is AwaitingNativeAnswer &&
+            (next is AwaitingNativeAnswer ||
+                next is PendingNativeAnswer ||
+                next is AbandonedNativeExercise)) ||
+        (previous is AnsweredNativeExercise &&
+            next is ClosingNativeExercise &&
+            _sameNativeCommand(previous.answer, next.answer) &&
+            jsonEncode(sameDraft) == jsonEncode(next.draft.toJson()));
+    if (!allowed) throw StateError('Invalid native checkpoint transition');
+  }
+
+  Future<void> _writeNativeStorage(
+    String sessionId, {
+    required AcceptedNativePlan plan,
+    required int expectedRevision,
+    required NativeCheckpoint checkpoint,
+  }) async {
+    checkpoint.validate(plan);
+    final changed = await database.customUpdate(
+      'UPDATE learning_sessions SET accepted_plan_id = ?, accepted_plan_json = ?, '
+      'checkpoint_revision = ?, checkpoint_json = ? WHERE id = ? AND owner_id = ? AND checkpoint_revision = ?',
+      variables: [
+        Variable<String>(plan.id),
+        Variable<String>(plan.stableSerialization),
+        Variable<int>(expectedRevision + 1),
+        Variable<String>(checkpoint.stableSerialization),
+        Variable<String>(sessionId),
+        Variable<String>(plan.exercise.ownerId),
+        Variable<int>(expectedRevision),
+      ],
+      updates: {database.learningSessions},
+    );
+    if (changed != 1) {
+      throw NativeExerciseUnavailable(
+        NativeExerciseUnavailableReason.revisionChanged,
+      );
     }
   }
 
@@ -1766,12 +2292,8 @@ final class DriftLearningRepository
       if (word == null ||
           word.read<String>('category_id') != target.categoryId ||
           word.read<String>('spelling') != target.spelling ||
-          ((session is ClozeSession ||
-                  session is WordScrambleSession ||
-                  session is SentenceScrambleSession) &&
-              (word.read<String>('meaning') != target.meaning ||
-                  word.read<String>('part_of_speech') !=
-                      target.partOfSpeech)) ||
+          word.read<String>('meaning') != target.meaning ||
+          word.read<String>('part_of_speech') != target.partOfSpeech ||
           'local-vocabulary-v1:${word.read<int>('local_revision')}' !=
               revision) {
         throw StateError('Dictation target changed');
@@ -1810,6 +2332,15 @@ final class DriftLearningRepository
     RecordAnswerCommand command,
   ) {
     _validateAnswer(command);
+    final draft = command.nativeDraft;
+    if (draft == null) {
+      throw ArgumentError('Native answer requires its captured response');
+    }
+    try {
+      PendingNativeAnswer(draft, command).validate(AcceptedNativePlan(session));
+    } on Object {
+      throw ArgumentError('Native response differs from its captured command');
+    }
     final context = command.evidenceContext;
     final matchesExercise = switch (session) {
       DictationSession() =>
@@ -1874,6 +2405,7 @@ final class DriftLearningRepository
         a.occurredAtUtc,
         a.providerProvenance,
         jsonEncode(a.evidenceContext.toJson()),
+        jsonEncode(a.nativeDraft?.toJson()),
       ) ==
       (
         b.id,
@@ -1887,6 +2419,7 @@ final class DriftLearningRepository
         b.occurredAtUtc,
         b.providerProvenance,
         jsonEncode(b.evidenceContext.toJson()),
+        jsonEncode(b.nativeDraft?.toJson()),
       );
 
   LearningSessionSummary _nativeSummary(db.LearningSession row) =>
@@ -1909,11 +2442,208 @@ final class DriftLearningRepository
   );
 
   @override
+  Future<AcceptedQuizPlan> prepareLexicalQuizPlan({
+    required LearningSessionDraft session,
+    required LexicalQuizConfiguration configuration,
+    required bool Function() stillCurrent,
+  }) async {
+    final reader = lexicalContent;
+    if (reader == null ||
+        !identical(reader.database, database) ||
+        !identical(reader.ownerWrites, _ownerWrites)) {
+      throw StateError(
+        'Lexical content must share the canonical database and owner coordinator',
+      );
+    }
+    _trackConfiguredOwner();
+    final epoch = _configuredOwnerEpoch;
+    bool current() => epoch == _configuredOwnerEpoch && stillCurrent();
+    return _ownerWrites.writeForActiveOwner(
+      expectedOwnerId: session.ownerId,
+      write: () async {
+        if (!current() || session.activityType != 'quiz') {
+          throw StateError('Lexical launch is no longer current');
+        }
+        final plan = await _readLexicalPlan(
+          session.ownerId,
+          configuration,
+          current,
+        );
+        if (!current()) throw StateError('Lexical owner changed');
+        _lexicalBindings[plan] = _LexicalIssuance(session, current);
+        return plan;
+      },
+    );
+  }
+
+  Future<AcceptedQuizPlan> _readLexicalPlan(
+    String owner,
+    LexicalQuizConfiguration configuration,
+    bool Function() current,
+  ) async {
+    final reader = lexicalContent;
+    if (reader == null) {
+      throw StateError('Owned lexical content reader is unavailable');
+    }
+    final detail = await reader.detail(
+      expectedOwnerId: owner,
+      packVersionId: configuration.packVersionId,
+      stillCurrent: current,
+    );
+    if (!current() ||
+        !detail.pack.isInstalled ||
+        detail.pack.identityConflict ||
+        detail.content == null ||
+        detail.pack.manifest.language.split('-').first != 'en') {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.contentChanged,
+      );
+    }
+    final source = LexicalPackPin(
+      ownerId: detail.pack.ownerId,
+      packVersionId: detail.pack.id,
+      packId: detail.pack.manifest.packId,
+      version: detail.pack.manifest.version,
+      packageSha256: detail.pack.packageSha256,
+      manifestSha256: sha256
+          .convert(utf8.encode(detail.pack.manifest.canonicalJson))
+          .toString(),
+    );
+    final bindings = <String, PackLexicalBinding>{};
+    for (final binding in detail.bindings) {
+      if (bindings.containsKey(binding.entry.code)) {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.contentChanged,
+        );
+      }
+      bindings[binding.entry.code] = binding;
+    }
+    final codes = configuration.entryCodes
+        .take(configuration.limit)
+        .toList(growable: false);
+    final requiredCodes = <String>{...codes};
+    for (final code in codes) {
+      final binding = bindings[code];
+      if (binding == null || !binding.isCurrent) {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.contentChanged,
+        );
+      }
+      if (configuration.input == LexicalQuizInput.definitionChoice) {
+        final authored = binding.entry.definitionQuestion;
+        if (authored == null) {
+          throw const ConfiguredQuizUnavailable(
+            ConfiguredQuizUnavailableReason.contentChanged,
+          );
+        }
+        requiredCodes.addAll(
+          authored.options.map((option) => option.entryCode),
+        );
+      }
+    }
+    final wordIds = <String>[];
+    for (final code in requiredCodes) {
+      final binding = bindings[code];
+      if (binding == null || !binding.isCurrent || binding.word == null) {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.contentChanged,
+        );
+      }
+      wordIds.add(binding.wordId);
+    }
+    final words = <String, QuizWord>{};
+    for (var offset = 0; offset < wordIds.length; offset += 100) {
+      final chunk = wordIds.skip(offset).take(100).toList(growable: false);
+      for (final word in await listQuizWords(
+        ownerId: owner,
+        wordIds: chunk,
+        limit: 100,
+      )) {
+        words[word.id] = word;
+      }
+    }
+    LexicalEntryPin pin(String code) {
+      final binding = bindings[code]!;
+      final word = words[binding.wordId];
+      if (word == null) {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.contentChanged,
+        );
+      }
+      return LexicalEntryPin(
+        snapshotId: binding.snapshotId,
+        wordRevision: binding.wordRevision,
+        word: word,
+        entryJson: binding.entry.canonicalJson,
+      );
+    }
+
+    final questions = <QuizQuestion>[];
+    for (final code in codes) {
+      final target = pin(code);
+      questions.add(
+        QuizQuestion.lexical(switch (configuration.input) {
+          LexicalQuizInput.definitionTyped => DefinitionTypedContent(
+            source: source,
+            target: target,
+          ),
+          LexicalQuizInput.definitionChoice => DefinitionChoiceContent(
+            source: source,
+            target: target,
+            options: [
+              for (final option in target.entry.definitionQuestion!.options)
+                LexicalDefinitionOption(
+                  code: option.code,
+                  pin: pin(option.entryCode),
+                  contrastiveExplanation: option.contrastiveExplanation,
+                ),
+            ],
+          ),
+        }),
+      );
+    }
+    if (!current()) throw StateError('Lexical owner changed');
+    return AcceptedQuizPlan.create(
+      configuration: QuizConfiguration.lexical(
+        lexical: configuration,
+        wordIds: questions.map((question) => question.word.id),
+      ),
+      questions: questions,
+    );
+  }
+
+  void _requireLexicalIssuance(
+    AcceptedQuizPlan plan,
+    LearningSessionDraft session,
+  ) {
+    if (!plan.isLexical) return;
+    final issued = _lexicalBindings[plan];
+    if (issued == null || issued.retired || !issued.current()) {
+      if (issued != null) issued.retired = true;
+      throw StateError('Original current lexical launch is required');
+    }
+    final original = issued.session;
+    if (original.id != session.id ||
+        original.ownerId != session.ownerId ||
+        original.activityType != session.activityType ||
+        original.startedAtUtc != session.startedAtUtc ||
+        original.appVersion != session.appVersion ||
+        original.buildId != session.buildId) {
+      throw StateError('Lexical launch identity changed');
+    }
+  }
+
+  @override
   Future<ConfiguredQuizState?> findConfiguredQuizStart(
     ConfiguredQuizLaunch launch,
   ) => _ownerWrites.writeForActiveOwner(
     expectedOwnerId: launch.session.ownerId,
     write: () async {
+      if (launch.configuration.lexical != null) {
+        final plan = launch.preparedPlan;
+        if (plan == null) throw StateError('Original lexical plan is required');
+        _requireLexicalIssuance(plan, launch.session);
+      }
       final row = await _session(launch.session.id);
       if (row == null) return null;
       _sameQuizLaunch(row, launch.session);
@@ -1921,6 +2651,13 @@ final class DriftLearningRepository
       if (saved.plan.configuration.stableSerialization !=
           launch.configuration.stableSerialization) {
         throw StateError('configured quiz launch identity changed');
+      }
+      if (launch.preparedPlan != null &&
+          saved.plan.id != launch.preparedPlan!.id) {
+        throw StateError('Accepted lexical plan changed');
+      }
+      if (launch.preparedPlan != null) {
+        _requireLexicalIssuance(launch.preparedPlan!, launch.session);
       }
       return saved;
     },
@@ -1937,6 +2674,7 @@ final class DriftLearningRepository
     return _ownerWrites.writeForActiveOwner(
       expectedOwnerId: session.ownerId,
       write: () async {
+        _requireLexicalIssuance(plan, session);
         final existing = await _session(session.id);
         if (existing != null) {
           _sameQuizLaunch(existing, session);
@@ -1944,6 +2682,9 @@ final class DriftLearningRepository
           if (saved.plan.configuration.stableSerialization !=
               plan.configuration.stableSerialization) {
             throw StateError('configured quiz launch identity changed');
+          }
+          if (plan.isLexical && saved.plan.id != plan.id) {
+            throw StateError('Accepted lexical plan changed');
           }
           return saved.asRestored();
         }
@@ -1963,7 +2704,9 @@ final class DriftLearningRepository
             checkpoint: checkpoint,
           ),
         );
-        return _readConfigured((await _session(session.id))!);
+        final saved = await _readConfigured((await _session(session.id))!);
+        _requireLexicalIssuance(plan, session);
+        return saved;
       },
     );
   }
@@ -1992,6 +2735,17 @@ final class DriftLearningRepository
   }) => _ownerWrites.writeForActiveOwner(
     expectedOwnerId: expectedOwnerId,
     write: () async {
+      final binding = _quizCheckpointBindings[checkpoint];
+      if (binding == null) {
+        throw StateError('Original configured checkpoint write is required');
+      }
+      binding.requireCurrent();
+      if (binding.ownerId != expectedOwnerId ||
+          binding.sessionId != sessionId ||
+          binding.checkpointRevision != expectedRevision ||
+          binding.planId != checkpoint.planId) {
+        throw StateError('Configured checkpoint read identity changed');
+      }
       final saved = await _loadQuiz(sessionId, expectedOwnerId);
       checkpoint.validateFor(saved.plan);
       if (expectedRevision < 1) {
@@ -2000,7 +2754,11 @@ final class DriftLearningRepository
       if (checkpoint.stableSerialization ==
               saved.checkpoint.stableSerialization &&
           expectedRevision <= saved.checkpointRevision) {
+        binding.requireCurrent();
         return saved;
+      }
+      if (binding.checkpointJson != saved.checkpoint.stableSerialization) {
+        throw StateError('Configured checkpoint read changed');
       }
       if (expectedRevision != saved.checkpointRevision ||
           saved.state != 'active') {
@@ -2029,7 +2787,11 @@ final class DriftLearningRepository
         checkpoint: checkpoint,
         expectedRevision: expectedRevision,
       );
-      return _loadQuiz(sessionId, expectedOwnerId);
+      final result = await _loadQuiz(sessionId, expectedOwnerId);
+      binding.requireCurrent();
+      await _requireTimeReadOwner(expectedOwnerId, () => true);
+      binding.requireCurrent();
+      return result;
     },
   );
 
@@ -2052,7 +2814,7 @@ final class DriftLearningRepository
           state: saved,
           record: AnswerRecordResult(
             inserted: false,
-            srs: await _savedQuizSrs(expectedOwnerId, checkpoint.answer.wordId),
+            srs: await _quizReplaySrs(sessionId, checkpoint.answer),
           ),
         );
       }
@@ -2077,7 +2839,7 @@ final class DriftLearningRepository
           ? await _recordAnswer(command)
           : AnswerRecordResult(
               inserted: false,
-              srs: await _savedQuizSrs(expectedOwnerId, command.wordId),
+              srs: await _quizReplaySrs(sessionId, checkpoint.answer),
             );
       await _writeQuizStorage(
         sessionId,
@@ -2088,6 +2850,7 @@ final class DriftLearningRepository
           questionOrdinal: checkpoint.questionOrdinal,
           assistance: checkpoint.assistance,
           answer: checkpoint.answer,
+          lexical: checkpoint.lexical,
         ),
         expectedRevision: expectedRevision,
       );
@@ -2124,6 +2887,9 @@ final class DriftLearningRepository
           ConfiguredQuizUnavailableReason.ownerChanged,
         );
       }
+      if (checkpoint is ClosingQuizSession && saved.plan.isLexical) {
+        await _requireQuizContent(expectedOwnerId, saved.plan);
+      }
       final summary = await _finishSession(
         ownerId: expectedOwnerId,
         sessionId: sessionId,
@@ -2142,6 +2908,7 @@ final class DriftLearningRepository
             planId: saved.plan.id,
             questionOrdinal: checkpoint.questionOrdinal,
             assistance: checkpoint.assistance,
+            lexical: checkpoint.lexical,
             close: close,
           ),
           expectedRevision: expectedRevision,
@@ -2155,6 +2922,9 @@ final class DriftLearningRepository
             LearningSessionLifecycleFact.fromRow(completed),
           ),
         );
+      }
+      if (checkpoint is ClosingQuizSession && saved.plan.isLexical) {
+        await _requireQuizContent(expectedOwnerId, saved.plan);
       }
       return ConfiguredQuizFinishResult(
         state: await _loadQuiz(sessionId, expectedOwnerId),
@@ -2181,7 +2951,8 @@ final class DriftLearningRepository
           .any(
             (entry) => switch (entry.key) {
               'activity_type' =>
-                entry.value == 'sentenceScramble' ||
+                entry.value == MatchingPlan.activityType ||
+                    entry.value == 'sentenceScramble' ||
                     _srsActivities.contains(entry.value),
               'checkpoint_revision' => entry.value != 0,
               _ => entry.value != null,
@@ -2215,6 +2986,8 @@ final class DriftLearningRepository
   }
 
   Future<ConfiguredQuizState> _readConfigured(db.LearningSession row) async {
+    _trackConfiguredOwner();
+    final ownerEpoch = _configuredOwnerEpoch;
     if (row.activityType == 'syncedEvidence' || row.state == 'syncedEvidence') {
       throw const ConfiguredQuizUnavailable(
         ConfiguredQuizUnavailableReason.syncedEvidence,
@@ -2232,6 +3005,11 @@ final class DriftLearningRepository
     final json = storage.readNullable<String>('accepted_plan_json');
     final revision = storage.read<int>('checkpoint_revision');
     final checkpointJson = storage.readNullable<String>('checkpoint_json');
+    if (id?.startsWith(AcceptedNativePlan.idPrefix) == true) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.legacy,
+      );
+    }
     if (id == null && json == null && revision == 0 && checkpointJson == null) {
       throw const ConfiguredQuizUnavailable(
         ConfiguredQuizUnavailableReason.legacy,
@@ -2274,6 +3052,15 @@ final class DriftLearningRepository
         ConfiguredQuizUnavailableReason.corrupt,
       );
     }
+    if (plan.isLexical &&
+        plan.questions.any(
+          (question) => question.lexical!.source.ownerId != row.ownerId,
+        )) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.ownerChanged,
+      );
+    }
+    await _requireTimeReadOwner(row.ownerId, () => true);
     if (checkpoint.answer?.capturedOwnerId != null &&
         checkpoint.answer!.capturedOwnerId != row.ownerId) {
       throw const ConfiguredQuizUnavailable(
@@ -2291,8 +3078,11 @@ final class DriftLearningRepository
         checkpoint is AwaitingQuizAnswer ||
         (checkpoint is PendingQuizAnswer &&
             attempts.length == checkpoint.questionOrdinal);
-    if (row.state == 'active' && needsFreshInput) {
+    if (row.state == 'active' && (needsFreshInput || plan.isLexical)) {
       await _requireQuizContent(row.ownerId, plan);
+    }
+    if (ownerEpoch != _configuredOwnerEpoch) {
+      throw StateError('Configured quiz owner changed during read');
     }
     return ConfiguredQuizState(
       sessionId: row.id,
@@ -2309,6 +3099,15 @@ final class DriftLearningRepository
       plan: plan,
       checkpointRevision: revision,
       checkpoint: checkpoint,
+      readBinding: _DriftConfiguredQuizReadBinding(
+        issuer: this,
+        ownerId: row.ownerId,
+        sessionId: row.id,
+        planId: plan.id,
+        checkpointRevision: revision,
+        checkpointJson: checkpoint.stableSerialization,
+        ownerEpoch: ownerEpoch,
+      ),
       mistakeWords: [
         for (var index = 0; index < attempts.length; index++)
           if (!attempts[index].isCorrect) plan.questions[index].word,
@@ -2321,6 +3120,28 @@ final class DriftLearningRepository
       throw const ConfiguredQuizUnavailable(
         ConfiguredQuizUnavailableReason.unsupportedPolicy,
       );
+    }
+    if (plan.isLexical) {
+      try {
+        final actual = await _readLexicalPlan(
+          owner,
+          plan.configuration.lexical!,
+          () => true,
+        );
+        if (actual.id != plan.id ||
+            actual.stableSerialization != plan.stableSerialization) {
+          throw const ConfiguredQuizUnavailable(
+            ConfiguredQuizUnavailableReason.contentChanged,
+          );
+        }
+      } on ConfiguredQuizUnavailable {
+        rethrow;
+      } on Object {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.contentChanged,
+        );
+      }
+      return;
     }
     final checkedCategories = <String>{};
     for (final question in plan.questions) {
@@ -2394,6 +3215,16 @@ final class DriftLearningRepository
         ConfiguredQuizUnavailableReason.corrupt,
       );
     }
+    if (checkpoint.lexical case final LexicalTypedLocalData local) {
+      final expected = checkpoint is PendingQuizAnswer
+          ? checkpoint.questionOrdinal + 1
+          : attempts.length;
+      if (local.responses.length != expected) {
+        throw const ConfiguredQuizUnavailable(
+          ConfiguredQuizUnavailableReason.corrupt,
+        );
+      }
+    }
     for (var index = 0; index < attempts.length; index++) {
       final attempt = attempts[index];
       final question = plan.questions[index];
@@ -2407,12 +3238,42 @@ final class DriftLearningRepository
           ConfiguredQuizUnavailableReason.corrupt,
         );
       }
+      if (checkpoint.lexical case final LexicalTypedLocalData local) {
+        final text = local.responses[index];
+        final revealed = evidence.hintLevel == 2;
+        if (!local.responses.containsKey(index) ||
+            (revealed ? text != null : text == null) ||
+            attempt.isCorrect !=
+                (!revealed &&
+                    text != null &&
+                    normalizeLexicalResponse(text) ==
+                        normalizeLexicalResponse(question.correctAnswer))) {
+          throw const ConfiguredQuizUnavailable(
+            ConfiguredQuizUnavailableReason.corrupt,
+          );
+        }
+      }
       if (attempt.ownerId != session.ownerId ||
           attempt.attemptNumber != index + 1 ||
           attempt.wordId != question.word.id ||
-          attempt.promptMode != 'meaningChoice' ||
+          attempt.promptMode != question.promptMode ||
           attempt.occurredAtUtcMs < session.startedAtUtcMs ||
-          evidence.contentRevision != question.word.contentRevision ||
+          evidence.contentRevision != question.evidenceContentRevision ||
+          (question.lexical != null &&
+              (evidence.skillId != question.skillId ||
+                  evidence.hintLevel < 0 ||
+                  evidence.hintLevel > 2 ||
+                  evidence.classificationSource !=
+                      EvidenceClassificationSource.declared ||
+                  evidence.policyVersion != plan.evidencePolicyVersion ||
+                  evidence.featureContractHash != plan.featureContractHash ||
+                  evidence.featureContractRevision !=
+                      plan.featureContractRevision ||
+                  evidence.engagementAllowed ||
+                  evidence.evidenceClass !=
+                      (evidence.hintLevel == 0
+                          ? question.unassistedEvidenceClass
+                          : EvidenceClass.guidedPractice))) ||
           !LearningEvidenceContract.isOrdinaryEvidence(evidence)) {
         throw const ConfiguredQuizUnavailable(
           ConfiguredQuizUnavailableReason.corrupt,
@@ -2455,6 +3316,17 @@ final class DriftLearningRepository
 
   void _requireQuizTransition(ConfiguredQuizState saved, QuizCheckpoint next) {
     final previous = saved.checkpoint;
+    if (previous.lexical case final LexicalTypedLocalData oldLocal) {
+      final nextLocal = next.lexical;
+      if (nextLocal is! LexicalTypedLocalData ||
+          oldLocal.responses.entries.any(
+            (entry) =>
+                !nextLocal.responses.containsKey(entry.key) ||
+                nextLocal.responses[entry.key] != entry.value,
+          )) {
+        throw StateError('Accepted private typed response changed');
+      }
+    }
     if (next.planId != saved.plan.id) throw StateError('quiz plan changed');
     final oldAssistance = previous.assistance;
     final assistance = next.assistance;
@@ -2541,6 +3413,17 @@ final class DriftLearningRepository
     }
     return saved;
   }
+
+  Future<SrsSnapshot?> _quizReplaySrs(
+    String sessionId,
+    QuizAnswerReceipt answer,
+  ) =>
+      _allowsAnswerProjection(
+        answer.toCommand(sessionId: sessionId),
+        LearningProjection.masterySrs,
+      )
+      ? _savedQuizSrs(answer.capturedOwnerId, answer.wordId)
+      : _readSavedSrs(answer.capturedOwnerId, answer.wordId);
 
   Future<SrsSnapshot?> _readSavedSrs(String ownerId, String wordId) async {
     final row =
@@ -2760,7 +3643,8 @@ final class DriftLearningRepository
   }
 
   bool _sameAttempt(db.AnswerAttempt row, RecordAnswerCommand command) {
-    return row.ownerId == command.ownerId &&
+    return row.id == command.id &&
+        row.ownerId == command.ownerId &&
         row.sessionId == command.sessionId &&
         row.wordId == command.wordId &&
         row.promptMode == command.promptMode &&
@@ -2849,12 +3733,82 @@ final class DriftLearningRepository
       : DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
 }
 
-final class _NativeBinding {
+final class _DriftConfiguredQuizReadBinding
+    implements ConfiguredQuizReadBinding {
+  _DriftConfiguredQuizReadBinding({
+    required this.issuer,
+    required this.ownerId,
+    required this.sessionId,
+    required this.planId,
+    required this.checkpointRevision,
+    required this.checkpointJson,
+    required this.ownerEpoch,
+  });
+  final DriftLearningRepository issuer;
+  final String ownerId;
+  final String sessionId;
+  final String planId;
+  final int checkpointRevision;
+  final String checkpointJson;
+  final int ownerEpoch;
+  bool retired = false;
+
+  @override
+  void requireCurrent() {
+    if (retired || ownerEpoch != issuer._configuredOwnerEpoch) {
+      retired = true;
+      throw StateError('Configured quiz read owner is no longer current');
+    }
+  }
+
+  @override
+  QuizCheckpoint bindCheckpointWrite(QuizCheckpoint checkpoint) {
+    requireCurrent();
+    if (checkpoint.planId != planId) {
+      throw StateError('Configured checkpoint plan changed');
+    }
+    issuer._quizCheckpointBindings[checkpoint] = this;
+    return checkpoint;
+  }
+}
+
+final class _LexicalIssuance {
+  _LexicalIssuance(this.session, this.current);
+  final LearningSessionDraft session;
+  final bool Function() current;
+  bool retired = false;
+}
+
+final class _NativeIssuance {
+  _NativeIssuance(this.current);
+  final bool Function() current;
+  bool retired = false;
   bool startAttempted = false;
   bool started = false;
-  bool finishAttempted = false;
-  RecordAnswerCommand? answer;
-  NativeFinishIntent? closing;
+}
+
+final class _DriftNativeState implements NativeExerciseState {
+  const _DriftNativeState({
+    required this.issuer,
+    required this.exercise,
+    required this.plan,
+    required this.checkpoint,
+    required this.checkpointRevision,
+    this.completedSummary,
+  });
+  final DriftLearningRepository issuer;
+  @override
+  final AcceptedNativeExercise exercise;
+  @override
+  final AcceptedNativePlan plan;
+  @override
+  final NativeCheckpoint checkpoint;
+  @override
+  final int checkpointRevision;
+  @override
+  final LearningSessionSummary? completedSummary;
+  @override
+  NativeCheckpointPhase get phase => checkpoint.phase;
 }
 
 const _srsActivities = <String>{'srsReview', 'flashcard', 'flashcards'};

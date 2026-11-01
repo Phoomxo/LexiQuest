@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/populated_owner_migration_fixture.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_coordinator.dart';
@@ -120,10 +121,10 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      23,
+      25,
     );
     expect(before, hasLength(30));
-    expect(database.allTables, hasLength(43));
+    expect(database.allTables, hasLength(45));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,
@@ -142,24 +143,10 @@ void main() {
           .get(),
       isEmpty,
     );
-    for (final table in before.entries) {
-      final after = await database
-          .customSelect('SELECT * FROM "${table.key}" ORDER BY rowid')
-          .get();
-      expect(
-        after
-            .map(
-              (row) => Map<String, Object?>.from(row.data)
-                ..remove('accepted_plan_id')
-                ..remove('accepted_plan_json')
-                ..remove('checkpoint_revision')
-                ..remove('checkpoint_json'),
-            )
-            .toList(),
-        table.value,
-        reason: table.key,
-      );
-    }
+    expectHistoricalOwnerMigrationRows(
+      await ownerMigrationRows(database),
+      before,
+    );
     final columns = await database
         .customSelect('PRAGMA table_info(research_participation_permits)')
         .get();

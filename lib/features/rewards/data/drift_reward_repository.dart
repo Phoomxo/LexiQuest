@@ -3,14 +3,30 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../identity/data/drift_owner_write_coordinator.dart';
 import 'drift_reward_projection_rebuilder.dart';
 import '../domain/reward_models.dart';
 
 final class DriftRewardRepository {
-  DriftRewardRepository(this.database)
-    : projections = DriftRewardProjectionRebuilder(database);
+  DriftRewardRepository(
+    this.database, {
+    DriftOwnerWriteCoordinator? ownerWrites,
+  }) : _ownerWrites =
+           ownerWrites ??
+           DriftOwnerWriteCoordinator(
+             database,
+             nowUtc: () => DateTime.now().toUtc(),
+           ),
+       projections = DriftRewardProjectionRebuilder(database) {
+    if (!identical(database, _ownerWrites.database)) {
+      throw ArgumentError(
+        'Rewards and owner coordinator must share a database',
+      );
+    }
+  }
 
   final AppDatabase database;
+  final DriftOwnerWriteCoordinator _ownerWrites;
   final DriftRewardProjectionRebuilder projections;
   Future<void> _writeGate = Future<void>.value();
 
@@ -43,9 +59,12 @@ final class DriftRewardRepository {
     required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
+    Future<void> Function()? verifyOwner,
   }) {
-    return _serialized(
-      () => database.transaction(() async {
+    return _writeForOwner(
+      ownerId: ownerId,
+      verifyOwner: verifyOwner,
+      write: () async {
         _validateItem(item, occurredAtUtc);
         final replay =
             await (database.select(database.rewardTransactions)..where(
@@ -103,7 +122,7 @@ final class DriftRewardRepository {
           status: PurchaseStatus.purchased,
           account: await load(ownerId),
         );
-      }),
+      },
     );
   }
 
@@ -113,9 +132,12 @@ final class DriftRewardRepository {
     required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
+    Future<void> Function()? verifyOwner,
   }) {
-    return _serialized(
-      () => database.transaction(() async {
+    return _writeForOwner(
+      ownerId: ownerId,
+      verifyOwner: verifyOwner,
+      write: () async {
         _validateItem(item, occurredAtUtc);
         final replay =
             await (database.select(database.rewardTransactions)..where(
@@ -175,7 +197,7 @@ final class DriftRewardRepository {
           status: EquipStatus.equipped,
           account: await load(ownerId),
         );
-      }),
+      },
     );
   }
 
@@ -209,6 +231,45 @@ final class DriftRewardRepository {
             createdAtUtcMs: occurredAtUtcMs,
           ),
         );
+  }
+
+  Future<T> _writeForOwner<T>({
+    required String ownerId,
+    required Future<T> Function() write,
+    Future<void> Function()? verifyOwner,
+  }) async {
+    var current = true;
+    final changes = database
+        .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
+        .listen(
+          (_) => current = false,
+          onError: (Object _) => current = false,
+          onDone: () => current = false,
+        );
+    try {
+      await verifyOwner?.call();
+      return await _serialized(
+        () => _ownerWrites.writeForActiveOwner(
+          expectedOwnerId: ownerId,
+          write: () async {
+            if (!current) {
+              throw const RewardException(RewardFailureCode.ownerChanged);
+            }
+            final result = await write();
+            await _ownerWrites.writeForActiveOwner(
+              expectedOwnerId: ownerId,
+              write: () async {},
+            );
+            if (!current) {
+              throw const RewardException(RewardFailureCode.ownerChanged);
+            }
+            return result;
+          },
+        ),
+      );
+    } finally {
+      await changes.cancel();
+    }
   }
 
   Future<T> _serialized<T>(Future<T> Function() operation) async {

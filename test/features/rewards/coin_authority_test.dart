@@ -301,7 +301,13 @@ Future<void> _legacyCredit(AppDatabase db, String owner, int amount) => db
 Future<void> _seedOwner(AppDatabase db, String owner) async {
   await db
       .into(db.localOwners)
-      .insert(LocalOwnersCompanion.insert(id: owner, createdAtUtcMs: 1));
+      .insert(
+        LocalOwnersCompanion.insert(
+          id: owner,
+          createdAtUtcMs: 1,
+          isActive: Value(owner == 'a'),
+        ),
+      );
   await db
       .into(db.vocabularyCategories)
       .insert(

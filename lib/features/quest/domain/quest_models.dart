@@ -11,7 +11,12 @@
 /// persistence of these models.
 library;
 
+import 'dart:convert';
+
+import 'package:timezone/timezone.dart' as timezone;
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+
+import '../../learning_profile/domain/learning_timezone.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +48,139 @@ enum QuestInstanceState {
 
   /// Explicitly abandoned by the learner or system.
   abandoned,
+}
+
+final class QuestPeriod {
+  const QuestPeriod._({
+    required this.key,
+    required this.kind,
+    required this.civilLabel,
+    required this.timezoneId,
+    required this.startUtc,
+    required this.endUtc,
+  });
+
+  factory QuestPeriod.at({
+    required QuestType type,
+    required DateTime atUtc,
+    required String timezoneId,
+  }) {
+    if (!atUtc.isUtc || atUtc.millisecondsSinceEpoch < 0) {
+      throw StateError('Quest period requires a UTC instant');
+    }
+    final location = timezone.getLocation(requireLearningTimezone(timezoneId));
+    if (type == QuestType.milestone || type == QuestType.story) {
+      return const QuestPeriod._(
+        key: 'quest-period-v1:once',
+        kind: 'once',
+        civilLabel: 'once',
+        timezoneId: 'UTC',
+        startUtc: null,
+        endUtc: null,
+      );
+    }
+    final local = timezone.TZDateTime.from(atUtc, location);
+    final day = DateTime.utc(local.year, local.month, local.day);
+    final startDay = type == QuestType.weekly
+        ? day.subtract(Duration(days: day.weekday - DateTime.monday))
+        : day;
+    final endDay = startDay.add(
+      Duration(days: type == QuestType.weekly ? 7 : 1),
+    );
+    final label =
+        '${startDay.year.toString().padLeft(4, '0')}-'
+        '${startDay.month.toString().padLeft(2, '0')}-'
+        '${startDay.day.toString().padLeft(2, '0')}';
+    DateTime utcBoundary(DateTime civil) => DateTime.fromMillisecondsSinceEpoch(
+      timezone.TZDateTime(
+        location,
+        civil.year,
+        civil.month,
+        civil.day,
+      ).millisecondsSinceEpoch,
+      isUtc: true,
+    );
+    return QuestPeriod._(
+      key: 'quest-period-v1:${type.name}:$label',
+      kind: type.name,
+      civilLabel: label,
+      timezoneId: timezoneId,
+      startUtc: utcBoundary(startDay),
+      endUtc: utcBoundary(endDay),
+    );
+  }
+
+  factory QuestPeriod.parse(String source) {
+    if (utf8.encode(source).length > 2048) {
+      throw StateError('Quest period is too large');
+    }
+    final value = jsonDecode(source);
+    const keys = {
+      'schemaVersion',
+      'key',
+      'kind',
+      'civilLabel',
+      'timezoneId',
+      'startUtcMs',
+      'endUtcMs',
+      'policyVersion',
+    };
+    if (value is! Map<String, dynamic> ||
+        value.length != keys.length ||
+        !value.keys.toSet().containsAll(keys) ||
+        value['schemaVersion'] != 1 ||
+        value['policyVersion'] != 1 ||
+        value['key'] is! String ||
+        value['kind'] is! String ||
+        value['civilLabel'] is! String ||
+        value['timezoneId'] is! String) {
+      throw StateError('Quest period contract is unavailable');
+    }
+    final kind = value['kind'] as String;
+    final start = value['startUtcMs'];
+    final end = value['endUtcMs'];
+    final QuestPeriod result;
+    if (kind == 'once' && start == null && end == null) {
+      result = QuestPeriod.at(
+        type: QuestType.milestone,
+        atUtc: DateTime.utc(2026),
+        timezoneId: 'UTC',
+      );
+    } else if ((kind == 'daily' || kind == 'weekly') &&
+        start is int &&
+        end is int &&
+        start >= 0 &&
+        end > start) {
+      result = QuestPeriod.at(
+        type: kind == 'daily' ? QuestType.daily : QuestType.weekly,
+        atUtc: DateTime.fromMillisecondsSinceEpoch(start, isUtc: true),
+        timezoneId: value['timezoneId'] as String,
+      );
+    } else {
+      throw StateError('Quest period contract is unavailable');
+    }
+    if (result.json != source) {
+      throw StateError('Quest period pin changed');
+    }
+    return result;
+  }
+
+  final String key, kind, civilLabel, timezoneId;
+  final DateTime? startUtc, endUtc;
+  int get policyVersion => 1;
+  bool contains(DateTime atUtc) =>
+      (startUtc == null || !atUtc.isBefore(startUtc!)) &&
+      (endUtc == null || atUtc.isBefore(endUtc!));
+  String get json => jsonEncode({
+    'schemaVersion': 1,
+    'key': key,
+    'kind': kind,
+    'civilLabel': civilLabel,
+    'timezoneId': timezoneId,
+    'startUtcMs': startUtc?.millisecondsSinceEpoch,
+    'endUtcMs': endUtc?.millisecondsSinceEpoch,
+    'policyVersion': policyVersion,
+  });
 }
 
 // ─── Objective matching ───────────────────────────────────────────────────────
@@ -92,7 +230,7 @@ final class QuestObjective {
 final class RewardSpec {
   const RewardSpec({required this.xpAmount, this.rewardItemId});
 
-  /// XP granted on completion (added to the learner's [PointsLedgerEntries]).
+  /// Engagement XP granted from a validated completion receipt.
   final int xpAmount;
 
   /// Optional cosmetic reward item ID (added to [OwnedRewardItems]).
@@ -205,6 +343,9 @@ final class QuestInstance {
     required List<ObjectiveProgress> progress,
     this.completedAtUtc,
     this.expiredAtUtc,
+    this.period,
+    this.definition,
+    this.definitionSha256,
   }) : progress = List.unmodifiable(progress);
 
   final String instanceId;
@@ -219,6 +360,9 @@ final class QuestInstance {
 
   final DateTime? completedAtUtc;
   final DateTime? expiredAtUtc;
+  final QuestPeriod? period;
+  final QuestDefinition? definition;
+  final String? definitionSha256;
 
   // ── Derived ──────────────────────────────────────────────────────────────
 
@@ -275,6 +419,9 @@ final class QuestInstance {
       progress: updated,
       completedAtUtc: completedAtUtc,
       expiredAtUtc: expiredAtUtc,
+      period: period,
+      definition: definition,
+      definitionSha256: definitionSha256,
     );
   }
 
@@ -301,4 +448,15 @@ final class QuestInstance {
       idempotencyKey: 'quest_complete_${instanceId}_$questId',
     );
   }
+}
+
+final class QuestCompletionReceipt {
+  const QuestCompletionReceipt({
+    required this.instance,
+    required this.definition,
+    required this.completion,
+  });
+  final QuestInstance instance;
+  final QuestDefinition definition;
+  final QuestCompletedEvent completion;
 }

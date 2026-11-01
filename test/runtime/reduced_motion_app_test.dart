@@ -3,11 +3,54 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/config/app_appearance_preferences.dart';
 import 'package:vocab_learning_app/main.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 void main() {
+  testWidgets(
+    'a session motion choice completes push and pop without changing global preferences',
+    (tester) async {
+      Route<void>? opened;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                onPressed: () => AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'synthetic/session-motion',
+                    reduceMotion: true,
+                    builder: (_) =>
+                        const Scaffold(body: Text('session-motion-route')),
+                  ),
+                  onRouteCreated: (route) => opened = route,
+                ),
+                child: const Text('เริ่มรอบ'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('เริ่มรอบ'));
+      await tester.pump();
+      final route = opened! as MaterialPageRoute<void>;
+      expect(route.transitionDuration, Duration.zero);
+      expect(route.reverseTransitionDuration, Duration.zero);
+      expect(route.animation!.value, 1);
+      expect(find.text('session-motion-route').hitTestable(), findsOneWidget);
+      Navigator.of(tester.element(find.text('session-motion-route'))).pop();
+      await tester.pump();
+      expect(find.text('session-motion-route'), findsNothing);
+      expect(
+        MediaQuery.disableAnimationsOf(tester.element(find.text('เริ่มรอบ'))),
+        isFalse,
+      );
+    },
+  );
+
   testWidgets(
     'saved motion preference reaches the app and keeps the current route',
     (tester) async {

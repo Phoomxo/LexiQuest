@@ -49,7 +49,7 @@ void main() {
         final wrong = row.reasons.whereType<IncorrectReason>().single;
         expect(wrong.incorrectCount, 2);
         expect(wrong.lastIncorrectAtUtc, h.now);
-        expect(before, hasLength(43));
+        expect(before, hasLength(45));
         expect(await h.snapshotAllTables(), before);
       } finally {
         await h.close();
@@ -362,7 +362,7 @@ void main() {
       final h = await ReviewCenterHarness.open();
       try {
         final before = await h.snapshotAllTables();
-        expect(before, hasLength(43));
+        expect(before, hasLength(45));
         final first = await _facts(h);
         h.now = h.now.add(const Duration(days: 1));
         final refreshed = await _facts(h);
@@ -380,7 +380,7 @@ void main() {
     final h = await ReviewCenterHarness.open(seed: false);
     try {
       final before = await h.snapshotAllTables();
-      expect(before, hasLength(43));
+      expect(before, hasLength(45));
       await expectLater(_facts(h), throwsA(_ownerInvalidated));
       expect(await h.snapshotAllTables(), before);
     } finally {

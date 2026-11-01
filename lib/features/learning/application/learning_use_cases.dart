@@ -21,6 +21,12 @@ import 'current_activity_evidence.dart';
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
+typedef OrdinaryAnswerPreparation =
+    Future<void> Function({
+      required String expectedOwnerId,
+      required String sessionId,
+      required bool Function() stillCurrent,
+    });
 
 /// Receives a [EventEnvelopeV2] produced from every recorded answer.
 ///
@@ -49,6 +55,7 @@ final class LearningUseCases {
     this.questEventSink,
     this.streakEventSink,
     this.contentProvider,
+    this.beforeOrdinaryAnswer,
   });
 
   final LocalOwnerRepository owners;
@@ -57,8 +64,33 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final ContentProvider? contentProvider;
+  final OrdinaryAnswerPreparation? beforeOrdinaryAnswer;
   final LearningMutationNotifier? onLocalMutation;
   final Expando<bool> _finishedNativeNotifications = Expando<bool>();
+
+  Future<void> prepareOrdinaryAnswer({
+    required String expectedOwnerId,
+    required String sessionId,
+    required bool Function() stillCurrent,
+  }) async {
+    _requiredId(sessionId, 'sessionId');
+    _requiredId(expectedOwnerId, 'expectedOwnerId');
+    Future<void> requireCurrent() async {
+      if (!stillCurrent() ||
+          (await owners.getOrCreateActiveOwner()).id != expectedOwnerId ||
+          !stillCurrent()) {
+        throw StateError('Ordinary answer owner is no longer current');
+      }
+    }
+
+    await requireCurrent();
+    await beforeOrdinaryAnswer?.call(
+      expectedOwnerId: expectedOwnerId,
+      sessionId: sessionId,
+      stillCurrent: stillCurrent,
+    );
+    await requireCurrent();
+  }
 
   /// Shadow mode — when non-null, every recorded answer is also run through
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
@@ -326,7 +358,7 @@ final class LearningUseCases {
         id: '${DictationSession.idPrefix}${_nextId()}',
         ownerId: owner.id,
         activityType: 'dictation',
-        startedAtUtc: _now(),
+        startedAtUtc: _nativeNow(),
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
       ),
@@ -360,7 +392,7 @@ final class LearningUseCases {
         id: '${WordScrambleSession.idPrefix}${_nextId()}',
         ownerId: owner.id,
         activityType: 'wordScramble',
-        startedAtUtc: _now(),
+        startedAtUtc: _nativeNow(),
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
       ),
@@ -431,7 +463,7 @@ final class LearningUseCases {
       id: '${SentenceScrambleSession.idPrefix}${_nextId()}',
       ownerId: owner.id,
       activityType: 'sentenceScramble',
-      startedAtUtc: _now(),
+      startedAtUtc: _nativeNow(),
       appVersion: buildInfo.version,
       buildId: buildInfo.buildId,
     );
@@ -564,7 +596,7 @@ final class LearningUseCases {
       id: '${ClozeSession.idPrefix}${_nextId()}',
       ownerId: owner.id,
       activityType: 'cloze',
-      startedAtUtc: _now(),
+      startedAtUtc: _nativeNow(),
       appVersion: buildInfo.version,
       buildId: buildInfo.buildId,
     );
@@ -639,9 +671,106 @@ final class LearningUseCases {
     stillCurrent: stillCurrent,
   );
 
+  Future<NativeExerciseState> resumeNativeExercise({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => _nativeExercises.resumeNativeExercise(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  Future<NativeExerciseState> readNativeExerciseState(
+    AcceptedNativeExercise exercise, {
+    required bool Function() stillCurrent,
+  }) => _nativeExercises.readNativeExerciseState(
+    exercise,
+    stillCurrent: stillCurrent,
+  );
+
+  Future<NativeExerciseState> saveNativeDraft({
+    required NativeExerciseState state,
+    required NativeExerciseDraft draft,
+    required bool Function() stillCurrent,
+  }) => _nativeExercises.saveNativeCheckpoint(
+    state,
+    AwaitingNativeAnswer(draft),
+    stillCurrent: stillCurrent,
+  );
+
+  Future<NativeExerciseState> stageNativeAnswer({
+    required NativeExerciseState state,
+    required NativeAnswerInput input,
+    required bool Function() stillCurrent,
+  }) async {
+    if (!identical(state.exercise, input.exercise)) {
+      throw StateError('Native response has a different issued exercise');
+    }
+    final current = await readNativeExerciseState(
+      state.exercise,
+      stillCurrent: stillCurrent,
+    );
+    final submission = NativeExerciseDraft.fromInput(input);
+    final stored = current.checkpoint.answer;
+    if (stored != null &&
+        jsonEncode(current.checkpoint.draft.toJson()) !=
+            jsonEncode(submission.toJson())) {
+      throw StateError('Native staged response identity changed');
+    }
+    final command = stored ?? prepareNativeAnswer(input);
+    return _nativeExercises.saveNativeCheckpoint(
+      state,
+      PendingNativeAnswer(command.nativeDraft!, command),
+      stillCurrent: stillCurrent,
+    );
+  }
+
+  Future<NativeExerciseState> stageNativeFinish({
+    required NativeExerciseState state,
+    required bool Function() stillCurrent,
+  }) async {
+    final command = state.checkpoint.answer;
+    if (command == null) {
+      throw StateError('Native answer has not been acknowledged');
+    }
+    final current = await readNativeExerciseState(
+      state.exercise,
+      stillCurrent: stillCurrent,
+    );
+    final endedAt = switch (current.checkpoint) {
+      ClosingNativeExercise(:final endedAtUtc) => endedAtUtc,
+      CompletedNativeExercise(:final endedAtUtc) => endedAtUtc,
+      _ => prepareNativeFinish(state.exercise, command).endedAtUtc,
+    };
+    return _nativeExercises.saveNativeCheckpoint(
+      state,
+      ClosingNativeExercise(state.checkpoint.draft, command, endedAt),
+      stillCurrent: stillCurrent,
+    );
+  }
+
+  Future<NativeExerciseState> abandonNativeExercise({
+    required NativeExerciseState state,
+    required bool Function() stillCurrent,
+  }) async {
+    final current = await readNativeExerciseState(
+      state.exercise,
+      stillCurrent: stillCurrent,
+    );
+    final endedAt = current.checkpoint is AbandonedNativeExercise
+        ? current.checkpoint.endedAtUtc!
+        : _nativeNow();
+    return _nativeExercises.saveNativeCheckpoint(
+      state,
+      AbandonedNativeExercise(state.checkpoint.draft, endedAt),
+      stillCurrent: stillCurrent,
+    );
+  }
+
   RecordAnswerCommand prepareNativeAnswer(NativeAnswerInput input) {
     final exercise = input.exercise;
-    final occurredAt = _now();
+    final occurredAt = _nativeNow();
     if (occurredAt.isBefore(exercise.startedAtUtc)) {
       throw StateError('Dictation clock precedes its original start');
     }
@@ -688,6 +817,7 @@ final class LearningUseCases {
           .toInt(),
       attemptNumber: 1,
       occurredAtUtc: occurredAt,
+      nativeDraft: NativeExerciseDraft.fromInput(input),
       providerProvenance: switch (exercise) {
         DictationSession() => null,
         WordScrambleSession() => null,
@@ -720,7 +850,7 @@ final class LearningUseCases {
     AcceptedNativeExercise exercise,
     RecordAnswerCommand answer,
   ) {
-    final endedAt = _now();
+    final endedAt = _nativeNow();
     if (endedAt.isBefore(answer.occurredAtUtc)) {
       throw StateError('Dictation clock precedes its saved answer');
     }
@@ -1123,15 +1253,26 @@ final class LearningUseCases {
     String? attemptId,
     DateTime? occurredAtUtc,
     EvidenceContext? evidenceContext,
+    bool Function()? stillCurrent,
   }) async {
     if ((attemptId == null) != (occurredAtUtc == null)) {
       throw ArgumentError(
         'retry identity and timestamp must be supplied together',
       );
     }
+    if (occurredAtUtc != null && !occurredAtUtc.isUtc) {
+      throw ArgumentError('occurredAtUtc must be UTC');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    if (attemptId == null) {
+      await prepareOrdinaryAnswer(
+        expectedOwnerId: owner.id,
+        sessionId: sessionId,
+        stillCurrent: stillCurrent ?? () => true,
+      );
+    }
     final recordedAt = occurredAtUtc ?? _now();
     if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
-    final owner = await owners.getOrCreateActiveOwner();
     final command = RecordAnswerCommand(
       id: attemptId == null
           ? 'attempt:${_nextId()}'
@@ -1297,6 +1438,81 @@ final class LearningUseCases {
     _ => throw StateError('configured quiz repository capability unavailable'),
   };
 
+  Future<ConfiguredQuizState> _resumeCurrentConfiguredQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+  }) async {
+    final state = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    state.requireCurrent();
+    return state;
+  }
+
+  Future<ConfiguredQuizState> _saveBoundQuizCheckpoint(
+    ConfiguredQuizState state, {
+    required int expectedRevision,
+    required QuizCheckpoint checkpoint,
+  }) => _configured.saveQuizCheckpoint(
+    sessionId: state.sessionId,
+    expectedOwnerId: state.ownerId,
+    expectedRevision: expectedRevision,
+    checkpoint: state.bindCheckpointWrite(checkpoint),
+  );
+
+  Future<ConfiguredQuizLaunch> prepareLexicalQuiz({
+    required String expectedOwnerId,
+    required String packVersionId,
+    required Iterable<String> entryCodes,
+    required LexicalQuizInput input,
+    required int limit,
+    required bool Function() stillCurrent,
+    LexicalQuizSettings settings = const LexicalQuizSettings(),
+  }) async {
+    final configuration = LexicalQuizConfiguration(
+      packVersionId: packVersionId,
+      entryCodes: entryCodes,
+      input: input,
+      limit: limit,
+      settings: settings,
+    );
+    if (!stillCurrent()) {
+      throw StateError('Lexical launch is no longer current');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId || !stillCurrent()) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.ownerChanged,
+      );
+    }
+    final capability = switch (repository) {
+      LexicalQuizRepository repository => repository,
+      _ => throw StateError('Authored lexical content is unavailable'),
+    };
+    final session = LearningSessionDraft(
+      id: 'session:${_nextId()}',
+      ownerId: owner.id,
+      activityType: 'quiz',
+      startedAtUtc: _now(),
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
+    final plan = await capability.prepareLexicalQuizPlan(
+      session: session,
+      configuration: configuration,
+      stillCurrent: stillCurrent,
+    );
+    if (!stillCurrent()) {
+      throw StateError('Lexical launch is no longer current');
+    }
+    return ConfiguredQuizLaunch(
+      session: session,
+      configuration: plan.configuration,
+      preparedPlan: plan,
+    );
+  }
+
   Future<ConfiguredQuizLaunch> prepareConfiguredQuiz({
     required QuizConfiguration configuration,
     String? expectedOwnerId,
@@ -1327,40 +1543,56 @@ final class LearningUseCases {
     if (launch.session.activityType != launch.configuration.activityType) {
       throw ArgumentError('quiz launch and configuration activity differ');
     }
+    if (launch.preparedPlan case final prepared?) {
+      if (!prepared.isLexical ||
+          prepared.configuration.stableSerialization !=
+              launch.configuration.stableSerialization) {
+        throw StateError(
+          'Prepared lexical plan differs from launch configuration',
+        );
+      }
+    }
     final existing = await _configured.findConfiguredQuizStart(launch);
     if (existing != null) {
+      existing.requireCurrent();
       _forgetQuizQuestion(existing);
       return existing.asRestored();
     }
     final configuration = launch.configuration;
-    final words = await repository.listQuizWords(
-      ownerId: launch.session.ownerId,
-      categoryId: configuration.categoryId,
-      wordIds: configuration.selectionKind == QuizSelectionKind.category
-          ? null
-          : configuration.wordIds,
-      limit: configuration.requestedItemCount,
-    );
-    if (words.isEmpty) {
+    final words = launch.preparedPlan != null
+        ? const <QuizWord>[]
+        : await repository.listQuizWords(
+            ownerId: launch.session.ownerId,
+            categoryId: configuration.categoryId,
+            wordIds: configuration.selectionKind == QuizSelectionKind.category
+                ? null
+                : configuration.wordIds,
+            limit: configuration.requestedItemCount,
+          );
+    if (words.isEmpty && launch.preparedPlan == null) {
       throw const ConfiguredQuizUnavailable(
         ConfiguredQuizUnavailableReason.emptySelection,
       );
     }
     final optionWords =
-        configuration.selectionKind == QuizSelectionKind.category
+        launch.preparedPlan != null ||
+            configuration.selectionKind == QuizSelectionKind.category
         ? const <QuizWord>[]
         : await repository.listQuizWords(
             ownerId: launch.session.ownerId,
             limit: 100,
           );
-    final plan = AcceptedQuizPlan.create(
-      configuration: configuration,
-      questions: _questions(words, optionWords: optionWords),
-    );
+    final plan =
+        launch.preparedPlan ??
+        AcceptedQuizPlan.create(
+          configuration: configuration,
+          questions: _questions(words, optionWords: optionWords),
+        );
     final saved = await _configured.startConfiguredQuiz(
       session: launch.session,
       plan: plan,
     );
+    saved.requireCurrent();
     if (!saved.restored &&
         saved.checkpointRevision == 1 &&
         saved.checkpoint is AwaitingQuizAnswer) {
@@ -1376,7 +1608,7 @@ final class LearningUseCases {
     required String sessionId,
     required String expectedOwnerId,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: _requiredId(sessionId, 'sessionId'),
       expectedOwnerId: _requiredId(expectedOwnerId, 'expectedOwnerId'),
     );
@@ -1390,7 +1622,7 @@ final class LearningUseCases {
     required int expectedRevision,
     required bool visible,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
     );
@@ -1404,16 +1636,53 @@ final class LearningUseCases {
         expectedRevision <= saved.checkpointRevision) {
       return saved;
     }
-    return _configured.saveQuizCheckpoint(
-      sessionId: sessionId,
-      expectedOwnerId: expectedOwnerId,
+    return _saveBoundQuizCheckpoint(
+      saved,
       expectedRevision: expectedRevision,
       checkpoint: AwaitingQuizAnswer(
         planId: saved.plan.id,
         questionOrdinal: checkpoint.questionOrdinal,
+        lexical: checkpoint.lexical,
         assistance: visible
             ? checkpoint.assistance.showHint(_now().millisecondsSinceEpoch)
             : checkpoint.assistance.hideHint(),
+      ),
+    );
+  }
+
+  Future<ConfiguredQuizState> saveQuizTypedDraft({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+    required String text,
+  }) async {
+    final saved = await _resumeCurrentConfiguredQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    final checkpoint = saved.checkpoint;
+    if (checkpoint is! AwaitingQuizAnswer ||
+        checkpoint.lexical is! LexicalTypedLocalData) {
+      throw StateError('Typed definition question is not awaiting input');
+    }
+    final local = checkpoint.lexical! as LexicalTypedLocalData;
+    if (local.draft == text &&
+        expectedRevision >= 1 &&
+        expectedRevision >= saved.checkpointRevision - 1 &&
+        expectedRevision <= saved.checkpointRevision) {
+      return saved;
+    }
+    if (expectedRevision != saved.checkpointRevision) {
+      throw StateError('Typed draft checkpoint changed');
+    }
+    return _saveBoundQuizCheckpoint(
+      saved,
+      expectedRevision: expectedRevision,
+      checkpoint: AwaitingQuizAnswer(
+        planId: saved.plan.id,
+        questionOrdinal: checkpoint.questionOrdinal,
+        assistance: checkpoint.assistance,
+        lexical: local.withDraft(text),
       ),
     );
   }
@@ -1425,8 +1694,10 @@ final class LearningUseCases {
     int? selectedOptionOrdinal,
     bool revealed = false,
     int? responseTimeMs,
+    String? typedResponse,
+    bool Function()? stillCurrent,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
     );
@@ -1436,6 +1707,7 @@ final class LearningUseCases {
       if ((checkpoint is PendingQuizAnswer ||
               checkpoint is AnsweredQuizQuestion) &&
           existing.selectedOptionOrdinal == selectedOptionOrdinal &&
+          existing.submittedText == typedResponse &&
           existing.revealed == revealed &&
           (expectedRevision == saved.checkpointRevision ||
               expectedRevision ==
@@ -1448,6 +1720,24 @@ final class LearningUseCases {
     if (checkpoint is! AwaitingQuizAnswer ||
         expectedRevision != saved.checkpointRevision) {
       throw StateError('quiz checkpoint changed');
+    }
+    await prepareOrdinaryAnswer(
+      expectedOwnerId: expectedOwnerId,
+      sessionId: sessionId,
+      stillCurrent: stillCurrent ?? () => true,
+    );
+    saved.requireCurrent();
+    final current = await _resumeCurrentConfiguredQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    if (current.checkpointRevision != expectedRevision ||
+        current.plan.stableSerialization != saved.plan.stableSerialization ||
+        current.checkpoint.stableSerialization !=
+            checkpoint.stableSerialization ||
+        current.state != 'active' ||
+        stillCurrent?.call() == false) {
+      throw StateError('Quiz context changed while preparing ordinary answer');
     }
     final occurredAt = _now().millisecondsSinceEpoch;
     final assistance = revealed
@@ -1468,16 +1758,22 @@ final class LearningUseCases {
       assistance: assistance,
       occurredAtUtcMs: occurredAt,
       responseTimeMs: fresh ? responseTimeMs : null,
+      submittedText: typedResponse,
     );
-    final pending = await _configured.saveQuizCheckpoint(
-      sessionId: sessionId,
-      expectedOwnerId: expectedOwnerId,
+    final pending = await _saveBoundQuizCheckpoint(
+      current,
       expectedRevision: expectedRevision,
       checkpoint: PendingQuizAnswer(
         planId: saved.plan.id,
         questionOrdinal: checkpoint.questionOrdinal,
         assistance: assistance,
         answer: answer,
+        lexical: checkpoint.lexical is LexicalTypedLocalData
+            ? (checkpoint.lexical! as LexicalTypedLocalData).withAnswer(
+                checkpoint.questionOrdinal,
+                typedResponse,
+              )
+            : checkpoint.lexical,
       ),
     );
     _forgetQuizQuestion(saved);
@@ -1494,6 +1790,7 @@ final class LearningUseCases {
       expectedOwnerId: expectedOwnerId,
       expectedRevision: expectedRevision,
     );
+    result.state.requireCurrent();
     final receipt = result.state.checkpoint.answer!;
     await _afterRecordedAnswer(
       receipt.toCommand(sessionId: sessionId),
@@ -1507,7 +1804,7 @@ final class LearningUseCases {
     required String expectedOwnerId,
     required int expectedRevision,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
     );
@@ -1521,14 +1818,14 @@ final class LearningUseCases {
         previous.questionOrdinal + 1 >= saved.plan.questions.length) {
       throw StateError('quiz cannot advance from this checkpoint');
     }
-    final next = await _configured.saveQuizCheckpoint(
-      sessionId: sessionId,
-      expectedOwnerId: expectedOwnerId,
+    final next = await _saveBoundQuizCheckpoint(
+      saved,
       expectedRevision: expectedRevision,
       checkpoint: AwaitingQuizAnswer(
         planId: saved.plan.id,
         questionOrdinal: previous.questionOrdinal + 1,
         assistance: QuizAssistance(),
+        lexical: previous.lexical?.nextQuestion(),
       ),
     );
     _markFreshQuizQuestion(next);
@@ -1540,7 +1837,7 @@ final class LearningUseCases {
     required String expectedOwnerId,
     required int expectedRevision,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
     );
@@ -1556,14 +1853,14 @@ final class LearningUseCases {
         previous.questionOrdinal != saved.plan.questions.length - 1) {
       throw StateError('quiz has unanswered questions');
     }
-    return _configured.saveQuizCheckpoint(
-      sessionId: sessionId,
-      expectedOwnerId: expectedOwnerId,
+    return _saveBoundQuizCheckpoint(
+      saved,
       expectedRevision: expectedRevision,
       checkpoint: ClosingQuizSession(
         planId: saved.plan.id,
         questionOrdinal: previous.questionOrdinal,
         assistance: previous.assistance,
+        lexical: previous.lexical,
         close: QuizCloseReceipt(
           capturedOwnerId: expectedOwnerId,
           endedAtUtcMs: _now().millisecondsSinceEpoch,
@@ -1583,6 +1880,7 @@ final class LearningUseCases {
       expectedOwnerId: expectedOwnerId,
       expectedRevision: expectedRevision,
     );
+    result.state.requireCurrent();
     if (notifyLocalMutation) {
       onLocalMutation?.call();
     }
@@ -1594,19 +1892,19 @@ final class LearningUseCases {
     required String expectedOwnerId,
     required int expectedRevision,
   }) async {
-    final saved = await _configured.resumeQuiz(
+    final saved = await _resumeCurrentConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
     );
     if (saved.checkpoint is AbandonedQuizSession) return saved;
-    final abandoned = await _configured.saveQuizCheckpoint(
-      sessionId: sessionId,
-      expectedOwnerId: expectedOwnerId,
+    final abandoned = await _saveBoundQuizCheckpoint(
+      saved,
       expectedRevision: expectedRevision,
       checkpoint: AbandonedQuizSession(
         planId: saved.plan.id,
         questionOrdinal: saved.checkpoint.questionOrdinal,
         assistance: saved.checkpoint.assistance,
+        lexical: saved.checkpoint.lexical,
         close: QuizCloseReceipt(
           capturedOwnerId: expectedOwnerId,
           endedAtUtcMs: _now().millisecondsSinceEpoch,
@@ -1675,6 +1973,11 @@ final class LearningUseCases {
     if (value.isEmpty) throw StateError('learning id generator returned blank');
     return value;
   }
+
+  DateTime _nativeNow() => DateTime.fromMillisecondsSinceEpoch(
+    _now().millisecondsSinceEpoch,
+    isUtc: true,
+  );
 
   DateTime _now() {
     final value = nowUtc();

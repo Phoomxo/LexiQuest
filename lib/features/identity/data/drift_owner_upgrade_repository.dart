@@ -689,7 +689,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         table: 'quest_instances',
         idColumn: 'instance_id',
         entityType: 'questInstance',
-        join: 'target.quest_id = guest.quest_id',
+        join:
+            'target.quest_id = guest.quest_id AND target.period_key = guest.period_key',
       ),
       _DuplicateSpecification(
         table: 'streak_states',
@@ -700,7 +701,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       _DuplicateSpecification(
         table: 'learning_day_log',
         entityType: 'learningDay',
-        join: 'target.learning_day = guest.learning_day',
+        join:
+            'target.learning_day = guest.learning_day AND target.policy_version IS guest.policy_version AND target.source_attempt_id IS guest.source_attempt_id',
       ),
       _DuplicateSpecification(
         table: 'association_records',
@@ -916,6 +918,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
       if (table == 'learning_time_preferences' ||
+          table == 'study_reminder_preferences' ||
           table == 'learning_profiles' ||
           table == 'saved_words' ||
           table == 'experiment_assignments' ||
@@ -928,6 +931,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       }
       await _updateOwner(table, sourceId, targetId);
     }
+    await _database.customUpdate(
+      'DELETE FROM study_reminder_preferences WHERE owner_id = ?',
+      variables: [Variable<String>(sourceId)],
+      updates: {_database.studyReminderPreferences},
+    );
     await _database.customUpdate(
       "UPDATE outbox_operations "
       "SET state = 'pending', lease_token = NULL, lease_expires_at_utc_ms = NULL "

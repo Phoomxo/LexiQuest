@@ -27,9 +27,11 @@ class LearningTimeScopes extends Table {
   TextColumn get sourceKind => text()();
   TextColumn get sourceBindingJson => text()();
   IntColumn get createdAtUtcMs => integer()();
-  TextColumn get linkedSessionId => text()
-      .nullable()
-      .references(LearningSessions, #id, onDelete: KeyAction.cascade)();
+  TextColumn get linkedSessionId => text().nullable().references(
+    LearningSessions,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
   TextColumn get sessionLinkBindingJson => text().nullable()();
 
   @override
@@ -38,7 +40,7 @@ class LearningTimeScopes extends Table {
   @override
   List<String> get customConstraints => [
     "CHECK (substr(id, 1, 11) = 'time-scope:' AND length(CAST(id AS BLOB)) BETWEEN 12 AND 256 AND length(trim(substr(id, 12))) > 0)",
-    "CHECK (source_kind IN ('configuredQuiz','ownedSrs','dictation','cloze','voicePractice','reading','tutor'))",
+    "CHECK (source_kind IN ('configuredQuiz','ownedSrs','dictation','cloze','voicePractice','reading','tutor','matching'))",
     'CHECK (length(CAST(source_binding_json AS BLOB)) BETWEEN 1 AND 16384)',
     "CHECK (typeof(created_at_utc_ms) = 'integer' AND created_at_utc_ms BETWEEN 0 AND 8640000000000000)",
     'CHECK ((linked_session_id IS NULL AND session_link_binding_json IS NULL) OR (linked_session_id IS NOT NULL AND session_link_binding_json IS NOT NULL))',

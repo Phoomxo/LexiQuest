@@ -4,16 +4,21 @@ import 'package:flutter/foundation.dart' show listEquals, ValueNotifier;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../config/m3_theme.dart';
 import '../features/account_deletion/domain/account_deletion_contracts.dart';
+import '../features/content_reports/domain/content_report.dart';
+import '../features/content_reports/presentation/content_report_button.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/accepted_quiz_plan.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_evidence_contract.dart';
 import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning/presentation/lesson_scaffold.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/learning_time/presentation/learning_time_binding.dart';
+import '../features/voice/application/voice_use_cases.dart';
+import '../features/learning_packs/presentation/rich_lexical_card.dart';
+import '../voice/voice_models.dart';
 import '../runtime/app_dependencies.dart';
-import '../widgets/adaptive_content_pane.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
 
@@ -33,6 +38,8 @@ class QuizScreen extends StatefulWidget {
     this.onScoreRouteChanged,
     this.learningTime,
     this.timeCallerContext = LearningTimeCallerContext.ordinary,
+    this.preparedLaunch,
+    this.voice,
   });
 
   final String? categoryId;
@@ -47,18 +54,21 @@ class QuizScreen extends StatefulWidget {
   final void Function(Route<dynamic>? route, bool current)? onScoreRouteChanged;
   final LearningTimeUseCases? learningTime;
   final LearningTimeCallerContext timeCallerContext;
+  final ConfiguredQuizLaunch? preparedLaunch;
+  final VoiceUseCases? voice;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-enum _QuizOperation { hint, answer, advance, finish }
+enum _QuizOperation { draft, hint, answer, advance, finish }
 
 typedef _AnswerIntent = ({
   int revision,
   int? optionOrdinal,
   bool reveal,
   int? latencyMs,
+  String? typedResponse,
 });
 
 bool _ownerChangedFailure(Object? error) =>
@@ -96,6 +106,115 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   LearningTimeUseCases? _time;
   LearningTimeBinding? _timeBinding;
   int _timeRequest = 0;
+  final _typed = TextEditingController();
+  bool _typedDirty = false;
+  bool _restoringTyped = false;
+  VoiceUseCases? _voice;
+  Future<void>? _voiceStopping;
+  int _audioGeneration = 0;
+  bool _ownsAudio = false;
+  bool _audioBusy = false;
+  bool _audioFailed = false;
+  bool _reportOverlay = false;
+
+  Future<void> _stopQuizVoice() {
+    _audioGeneration++;
+    _audioBusy = false;
+    if (!_ownsAudio) return _voiceStopping ?? Future<void>.value();
+    _ownsAudio = false;
+    final voice = _voice;
+    final stopped = () async {
+      try {
+        await voice?.stop();
+      } on Object {
+        // Audio cleanup cannot change an acknowledged answer.
+      }
+    }();
+    _voiceStopping = stopped;
+    unawaited(
+      stopped.then((_) {
+        if (identical(_voiceStopping, stopped)) _voiceStopping = null;
+      }),
+    );
+    return stopped;
+  }
+
+  Future<void> _speakAnswer() async {
+    final quiz = _quiz;
+    final voice = _voice;
+    if (quiz == null ||
+        voice == null ||
+        !_answered ||
+        _blocked ||
+        _audioBusy ||
+        quiz.plan.configuration.lexical?.settings.manualAudio != true ||
+        !_current(_generation)) {
+      return;
+    }
+    final stopped = _stopQuizVoice();
+    final audio = _audioGeneration;
+    final generation = _generation;
+    bool current() =>
+        _current(generation) &&
+        audio == _audioGeneration &&
+        identical(voice, _voice) &&
+        identical(quiz, _quiz) &&
+        _answered;
+    setState(() {
+      _audioBusy = true;
+      _audioFailed = false;
+    });
+    try {
+      await stopped;
+      if (!current()) return;
+      final saved = await _learning!.resumeQuiz(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+      );
+      if (!current()) return;
+      if (saved.checkpointRevision != quiz.checkpointRevision ||
+          saved.plan.id != quiz.plan.id ||
+          saved.checkpoint is! AnsweredQuizQuestion) {
+        throw StateError('Feedback changed');
+      }
+      _ownsAudio = true;
+      await voice.speak(
+        VoiceRequest.create(
+          text: quiz.plan.questions[_index].word.spelling,
+          language: 'en',
+          voiceId: 'device-default',
+          speed: 1,
+          contentId: '${quiz.plan.id}:$_index',
+          contentType: 'vocabulary_word',
+          mode: VoiceMode.practice,
+        ),
+      );
+    } on Object {
+      if (current()) setState(() => _audioFailed = true);
+    } finally {
+      if (current()) setState(() => _audioBusy = false);
+    }
+  }
+
+  void _typedChanged() {
+    if (_restoringTyped || !mounted) return;
+    _timeBinding?.interacted();
+    setState(() => _typedDirty = true);
+  }
+
+  void _restoreTyped(ConfiguredQuizState saved) {
+    final local = saved.checkpoint.lexical;
+    final text = local is LexicalTypedLocalData
+        ? saved.checkpoint.answer?.submittedText ?? local.draft
+        : '';
+    _restoringTyped = true;
+    _typed.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _restoringTyped = false;
+    _typedDirty = false;
+  }
 
   void _suspendTime() {
     _timeRequest++;
@@ -174,6 +293,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool get _revealed =>
       _quiz?.checkpoint.answer?.revealed ?? _answerIntent?.reveal ?? false;
   String? get _selected {
+    if (_quiz?.checkpoint.lexical is LexicalTypedLocalData) {
+      return _quiz?.checkpoint.answer?.submittedText ??
+          _answerIntent?.typedResponse;
+    }
     final ordinal =
         _quiz?.checkpoint.answer?.selectedOptionOrdinal ??
         _answerIntent?.optionOrdinal;
@@ -199,17 +322,20 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _typed.addListener(_typedChanged);
     _foreground =
         (WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed) ==
         AppLifecycleState.resumed;
     _acceptedSessionId = widget.resumeSessionId;
-    _boundOwnerId = widget.expectedOwnerId;
+    _boundOwnerId =
+        widget.expectedOwnerId ?? widget.preparedLaunch?.session.ownerId;
   }
 
   @override
   void didUpdateWidget(covariant QuizScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.learning != widget.learning ||
+    if (oldWidget.preparedLaunch != widget.preparedLaunch ||
+        oldWidget.learning != widget.learning ||
         oldWidget.categoryId != widget.categoryId ||
         !listEquals(oldWidget.wordIds, widget.wordIds) ||
         oldWidget.selectionMode != widget.selectionMode ||
@@ -221,7 +347,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       _generation++;
       _launch = null;
       _acceptedSessionId = widget.resumeSessionId;
-      _boundOwnerId = widget.expectedOwnerId;
+      _boundOwnerId =
+          widget.expectedOwnerId ?? widget.preparedLaunch?.session.ownerId;
       _quiz = null;
       _load = null;
       _finished = null;
@@ -243,6 +370,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final learning = widget.learning ?? dependencies?.learning;
     final time = widget.learningTime ?? dependencies?.learningTime;
+    final voice = widget.voice ?? dependencies?.voice;
+    if (!identical(voice, _voice)) {
+      unawaited(_stopQuizVoice());
+      _voice = voice;
+    }
     if (!identical(_time, time) || !identical(_learning, learning)) {
       _retireTime();
       _time = time;
@@ -254,7 +386,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       _load = null;
       _launch = null;
       _acceptedSessionId = widget.resumeSessionId;
-      _boundOwnerId = widget.expectedOwnerId;
+      _boundOwnerId =
+          widget.expectedOwnerId ?? widget.preparedLaunch?.session.ownerId;
       _quiz = null;
       _finished = null;
       _unavailable = null;
@@ -317,6 +450,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   }
 
   void _updateVisibility() {
+    if (_reportOverlay && _foreground && _route?.isCurrent == false) {
+      _suspendTime();
+      return;
+    }
     final visible = _foreground && (_route?.isCurrent ?? true);
     if (_visible == visible) return;
     _suspendTime();
@@ -329,6 +466,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   }
 
   void _clearPendingUi() {
+    unawaited(_stopQuizVoice());
     _saving = false;
     _retryAction = null;
     _failedOperation = null;
@@ -341,6 +479,17 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     final learning = _learning;
     if (learning == null) {
       throw StateError('local learning dependency unavailable');
+    }
+    if (widget.preparedLaunch case final launch?) {
+      if (widget.resumeSessionId != null ||
+          widget.categoryId != null ||
+          widget.wordIds != null ||
+          (widget.expectedOwnerId != null &&
+              widget.expectedOwnerId != launch.session.ownerId)) {
+        throw ArgumentError(
+          'Prepared quiz must retain its original owner and selection',
+        );
+      }
     }
     if (widget.resumeSessionId != null &&
         (widget.expectedOwnerId == null ||
@@ -361,10 +510,12 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           : widget.selectionMode == QuizWordSelectionMode.sourcePractice
           ? QuizConfiguration.sourcePractice(wordIds: widget.wordIds!)
           : QuizConfiguration.weaknessPractice(wordIds: widget.wordIds!);
-      final launchFuture = _launch ??= learning.prepareConfiguredQuiz(
-        configuration: configuration,
-        expectedOwnerId: widget.expectedOwnerId,
-      );
+      final launchFuture = _launch ??= widget.preparedLaunch == null
+          ? learning.prepareConfiguredQuiz(
+              configuration: configuration,
+              expectedOwnerId: widget.expectedOwnerId,
+            )
+          : Future.value(widget.preparedLaunch!);
       final ConfiguredQuizLaunch launch;
       try {
         launch = await launchFuture;
@@ -395,6 +546,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     if (_current(generation) && binding == _binding) {
       setState(() {
         _quiz = saved;
+        _restoreTyped(saved);
         if (!saved.restored && saved.checkpoint is AwaitingQuizAnswer) {
           _questionClock = Stopwatch()..start();
         }
@@ -406,6 +558,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    unawaited(_stopQuizVoice());
+    _typed.dispose();
     _timeBinding?.dispose();
     _timeRequest++;
     _generation++;
@@ -428,100 +582,94 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final usesAdaptiveTitle =
-        _title.runes.length > 18 ||
-        MediaQuery.textScalerOf(context).scale(1) >= 2;
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: usesAdaptiveTitle
-            ? M3Theme.appBarToolbarHeight(context)
-            : null,
-        title: usesAdaptiveTitle
-            ? M3Theme.appBarTitle(context, _title)
-            : Text(_title),
-      ),
-      body: AdaptiveContentPane(
-        child: !_visible
-            ? const SizedBox.shrink()
-            : !_ownerCurrent || _unavailable != null
-            ? _QuizMessage(
-                icon: Icons.error_outline,
-                message:
-                    !_ownerCurrent ||
-                        _unavailable?.reason ==
-                            ConfiguredQuizUnavailableReason.ownerChanged
-                    ? 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'
-                    : 'ไม่สามารถเล่นรอบเดิมต่อได้ กรุณากลับไปเลือกกิจกรรม',
-                liveRegion: true,
-                actionLabel: 'กลับไปเลือกกิจกรรม',
-                onAction: () => Navigator.maybePop(context),
-              )
-            : FutureBuilder<ConfiguredQuizState?>(
-                future: _load,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    final error = snapshot.error;
-                    final ownerChanged = _ownerChangedFailure(error);
-                    return _QuizMessage(
-                      icon: Icons.error_outline,
-                      message: ownerChanged
-                          ? 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'
-                          : 'เปิดแบบทดสอบไม่สำเร็จ กรุณาลองอีกครั้งหรือกลับไปเลือกกิจกรรม',
-                      liveRegion: true,
-                      actionLabel: 'กลับไปเลือกกิจกรรม',
-                      onAction: () => Navigator.maybePop(context),
-                      onRetry: ownerChanged ? null : _retryLoad,
-                    );
-                  }
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'กำลังเตรียมแบบทดสอบ',
-                      ),
-                    );
-                  }
-                  if (snapshot.data == null) {
-                    return const _QuizMessage(
-                      icon: Icons.library_add_outlined,
-                      message:
-                          'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
-                    );
-                  }
-                  final quiz = _quiz;
-                  if (quiz == null || !_ownerCurrent) {
-                    return const SizedBox.shrink();
-                  }
-                  final checkpoint = quiz.checkpoint;
-                  if (checkpoint is AbandonedQuizSession) {
-                    return _QuizMessage(
-                      icon: Icons.history,
-                      message: 'รอบการฝึกนี้จบแล้ว กรุณาเลือกกิจกรรมใหม่',
-                      actionLabel: 'กลับไปเลือกกิจกรรม',
-                      onAction: () => Navigator.maybePop(context),
-                    );
-                  }
-                  if (checkpoint is ClosingQuizSession ||
-                      checkpoint is CompletedQuizSession) {
-                    return _QuizMessage(
-                      icon: Icons.check_circle_outline,
-                      message: checkpoint is CompletedQuizSession
-                          ? 'บันทึกผลรอบนี้แล้ว'
-                          : 'คำตอบครบแล้ว พร้อมบันทึกผลรอบนี้',
-                      liveRegion: true,
-                      actionLabel: _saving || _scoreOpen
-                          ? null
-                          : 'ดูผลการเรียน',
-                      onAction: _saving || _scoreOpen ? null : _next,
-                    );
-                  }
-                  return _buildQuestion(quiz.asQuizSession);
-                },
-              ),
-      ),
+    return LessonScaffold(
+      title: _title,
+      largeControls:
+          _quiz?.plan.configuration.lexical?.settings.accessibleInput == true,
+      reduceMotion:
+          _quiz?.plan.configuration.lexical?.settings.reduceMotion == true,
+      body: !_visible
+          ? const SizedBox.shrink()
+          : !_ownerCurrent || _unavailable != null
+          ? _QuizMessage(
+              icon: Icons.error_outline,
+              message:
+                  !_ownerCurrent ||
+                      _unavailable?.reason ==
+                          ConfiguredQuizUnavailableReason.ownerChanged
+                  ? 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'
+                  : 'ไม่สามารถเล่นรอบเดิมต่อได้ กรุณากลับไปเลือกกิจกรรม',
+              liveRegion: true,
+              actionLabel: 'กลับไปเลือกกิจกรรม',
+              onAction: () => Navigator.maybePop(context),
+            )
+          : FutureBuilder<ConfiguredQuizState?>(
+              future: _load,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  final error = snapshot.error;
+                  final ownerChanged = _ownerChangedFailure(error);
+                  return _QuizMessage(
+                    icon: Icons.error_outline,
+                    message: ownerChanged
+                        ? 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'
+                        : 'เปิดแบบทดสอบไม่สำเร็จ กรุณาลองอีกครั้งหรือกลับไปเลือกกิจกรรม',
+                    liveRegion: true,
+                    actionLabel: 'กลับไปเลือกกิจกรรม',
+                    onAction: () => Navigator.maybePop(context),
+                    onRetry: ownerChanged ? null : _retryLoad,
+                  );
+                }
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'กำลังเตรียมแบบทดสอบ',
+                    ),
+                  );
+                }
+                if (snapshot.data == null) {
+                  return const _QuizMessage(
+                    icon: Icons.library_add_outlined,
+                    message:
+                        'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
+                  );
+                }
+                final quiz = _quiz;
+                if (quiz == null || !_ownerCurrent) {
+                  return const SizedBox.shrink();
+                }
+                final checkpoint = quiz.checkpoint;
+                if (checkpoint is AbandonedQuizSession) {
+                  return _QuizMessage(
+                    icon: Icons.history,
+                    message: 'รอบการฝึกนี้จบแล้ว กรุณาเลือกกิจกรรมใหม่',
+                    actionLabel: 'กลับไปเลือกกิจกรรม',
+                    onAction: () => Navigator.maybePop(context),
+                  );
+                }
+                if (checkpoint is ClosingQuizSession ||
+                    checkpoint is CompletedQuizSession) {
+                  return _QuizMessage(
+                    icon: Icons.check_circle_outline,
+                    message: checkpoint is CompletedQuizSession
+                        ? 'บันทึกผลรอบนี้แล้ว'
+                        : 'คำตอบครบแล้ว พร้อมบันทึกผลรอบนี้',
+                    liveRegion: true,
+                    actionLabel: _saving || _scoreOpen ? null : 'ดูผลการเรียน',
+                    onAction: _saving || _scoreOpen ? null : _next,
+                  );
+                }
+                return _buildQuestion(quiz.asQuizSession);
+              },
+            ),
     );
   }
 
   String get _title {
+    if (_quiz?.plan.configuration.lexical != null ||
+        widget.preparedLaunch?.configuration.lexical != null) {
+      return 'ฝึกคำศัพท์จากนิยาม';
+    }
     final activity = _quiz?.activityType;
     if (activity == 'sourcePractice' ||
         (activity == null &&
@@ -538,40 +686,47 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
+    final lexical = question.lexical;
+    final typed = lexical is DefinitionTypedContent;
+    final accessible =
+        _quiz!.plan.configuration.lexical?.settings.accessibleInput == true;
+    final help = lexical?.target.entry;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'คำถาม ${_index + 1} จาก ${session.questions.length}',
-              style: Theme.of(context).textTheme.labelLarge,
+            LessonProgress(
+              current: _index + 1,
+              total: session.questions.length,
             ),
-            const SizedBox(height: 8),
-            Semantics(
-              label: 'คำถาม ${_index + 1} จาก ${session.questions.length}',
-              child: LinearProgressIndicator(
-                value: (_index + 1) / session.questions.length,
-              ),
-            ),
+            if (_quiz!.plan.configuration.lexical?.settings.advisoryMinutes
+                case final minutes?)
+              Text('เป้าหมาย $minutes นาที · พักหรือจบเมื่อพร้อม'),
             const SizedBox(height: 24),
-            const Text('เลือกคำแปลที่ตรงกับคำศัพท์'),
+            Text(
+              typed
+                  ? 'อ่านนิยามแล้วพิมพ์คำศัพท์'
+                  : lexical != null
+                  ? 'อ่านนิยามแล้วเลือกคำศัพท์'
+                  : 'เลือกคำแปลที่ตรงกับคำศัพท์',
+            ),
             const SizedBox(height: 12),
             Text(
-              question.word.spelling,
+              question.prompt,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 4),
-            if (_hintVisible || _answered)
+            if (lexical == null && (_hintVisible || _answered))
               Text(
                 question.word.partOfSpeech,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             if (!_answered) ...[
-              if (question.word.partOfSpeech.isNotEmpty)
+              if (help != null || question.word.partOfSpeech.isNotEmpty)
                 TextButton(
                   onPressed: _blocked ? null : _toggleHint,
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -585,7 +740,73 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 child: const Text('เฉลยคำตอบ'),
               ),
             ],
+            if (help != null && _hintVisible && !_answered) ...[
+              if (help.hint != null) Text('คำใบ้: ${help.hint}'),
+              if (help.strategy != null) Text('วิธีฝึก: ${help.strategy}'),
+              if (help.memoryCue != null) Text('ช่วยจำ: ${help.memoryCue}'),
+              for (final example in help.examples)
+                Text('ตัวอย่าง: ${example.text}'),
+            ],
+            if (lexical != null &&
+                _quiz!.checkpoint.assistance.hintFirstShownAtUtcMs != null)
+              const Text('ใช้ตัวช่วยแล้วในข้อนี้'),
             const SizedBox(height: 24),
+            if (typed) ...[
+              TextField(
+                key: const ValueKey('definition-response'),
+                controller: _typed,
+                enabled: !_answered && !_blocked,
+                autocorrect: false,
+                enableSuggestions: false,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'คำศัพท์ของคุณ',
+                  border: OutlineInputBorder(),
+                  helperText: 'กดเก็บร่างเพื่อเปิดข้อความเดิมต่อได้',
+                ),
+                onSubmitted: (_) =>
+                    _record(question, null, typedResponse: _typed.text),
+              ),
+              const SizedBox(height: 12),
+              if (!_answered) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _typedDirty
+                        ? 'ร่างยังไม่ได้บันทึก'
+                        : 'เก็บร่างแล้ว ยังไม่บันทึกคำตอบ',
+                    key: const ValueKey('definition-draft-status'),
+                  ),
+                ),
+                if (_typed.text.length > 512)
+                  const Text('คำตอบยาวเกิน 512 ตัวอักษร'),
+                if (!_typed.value.composing.isCollapsed)
+                  const Text('ยืนยันข้อความบนแป้นพิมพ์ก่อนส่ง'),
+                OutlinedButton(
+                  key: const ValueKey('definition-save-draft'),
+                  onPressed:
+                      _blocked ||
+                          !_typedDirty ||
+                          !_typed.value.composing.isCollapsed ||
+                          _typed.text.length > 512
+                      ? null
+                      : _saveTypedDraft,
+                  child: const Text('เก็บร่าง'),
+                ),
+                FilledButton(
+                  key: const ValueKey('definition-submit'),
+                  onPressed:
+                      _blocked ||
+                          _typed.text.trim().isEmpty ||
+                          _typed.text.length > 512 ||
+                          !_typed.value.composing.isCollapsed
+                      ? null
+                      : () =>
+                            _record(question, null, typedResponse: _typed.text),
+                  child: const Text('บันทึกคำตอบ'),
+                ),
+              ],
+            ],
             ...question.options.map((option) {
               final feedbackColors = _answerColors(question, option);
               return Padding(
@@ -595,7 +816,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                       ? null
                       : () => _record(question, option),
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
+                    minimumSize: Size.fromHeight(accessible ? 64 : 52),
                     backgroundColor: feedbackColors?.background,
                     foregroundColor: feedbackColors?.foreground,
                   ),
@@ -620,7 +841,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _selected == question.correctAnswer
+                      _quiz!.checkpoint.answer!.isCorrect
                           ? 'ถูกต้อง'
                           : 'ยังไม่ถูก ลองดูคำแปลอีกครั้ง',
                       style: Theme.of(context).textTheme.titleMedium,
@@ -632,10 +853,49 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     Text(
                       '${question.word.spelling} — ${question.correctAnswer}',
                     ),
+                    if (lexical != null)
+                      LexicalEntryDetails(
+                        entry: lexical.target.entry,
+                        showIdentity: false,
+                        showAssistance: true,
+                      ),
+                    if (_quiz!.acknowledgedContrastiveExplanation
+                        case final explanation?)
+                      Text(
+                        explanation,
+                        key: const ValueKey(
+                          'definition-contrastive-explanation',
+                        ),
+                      ),
+                    if (_quiz!
+                            .plan
+                            .configuration
+                            .lexical
+                            ?.settings
+                            .manualAudio ==
+                        true) ...[
+                      OutlinedButton.icon(
+                        key: const ValueKey('definition-feedback-audio'),
+                        onPressed: _voice == null || _audioBusy || _blocked
+                            ? null
+                            : _speakAnswer,
+                        icon: const Icon(Icons.volume_up_outlined),
+                        label: Text(
+                          _voice == null
+                              ? 'ระบบเสียงยังไม่พร้อม'
+                              : _audioBusy
+                              ? 'กำลังเล่นเสียง'
+                              : 'ฟังคำศัพท์',
+                        ),
+                      ),
+                      if (_audioFailed)
+                        const Text('เล่นเสียงไม่สำเร็จ ลองฟังอีกครั้งได้'),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(height: 16),
+              _reportQuestion(question),
             ],
             if (!_saving &&
                 _retryAction != null &&
@@ -656,6 +916,72 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _reportQuestion(QuizQuestion question) {
+    final quiz = _quiz;
+    if (quiz == null ||
+        !_answered ||
+        widget.timeCallerContext != LearningTimeCallerContext.ordinary ||
+        !LearningEvidenceContract.isOrdinaryEvidence(
+          quiz.checkpoint.answer!.evidenceContext,
+        )) {
+      return const SizedBox.shrink();
+    }
+    final generation = _generation;
+    final ordinal = _index;
+    bool current() =>
+        _current(generation) &&
+        identical(_quiz, quiz) &&
+        _index == ordinal &&
+        !_blocked;
+    Future<void> validate(bool Function() current) async {
+      if (!current() || !identical(_quiz, quiz) || _index != ordinal) {
+        throw StateError('The reported question changed');
+      }
+      quiz.requireCurrent();
+    }
+
+    final lexical = question.lexical;
+    final key = ValueKey('content-report-quiz:${quiz.plan.id}:$ordinal');
+    if (lexical == null) {
+      return ContentReportButton.ownedWord(
+        key: key,
+        expectedOwnerId: quiz.ownerId,
+        word: question.word,
+        sessionId: quiz.sessionId,
+        callerContext: widget.timeCallerContext,
+        canOpen: current,
+        beforeOpen: _stopQuizVoice,
+        revalidateSource: validate,
+        onOverlayChanged: (open) {
+          _reportOverlay = open;
+        },
+      );
+    }
+    return ContentReportButton.content(
+      key: key,
+      expectedOwnerId: quiz.ownerId,
+      sessionId: quiz.sessionId,
+      sourceIdentity: (quiz.plan.id, ordinal, quiz.checkpointRevision),
+      sourceText: contentReportEntryText(lexical.target.entry),
+      callerContext: widget.timeCallerContext,
+      canOpen: current,
+      beforeOpen: _stopQuizVoice,
+      revalidateSource: validate,
+      onOverlayChanged: (open) {
+        _reportOverlay = open;
+      },
+      targetForSelection: (text, excerpt) => ContentReportTarget.packEntry(
+        text: text,
+        isExcerpt: excerpt,
+        packId: lexical.source.packId,
+        packVersion: lexical.source.version,
+        packageSha256: lexical.source.packageSha256,
+        entryCode: lexical.target.entry.code,
+        entrySha256: lexical.target.entry.contentSha256,
       ),
     );
   }
@@ -701,6 +1027,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     if (!_current(generation)) return false;
     setState(() {
       _quiz = saved;
+      if (freshQuestion ||
+          saved.checkpoint is PendingQuizAnswer ||
+          saved.checkpoint is AnsweredQuizQuestion) {
+        _restoreTyped(saved);
+      }
       _answerIntent = null;
       _retryAction = null;
       _failedOperation = null;
@@ -790,10 +1121,32 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     });
   }
 
+  Future<void> _saveTypedDraft() async {
+    final quiz = _quiz;
+    if (quiz == null ||
+        _blocked ||
+        quiz.checkpoint is! AwaitingQuizAnswer ||
+        !_typed.value.composing.isCollapsed ||
+        _typed.text.length > 512) {
+      return;
+    }
+    final text = _typed.text;
+    await _run(_QuizOperation.draft, (generation) async {
+      final saved = await _learning!.saveQuizTypedDraft(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+        expectedRevision: quiz.checkpointRevision,
+        text: text,
+      );
+      if (_apply(saved, generation)) setState(() => _restoreTyped(saved));
+    });
+  }
+
   Future<void> _record(
     QuizQuestion question,
     String? option, {
     bool reveal = false,
+    String? typedResponse,
   }) async {
     if (_saving || _answered) return;
     final retry = _retryAction;
@@ -810,14 +1163,26 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       return;
     }
     if (quiz.checkpoint is! AwaitingQuizAnswer) return;
-    final ordinal = option == null ? null : question.options.indexOf(option);
-    if (!reveal && (ordinal == null || ordinal < 0)) return;
+    final typed = question.lexical is DefinitionTypedContent;
+    if (typed &&
+        !reveal &&
+        (typedResponse == null ||
+            typedResponse.trim().isEmpty ||
+            typedResponse.length > 512 ||
+            !_typed.value.composing.isCollapsed)) {
+      return;
+    }
+    final ordinal = typed || option == null
+        ? null
+        : question.options.indexOf(option);
+    if (!typed && !reveal && (ordinal == null || ordinal < 0)) return;
     _timeBinding?.interacted();
     final intent = (
       revision: quiz.checkpointRevision,
       optionOrdinal: ordinal,
       reveal: reveal,
       latencyMs: _questionClock?.elapsedMilliseconds,
+      typedResponse: typed && !reveal ? typedResponse : null,
     );
     _answerIntent = intent;
     await _run(_QuizOperation.answer, (generation) async {
@@ -828,6 +1193,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         selectedOptionOrdinal: intent.optionOrdinal,
         revealed: intent.reveal,
         responseTimeMs: intent.latencyMs,
+        typedResponse: intent.typedResponse,
+        stillCurrent: () => _current(generation),
       );
       if (!_apply(prepared, generation)) return;
       if (prepared.checkpoint is PendingQuizAnswer ||
@@ -861,6 +1228,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   Future<void> _next() async {
     if (_saving || _scoreOpen) return;
+    unawaited(_stopQuizVoice());
     final retry = _retryAction;
     if (retry != null) {
       await retry();
@@ -932,6 +1300,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         context,
         AppPage<void>(
           name: 'learning/score',
+          reduceMotion:
+              result.state.plan.configuration.lexical?.settings.reduceMotion ==
+              true,
           builder: (scoreContext) {
             widget.onScoreRouteChanged?.call(
               ModalRoute.of(scoreContext),

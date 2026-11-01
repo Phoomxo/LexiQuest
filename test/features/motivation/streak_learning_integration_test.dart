@@ -1,180 +1,148 @@
-import 'package:drift/native.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:vocab_learning_app/data/local/app_database.dart' as db;
-import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
-import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
-import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
+import 'package:vocab_learning_app/features/motivation/data/drift_learning_day_recorder.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
-class _FakeOwners implements LocalOwnerRepository {
-  final LocalOwner _owner;
-  _FakeOwners(this._owner);
-  @override
-  Future<LocalOwner> getOrCreateActiveOwner() async => _owner;
-  @override
-  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async =>
-      _owner;
-}
+import '../../support/configured_quiz_harness.dart';
 
 void main() {
-  setUpAll(tz.initializeTimeZones);
-
-  late db.AppDatabase database;
-  late StreakUseCases streakUseCases;
-  late LearningUseCases learningUseCases;
-  late LocalOwner owner;
-
+  late ConfiguredQuizHarness h;
+  late LearningUseCases learning;
+  late StreakUseCases streak;
+  var nextId = 0;
   setUp(() async {
-    database = db.AppDatabase(NativeDatabase.memory());
-    owner = LocalOwner(id: 'owner-sli', createdAtUtc: DateTime.utc(2026, 8, 4));
-
-    await database.customInsert(
-      "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
-      "VALUES ('owner-sli', 'localGuest', 1722758400000)",
+    h = await ConfiguredQuizHarness.open();
+    nextId = 0;
+    learning = LearningUseCases(
+      owners: h.owners,
+      repository: DriftLearningRepository(
+        h.database,
+        ownerWrites: h.ownerWrites,
+      ),
+      generateId: () => 'synthetic-learning-${++nextId}',
+      nowUtc: () => h.now,
+      buildInfo: const AppBuildInfo(
+        version: 'synthetic-1',
+        buildId: 'synthetic-streak',
+      ),
     );
-    await database.customInsert(
-      "INSERT INTO vocabulary_categories "
-      "(id, owner_id, name, normalized_name, sort_order, local_revision, "
-      "cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms) "
-      "VALUES ('cat-1', 'owner-sli', 'Test', 'test', 0, 1, 0, 0, 10, 10)",
-    );
-    await database.customInsert(
-      "INSERT INTO vocabulary_words "
-      "(id, owner_id, category_id, spelling, normalized_spelling, meaning, "
-      "normalized_meaning, part_of_speech, source, is_global, local_revision, "
-      "cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms) "
-      "VALUES ('word-1', 'owner-sli', 'cat-1', 'hello', 'hello', "
-      "'สวัสดี', 'สวัสดี', 'interjection', 'manual', 0, 1, 0, 0, 10, 10)",
-    );
-
-    await database
-        .into(database.vocabularyWords)
-        .insert(
-          db.VocabularyWordsCompanion.insert(
-            id: 'word-2',
-            ownerId: owner.id,
-            categoryId: 'cat-1',
-            spelling: 'goodbye',
-            normalizedSpelling: 'goodbye',
-            meaning: 'ลาก่อน',
-            normalizedMeaning: 'ลาก่อน',
-            partOfSpeech: 'interjection',
-            createdAtUtcMs: 10,
-            updatedAtUtcMs: 10,
-          ),
-        );
-
-    streakUseCases = StreakUseCases(
-      repository: DriftStreakRepository(database),
-      owners: _FakeOwners(owner),
-      nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-      timezoneId: 'Asia/Bangkok',
-    );
-
-    learningUseCases = LearningUseCases(
-      owners: _FakeOwners(owner),
-      repository: DriftLearningRepository(database),
-      generateId: () => 'id-${DateTime.now().microsecondsSinceEpoch}',
-      nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-      buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
-      streakEventSink: () => streakUseCases.recordLearningDay().then((_) {}),
+    streak = StreakUseCases(
+      repository: DriftStreakRepository(
+        h.database,
+        ownerWrites: h.ownerWrites,
+        nowUtc: () => h.now,
+      ),
+      nowUtc: () => h.now,
     );
   });
+  tearDown(() => h.close());
 
-  tearDown(() async => database.close());
+  test('canonical answer captures its day with no optional callback', () async {
+    final session = await learning.startQuiz(limit: 3);
+    await _answerQuiz(learning, session, correct: true, responseTimeMs: 300);
+    final row = await h.database.select(h.database.learningDayLog).getSingle();
+    final answer = await h.database
+        .select(h.database.answerAttempts)
+        .getSingle();
+    expect(row.sourceAttemptId, answer.id);
+    expect(row.firstSessionAtUtcMs, answer.occurredAtUtcMs);
+    expect(row.policyVersion, 1);
+    expect(row.timezoneId, 'UTC');
+    expect((await streak.getCurrentStreak()).currentStreakDays, 1);
+    expect((await h.researchCounts()).values, everyElement(0));
+  });
 
-  group('StreakEventSink — D8.1 Streak-Learning integration', () {
-    test('recordAnswer triggers streak start on first session', () async {
-      final session = await learningUseCases.startQuiz(limit: 10);
-      expect(session.questions, isNotEmpty);
-
-      await _answerQuiz(
-        learningUseCases,
-        session,
-        correct: true,
-        responseTimeMs: 300,
-      );
-
-      final state = await streakUseCases.getCurrentStreak();
+  test(
+    'incorrect answers still acknowledge one genuine learning day',
+    () async {
+      final session = await learning.startQuiz(limit: 3);
+      await _answerQuiz(learning, session, correct: false, responseTimeMs: 500);
       expect(
-        state.currentStreakDays,
-        1,
-        reason: 'first recordAnswer must start streak at 1',
+        await DriftStreakRepository(
+          h.database,
+        ).getLearningDays(configuredOwnerId, nowUtc: h.now),
+        ['2026-10-29'],
       );
-    });
+      expect((await streak.getCurrentStreak()).currentStreakDays, 1);
+    },
+  );
 
-    test('streakEventSink null = no crash (streak not wired)', () async {
-      final noStreakUseCases = LearningUseCases(
-        owners: _FakeOwners(owner),
-        repository: DriftLearningRepository(database),
-        generateId: () => 'ns-${DateTime.now().microsecondsSinceEpoch}',
-        nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-        buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha'),
-        // streakEventSink intentionally absent
-      );
-      final session = await noStreakUseCases.startQuiz(limit: 10);
+  test('second answer preserves the first day source receipt', () async {
+    final session = await learning.startQuiz(limit: 3);
+    await _answerQuiz(learning, session, correct: true, responseTimeMs: 300);
+    final original = await h.database
+        .select(h.database.learningDayLog)
+        .getSingle();
+    await _answerQuiz(learning, session, correct: false, responseTimeMs: 400);
+    expect(
+      (await h.database.select(h.database.learningDayLog).getSingle()).toJson(),
+      original.toJson(),
+    );
+    expect((await streak.getCurrentStreak()).currentStreakDays, 1);
+  });
+
+  test(
+    'an interrupted day insert rolls back the canonical answer too',
+    () async {
+      final session = await learning.startQuiz(limit: 3);
+      final before = await h.snapshot();
       await expectLater(
-        _answerQuiz(
-          noStreakUseCases,
-          session,
-          correct: true,
-          responseTimeMs: 300,
+        h.database.runWithInterceptor(
+          () => _answerQuiz(
+            learning,
+            session,
+            correct: true,
+            responseTimeMs: 300,
+          ),
+          interceptor: _FailDayReceipt(),
         ),
-        completes,
+        throwsA(anything),
       );
-    });
+      final after = await h.snapshot();
+      expect(await h.count('answer_attempts'), 0);
+      expect(await h.count('learning_day_log'), 0);
+      for (final table in [
+        'points_ledger_entries',
+        'srs_states',
+        'events_v2',
+        'outbox_operations',
+      ]) {
+        expect(after[table], before[table], reason: table);
+      }
+    },
+  );
 
-    test('learning day log records entry on first answer', () async {
-      final session = await learningUseCases.startQuiz(limit: 10);
-      await _answerQuiz(
-        learningUseCases,
-        session,
-        correct: false,
-        responseTimeMs: 500,
-      );
-
-      final days = await DriftStreakRepository(
-        database,
-      ).getLearningDays('owner-sli');
-      expect(days, hasLength(1));
-      expect(
-        days.first,
-        '2026-08-04',
-        reason: 'learning day log must record Bangkok date',
-      );
-    });
-
-    test('streak outcome is sameDay on second answer same session', () async {
-      final session = await learningUseCases.startQuiz(limit: 10);
-      // First answer — starts streak.
-      await _answerQuiz(
-        learningUseCases,
-        session,
-        correct: true,
-        responseTimeMs: 300,
-      );
-      // Second answer same UTC day — must be idempotent.
-      await _answerQuiz(
-        learningUseCases,
-        session,
-        correct: false,
-        responseTimeMs: 400,
-      );
-
-      final state = await streakUseCases.getCurrentStreak();
-      expect(
-        state.currentStreakDays,
-        1,
-        reason: 'same-day answer must not extend streak',
-      );
-    });
+  test('day receipt helper rejects an ambient-free write', () async {
+    final before = await h.snapshot();
+    await expectLater(
+      DriftLearningDayRecorder(
+        h.database,
+        ownerWrites: h.ownerWrites,
+      ).recordAnswer('synthetic-not-issued'),
+      throwsA(isA<StateError>()),
+    );
+    expect(await h.snapshot(), before);
   });
+}
+
+final class _FailDayReceipt extends QueryInterceptor {
+  @override
+  Future<int> runInsert(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) {
+    if (statement.toLowerCase().contains('learning_day_log')) {
+      throw StateError('synthetic day receipt failure');
+    }
+    return executor.runInsert(statement, args);
+  }
 }
 
 Future<void> _answerQuiz(

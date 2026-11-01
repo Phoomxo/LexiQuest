@@ -92,6 +92,7 @@ final class DriftLearningProfileRepository
           Variable<String>(next.draft.goalText),
           Variable<String>(next.draft.targetDate?.toString()),
           Variable<int>(next.draft.dailyMinutes),
+          Variable<String>(next.draft.learningTimezoneId),
           Variable<String>(next.draft.interestCodesJson),
           Variable<int>(next.updatedAtUtc.millisecondsSinceEpoch),
           Variable<int>(next.revision),
@@ -101,14 +102,14 @@ final class DriftLearningProfileRepository
         if (previous == null) {
           await database.customInsert(
             'INSERT INTO learning_profiles '
-            '(onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms,revision,owner_id) '
-            'VALUES (?,?,?,?,?,?,?,?)',
+            '(onboarding_state,goal_text,target_date,daily_minutes,learning_timezone_id,interest_codes_json,updated_at_utc_ms,revision,owner_id) '
+            'VALUES (?,?,?,?,?,?,?,?,?)',
             variables: values,
             updates: {table},
           );
         } else {
           final count = await database.customUpdate(
-            'UPDATE learning_profiles SET onboarding_state=?,goal_text=?,target_date=?,daily_minutes=?,'
+            'UPDATE learning_profiles SET onboarding_state=?,goal_text=?,target_date=?,daily_minutes=?,learning_timezone_id=?,'
             'interest_codes_json=?,updated_at_utc_ms=?,revision=? WHERE owner_id=? AND revision=?',
             variables: [...values, Variable<int>(change.expectedRevision)],
             updates: {table},
@@ -157,7 +158,7 @@ final class DriftLearningProfileRepository
   Future<LearningProfileSnapshot> _read(String ownerId) async {
     final row = await database
         .customSelect(
-          'SELECT owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,'
+          'SELECT owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,learning_timezone_id,'
           'interest_codes_json,updated_at_utc_ms FROM learning_profiles WHERE owner_id=?',
           variables: [Variable<String>(ownerId)],
         )
@@ -188,6 +189,7 @@ final class DriftLearningProfileRepository
       goalText: row.readNullable<String>('goal_text'),
       targetDate: target == null ? null : LearningCivilDate.parse(target),
       dailyMinutes: row.readNullable<int>('daily_minutes'),
+      learningTimezoneId: row.readNullable<String>('learning_timezone_id'),
       interestCodes: List<String>.from(decoded['codes'] as List),
     );
     if (draft.interestCodesJson != interestJson ||

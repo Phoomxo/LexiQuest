@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/presentation/lesson_scaffold.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -39,11 +40,9 @@ class ScoreScreen extends StatelessWidget {
     final total = correctAnswers + wrongAnswers;
     final resolvedScore =
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ผลการเรียน'),
-        leading: onBack == null ? null : BackButton(onPressed: onBack),
-      ),
+    return LessonScaffold(
+      title: 'ผลการเรียน',
+      leading: onBack == null ? null : BackButton(onPressed: onBack),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
         child: SafeArea(

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../support/native_checkpoint_privacy.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -454,7 +456,7 @@ void main() {
   );
 
   test(
-    'raw typed response remains transient through save finish and outbox',
+    'submitted text stays in local private slots through save finish and outbox',
     () async {
       final exercise = await h.ready();
       const response = 'synthetic private raw response 4582';
@@ -465,9 +467,21 @@ void main() {
         stillCurrent: () => true,
       );
       expect(answer.isCorrect, isFalse);
-      expect(jsonEncode(await h.storage.snapshot()), isNot(contains(response)));
+      final snapshot = await h.storage.snapshot();
       expect(
-        jsonEncode(await h.storage.snapshot()),
+        (await h.storage.session(exercise.id))['checkpoint_json'],
+        contains(response),
+      );
+      expect(
+        (await h.storage.session(exercise.id))['accepted_plan_json'],
+        contains(exercise.content.sentence),
+      );
+      expect(
+        nativeSnapshotWithoutPrivateSlots(snapshot),
+        isNot(contains(response)),
+      );
+      expect(
+        nativeSnapshotWithoutPrivateSlots(snapshot),
         isNot(contains(exercise.content.sentence)),
       );
       expect(

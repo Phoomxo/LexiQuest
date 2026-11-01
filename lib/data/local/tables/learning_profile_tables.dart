@@ -12,6 +12,8 @@ class LearningProfiles extends Table {
   IntColumn get dailyMinutes => integer().nullable()();
   TextColumn get interestCodesJson => text()();
   IntColumn get updatedAtUtcMs => integer()();
+  TextColumn get learningTimezoneId =>
+      text().nullable().withLength(min: 1, max: 100)();
 
   @override
   Set<Column<Object>> get primaryKey => {ownerId};

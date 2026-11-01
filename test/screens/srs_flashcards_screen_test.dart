@@ -63,12 +63,31 @@ void main() {
         generateId: () => 'source',
         nowUtc: () => DateTime.utc(2026, 10, 21),
       );
+      var preparations = 0;
       final learning = LearningUseCases(
         owners: owners,
         repository: DriftLearningRepository(db),
         generateId: () => 'source',
         nowUtc: () => DateTime.utc(2026, 10, 21),
         buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        beforeOrdinaryAnswer:
+            ({
+              required expectedOwnerId,
+              required sessionId,
+              required stillCurrent,
+            }) async {
+              expect(stillCurrent(), isTrue);
+              expect(
+                (await owners.getOrCreateActiveOwner()).id,
+                expectedOwnerId,
+              );
+              expect(
+                (await db.select(db.learningSessions).getSingle()).id,
+                sessionId,
+              );
+              expect(await db.select(db.answerAttempts).get(), isEmpty);
+              preparations++;
+            },
       );
       await tester.runAsync(
         () => _seedVocabularyWords(db, owners, ['apple', 'banana']),
@@ -107,6 +126,7 @@ void main() {
       await tester.tap(find.text('ยังจำไม่ได้'));
       await _pumpUntil(tester, find.text('บันทึกแล้ว'));
 
+      expect(preparations, 1);
       expect(find.text('ผลที่คุณเลือก: จำไม่ได้'), findsOneWidget);
       expect(find.text('จบการฝึก'), findsOneWidget);
       expect(
@@ -358,7 +378,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('จำได้แล้ว'));
       await tester.tap(find.text('จำได้แล้ว'));
-      await tester.pump();
+      for (var frame = 0; frame < 60 && repository.commands.isEmpty; frame++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
       expect(repository.commands, hasLength(1));
       expect(find.text('บันทึกแล้ว'), findsNothing);
       expect(find.text('คำถัดไป'), findsNothing);

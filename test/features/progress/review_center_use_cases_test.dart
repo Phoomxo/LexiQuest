@@ -51,7 +51,7 @@ void main() {
       expect(first.target.wordRevision, 1);
       expect(second.target.wordRevision, 2);
       expect(value.reportCount, 2);
-      expect(before.length, 43);
+      expect(before.length, 45);
       expect(await h.snapshotAllTables(), before);
     },
   );

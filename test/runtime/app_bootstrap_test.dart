@@ -64,6 +64,21 @@ AppDatabase _testDatabase() {
   return database;
 }
 
+Future<Map<String, List<String>>> _allBootstrapRows(
+  AppDatabase database,
+) async => {
+  for (final table in database.allTables)
+    table.actualTableName: [
+      for (final row
+          in await database
+              .customSelect(
+                'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+              )
+              .get())
+        jsonEncode(row.data),
+    ],
+};
+
 void main() {
   test(
     'enabled billing composition reaches the application and disposes once',
@@ -81,7 +96,7 @@ void main() {
         billingEnabled: true,
         billingFactory: (database, baseUri) async {
           calls++;
-          expect(database.schemaVersion, 23);
+          expect(database.schemaVersion, 25);
           expect(baseUri, _validConfig().aiApiBaseUri);
           return BillingComposition(
             useCases: fixture.billing,
@@ -119,6 +134,44 @@ void main() {
     expect(dependencies.billing, isNull);
     expect(AppBootstrap.production().billingEnabled, isFalse);
   });
+
+  test(
+    'ordinary motivation composes idle and activates only in foreground',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async => throw StateError('synthetic offline'),
+        initializeSupabase: () async => throw StateError('synthetic offline'),
+        loadConfig: () => throw const AppConfigException('synthetic offline'),
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final runtime = dependencies.motivation!;
+      final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(runtime.database, same(database));
+      expect(dependencies.quest, same(runtime.quest));
+      expect(dependencies.streak, same(runtime.streak));
+      expect(runtime.isForeground, isFalse);
+      final before = await _allBootstrapRows(database);
+      await runtime.load(expectedOwnerId: owner.id, stillCurrent: () => true);
+      expect(await _allBootstrapRows(database), before);
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      runtime.setForeground(true);
+      await runtime.activate(ownerId: owner.id, stillCurrent: () => true);
+      expect(
+        await database.select(database.questInstances).get(),
+        hasLength(2),
+      );
+      final active = await _allBootstrapRows(database);
+      await runtime.activate(ownerId: owner.id, stillCurrent: () => true);
+      expect(await _allBootstrapRows(database), active);
+      runtime.setForeground(false);
+      await dependencies.dispose();
+      expect(runtime.isRetired, isTrue);
+    },
+  );
 
   test(
     'ordinary local time composes disabled and reads without new facts',

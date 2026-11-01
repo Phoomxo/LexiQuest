@@ -141,6 +141,28 @@ class Settings(BaseSettings):
         le=512 * 1024 * 1024,
     )
 
+    content_reports_enabled: bool = False
+    content_report_moderator_uids_json: str = Field(default='[]', max_length=16384)
+    content_report_submissions_per_minute: int = Field(default=10, ge=1, le=60)
+
+    def content_report_moderators(self):
+        from lexiquest_ai.content_reports import ContentReportError, closed_json, require_uid
+        try:
+            values = closed_json(self.content_report_moderator_uids_json.encode('utf-8'), 16384)
+            if not isinstance(values, list) or len(values) > 64 or any(not isinstance(uid, str) for uid in values):
+                raise ValueError()
+            result = frozenset(require_uid(uid) for uid in values)
+            if len(result) != len(values):
+                raise ValueError()
+            return result
+        except (ValueError, TypeError, ContentReportError):
+            raise ValueError('Report moderators require a bounded unique UID allowlist') from None
+
+    @model_validator(mode='after')
+    def _validate_content_reports(self):
+        self.content_report_moderators()
+        return self
+
     research_enabled: bool = False
     research_operation_public_keys_json: str = Field(default='{}', max_length=16384)
     research_participation_public_keys_json: str = Field(default='{}', max_length=16384)

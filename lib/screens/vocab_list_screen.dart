@@ -9,6 +9,8 @@ import '../features/vocabulary/application/word_report_use_cases.dart';
 import '../features/vocabulary/domain/word_report.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../features/learning_packs/presentation/rich_lexical_card.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -560,6 +562,43 @@ class _VocabListScreenState extends State<VocabListScreen>
                                     ],
                                   ),
                                 ),
+                                if (AppDependenciesScope.maybeOf(
+                                      context,
+                                    )?.learningPacks !=
+                                    null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: ExpansionTile(
+                                      key: ValueKey(
+                                        'vocab-rich:${word.id}:${word.localRevision}',
+                                      ),
+                                      title: Text(
+                                        _text(
+                                          'รายละเอียดคำศัพท์',
+                                          'Word details',
+                                        ),
+                                      ),
+                                      maintainState: false,
+                                      children: [
+                                        OwnedLexicalDetails(
+                                          word: QuizWord(
+                                            id: word.id,
+                                            categoryId: word.categoryId,
+                                            spelling: word.spelling,
+                                            meaning: word.meaning,
+                                            partOfSpeech: word.partOfSpeech,
+                                            contentRevision:
+                                                'local-vocabulary-v1:${word.localRevision}',
+                                          ),
+                                          expectedOwnerId: word.ownerId,
+                                          visible: () => _visible,
+                                          showAssistance: true,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 if (pending != null)
                                   Padding(
                                     padding: const EdgeInsets.symmetric(

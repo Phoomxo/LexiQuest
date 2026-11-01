@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'tables/associative_tables.dart';
+import 'tables/content_report_tables.dart';
+import 'tables/study_reminder_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
@@ -39,6 +41,8 @@ final _productionNativeOptions = DriftNativeOptions(
     VocabularyWords,
     SavedWords,
     WordReports,
+    ContentReports,
+    StudyReminderPreferences,
     VocabularyImports,
     VocabularyImportRows,
     LearningSessions,
@@ -81,7 +85,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -270,6 +274,53 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 23) {
         await _createMissingTables(migrator);
       }
+      if (from < 24) {
+        if (!await _columnExists('quest_instances', 'period_key')) {
+          await migrator.alterTable(
+            TableMigration(
+              questInstances,
+              newColumns: [
+                questInstances.periodKey,
+                questInstances.periodJson,
+                questInstances.definitionSnapshotJson,
+                questInstances.definitionSha256,
+              ],
+              columnTransformer: {
+                questInstances.periodKey: const CustomExpression<String>(
+                  "'legacy:' || instance_id",
+                ),
+              },
+            ),
+          );
+        }
+        if (!await _columnExists('learning_day_log', 'source_attempt_id')) {
+          await migrator.alterTable(
+            TableMigration(
+              learningDayLog,
+              newColumns: [
+                learningDayLog.sourceAttemptId,
+                learningDayLog.timezoneId,
+                learningDayLog.policyVersion,
+              ],
+            ),
+          );
+        }
+        await _addColumnIfMissing(
+          migrator,
+          'learning_profiles',
+          learningProfiles,
+          learningProfiles.learningTimezoneId,
+        );
+      }
+      if (from < 25) {
+        await _createMissingTables(migrator);
+        final timeSchema = await customSelect(
+          "SELECT sql FROM sqlite_master WHERE name = 'learning_time_scopes'",
+        ).getSingle();
+        if (!timeSchema.read<String>('sql').contains("'matching'")) {
+          await migrator.alterTable(TableMigration(learningTimeScopes));
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -278,6 +329,10 @@ final class AppDatabase extends _$AppDatabase {
       await _createLearningPackIndexes();
       await _createEventIndexes();
       await _createMeasurementOpportunityIndexes();
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_content_reports_owner_queue '
+        'ON content_reports(owner_id,queued_at_utc_ms,id)',
+      );
     },
   );
 
@@ -382,6 +437,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('word_reports')) {
       await migrator.createTable(wordReports);
+    }
+    if (!await _tableExists('content_reports')) {
+      await migrator.createTable(contentReports);
+    }
+    if (!await _tableExists('study_reminder_preferences')) {
+      await migrator.createTable(studyReminderPreferences);
     }
     if (!await _tableExists('vocabulary_imports')) {
       await migrator.createTable(vocabularyImports);

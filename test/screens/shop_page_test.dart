@@ -1334,12 +1334,17 @@ final class _LostAckRewardShop implements RewardShopOperations {
   );
 
   @override
-  Future<RewardSession> loadSession() async =>
-      RewardSession(ownerId: 'local:shop-owner', account: _initialAccount);
+  Future<RewardSession> loadSession() async => RewardSession(
+    ownerId: 'local:shop-owner',
+    account: purchaseCalls.length >= 2 ? _replayedAccount : _initialAccount,
+  );
 
   @override
-  Stream<RewardAppearance> watchAppearance() => Stream.value(
-    const RewardAppearance(ownerId: 'local:shop-owner', equippedBySlot: {}),
+  Stream<RewardAppearance> watchAppearance() => Stream<RewardAppearance>.multi(
+    (events) => events.addSync(
+      const RewardAppearance(ownerId: 'local:shop-owner', equippedBySlot: {}),
+    ),
+    isBroadcast: true,
   );
 
   @override

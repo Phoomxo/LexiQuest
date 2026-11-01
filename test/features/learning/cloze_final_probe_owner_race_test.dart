@@ -84,6 +84,31 @@ void main() {
 
 final class _ProbeBoundaryRepository extends Fake
     implements LearningRepository, NativeExerciseRepository {
+  @override
+  Future<NativeExerciseState> resumeNativeExercise({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => delegate.resumeNativeExercise(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+  @override
+  Future<NativeExerciseState> readNativeExerciseState(
+    AcceptedNativeExercise exercise, {
+    required bool Function() stillCurrent,
+  }) => delegate.readNativeExerciseState(exercise, stillCurrent: stillCurrent);
+  @override
+  Future<NativeExerciseState> saveNativeCheckpoint(
+    NativeExerciseState state,
+    NativeCheckpoint checkpoint, {
+    required bool Function() stillCurrent,
+  }) => delegate.saveNativeCheckpoint(
+    state,
+    checkpoint,
+    stillCurrent: stillCurrent,
+  );
   _ProbeBoundaryRepository(this.delegate, {this.afterSecondProbe});
 
   final DriftLearningRepository delegate;

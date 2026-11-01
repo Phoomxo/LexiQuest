@@ -208,7 +208,7 @@ void main() {
     () async {
       final expected = await _seedPersonalTimeExportPair(database);
       expect(database.schemaVersion, 23);
-      expect(database.allTables, hasLength(43));
+      expect(database.allTables, hasLength(45));
       final before = await _personalTimeExportSnapshot(database);
       final data = await DriftExportReader(database).load(
         ownerId: 'local:owner',

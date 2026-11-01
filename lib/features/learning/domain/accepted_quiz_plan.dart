@@ -3,13 +3,26 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 import '../../../product/feature_contract/feature_contract_digest.dart';
+import '../../learning_packs/domain/learning_pack.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 import 'learning_models.dart';
 
+part 'lexical_quiz.dart';
+
 enum QuizSelectionKind { category, wordIds, weakness }
 
 final class QuizConfiguration {
+  QuizConfiguration.lexical({
+    required LexicalQuizConfiguration lexical,
+    required Iterable<String> wordIds,
+  }) : this._(
+         selectionKind: QuizSelectionKind.wordIds,
+         categoryId: null,
+         wordIds: wordIds,
+         requestedItemCount: lexical.limit,
+         lexical: lexical,
+       );
   QuizConfiguration.category({String? categoryId, int limit = 10})
     : this._(
         selectionKind: QuizSelectionKind.category,
@@ -43,6 +56,7 @@ final class QuizConfiguration {
     required this.categoryId,
     required Iterable<String> wordIds,
     required this.requestedItemCount,
+    this.lexical,
   }) : wordIds = List.unmodifiable(wordIds.toSet().toList()..sort()) {
     if (requestedItemCount < 1 || requestedItemCount > 100) {
       throw const FormatException('Quiz item count must be 1..100.');
@@ -76,27 +90,32 @@ final class QuizConfiguration {
   final String? categoryId;
   final List<String> wordIds;
   final int requestedItemCount;
+  final LexicalQuizConfiguration? lexical;
 
-  String get activityType => switch (selectionKind) {
-    QuizSelectionKind.category => 'quiz',
-    QuizSelectionKind.wordIds => 'sourcePractice',
-    QuizSelectionKind.weakness => 'weaknessPractice',
-  };
+  String get activityType => lexical != null
+      ? 'quiz'
+      : switch (selectionKind) {
+          QuizSelectionKind.category => 'quiz',
+          QuizSelectionKind.wordIds => 'sourcePractice',
+          QuizSelectionKind.weakness => 'weaknessPractice',
+        };
 
-  Map<String, Object?> toJson({int? acceptedItemCount}) => {
-    'policyVersion': policyVersion,
-    'requestedItemCount': requestedItemCount,
-    'acceptedItemCount': ?acceptedItemCount,
-    'direction': 'forward',
-    'inputMode': 'meaningChoice',
-    'hintPolicy': hintPolicy,
-    'revealPolicy': revealPolicy,
-    'selection': {
-      'kind': selectionKind.name,
-      'categoryId': categoryId,
-      'requestedWordIds': wordIds,
-    },
-  };
+  Map<String, Object?> toJson({int? acceptedItemCount}) => lexical != null
+      ? lexical!.configurationJson(wordIds, acceptedItemCount)
+      : {
+          'policyVersion': policyVersion,
+          'requestedItemCount': requestedItemCount,
+          'acceptedItemCount': ?acceptedItemCount,
+          'direction': 'forward',
+          'inputMode': 'meaningChoice',
+          'hintPolicy': hintPolicy,
+          'revealPolicy': revealPolicy,
+          'selection': {
+            'kind': selectionKind.name,
+            'categoryId': categoryId,
+            'requestedWordIds': wordIds,
+          },
+        };
 
   late final String stableSerialization = jsonEncode(toJson());
 
@@ -150,10 +169,12 @@ final class AcceptedQuizPlan {
     required this.featureContractHash,
   }) : questions = List.unmodifiable(
          questions.map(
-           (question) => QuizQuestion(
-             word: question.word,
-             options: List.unmodifiable(question.options),
-           ),
+           (question) => question.lexical != null
+               ? QuizQuestion.lexical(question.lexical!)
+               : QuizQuestion(
+                   word: question.word,
+                   options: List.unmodifiable(question.options),
+                 ),
          ),
        ) {
     _identifier(evidencePolicyVersion, 'evidencePolicyVersion');
@@ -166,6 +187,18 @@ final class AcceptedQuizPlan {
     final seen = <String>{};
     for (final question in this.questions) {
       _validateQuestion(question);
+      if ((configuration.lexical == null) != (question.lexical == null) ||
+          (question.lexical != null &&
+              (question.lexical!.input != configuration.lexical!.input ||
+                  question.lexical!.source.packVersionId !=
+                      configuration.lexical!.packVersionId ||
+                  !configuration.lexical!.entryCodes.contains(
+                    question.lexical!.target.entry.code,
+                  )))) {
+        throw const FormatException(
+          'Question variant differs from configuration.',
+        );
+      }
       final word = question.word;
       if (!seen.add(word.id)) {
         throw const FormatException('A quiz word can occur only once.');
@@ -204,6 +237,9 @@ final class AcceptedQuizPlan {
       );
     }
     final body = _map(jsonDecode(json), 'accepted quiz plan');
+    if (body['schemaVersion'] == 2) {
+      return _parseLexicalPlan(id, json, body);
+    }
     _keys(body, {
       'schemaVersion',
       'mode',
@@ -299,39 +335,46 @@ final class AcceptedQuizPlan {
       16384;
 
   String get activityType => configuration.activityType;
-  String get mode => 'meaning-quiz';
+  bool get isLexical => configuration.lexical != null;
+  String get mode => isLexical ? 'definition-quiz' : 'meaning-quiz';
   bool get supportsCurrentPolicy =>
       evidencePolicyVersion == EvidenceContext.currentPolicyVersion &&
       featureContractRevision == currentFeatureContractIdentity.revision &&
       featureContractHash == currentFeatureContractIdentity.semanticHash;
 
-  Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
-    'mode': mode,
-    'activityType': activityType,
-    'configuration': configuration.toJson(acceptedItemCount: questions.length),
-    'questionBuilderVersion': 'current-meaning-options-v1',
-    'evidencePolicyVersion': evidencePolicyVersion,
-    'featureContractRevision': featureContractRevision,
-    'featureContractHash': featureContractHash,
-    'questions': [
-      for (var ordinal = 0; ordinal < questions.length; ordinal++)
-        {
-          'ordinal': ordinal,
-          'wordId': questions[ordinal].word.id,
-          'categoryId': questions[ordinal].word.categoryId,
-          'spelling': questions[ordinal].word.spelling,
-          'meaning': questions[ordinal].word.meaning,
-          'partOfSpeech': questions[ordinal].word.partOfSpeech,
-          'contentRevision': questions[ordinal].word.contentRevision,
-          'contentChecksumSha256': quizWordChecksum(questions[ordinal].word),
-          'options': questions[ordinal].options,
-          'correctOptionOrdinal': questions[ordinal].options.indexOf(
-            questions[ordinal].word.meaning,
+  Map<String, Object?> toJson() => isLexical
+      ? _lexicalPlanJson(this)
+      : {
+          'schemaVersion': 1,
+          'mode': mode,
+          'activityType': activityType,
+          'configuration': configuration.toJson(
+            acceptedItemCount: questions.length,
           ),
-        },
-    ],
-  };
+          'questionBuilderVersion': 'current-meaning-options-v1',
+          'evidencePolicyVersion': evidencePolicyVersion,
+          'featureContractRevision': featureContractRevision,
+          'featureContractHash': featureContractHash,
+          'questions': [
+            for (var ordinal = 0; ordinal < questions.length; ordinal++)
+              {
+                'ordinal': ordinal,
+                'wordId': questions[ordinal].word.id,
+                'categoryId': questions[ordinal].word.categoryId,
+                'spelling': questions[ordinal].word.spelling,
+                'meaning': questions[ordinal].word.meaning,
+                'partOfSpeech': questions[ordinal].word.partOfSpeech,
+                'contentRevision': questions[ordinal].word.contentRevision,
+                'contentChecksumSha256': quizWordChecksum(
+                  questions[ordinal].word,
+                ),
+                'options': questions[ordinal].options,
+                'correctOptionOrdinal': questions[ordinal].options.indexOf(
+                  questions[ordinal].word.meaning,
+                ),
+              },
+          ],
+        };
 
   late final String stableSerialization = jsonEncode(toJson());
   late final String id =
@@ -442,6 +485,7 @@ final class QuizAnswerReceipt {
     required this.responseTimeMs,
     required this.evidenceContext,
     this.providerProvenance,
+    this.submittedText,
   }) {
     _identifier(capturedOwnerId, 'capturedOwnerId');
     _identifier(attemptId, 'attemptId');
@@ -449,7 +493,19 @@ final class QuizAnswerReceipt {
     _time(occurredAtUtcMs, 'occurredAtUtcMs');
     if (questionOrdinal < 0 ||
         attemptNumber != questionOrdinal + 1 ||
-        promptMode != 'meaningChoice' ||
+        !{
+          'meaningChoice',
+          'definitionChoice',
+          'definitionTyped',
+        }.contains(promptMode) ||
+        (promptMode == 'definitionTyped'
+            ? selectedOptionOrdinal != null ||
+                  (revealed
+                      ? submittedText != null
+                      : submittedText == null ||
+                            submittedText!.trim().isEmpty ||
+                            submittedText!.length > 512)
+            : submittedText != null) ||
         (responseTimeMs != null &&
             (responseTimeMs! < 0 ||
                 responseTimeMs! >
@@ -474,6 +530,7 @@ final class QuizAnswerReceipt {
     required QuizAssistance assistance,
     required int occurredAtUtcMs,
     required int? responseTimeMs,
+    String? submittedText,
   }) {
     if (!plan.supportsCurrentPolicy) {
       throw StateError('Accepted quiz policy is unavailable for new evidence.');
@@ -494,23 +551,29 @@ final class QuizAnswerReceipt {
       selectedOptionOrdinal: selectedOptionOrdinal,
       revealed: revealed,
       wordId: question.word.id,
-      promptMode: 'meaningChoice',
+      promptMode: question.promptMode,
+      submittedText: submittedText,
       isCorrect:
           !revealed &&
-          selectedOptionOrdinal != null &&
-          selectedOptionOrdinal >= 0 &&
-          selectedOptionOrdinal < question.options.length &&
-          question.options[selectedOptionOrdinal] == question.word.meaning,
+          (question.lexical is DefinitionTypedContent
+              ? submittedText != null &&
+                    normalizeLexicalResponse(submittedText) ==
+                        normalizeLexicalResponse(question.correctAnswer)
+              : selectedOptionOrdinal != null &&
+                    selectedOptionOrdinal >= 0 &&
+                    selectedOptionOrdinal < question.options.length &&
+                    question.options[selectedOptionOrdinal] ==
+                        question.correctAnswer),
       attemptNumber: questionOrdinal + 1,
       occurredAtUtcMs: occurredAtUtcMs,
       responseTimeMs: responseTimeMs,
       evidenceContext: EvidenceContext.forNewEvidence(
         evidenceClass: hintLevel == 0
-            ? EvidenceClass.recognition
+            ? question.unassistedEvidenceClass
             : EvidenceClass.guidedPractice,
-        skillId: 'meaning-recall',
+        skillId: question.skillId,
         hintLevel: hintLevel,
-        contentRevision: question.word.contentRevision!,
+        contentRevision: question.evidenceContentRevision,
         rolloutMode: EvidencePolicyRolloutMode.legacy,
       ),
     );
@@ -531,6 +594,7 @@ final class QuizAnswerReceipt {
   final int? responseTimeMs;
   final String? providerProvenance;
   final EvidenceContext evidenceContext;
+  final String? submittedText;
 
   void validateFor(AcceptedQuizPlan plan, QuizAssistance assistance) {
     if (questionOrdinal < 0 || questionOrdinal >= plan.questions.length) {
@@ -540,18 +604,31 @@ final class QuizAnswerReceipt {
     }
     final question = plan.questions[questionOrdinal];
     final selected = selectedOptionOrdinal;
+    final typed = question.lexical is DefinitionTypedContent;
     if (wordId != question.word.id ||
+        promptMode != question.promptMode ||
         (revealed
             ? selected != null ||
+                  submittedText != null ||
                   assistance.revealRequestedAtUtcMs != occurredAtUtcMs
-            : selected == null ||
-                  selected < 0 ||
-                  selected >= question.options.length ||
-                  assistance.revealRequestedAtUtcMs != null)) {
+            : assistance.revealRequestedAtUtcMs != null ||
+                  (typed
+                      ? selected != null ||
+                            submittedText == null ||
+                            submittedText!.trim().isEmpty ||
+                            submittedText!.length > 512
+                      : submittedText != null ||
+                            selected == null ||
+                            selected < 0 ||
+                            selected >= question.options.length))) {
       throw const FormatException('Answer does not match accepted input.');
     }
     final expectedCorrect =
-        !revealed && question.options[selected!] == question.word.meaning;
+        !revealed &&
+        (typed
+            ? normalizeLexicalResponse(submittedText!) ==
+                  normalizeLexicalResponse(question.correctAnswer)
+            : question.options[selected!] == question.correctAnswer);
     final hintLevel = revealed
         ? 2
         : assistance.hintFirstShownAtUtcMs == null
@@ -560,12 +637,12 @@ final class QuizAnswerReceipt {
     final hintTime = assistance.hintFirstShownAtUtcMs;
     if (isCorrect != expectedCorrect ||
         (hintTime != null && hintTime > occurredAtUtcMs) ||
-        evidenceContext.contentRevision != question.word.contentRevision ||
+        evidenceContext.contentRevision != question.evidenceContentRevision ||
         evidenceContext.hintLevel != hintLevel ||
-        evidenceContext.skillId != 'meaning-recall' ||
+        evidenceContext.skillId != question.skillId ||
         evidenceContext.evidenceClass !=
             (hintLevel == 0
-                ? EvidenceClass.recognition
+                ? question.unassistedEvidenceClass
                 : EvidenceClass.guidedPractice) ||
         evidenceContext.policyVersion != plan.evidencePolicyVersion ||
         evidenceContext.featureContractRevision !=
@@ -612,6 +689,7 @@ final class QuizAnswerReceipt {
     'responseTimeMs': responseTimeMs,
     'providerProvenance': providerProvenance,
     'evidenceContext': evidenceContext.toJson(),
+    if (promptMode == 'definitionTyped') 'submittedText': submittedText,
   };
 
   factory QuizAnswerReceipt.fromJson(Map<String, Object?> body) {
@@ -629,6 +707,7 @@ final class QuizAnswerReceipt {
       'responseTimeMs',
       'providerProvenance',
       'evidenceContext',
+      if (body['promptMode'] == 'definitionTyped') 'submittedText',
     });
     return QuizAnswerReceipt(
       capturedOwnerId: _string(body['capturedOwnerId'], 'capturedOwnerId'),
@@ -652,6 +731,7 @@ final class QuizAnswerReceipt {
       evidenceContext: EvidenceContext.fromJson(
         _map(body['evidenceContext'], 'evidenceContext'),
       ),
+      submittedText: _nullableString(body['submittedText'], 'submittedText'),
     );
   }
 }
@@ -687,6 +767,7 @@ sealed class QuizCheckpoint {
     required this.planId,
     required this.questionOrdinal,
     required this.assistance,
+    this.lexical,
   }) {
     if (!RegExp(r'^quiz-plan:[0-9a-f]{64}$').hasMatch(planId) ||
         questionOrdinal < 0 ||
@@ -699,11 +780,14 @@ sealed class QuizCheckpoint {
     planId: plan.id,
     questionOrdinal: 0,
     assistance: QuizAssistance(),
+    lexical: plan.isLexical
+        ? LexicalQuizLocalData.initial(plan.configuration.lexical!.input)
+        : null,
   );
 
   factory QuizCheckpoint.parse(String json, {required AcceptedQuizPlan plan}) {
-    if (json.length > maxSerializedBytes ||
-        utf8.encode(json).length > maxSerializedBytes) {
+    final budget = plan.isLexical ? 512 * 1024 : maxSerializedBytes;
+    if (json.length > budget || utf8.encode(json).length > budget) {
       throw const FormatException('Quiz checkpoint exceeds its byte budget.');
     }
     final body = _map(jsonDecode(json), 'quiz checkpoint');
@@ -715,8 +799,9 @@ sealed class QuizCheckpoint {
       'assistance',
       'answer',
       'close',
+      if (plan.isLexical) 'local',
     });
-    if (body['schemaVersion'] != 1) {
+    if (body['schemaVersion'] != (plan.isLexical ? 2 : 1)) {
       throw const FormatException('Unsupported quiz checkpoint.');
     }
     final planId = _string(body['planId'], 'planId');
@@ -725,6 +810,9 @@ sealed class QuizCheckpoint {
       _map(body['assistance'], 'assistance'),
     );
     final phase = _string(body['phase'], 'phase');
+    final lexical = plan.isLexical
+        ? LexicalQuizLocalData.fromJson(_map(body['local'], 'local'))
+        : null;
     final QuizCheckpoint checkpoint;
     if (phase == 'awaitingAnswer') {
       if (body['answer'] != null || body['close'] != null) {
@@ -734,6 +822,7 @@ sealed class QuizCheckpoint {
         planId: planId,
         questionOrdinal: ordinal,
         assistance: assistance,
+        lexical: lexical,
       );
     } else if (phase == 'pendingAnswer' || phase == 'answered') {
       if (body['close'] != null) {
@@ -747,12 +836,14 @@ sealed class QuizCheckpoint {
               planId: planId,
               questionOrdinal: ordinal,
               assistance: assistance,
+              lexical: lexical,
               answer: answer,
             )
           : AnsweredQuizQuestion(
               planId: planId,
               questionOrdinal: ordinal,
               assistance: assistance,
+              lexical: lexical,
               answer: answer,
             );
     } else {
@@ -765,18 +856,21 @@ sealed class QuizCheckpoint {
           planId: planId,
           questionOrdinal: ordinal,
           assistance: assistance,
+          lexical: lexical,
           close: close,
         ),
         'completed' => CompletedQuizSession(
           planId: planId,
           questionOrdinal: ordinal,
           assistance: assistance,
+          lexical: lexical,
           close: close,
         ),
         'abandoned' => AbandonedQuizSession(
           planId: planId,
           questionOrdinal: ordinal,
           assistance: assistance,
+          lexical: lexical,
           close: close,
         ),
         _ => throw const FormatException('Unsupported quiz checkpoint phase.'),
@@ -793,6 +887,7 @@ sealed class QuizCheckpoint {
   static const maxSerializedBytes = 64 * 1024;
   final int questionOrdinal;
   final QuizAssistance assistance;
+  final LexicalQuizLocalData? lexical;
   String get phase;
   QuizAnswerReceipt? get answer => null;
   QuizCloseReceipt? get close => null;
@@ -802,6 +897,40 @@ sealed class QuizCheckpoint {
       throw const FormatException(
         'Checkpoint does not belong to accepted plan.',
       );
+    }
+    if ((lexical == null) != !plan.isLexical ||
+        (lexical is LexicalTypedLocalData) !=
+            (plan.configuration.lexical?.input ==
+                LexicalQuizInput.definitionTyped)) {
+      throw const FormatException(
+        'Private checkpoint variant differs from plan.',
+      );
+    }
+    if (lexical case final LexicalTypedLocalData local) {
+      final expectedCount =
+          this is PendingQuizAnswer ||
+              this is AnsweredQuizQuestion ||
+              this is ClosingQuizSession ||
+              this is CompletedQuizSession
+          ? questionOrdinal + 1
+          : questionOrdinal;
+      if (local.responses.keys.any((ordinal) => ordinal > questionOrdinal) ||
+          local.responses.length < expectedCount ||
+          local.responses.length > questionOrdinal + 1 ||
+          List.generate(
+            expectedCount,
+            (i) => i,
+          ).any((i) => !local.responses.containsKey(i)) ||
+          (this is AwaitingQuizAnswer &&
+              local.responses.containsKey(questionOrdinal)) ||
+          (this.answer != null &&
+              (!local.responses.containsKey(questionOrdinal) ||
+                  local.responses[questionOrdinal] !=
+                      this.answer!.submittedText))) {
+        throw const FormatException(
+          'Private responses contradict quiz progress.',
+        );
+      }
     }
     if (this is AwaitingQuizAnswer &&
         assistance.revealRequestedAtUtcMs != null) {
@@ -832,13 +961,14 @@ sealed class QuizCheckpoint {
   }
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': lexical == null ? 1 : 2,
     'planId': planId,
     'questionOrdinal': questionOrdinal,
     'phase': phase,
     'assistance': assistance.toJson(),
     'answer': answer?.toJson(),
     'close': close?.toJson(),
+    if (lexical != null) 'local': lexical!.toJson(),
   };
 
   String get stableSerialization => jsonEncode(toJson());
@@ -849,6 +979,7 @@ final class AwaitingQuizAnswer extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
   });
   @override
   String get phase => 'awaitingAnswer';
@@ -859,6 +990,7 @@ final class PendingQuizAnswer extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
     required this.answer,
   });
   @override
@@ -872,6 +1004,7 @@ final class AnsweredQuizQuestion extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
     required this.answer,
   });
   @override
@@ -885,6 +1018,7 @@ final class ClosingQuizSession extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
     required this.close,
   });
   @override
@@ -898,6 +1032,7 @@ final class CompletedQuizSession extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
     required this.close,
   });
   @override
@@ -911,6 +1046,7 @@ final class AbandonedQuizSession extends QuizCheckpoint {
     required super.planId,
     required super.questionOrdinal,
     required super.assistance,
+    super.lexical,
     required this.close,
   });
   @override
@@ -921,6 +1057,14 @@ final class AbandonedQuizSession extends QuizCheckpoint {
 
 void _validateQuestion(QuizQuestion question) {
   _validateWord(question.word);
+  if (question.lexical != null) {
+    question.lexical!.validate();
+    if (quizWordChecksum(question.word) !=
+        quizWordChecksum(question.lexical!.target.word)) {
+      throw const FormatException('Lexical question target changed.');
+    }
+    return;
+  }
   if (question.options.isEmpty ||
       question.options.length > 4 ||
       question.options.toSet().length != question.options.length ||

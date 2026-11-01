@@ -8,6 +8,7 @@ const learningTimeMaximumJsonBytes = 16384;
 
 enum TimeSourceKind {
   configuredQuiz,
+  matching,
   ownedSrs,
   dictation,
   cloze,
@@ -368,6 +369,13 @@ enum LearningTimePendingState { none, segment, sessionLink, preference }
 /// Strict masks are shared by normalization and persisted readback. Canonical
 /// proof authority is separately checked by its original issuer.
 const timeSourceBindingKeys = <TimeSourceKind, Set<String>>{
+  TimeSourceKind.matching: {
+    'schemaVersion',
+    'kind',
+    'sessionId',
+    'activityType',
+    'acceptedPlanId',
+  },
   TimeSourceKind.configuredQuiz: {
     'schemaVersion',
     'kind',
@@ -424,6 +432,14 @@ const timeSourceBindingKeys = <TimeSourceKind, Set<String>>{
 };
 
 const timeEligibilityContextKeys = <TimeSourceKind, Set<String>>{
+  TimeSourceKind.matching: {
+    'schemaVersion',
+    'checkpointRevision',
+    'attemptCount',
+    'phase',
+    'promptMode',
+    'evidenceContext',
+  },
   TimeSourceKind.configuredQuiz: {
     'schemaVersion',
     'questionOrdinal',
@@ -490,12 +506,20 @@ Map<String, Object?> parseTimeBindingJson(
   if (decoded is! Map<String, dynamic> || jsonEncode(decoded) != value) {
     throw const FormatException('Learning-time binding must be an object');
   }
-  final expected = (isContext
+  final nativeV2 =
+      isContext &&
+      (sourceKind == TimeSourceKind.dictation ||
+          sourceKind == TimeSourceKind.cloze) &&
+      decoded['schemaVersion'] == 2;
+  final originalKeys = (isContext
       ? timeEligibilityContextKeys
       : timeSourceBindingKeys)[sourceKind]!;
+  final expected = nativeV2
+      ? {...originalKeys, 'checkpointRevision'}
+      : originalKeys;
   if (decoded.length != expected.length ||
       !decoded.keys.every(expected.contains) ||
-      decoded['schemaVersion'] != 1 ||
+      decoded['schemaVersion'] != (nativeV2 ? 2 : 1) ||
       (!isContext && decoded['kind'] != sourceKind.name)) {
     throw const FormatException('Unsupported learning-time binding');
   }
@@ -547,12 +571,18 @@ Map<String, Object?> parseTimeBindingJson(
       'documentRevision',
       'readingStage',
       'questionOrdinal',
+      'attemptCount',
       'checkpointRevision',
       'cardIndex',
       'wordIndex',
     }.contains(entry.key)) {
       if (item is! int || item < 0 || item > 9007199254740991) {
         throw const FormatException('Invalid learning-time binding revision');
+      }
+      if (nativeV2 && entry.key == 'checkpointRevision' && item == 0) {
+        throw const FormatException(
+          'Native time needs an acknowledged checkpoint',
+        );
       }
     } else if (item is! String || item.trim().isEmpty || item.length > 512) {
       throw const FormatException('Invalid learning-time binding pin');
@@ -564,7 +594,12 @@ Map<String, Object?> parseTimeBindingJson(
   }
   if (isContext) {
     final modes = switch (sourceKind) {
-      TimeSourceKind.configuredQuiz => {'meaningChoice'},
+      TimeSourceKind.matching => {'matchingPair'},
+      TimeSourceKind.configuredQuiz => {
+        'meaningChoice',
+        'definitionChoice',
+        'definitionTyped',
+      },
       TimeSourceKind.ownedSrs => {'srsRecall'},
       TimeSourceKind.dictation => {'dictation'},
       TimeSourceKind.cloze => {'clozeTyped', 'clozeChoice'},
@@ -576,6 +611,29 @@ Map<String, Object?> parseTimeBindingJson(
         (sourceKind == TimeSourceKind.configuredQuiz &&
             decoded['phase'] != 'awaitingAnswer')) {
       throw const FormatException('Unsupported learning-time prompt mode');
+    }
+  }
+  if (sourceKind == TimeSourceKind.matching) {
+    if (isContext) {
+      final evidence = EvidenceContext.fromJson(
+        Map<String, Object?>.from(decoded['evidenceContext'] as Map),
+      );
+      if (decoded['phase'] != 'selecting' ||
+          (decoded['checkpointRevision'] as int) < 1 ||
+          evidence.evidenceClass != EvidenceClass.recognition ||
+          evidence.hintLevel != 0 ||
+          evidence.engagementAllowed ||
+          evidence.policyVersion != EvidenceContext.currentPolicyVersion ||
+          evidence.classificationSource !=
+              EvidenceClassificationSource.declared ||
+          evidence.rolloutMode != EvidencePolicyRolloutMode.legacy) {
+        throw const FormatException('Unsupported matching time context');
+      }
+    } else if (decoded['activityType'] != 'matching' ||
+        !(decoded['acceptedPlanId'] as String).startsWith(
+          'matching-plan-v1:',
+        )) {
+      throw const FormatException('Unsupported matching time source');
     }
   }
   if (sourceKind == TimeSourceKind.reading) {

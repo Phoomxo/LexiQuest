@@ -746,6 +746,83 @@ category/word/pack parent merge reconciliation; full personal export/purge; no
 Research or pack-specific ordinary sync writes; actual accessible catalog/detail
 and lexical-card callers. Trusted catalog content and rollout remain external.
 
+### v24 — Pinned Quest periods and canonical learning days
+
+**Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
+**Status:** reserved for implementation; no current-source completion claim.
+
+Keep43 tables. Rebuild `quest_instances` with unique
+`(owner_id,quest_id,period_key)` and bounded nullable period/definition JSON plus
+definition SHA256. Existing rows receive `legacy:<instance_id>` and no invented
+period or definition proof; IDs, state, timestamps and objective children remain.
+New periods pin the civil label, IANA timezone, UTC half-open window, policy and
+authored definition. Legacy windows need their original provable catalog contract.
+
+Add optional `learning_timezone_id` to `learning_profiles` (explicit UTC fallback
+when absent). Add optional source attempt, timezone and policy pins to
+`learning_day_log`; all old rows keep null pins and cannot become new canonical
+evidence. Uniqueness becomes
+`(owner_id,learning_day,policy_version,source_attempt_id)`, allowing an original
+null-policy legacy row and retaining both genuine source/timezone pins after
+owner merge. A real merge canary proved that deleting a collided guest pin
+refunded its spent freeze and invented a UTC fallback day. Local answer writes
+still insert only the first receipt for that day; merge preserves distinct
+source receipts and the read projection counts a civil day only once. New day
+receipts must validate the actual owned eligible answer in the
+same canonical transaction. XP/freeze receipts reuse `reward_transactions` and
+must never become spendable coins or client-authorized sync grants.
+
+Genuine pre-migration23 capture ran against actual AppDatabase23/43 before this
+reservation. `tool/capture_schema_v23_test.dart` passed its canonical pack install,
+all68 old-row equality, BLOB/JSON/SQLite roundtrip, FK and integrity checks. The
+original pending-deletion fence is unchanged. The capture records local source
+state at HEAD0255f843 and generated-source SHA. Fixtures:
+
+- `test/fixtures/schema_v23.sql`, SHA256
+  `4b43330c96a62dc1451926f2f5c83854188fc08038e2268105614a1ca7a32c78`.
+- `test/fixtures/populated_schema_v23.json`, SHA256
+  `92a58eecd4ccb85df48efff41274f74ed2628f81bea5383b382fb296eab459df`.
+
+The migration test first observed expected24/actual23. Acceptance requires
+populated23-to24/reopen preserving every old field and unaffected DDL, both
+periods retained, DST/timezone/revision/replay/race checks, canonical recovery,
+owner merge/export/purge, one streak read authority and no Research/sync leakage.
+One freeze per completed weekly Quest is the bounded motivation policy; no paid
+acquisition or learning-day credit. Root owns schema and shared lifecycle edits.
+
+### v25 — Local content-report queue and opt-in reminder preference
+
+**Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
+**Status:** reserved for implementation; current-source release gates pending.
+
+Add `content_reports` and `study_reminder_preferences`:45 tables, unchanged
+8/44 feature catalog. Reports pin immutable original payload/digest/time, durable
+unknown-delivery state, monotone server acknowledgement and verified Firebase UID.
+No automatic POST and no ordinary sync outbox. Existing word reports retain their
+original IDs and snapshot bytes. Reminder absence means disabled, with explicit
+permission/schedule/cancel and owner-bound revision. These local-only tables need
+owner export/deletion/rehome and policy isolation checks; account merge must not
+silently enable a source owner's reminder or rebind a received server receipt.
+
+Before reservation, actual AppDatabase24/43 capture passed1/1 with genuine23
+migration, all old fields/fence preserved, actual synthetic owner-b pack/profile/
+Quest/canonical answer/day/grant writes, FK/integrity and a second SQLite/BLOB
+roundtrip. `tool/capture_schema_v24_test.dart` is the generator. Fixtures:
+
+- `test/fixtures/schema_v24.sql`, SHA256
+  `896ba986306545567618bf46a2f596af89489a10eece2f93d54dea8bf25c2d3f`.
+- `test/fixtures/populated_schema_v24.json`, SHA256
+  `99c8a7531012fed90791e77686ecc3a07d17b7fb4c5eaf0411f6b91c2ac128b1`.
+
+The capture's initial matcher used map identity; changing it to deep `equals`
+made the exact-field proof executable. No fixture was written by that failed run.
+Migration adds two empty tables and preserves every prior row and unaffected DDL,
+and survive file reopen. Also widen only the existing learning-time scope kind
+CHECK to include `matching`, preserving all scope/segment rows and foreign keys;
+the catalog permits recognition effort, so it must use an explicit source kind.
+No deployment, notification delivery or real upload is
+claimed by this reservation.
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |

@@ -7,6 +7,8 @@ import 'package:flutter/scheduler.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/presentation/lesson_scaffold.dart';
+import '../features/learning_packs/presentation/rich_lexical_card.dart';
 import '../features/learning/domain/learning_time_admission.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/learning_time/presentation/learning_time_binding.dart';
@@ -490,12 +492,21 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     _redraw();
     try {
       if (!_isPreview) {
-        _rating ??= _learning!.prepareSrsRating(
-          review: _review!,
-          cardIndex: index,
-          recalled: recalled,
-          responseTimeMs: _latency.elapsedMilliseconds,
-        );
+        if (_rating == null) {
+          final responseTimeMs = _latency.elapsedMilliseconds;
+          await _learning!.prepareOrdinaryAnswer(
+            expectedOwnerId: _review!.ownerId,
+            sessionId: _review!.id,
+            stillCurrent: () => _cardCurrent(epoch, index),
+          );
+          if (!_cardCurrent(epoch, index)) return;
+          _rating = _learning!.prepareSrsRating(
+            review: _review!,
+            cardIndex: index,
+            recalled: recalled,
+            responseTimeMs: responseTimeMs,
+          );
+        }
         await _learning!.commitSrsRating(
           _rating!,
           stillCurrent: () => _cardCurrent(epoch, index),
@@ -777,19 +788,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           _invalidate();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: Navigator.of(context).canPop()
-              ? BackButton(onPressed: () => _leave(route))
-              : null,
-          title: Text(
-            _isPreview
-                ? _copy('ชุดตัวอย่างบัตรคำ', 'Flashcard preview')
-                : _isSource
-                ? _copy('บัตรคำจากเนื้อหานี้', 'Source flashcards')
-                : _copy('ทบทวนคำที่ถึงกำหนด', 'Due flashcards'),
-          ),
-        ),
+      child: LessonScaffold(
+        leading: Navigator.of(context).canPop()
+            ? BackButton(onPressed: () => _leave(route))
+            : null,
+        title: _isPreview
+            ? _copy('ชุดตัวอย่างบัตรคำ', 'Flashcard preview')
+            : _isSource
+            ? _copy('บัตรคำจากเนื้อหานี้', 'Source flashcards')
+            : _copy('ทบทวนคำที่ถึงกำหนด', 'Due flashcards'),
         body: _invalidated
             ? _message(
                 _copy('กิจกรรมไม่พร้อมใช้งาน', 'Activity unavailable'),
@@ -1002,6 +1009,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               ),
             ),
             const SizedBox(height: 12),
+            if (!_isPreview && _isFlipped && _review != null)
+              OwnedLexicalDetails(
+                key: ValueKey(('srs-lexical', _review!.id, index)),
+                word: _review!.words[index],
+                expectedOwnerId: _review!.ownerId,
+                visible: () => _current(epoch) && _index == index && _isFlipped,
+              ),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 12,

@@ -31,6 +31,8 @@ from lexiquest_ai.account_deletion import (
     RecentAuthenticationRequired,
 )
 from lexiquest_ai.config import Settings
+from lexiquest_ai.content_reports import ContentReportService
+from lexiquest_ai.content_report_routes import content_report_router
 from lexiquest_ai.billing import BillingError, BillingService
 from lexiquest_ai.play_billing import GooglePubSubPushVerifier, decode_play_notification
 from lexiquest_ai.research import (
@@ -162,6 +164,7 @@ def create_app(
     billing_service: BillingService | None = None,
     billing_notification_verifier: GooglePubSubPushVerifier | None = None,
     research_service: ResearchService | None = None,
+    content_report_service: ContentReportService | None = None,
 ) -> FastAPI:
     """Create the HTTP API without loading production dependencies."""
 
@@ -175,6 +178,8 @@ def create_app(
     )
     app.state.settings = settings
     app.add_middleware(RequestBodyLimitMiddleware)
+    app.include_router(content_report_router(settings=settings,
+        token_verifier=token_verifier, service=content_report_service))
 
     def require_billing():
         if not settings.billing_enabled:
@@ -345,6 +350,9 @@ def create_app(
                 or (settings.environment.lower() == 'production' and billing_notification_verifier is None)):
             return JSONResponse(status_code=503, content={'detail': {
                 'code': 'BILLING_UNAVAILABLE', 'message': 'Billing is unavailable.'}})
+        if settings.content_reports_enabled and content_report_service is None:
+            return JSONResponse(status_code=503, content={'detail': {
+                'code': 'REPORTS_UNAVAILABLE', 'message': 'Report transport is unavailable.'}})
         deletion_configured = bool(
             settings.account_deletion_enabled
             or settings.account_deletion_server_export_authority

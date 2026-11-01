@@ -19,6 +19,7 @@ import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/sentence_scramble_native_harness.dart';
+import '../support/native_checkpoint_privacy.dart';
 
 void main() {
   for (final correct in [true, false]) {
@@ -457,8 +458,16 @@ Future<void> _assertOneRecreationalAnswer(
   ]) {
     expect(snapshot[table], isEmpty, reason: table);
   }
+  final session = jsonDecode(snapshot['learning_sessions']!.single) as Map;
   expect(
-    jsonEncode(snapshot),
+    session['accepted_plan_json'],
+    contains(screen.session.content.sentence),
+  );
+  final checkpoint = jsonDecode(session['checkpoint_json'] as String) as Map;
+  expect(checkpoint['phase'], 'completed');
+  expect((checkpoint['answer'] as Map)['id'], attempt['id']);
+  expect(
+    nativeSnapshotWithoutPrivateSlots(snapshot),
     isNot(contains(screen.session.content.sentence)),
   );
   expect(h.questEvents, 0);

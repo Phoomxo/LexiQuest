@@ -157,6 +157,7 @@ final class WordReportCommand {
     required this.reason,
     required this.comment,
     required this.queuedAtUtc,
+    this.revalidate,
   }) {
     _reportFields(id, expectedOwnerId, reason, comment, queuedAtUtc);
   }
@@ -167,6 +168,7 @@ final class WordReportCommand {
   final ReportReason reason;
   final String? comment;
   final DateTime queuedAtUtc;
+  final Future<void> Function()? revalidate;
 }
 
 final class StoredWordReport {

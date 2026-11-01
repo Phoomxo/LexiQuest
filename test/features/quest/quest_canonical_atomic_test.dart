@@ -422,10 +422,18 @@ void main() {
         h.repository.upsertDefinition(definition),
         throwsStateError,
       );
-      await expectLater(
-        h.apply(await h.answer(), questDefinition(version: 2)),
-        throwsStateError,
+      final answer = await h.answer();
+      expect(await h.apply(answer, questDefinition(version: 2)), isEmpty);
+      final pinned = (await h.repository.getActiveInstances(
+        configuredOwnerId,
+      )).single;
+      expect(pinned.catalogVersion, 1);
+      expect(pinned.definition!.catalogVersion, 1);
+      expect(
+        pinned.progress.single.targetCount,
+        definition.objectives.single.targetCount,
       );
+      expect(pinned.progress.single.sourceEventIds, [answer.eventId]);
     },
   );
 

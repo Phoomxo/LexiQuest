@@ -146,6 +146,24 @@ final class LearningPackDefinitionQuestion {
   };
 }
 
+final class LearningPackLexicalDetails {
+  LearningPackLexicalDetails({
+    this.ipa,
+    List<String> synonyms = const [],
+    List<String> antonyms = const [],
+  }) : synonyms = List.unmodifiable(synonyms),
+       antonyms = List.unmodifiable(antonyms);
+  final String? ipa;
+  final List<String> synonyms;
+  final List<String> antonyms;
+  Map<String, Object?> toJson() => {
+    'schemaVersion': 1,
+    'ipa': ipa,
+    'synonyms': synonyms,
+    'antonyms': antonyms,
+  };
+}
+
 final class LearningPackEntry {
   LearningPackEntry({
     required this.code,
@@ -159,6 +177,7 @@ final class LearningPackEntry {
     this.hint,
     this.strategy,
     this.definitionQuestion,
+    this.lexicalDetails,
   }) : examples = List.unmodifiable(examples);
   final String code;
   final String spelling;
@@ -171,6 +190,7 @@ final class LearningPackEntry {
   final String? hint;
   final String? strategy;
   final LearningPackDefinitionQuestion? definitionQuestion;
+  final LearningPackLexicalDetails? lexicalDetails;
 
   Map<String, Object?> toJson() => {
     'code': code,
@@ -184,6 +204,7 @@ final class LearningPackEntry {
     'hint': hint,
     'strategy': strategy,
     'definitionQuestion': definitionQuestion?.toJson(),
+    if (lexicalDetails != null) 'lexicalDetails': lexicalDetails!.toJson(),
   };
   String get canonicalJson => _canonicalJson(toJson());
   String get contentSha256 => _digest(utf8.encode(canonicalJson));

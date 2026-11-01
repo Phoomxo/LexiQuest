@@ -15,6 +15,9 @@ abstract final class LearningEvidenceContract {
     'clozeChoice',
     'wordScramble',
     'sentenceScramble',
+    'definitionChoice',
+    'definitionTyped',
+    'matchingPair',
   };
 
   // Frozen archived v13 sentinel is reused by the current-lineage v11 migration.
@@ -103,8 +106,23 @@ abstract final class LearningEvidenceContract {
     final context = EvidenceContext.fromJson(
       jsonDecode(evidenceContextJson) as Map<String, dynamic>,
     );
+    if (promptMode == 'matchingPair' &&
+        (context.evidenceClass != EvidenceClass.recognition ||
+            context.skillId != 'meaning-recognition' ||
+            context.hintLevel != 0 ||
+            context.engagementAllowed ||
+            !RegExp(
+              r'^matching-plan-v1:[a-f0-9]{64}$',
+            ).hasMatch(context.contentRevision))) {
+      return false;
+    }
     if (context.classificationSource != EvidenceClassificationSource.declared ||
         context.policyVersion != EvidenceContext.currentPolicyVersion) {
+      if (promptMode == 'definitionChoice' ||
+          promptMode == 'definitionTyped' ||
+          promptMode == 'matchingPair') {
+        return false;
+      }
       return true;
     }
     return EvidenceProjectionDecision.resolve(

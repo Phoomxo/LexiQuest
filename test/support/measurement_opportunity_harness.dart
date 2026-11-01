@@ -276,11 +276,13 @@ final class OpportunityFixture {
         sessionId: id,
         expectedOwnerId: 'owner-a',
         expectedRevision: saved.checkpointRevision,
-        checkpoint: PendingQuizAnswer(
-          planId: saved.plan.id,
-          questionOrdinal: 0,
-          assistance: saved.checkpoint.assistance,
-          answer: answer,
+        checkpoint: saved.bindCheckpointWrite(
+          PendingQuizAnswer(
+            planId: saved.plan.id,
+            questionOrdinal: 0,
+            assistance: saved.checkpoint.assistance,
+            answer: answer,
+          ),
         ),
       );
     }
@@ -296,13 +298,15 @@ final class OpportunityFixture {
         sessionId: id,
         expectedOwnerId: 'owner-a',
         expectedRevision: saved.checkpointRevision,
-        checkpoint: ClosingQuizSession(
-          planId: saved.plan.id,
-          questionOrdinal: 0,
-          assistance: saved.checkpoint.assistance,
-          close: QuizCloseReceipt(
-            capturedOwnerId: 'owner-a',
-            endedAtUtcMs: ended.millisecondsSinceEpoch,
+        checkpoint: saved.bindCheckpointWrite(
+          ClosingQuizSession(
+            planId: saved.plan.id,
+            questionOrdinal: 0,
+            assistance: saved.checkpoint.assistance,
+            close: QuizCloseReceipt(
+              capturedOwnerId: 'owner-a',
+              endedAtUtcMs: ended.millisecondsSinceEpoch,
+            ),
           ),
         ),
       );

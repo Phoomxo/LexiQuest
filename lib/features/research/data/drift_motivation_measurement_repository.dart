@@ -755,6 +755,7 @@ final class DriftMotivationMeasurementRepository
               21,
               22,
               23,
+              24,
             }.contains(storedSchema) ||
             storedSchema > database.schemaVersion)) {
       _deny(ResearchCaptureReason.versionConflict);

@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show TableUpdateQuery;
+
 import '../../identity/domain/local_owner_repository.dart';
 import '../data/drift_reward_repository.dart';
 import '../domain/reward_models.dart';
@@ -57,6 +59,10 @@ final class RewardUseCases implements RewardShopOperations {
   @override
   Stream<RewardAppearance> watchAppearance() => repository.watchAppearance();
 
+  Stream<void> watchOwnerInvalidations() => repository.database
+      .tableUpdates(TableUpdateQuery.onTable(repository.database.localOwners))
+      .map<void>((_) {});
+
   @override
   Future<PurchaseResult> purchase({
     required String expectedOwnerId,
@@ -83,9 +89,11 @@ final class RewardUseCases implements RewardShopOperations {
       idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
+      verifyOwner: () async {
+        await _requireActiveOwner(ownerId);
+      },
     );
     if (result.status == PurchaseStatus.purchased) onLocalMutation?.call();
-    await _requireActiveOwner(ownerId);
     return result;
   }
 
@@ -110,9 +118,11 @@ final class RewardUseCases implements RewardShopOperations {
       idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
+      verifyOwner: () async {
+        await _requireActiveOwner(ownerId);
+      },
     );
     if (result.status == EquipStatus.equipped) onLocalMutation?.call();
-    await _requireActiveOwner(ownerId);
     return result;
   }
 

@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show TableUpdateQuery;
 
+import '../../account_deletion/domain/account_deletion_contracts.dart';
+import '../../identity/data/drift_owner_write_coordinator.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../../learning_time/application/learning_time_use_cases.dart';
 import '../data/drift_learning_calendar_queries.dart';
@@ -121,31 +125,55 @@ final class ProgressUseCases {
     Future<T> Function(DateTime now) read,
   ) async {
     var valid = true;
-    final changes = queries.database
-        .tableUpdates(TableUpdateQuery.onTable(queries.database.localOwners))
+    final changes = Zone.root
+        .run(
+          () => queries.database.tableUpdates(
+          TableUpdateQuery.allOf([
+              TableUpdateQuery.onTable(queries.database.localOwners),
+            TableUpdateQuery.onTable(queries.database.runtimeFlags),
+            ]),
+          ),
+        )
         .listen(
           (_) => valid = false,
           onError: (Object _) => valid = false,
           onDone: () => valid = false,
         );
     bool current() => valid && stillCurrent();
-    late final T result;
-    try {
+    Future<void> requireCurrentOwner() async {
       await requireReviewReadOwner(
         queries.database,
         expectedOwnerId: expectedOwnerId,
         stillCurrent: current,
       );
+      final fence = await DriftOwnerWriteCoordinator(
+        queries.database,
+        nowUtc: nowUtc,
+      ).inspect();
+      if (!current() ||
+          (fence != null &&
+              (fence.casToken == null ||
+                  fence.casToken!.matchesOwner(expectedOwnerId) ||
+                  (fence.cloudReceipt != null &&
+                      accountDeletionReplacementGuestOwnerId(
+                            fence.cloudReceipt!,
+                          ) ==
+                          expectedOwnerId)))) {
+        throw const ReviewCenterReadException(
+          ReviewReadFailureCode.ownerInvalidated,
+        );
+      }
+    }
+
+    late final T result;
+    try {
+      await requireCurrentOwner();
       final now = nowUtc();
       if (!now.isUtc || now.microsecondsSinceEpoch < 0) {
         throw ArgumentError('Progress clock must be nonnegative UTC');
       }
       result = await read(now);
-      await requireReviewReadOwner(
-        queries.database,
-        expectedOwnerId: expectedOwnerId,
-        stillCurrent: current,
-      );
+      await requireCurrentOwner();
     } finally {
       await changes.cancel();
     }

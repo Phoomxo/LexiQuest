@@ -2,6 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning_profile/domain/learning_profile.dart';
 
 void main() {
+  test('learning timezone is optional and pins an exact known IANA name', () {
+    LearningProfileDraft draft([String? zone]) => LearningProfileDraft(
+      onboardingState: LearningOnboardingState.completed,
+      learningTimezoneId: zone,
+    );
+    expect(draft().learningTimezoneId, isNull);
+    for (final zone in ['UTC', 'Asia/Bangkok', 'America/New_York']) {
+      expect(draft(zone).learningTimezoneId, zone);
+    }
+    expect(draft('UTC').sameFacts(draft('Asia/Bangkok')), isFalse);
+    expect(draft('UTC').interestCodesJson, draft().interestCodesJson);
+    for (final zone in [
+      '',
+      'EST',
+      'GMT+7',
+      ' Asia/Bangkok',
+      'Asia/Unknown',
+      'asia/bangkok',
+    ]) {
+      expect(
+        () => draft(zone),
+        throwsA(isA<LearningProfileException>()),
+        reason: zone,
+      );
+    }
+  });
   test('civil dates validate leap days and canonical format', () {
     expect(LearningCivilDate.parse('2028-02-29').toString(), '2028-02-29');
     for (final value in [

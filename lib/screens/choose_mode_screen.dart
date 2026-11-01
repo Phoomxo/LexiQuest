@@ -8,17 +8,27 @@ import '../features/learning_packs/presentation/learning_pack_catalog_screen.dar
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/recall_ladder.dart';
+import '../features/learning/presentation/recall_ladder_panel.dart';
+import '../features/study_reminders/presentation/study_reminder_settings_screen.dart';
 import '../features/learning/domain/learning_time_admission.dart';
+import '../features/motivation/presentation/quest_screen.dart';
+import '../features/motivation/presentation/today_motivation_panel.dart';
+import '../features/motivation/presentation/contextual_companion_panel.dart';
 import '../features/progress/presentation/progress_host_binding.dart';
+import '../features/progress/presentation/today_resume_panel.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/presentation/study_host.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/motivation_runtime.dart';
+import '../runtime/registries/feature.dart';
 import '../services/ai_reading_content_adapter.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'learning_history_screen.dart';
 import 'review_center_screen.dart';
 import 'focus_timer_screen.dart';
 import 'dictation_quiz_screen.dart';
@@ -27,6 +37,8 @@ import 'word_scramble_screen.dart';
 import 'sentence_scramble_screen.dart';
 import 'score_screen.dart';
 import 'quiz_screen.dart';
+import 'matching_quiz_screen.dart';
+import 'source_practice_screen.dart';
 import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
 import 'srs_flashcards_screen.dart';
@@ -77,8 +89,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   bool _nativeBound = false;
   bool _nativeRouteVisible = false;
   bool _openingNative = false;
+  bool _nativeChildActive = false;
   bool _choosingNativeOverlay = false;
   bool _openingSrs = false;
+  bool _openingMotivation = false;
+  bool _openingMatching = false;
+  bool _openingLadder = false;
+  bool _openingReminder = false;
 
   @override
   void initState() {
@@ -101,7 +118,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
     if (state != AppLifecycleState.resumed) {
-      _invalidateNative();
+      if (!(_openingReminder &&
+          _nativeDependencies?.studyReminders?.isRequestingPermission ==
+              true)) {
+        _invalidateNative();
+      }
       _progress?.invalidateLaunch();
     }
     _syncProgress();
@@ -127,7 +148,12 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     if (_nativeRouteVisible &&
         !visible &&
         !_choosingNativeOverlay &&
-        !_openingSrs) {
+        !_nativeChildActive &&
+        !_openingSrs &&
+        !_openingMatching &&
+        !_openingLadder &&
+        !_openingReminder &&
+        !_openingMotivation) {
       _invalidateNative();
     }
     _nativeRouteVisible = visible;
@@ -278,7 +304,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
           ((_openingSrs || _openingProgressChild) && !_foreignProgressCover ||
               _choosingNativeOverlay ||
-              _openingNative),
+              _nativeChildActive),
     );
   }
 
@@ -508,6 +534,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
+          _motivationEntry(),
+          _todayResumeEntry(),
+          _recallEntry(),
           _studyEntry(),
           Builder(
             builder: (context) {
@@ -710,6 +739,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 ),
               ),
             ),
+          if (canQuiz && _nativeDependencies?.matching != null)
+            _LearningTile(
+              key: const ValueKey('matching-entry'),
+              icon: Icons.compare_arrows_outlined,
+              title: 'จับคู่คำศัพท์',
+              subtitle: 'เลือกคำและความหมายที่ตรงกัน แล้วตรวจคำตอบ',
+              onTap: _openingMatching ? null : _openMatching,
+            ),
           if (AppDependenciesScope.maybeOf(context)?.learningPacks
               case final packs?)
             _LearningTile(
@@ -755,6 +792,16 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 : 'ช่วงเวลาในเครื่อง เลือกใช้ได้ ไม่ใช่เวลาเรียนที่บันทึก',
             onTap: _focusTimerAction(),
           ),
+          if (_nativeDependencies?.studyReminders != null)
+            _LearningTile(
+              key: const ValueKey('study-reminder-entry'),
+              icon: Icons.notifications_none_outlined,
+              title: 'การเตือนเรียน',
+              subtitle: 'ปิดไว้จนกว่าคุณจะเลือกเวลาและอนุญาตการแจ้งเตือน',
+              onTap: _nativeOwnerId == null || _openingReminder
+                  ? null
+                  : _openReminder,
+            ),
         ],
       ),
     );
@@ -858,6 +905,78 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   ) =>
       _nativeContextCurrent(generation, ownerId, learning, dependencies) &&
       ModalRoute.of(context)?.isCurrent == true;
+
+  Future<void> _openMatching() async {
+    final dependencies = _nativeDependencies;
+    final matching = dependencies?.matching;
+    final learning = _learning;
+    final ownerId = _nativeOwnerId;
+    final owners = dependencies?.progress;
+    if (_openingMatching ||
+        dependencies == null ||
+        matching == null ||
+        learning == null ||
+        ownerId == null ||
+        owners == null ||
+        !_nativeRouteVisible ||
+        !_canOpenNative(_nativeGeneration, ownerId, learning, dependencies)) {
+      return;
+    }
+    final generation = _nativeGeneration;
+    _openingMatching = true;
+    bool current() =>
+        _openingMatching &&
+        _nativeContextCurrent(generation, ownerId, learning, dependencies) &&
+        identical(matching, dependencies.matching);
+    try {
+      final plan = await matching.prepare(
+        expectedOwnerId: ownerId,
+        stillCurrent: current,
+      );
+      if (!current() || !mounted || ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      if (plan == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ต้องมีคำและความหมายที่ไม่ซ้ำกันอย่างน้อย 2 คู่'),
+          ),
+        );
+        return;
+      }
+      final screenOwners = owners.watchActiveOwnerId();
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/matching',
+          builder: (_) => ValueListenableBuilder<int>(
+            valueListenable: _nativeChanges,
+            builder: (_, _, _) => current()
+                ? MatchingQuizScreen(
+                    matching: matching,
+                    expectedOwnerId: ownerId,
+                    ownerChanges: screenOwners,
+                    preparedPlan: plan,
+                    learning: learning,
+                    learningTime: dependencies.learningTime,
+                  )
+                : const Scaffold(
+                    body: Center(child: Text('กิจกรรมไม่พร้อมใช้งาน')),
+                  ),
+          ),
+        ),
+      );
+    } on Object {
+      if (current() && mounted && ModalRoute.of(context)?.isCurrent == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เปิดเกมจับคู่ไม่ได้ ลองใหม่อีกครั้ง')),
+        );
+      }
+    } finally {
+      _openingMatching = false;
+      if (mounted) _syncProgress();
+    }
+  }
 
   Future<void> _openDictation() => _openNative(_NativeMode.dictation);
 
@@ -1026,6 +1145,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         return;
       }
       final screenOwners = dependencies.progress!.watchActiveOwnerId();
+      _nativeChildActive = true;
       final summary = await AppNavigator.pushPage<LearningSessionSummary>(
         context,
         AppPage<LearningSessionSummary>(
@@ -1063,14 +1183,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           },
         ),
       );
-      final hasResult = switch (mode) {
-        _NativeMode.dictation ||
-        _NativeMode.cloze ||
-        _NativeMode.sentenceScramble => true,
-        _NativeMode.wordScramble => false,
-      };
-      if (hasResult &&
-          summary != null &&
+      if (summary != null &&
           summary.id == session.id &&
           summary.state == 'completed' &&
           summary.correctCount >= 0 &&
@@ -1144,6 +1257,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         unavailable();
       }
     } finally {
+      _nativeChildActive = false;
       _choosingNativeOverlay = false;
       _openingNative = false;
     }
@@ -1233,6 +1347,332 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         context,
         QuizScreen(categoryId: categoryId, learning: _learning),
       );
+    }
+  }
+
+  Future<void> _openReminder() async {
+    final dependencies = _nativeDependencies;
+    final runtime = dependencies?.studyReminders;
+    final owner = _nativeOwnerId;
+    if (_openingReminder ||
+        dependencies == null ||
+        runtime == null ||
+        owner == null ||
+        !_nativeRouteVisible ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final generation = _nativeGeneration;
+    bool current() =>
+        mounted &&
+        generation == _nativeGeneration &&
+        owner == _nativeOwnerId &&
+        identical(dependencies, _nativeDependencies) &&
+        identical(runtime, dependencies.studyReminders) &&
+        !runtime.isRetired &&
+        runtime.currentOwnerId == owner &&
+        Visibility.of(context) &&
+        (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed ||
+            (_openingReminder && runtime.isRequestingPermission));
+    if (!current()) return;
+    _openingReminder = true;
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/study-reminder',
+          builder: (_) => ValueListenableBuilder<int>(
+            valueListenable: _nativeChanges,
+            builder: (_, _, _) => current()
+                ? StudyReminderSettingsScreen(runtime: runtime, ownerId: owner)
+                : const Scaffold(
+                    body: Center(child: Text('การเตือนไม่พร้อมใช้งาน')),
+                  ),
+          ),
+        ),
+      );
+    } finally {
+      _openingReminder = false;
+    }
+  }
+
+  Widget _todayResumeEntry() => ValueListenableBuilder<int>(
+    valueListenable: _nativeChanges,
+    builder: (context, _, _) {
+      final dependencies = _nativeDependencies;
+      final progress = dependencies?.progress;
+      final owner = _nativeOwnerId;
+      final owners = _nativeOwnerSource;
+      if (dependencies == null ||
+          progress == null ||
+          owner == null ||
+          owners == null ||
+          !_features.isVisible(FieldFeature.mastery)) {
+        return const SizedBox.shrink();
+      }
+      final generation = _nativeGeneration;
+      return TodayResumePanel(
+        key: ValueKey(('today-resume', owner, generation)),
+        progress: progress,
+        ownerId: owner,
+        ownerChanges: owners,
+        onOpenHistory: () async {
+          if (!mounted ||
+              !context.mounted ||
+              generation != _nativeGeneration ||
+              owner != _nativeOwnerId ||
+              !identical(dependencies, _nativeDependencies) ||
+              ModalRoute.of(context)?.isCurrent != true ||
+              !Visibility.of(context) ||
+              WidgetsBinding.instance.lifecycleState !=
+                  AppLifecycleState.resumed) {
+            return;
+          }
+          await AppNavigator.pushPage<void>(
+            context,
+            AppPage<void>(
+              name: 'learning/today-history',
+              builder: (_) => LearningHistoryScreen(ownerChanges: owners),
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  Widget _recallEntry() => ValueListenableBuilder<int>(
+    valueListenable: _nativeChanges,
+    builder: (context, _, _) {
+      final dependencies = _nativeDependencies;
+      final reader = dependencies?.recallLadder;
+      final owner = _nativeOwnerId;
+      final owners = _nativeOwnerSource;
+      if (dependencies == null ||
+          reader == null ||
+          owner == null ||
+          owners == null ||
+          !_features.isVisible(FieldFeature.quiz)) {
+        return const SizedBox.shrink();
+      }
+      final generation = _nativeGeneration;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: RecallLadderPanel(
+          key: ValueKey(('ladder', reader, owner, generation)),
+          reader: reader,
+          ownerId: owner,
+          ownerChanges: owners,
+          canPractice: (stage, word) => switch (stage) {
+            RecallLadderStage.exposure =>
+              _learning != null && _features.isVisible(FieldFeature.srs),
+            RecallLadderStage.recognition ||
+            RecallLadderStage.cloze ||
+            RecallLadderStage.dictation => _learning != null,
+            RecallLadderStage.matching => dependencies.matching != null,
+            RecallLadderStage.typedRecall => dependencies.learningPacks != null,
+            RecallLadderStage.speaking =>
+              dependencies.speechPractice != null &&
+                  dependencies.vocabulary != null &&
+                  dependencies.sourcePracticeFilePicker != null &&
+                  _features.isVisible(FieldFeature.speechPractice),
+          },
+          onPractice: (stage, word) async {
+            final learning = _learning;
+            if (_openingLadder ||
+                learning == null ||
+                !_nativeRouteVisible ||
+                !_canOpenNative(generation, owner, learning, dependencies)) {
+              return;
+            }
+            _openingLadder = true;
+            try {
+              switch (stage) {
+                case RecallLadderStage.matching:
+                  await _openMatching();
+                case RecallLadderStage.cloze:
+                  await _openCloze();
+                case RecallLadderStage.dictation:
+                  await _openDictation();
+                case RecallLadderStage.exposure:
+                  await _push(
+                    context,
+                    SrsFlashcardsScreen(
+                      sourceWordIds: [word.id],
+                      expectedOwnerId: owner,
+                      ownerChanges: owners,
+                      learning: learning,
+                      learningTime: dependencies.learningTime,
+                      voice: dependencies.voice,
+                    ),
+                  );
+                case RecallLadderStage.recognition:
+                  await _push(
+                    context,
+                    QuizScreen(
+                      wordIds: [word.id],
+                      learning: learning,
+                      expectedOwnerId: owner,
+                      ownerChanges: owners,
+                      voice: dependencies.voice,
+                      learningTime: dependencies.learningTime,
+                    ),
+                  );
+                case RecallLadderStage.typedRecall:
+                  await _push(
+                    context,
+                    LearningPackCatalogScreen(
+                      packs: dependencies.learningPacks,
+                      downloads: dependencies.learningPackDownloads,
+                    ),
+                  );
+                case RecallLadderStage.speaking:
+                  if (dependencies.vocabulary == null ||
+                      dependencies.sourcePracticeFilePicker == null) {
+                    return;
+                  }
+                  await _push(
+                    context,
+                    SourcePracticeScreen(
+                      categoryId: word.categoryId,
+                      categoryName: 'เลือกชุดคำเพื่อฝึกออกเสียง',
+                      vocabulary: dependencies.vocabulary!,
+                      learning: learning,
+                      filePicker: dependencies.sourcePracticeFilePicker!,
+                      associativeLearning: dependencies.associativeLearning,
+                      voice: dependencies.voice,
+                    ),
+                  );
+              }
+            } finally {
+              _openingLadder = false;
+              if (mounted) _syncProgress();
+            }
+          },
+        ),
+      );
+    },
+  );
+
+  Widget _motivationEntry() => ValueListenableBuilder<int>(
+    valueListenable: _nativeChanges,
+    builder: (context, _, _) {
+      final dependencies = _nativeDependencies;
+      final runtime = dependencies?.motivation;
+      final ownerId = _nativeOwnerId;
+      if (dependencies == null ||
+          runtime == null ||
+          ownerId == null ||
+          !dependencies.features.isVisible(Feature.questV2)) {
+        return const SizedBox.shrink();
+      }
+      final generation = _nativeGeneration;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TodayMotivationPanel(
+              key: ValueKey((runtime, ownerId, generation)),
+              runtime: runtime,
+              ownerId: ownerId,
+              onOpenQuests: () => _openMotivation(
+                runtime,
+                dependencies,
+                ownerId,
+                generation,
+                practice: false,
+              ),
+              onPractice:
+                  _learning == null || !_features.isVisible(FieldFeature.quiz)
+                  ? null
+                  : () => _openMotivation(
+                      runtime,
+                      dependencies,
+                      ownerId,
+                      generation,
+                      practice: true,
+                    ),
+            ),
+            ContextualCompanionPanel(
+              key: ValueKey(('companion', runtime, ownerId, generation)),
+              runtime: runtime,
+              ownerId: ownerId,
+              progress: dependencies.progress,
+              onOpenQuests: () => _openMotivation(
+                runtime,
+                dependencies,
+                ownerId,
+                generation,
+                practice: false,
+              ),
+              onPractice:
+                  _learning == null || !_features.isVisible(FieldFeature.quiz)
+                  ? null
+                  : () => _openMotivation(
+                      runtime,
+                      dependencies,
+                      ownerId,
+                      generation,
+                      practice: true,
+                    ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  Future<void> _openMotivation(
+    MotivationRuntime runtime,
+    AppDependencies dependencies,
+    String ownerId,
+    int generation, {
+    required bool practice,
+  }) async {
+    bool current() =>
+        mounted &&
+        generation == _nativeGeneration &&
+        ownerId == _nativeOwnerId &&
+        identical(dependencies, _nativeDependencies) &&
+        identical(runtime, dependencies.motivation) &&
+        runtime.currentOwnerId == ownerId &&
+        !runtime.isRetired &&
+        runtime.isForeground &&
+        dependencies.features.isVisible(Feature.questV2) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (_openingMotivation ||
+        !current() ||
+        !_nativeRouteVisible ||
+        ModalRoute.isCurrentOf(context) != true ||
+        !Visibility.of(context) ||
+        (practice &&
+            (_learning == null || !_features.isVisible(FieldFeature.quiz)))) {
+      return;
+    }
+    _openingMotivation = true;
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: practice ? 'learning/today-practice' : 'motivation/quests',
+          builder: (_) => !current()
+              ? const Scaffold(
+                  body: Center(
+                    child: Text('ข้อมูลเปลี่ยนแล้ว กรุณากลับไปหน้าเรียน'),
+                  ),
+                )
+              : practice
+              ? QuizScreen(
+                  learning: _learning,
+                  expectedOwnerId: ownerId,
+                  ownerChanges: _nativeOwnerSource,
+                )
+              : QuestScreen(runtime: runtime, ownerId: ownerId),
+        ),
+      );
+    } finally {
+      _openingMotivation = false;
+      if (mounted) _syncProgress();
     }
   }
 

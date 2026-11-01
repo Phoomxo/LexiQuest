@@ -68,14 +68,20 @@ void main() {
       expect(File(file.path).parent.absolute.path, directory.absolute.path);
       await directory.delete(recursive: true);
     });
-    expect(database.schemaVersion, 23);
+    expect(database.schemaVersion, 25);
     final after = await ownerMigrationRows(database);
-    expect(after.length, 43);
-    for (final old in rows.entries) {
-      expect(after[old.key], old.value, reason: old.key);
-    }
+    expect(after.length, 45);
+    expectHistoricalOwnerMigrationRows(after, {
+      for (final table in rows.entries)
+        table.key: [
+          for (final row in table.value as List)
+            Map<String, Object?>.from(row as Map),
+        ],
+    });
     expect(after['learning_pack_versions'], isEmpty);
     expect(after['lexical_content_snapshots'], isEmpty);
+    expect(after['content_reports'], isEmpty);
+    expect(after['study_reminder_preferences'], isEmpty);
     final objects = await database
         .customSelect(
           "SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'",
@@ -90,10 +96,11 @@ void main() {
       'learning_pack_versions',
       'lexical_content_snapshots',
       'idx_lexical_content_owner_word',
+      'content_reports',
+      'study_reminder_preferences',
+      'idx_content_reports_owner_queue',
     });
-    for (final object in oldObjects.entries) {
-      expect(byName[object.key], object.value, reason: object.key);
-    }
+    expectHistoricalMigrationObjects(oldObjects, byName);
     expect(
       await database.customSelect('PRAGMA foreign_key_check').get(),
       isEmpty,

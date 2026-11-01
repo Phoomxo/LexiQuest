@@ -1,4 +1,5 @@
-import 'dart:convert';
+
+import '../../support/native_checkpoint_privacy.dart';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_test/flutter_test.dart';
@@ -86,7 +87,7 @@ void main() {
   }
 
   test(
-    'typed raw response is neither persisted nor included in its evidence pin',
+    'typed response stays in its local private checkpoint and outside its evidence pin',
     () async {
       final exercise = await h.ready(ClozeVariant.typed) as TypedClozeSession;
       const response = 'synthetic raw response must stay transient 3f62';
@@ -107,7 +108,14 @@ void main() {
         h.learning.prepareNativeFinish(exercise, command),
         stillCurrent: () => true,
       );
-      expect(jsonEncode(await h.storage.snapshot()), isNot(contains(response)));
+      expect(
+        (await h.storage.session(exercise.id))['checkpoint_json'],
+        contains(response),
+      );
+      expect(
+        nativeSnapshotWithoutPrivateSlots(await h.storage.snapshot()),
+        isNot(contains(response)),
+      );
       expect(
         command.evidenceContext.contentRevision,
         exercise.evidenceContentRevision,

@@ -7995,6 +7995,1073 @@ class WordReportsCompanion extends UpdateCompanion<WordReportRow> {
   }
 }
 
+class $ContentReportsTable extends ContentReports
+    with TableInfo<$ContentReportsTable, ContentReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContentReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 256,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _reportJsonMeta = const VerificationMeta(
+    'reportJson',
+  );
+  @override
+  late final GeneratedColumn<String> reportJson = GeneratedColumn<String>(
+    'report_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reportSha256Meta = const VerificationMeta(
+    'reportSha256',
+  );
+  @override
+  late final GeneratedColumn<String> reportSha256 = GeneratedColumn<String>(
+    'report_sha256',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 64,
+      maxTextLength: 64,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _queuedAtUtcMsMeta = const VerificationMeta(
+    'queuedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> queuedAtUtcMs = GeneratedColumn<int>(
+    'queued_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deliveryStateMeta = const VerificationMeta(
+    'deliveryState',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryState = GeneratedColumn<String>(
+    'delivery_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('queued'),
+  );
+  static const VerificationMeta _acknowledgementJsonMeta =
+      const VerificationMeta('acknowledgementJson');
+  @override
+  late final GeneratedColumn<String> acknowledgementJson =
+      GeneratedColumn<String>(
+        'acknowledgement_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _acknowledgedFirebaseUidMeta =
+      const VerificationMeta('acknowledgedFirebaseUid');
+  @override
+  late final GeneratedColumn<String> acknowledgedFirebaseUid =
+      GeneratedColumn<String>(
+        'acknowledged_firebase_uid',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    reportJson,
+    reportSha256,
+    queuedAtUtcMs,
+    deliveryState,
+    acknowledgementJson,
+    acknowledgedFirebaseUid,
+    localRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'content_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContentReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('report_json')) {
+      context.handle(
+        _reportJsonMeta,
+        reportJson.isAcceptableOrUnknown(data['report_json']!, _reportJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reportJsonMeta);
+    }
+    if (data.containsKey('report_sha256')) {
+      context.handle(
+        _reportSha256Meta,
+        reportSha256.isAcceptableOrUnknown(
+          data['report_sha256']!,
+          _reportSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_reportSha256Meta);
+    }
+    if (data.containsKey('queued_at_utc_ms')) {
+      context.handle(
+        _queuedAtUtcMsMeta,
+        queuedAtUtcMs.isAcceptableOrUnknown(
+          data['queued_at_utc_ms']!,
+          _queuedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_queuedAtUtcMsMeta);
+    }
+    if (data.containsKey('delivery_state')) {
+      context.handle(
+        _deliveryStateMeta,
+        deliveryState.isAcceptableOrUnknown(
+          data['delivery_state']!,
+          _deliveryStateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('acknowledgement_json')) {
+      context.handle(
+        _acknowledgementJsonMeta,
+        acknowledgementJson.isAcceptableOrUnknown(
+          data['acknowledgement_json']!,
+          _acknowledgementJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('acknowledged_firebase_uid')) {
+      context.handle(
+        _acknowledgedFirebaseUidMeta,
+        acknowledgedFirebaseUid.isAcceptableOrUnknown(
+          data['acknowledged_firebase_uid']!,
+          _acknowledgedFirebaseUidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContentReportRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContentReportRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      reportJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}report_json'],
+      )!,
+      reportSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}report_sha256'],
+      )!,
+      queuedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}queued_at_utc_ms'],
+      )!,
+      deliveryState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_state'],
+      )!,
+      acknowledgementJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}acknowledgement_json'],
+      ),
+      acknowledgedFirebaseUid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}acknowledged_firebase_uid'],
+      ),
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $ContentReportsTable createAlias(String alias) {
+    return $ContentReportsTable(attachedDatabase, alias);
+  }
+}
+
+class ContentReportRow extends DataClass
+    implements Insertable<ContentReportRow> {
+  final String id;
+  final String ownerId;
+  final String reportJson;
+  final String reportSha256;
+  final int queuedAtUtcMs;
+  final String deliveryState;
+  final String? acknowledgementJson;
+  final String? acknowledgedFirebaseUid;
+  final int localRevision;
+  const ContentReportRow({
+    required this.id,
+    required this.ownerId,
+    required this.reportJson,
+    required this.reportSha256,
+    required this.queuedAtUtcMs,
+    required this.deliveryState,
+    this.acknowledgementJson,
+    this.acknowledgedFirebaseUid,
+    required this.localRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['report_json'] = Variable<String>(reportJson);
+    map['report_sha256'] = Variable<String>(reportSha256);
+    map['queued_at_utc_ms'] = Variable<int>(queuedAtUtcMs);
+    map['delivery_state'] = Variable<String>(deliveryState);
+    if (!nullToAbsent || acknowledgementJson != null) {
+      map['acknowledgement_json'] = Variable<String>(acknowledgementJson);
+    }
+    if (!nullToAbsent || acknowledgedFirebaseUid != null) {
+      map['acknowledged_firebase_uid'] = Variable<String>(
+        acknowledgedFirebaseUid,
+      );
+    }
+    map['local_revision'] = Variable<int>(localRevision);
+    return map;
+  }
+
+  ContentReportsCompanion toCompanion(bool nullToAbsent) {
+    return ContentReportsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      reportJson: Value(reportJson),
+      reportSha256: Value(reportSha256),
+      queuedAtUtcMs: Value(queuedAtUtcMs),
+      deliveryState: Value(deliveryState),
+      acknowledgementJson: acknowledgementJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acknowledgementJson),
+      acknowledgedFirebaseUid: acknowledgedFirebaseUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acknowledgedFirebaseUid),
+      localRevision: Value(localRevision),
+    );
+  }
+
+  factory ContentReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContentReportRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      reportJson: serializer.fromJson<String>(json['reportJson']),
+      reportSha256: serializer.fromJson<String>(json['reportSha256']),
+      queuedAtUtcMs: serializer.fromJson<int>(json['queuedAtUtcMs']),
+      deliveryState: serializer.fromJson<String>(json['deliveryState']),
+      acknowledgementJson: serializer.fromJson<String?>(
+        json['acknowledgementJson'],
+      ),
+      acknowledgedFirebaseUid: serializer.fromJson<String?>(
+        json['acknowledgedFirebaseUid'],
+      ),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'reportJson': serializer.toJson<String>(reportJson),
+      'reportSha256': serializer.toJson<String>(reportSha256),
+      'queuedAtUtcMs': serializer.toJson<int>(queuedAtUtcMs),
+      'deliveryState': serializer.toJson<String>(deliveryState),
+      'acknowledgementJson': serializer.toJson<String?>(acknowledgementJson),
+      'acknowledgedFirebaseUid': serializer.toJson<String?>(
+        acknowledgedFirebaseUid,
+      ),
+      'localRevision': serializer.toJson<int>(localRevision),
+    };
+  }
+
+  ContentReportRow copyWith({
+    String? id,
+    String? ownerId,
+    String? reportJson,
+    String? reportSha256,
+    int? queuedAtUtcMs,
+    String? deliveryState,
+    Value<String?> acknowledgementJson = const Value.absent(),
+    Value<String?> acknowledgedFirebaseUid = const Value.absent(),
+    int? localRevision,
+  }) => ContentReportRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    reportJson: reportJson ?? this.reportJson,
+    reportSha256: reportSha256 ?? this.reportSha256,
+    queuedAtUtcMs: queuedAtUtcMs ?? this.queuedAtUtcMs,
+    deliveryState: deliveryState ?? this.deliveryState,
+    acknowledgementJson: acknowledgementJson.present
+        ? acknowledgementJson.value
+        : this.acknowledgementJson,
+    acknowledgedFirebaseUid: acknowledgedFirebaseUid.present
+        ? acknowledgedFirebaseUid.value
+        : this.acknowledgedFirebaseUid,
+    localRevision: localRevision ?? this.localRevision,
+  );
+  ContentReportRow copyWithCompanion(ContentReportsCompanion data) {
+    return ContentReportRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      reportJson: data.reportJson.present
+          ? data.reportJson.value
+          : this.reportJson,
+      reportSha256: data.reportSha256.present
+          ? data.reportSha256.value
+          : this.reportSha256,
+      queuedAtUtcMs: data.queuedAtUtcMs.present
+          ? data.queuedAtUtcMs.value
+          : this.queuedAtUtcMs,
+      deliveryState: data.deliveryState.present
+          ? data.deliveryState.value
+          : this.deliveryState,
+      acknowledgementJson: data.acknowledgementJson.present
+          ? data.acknowledgementJson.value
+          : this.acknowledgementJson,
+      acknowledgedFirebaseUid: data.acknowledgedFirebaseUid.present
+          ? data.acknowledgedFirebaseUid.value
+          : this.acknowledgedFirebaseUid,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentReportRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('reportJson: $reportJson, ')
+          ..write('reportSha256: $reportSha256, ')
+          ..write('queuedAtUtcMs: $queuedAtUtcMs, ')
+          ..write('deliveryState: $deliveryState, ')
+          ..write('acknowledgementJson: $acknowledgementJson, ')
+          ..write('acknowledgedFirebaseUid: $acknowledgedFirebaseUid, ')
+          ..write('localRevision: $localRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    reportJson,
+    reportSha256,
+    queuedAtUtcMs,
+    deliveryState,
+    acknowledgementJson,
+    acknowledgedFirebaseUid,
+    localRevision,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContentReportRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.reportJson == this.reportJson &&
+          other.reportSha256 == this.reportSha256 &&
+          other.queuedAtUtcMs == this.queuedAtUtcMs &&
+          other.deliveryState == this.deliveryState &&
+          other.acknowledgementJson == this.acknowledgementJson &&
+          other.acknowledgedFirebaseUid == this.acknowledgedFirebaseUid &&
+          other.localRevision == this.localRevision);
+}
+
+class ContentReportsCompanion extends UpdateCompanion<ContentReportRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> reportJson;
+  final Value<String> reportSha256;
+  final Value<int> queuedAtUtcMs;
+  final Value<String> deliveryState;
+  final Value<String?> acknowledgementJson;
+  final Value<String?> acknowledgedFirebaseUid;
+  final Value<int> localRevision;
+  final Value<int> rowid;
+  const ContentReportsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.reportJson = const Value.absent(),
+    this.reportSha256 = const Value.absent(),
+    this.queuedAtUtcMs = const Value.absent(),
+    this.deliveryState = const Value.absent(),
+    this.acknowledgementJson = const Value.absent(),
+    this.acknowledgedFirebaseUid = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContentReportsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String reportJson,
+    required String reportSha256,
+    required int queuedAtUtcMs,
+    this.deliveryState = const Value.absent(),
+    this.acknowledgementJson = const Value.absent(),
+    this.acknowledgedFirebaseUid = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       reportJson = Value(reportJson),
+       reportSha256 = Value(reportSha256),
+       queuedAtUtcMs = Value(queuedAtUtcMs);
+  static Insertable<ContentReportRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? reportJson,
+    Expression<String>? reportSha256,
+    Expression<int>? queuedAtUtcMs,
+    Expression<String>? deliveryState,
+    Expression<String>? acknowledgementJson,
+    Expression<String>? acknowledgedFirebaseUid,
+    Expression<int>? localRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (reportJson != null) 'report_json': reportJson,
+      if (reportSha256 != null) 'report_sha256': reportSha256,
+      if (queuedAtUtcMs != null) 'queued_at_utc_ms': queuedAtUtcMs,
+      if (deliveryState != null) 'delivery_state': deliveryState,
+      if (acknowledgementJson != null)
+        'acknowledgement_json': acknowledgementJson,
+      if (acknowledgedFirebaseUid != null)
+        'acknowledged_firebase_uid': acknowledgedFirebaseUid,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContentReportsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? reportJson,
+    Value<String>? reportSha256,
+    Value<int>? queuedAtUtcMs,
+    Value<String>? deliveryState,
+    Value<String?>? acknowledgementJson,
+    Value<String?>? acknowledgedFirebaseUid,
+    Value<int>? localRevision,
+    Value<int>? rowid,
+  }) {
+    return ContentReportsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      reportJson: reportJson ?? this.reportJson,
+      reportSha256: reportSha256 ?? this.reportSha256,
+      queuedAtUtcMs: queuedAtUtcMs ?? this.queuedAtUtcMs,
+      deliveryState: deliveryState ?? this.deliveryState,
+      acknowledgementJson: acknowledgementJson ?? this.acknowledgementJson,
+      acknowledgedFirebaseUid:
+          acknowledgedFirebaseUid ?? this.acknowledgedFirebaseUid,
+      localRevision: localRevision ?? this.localRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (reportJson.present) {
+      map['report_json'] = Variable<String>(reportJson.value);
+    }
+    if (reportSha256.present) {
+      map['report_sha256'] = Variable<String>(reportSha256.value);
+    }
+    if (queuedAtUtcMs.present) {
+      map['queued_at_utc_ms'] = Variable<int>(queuedAtUtcMs.value);
+    }
+    if (deliveryState.present) {
+      map['delivery_state'] = Variable<String>(deliveryState.value);
+    }
+    if (acknowledgementJson.present) {
+      map['acknowledgement_json'] = Variable<String>(acknowledgementJson.value);
+    }
+    if (acknowledgedFirebaseUid.present) {
+      map['acknowledged_firebase_uid'] = Variable<String>(
+        acknowledgedFirebaseUid.value,
+      );
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentReportsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('reportJson: $reportJson, ')
+          ..write('reportSha256: $reportSha256, ')
+          ..write('queuedAtUtcMs: $queuedAtUtcMs, ')
+          ..write('deliveryState: $deliveryState, ')
+          ..write('acknowledgementJson: $acknowledgementJson, ')
+          ..write('acknowledgedFirebaseUid: $acknowledgedFirebaseUid, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StudyReminderPreferencesTable extends StudyReminderPreferences
+    with TableInfo<$StudyReminderPreferencesTable, StudyReminderPreference> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StudyReminderPreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _minuteOfDayMeta = const VerificationMeta(
+    'minuteOfDay',
+  );
+  @override
+  late final GeneratedColumn<int> minuteOfDay = GeneratedColumn<int>(
+    'minute_of_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    enabled,
+    minuteOfDay,
+    timezoneId,
+    revision,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'study_reminder_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudyReminderPreference> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('minute_of_day')) {
+      context.handle(
+        _minuteOfDayMeta,
+        minuteOfDay.isAcceptableOrUnknown(
+          data['minute_of_day']!,
+          _minuteOfDayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_minuteOfDayMeta);
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  StudyReminderPreference map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudyReminderPreference(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      minuteOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minute_of_day'],
+      )!,
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $StudyReminderPreferencesTable createAlias(String alias) {
+    return $StudyReminderPreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class StudyReminderPreference extends DataClass
+    implements Insertable<StudyReminderPreference> {
+  final String ownerId;
+  final bool enabled;
+  final int minuteOfDay;
+  final String timezoneId;
+  final int revision;
+  final int updatedAtUtcMs;
+  const StudyReminderPreference({
+    required this.ownerId,
+    required this.enabled,
+    required this.minuteOfDay,
+    required this.timezoneId,
+    required this.revision,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['enabled'] = Variable<bool>(enabled);
+    map['minute_of_day'] = Variable<int>(minuteOfDay);
+    map['timezone_id'] = Variable<String>(timezoneId);
+    map['revision'] = Variable<int>(revision);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  StudyReminderPreferencesCompanion toCompanion(bool nullToAbsent) {
+    return StudyReminderPreferencesCompanion(
+      ownerId: Value(ownerId),
+      enabled: Value(enabled),
+      minuteOfDay: Value(minuteOfDay),
+      timezoneId: Value(timezoneId),
+      revision: Value(revision),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory StudyReminderPreference.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudyReminderPreference(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      minuteOfDay: serializer.fromJson<int>(json['minuteOfDay']),
+      timezoneId: serializer.fromJson<String>(json['timezoneId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'enabled': serializer.toJson<bool>(enabled),
+      'minuteOfDay': serializer.toJson<int>(minuteOfDay),
+      'timezoneId': serializer.toJson<String>(timezoneId),
+      'revision': serializer.toJson<int>(revision),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  StudyReminderPreference copyWith({
+    String? ownerId,
+    bool? enabled,
+    int? minuteOfDay,
+    String? timezoneId,
+    int? revision,
+    int? updatedAtUtcMs,
+  }) => StudyReminderPreference(
+    ownerId: ownerId ?? this.ownerId,
+    enabled: enabled ?? this.enabled,
+    minuteOfDay: minuteOfDay ?? this.minuteOfDay,
+    timezoneId: timezoneId ?? this.timezoneId,
+    revision: revision ?? this.revision,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  StudyReminderPreference copyWithCompanion(
+    StudyReminderPreferencesCompanion data,
+  ) {
+    return StudyReminderPreference(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      minuteOfDay: data.minuteOfDay.present
+          ? data.minuteOfDay.value
+          : this.minuteOfDay,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyReminderPreference(')
+          ..write('ownerId: $ownerId, ')
+          ..write('enabled: $enabled, ')
+          ..write('minuteOfDay: $minuteOfDay, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('revision: $revision, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    enabled,
+    minuteOfDay,
+    timezoneId,
+    revision,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudyReminderPreference &&
+          other.ownerId == this.ownerId &&
+          other.enabled == this.enabled &&
+          other.minuteOfDay == this.minuteOfDay &&
+          other.timezoneId == this.timezoneId &&
+          other.revision == this.revision &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class StudyReminderPreferencesCompanion
+    extends UpdateCompanion<StudyReminderPreference> {
+  final Value<String> ownerId;
+  final Value<bool> enabled;
+  final Value<int> minuteOfDay;
+  final Value<String> timezoneId;
+  final Value<int> revision;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const StudyReminderPreferencesCompanion({
+    this.ownerId = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.minuteOfDay = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StudyReminderPreferencesCompanion.insert({
+    required String ownerId,
+    this.enabled = const Value.absent(),
+    required int minuteOfDay,
+    required String timezoneId,
+    required int revision,
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       minuteOfDay = Value(minuteOfDay),
+       timezoneId = Value(timezoneId),
+       revision = Value(revision),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<StudyReminderPreference> custom({
+    Expression<String>? ownerId,
+    Expression<bool>? enabled,
+    Expression<int>? minuteOfDay,
+    Expression<String>? timezoneId,
+    Expression<int>? revision,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (enabled != null) 'enabled': enabled,
+      if (minuteOfDay != null) 'minute_of_day': minuteOfDay,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (revision != null) 'revision': revision,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StudyReminderPreferencesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<bool>? enabled,
+    Value<int>? minuteOfDay,
+    Value<String>? timezoneId,
+    Value<int>? revision,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return StudyReminderPreferencesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      enabled: enabled ?? this.enabled,
+      minuteOfDay: minuteOfDay ?? this.minuteOfDay,
+      timezoneId: timezoneId ?? this.timezoneId,
+      revision: revision ?? this.revision,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (minuteOfDay.present) {
+      map['minute_of_day'] = Variable<int>(minuteOfDay.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyReminderPreferencesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('enabled: $enabled, ')
+          ..write('minuteOfDay: $minuteOfDay, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('revision: $revision, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VocabularyImportsTable extends VocabularyImports
     with TableInfo<$VocabularyImportsTable, VocabularyImport> {
   @override
@@ -20040,6 +21107,51 @@ class $QuestInstancesTable extends QuestInstances
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _periodKeyMeta = const VerificationMeta(
+    'periodKey',
+  );
+  @override
+  late final GeneratedColumn<String> periodKey = GeneratedColumn<String>(
+    'period_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('legacy'),
+  );
+  static const VerificationMeta _periodJsonMeta = const VerificationMeta(
+    'periodJson',
+  );
+  @override
+  late final GeneratedColumn<String> periodJson = GeneratedColumn<String>(
+    'period_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _definitionSnapshotJsonMeta =
+      const VerificationMeta('definitionSnapshotJson');
+  @override
+  late final GeneratedColumn<String> definitionSnapshotJson =
+      GeneratedColumn<String>(
+        'definition_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _definitionSha256Meta = const VerificationMeta(
+    'definitionSha256',
+  );
+  @override
+  late final GeneratedColumn<String> definitionSha256 = GeneratedColumn<String>(
+    'definition_sha256',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     instanceId,
@@ -20050,6 +21162,10 @@ class $QuestInstancesTable extends QuestInstances
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    periodKey,
+    periodJson,
+    definitionSnapshotJson,
+    definitionSha256,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -20135,6 +21251,36 @@ class $QuestInstancesTable extends QuestInstances
         ),
       );
     }
+    if (data.containsKey('period_key')) {
+      context.handle(
+        _periodKeyMeta,
+        periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
+      );
+    }
+    if (data.containsKey('period_json')) {
+      context.handle(
+        _periodJsonMeta,
+        periodJson.isAcceptableOrUnknown(data['period_json']!, _periodJsonMeta),
+      );
+    }
+    if (data.containsKey('definition_snapshot_json')) {
+      context.handle(
+        _definitionSnapshotJsonMeta,
+        definitionSnapshotJson.isAcceptableOrUnknown(
+          data['definition_snapshot_json']!,
+          _definitionSnapshotJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('definition_sha256')) {
+      context.handle(
+        _definitionSha256Meta,
+        definitionSha256.isAcceptableOrUnknown(
+          data['definition_sha256']!,
+          _definitionSha256Meta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -20142,7 +21288,7 @@ class $QuestInstancesTable extends QuestInstances
   Set<GeneratedColumn> get $primaryKey => {instanceId};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {ownerId, questId},
+    {ownerId, questId, periodKey},
   ];
   @override
   QuestInstance map(Map<String, dynamic> data, {String? tablePrefix}) {
@@ -20180,6 +21326,22 @@ class $QuestInstancesTable extends QuestInstances
         DriftSqlType.int,
         data['${effectivePrefix}expired_at_utc_ms'],
       ),
+      periodKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_key'],
+      )!,
+      periodJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_json'],
+      ),
+      definitionSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_snapshot_json'],
+      ),
+      definitionSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_sha256'],
+      ),
     );
   }
 
@@ -20201,6 +21363,10 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
   final String state;
   final int? completedAtUtcMs;
   final int? expiredAtUtcMs;
+  final String periodKey;
+  final String? periodJson;
+  final String? definitionSnapshotJson;
+  final String? definitionSha256;
   const QuestInstance({
     required this.instanceId,
     required this.questId,
@@ -20210,6 +21376,10 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     required this.state,
     this.completedAtUtcMs,
     this.expiredAtUtcMs,
+    required this.periodKey,
+    this.periodJson,
+    this.definitionSnapshotJson,
+    this.definitionSha256,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -20225,6 +21395,18 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     }
     if (!nullToAbsent || expiredAtUtcMs != null) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs);
+    }
+    map['period_key'] = Variable<String>(periodKey);
+    if (!nullToAbsent || periodJson != null) {
+      map['period_json'] = Variable<String>(periodJson);
+    }
+    if (!nullToAbsent || definitionSnapshotJson != null) {
+      map['definition_snapshot_json'] = Variable<String>(
+        definitionSnapshotJson,
+      );
+    }
+    if (!nullToAbsent || definitionSha256 != null) {
+      map['definition_sha256'] = Variable<String>(definitionSha256);
     }
     return map;
   }
@@ -20243,6 +21425,16 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: expiredAtUtcMs == null && nullToAbsent
           ? const Value.absent()
           : Value(expiredAtUtcMs),
+      periodKey: Value(periodKey),
+      periodJson: periodJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodJson),
+      definitionSnapshotJson: definitionSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(definitionSnapshotJson),
+      definitionSha256: definitionSha256 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(definitionSha256),
     );
   }
 
@@ -20260,6 +21452,12 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       state: serializer.fromJson<String>(json['state']),
       completedAtUtcMs: serializer.fromJson<int?>(json['completedAtUtcMs']),
       expiredAtUtcMs: serializer.fromJson<int?>(json['expiredAtUtcMs']),
+      periodKey: serializer.fromJson<String>(json['periodKey']),
+      periodJson: serializer.fromJson<String?>(json['periodJson']),
+      definitionSnapshotJson: serializer.fromJson<String?>(
+        json['definitionSnapshotJson'],
+      ),
+      definitionSha256: serializer.fromJson<String?>(json['definitionSha256']),
     );
   }
   @override
@@ -20274,6 +21472,12 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       'state': serializer.toJson<String>(state),
       'completedAtUtcMs': serializer.toJson<int?>(completedAtUtcMs),
       'expiredAtUtcMs': serializer.toJson<int?>(expiredAtUtcMs),
+      'periodKey': serializer.toJson<String>(periodKey),
+      'periodJson': serializer.toJson<String?>(periodJson),
+      'definitionSnapshotJson': serializer.toJson<String?>(
+        definitionSnapshotJson,
+      ),
+      'definitionSha256': serializer.toJson<String?>(definitionSha256),
     };
   }
 
@@ -20286,6 +21490,10 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     String? state,
     Value<int?> completedAtUtcMs = const Value.absent(),
     Value<int?> expiredAtUtcMs = const Value.absent(),
+    String? periodKey,
+    Value<String?> periodJson = const Value.absent(),
+    Value<String?> definitionSnapshotJson = const Value.absent(),
+    Value<String?> definitionSha256 = const Value.absent(),
   }) => QuestInstance(
     instanceId: instanceId ?? this.instanceId,
     questId: questId ?? this.questId,
@@ -20299,6 +21507,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     expiredAtUtcMs: expiredAtUtcMs.present
         ? expiredAtUtcMs.value
         : this.expiredAtUtcMs,
+    periodKey: periodKey ?? this.periodKey,
+    periodJson: periodJson.present ? periodJson.value : this.periodJson,
+    definitionSnapshotJson: definitionSnapshotJson.present
+        ? definitionSnapshotJson.value
+        : this.definitionSnapshotJson,
+    definitionSha256: definitionSha256.present
+        ? definitionSha256.value
+        : this.definitionSha256,
   );
   QuestInstance copyWithCompanion(QuestInstancesCompanion data) {
     return QuestInstance(
@@ -20320,6 +21536,16 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: data.expiredAtUtcMs.present
           ? data.expiredAtUtcMs.value
           : this.expiredAtUtcMs,
+      periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      periodJson: data.periodJson.present
+          ? data.periodJson.value
+          : this.periodJson,
+      definitionSnapshotJson: data.definitionSnapshotJson.present
+          ? data.definitionSnapshotJson.value
+          : this.definitionSnapshotJson,
+      definitionSha256: data.definitionSha256.present
+          ? data.definitionSha256.value
+          : this.definitionSha256,
     );
   }
 
@@ -20333,7 +21559,11 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
-          ..write('expiredAtUtcMs: $expiredAtUtcMs')
+          ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('periodJson: $periodJson, ')
+          ..write('definitionSnapshotJson: $definitionSnapshotJson, ')
+          ..write('definitionSha256: $definitionSha256')
           ..write(')'))
         .toString();
   }
@@ -20348,6 +21578,10 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    periodKey,
+    periodJson,
+    definitionSnapshotJson,
+    definitionSha256,
   );
   @override
   bool operator ==(Object other) =>
@@ -20360,7 +21594,11 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           other.assignedAtUtcMs == this.assignedAtUtcMs &&
           other.state == this.state &&
           other.completedAtUtcMs == this.completedAtUtcMs &&
-          other.expiredAtUtcMs == this.expiredAtUtcMs);
+          other.expiredAtUtcMs == this.expiredAtUtcMs &&
+          other.periodKey == this.periodKey &&
+          other.periodJson == this.periodJson &&
+          other.definitionSnapshotJson == this.definitionSnapshotJson &&
+          other.definitionSha256 == this.definitionSha256);
 }
 
 class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
@@ -20372,6 +21610,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
   final Value<String> state;
   final Value<int?> completedAtUtcMs;
   final Value<int?> expiredAtUtcMs;
+  final Value<String> periodKey;
+  final Value<String?> periodJson;
+  final Value<String?> definitionSnapshotJson;
+  final Value<String?> definitionSha256;
   final Value<int> rowid;
   const QuestInstancesCompanion({
     this.instanceId = const Value.absent(),
@@ -20382,6 +21624,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     this.state = const Value.absent(),
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.periodJson = const Value.absent(),
+    this.definitionSnapshotJson = const Value.absent(),
+    this.definitionSha256 = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuestInstancesCompanion.insert({
@@ -20393,6 +21639,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     required String state,
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.periodJson = const Value.absent(),
+    this.definitionSnapshotJson = const Value.absent(),
+    this.definitionSha256 = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : instanceId = Value(instanceId),
        questId = Value(questId),
@@ -20409,6 +21659,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Expression<String>? state,
     Expression<int>? completedAtUtcMs,
     Expression<int>? expiredAtUtcMs,
+    Expression<String>? periodKey,
+    Expression<String>? periodJson,
+    Expression<String>? definitionSnapshotJson,
+    Expression<String>? definitionSha256,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -20420,6 +21674,11 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       if (state != null) 'state': state,
       if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
       if (expiredAtUtcMs != null) 'expired_at_utc_ms': expiredAtUtcMs,
+      if (periodKey != null) 'period_key': periodKey,
+      if (periodJson != null) 'period_json': periodJson,
+      if (definitionSnapshotJson != null)
+        'definition_snapshot_json': definitionSnapshotJson,
+      if (definitionSha256 != null) 'definition_sha256': definitionSha256,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -20433,6 +21692,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Value<String>? state,
     Value<int?>? completedAtUtcMs,
     Value<int?>? expiredAtUtcMs,
+    Value<String>? periodKey,
+    Value<String?>? periodJson,
+    Value<String?>? definitionSnapshotJson,
+    Value<String?>? definitionSha256,
     Value<int>? rowid,
   }) {
     return QuestInstancesCompanion(
@@ -20444,6 +21707,11 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       state: state ?? this.state,
       completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
       expiredAtUtcMs: expiredAtUtcMs ?? this.expiredAtUtcMs,
+      periodKey: periodKey ?? this.periodKey,
+      periodJson: periodJson ?? this.periodJson,
+      definitionSnapshotJson:
+          definitionSnapshotJson ?? this.definitionSnapshotJson,
+      definitionSha256: definitionSha256 ?? this.definitionSha256,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -20475,6 +21743,20 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     if (expiredAtUtcMs.present) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs.value);
     }
+    if (periodKey.present) {
+      map['period_key'] = Variable<String>(periodKey.value);
+    }
+    if (periodJson.present) {
+      map['period_json'] = Variable<String>(periodJson.value);
+    }
+    if (definitionSnapshotJson.present) {
+      map['definition_snapshot_json'] = Variable<String>(
+        definitionSnapshotJson.value,
+      );
+    }
+    if (definitionSha256.present) {
+      map['definition_sha256'] = Variable<String>(definitionSha256.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -20492,6 +21774,10 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
           ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('periodJson: $periodJson, ')
+          ..write('definitionSnapshotJson: $definitionSnapshotJson, ')
+          ..write('definitionSha256: $definitionSha256, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -21460,12 +22746,51 @@ class $LearningDayLogTable extends LearningDayLog
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sourceAttemptIdMeta = const VerificationMeta(
+    'sourceAttemptId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceAttemptId = GeneratedColumn<String>(
+    'source_attempt_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES answer_attempts (id)',
+    ),
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _policyVersionMeta = const VerificationMeta(
+    'policyVersion',
+  );
+  @override
+  late final GeneratedColumn<int> policyVersion = GeneratedColumn<int>(
+    'policy_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     ownerId,
     learningDay,
     firstSessionAtUtcMs,
+    sourceAttemptId,
+    timezoneId,
+    policyVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21514,6 +22839,30 @@ class $LearningDayLogTable extends LearningDayLog
     } else if (isInserting) {
       context.missing(_firstSessionAtUtcMsMeta);
     }
+    if (data.containsKey('source_attempt_id')) {
+      context.handle(
+        _sourceAttemptIdMeta,
+        sourceAttemptId.isAcceptableOrUnknown(
+          data['source_attempt_id']!,
+          _sourceAttemptIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    }
+    if (data.containsKey('policy_version')) {
+      context.handle(
+        _policyVersionMeta,
+        policyVersion.isAcceptableOrUnknown(
+          data['policy_version']!,
+          _policyVersionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21521,7 +22870,7 @@ class $LearningDayLogTable extends LearningDayLog
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {ownerId, learningDay},
+    {ownerId, learningDay, policyVersion, sourceAttemptId},
   ];
   @override
   LearningDayLogData map(Map<String, dynamic> data, {String? tablePrefix}) {
@@ -21543,6 +22892,18 @@ class $LearningDayLogTable extends LearningDayLog
         DriftSqlType.int,
         data['${effectivePrefix}first_session_at_utc_ms'],
       )!,
+      sourceAttemptId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_attempt_id'],
+      ),
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      ),
+      policyVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}policy_version'],
+      ),
     );
   }
 
@@ -21564,11 +22925,17 @@ class LearningDayLogData extends DataClass
 
   /// UTC timestamp of the first session on this day.
   final int firstSessionAtUtcMs;
+  final String? sourceAttemptId;
+  final String? timezoneId;
+  final int? policyVersion;
   const LearningDayLogData({
     required this.id,
     required this.ownerId,
     required this.learningDay,
     required this.firstSessionAtUtcMs,
+    this.sourceAttemptId,
+    this.timezoneId,
+    this.policyVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -21577,6 +22944,15 @@ class LearningDayLogData extends DataClass
     map['owner_id'] = Variable<String>(ownerId);
     map['learning_day'] = Variable<String>(learningDay);
     map['first_session_at_utc_ms'] = Variable<int>(firstSessionAtUtcMs);
+    if (!nullToAbsent || sourceAttemptId != null) {
+      map['source_attempt_id'] = Variable<String>(sourceAttemptId);
+    }
+    if (!nullToAbsent || timezoneId != null) {
+      map['timezone_id'] = Variable<String>(timezoneId);
+    }
+    if (!nullToAbsent || policyVersion != null) {
+      map['policy_version'] = Variable<int>(policyVersion);
+    }
     return map;
   }
 
@@ -21586,6 +22962,15 @@ class LearningDayLogData extends DataClass
       ownerId: Value(ownerId),
       learningDay: Value(learningDay),
       firstSessionAtUtcMs: Value(firstSessionAtUtcMs),
+      sourceAttemptId: sourceAttemptId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceAttemptId),
+      timezoneId: timezoneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timezoneId),
+      policyVersion: policyVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(policyVersion),
     );
   }
 
@@ -21601,6 +22986,9 @@ class LearningDayLogData extends DataClass
       firstSessionAtUtcMs: serializer.fromJson<int>(
         json['firstSessionAtUtcMs'],
       ),
+      sourceAttemptId: serializer.fromJson<String?>(json['sourceAttemptId']),
+      timezoneId: serializer.fromJson<String?>(json['timezoneId']),
+      policyVersion: serializer.fromJson<int?>(json['policyVersion']),
     );
   }
   @override
@@ -21611,6 +22999,9 @@ class LearningDayLogData extends DataClass
       'ownerId': serializer.toJson<String>(ownerId),
       'learningDay': serializer.toJson<String>(learningDay),
       'firstSessionAtUtcMs': serializer.toJson<int>(firstSessionAtUtcMs),
+      'sourceAttemptId': serializer.toJson<String?>(sourceAttemptId),
+      'timezoneId': serializer.toJson<String?>(timezoneId),
+      'policyVersion': serializer.toJson<int?>(policyVersion),
     };
   }
 
@@ -21619,11 +23010,21 @@ class LearningDayLogData extends DataClass
     String? ownerId,
     String? learningDay,
     int? firstSessionAtUtcMs,
+    Value<String?> sourceAttemptId = const Value.absent(),
+    Value<String?> timezoneId = const Value.absent(),
+    Value<int?> policyVersion = const Value.absent(),
   }) => LearningDayLogData(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
     learningDay: learningDay ?? this.learningDay,
     firstSessionAtUtcMs: firstSessionAtUtcMs ?? this.firstSessionAtUtcMs,
+    sourceAttemptId: sourceAttemptId.present
+        ? sourceAttemptId.value
+        : this.sourceAttemptId,
+    timezoneId: timezoneId.present ? timezoneId.value : this.timezoneId,
+    policyVersion: policyVersion.present
+        ? policyVersion.value
+        : this.policyVersion,
   );
   LearningDayLogData copyWithCompanion(LearningDayLogCompanion data) {
     return LearningDayLogData(
@@ -21635,6 +23036,15 @@ class LearningDayLogData extends DataClass
       firstSessionAtUtcMs: data.firstSessionAtUtcMs.present
           ? data.firstSessionAtUtcMs.value
           : this.firstSessionAtUtcMs,
+      sourceAttemptId: data.sourceAttemptId.present
+          ? data.sourceAttemptId.value
+          : this.sourceAttemptId,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      policyVersion: data.policyVersion.present
+          ? data.policyVersion.value
+          : this.policyVersion,
     );
   }
 
@@ -21644,14 +23054,24 @@ class LearningDayLogData extends DataClass
           ..write('id: $id, ')
           ..write('ownerId: $ownerId, ')
           ..write('learningDay: $learningDay, ')
-          ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs')
+          ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs, ')
+          ..write('sourceAttemptId: $sourceAttemptId, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('policyVersion: $policyVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, ownerId, learningDay, firstSessionAtUtcMs);
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    learningDay,
+    firstSessionAtUtcMs,
+    sourceAttemptId,
+    timezoneId,
+    policyVersion,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -21659,7 +23079,10 @@ class LearningDayLogData extends DataClass
           other.id == this.id &&
           other.ownerId == this.ownerId &&
           other.learningDay == this.learningDay &&
-          other.firstSessionAtUtcMs == this.firstSessionAtUtcMs);
+          other.firstSessionAtUtcMs == this.firstSessionAtUtcMs &&
+          other.sourceAttemptId == this.sourceAttemptId &&
+          other.timezoneId == this.timezoneId &&
+          other.policyVersion == this.policyVersion);
 }
 
 class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
@@ -21667,12 +23090,18 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
   final Value<String> ownerId;
   final Value<String> learningDay;
   final Value<int> firstSessionAtUtcMs;
+  final Value<String?> sourceAttemptId;
+  final Value<String?> timezoneId;
+  final Value<int?> policyVersion;
   final Value<int> rowid;
   const LearningDayLogCompanion({
     this.id = const Value.absent(),
     this.ownerId = const Value.absent(),
     this.learningDay = const Value.absent(),
     this.firstSessionAtUtcMs = const Value.absent(),
+    this.sourceAttemptId = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.policyVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningDayLogCompanion.insert({
@@ -21680,6 +23109,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
     required String ownerId,
     required String learningDay,
     required int firstSessionAtUtcMs,
+    this.sourceAttemptId = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.policyVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -21690,6 +23122,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
     Expression<String>? ownerId,
     Expression<String>? learningDay,
     Expression<int>? firstSessionAtUtcMs,
+    Expression<String>? sourceAttemptId,
+    Expression<String>? timezoneId,
+    Expression<int>? policyVersion,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -21698,6 +23133,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
       if (learningDay != null) 'learning_day': learningDay,
       if (firstSessionAtUtcMs != null)
         'first_session_at_utc_ms': firstSessionAtUtcMs,
+      if (sourceAttemptId != null) 'source_attempt_id': sourceAttemptId,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (policyVersion != null) 'policy_version': policyVersion,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -21707,6 +23145,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
     Value<String>? ownerId,
     Value<String>? learningDay,
     Value<int>? firstSessionAtUtcMs,
+    Value<String?>? sourceAttemptId,
+    Value<String?>? timezoneId,
+    Value<int?>? policyVersion,
     Value<int>? rowid,
   }) {
     return LearningDayLogCompanion(
@@ -21714,6 +23155,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
       ownerId: ownerId ?? this.ownerId,
       learningDay: learningDay ?? this.learningDay,
       firstSessionAtUtcMs: firstSessionAtUtcMs ?? this.firstSessionAtUtcMs,
+      sourceAttemptId: sourceAttemptId ?? this.sourceAttemptId,
+      timezoneId: timezoneId ?? this.timezoneId,
+      policyVersion: policyVersion ?? this.policyVersion,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -21733,6 +23177,15 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
     if (firstSessionAtUtcMs.present) {
       map['first_session_at_utc_ms'] = Variable<int>(firstSessionAtUtcMs.value);
     }
+    if (sourceAttemptId.present) {
+      map['source_attempt_id'] = Variable<String>(sourceAttemptId.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (policyVersion.present) {
+      map['policy_version'] = Variable<int>(policyVersion.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -21746,6 +23199,9 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
           ..write('ownerId: $ownerId, ')
           ..write('learningDay: $learningDay, ')
           ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs, ')
+          ..write('sourceAttemptId: $sourceAttemptId, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('policyVersion: $policyVersion, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -27793,6 +29249,21 @@ class $LearningProfilesTable extends LearningProfiles
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _learningTimezoneIdMeta =
+      const VerificationMeta('learningTimezoneId');
+  @override
+  late final GeneratedColumn<String> learningTimezoneId =
+      GeneratedColumn<String>(
+        'learning_timezone_id',
+        aliasedName,
+        true,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 100,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     ownerId,
@@ -27803,6 +29274,7 @@ class $LearningProfilesTable extends LearningProfiles
     dailyMinutes,
     interestCodesJson,
     updatedAtUtcMs,
+    learningTimezoneId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -27886,6 +29358,15 @@ class $LearningProfilesTable extends LearningProfiles
     } else if (isInserting) {
       context.missing(_updatedAtUtcMsMeta);
     }
+    if (data.containsKey('learning_timezone_id')) {
+      context.handle(
+        _learningTimezoneIdMeta,
+        learningTimezoneId.isAcceptableOrUnknown(
+          data['learning_timezone_id']!,
+          _learningTimezoneIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -27927,6 +29408,10 @@ class $LearningProfilesTable extends LearningProfiles
         DriftSqlType.int,
         data['${effectivePrefix}updated_at_utc_ms'],
       )!,
+      learningTimezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_timezone_id'],
+      ),
     );
   }
 
@@ -27945,6 +29430,7 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
   final int? dailyMinutes;
   final String interestCodesJson;
   final int updatedAtUtcMs;
+  final String? learningTimezoneId;
   const LearningProfile({
     required this.ownerId,
     required this.revision,
@@ -27954,6 +29440,7 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
     this.dailyMinutes,
     required this.interestCodesJson,
     required this.updatedAtUtcMs,
+    this.learningTimezoneId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -27972,6 +29459,9 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
     }
     map['interest_codes_json'] = Variable<String>(interestCodesJson);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    if (!nullToAbsent || learningTimezoneId != null) {
+      map['learning_timezone_id'] = Variable<String>(learningTimezoneId);
+    }
     return map;
   }
 
@@ -27991,6 +29481,9 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
           : Value(dailyMinutes),
       interestCodesJson: Value(interestCodesJson),
       updatedAtUtcMs: Value(updatedAtUtcMs),
+      learningTimezoneId: learningTimezoneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learningTimezoneId),
     );
   }
 
@@ -28008,6 +29501,9 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
       dailyMinutes: serializer.fromJson<int?>(json['dailyMinutes']),
       interestCodesJson: serializer.fromJson<String>(json['interestCodesJson']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      learningTimezoneId: serializer.fromJson<String?>(
+        json['learningTimezoneId'],
+      ),
     );
   }
   @override
@@ -28022,6 +29518,7 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
       'dailyMinutes': serializer.toJson<int?>(dailyMinutes),
       'interestCodesJson': serializer.toJson<String>(interestCodesJson),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'learningTimezoneId': serializer.toJson<String?>(learningTimezoneId),
     };
   }
 
@@ -28034,6 +29531,7 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
     Value<int?> dailyMinutes = const Value.absent(),
     String? interestCodesJson,
     int? updatedAtUtcMs,
+    Value<String?> learningTimezoneId = const Value.absent(),
   }) => LearningProfile(
     ownerId: ownerId ?? this.ownerId,
     revision: revision ?? this.revision,
@@ -28043,6 +29541,9 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
     dailyMinutes: dailyMinutes.present ? dailyMinutes.value : this.dailyMinutes,
     interestCodesJson: interestCodesJson ?? this.interestCodesJson,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    learningTimezoneId: learningTimezoneId.present
+        ? learningTimezoneId.value
+        : this.learningTimezoneId,
   );
   LearningProfile copyWithCompanion(LearningProfilesCompanion data) {
     return LearningProfile(
@@ -28064,6 +29565,9 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
       updatedAtUtcMs: data.updatedAtUtcMs.present
           ? data.updatedAtUtcMs.value
           : this.updatedAtUtcMs,
+      learningTimezoneId: data.learningTimezoneId.present
+          ? data.learningTimezoneId.value
+          : this.learningTimezoneId,
     );
   }
 
@@ -28077,7 +29581,8 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
           ..write('targetDate: $targetDate, ')
           ..write('dailyMinutes: $dailyMinutes, ')
           ..write('interestCodesJson: $interestCodesJson, ')
-          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('learningTimezoneId: $learningTimezoneId')
           ..write(')'))
         .toString();
   }
@@ -28092,6 +29597,7 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
     dailyMinutes,
     interestCodesJson,
     updatedAtUtcMs,
+    learningTimezoneId,
   );
   @override
   bool operator ==(Object other) =>
@@ -28104,7 +29610,8 @@ class LearningProfile extends DataClass implements Insertable<LearningProfile> {
           other.targetDate == this.targetDate &&
           other.dailyMinutes == this.dailyMinutes &&
           other.interestCodesJson == this.interestCodesJson &&
-          other.updatedAtUtcMs == this.updatedAtUtcMs);
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.learningTimezoneId == this.learningTimezoneId);
 }
 
 class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
@@ -28116,6 +29623,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
   final Value<int?> dailyMinutes;
   final Value<String> interestCodesJson;
   final Value<int> updatedAtUtcMs;
+  final Value<String?> learningTimezoneId;
   final Value<int> rowid;
   const LearningProfilesCompanion({
     this.ownerId = const Value.absent(),
@@ -28126,6 +29634,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
     this.dailyMinutes = const Value.absent(),
     this.interestCodesJson = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
+    this.learningTimezoneId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningProfilesCompanion.insert({
@@ -28137,6 +29646,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
     this.dailyMinutes = const Value.absent(),
     required String interestCodesJson,
     required int updatedAtUtcMs,
+    this.learningTimezoneId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : ownerId = Value(ownerId),
        revision = Value(revision),
@@ -28152,6 +29662,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
     Expression<int>? dailyMinutes,
     Expression<String>? interestCodesJson,
     Expression<int>? updatedAtUtcMs,
+    Expression<String>? learningTimezoneId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -28163,6 +29674,8 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
       if (dailyMinutes != null) 'daily_minutes': dailyMinutes,
       if (interestCodesJson != null) 'interest_codes_json': interestCodesJson,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (learningTimezoneId != null)
+        'learning_timezone_id': learningTimezoneId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -28176,6 +29689,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
     Value<int?>? dailyMinutes,
     Value<String>? interestCodesJson,
     Value<int>? updatedAtUtcMs,
+    Value<String?>? learningTimezoneId,
     Value<int>? rowid,
   }) {
     return LearningProfilesCompanion(
@@ -28187,6 +29701,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
       dailyMinutes: dailyMinutes ?? this.dailyMinutes,
       interestCodesJson: interestCodesJson ?? this.interestCodesJson,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      learningTimezoneId: learningTimezoneId ?? this.learningTimezoneId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -28218,6 +29733,9 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
     if (updatedAtUtcMs.present) {
       map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
     }
+    if (learningTimezoneId.present) {
+      map['learning_timezone_id'] = Variable<String>(learningTimezoneId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -28235,6 +29753,7 @@ class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
           ..write('dailyMinutes: $dailyMinutes, ')
           ..write('interestCodesJson: $interestCodesJson, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('learningTimezoneId: $learningTimezoneId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -30155,6 +31674,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SavedWordsTable savedWords = $SavedWordsTable(this);
   late final $WordReportsTable wordReports = $WordReportsTable(this);
+  late final $ContentReportsTable contentReports = $ContentReportsTable(this);
+  late final $StudyReminderPreferencesTable studyReminderPreferences =
+      $StudyReminderPreferencesTable(this);
   late final $VocabularyImportsTable vocabularyImports =
       $VocabularyImportsTable(this);
   late final $VocabularyImportRowsTable vocabularyImportRows =
@@ -30231,6 +31753,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vocabularyWords,
     savedWords,
     wordReports,
+    contentReports,
+    studyReminderPreferences,
     vocabularyImports,
     vocabularyImportRows,
     learningSessions,
@@ -30543,6 +32067,49 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_wordReportsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ContentReportsTable, List<ContentReportRow>>
+  _contentReportsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.contentReports,
+    aliasName: 'local_owners__id__content_reports__owner_id',
+  );
+
+  $$ContentReportsTableProcessedTableManager get contentReportsRefs {
+    final manager = $$ContentReportsTableTableManager(
+      $_db,
+      $_db.contentReports,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_contentReportsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StudyReminderPreferencesTable,
+    List<StudyReminderPreference>
+  >
+  _studyReminderPreferencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.studyReminderPreferences,
+        aliasName: 'local_owners__id__study_reminder_preferences__owner_id',
+      );
+
+  $$StudyReminderPreferencesTableProcessedTableManager
+  get studyReminderPreferencesRefs {
+    final manager = $$StudyReminderPreferencesTableTableManager(
+      $_db,
+      $_db.studyReminderPreferences,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _studyReminderPreferencesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -31379,6 +32946,58 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> contentReportsRefs(
+    Expression<bool> Function($$ContentReportsTableFilterComposer f) f,
+  ) {
+    final $$ContentReportsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contentReports,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentReportsTableFilterComposer(
+            $db: $db,
+            $table: $db.contentReports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> studyReminderPreferencesRefs(
+    Expression<bool> Function($$StudyReminderPreferencesTableFilterComposer f)
+    f,
+  ) {
+    final $$StudyReminderPreferencesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.studyReminderPreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StudyReminderPreferencesTableFilterComposer(
+                $db: $db,
+                $table: $db.studyReminderPreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -32373,6 +33992,58 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> contentReportsRefs<T extends Object>(
+    Expression<T> Function($$ContentReportsTableAnnotationComposer a) f,
+  ) {
+    final $$ContentReportsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.contentReports,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentReportsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contentReports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> studyReminderPreferencesRefs<T extends Object>(
+    Expression<T> Function($$StudyReminderPreferencesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$StudyReminderPreferencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.studyReminderPreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StudyReminderPreferencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.studyReminderPreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> vocabularyImportsRefs<T extends Object>(
     Expression<T> Function($$VocabularyImportsTableAnnotationComposer a) f,
   ) {
@@ -33089,6 +34760,8 @@ class $$LocalOwnersTableTableManager
             bool vocabularyWordsRefs,
             bool savedWordsRefs,
             bool wordReportsRefs,
+            bool contentReportsRefs,
+            bool studyReminderPreferencesRefs,
             bool vocabularyImportsRefs,
             bool learningSessionsRefs,
             bool answerAttemptsRefs,
@@ -33184,6 +34857,8 @@ class $$LocalOwnersTableTableManager
                 vocabularyWordsRefs = false,
                 savedWordsRefs = false,
                 wordReportsRefs = false,
+                contentReportsRefs = false,
+                studyReminderPreferencesRefs = false,
                 vocabularyImportsRefs = false,
                 learningSessionsRefs = false,
                 answerAttemptsRefs = false,
@@ -33226,6 +34901,9 @@ class $$LocalOwnersTableTableManager
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (savedWordsRefs) db.savedWords,
                     if (wordReportsRefs) db.wordReports,
+                    if (contentReportsRefs) db.contentReports,
+                    if (studyReminderPreferencesRefs)
+                      db.studyReminderPreferences,
                     if (vocabularyImportsRefs) db.vocabularyImports,
                     if (learningSessionsRefs) db.learningSessions,
                     if (answerAttemptsRefs) db.answerAttempts,
@@ -33441,6 +35119,48 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).wordReportsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contentReportsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ContentReportRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._contentReportsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contentReportsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (studyReminderPreferencesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StudyReminderPreference
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._studyReminderPreferencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studyReminderPreferencesRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -34044,6 +35764,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool vocabularyWordsRefs,
         bool savedWordsRefs,
         bool wordReportsRefs,
+        bool contentReportsRefs,
+        bool studyReminderPreferencesRefs,
         bool vocabularyImportsRefs,
         bool learningSessionsRefs,
         bool answerAttemptsRefs,
@@ -40839,6 +42561,785 @@ typedef $$WordReportsTableProcessedTableManager =
       WordReportRow,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$ContentReportsTableCreateCompanionBuilder =
+    ContentReportsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String reportJson,
+      required String reportSha256,
+      required int queuedAtUtcMs,
+      Value<String> deliveryState,
+      Value<String?> acknowledgementJson,
+      Value<String?> acknowledgedFirebaseUid,
+      Value<int> localRevision,
+      Value<int> rowid,
+    });
+typedef $$ContentReportsTableUpdateCompanionBuilder =
+    ContentReportsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> reportJson,
+      Value<String> reportSha256,
+      Value<int> queuedAtUtcMs,
+      Value<String> deliveryState,
+      Value<String?> acknowledgementJson,
+      Value<String?> acknowledgedFirebaseUid,
+      Value<int> localRevision,
+      Value<int> rowid,
+    });
+
+final class $$ContentReportsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ContentReportsTable, ContentReportRow> {
+  $$ContentReportsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('content_reports__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContentReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContentReportsTable> {
+  $$ContentReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportJson => $composableBuilder(
+    column: $table.reportJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportSha256 => $composableBuilder(
+    column: $table.reportSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryState => $composableBuilder(
+    column: $table.deliveryState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get acknowledgementJson => $composableBuilder(
+    column: $table.acknowledgementJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get acknowledgedFirebaseUid => $composableBuilder(
+    column: $table.acknowledgedFirebaseUid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContentReportsTable> {
+  $$ContentReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportJson => $composableBuilder(
+    column: $table.reportJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportSha256 => $composableBuilder(
+    column: $table.reportSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryState => $composableBuilder(
+    column: $table.deliveryState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get acknowledgementJson => $composableBuilder(
+    column: $table.acknowledgementJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get acknowledgedFirebaseUid => $composableBuilder(
+    column: $table.acknowledgedFirebaseUid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContentReportsTable> {
+  $$ContentReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get reportJson => $composableBuilder(
+    column: $table.reportJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reportSha256 => $composableBuilder(
+    column: $table.reportSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get queuedAtUtcMs => $composableBuilder(
+    column: $table.queuedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryState => $composableBuilder(
+    column: $table.deliveryState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get acknowledgementJson => $composableBuilder(
+    column: $table.acknowledgementJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get acknowledgedFirebaseUid => $composableBuilder(
+    column: $table.acknowledgedFirebaseUid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContentReportsTable,
+          ContentReportRow,
+          $$ContentReportsTableFilterComposer,
+          $$ContentReportsTableOrderingComposer,
+          $$ContentReportsTableAnnotationComposer,
+          $$ContentReportsTableCreateCompanionBuilder,
+          $$ContentReportsTableUpdateCompanionBuilder,
+          (ContentReportRow, $$ContentReportsTableReferences),
+          ContentReportRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ContentReportsTableTableManager(
+    _$AppDatabase db,
+    $ContentReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContentReportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContentReportsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContentReportsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> reportJson = const Value.absent(),
+                Value<String> reportSha256 = const Value.absent(),
+                Value<int> queuedAtUtcMs = const Value.absent(),
+                Value<String> deliveryState = const Value.absent(),
+                Value<String?> acknowledgementJson = const Value.absent(),
+                Value<String?> acknowledgedFirebaseUid = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentReportsCompanion(
+                id: id,
+                ownerId: ownerId,
+                reportJson: reportJson,
+                reportSha256: reportSha256,
+                queuedAtUtcMs: queuedAtUtcMs,
+                deliveryState: deliveryState,
+                acknowledgementJson: acknowledgementJson,
+                acknowledgedFirebaseUid: acknowledgedFirebaseUid,
+                localRevision: localRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String reportJson,
+                required String reportSha256,
+                required int queuedAtUtcMs,
+                Value<String> deliveryState = const Value.absent(),
+                Value<String?> acknowledgementJson = const Value.absent(),
+                Value<String?> acknowledgedFirebaseUid = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentReportsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                reportJson: reportJson,
+                reportSha256: reportSha256,
+                queuedAtUtcMs: queuedAtUtcMs,
+                deliveryState: deliveryState,
+                acknowledgementJson: acknowledgementJson,
+                acknowledgedFirebaseUid: acknowledgedFirebaseUid,
+                localRevision: localRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContentReportsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$ContentReportsTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ContentReportsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContentReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContentReportsTable,
+      ContentReportRow,
+      $$ContentReportsTableFilterComposer,
+      $$ContentReportsTableOrderingComposer,
+      $$ContentReportsTableAnnotationComposer,
+      $$ContentReportsTableCreateCompanionBuilder,
+      $$ContentReportsTableUpdateCompanionBuilder,
+      (ContentReportRow, $$ContentReportsTableReferences),
+      ContentReportRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$StudyReminderPreferencesTableCreateCompanionBuilder =
+    StudyReminderPreferencesCompanion Function({
+      required String ownerId,
+      Value<bool> enabled,
+      required int minuteOfDay,
+      required String timezoneId,
+      required int revision,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$StudyReminderPreferencesTableUpdateCompanionBuilder =
+    StudyReminderPreferencesCompanion Function({
+      Value<String> ownerId,
+      Value<bool> enabled,
+      Value<int> minuteOfDay,
+      Value<String> timezoneId,
+      Value<int> revision,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$StudyReminderPreferencesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StudyReminderPreferencesTable,
+          StudyReminderPreference
+        > {
+  $$StudyReminderPreferencesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('study_reminder_preferences__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StudyReminderPreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $StudyReminderPreferencesTable> {
+  $$StudyReminderPreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyReminderPreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StudyReminderPreferencesTable> {
+  $$StudyReminderPreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyReminderPreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StudyReminderPreferencesTable> {
+  $$StudyReminderPreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get minuteOfDay => $composableBuilder(
+    column: $table.minuteOfDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyReminderPreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StudyReminderPreferencesTable,
+          StudyReminderPreference,
+          $$StudyReminderPreferencesTableFilterComposer,
+          $$StudyReminderPreferencesTableOrderingComposer,
+          $$StudyReminderPreferencesTableAnnotationComposer,
+          $$StudyReminderPreferencesTableCreateCompanionBuilder,
+          $$StudyReminderPreferencesTableUpdateCompanionBuilder,
+          (StudyReminderPreference, $$StudyReminderPreferencesTableReferences),
+          StudyReminderPreference,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$StudyReminderPreferencesTableTableManager(
+    _$AppDatabase db,
+    $StudyReminderPreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StudyReminderPreferencesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$StudyReminderPreferencesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$StudyReminderPreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> minuteOfDay = const Value.absent(),
+                Value<String> timezoneId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StudyReminderPreferencesCompanion(
+                ownerId: ownerId,
+                enabled: enabled,
+                minuteOfDay: minuteOfDay,
+                timezoneId: timezoneId,
+                revision: revision,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                Value<bool> enabled = const Value.absent(),
+                required int minuteOfDay,
+                required String timezoneId,
+                required int revision,
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => StudyReminderPreferencesCompanion.insert(
+                ownerId: ownerId,
+                enabled: enabled,
+                minuteOfDay: minuteOfDay,
+                timezoneId: timezoneId,
+                revision: revision,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StudyReminderPreferencesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$StudyReminderPreferencesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$StudyReminderPreferencesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StudyReminderPreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StudyReminderPreferencesTable,
+      StudyReminderPreference,
+      $$StudyReminderPreferencesTableFilterComposer,
+      $$StudyReminderPreferencesTableOrderingComposer,
+      $$StudyReminderPreferencesTableAnnotationComposer,
+      $$StudyReminderPreferencesTableCreateCompanionBuilder,
+      $$StudyReminderPreferencesTableUpdateCompanionBuilder,
+      (StudyReminderPreference, $$StudyReminderPreferencesTableReferences),
+      StudyReminderPreference,
+      PrefetchHooks Function({bool ownerId})
+    >;
 typedef $$VocabularyImportsTableCreateCompanionBuilder =
     VocabularyImportsCompanion Function({
       required String id,
@@ -43042,6 +45543,24 @@ final class $$AnswerAttemptsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$LearningDayLogTable, List<LearningDayLogData>>
+  _learningDayLogRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.learningDayLog,
+    aliasName: 'answer_attempts__id__learning_day_log__source_attempt_id',
+  );
+
+  $$LearningDayLogTableProcessedTableManager get learningDayLogRefs {
+    final manager = $$LearningDayLogTableTableManager($_db, $_db.learningDayLog)
+        .filter(
+          (f) => f.sourceAttemptId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_learningDayLogRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$AnswerAttemptsTableFilterComposer
@@ -43165,6 +45684,31 @@ class $$AnswerAttemptsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> learningDayLogRefs(
+    Expression<bool> Function($$LearningDayLogTableFilterComposer f) f,
+  ) {
+    final $$LearningDayLogTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningDayLog,
+      getReferencedColumn: (t) => t.sourceAttemptId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningDayLogTableFilterComposer(
+            $db: $db,
+            $table: $db.learningDayLog,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -43410,6 +45954,31 @@ class $$AnswerAttemptsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> learningDayLogRefs<T extends Object>(
+    Expression<T> Function($$LearningDayLogTableAnnotationComposer a) f,
+  ) {
+    final $$LearningDayLogTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningDayLog,
+      getReferencedColumn: (t) => t.sourceAttemptId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningDayLogTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningDayLog,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AnswerAttemptsTableTableManager
@@ -43425,7 +45994,12 @@ class $$AnswerAttemptsTableTableManager
           $$AnswerAttemptsTableUpdateCompanionBuilder,
           (AnswerAttempt, $$AnswerAttemptsTableReferences),
           AnswerAttempt,
-          PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool sessionId,
+            bool wordId,
+            bool learningDayLogRefs,
+          })
         > {
   $$AnswerAttemptsTableTableManager(
     _$AppDatabase db,
@@ -43509,10 +46083,17 @@ class $$AnswerAttemptsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ownerId = false, sessionId = false, wordId = false}) {
+              ({
+                ownerId = false,
+                sessionId = false,
+                wordId = false,
+                learningDayLogRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (learningDayLogRefs) db.learningDayLog,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -43578,7 +46159,29 @@ class $$AnswerAttemptsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (learningDayLogRefs)
+                        await $_getPrefetchedData<
+                          AnswerAttempt,
+                          $AnswerAttemptsTable,
+                          LearningDayLogData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AnswerAttemptsTableReferences
+                              ._learningDayLogRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AnswerAttemptsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningDayLogRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceAttemptId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -43598,7 +46201,12 @@ typedef $$AnswerAttemptsTableProcessedTableManager =
       $$AnswerAttemptsTableUpdateCompanionBuilder,
       (AnswerAttempt, $$AnswerAttemptsTableReferences),
       AnswerAttempt,
-      PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+      PrefetchHooks Function({
+        bool ownerId,
+        bool sessionId,
+        bool wordId,
+        bool learningDayLogRefs,
+      })
     >;
 typedef $$SrsStatesTableCreateCompanionBuilder =
     SrsStatesCompanion Function({
@@ -49997,6 +52605,10 @@ typedef $$QuestInstancesTableCreateCompanionBuilder =
       required String state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String> periodKey,
+      Value<String?> periodJson,
+      Value<String?> definitionSnapshotJson,
+      Value<String?> definitionSha256,
       Value<int> rowid,
     });
 typedef $$QuestInstancesTableUpdateCompanionBuilder =
@@ -50009,6 +52621,10 @@ typedef $$QuestInstancesTableUpdateCompanionBuilder =
       Value<String> state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String> periodKey,
+      Value<String?> periodJson,
+      Value<String?> definitionSnapshotJson,
+      Value<String?> definitionSha256,
       Value<int> rowid,
     });
 
@@ -50127,6 +52743,26 @@ class $$QuestInstancesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodJson => $composableBuilder(
+    column: $table.periodJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionSha256 => $composableBuilder(
+    column: $table.definitionSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$QuestDefinitionsTableFilterComposer get questId {
     final $$QuestDefinitionsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -50239,6 +52875,26 @@ class $$QuestInstancesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodJson => $composableBuilder(
+    column: $table.periodJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionSha256 => $composableBuilder(
+    column: $table.definitionSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$QuestDefinitionsTableOrderingComposer get questId {
     final $$QuestDefinitionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -50320,6 +52976,24 @@ class $$QuestInstancesTableAnnotationComposer
 
   GeneratedColumn<int> get expiredAtUtcMs => $composableBuilder(
     column: $table.expiredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get periodKey =>
+      $composableBuilder(column: $table.periodKey, builder: (column) => column);
+
+  GeneratedColumn<String> get periodJson => $composableBuilder(
+    column: $table.periodJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get definitionSha256 => $composableBuilder(
+    column: $table.definitionSha256,
     builder: (column) => column,
   );
 
@@ -50438,6 +53112,10 @@ class $$QuestInstancesTableTableManager
                 Value<String> state = const Value.absent(),
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String> periodKey = const Value.absent(),
+                Value<String?> periodJson = const Value.absent(),
+                Value<String?> definitionSnapshotJson = const Value.absent(),
+                Value<String?> definitionSha256 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion(
                 instanceId: instanceId,
@@ -50448,6 +53126,10 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                periodKey: periodKey,
+                periodJson: periodJson,
+                definitionSnapshotJson: definitionSnapshotJson,
+                definitionSha256: definitionSha256,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -50460,6 +53142,10 @@ class $$QuestInstancesTableTableManager
                 required String state,
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String> periodKey = const Value.absent(),
+                Value<String?> periodJson = const Value.absent(),
+                Value<String?> definitionSnapshotJson = const Value.absent(),
+                Value<String?> definitionSha256 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion.insert(
                 instanceId: instanceId,
@@ -50470,6 +53156,10 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                periodKey: periodKey,
+                periodJson: periodJson,
+                definitionSnapshotJson: definitionSnapshotJson,
+                definitionSha256: definitionSha256,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -51309,6 +53999,9 @@ typedef $$LearningDayLogTableCreateCompanionBuilder =
       required String ownerId,
       required String learningDay,
       required int firstSessionAtUtcMs,
+      Value<String?> sourceAttemptId,
+      Value<String?> timezoneId,
+      Value<int?> policyVersion,
       Value<int> rowid,
     });
 typedef $$LearningDayLogTableUpdateCompanionBuilder =
@@ -51317,6 +54010,9 @@ typedef $$LearningDayLogTableUpdateCompanionBuilder =
       Value<String> ownerId,
       Value<String> learningDay,
       Value<int> firstSessionAtUtcMs,
+      Value<String?> sourceAttemptId,
+      Value<String?> timezoneId,
+      Value<int?> policyVersion,
       Value<int> rowid,
     });
 
@@ -51349,6 +54045,24 @@ final class $$LearningDayLogTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static $AnswerAttemptsTable _sourceAttemptIdTable(_$AppDatabase db) => db
+      .answerAttempts
+      .createAlias('learning_day_log__source_attempt_id__answer_attempts__id');
+
+  $$AnswerAttemptsTableProcessedTableManager? get sourceAttemptId {
+    final $_column = $_itemColumn<String>('source_attempt_id');
+    if ($_column == null) return null;
+    final manager = $$AnswerAttemptsTableTableManager(
+      $_db,
+      $_db.answerAttempts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceAttemptIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 }
 
 class $$LearningDayLogTableFilterComposer
@@ -51375,6 +54089,16 @@ class $$LearningDayLogTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LocalOwnersTableFilterComposer get ownerId {
     final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -51389,6 +54113,29 @@ class $$LearningDayLogTableFilterComposer
           }) => $$LocalOwnersTableFilterComposer(
             $db: $db,
             $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableFilterComposer get sourceAttemptId {
+    final $$AnswerAttemptsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceAttemptId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableFilterComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -51423,6 +54170,16 @@ class $$LearningDayLogTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -51437,6 +54194,29 @@ class $$LearningDayLogTableOrderingComposer
           }) => $$LocalOwnersTableOrderingComposer(
             $db: $db,
             $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableOrderingComposer get sourceAttemptId {
+    final $$AnswerAttemptsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceAttemptId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableOrderingComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -51469,6 +54249,16 @@ class $$LearningDayLogTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => column,
+  );
+
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -51483,6 +54273,29 @@ class $$LearningDayLogTableAnnotationComposer
           }) => $$LocalOwnersTableAnnotationComposer(
             $db: $db,
             $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableAnnotationComposer get sourceAttemptId {
+    final $$AnswerAttemptsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceAttemptId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -51506,7 +54319,7 @@ class $$LearningDayLogTableTableManager
           $$LearningDayLogTableUpdateCompanionBuilder,
           (LearningDayLogData, $$LearningDayLogTableReferences),
           LearningDayLogData,
-          PrefetchHooks Function({bool ownerId})
+          PrefetchHooks Function({bool ownerId, bool sourceAttemptId})
         > {
   $$LearningDayLogTableTableManager(
     _$AppDatabase db,
@@ -51527,12 +54340,18 @@ class $$LearningDayLogTableTableManager
                 Value<String> ownerId = const Value.absent(),
                 Value<String> learningDay = const Value.absent(),
                 Value<int> firstSessionAtUtcMs = const Value.absent(),
+                Value<String?> sourceAttemptId = const Value.absent(),
+                Value<String?> timezoneId = const Value.absent(),
+                Value<int?> policyVersion = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningDayLogCompanion(
                 id: id,
                 ownerId: ownerId,
                 learningDay: learningDay,
                 firstSessionAtUtcMs: firstSessionAtUtcMs,
+                sourceAttemptId: sourceAttemptId,
+                timezoneId: timezoneId,
+                policyVersion: policyVersion,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -51541,12 +54360,18 @@ class $$LearningDayLogTableTableManager
                 required String ownerId,
                 required String learningDay,
                 required int firstSessionAtUtcMs,
+                Value<String?> sourceAttemptId = const Value.absent(),
+                Value<String?> timezoneId = const Value.absent(),
+                Value<int?> policyVersion = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningDayLogCompanion.insert(
                 id: id,
                 ownerId: ownerId,
                 learningDay: learningDay,
                 firstSessionAtUtcMs: firstSessionAtUtcMs,
+                sourceAttemptId: sourceAttemptId,
+                timezoneId: timezoneId,
+                policyVersion: policyVersion,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -51557,7 +54382,7 @@ class $$LearningDayLogTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({ownerId = false}) {
+          prefetchHooksCallback: ({ownerId = false, sourceAttemptId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -51591,6 +54416,20 @@ class $$LearningDayLogTableTableManager
                               )
                               as T;
                     }
+                    if (sourceAttemptId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sourceAttemptId,
+                                referencedTable: $$LearningDayLogTableReferences
+                                    ._sourceAttemptIdTable(db),
+                                referencedColumn:
+                                    $$LearningDayLogTableReferences
+                                        ._sourceAttemptIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -51615,7 +54454,7 @@ typedef $$LearningDayLogTableProcessedTableManager =
       $$LearningDayLogTableUpdateCompanionBuilder,
       (LearningDayLogData, $$LearningDayLogTableReferences),
       LearningDayLogData,
-      PrefetchHooks Function({bool ownerId})
+      PrefetchHooks Function({bool ownerId, bool sourceAttemptId})
     >;
 typedef $$AssociationRecordsTableCreateCompanionBuilder =
     AssociationRecordsCompanion Function({
@@ -56154,6 +58993,7 @@ typedef $$LearningProfilesTableCreateCompanionBuilder =
       Value<int?> dailyMinutes,
       required String interestCodesJson,
       required int updatedAtUtcMs,
+      Value<String?> learningTimezoneId,
       Value<int> rowid,
     });
 typedef $$LearningProfilesTableUpdateCompanionBuilder =
@@ -56166,6 +59006,7 @@ typedef $$LearningProfilesTableUpdateCompanionBuilder =
       Value<int?> dailyMinutes,
       Value<String> interestCodesJson,
       Value<int> updatedAtUtcMs,
+      Value<String?> learningTimezoneId,
       Value<int> rowid,
     });
 
@@ -56240,6 +59081,11 @@ class $$LearningProfilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get learningTimezoneId => $composableBuilder(
+    column: $table.learningTimezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LocalOwnersTableFilterComposer get ownerId {
     final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -56308,6 +59154,11 @@ class $$LearningProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get learningTimezoneId => $composableBuilder(
+    column: $table.learningTimezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -56369,6 +59220,11 @@ class $$LearningProfilesTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get learningTimezoneId => $composableBuilder(
+    column: $table.learningTimezoneId,
     builder: (column) => column,
   );
 
@@ -56434,6 +59290,7 @@ class $$LearningProfilesTableTableManager
                 Value<int?> dailyMinutes = const Value.absent(),
                 Value<String> interestCodesJson = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<String?> learningTimezoneId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProfilesCompanion(
                 ownerId: ownerId,
@@ -56444,6 +59301,7 @@ class $$LearningProfilesTableTableManager
                 dailyMinutes: dailyMinutes,
                 interestCodesJson: interestCodesJson,
                 updatedAtUtcMs: updatedAtUtcMs,
+                learningTimezoneId: learningTimezoneId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -56456,6 +59314,7 @@ class $$LearningProfilesTableTableManager
                 Value<int?> dailyMinutes = const Value.absent(),
                 required String interestCodesJson,
                 required int updatedAtUtcMs,
+                Value<String?> learningTimezoneId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProfilesCompanion.insert(
                 ownerId: ownerId,
@@ -56466,6 +59325,7 @@ class $$LearningProfilesTableTableManager
                 dailyMinutes: dailyMinutes,
                 interestCodesJson: interestCodesJson,
                 updatedAtUtcMs: updatedAtUtcMs,
+                learningTimezoneId: learningTimezoneId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -58169,6 +61029,13 @@ class $AppDatabaseManager {
       $$SavedWordsTableTableManager(_db, _db.savedWords);
   $$WordReportsTableTableManager get wordReports =>
       $$WordReportsTableTableManager(_db, _db.wordReports);
+  $$ContentReportsTableTableManager get contentReports =>
+      $$ContentReportsTableTableManager(_db, _db.contentReports);
+  $$StudyReminderPreferencesTableTableManager get studyReminderPreferences =>
+      $$StudyReminderPreferencesTableTableManager(
+        _db,
+        _db.studyReminderPreferences,
+      );
   $$VocabularyImportsTableTableManager get vocabularyImports =>
       $$VocabularyImportsTableTableManager(_db, _db.vocabularyImports);
   $$VocabularyImportRowsTableTableManager get vocabularyImportRows =>

@@ -9,10 +9,15 @@ final class EmailVerificationArgs {
 }
 
 final class AppPage<T> {
-  const AppPage({required this.name, required this.builder});
+  const AppPage({
+    required this.name,
+    required this.builder,
+    this.reduceMotion = false,
+  });
 
   final String name;
   final WidgetBuilder builder;
+  final bool reduceMotion;
 }
 
 abstract final class AppNavigator {
@@ -55,15 +60,39 @@ abstract final class AppNavigator {
     bool replace = false,
     ValueChanged<Route<T>>? onRouteCreated,
   }) {
-    final route = MaterialPageRoute<T>(
-      settings: RouteSettings(name: page.name),
-      builder: page.builder,
-    );
+    final settings = RouteSettings(name: page.name);
+    final route =
+        page.reduceMotion ||
+            (MediaQuery.maybeOf(context)?.disableAnimations ?? false)
+        ? _ReducedMotionPageRoute<T>(settings: settings, builder: page.builder)
+        : MaterialPageRoute<T>(settings: settings, builder: page.builder);
     onRouteCreated?.call(route);
     return replace
         ? Navigator.of(context).pushReplacement<T, T>(route)
         : Navigator.of(context).push<T>(route);
   }
+}
+
+class _ReducedMotionPageRoute<T> extends MaterialPageRoute<T> {
+  _ReducedMotionPageRoute({required super.settings, required super.builder});
+  @override
+  TickerFuture didPush() {
+    final result = super.didPush();
+    // The launching control may detach in the same frame as an instant push.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = subtreeContext;
+      if (isCurrent && context != null && context.mounted) {
+        final scope = FocusScope.of(context);
+        if (!scope.hasFocus) scope.requestFocus();
+      }
+    });
+    return result;
+  }
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
 }
 
 extension AppRoutePath on AppRoute {

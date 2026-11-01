@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../config/m3_theme.dart';
+import '../features/content_reports/presentation/content_report_inbox.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/progress/application/review_center_use_cases.dart';
 import '../features/progress/domain/review_center_models.dart';
@@ -520,6 +521,12 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
             wordReports: _reports,
             languageCode: widget.languageCode,
           ),
+          'content-reports' => ContentReportInbox(
+            expectedOwnerId: owner,
+            reports: _dependencies!.contentReports!,
+            ownerChanges: owners,
+            languageCode: widget.languageCode,
+          ),
           _ => LearningHistoryScreen(
             ownerChanges: owners,
             loader: ({before}) => review.progress.loadHistoryForOwner(
@@ -758,6 +765,15 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
           _reports != null,
         ),
         (
+          'content-reports',
+          'review-center-content-reports',
+          _text(
+            'กล่องรายงานเนื้อหาและใบรับเรื่อง',
+            'Content reports and receipts',
+          ),
+          _dependencies?.contentReports != null,
+        ),
+        (
           'history',
           'review-center-history',
           _text('ประวัติการเรียน', 'Learning history'),
@@ -864,7 +880,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         child: ExpansionTile(
           key: ValueKey('review-center-report:${row.reportId}'),
           title: Text(
-            _text('รายงานในเครื่อง · ยังไม่ได้ส่ง', 'Local report · Not sent.'),
+            _text('รายงานที่บันทึกในเครื่อง', 'Report saved on this device'),
           ),
           subtitle: Text(row.report.target.spelling),
           childrenPadding: const EdgeInsets.all(16),
@@ -873,6 +889,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
               WordReportDetails(
                 report: row.report,
                 languageCode: widget.languageCode,
+                showLocalOnlyNotice: false,
               ),
           ],
         ),

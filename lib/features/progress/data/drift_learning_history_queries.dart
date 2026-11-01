@@ -29,10 +29,16 @@ final class DriftLearningHistoryQueries {
           .customSelect(
             '''
   SELECT id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms,
-         (accepted_plan_id IS NOT NULL AND accepted_plan_json IS NOT NULL
-          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_quiz
+         (accepted_plan_id LIKE 'quiz-plan:%' AND accepted_plan_json IS NOT NULL
+          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_quiz,
+         (accepted_plan_id LIKE 'native-plan-v1:%' AND accepted_plan_json IS NOT NULL
+          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_native,
+         (accepted_plan_id LIKE 'matching-plan-v1:%' AND accepted_plan_json IS NOT NULL
+          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_matching
   FROM learning_sessions
   WHERE owner_id = ? AND activity_type <> 'assessment'
+  AND NOT EXISTS (SELECT 1 FROM assessment_runs r WHERE r.learning_session_id = learning_sessions.id)
+  AND NOT EXISTS (SELECT 1 FROM measurement_opportunities m WHERE m.learning_session_id = learning_sessions.id)
   ${before == null ? '' : 'AND (started_at_utc_ms < ? OR (started_at_utc_ms = ? AND id < ?))'}
   ORDER BY started_at_utc_ms DESC, id DESC
   LIMIT ?
@@ -46,7 +52,12 @@ final class DriftLearningHistoryQueries {
               ],
               Variable.withInt(pageSize + 1),
             ],
-            readsFrom: {database.learningSessions, database.answerAttempts},
+            readsFrom: {
+              database.learningSessions,
+              database.answerAttempts,
+              database.assessmentRuns,
+              database.measurementOpportunities,
+            },
           )
           .get();
       final pageAttempts =
@@ -92,6 +103,8 @@ final class DriftLearningHistoryQueries {
               answerCount: answerCounts[row.read<String>('id')]?.$1 ?? 0,
               correctCount: answerCounts[row.read<String>('id')]?.$2 ?? 0,
               hasAcceptedQuiz: row.read<int>('has_accepted_quiz') == 1,
+              hasAcceptedNative: row.read<int>('has_accepted_native') == 1,
+              hasAcceptedMatching: row.read<int>('has_accepted_matching') == 1,
             ),
           )
           .toList(growable: false);
@@ -114,13 +127,20 @@ FROM answer_attempts a
 INNER JOIN learning_sessions s ON s.id = a.session_id AND s.owner_id = a.owner_id
 WHERE a.owner_id = ? AND a.occurred_at_utc_ms >= ? AND a.occurred_at_utc_ms < ?
   AND s.activity_type <> 'assessment'
+  AND NOT EXISTS (SELECT 1 FROM assessment_runs r WHERE r.learning_session_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM measurement_opportunities m WHERE m.learning_session_id = s.id)
 ''',
             variables: [
               Variable.withString(ownerId),
               Variable.withInt(firstDay.toUtc().millisecondsSinceEpoch),
               Variable.withInt(tomorrow.toUtc().millisecondsSinceEpoch),
             ],
-            readsFrom: {database.learningSessions, database.answerAttempts},
+            readsFrom: {
+              database.learningSessions,
+              database.answerAttempts,
+              database.assessmentRuns,
+              database.measurementOpportunities,
+            },
           )
           .get();
       final counts = <DateTime, int>{};

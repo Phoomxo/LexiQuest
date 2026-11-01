@@ -8,6 +8,7 @@ import 'features/account/domain/account_contracts.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
 import 'runtime/app_runtime_status.dart';
+import 'runtime/registries/feature.dart';
 import 'features/rewards/domain/reward_models.dart';
 import 'features/sync/application/sync_trigger.dart';
 import 'features/sync/platform/background_sync_scheduler.dart';
@@ -62,6 +63,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _appAppearance = widget.appearance ?? AppAppearanceController.system();
     _appearanceStream = widget.dependencies.rewards?.watchAppearance();
     WidgetsBinding.instance.addObserver(this);
+    _updateMotivationForeground();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final trigger = widget.dependencies.syncTrigger;
@@ -73,6 +75,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _updateMotivationForeground(state);
     if (state == AppLifecycleState.resumed) {
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
@@ -90,7 +93,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didUpdateWidget(covariant MyApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.dependencies, widget.dependencies)) {
+      oldWidget.dependencies.motivation?.setForeground(false);
+      oldWidget.dependencies.studyReminders?.setForeground(false);
       _appearanceStream = widget.dependencies.rewards?.watchAppearance();
+      _updateMotivationForeground();
       unawaited(oldWidget.dependencies.dispose());
     }
   }
@@ -98,9 +104,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.dependencies.motivation?.setForeground(false);
+    widget.dependencies.studyReminders?.setForeground(false);
     if (_ownsAppAppearance) _appAppearance.dispose();
     unawaited(widget.dependencies.dispose());
     super.dispose();
+  }
+
+  void _updateMotivationForeground([AppLifecycleState? state]) {
+    final dependencies = widget.dependencies;
+    dependencies.studyReminders?.setForeground(
+      (state ?? WidgetsBinding.instance.lifecycleState) ==
+          AppLifecycleState.resumed,
+    );
+    dependencies.motivation?.setForeground(
+      (state ?? WidgetsBinding.instance.lifecycleState) ==
+              AppLifecycleState.resumed &&
+          dependencies.features.isVisible(Feature.questV2),
+    );
   }
 
   @override

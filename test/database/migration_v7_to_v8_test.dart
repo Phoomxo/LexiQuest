@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports current schema version 23', () async {
+    test('fresh database reports current schema version 25', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,11 +68,11 @@ void main() {
           .getSingle();
       expect(
         version,
-        23,
+        25,
         reason:
             'current schema retains quest and evidence tables with assignments',
       );
-      expect(db.allTables, hasLength(43));
+      expect(db.allTables, hasLength(45));
       expect(
         await db.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,

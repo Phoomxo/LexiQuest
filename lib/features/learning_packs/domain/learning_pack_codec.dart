@@ -317,7 +317,7 @@ LearningPackMetadata _metadata(Map<String, Object?> value) {
 }
 
 LearningPackEntry _entry(Object? raw) {
-  final value = _object(raw, const {
+  final value = _object(raw, {
     'code',
     'spelling',
     'meaning',
@@ -329,6 +329,7 @@ LearningPackEntry _entry(Object? raw) {
     'hint',
     'strategy',
     'definitionQuestion',
+    if (raw is Map && raw.containsKey('lexicalDetails')) 'lexicalDetails',
   });
   final examples = <LearningPackExample>[];
   for (final rawExample in _list(value['examples'], 0, 5)) {
@@ -363,6 +364,43 @@ LearningPackEntry _entry(Object? raw) {
     hint: _optionalText(value['hint'], 500),
     strategy: _optionalText(value['strategy'], 1000),
     definitionQuestion: question,
+    lexicalDetails: value.containsKey('lexicalDetails')
+        ? _lexicalDetails(value['lexicalDetails'])
+        : null,
+  );
+}
+
+LearningPackLexicalDetails _lexicalDetails(Object? raw) {
+  final value = _object(raw, const {
+    'schemaVersion',
+    'ipa',
+    'synonyms',
+    'antonyms',
+  });
+  if (value['schemaVersion'] is! int || value['schemaVersion'] != 1) {
+    _packFail(LearningPackFailureCode.unsupportedVersion);
+  }
+  List<String> relations(Object? raw) {
+    final values = [
+      for (final value in _list(raw, 0, 12)) _canonicalText(value, 120),
+    ];
+    if (values.map((value) => value.toLowerCase()).toSet().length !=
+        values.length) {
+      _packFail(LearningPackFailureCode.duplicateIdentity);
+    }
+    return values;
+  }
+
+  final ipa = _optionalText(value['ipa'], 120);
+  final synonyms = relations(value['synonyms']);
+  final antonyms = relations(value['antonyms']);
+  if (ipa == null && synonyms.isEmpty && antonyms.isEmpty) {
+    _packFail(LearningPackFailureCode.invalidFormat);
+  }
+  return LearningPackLexicalDetails(
+    ipa: ipa,
+    synonyms: synonyms,
+    antonyms: antonyms,
   );
 }
 

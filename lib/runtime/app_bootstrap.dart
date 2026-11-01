@@ -18,6 +18,9 @@ import 'package:uuid/uuid.dart';
 import '../ai/ai_service_factory.dart';
 import 'configured_research_transport_factory.dart';
 import 'firebase_research_identity.dart';
+import 'content_report_composition.dart';
+import '../features/content_reports/application/content_report_use_cases.dart';
+import '../features/content_reports/data/drift_content_report_queue.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../data/local/shared_preferences_account_deletion_journal.dart';
@@ -65,9 +68,11 @@ import '../features/identity/domain/local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/matching_use_cases.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/learning_time/data/drift_learning_time_repository.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/data/drift_recall_ladder_reader.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/data/plugin_device_permission_access.dart';
@@ -91,6 +96,8 @@ import '../features/sync/data/drift_cloud_policy_cache.dart';
 import '../features/sync/data/drift_sync_store.dart';
 import '../features/sync/data/firestore_sync_gateway.dart';
 import '../features/sync/domain/sync_gateway.dart';
+import '../features/study_reminders/application/study_reminder_runtime.dart';
+import '../features/study_reminders/data/method_channel_study_reminder_platform.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/saved_words_use_cases.dart';
 import '../features/vocabulary/application/word_report_use_cases.dart';
@@ -104,6 +111,7 @@ import '../features/vocabulary/data/drift_word_report_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
+import 'motivation_runtime.dart';
 import 'app_runtime_status.dart';
 import 'registries/drift_consent_registry.dart';
 import 'research_transport_composition.dart';
@@ -113,6 +121,11 @@ typedef StudyArchiveFactory =
     ControlledStudyArchiveUseCases Function(StudyRuntime study);
 typedef BillingRuntimeFactory =
     Future<BillingComposition> Function(AppDatabase database, Uri baseUri);
+typedef ContentReportRuntimeFactory =
+    Future<ContentReportComposition> Function(
+      AppDatabase database,
+      Uri baseUri,
+    );
 typedef RuntimeInitializer = Future<void> Function();
 typedef FirebaseAppCheckTokenLoader = Future<String?> Function();
 typedef AppConfigLoader = AppConfig Function();
@@ -348,6 +361,8 @@ final class AppBootstrap {
     this.researchTransportFactory,
     this.billingEnabled = false,
     this.billingFactory,
+    this.contentReportsEnabled = false,
+    this.contentReportFactory,
     this.learningPackCatalog = const [],
   });
 
@@ -427,6 +442,15 @@ final class AppBootstrap {
         baseUri: baseUri,
         auth: FirebaseAuth.instance,
       ),
+      contentReportsEnabled: const bool.fromEnvironment(
+        'LEXIQUEST_CONTENT_REPORTS_ENABLED',
+      ),
+      contentReportFactory: (database, baseUri) =>
+          createProductionContentReports(
+            database: database,
+            baseUri: baseUri,
+            auth: FirebaseAuth.instance,
+          ),
     );
   }
 
@@ -435,6 +459,8 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
+  final bool contentReportsEnabled;
+  final ContentReportRuntimeFactory? contentReportFactory;
   final ContentServiceFactory? contentServiceFactory;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
@@ -618,10 +644,15 @@ final class AppBootstrap {
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final reportQueue = DriftContentReportQueue(
+      database: database,
+      ownerWrites: ownerWrites,
+    );
     final wordReports = WordReportUseCases(
       repository: DriftWordReportRepository(
         database: database,
         ownerWriteCoordinator: ownerWrites,
+        contentReports: reportQueue,
       ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
@@ -722,12 +753,50 @@ final class AppBootstrap {
     LearningPackUseCases? learningPacks;
     HttpLearningPackSource? learningPackDownloads;
     BillingComposition? billingComposition;
+    ContentReportComposition? contentReportComposition;
+    MotivationRuntime? motivation;
+    StudyReminderRuntime? studyReminders;
     final learningTimeClock = Stopwatch();
     try {
+      var contentReports = ContentReportUseCases(
+        queue: reportQueue,
+        ordinarySessionGuard: reportQueue.requireOrdinarySession,
+        generateId: idGenerator.v4,
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      final createReports = contentReportFactory;
+      if (contentReportsEnabled &&
+          createReports != null &&
+          config != null &&
+          firebase == RuntimeAvailability.ready) {
+        try {
+          contentReportComposition = await createReports(
+            database,
+            config.aiApiBaseUri,
+          );
+          contentReports = contentReportComposition.useCases;
+        } on Object {
+          await contentReportComposition?.dispose();
+          contentReportComposition = null;
+        }
+      }
+      final packRepository = DriftLearningPackRepository(
+        database: database,
+        ownerWrites: ownerWrites,
+      );
+      final ordinaryMotivation = motivation = MotivationRuntime(
+        database: database,
+        ownerWrites: ownerWrites,
+        owners: localOwners,
+        nowUtc: () => DateTime.now().toUtc(),
+        generateId: idGenerator.v4,
+        onLocalMutation: notifyLocalMutation,
+      );
       final learningRepository = DriftLearningRepository(
         database,
         ownerWrites: ownerWrites,
         lifecycleObserver: studyObserver,
+        lexicalContent: packRepository,
       );
       learning = LearningUseCases(
         owners: localOwners,
@@ -737,10 +806,48 @@ final class AppBootstrap {
         buildInfo: const AppBuildInfo.fromEnvironment(),
         onLocalMutation: notifyLocalMutation,
         contentProvider: contentService,
+        beforeOrdinaryAnswer:
+            ({
+              required expectedOwnerId,
+              required sessionId,
+              required stillCurrent,
+            }) async {
+              try {
+                await ordinaryMotivation.beforeLearningAnswer(
+                  ownerId: expectedOwnerId,
+                  sessionId: sessionId,
+                  stillCurrent: stillCurrent,
+                );
+              } on Object {
+                // Optional Quest activation cannot turn a learning write into failure.
+              }
+            },
+        questEventSink: (event) => ordinaryMotivation.afterLearningAnswer(
+          ownerId: event.ownerIdentity,
+          sessionId: event.aggregateId,
+          stillCurrent: () =>
+              !ordinaryMotivation.isRetired &&
+              ordinaryMotivation.isForeground &&
+              ordinaryMotivation.currentOwnerId == event.ownerIdentity,
+        ),
+      );
+      final matching = MatchingUseCases(
+        repository: DriftMatchingRepository(learningRepository),
+        generateId: idGenerator.v4,
+        nowUtc: () => DateTime.now().toUtc(),
+        buildInfo: const AppBuildInfo.fromEnvironment(),
+        onLocalMutation: notifyLocalMutation,
       );
       final progress = ProgressUseCases(
         owners: localOwners,
         queries: DriftProgressQueries(database),
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      studyReminders = StudyReminderRuntime(
+        database: database,
+        ownerWrites: ownerWrites,
+        ownerChanges: progress.watchActiveOwnerId(),
+        platform: const MethodChannelStudyReminderPlatform(),
         nowUtc: () => DateTime.now().toUtc(),
       );
       learningTimeClock.start();
@@ -764,7 +871,7 @@ final class AppBootstrap {
       );
       final rewards = RewardUseCases(
         owners: localOwners,
-        repository: DriftRewardRepository(database),
+        repository: DriftRewardRepository(database, ownerWrites: ownerWrites),
         generateId: idGenerator.v4,
         nowUtc: () => DateTime.now().toUtc(),
         onLocalMutation: notifyLocalMutation,
@@ -793,10 +900,7 @@ final class AppBootstrap {
         catalog: learningPackCatalog,
       );
       learningPacks = LearningPackUseCases(
-        repository: DriftLearningPackRepository(
-          database: database,
-          ownerWrites: ownerWrites,
-        ),
+        repository: packRepository,
         nowUtc: () => DateTime.now().toUtc(),
         generateId: idGenerator.v4,
         onLocalMutation: notifyLocalMutation,
@@ -970,10 +1074,19 @@ final class AppBootstrap {
         syncTrigger: syncTrigger,
         syncStatus: syncStore,
         learning: learning,
+        matching: matching,
+        studyReminders: studyReminders,
+        recallLadder: DriftRecallLadderReader(
+          database: database,
+          ownerWrites: ownerWrites,
+        ),
         learningTime: learningTime,
         learningProfile: learningProfile,
         learningPacks: learningPacks,
         learningPackDownloads: learningPackDownloads,
+        motivation: ordinaryMotivation,
+        quest: ordinaryMotivation.quest,
+        streak: ordinaryMotivation.streak,
         billing: billingComposition?.useCases,
         entitlements: billingComposition == null
             ? const NoOpEntitlementRegistry()
@@ -986,6 +1099,7 @@ final class AppBootstrap {
         vocabulary: vocabulary,
         savedWords: savedWords,
         wordReports: wordReports,
+        contentReports: contentReports,
         vocabularyImporter: vocabularyImporter,
         vocabularyImportFilePicker:
             FileSelectorVocabularyImportFilePicker().pick,
@@ -1008,6 +1122,9 @@ final class AppBootstrap {
         speechPractice: speechPractice,
         disposeResources: () async {
           try {
+            await motivation?.dispose();
+            await studyReminders?.dispose();
+            await contentReportComposition?.dispose();
             await researchTransport?.dispose();
             await learningTime?.dispose();
             await learningProfile?.dispose();
@@ -1037,6 +1154,9 @@ final class AppBootstrap {
       );
     } on Object {
       try {
+        await motivation?.dispose();
+        await studyReminders?.dispose();
+        await contentReportComposition?.dispose();
         await researchTransport?.dispose();
         await learningTime?.dispose();
         await learningProfile?.dispose();

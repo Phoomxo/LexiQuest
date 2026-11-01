@@ -57,9 +57,7 @@ class QuestDefinitions extends Table {
 /// Owner-scoped; included in [ownerUpgradeInventory] so guest→user upgrade
 /// carries quest progress forward.
 ///
-/// The unique constraint on `(owner_id, quest_id)` prevents duplicate active
-/// instances for the same quest.  When a quest is completed/expired it remains
-/// in the table with a terminal state so history is preserved.
+/// Each pinned civil period retains its terminal history independently.
 class QuestInstances extends Table {
   /// Primary key: matches [QuestInstance.instanceId].
   TextColumn get instanceId => text()();
@@ -78,13 +76,25 @@ class QuestInstances extends Table {
   IntColumn get completedAtUtcMs => integer().nullable()();
   IntColumn get expiredAtUtcMs => integer().nullable()();
 
+  TextColumn get periodKey => text().withDefault(const Constant('legacy'))();
+  TextColumn get periodJson => text().nullable()();
+  TextColumn get definitionSnapshotJson => text().nullable()();
+  TextColumn get definitionSha256 => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {instanceId};
 
-  /// One active instance per quest per owner.
   @override
   List<Set<Column>> get uniqueKeys => [
-    {ownerId, questId},
+    {ownerId, questId, periodKey},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (length(period_key) BETWEEN 1 AND 256)',
+    "CHECK ((period_key LIKE 'legacy%' AND period_json IS NULL AND definition_snapshot_json IS NULL AND definition_sha256 IS NULL) OR (period_json IS NOT NULL AND definition_snapshot_json IS NOT NULL AND definition_sha256 IS NOT NULL AND length(definition_sha256) = 64))",
+    'CHECK (period_json IS NULL OR length(CAST(period_json AS BLOB)) BETWEEN 1 AND 2048)',
+    'CHECK (definition_snapshot_json IS NULL OR length(CAST(definition_snapshot_json AS BLOB)) BETWEEN 1 AND 16384)',
   ];
 }
 

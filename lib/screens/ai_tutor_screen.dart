@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config/m3_theme.dart';
+import '../features/content_reports/domain/content_report.dart';
+import '../features/content_reports/presentation/content_report_button.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_time_admission.dart';
@@ -28,12 +30,16 @@ final class ChatMessage {
     required this.text,
     required this.isUser,
     this.model,
+    this.replyId,
+    this.generatedAtUtc,
   });
 
   final String sender;
   final String text;
   final bool isUser;
   final String? model;
+  final String? replyId;
+  final DateTime? generatedAtUtc;
 }
 
 final class TutorWordDraft {
@@ -403,6 +409,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
             text: reply.text,
             isUser: false,
             model: reply.model,
+            replyId: _timeDisplay,
+            generatedAtUtc: reply.generatedAtUtc,
           ),
         );
       });
@@ -1012,6 +1020,56 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodySmall,
+                                      ),
+                                    if (!message.isUser &&
+                                        message.model != null &&
+                                        message.replyId != null &&
+                                        message.generatedAtUtc != null &&
+                                        widget.timeCallerContext ==
+                                            LearningTimeCallerContext
+                                                .ordinary &&
+                                        _tutor?.scope?.ownerId != null)
+                                      ContentReportButton.content(
+                                        key: ValueKey(
+                                          'content-report-tutor:${message.replyId}',
+                                        ),
+                                        expectedOwnerId: _tutor!.scope!.ownerId,
+                                        sourceIdentity: (
+                                          message.replyId,
+                                          message.model,
+                                          message.generatedAtUtc,
+                                        ),
+                                        sourceText: message.text,
+                                        callerContext: widget.timeCallerContext,
+                                        canOpen: () =>
+                                            mounted &&
+                                            !_sending &&
+                                            _messages.contains(message) &&
+                                            _visibleScope == _tutor?.scope &&
+                                            (ModalRoute.of(
+                                                  context,
+                                                )?.isCurrent ??
+                                                false),
+                                        beforeOpen: _cancelAudioForLifecycle,
+                                        revalidateSource: (current) async {
+                                          if (!current() ||
+                                              !_messages.contains(message) ||
+                                              _visibleScope != _tutor?.scope) {
+                                            throw StateError(
+                                              'The assistant reply is no longer current',
+                                            );
+                                          }
+                                        },
+                                        targetForSelection: (text, excerpt) =>
+                                            ContentReportTarget.tutorReply(
+                                              text: text,
+                                              isExcerpt: excerpt,
+                                              replyId: message.replyId!,
+                                              modelVersion: message.model!,
+                                              generatedAtUtcMs: message
+                                                  .generatedAtUtc!
+                                                  .millisecondsSinceEpoch,
+                                            ),
                                       ),
                                   ],
                                 ),

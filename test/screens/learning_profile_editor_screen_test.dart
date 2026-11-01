@@ -61,6 +61,18 @@ void main() {
           find.byKey(const ValueKey('learning-profile-date')),
           '2026-12-31',
         );
+        final zone = find.byKey(const ValueKey('learning-profile-timezone-0'));
+        await tester.ensureVisible(zone);
+        await tester.tap(zone);
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('Asia/Bangkok'),
+          250,
+          scrollable: find.byType(Scrollable).last,
+          maxScrolls: 80,
+        );
+        await tester.tap(find.text('Asia/Bangkok').last);
+        await tester.pumpAndSettle();
         await tester.ensureVisible(
           find.byKey(const ValueKey('learning-profile-save')),
         );
@@ -73,6 +85,7 @@ void main() {
         ))!;
         expect(stored.read<String>('goal_text'), 'Synthetic retained goal');
         expect(stored.read<String>('target_date'), '2026-12-31');
+        expect(stored.read<String>('learning_timezone_id'), 'Asia/Bangkok');
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.runAsync(() async {
           await profile.dispose();
@@ -312,6 +325,13 @@ void main() {
     await tester.pumpAndSettle();
     final original = repository.changes.single;
     expect(find.text('ลองบันทึกเดิมอีกครั้ง'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('learning-profile-save')),
+    );
+    expect(
+      find.byKey(const ValueKey('learning-profile-save')).hitTestable(),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('learning-profile-save')));
     await tester.pumpAndSettle();
     expect(repository.changes.length, 2);

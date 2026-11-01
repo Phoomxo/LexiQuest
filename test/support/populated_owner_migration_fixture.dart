@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
@@ -80,20 +82,22 @@ Future<void> populateOwnerMigrationFacts(OpportunityFixture fixture) async {
     sessionId: pending.sessionId,
     expectedOwnerId: 'owner-a',
     expectedRevision: pending.checkpointRevision,
-    checkpoint: PendingQuizAnswer(
-      planId: pending.plan.id,
-      questionOrdinal: 0,
-      assistance: assistance,
-      answer: QuizAnswerReceipt.capture(
-        plan: pending.plan,
-        ownerId: 'owner-a',
-        attemptId: 'synthetic-retained-unsubmitted-answer',
+    checkpoint: pending.bindCheckpointWrite(
+      PendingQuizAnswer(
+        planId: pending.plan.id,
         questionOrdinal: 0,
-        selectedOptionOrdinal: null,
-        revealed: true,
         assistance: assistance,
-        occurredAtUtcMs: participationStart.millisecondsSinceEpoch + 15,
-        responseTimeMs: null,
+        answer: QuizAnswerReceipt.capture(
+          plan: pending.plan,
+          ownerId: 'owner-a',
+          attemptId: 'synthetic-retained-unsubmitted-answer',
+          questionOrdinal: 0,
+          selectedOptionOrdinal: null,
+          revealed: true,
+          assistance: assistance,
+          occurredAtUtcMs: participationStart.millisecondsSinceEpoch + 15,
+          responseTimeMs: null,
+        ),
       ),
     ),
   );
@@ -373,4 +377,98 @@ Future<Map<String, List<Map<String, Object?>>>> ownerMigrationRows(
               .get())
         Map<String, Object?>.from(row.data),
     ],
+};
+
+Future<Map<String, List<Map<String, Object?>>>> ownerMigrationRowsBeforeV24(
+  AppDatabase database,
+) async {
+  final rows = await ownerMigrationRows(database);
+  for (final table in ['content_reports', 'study_reminder_preferences']) {
+    expect(
+      rows.remove(table),
+      isEmpty,
+      reason: 'A historical fixture must not discard new-table facts: $table',
+    );
+  }
+  for (final table in rows.entries) {
+    for (final row in table.value) {
+      for (final column
+          in _motivationV24Columns[table.key] ?? const <String>[]) {
+        row.remove(column);
+      }
+    }
+  }
+  return rows;
+}
+
+void expectHistoricalOwnerMigrationRows(
+  Map<String, List<Map<String, Object?>>> actual,
+  Map<String, List<Map<String, Object?>>> before,
+) {
+  for (final table in before.entries) {
+    final after = actual[table.key]!;
+    expect(after, hasLength(table.value.length), reason: table.key);
+    for (var index = 0; index < table.value.length; index++) {
+      final old = table.value[index];
+      final current = after[index];
+      expect(
+        {for (final key in old.keys) key: current[key]},
+        old,
+        reason: '${table.key} row$index retains every old field',
+      );
+      for (final column
+          in _motivationV24Columns[table.key] ?? const <String>[]) {
+        if (old.containsKey(column)) continue;
+        expect(
+          current[column],
+          column == 'period_key' ? 'legacy:${current['instance_id']}' : isNull,
+          reason: '${table.key} row$index must not invent $column proof',
+        );
+      }
+    }
+  }
+}
+
+void expectHistoricalMigrationObjects(
+  Map<String, String> before,
+  Map<String, String> after,
+) {
+  final genuineV24 = File('test/fixtures/schema_v24.sql').readAsLinesSync();
+  for (final object in before.entries) {
+    if (_motivationV24Columns.containsKey(object.key)) {
+      final expected = genuineV24.singleWhere(
+        (line) =>
+            line.startsWith('CREATE TABLE "${object.key}" ') ||
+            line.startsWith('CREATE TABLE ${object.key} '),
+      );
+      expect(
+        after[object.key],
+        expected.substring(0, expected.length - 1),
+        reason: 'Use the genuine v24 migration DDL for ${object.key}',
+      );
+    } else if (object.key == 'learning_time_scopes') {
+      expect(
+        after[object.key]?.replaceAll(",'matching'", ''),
+        object.value,
+        reason: 'Only the approved v25 source-kind CHECK changes',
+      );
+    } else {
+      expect(
+        after[object.key],
+        object.value,
+        reason: 'Retain exact unaffected DDL ${object.key}',
+      );
+    }
+  }
+}
+
+const _motivationV24Columns = {
+  'quest_instances': [
+    'period_key',
+    'period_json',
+    'definition_snapshot_json',
+    'definition_sha256',
+  ],
+  'learning_day_log': ['source_attempt_id', 'timezone_id', 'policy_version'],
+  'learning_profiles': ['learning_timezone_id'],
 };

@@ -463,9 +463,7 @@ final class _Fixture {
     );
     final streak = StreakUseCases(
       repository: DriftStreakRepository(database),
-      owners: owners,
       nowUtc: () => _now,
-      timezoneId: 'Asia/Bangkok',
     );
     useCases = LearningUseCases(
       owners: owners,
@@ -486,7 +484,7 @@ final class _Fixture {
       },
       streakEventSink: () async {
         streakCalls++;
-        await streak.recordLearningDay();
+        await streak.getCurrentStreak();
       },
     );
   }

@@ -40,7 +40,7 @@ void main() {
       final before = (await tester.runAsync(
         () => ownerMigrationRows(fixture.database),
       ))!;
-      expect(before, hasLength(43));
+      expect(before, hasLength(45));
       try {
         await tester.pumpWidget(
           _app(

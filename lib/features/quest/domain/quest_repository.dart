@@ -24,6 +24,26 @@ abstract interface class QuestRepository {
   /// An exact identity replay preserves existing state and objective rows.
   Future<void> startInstance(QuestInstance instance);
 
+  Future<QuestInstance?> assignCurrentPeriod({
+    required String ownerId,
+    required QuestDefinition definition,
+    required String instanceId,
+    required DateTime assignedAtUtc,
+    required String timezoneId,
+    required bool Function() stillCurrent,
+  });
+
+  Future<List<QuestCompletedEvent>> reconcile({
+    required String expectedOwnerId,
+    required List<QuestDefinition> catalog,
+    required bool Function() stillCurrent,
+  });
+
+  Future<List<QuestCompletionReceipt>> readValidatedCompletions({
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  });
+
   /// Return all instances with state 'active' for [ownerId].
   Future<List<QuestInstance>> getActiveInstances(String ownerId);
 

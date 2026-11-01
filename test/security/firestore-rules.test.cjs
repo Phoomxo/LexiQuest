@@ -1162,6 +1162,30 @@ describe('field sync ownership and atomic revision contract', () => {
 });
 
 describe('ordinary answer evidence v2 contract', () => {
+  for (const [promptMode, evidenceClass] of [
+    ['definitionChoice', 'recognition'],
+    ['definitionTyped', 'independentRecall'],
+  ]) {
+    it(`accepts ${promptMode} metadata and rejects private response fields`, async () => {
+      const evidenceContext = {
+        ...ordinaryAttemptEvidence(),
+        evidenceClass,
+        skillId: 'definition-recall',
+        contentRevision: `lexical-definition-v1:${'a'.repeat(64)}`,
+      };
+      const payload = { ...evidenceAttemptPayload(evidenceContext), promptMode };
+      await assertSucceeds(writeFieldLearningEvent(authDb(), { schemaVersion: 2, payload }));
+      for (const field of ['typedResponse', 'draft', 'acceptedPlanJson', 'definition']) {
+        await assertFails(writeFieldLearningEvent(authDb(), {
+          schemaVersion: 2,
+          entityId: `private-${field}`,
+          operationId: `private-operation-${field}`,
+          payload: { ...payload, [field]: 'PRIVATE_SYNTHETIC_LEXICAL_CANARY' },
+        }));
+      }
+    });
+  }
+
   it('accepts declared ordinary metadata with matching immutable operation schema', async () => {
     const db = authDb();
     await assertSucceeds(writeFieldLearningEvent(db, {
@@ -1269,10 +1293,11 @@ describe('ordinary answer evidence v2 contract', () => {
   });
 });
 
-describe('server-only billing and Research namespaces', () => {
+describe('server-only billing, reports and Research namespaces', () => {
   for (const collection of [
     'billing_accounts', 'billing_purchases', 'billing_usage', 'billing_usage_windows',
     'research_enrollments', 'research_consents', 'research_study_archives',
+    'content_reports', 'content_report_limits',
   ]) {
     it(`denies client access to ${collection}`, async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {

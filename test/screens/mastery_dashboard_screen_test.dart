@@ -657,7 +657,7 @@ void main() {
               ),
             );
         final beforeA = (await tester.runAsync(() => _databaseSnapshot(db)))!;
-        expect(beforeA, hasLength(43));
+        expect(beforeA, hasLength(45));
         await tester.pumpWidget(app(depsA, streamA));
         await _waitFor(
           tester,
@@ -683,7 +683,7 @@ void main() {
           }),
         );
         final beforeB = (await tester.runAsync(() => _databaseSnapshot(db)))!;
-        expect(beforeB, hasLength(43));
+        expect(beforeB, hasLength(45));
         expect(find.byType(WeaknessClinicScreen), findsNothing);
         await _popCapturedChild(tester, capturedChild);
         await _waitFor(

@@ -12,6 +12,44 @@ import 'package:vocab_learning_app/features/learning_profile/data/drift_learning
 import 'package:vocab_learning_app/features/learning_profile/domain/learning_profile.dart';
 
 void main() {
+  test(
+    'timezone is owner-scoped durable preference with exact retry and explicit clearing',
+    () async {
+      final h = await _Harness.open();
+      addTearDown(h.close);
+      final draft = LearningProfileDraft(
+        onboardingState: LearningOnboardingState.completed,
+        learningTimezoneId: 'America/New_York',
+      );
+      final change = h.change(draft: draft);
+      await h.repository.save(change);
+      final after = await _snapshot(h.database);
+      final replay = await h.repository.save(change);
+      expect(replay.draft.learningTimezoneId, 'America/New_York');
+      expect(await _snapshot(h.database), after);
+      final read = await h.repository.read(
+        expectedOwnerId: 'a',
+        stillCurrent: () => true,
+      );
+      expect(read.profile!.draft.learningTimezoneId, 'America/New_York');
+      expect(after['learning_profiles']!.single['owner_id'], 'a');
+      await h.repository.save(
+        h.change(
+          revision: 1,
+          draft: LearningProfileDraft(
+            onboardingState: LearningOnboardingState.completed,
+          ),
+        ),
+      );
+      expect(
+        (await h.repository.read(
+          expectedOwnerId: 'a',
+          stillCurrent: () => true,
+        )).profile!.draft.learningTimezoneId,
+        isNull,
+      );
+    },
+  );
   test('inactive owner cannot save a profile or mutate any table', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -263,6 +301,7 @@ void main() {
         draft: LearningProfileDraft(
           onboardingState: LearningOnboardingState.completed,
           goalText: 'Retained',
+          learningTimezoneId: 'Asia/Bangkok',
         ),
         updatedAtUtc: DateTime.utc(2026, 11, 1),
         stillCurrent: () => true,
@@ -283,6 +322,7 @@ void main() {
         stillCurrent: () => true,
       );
       expect(loaded.profile!.draft.goalText, 'Retained');
+      expect(loaded.profile!.draft.learningTimezoneId, 'Asia/Bangkok');
       expect(loaded.revision, 1);
     } finally {
       await reopened.close();

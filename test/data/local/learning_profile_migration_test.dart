@@ -66,15 +66,21 @@ void main() {
         expect(File(file.path).parent.absolute.path, directory.absolute.path);
         await directory.delete(recursive: true);
       });
-      expect(database.schemaVersion, 23);
+      expect(database.schemaVersion, 25);
       final after = await ownerMigrationRows(database);
-      expect(after.length, 43);
-      for (final old in rows.entries) {
-        expect(after[old.key], old.value, reason: old.key);
-      }
+      expect(after.length, 45);
+      expectHistoricalOwnerMigrationRows(after, {
+        for (final table in rows.entries)
+          table.key: [
+            for (final row in table.value as List)
+              Map<String, Object?>.from(row as Map),
+          ],
+      });
       expect(after['learning_profiles'], isEmpty);
       expect(after['learning_pack_versions'], isEmpty);
       expect(after['lexical_content_snapshots'], isEmpty);
+      expect(after['content_reports'], isEmpty);
+      expect(after['study_reminder_preferences'], isEmpty);
       expect(
         await database.customSelect('PRAGMA foreign_key_check').get(),
         isEmpty,

@@ -23,6 +23,7 @@ final class QuestUseCases {
     required this.generateId,
     required this.nowUtc,
     required this.timezoneId,
+    this.resolveTimezoneId,
     this.shadowOrchestrator,
   });
 
@@ -33,6 +34,7 @@ final class QuestUseCases {
 
   /// IANA timezone id for the learner, e.g. `'Asia/Bangkok'`.
   final String timezoneId;
+  final Future<String> Function(String ownerId)? resolveTimezoneId;
 
   /// When non-null, [QuestCompletedEvent]s are forwarded to the V2 reward
   /// shadow pipeline.  Errors are swallowed — shadow mode must never break
@@ -42,39 +44,43 @@ final class QuestUseCases {
   // ── Public API ─────────────────────────────────────────────────────────────
 
   /// Seed the catalog with [def] and start a new active [QuestInstance] for
-  /// the current owner unless one is already active for the same quest.
+  /// the current owner after recovering its assigned canonical answers.
   ///
-  /// Returns the new [QuestInstance], or null when the quest is already active.
-  Future<QuestInstance?> startQuest(QuestDefinition def) async {
+  /// Returns null when the pinned current period already exists in any state.
+  Future<QuestInstance?> startQuest(
+    QuestDefinition def, {
+    String? expectedOwnerId,
+    bool Function()? stillCurrent,
+  }) async {
+    final current = stillCurrent ?? () => true;
+    if (!current()) throw StateError('Quest owner changed');
     final owner = await owners.getOrCreateActiveOwner();
-    await repository.upsertDefinition(def);
-
-    final existing = await repository.getActiveInstances(owner.id);
-    if (existing.any((i) => i.questId == def.questId)) {
-      return null;
+    if (!current() ||
+        (expectedOwnerId != null && owner.id != expectedOwnerId)) {
+      throw StateError('Quest owner changed');
     }
-
-    final now = _now();
-    final instance = QuestInstance(
+    final zone =
+        await (resolveTimezoneId?.call(owner.id) ?? Future.value(timezoneId));
+    if (!current()) throw StateError('Quest owner changed');
+    return repository.assignCurrentPeriod(
       instanceId: 'quest:${_nextId()}',
-      questId: def.questId,
       ownerId: owner.id,
-      catalogVersion: def.catalogVersion,
-      assignedAtUtc: now,
-      state: QuestInstanceState.active,
-      progress: def.objectives
-          .map(
-            (o) => ObjectiveProgress(
-              objectiveId: o.objectiveId,
-              currentCount: 0,
-              targetCount: o.targetCount,
-            ),
-          )
-          .toList(growable: false),
+      definition: def,
+      assignedAtUtc: _now(),
+      timezoneId: zone,
+      stillCurrent: current,
     );
-    await repository.startInstance(instance);
-    return instance;
   }
+
+  Future<List<QuestCompletedEvent>> reconcile({
+    required String expectedOwnerId,
+    required List<QuestDefinition> catalog,
+    required bool Function() stillCurrent,
+  }) => repository.reconcile(
+    expectedOwnerId: expectedOwnerId,
+    catalog: catalog,
+    stillCurrent: stillCurrent,
+  );
 
   /// Feed [event] into all active quest instances for the event's owner.
   ///
@@ -117,26 +123,16 @@ final class QuestUseCases {
       return;
     }
 
-    final now = _now();
+    final catalog = <String, QuestDefinition>{};
     for (final instance in active) {
       final def = await repository.getDefinition(instance.questId);
-      if (def == null) {
-        continue;
-      }
-      if (def.catalogVersion != instance.catalogVersion) {
-        throw StateError('Quest expiry has no matching catalog revision');
-      }
-
-      final expiresIn = def.expiresIn;
-      if (expiresIn == null) {
-        continue;
-      }
-
-      final deadline = instance.assignedAtUtc.add(expiresIn);
-      if (now.isAfter(deadline)) {
-        await repository.markExpired(instance.instanceId, now);
-      }
+      if (def != null) catalog[def.questId] = def;
     }
+    await repository.reconcile(
+      expectedOwnerId: owner.id,
+      catalog: catalog.values.toList(),
+      stillCurrent: () => true,
+    );
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────

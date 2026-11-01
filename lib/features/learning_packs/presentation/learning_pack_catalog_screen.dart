@@ -11,13 +11,21 @@ import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/registries/feature_registry.dart';
 import '../../../screens/saved_words_screen.dart';
 import '../../../screens/srs_flashcards_screen.dart';
+import '../../../screens/quiz_screen.dart';
 import '../../../voice/voice_models.dart';
 import '../../../widgets/adaptive_content_pane.dart';
 import '../../../widgets/word_report_sheet.dart';
+import '../../content_reports/domain/content_report.dart';
+import '../../content_reports/presentation/content_report_button.dart';
+import '../../learning/domain/learning_time_admission.dart';
 import '../../vocabulary/application/word_report_use_cases.dart';
 import '../../vocabulary/domain/word_report.dart';
 import '../../voice/application/voice_use_cases.dart';
+import '../../learning/domain/accepted_quiz_plan.dart';
+import '../../learning/domain/learning_models.dart';
+import '../../learning/presentation/lexical_quiz_setup_dialog.dart';
 import '../application/learning_pack_use_cases.dart';
+import 'rich_lexical_card.dart';
 import '../data/http_learning_pack_source.dart';
 import '../domain/learning_pack.dart';
 import '../domain/learning_pack_download.dart';
@@ -632,14 +640,20 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _dependencies?.learning != null &&
       _dependencies!.features.isVisible(Feature.srs);
 
+  bool get _definitionAvailable =>
+      _dependencies?.learning != null &&
+      _dependencies!.features.isVisible(Feature.quiz);
+
   Future<void> _startPractice(
     PackDetail shown,
-    List<PackLexicalBinding> requested,
-  ) async {
+    List<PackLexicalBinding> requested, {
+    bool definition = false,
+  }) async {
     final dependencies = _dependencies;
     final scope = _scope;
+    bool available() => definition ? _definitionAvailable : _practiceAvailable;
     if (!_canAct ||
-        !_practiceAvailable ||
+        !available() ||
         scope == null ||
         !scope.isCurrent ||
         requested.isEmpty ||
@@ -654,7 +668,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     var launched = false;
     try {
       final fresh = await _packs!.detail(scope, shown.pack.id);
-      if (!_resultCurrent(operation, scope) || !_practiceAvailable) return;
+      if (!_resultCurrent(operation, scope) || !available()) return;
       for (final selected in requested) {
         if (!fresh.bindings.any(
           (binding) =>
@@ -672,21 +686,70 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       if (ids.toSet().length != ids.length) {
         throw const PackStorageException(PackStorageFailureCode.invalid);
       }
+      ConfiguredQuizLaunch? quizLaunch;
+      if (definition) {
+        _overlay = true;
+        final LexicalQuizConfiguration? configuration;
+        try {
+          if (!mounted) return;
+          configuration = await showDialog<LexicalQuizConfiguration>(
+            context: context,
+            builder: (_) => LexicalQuizSetupDialog(
+              packVersionId: shown.pack.id,
+              entries: requested.map((binding) => binding.entry),
+            ),
+          );
+        } finally {
+          _overlay = false;
+        }
+        if (configuration == null ||
+            !_resultCurrent(operation, scope) ||
+            !_visible ||
+            !available() ||
+            _route?.isCurrent != true) {
+          return;
+        }
+        quizLaunch = await dependencies!.learning!.prepareLexicalQuiz(
+          expectedOwnerId: scope.ownerId,
+          packVersionId: configuration.packVersionId,
+          entryCodes: configuration.entryCodes,
+          input: configuration.input,
+          limit: configuration.limit,
+          settings: configuration.settings,
+          stillCurrent: () =>
+              _resultCurrent(operation, scope) && _visible && available(),
+        );
+        if (!_resultCurrent(operation, scope) || !_visible || !available()) {
+          return;
+        }
+      }
       if (!mounted) return;
       _stopVoice();
       launched = true;
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
-          name: 'learning-packs/srs',
+          name: definition ? 'learning-packs/definition' : 'learning-packs/srs',
+          reduceMotion:
+              quizLaunch?.configuration.lexical?.settings.reduceMotion == true,
           builder: (_) {
             if (!_resultCurrent(operation, scope) ||
                 !identical(dependencies, _dependencies) ||
-                !_practiceAvailable) {
+                !available()) {
               return const Scaffold(
                 body: Center(
                   child: Text('การฝึกไม่พร้อมใช้งาน โปรดเปิดแพ็กใหม่'),
                 ),
+              );
+            }
+            if (definition) {
+              return QuizScreen(
+                preparedLaunch: quizLaunch!,
+                expectedOwnerId: scope.ownerId,
+                ownerChanges: _packs!.watchActiveOwnerId(),
+                learning: dependencies!.learning,
+                learningTime: dependencies.learningTime,
+                voice: _voice,
               );
             }
             return SrsFlashcardsScreen(
@@ -841,6 +904,29 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     } finally {
       _overlay = false;
       if (_operationCurrent(operation)) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _validatePackReport(CurrentLexicalContent shown) async {
+    final scope = _scope;
+    final view = _view;
+    if (!_visible ||
+        scope?.isCurrent != true ||
+        view is! _Lexical ||
+        !identical(view.content, shown)) {
+      throw StateError('The reported entry is no longer displayed');
+    }
+    final fresh = await _freshWord(shown);
+    if (!_visible ||
+        !identical(scope, _scope) ||
+        scope?.isCurrent != true ||
+        !identical(view, _view) ||
+        fresh == null ||
+        fresh.pack.id != shown.pack.id ||
+        fresh.pack.packageSha256 != shown.pack.packageSha256 ||
+        fresh.entry.contentSha256 != shown.entry.contentSha256 ||
+        fresh.word.localRevision != shown.word.localRevision) {
+      throw StateError('The reported pack entry changed');
     }
   }
 
@@ -1127,6 +1213,27 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         ),
       const SizedBox(height: 16),
       if (pack.isInstalled) ...[
+        if (_definitionAvailable &&
+            current.any((binding) => binding.entry.definition != null)) ...[
+          const Text('ฝึกจากนิยามที่มีอยู่ในแพ็ก'),
+          for (var offset = 0; offset < current.length; offset += 20)
+            if (current
+                .skip(offset)
+                .take(20)
+                .any((binding) => binding.entry.definition != null))
+              OutlinedButton.icon(
+                key: ValueKey('pack-definition-${offset ~/ 20}'),
+                onPressed: _action(
+                  () => _startPractice(
+                    detail,
+                    current.skip(offset).take(20).toList(),
+                    definition: true,
+                  ),
+                ),
+                icon: const Icon(Icons.quiz_outlined),
+                label: Text('ฝึกนิยามชุดที่ ${offset ~/ 20 + 1}'),
+              ),
+        ],
         if (_practiceAvailable && current.isNotEmpty) ...[
           const Text('ฝึกเฉพาะคำที่ยังตรงกับเนื้อหานี้ ชุดละไม่เกิน 20 คำ'),
           for (var offset = 0; offset < current.length; offset += 20)
@@ -1198,67 +1305,32 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   List<Widget> _lexical(CurrentLexicalContent content) {
     final entry = content.entry;
     final saved = _saved;
-    final image = content.image;
     return [
       Text(entry.spelling, style: Theme.of(context).textTheme.headlineMedium),
       Text(entry.partOfSpeech, style: Theme.of(context).textTheme.labelLarge),
       const SizedBox(height: 12),
       Text(entry.meaning),
-      if (image != null)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 240),
-            child: Image.memory(
-              image.bytes,
-              fit: BoxFit.contain,
-              semanticLabel: image.altText,
-            ),
-          ),
-        ),
-      if (entry.definition != null) ...[
-        const SizedBox(height: 20),
-        Text(
-          'คำจำกัดความภาษาอังกฤษ',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        Text(entry.definition!),
-      ],
-      if (entry.examples.isNotEmpty) ...[
-        const SizedBox(height: 20),
-        Text('ตัวอย่างการใช้', style: Theme.of(context).textTheme.titleMedium),
-        for (final example in entry.examples)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(example.text),
-                if (example.translation != null) Text(example.translation!),
-              ],
-            ),
-          ),
-      ],
-      if (entry.memoryCue != null) ...[
-        const SizedBox(height: 16),
-        Text('ช่วยจำ', style: Theme.of(context).textTheme.titleMedium),
-        Text(entry.memoryCue!),
-      ],
-      if (entry.hint != null) ...[
-        const SizedBox(height: 16),
-        Text('คำใบ้', style: Theme.of(context).textTheme.titleMedium),
-        Text(entry.hint!),
-      ],
-      if (entry.strategy != null) ...[
-        const SizedBox(height: 16),
-        Text('วิธีฝึก', style: Theme.of(context).textTheme.titleMedium),
-        Text(entry.strategy!),
-      ],
+      RichLexicalCard(
+        content: content,
+        showAssistance: true,
+        showIdentity: false,
+      ),
       const SizedBox(height: 20),
       Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
+          if (_definitionAvailable && entry.definition != null)
+            OutlinedButton.icon(
+              key: const ValueKey('pack-word-definition'),
+              onPressed: _action(
+                () => _startPractice((_view as _Lexical).detail, [
+                  content.binding,
+                ], definition: true),
+              ),
+              icon: const Icon(Icons.quiz_outlined),
+              label: const Text('ฝึกจากนิยาม'),
+            ),
           if (_practiceAvailable)
             FilledButton.icon(
               key: const ValueKey('pack-word-practice'),
@@ -1300,6 +1372,39 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
               onPressed: _action(() => _reportWord(content)),
               icon: const Icon(Icons.flag_outlined),
               label: const Text('รายงานคำ'),
+            ),
+          if (_scope != null)
+            ContentReportButton.content(
+              key: const ValueKey('content-report-pack-entry'),
+              expectedOwnerId: _scope!.ownerId,
+              sourceIdentity: (
+                content.pack.id,
+                content.pack.packageSha256,
+                entry.contentSha256,
+                content.word.localRevision,
+              ),
+              sourceText: contentReportEntryText(entry),
+              callerContext: LearningTimeCallerContext.ordinary,
+              canOpen: () =>
+                  _canAct &&
+                  _scope?.isCurrent == true &&
+                  _view is _Lexical &&
+                  identical((_view as _Lexical).content, content),
+              beforeOpen: () => _validatePackReport(content),
+              revalidateSource: (_) => _validatePackReport(content),
+              onOverlayChanged: (open) {
+                _overlay = open;
+              },
+              targetForSelection: (text, excerpt) =>
+                  ContentReportTarget.packEntry(
+                    text: text,
+                    isExcerpt: excerpt,
+                    packId: content.pack.manifest.packId,
+                    packVersion: content.pack.manifest.version,
+                    packageSha256: content.pack.packageSha256,
+                    entryCode: entry.code,
+                    entrySha256: entry.contentSha256,
+                  ),
             ),
         ],
       ),

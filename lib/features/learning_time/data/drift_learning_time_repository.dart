@@ -676,6 +676,7 @@ final class DriftLearningTimeRepository implements LearningTimeRepository {
     if (row == null ||
         !const {
           'quiz',
+          'matching',
           'sourcePractice',
           'weaknessPractice',
           'srsReview',

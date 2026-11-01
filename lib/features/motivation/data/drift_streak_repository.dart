@@ -1,94 +1,124 @@
-import 'package:drift/drift.dart';
+import 'package:timezone/timezone.dart' as timezone;
 
 import '../../../data/local/app_database.dart' as db;
-import '../domain/streak_policy.dart';
+import '../../identity/data/drift_owner_write_coordinator.dart';
+import '../../learning_profile/domain/learning_timezone.dart';
+import '../../quest/data/drift_quest_repository.dart';
+import '../../rewards/data/drift_motivation_reward_repository.dart';
+import '../domain/motivation_snapshot.dart';
+import 'drift_learning_day_recorder.dart';
+import 'drift_motivation_scope.dart';
 
-/// Drift-backed persistence for [StreakState] and [LearningDayLog].
 final class DriftStreakRepository {
-  DriftStreakRepository(this._database);
-
-  final db.AppDatabase _database;
-
-  // ── Read ──────────────────────────────────────────────────────────────────
-
-  Future<StreakState> getOrCreate(String ownerId, int nowMs) async {
-    final row = await (_database.select(
-      _database.streakStates,
-    )..where((t) => t.ownerId.equals(ownerId))).getSingleOrNull();
-    if (row != null) return _rowToState(row);
-
-    // First access — create initial row.
-    await _database
-        .into(_database.streakStates)
-        .insert(
-          db.StreakStatesCompanion.insert(
-            ownerId: ownerId,
-            updatedAtUtcMs: nowMs,
+  DriftStreakRepository(
+    this.database, {
+    DriftOwnerWriteCoordinator? ownerWrites,
+    DriftQuestRepository? quests,
+    DateTime Function()? nowUtc,
+  }) {
+    this.ownerWrites =
+        ownerWrites ??
+        DriftOwnerWriteCoordinator(database, nowUtc: nowUtc ?? _utcNow);
+    if (!identical(database, this.ownerWrites.database)) {
+      throw ArgumentError('Streak reads require the canonical owner database');
+    }
+    rewards = DriftMotivationRewardRepository(
+      database,
+      ownerWrites: this.ownerWrites,
+      quests:
+          quests ??
+          DriftQuestRepository(
+            database,
+            ownerWrites: this.ownerWrites,
+            nowUtc: nowUtc ?? _utcNow,
           ),
-          mode: InsertMode.insertOrIgnore,
-        );
-    return StreakState.initial(ownerId: ownerId, nowMs: nowMs);
+      nowUtc: nowUtc ?? _utcNow,
+    );
   }
+  final db.AppDatabase database;
+  late final DriftOwnerWriteCoordinator ownerWrites;
+  late final DriftMotivationRewardRepository rewards;
 
-  // ── Write ─────────────────────────────────────────────────────────────────
-
-  Future<void> save(StreakState state) async {
-    await _database
-        .into(_database.streakStates)
-        .insertOnConflictUpdate(
-          db.StreakStatesCompanion(
-            ownerId: Value(state.ownerId),
-            currentStreakDays: Value(state.currentStreakDays),
-            longestStreakDays: Value(state.longestStreakDays),
-            freezeCount: Value(state.freezeCount),
-            lastLearnedAtUtcMs: Value(state.lastLearnedAtUtcMs),
-            updatedAtUtcMs: Value(state.updatedAtUtcMs),
-          ),
-        );
-  }
-
-  // ── LearningDayLog ────────────────────────────────────────────────────────
-
-  /// Record that [ownerId] was active on [learningDay] (idempotent).
-  ///
-  /// [learningDay] must be a date string in `'YYYY-MM-DD'` format.
-  Future<void> recordLearningDay({
-    required String ownerId,
-    required String learningDay,
-    required int firstSessionAtUtcMs,
-  }) async {
-    final id = 'day:$ownerId:$learningDay';
-    await _database
-        .into(_database.learningDayLog)
-        .insert(
-          db.LearningDayLogCompanion.insert(
-            id: id,
-            ownerId: ownerId,
-            learningDay: learningDay,
-            firstSessionAtUtcMs: firstSessionAtUtcMs,
-          ),
-          mode: InsertMode.insertOrIgnore,
-        );
-  }
-
-  /// Returns all learning-day entries for [ownerId], newest first.
-  Future<List<String>> getLearningDays(String ownerId) async {
+  Future<String> readActiveOwnerId() async {
     final rows =
-        await (_database.select(_database.learningDayLog)
-              ..where((t) => t.ownerId.equals(ownerId))
-              ..orderBy([(t) => OrderingTerm.desc(t.firstSessionAtUtcMs)]))
+        await (database.select(database.localOwners)
+              ..where((row) => row.isActive.equals(true))
+              ..limit(2))
             .get();
-    return rows.map((r) => r.learningDay).toList(growable: false);
+    if (rows.length != 1) {
+      throw const MotivationException(MotivationFailureCode.ownerChanged);
+    }
+    return rows.single.id;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
-
-  StreakState _rowToState(db.StreakState row) => StreakState(
-    ownerId: row.ownerId,
-    currentStreakDays: row.currentStreakDays,
-    longestStreakDays: row.longestStreakDays,
-    freezeCount: row.freezeCount,
-    lastLearnedAtUtcMs: row.lastLearnedAtUtcMs,
-    updatedAtUtcMs: row.updatedAtUtcMs,
+  Future<MotivationSnapshot> read({
+    required String expectedOwnerId,
+    required DateTime nowUtc,
+    required bool Function() stillCurrent,
+  }) => withMotivationOwner(
+    database,
+    ownerWrites,
+    expectedOwnerId,
+    stillCurrent,
+    (_) => readForProjection(ownerId: expectedOwnerId, nowUtc: nowUtc),
   );
+
+  Future<MotivationSnapshot> readForProjection({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) => database.transaction(() async {
+    if (!nowUtc.isUtc || nowUtc.millisecondsSinceEpoch < 0) {
+      throw const MotivationException(MotivationFailureCode.invalid);
+    }
+    final profile = await (database.select(
+      database.learningProfiles,
+    )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+    final String zone;
+    try {
+      zone = requireLearningTimezone(profile?.learningTimezoneId ?? 'UTC');
+    } on FormatException {
+      throw const MotivationException(MotivationFailureCode.unavailable);
+    }
+    final days = await readCanonicalLearningDays(
+      database,
+      ownerId: ownerId,
+      nowUtc: nowUtc,
+    );
+    final totals = await rewards.readForProjection(
+      ownerId: ownerId,
+      atUtc: nowUtc,
+    );
+    final today = motivationDayLabel(
+      timezone.TZDateTime.from(nowUtc, timezone.getLocation(zone)),
+    );
+    return MotivationSnapshot(
+      ownerId: ownerId,
+      state: projectCanonicalStreak(
+        ownerId: ownerId,
+        learningDays: days,
+        protectedDays: totals.protectedDays,
+        today: today,
+        freezeCount: totals.freezeCount,
+      ),
+      timezoneId: zone,
+      usedUtcFallback:
+          profile?.learningTimezoneId == null || days.any((day) => !day.pinned),
+      learningDays: days,
+      protectedDays: totals.protectedDays,
+      questXp: totals.questXp,
+    );
+  });
+
+  Future<List<String>> getLearningDays(
+    String ownerId, {
+    DateTime? nowUtc,
+  }) async =>
+      (await read(
+          expectedOwnerId: ownerId,
+          nowUtc: nowUtc ?? _utcNow(),
+          stillCurrent: () => true,
+        )).learningDays.map((day) => day.learningDay).toSet().toList()
+        ..sort((a, b) => b.compareTo(a));
 }
+
+DateTime _utcNow() => DateTime.now().toUtc();

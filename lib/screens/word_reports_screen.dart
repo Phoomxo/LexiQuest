@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
+import '../features/content_reports/presentation/content_report_inbox.dart';
 import '../features/vocabulary/application/word_report_use_cases.dart';
 import '../features/vocabulary/domain/word_report.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 import '../widgets/word_report_sheet.dart';
@@ -40,6 +42,7 @@ class _WordReportsScreenState extends State<WordReportsScreen>
   bool _readFailed = false;
   int _scopeEpoch = -1;
   int _readToken = 0;
+  bool _openingContentReports = false;
   String _text(String th, String en) => widget.languageCode == 'en' ? en : th;
   bool get _visible =>
       mounted &&
@@ -180,6 +183,62 @@ class _WordReportsScreenState extends State<WordReportsScreen>
     setState(() {});
   }
 
+  Future<void> _openContentReports({StoredWordReport? legacy}) async {
+    final scope = _scope;
+    final dependencies = _dependencies;
+    final reports = dependencies?.contentReports;
+    if (_openingContentReports || scope?.current != true || reports == null) {
+      return;
+    }
+    final epoch = scope!.generation;
+    final owners =
+        dependencies?.progress?.watchActiveOwnerId() ?? widget.ownerChanges;
+    if (owners == null) return;
+    bool current() =>
+        mounted &&
+        !_invalidated &&
+        scope.isCurrent(epoch) &&
+        identical(dependencies, _dependencies);
+    setState(() => _openingContentReports = true);
+    try {
+      if (legacy != null) {
+        if (_snapshot?.any((report) => report.sameFacts(legacy)) != true) {
+          return;
+        }
+        await reports.mirrorLegacy(legacy);
+        if (!current()) return;
+      }
+      if (!mounted || !current()) return;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'vocab/content-report-inbox',
+          builder: (_) => ContentReportInbox(
+            expectedOwnerId: widget.expectedOwnerId,
+            reports: reports,
+            ownerChanges: owners,
+            languageCode: widget.languageCode,
+          ),
+        ),
+      );
+    } on Object {
+      if (mounted && current()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _text(
+                'เปิดกล่องรายงานไม่ได้ รายงานเดิมยังอยู่ในเครื่อง',
+                'Could not open report inbox. The original local report is retained.',
+              ),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingContentReports = false);
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
@@ -254,8 +313,8 @@ class _WordReportsScreenState extends State<WordReportsScreen>
         children: [
           Text(
             _text(
-              'รายการนี้เก็บในเครื่อง ยังไม่ได้ส่ง',
-              'These reports are stored on this device. Not sent.',
+              'รายละเอียดที่บันทึกในเครื่อง ตรวจใบรับเรื่องและสถานะในกล่องรายงานเนื้อหา',
+              'Local report details. Check receipts and review status in the content report inbox.',
             ),
           ),
           const SizedBox(height: 12),
@@ -273,7 +332,23 @@ class _WordReportsScreenState extends State<WordReportsScreen>
                   WordReportDetails(
                     report: report,
                     languageCode: widget.languageCode,
+                    showLocalOnlyNotice: false,
                   ),
+                  if (_dependencies?.contentReports != null)
+                    OutlinedButton(
+                      key: ValueKey(
+                        'content-report-legacy-mirror:${report.id}',
+                      ),
+                      onPressed: _openingContentReports
+                          ? null
+                          : () => _openContentReports(legacy: report),
+                      child: Text(
+                        _text(
+                          'เตรียมรายงานเดิมในกล่องรายงาน',
+                          'Prepare this existing report in the inbox',
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -287,6 +362,17 @@ class _WordReportsScreenState extends State<WordReportsScreen>
           context,
           _text('รายงานในเครื่อง', 'Local reports'),
         ),
+        actions: [
+          if (_dependencies?.contentReports != null)
+            IconButton(
+              key: const ValueKey('content-report-inbox'),
+              tooltip: _text('กล่องรายงานเนื้อหา', 'Content report inbox'),
+              onPressed: _scope?.current != true || _openingContentReports
+                  ? null
+                  : _openContentReports,
+              icon: const Icon(Icons.inbox_outlined),
+            ),
+        ],
       ),
       body: AdaptiveContentPane(child: body),
     );

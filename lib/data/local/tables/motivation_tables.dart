@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'identity_tables.dart';
+import 'learning_tables.dart';
 
 /// Drift tables for the Motivation domain (streaks, learning-day log).
 ///
@@ -61,12 +62,22 @@ class LearningDayLog extends Table {
   /// UTC timestamp of the first session on this day.
   IntColumn get firstSessionAtUtcMs => integer()();
 
+  TextColumn get sourceAttemptId =>
+      text().nullable().references(AnswerAttempts, #id)();
+  TextColumn get timezoneId => text().nullable()();
+  IntColumn get policyVersion => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 
   /// Prevents two rows for the same owner+day from being inserted.
   @override
   List<Set<Column>> get uniqueKeys => [
-    {ownerId, learningDay},
+    {ownerId, learningDay, policyVersion, sourceAttemptId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK ((source_attempt_id IS NULL AND timezone_id IS NULL AND policy_version IS NULL) OR (source_attempt_id IS NOT NULL AND timezone_id IS NOT NULL AND policy_version IS NOT NULL AND length(timezone_id) BETWEEN 1 AND 100 AND policy_version > 0))',
   ];
 }

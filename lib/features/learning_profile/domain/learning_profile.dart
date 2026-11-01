@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'learning_timezone.dart';
+
 const learningProfileMaxRevision = 9007199254740991;
 
 enum LearningOnboardingState { completed, skipped }
@@ -86,8 +88,18 @@ final class LearningProfileDraft {
     String? goalText,
     LearningCivilDate? targetDate,
     int? dailyMinutes,
+    String? learningTimezoneId,
     List<String> interestCodes = const [],
   }) {
+    if (learningTimezoneId != null) {
+      try {
+        requireLearningTimezone(learningTimezoneId);
+      } on FormatException {
+        throw const LearningProfileException(
+          LearningProfileFailureCode.invalid,
+        );
+      }
+    }
     final goal = goalText?.trim();
     final interests = List<String>.of(interestCodes)..sort();
     if ((goal != null &&
@@ -106,6 +118,7 @@ final class LearningProfileDraft {
       goalText: goal == null || goal.isEmpty ? null : goal,
       targetDate: targetDate,
       dailyMinutes: dailyMinutes,
+      learningTimezoneId: learningTimezoneId,
       interestCodes: List.unmodifiable(interests),
     );
   }
@@ -115,6 +128,7 @@ final class LearningProfileDraft {
     required this.goalText,
     required this.targetDate,
     required this.dailyMinutes,
+    required this.learningTimezoneId,
     required this.interestCodes,
   });
 
@@ -122,6 +136,7 @@ final class LearningProfileDraft {
   final String? goalText;
   final LearningCivilDate? targetDate;
   final int? dailyMinutes;
+  final String? learningTimezoneId;
   final List<String> interestCodes;
 
   String get interestCodesJson =>
@@ -132,6 +147,7 @@ final class LearningProfileDraft {
       goalText == other.goalText &&
       targetDate == other.targetDate &&
       dailyMinutes == other.dailyMinutes &&
+      learningTimezoneId == other.learningTimezoneId &&
       interestCodesJson == other.interestCodesJson;
 }
 

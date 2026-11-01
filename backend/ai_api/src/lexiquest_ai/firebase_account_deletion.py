@@ -60,6 +60,8 @@ FIREBASE_ACCOUNT_DATA_SOURCES = (
     FirebaseOwnedDataSource("research_enrollments", "firebaseUid", False),
     FirebaseOwnedDataSource("research_consents", "firebaseUid", False),
     FirebaseOwnedDataSource("research_study_archives", "firebaseUid", False),
+    FirebaseOwnedDataSource("content_reports", "firebaseUid", False),
+    FirebaseOwnedDataSource("content_report_limits", "firebaseUid", False),
 )
 
 _OPERATION_COMMON_KEYS = frozenset(

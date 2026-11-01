@@ -25,18 +25,63 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     ExportArtifact artifact, {
     required ExportCancellation cancellation,
     required ExportWriteRevalidator revalidateBeforeWrite,
+  }) => _saveNamedBytes(
+    bytes: artifact.bytes,
+    fileName: artifact.suggestedFileName,
+    mimeType: artifact.mimeType,
+    typeLabel: artifact.format.name,
+    cancellation: cancellation,
+    revalidateBeforeWrite: revalidateBeforeWrite,
+  );
+
+  Future<ExportSaveResult> saveImage({
+    required Uint8List pngBytes,
+    required ExportCancellation cancellation,
+    required ExportWriteRevalidator revalidateBeforeWrite,
+  }) {
+    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (pngBytes.length <= signature.length ||
+        pngBytes.length > 2 * 1024 * 1024 ||
+        !Iterable.generate(
+          signature.length,
+        ).every((i) => pngBytes[i] == signature[i])) {
+      throw const ExportException(ExportFailureCode.writeFailed);
+    }
+    return _saveNamedBytes(
+      bytes: Uint8List.fromList(pngBytes),
+      fileName: 'lexiquest-achievement.png',
+      mimeType: 'image/png',
+      typeLabel: 'PNG',
+      cancellation: cancellation,
+      revalidateBeforeWrite: revalidateBeforeWrite,
+    );
+  }
+
+  Future<ExportSaveResult> _saveNamedBytes({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String typeLabel,
+    required ExportCancellation cancellation,
+    required ExportWriteRevalidator revalidateBeforeWrite,
   }) async {
     cancellation.throwIfCancelled();
     if (_usesAndroidDocumentPicker) {
-      return _saveOnAndroid(artifact, cancellation, revalidateBeforeWrite);
+      return _saveOnAndroid(
+        bytes,
+        fileName,
+        mimeType,
+        cancellation,
+        revalidateBeforeWrite,
+      );
     }
     final location = await getSaveLocation(
-      suggestedName: artifact.suggestedFileName,
+      suggestedName: fileName,
       acceptedTypeGroups: [
         XTypeGroup(
-          label: artifact.format.name,
-          extensions: [_extension(artifact.suggestedFileName)],
-          mimeTypes: [artifact.mimeType],
+          label: typeLabel,
+          extensions: [_extension(fileName)],
+          mimeTypes: [mimeType],
         ),
       ],
     );
@@ -52,22 +97,16 @@ final class FileSelectorExportStore implements ExportArtifactStore {
       stagingDirectory = await getTemporaryDirectory();
       partial = File(
         '${stagingDirectory.path}${Platform.pathSeparator}'
-        '${artifact.suggestedFileName}.partial',
+        '$fileName.partial',
       );
       if (await partial.exists()) await partial.delete();
-      await partial.writeAsBytes(artifact.bytes, flush: true);
+      await partial.writeAsBytes(bytes, flush: true);
       cancellation.throwIfCancelled();
       await revalidateBeforeWrite();
       cancellation.throwIfCancelled();
-      await XFile(
-        partial.path,
-        mimeType: artifact.mimeType,
-      ).saveTo(location.path);
+      await XFile(partial.path, mimeType: mimeType).saveTo(location.path);
       // shortcut: external writes cannot roll back; upgrade with transactional stores.
-      return ExportSaveResult(
-        path: location.path,
-        bytesWritten: artifact.bytes.length,
-      );
+      return ExportSaveResult(path: location.path, bytesWritten: bytes.length);
     } on ExportException {
       rethrow;
     } on FileSystemException catch (error) {
@@ -89,12 +128,14 @@ final class FileSelectorExportStore implements ExportArtifactStore {
   }
 
   Future<ExportSaveResult> _saveOnAndroid(
-    ExportArtifact artifact,
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
     ExportCancellation cancellation,
     ExportWriteRevalidator revalidateBeforeWrite,
   ) async {
     try {
-      final location = await _selectAndroidDestination(artifact);
+      final location = await _selectAndroidDestination(fileName, mimeType);
       if (location == null) {
         throw const ExportException(ExportFailureCode.cancelled);
       }
@@ -106,11 +147,11 @@ final class FileSelectorExportStore implements ExportArtifactStore {
         await _discardAndroidDestination(location);
         rethrow;
       }
-      await _writeAndroidDestination(location, artifact);
+      await _writeAndroidDestination(location, bytes);
       // shortcut: external writes cannot roll back; upgrade with transactional stores.
       return ExportSaveResult(
         path: location.destination,
-        bytesWritten: artifact.bytes.length,
+        bytesWritten: bytes.length,
       );
     } on ExportException {
       rethrow;
@@ -128,14 +169,12 @@ final class FileSelectorExportStore implements ExportArtifactStore {
   }
 
   Future<_AndroidExportDestination?> _selectAndroidDestination(
-    ExportArtifact artifact,
+    String fileName,
+    String mimeType,
   ) async {
     final response = await _androidChannel.invokeMethod<Object?>(
       'selectExportDestination',
-      {
-        'suggestedName': artifact.suggestedFileName,
-        'mimeType': artifact.mimeType,
-      },
+      {'suggestedName': fileName, 'mimeType': mimeType},
     );
     if (response == null) return null;
     if (response is! Map) {
@@ -157,12 +196,12 @@ final class FileSelectorExportStore implements ExportArtifactStore {
 
   Future<void> _writeAndroidDestination(
     _AndroidExportDestination location,
-    ExportArtifact artifact,
+    Uint8List bytes,
   ) {
     return _androidChannel.invokeMethod<void>('writeExportFile', {
       'destination': location.destination,
       'selectionToken': location.selectionToken,
-      'bytes': artifact.bytes,
+      'bytes': bytes,
     });
   }
 

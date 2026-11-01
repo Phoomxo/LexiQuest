@@ -6,6 +6,7 @@ import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/research/data/drift_measurement_opportunity_repository.dart';
 import 'package:vocab_learning_app/features/research/data/drift_motivation_measurement_repository.dart';
 import 'package:vocab_learning_app/features/research/data/drift_motivation_measurement_timing_reader.dart';
@@ -13,6 +14,7 @@ import 'package:vocab_learning_app/features/research/domain/motivation_measureme
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
 
 import '../../support/measurement_opportunity_harness.dart';
+import '../../support/populated_owner_migration_fixture.dart';
 import '../../support/research_participation_harness.dart'
     show ParticipationFixture;
 
@@ -26,11 +28,11 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 23);
+      expect(database.schemaVersion, 25);
       final columns = await database
           .customSelect('PRAGMA table_info(measurement_opportunities)')
           .get();
-      expect(database.allTables, hasLength(43));
+      expect(database.allTables, hasLength(45));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -97,20 +99,23 @@ void main() {
             sessionId: pending.sessionId,
             expectedOwnerId: 'owner-a',
             expectedRevision: pending.checkpointRevision,
-            checkpoint: PendingQuizAnswer(
-              planId: pending.plan.id,
-              questionOrdinal: 0,
-              assistance: assistance,
-              answer: QuizAnswerReceipt.capture(
-                plan: pending.plan,
-                ownerId: 'owner-a',
-                attemptId: 'synthetic-unsubmitted-before-exposure',
+            checkpoint: pending.bindCheckpointWrite(
+              PendingQuizAnswer(
+                planId: pending.plan.id,
                 questionOrdinal: 0,
-                selectedOptionOrdinal: 1,
-                revealed: false,
                 assistance: assistance,
-                occurredAtUtcMs: participationStart.millisecondsSinceEpoch + 20,
-                responseTimeMs: null,
+                answer: QuizAnswerReceipt.capture(
+                  plan: pending.plan,
+                  ownerId: 'owner-a',
+                  attemptId: 'synthetic-unsubmitted-before-exposure',
+                  questionOrdinal: 0,
+                  selectedOptionOrdinal: 1,
+                  revealed: false,
+                  assistance: assistance,
+                  occurredAtUtcMs:
+                      participationStart.millisecondsSinceEpoch + 20,
+                  responseTimeMs: null,
+                ),
               ),
             ),
           );
@@ -140,7 +145,7 @@ void main() {
             idempotencyKey: 'synthetic-v16-ddl-migration-$startedKind',
           );
           await source.participation.ownerWrites.markPending(token);
-          oldRows = await _allRows(source.database);
+          oldRows = await ownerMigrationRowsBeforeV24(source.database);
           expect(oldRows.remove('assessment_runs'), isEmpty);
           expect(oldRows.remove('saved_words'), isEmpty);
           expect(oldRows.remove('word_reports'), isEmpty);
@@ -223,10 +228,10 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          23,
+          25,
         );
         expect(before, hasLength(34));
-        expect(database.allTables, hasLength(43));
+        expect(database.allTables, hasLength(45));
         expect(
           await database.customSelect('SELECT * FROM word_reports').get(),
           isEmpty,
@@ -241,18 +246,9 @@ void main() {
         expect(after['learning_profiles'], isEmpty);
         expect(after['learning_pack_versions'], isEmpty);
         expect(after['lexical_content_snapshots'], isEmpty);
-        for (final table in before.entries) {
-          final retained = after[table.key]!.map((row) {
-            final old = Map<String, Object?>.from(row);
-            if (table.key == 'measurement_opportunities') {
-              for (final name in _newColumns) {
-                old.remove(name);
-              }
-            }
-            return old;
-          }).toList();
-          expect(retained, table.value, reason: table.key);
-        }
+        expect(after['content_reports'], isEmpty);
+        expect(after['study_reminder_preferences'], isEmpty);
+        expectHistoricalOwnerMigrationRows(after, before);
         final opportunity = after['measurement_opportunities']!.single;
         expect(opportunity['last_switch_ordinal'], 0);
         expect(opportunity['suppressed_switch_count'], 0);
@@ -313,14 +309,54 @@ void main() {
           opportunityId,
         ))!;
         if (indexId != null) {
-          final recovered =
-              await DriftLearningRepository(
-                database,
-                ownerWrites: participant.ownerWrites,
-              ).inspectConfiguredQuiz(
-                sessionId: indexId,
-                expectedOwnerId: 'owner-a',
-              );
+          await expectLater(
+            DriftLearningRepository(
+              database,
+              ownerWrites: participant.ownerWrites,
+            ).inspectConfiguredQuiz(
+              sessionId: indexId,
+              expectedOwnerId: 'owner-a',
+            ),
+            throwsA(
+              isA<StateError>().having(
+                (error) => error.message,
+                'fenced owner',
+                contains('owner is fenced'),
+              ),
+            ),
+          );
+          // Decode a historical view, without issuing a live read/write lease.
+          final indexRow = after['learning_sessions']!.singleWhere(
+            (row) => row['id'] == indexId,
+          );
+          final historicalPlan = AcceptedQuizPlan.parse(
+            id: indexRow['accepted_plan_id']! as String,
+            json: indexRow['accepted_plan_json']! as String,
+          );
+          final recovered = ConfiguredQuizState(
+            sessionId: indexId,
+            ownerId: indexRow['owner_id']! as String,
+            activityType: indexRow['activity_type']! as String,
+            startedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+              indexRow['started_at_utc_ms']! as int,
+              isUtc: true,
+            ),
+            appVersion: indexRow['app_version']! as String,
+            buildId: indexRow['build_id']! as String,
+            state: indexRow['state']! as String,
+            endedAtUtc: indexRow['ended_at_utc_ms'] == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(
+                    indexRow['ended_at_utc_ms']! as int,
+                    isUtc: true,
+                  ),
+            plan: historicalPlan,
+            checkpointRevision: indexRow['checkpoint_revision']! as int,
+            checkpoint: QuizCheckpoint.parse(
+              indexRow['checkpoint_json']! as String,
+              plan: historicalPlan,
+            ),
+          );
           final proof = opportunities.inspectIndexFacts(
             run: historicalRun,
             opportunity: migratedOpportunity,

@@ -828,7 +828,7 @@ void main() {
           observation = ioZone.run(() => h.ownerChanges.listen(observed.add));
         });
         final before = (await tester.runAsync(h.snapshotAllTables))!;
-        expect(before, hasLength(43));
+        expect(before, hasLength(45));
         await _mount(
           tester,
           navigation: navigation,

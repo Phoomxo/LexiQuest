@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/populated_owner_migration_fixture.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
@@ -67,9 +68,9 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final version = await database
         .customSelect('PRAGMA user_version')
         .getSingle();
-    expect(version.read<int>('user_version'), 23);
+    expect(version.read<int>('user_version'), 25);
     expect(before, hasLength(29));
-    expect(database.allTables, hasLength(43));
+    expect(database.allTables, hasLength(45));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,
@@ -86,25 +87,10 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
       await database.customSelect('SELECT * FROM experiment_assignments').get(),
       isEmpty,
     );
-    for (final entry in before.entries) {
-      final rows = await database
-          .customSelect('SELECT * FROM "${entry.key}"')
-          .get();
-      expect(
-        [
-          for (final row in rows)
-            Map<String, Object?>.from(row.data)
-              ..remove('evidence_class')
-              ..remove('evidence_context_json')
-              ..remove('accepted_plan_id')
-              ..remove('accepted_plan_json')
-              ..remove('checkpoint_revision')
-              ..remove('checkpoint_json'),
-        ],
-        entry.value,
-        reason: 'Migration must preserve ${entry.key} facts.',
-      );
-    }
+    expectHistoricalOwnerMigrationRows(
+      await ownerMigrationRows(database),
+      before,
+    );
     final attempt = await database
         .customSelect('SELECT * FROM answer_attempts')
         .getSingle();
@@ -144,8 +130,8 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final columns = await database
         .customSelect('PRAGMA table_info(answer_attempts)')
         .get();
-    expect(database.schemaVersion, 23);
-    expect(database.allTables, hasLength(43));
+    expect(database.schemaVersion, 25);
+    expect(database.allTables, hasLength(45));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,

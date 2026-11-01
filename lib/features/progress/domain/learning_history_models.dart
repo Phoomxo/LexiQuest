@@ -24,6 +24,8 @@ final class LearningHistoryEntry {
     required this.answerCount,
     required this.correctCount,
     this.hasAcceptedQuiz = false,
+    this.hasAcceptedNative = false,
+    this.hasAcceptedMatching = false,
   });
 
   final String sessionId;
@@ -34,6 +36,8 @@ final class LearningHistoryEntry {
   final int answerCount;
   final int correctCount;
   final bool hasAcceptedQuiz;
+  final bool hasAcceptedNative;
+  final bool hasAcceptedMatching;
 }
 
 final class LearningHistoryDay {

@@ -1,126 +1,103 @@
-import '../../identity/domain/local_owner_repository.dart';
+import 'package:timezone/timezone.dart' as timezone;
+import 'package:uuid/uuid.dart';
+
 import '../data/drift_streak_repository.dart';
+import '../domain/motivation_snapshot.dart';
 import '../domain/streak_policy.dart';
 
 typedef StreakUtcNow = DateTime Function();
 
-/// Application façade for streak tracking.
-///
-/// **Responsibilities:**
-/// - On each learning session: evaluate the streak impact via [StreakPolicy]
-///   and persist both the [StreakState] and a [LearningDayLog] entry.
-/// - On demand: return the current [StreakState].
-/// - On request: consume a freeze token to protect an at-risk streak.
-///
-/// All methods are idempotent when called multiple times for the same
-/// learning day.
 final class StreakUseCases {
   StreakUseCases({
     required this.repository,
-    required this.owners,
     required this.nowUtc,
-    required this.timezoneId,
-  });
-
+    String Function()? generateId,
+  }) : generateId = generateId ?? const Uuid().v4;
   final DriftStreakRepository repository;
-  final LocalOwnerRepository owners;
   final StreakUtcNow nowUtc;
+  final String Function() generateId;
 
-  /// IANA timezone identifier, e.g. `'Asia/Bangkok'`.
-  final String timezoneId;
+  Future<MotivationSnapshot> load({
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => repository.read(
+    expectedOwnerId: expectedOwnerId,
+    nowUtc: _now(),
+    stillCurrent: stillCurrent,
+  );
 
-  // ISO date formatter: 'YYYY-MM-DD'
-  static String _formatDay(DateTime utcMidnight) {
-    final y = utcMidnight.year.toString().padLeft(4, '0');
-    final m = utcMidnight.month.toString().padLeft(2, '0');
-    final d = utcMidnight.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
+  Future<StreakState> getCurrentStreak({
+    String? expectedOwnerId,
+    bool Function()? stillCurrent,
+  }) async => (await load(
+    expectedOwnerId: expectedOwnerId ?? await repository.readActiveOwnerId(),
+    stillCurrent: stillCurrent ?? () => true,
+  )).state;
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  Future<void> reconcileRewards({
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => repository.rewards.reconcile(
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
 
-  /// Record that the current owner completed a learning session and return
-  /// the resulting [StreakUpdate].
-  ///
-  /// Safe to call multiple times for the same day — [StreakOutcome.sameDay]
-  /// is returned for subsequent calls with no DB writes beyond the first.
-  Future<StreakUpdate> recordLearningDay() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final nowMs = now.millisecondsSinceEpoch;
-
-    final current = await repository.getOrCreate(owner.id, nowMs);
-    final update = StreakPolicy.evaluate(
-      current: current,
-      nowUtc: now,
-      timezoneId: timezoneId,
-    );
-
-    if (update.changed) {
-      final updated = update.after.copyWith(updatedAtUtcMs: nowMs);
-      await repository.save(updated);
+  FreezeProtectionIntent prepareProtection({
+    required MotivationSnapshot snapshot,
+    required String protectedDay,
+    required bool Function() stillCurrent,
+  }) {
+    final day = motivationCivilDay(protectedDay);
+    final previous = motivationDayLabel(day.subtract(const Duration(days: 1)));
+    final sources =
+        snapshot.learningDays
+            .where(
+              (fact) =>
+                  fact.learningDay == previous &&
+                  fact.timezoneId == snapshot.timezoneId,
+            )
+            .toList()
+          ..sort((a, b) => a.occurredAtUtc.compareTo(b.occurredAtUtc));
+    if (sources.isEmpty || snapshot.protectedDays.contains(protectedDay)) {
+      throw const MotivationException(MotivationFailureCode.invalid);
     }
-
-    // Always record learning day (insertOrIgnore — idempotent).
-    final dayLabel = _formatDay(update.learningDay);
-    await repository.recordLearningDay(
-      ownerId: owner.id,
-      learningDay: dayLabel,
-      firstSessionAtUtcMs: nowMs,
+    final at = _now();
+    final today = motivationCivilDay(
+      motivationDayLabel(
+        timezone.TZDateTime.from(at, timezone.getLocation(snapshot.timezoneId)),
+      ),
     );
-
-    return update;
+    if (today.difference(day).inDays != 1) {
+      throw const MotivationException(MotivationFailureCode.invalid);
+    }
+    final id = generateId();
+    if (id.trim().isEmpty || id.length > 240) {
+      throw const MotivationException(MotivationFailureCode.invalid);
+    }
+    return FreezeProtectionIntent(
+      id: 'freeze:$id',
+      ownerId: snapshot.ownerId,
+      protectedDay: protectedDay,
+      timezoneId: snapshot.timezoneId,
+      sourceAttemptId: sources.first.sourceAttemptId,
+      occurredAtUtc: at,
+      stillCurrent: stillCurrent,
+    );
   }
 
-  /// Return the current [StreakState] for the active owner.
-  Future<StreakState> getCurrentStreak() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    return repository.getOrCreate(owner.id, now.millisecondsSinceEpoch);
+  Future<MotivationSnapshot> protect(FreezeProtectionIntent intent) async {
+    await repository.rewards.protect(intent);
+    return load(
+      expectedOwnerId: intent.ownerId,
+      stillCurrent: intent.stillCurrent,
+    );
   }
-
-  /// Consume one freeze token to protect the current streak.
-  ///
-  /// Returns `true` if a token was consumed, `false` if none were available.
-  Future<bool> useFreezeToken() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    if (current.freezeCount <= 0) return false;
-    final updated = current.copyWith(
-      freezeCount: current.freezeCount - 1,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return true;
-  }
-
-  /// Grant [count] freeze tokens to the active owner (called by reward
-  /// pipeline when a daily/weekly quest is completed).
-  Future<StreakState> grantFreezeTokens(int count) async {
-    assert(count > 0, 'count must be positive');
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    final updated = current.copyWith(
-      freezeCount: current.freezeCount + count,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return updated;
-  }
-
-  // ── Private ────────────────────────────────────────────────────────────────
 
   DateTime _now() {
-    final value = nowUtc();
-    if (!value.isUtc) throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
-    return value;
+    final now = nowUtc();
+    if (!now.isUtc || now.millisecondsSinceEpoch < 0) {
+      throw const MotivationException(MotivationFailureCode.invalid);
+    }
+    return now;
   }
 }

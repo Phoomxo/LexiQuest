@@ -1,6 +1,18 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Current local attestation updated2026-11-01 is sourcefdf8f3b9 at schema21/40. Flutter4717PASS/0FAIL, analysis0, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK pass. All984 frozen inputs plus3assets remain identical and independent actual-APK/source/log verification passes. f23 and f24 are Connected for their approved local runtime scope. Coverage is16 connected/18 partial/10 missing across44 IDs. This does not complete the whole system or authorize Research collection/upload. See [Wave23](2026-11-01-remaining-systems-wave23.md).
+Current accepted local attestation,2026-11-01: source`0255f843` at schema23/43,
+Flutter5080PASS/0FAIL, analysis0, CLI23/23, offline backend563PASS/one existing
+opt-in skip and Firestore emulator52PASS/0skip. All1194frozen inputs/877Dart and
+three assets match through the normal main/debug APK; independent actual-APK,
+source and log attestation accepts the snapshot. Coverage is24Connected,
+14Partial and6Missing across44IDs. R1/R2 Research engineering is locally complete;
+Research stays default-off and real enrollment/upload requires supplied authority
+and rollout permission. The all-feature implementation continues with L1/M1/Q1/L2/X1.
+See [Wave25 evidence and release boundaries](2026-11-01-remaining-systems-wave25.md).
+
+Historical Wave23 local attestation: sourcefdf8f3b9 at schema21/40 passed
+Flutter4717/analysis0/CLI23/backend390plus one skip and normal debug APK.
+Coverage was16Connected/18Partial/10Missing. See [Wave23](2026-11-01-remaining-systems-wave23.md).
 
 Historical Wave22 local attestation updated2026-10-31 is application71a230a4 at schema20/37. Full4552/11m45s, analysis0/18.1s, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK121.2s/native-provider0/restoredtrue are verified. Exact767Dart/54CLI/92backend inputs and independent actual-APK/source/log acceptance bind this source. Coverage is14 connected/19 partial/11 missing. Only f23 changes Missing-to-Partial; f24Missing, f22Connected and f21Partial remain. See [Wave22](2026-10-31-remaining-systems-wave22.md).
 
@@ -67,20 +79,23 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 16 connected runtime capabilities, 18 partial capabilities and 10
+There are 24 connected runtime capabilities, 14 partial capabilities and 6
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
-Wave21 changes only f22 from Partial to Connected after actual current-source gates and independent artifact acceptance. f21 stays Partial and f23/f24 stay Missing. The P3 fixture cleanup follow-up, physical/UAT and Research rollout remain explicit separate work.
+Wave25 promotes f01/f02/f26/f35 from Missing and f25/f28/f36/f44 from Partial
+after the accepted source gates. f03/f04 remain Partial. Earlier Wave21 status
+changes above are historical; device UAT, commercial activation and Research
+rollout remain separate from this local runtime classification.
 
 ## Content
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f01 | Curriculum & Learning Pack Catalog | Missing | User vocabulary categories exist; versioned curriculum/learning-pack catalog has no runtime entry. |
-| f02 | Learning Pack Detail | Missing | No pack detail combines objectives, version, download state and start action. |
-| f03 | Rich Lexical Card | Partial | `VocabListScreen` shows/edit words and SRS speaks them. A combined examples/image/memory card is absent. |
-| f04 | Content Version & Quality Control | Partial | Vocabulary revisions/provenance and immutable local word-report snapshots/version presentation exist. Curated content versions, broader quality control and report transport/moderation remain incomplete. |
+| f01 | Curriculum & Learning Pack Catalog | Connected | Actual Settings/ChooseMode entries open a searchable CEFR/version/provenance catalog, bounded configured HTTPS downloads and explicit reviewed file import. Immutable codec/hash checks precede install; no invented curated publisher or bundled licensed corpus. Accepted at0255f843. |
+| f02 | Learning Pack Detail | Connected | Detail combines objectives, original version/provenance, download/cache/install state, lexical previews and canonical SRS start in groups of at most20. Invalid or stale words cannot start practice; owner/route/retry guards and actual UI pass at0255f843. |
+| f03 | Rich Lexical Card | Partial | Installed packs now show a combined current-word definition/examples/image/memory/hint card with existing voice/save/report actions and stale-content rejection. Reuse in main vocabulary, SRS and the shared lesson experience remains incomplete. |
+| f04 | Content Version & Quality Control | Partial | Immutable pack versions, package/content hashes, provenance, lexical snapshots and original report versions now persist through owner lifecycle. Imported content truthfully remains user-provided/unreviewed. Curated quality control and broader report transport/moderation remain incomplete. |
 
 ## Learning experience
 
@@ -116,10 +131,10 @@ Wave21 changes only f22 from Partial to Connected after actual current-source ga
 | f22 | Review Center | Connected | Actual four-reason local Hub, full filtered lists, unavailable reasons and immutable not-sent receipts; captured-owner pure reads across ChooseMode/Clinic/Mastery and same canonical practice/History callers. Sourcea54ac2e2 passes full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source and independent artifact acceptance. No all37-table changes from reads. f21 broader report targets/transport and the P3 test cleanup counter follow-up remain separate. |
 | f23 | Focus Timer | Connected | Optional P06 timer supports1-180/default25 minutes, configured/running/paused/stopped/finished states, explicit same-owner Resume and safe exits. Its f24 dependency is now locally connected atfdf8f3b9 with full4717, analysis0 and normal APK acceptance. Timer elapsed creates no learning credit. Presets, cold-restart recovery and background service are outside the approved transient scope. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
 | f24 | Automatic Learning-Time Capture | Connected | Default-off per-owner confirmed interaction capture uses one durable authority across eligible Quiz/SRS/native/Voice/Reading/Tutor paths. Provider/audio/save waits, background and unconfirmed terminal gaps are excluded. Actual P23 session/scope results and independent P24 owner readback work with empty/failed Progress. Schema21/40 migration, owner lifecycle, personal export/purge and sync/Research exclusion pass atfdf8f3b9, full4717/analysis0/normal APK and independent artifact acceptance. Silent reading may be undercounted; no attention or efficacy claim. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
-| f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
-| f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
+| f25 | Learning Calendar & Weekly Analytics | Connected | Actual Mastery calendar provides month/seven-day views from canonical answer/correct/completed-session facts and acknowledged observed-END learning time, including failed aggregate Progress. Owner-bound pure reads exclude Research/Assessment, invalid, foreign and future facts. Descriptive counts do not establish attention or learning efficacy. Accepted at0255f843. |
+| f26 | Goal / Test Countdown | Connected | The owner profile editor persists an optional goal and validated civil target/test date, with a day countdown and later editing. Immutable retry/revision conflicts, restart, owner change, export/purge/rehome and actual Profile/Settings/ChooseMode callers pass at0255f843. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host connects actual controlled Assessment pre/post, compatible descriptive comparison, Motivation forms and the exact first quiz. Either form order works; pre precedes opening and Assessment-only post does not hold Score. v18 writer/retries, ordinary isolation, owner/export/purge, signature races and actual UI are verified atfabc990f. Genuine production gateway/lifecycle and collection/upload integration remain incomplete; Research default-off. No efficacy/instrument-validation claim. |
+| f28 | Learning Assessment & Progress Comparison | Connected | Optional supplied Assessment pre/post and compatible descriptive comparison connect the exact Study quiz, paired signed authority lifecycle, explicit preprovisioned participation activation, authoritative consent/withdrawal and scoped archive/upload. Actual UI/bootstrap/identity, signatures, owner/assignment isolation, before/after linkage and export/deletion pass1022subsystem checks, independent client/backend review and the full0255f843 gate. Research stays default-off; supplied issuer/instrument/notice/approval, real enrollment/upload permission and device/live-service UAT remain release dependencies. No efficacy/instrument-validation claim. |
 
 ## Motivation
 
@@ -136,8 +151,8 @@ Wave21 changes only f22 from Partial to Connected after actual current-source ga
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f35 | Learning Preference & Goal Quiz | Missing | No optional onboarding for goals, available time and interests. |
-| f36 | Personal Learning Profile | Partial | Profile settings contain display name and metrics. Editable learning preferences/goals are absent. |
+| f35 | Learning Preference & Goal Quiz | Connected | Optional onboarding accepts goal, civil target date,1-180daily minutes and up to eight interest codes, with explicit completed/skipped states and later editing. Merely reading absence creates no row; it enables no reminders, time capture or Research. Actual persisted callers/retry/owner tests pass at0255f843. |
+| f36 | Personal Learning Profile | Connected | One owner-scoped profile authority powers Profile/Settings/ChooseMode editing and countdown. Revision CAS, exact immutable retries, failed reload/late hydration protection, owner A-B-A, restart and personal export/purge/rehome are verified at0255f843; no second learning/reward authority. |
 | f37 | Recommendation Panel | Connected | Choose Mode and Weakness offer rule-based due/weakness/quiz recommendations and targeted practice. |
 | f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Dictation has reachable Thai/English200% keyboard flows and the actual Thai320px hub entry. Cloze adds masked meaning semantics and an English320px/200% keyboard flow. Coverage remains incomplete; physical TalkBack is unverified. |
 | f39 | Motion & Theme Controls | Connected | Commit `0eedc90b` wires saved theme/Reduced Motion, OS accessibility propagation and route/card/chat/sheet consumers. Focused 153 tests and Android light 100% settings fixture pass; native dark/200% and hardware gestures remain release checks. |
@@ -148,7 +163,7 @@ Wave21 changes only f22 from Partial to Connected after actual current-source ga
 | --- | --- | --- | --- |
 | f40 | Local-First Operation | Connected | Bootstrap composes Drift vocabulary/learning/progress/outbox/sync; history reads local facts. Live cross-device rollout remains separate. |
 | f41 | Feature Flag & Controlled Rollout | Connected | Main navigation uses `FieldFeatureRegistry` and limited disclosure. Declaring a capability in the separate V2 registry does not compose its runtime. |
-| f44 | Offline Content Manager | Partial | Settings connects device-model download/verify/activate/status. Learning-pack pin/repair/remove preserving evidence is absent. |
+| f44 | Offline Content Manager | Connected | Existing device-model management is joined by actual pack verified cache-only/install/pin/repair/remove actions. Removing cached files retains canonical words, learning evidence and immutable version history. Bounded transport, original retry identity, installed owner merge, byte-preserving export and deletion/retry pass at0255f843. |
 
 ## Today and history
 
@@ -174,6 +189,6 @@ rollout authority, live model/service evidence and physical UAT are separate
 requirements. No capability is described as complete merely because an
 external gate also remains.
 
-The [active integration plan](../superpowers/plans/2026-10-28-unfinished-system-integration.md)
-orders Research consent/assignment/authority/capture first, followed by motivation,
-native learning integration, versioned content and planning/continuity units.
+The [active completion plan](../superpowers/plans/2026-10-30-remaining-feature-sequence.md)
+continues L1 lessons/native resume, M1 motivation, Q1 reports/reminders, L2 Matching
+after accepted local Research engineering, and X1 accessibility/integration.

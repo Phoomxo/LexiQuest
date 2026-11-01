@@ -328,7 +328,7 @@ void main() {
     }))!;
     try {
       final before = await tester.runAsync(h.snapshotAllTables);
-      expect(before, hasLength(43));
+      expect(before, hasLength(45));
       await tester.pumpWidget(
         AppDependenciesScope(
           dependencies: AppDependencies(

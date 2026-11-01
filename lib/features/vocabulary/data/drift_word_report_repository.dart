@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../account_deletion/domain/owner_write_coordinator.dart';
 import '../../identity/data/drift_owner_write_coordinator.dart';
+import '../../content_reports/data/drift_content_report_queue.dart';
+import '../../content_reports/domain/content_report.dart';
 import '../domain/vocabulary_word.dart';
 import '../domain/word_report.dart';
 
@@ -10,6 +14,7 @@ final class DriftWordReportRepository implements WordReportRepository {
   DriftWordReportRepository({
     required this.database,
     required OwnerWriteCoordinator ownerWriteCoordinator,
+    this.contentReports,
   }) {
     if (ownerWriteCoordinator is! DriftOwnerWriteCoordinator ||
         !identical(database, ownerWriteCoordinator.database)) {
@@ -18,88 +23,126 @@ final class DriftWordReportRepository implements WordReportRepository {
       );
     }
     _ownerWrites = ownerWriteCoordinator;
+    if (contentReports != null &&
+        !identical(database, contentReports!.database)) {
+      throw ArgumentError('Report queues must share the word database');
+    }
   }
 
   final db.AppDatabase database;
   late final DriftOwnerWriteCoordinator _ownerWrites;
+  final DriftContentReportQueue? contentReports;
 
   @override
   Future<SubmitResult> submit(WordReportCommand command) async {
-    if (await _ownerWrites.hasAmbientTransaction()) {
-      _unavailable();
-    }
-    return _ownerWrites.writeForActiveOwner(
-      expectedOwnerId: command.expectedOwnerId,
-      write: () async {
-        final existing = await _row(command.id);
-        final StoredWordReport expected;
-        final bool inserted;
-        if (existing != null) {
-          if (existing.data['owner_id'] != command.expectedOwnerId) {
-            _unavailable();
-          }
-          expected = _decode(existing);
-          if (!expected.matchesCommand(command)) {
-            throw const WordReportException(WordReportFailureCode.collision);
-          }
-          inserted = false;
-        } else {
-          await _requireFreshTarget(command.expectedOwnerId, command.target);
-          expected = StoredWordReport(
-            id: command.id,
-            ownerId: command.expectedOwnerId,
-            target: command.target,
-            reason: command.reason,
-            comment: command.comment,
-            queuedAtUtc: command.queuedAtUtc,
-          );
-          await database.customInsert(
-            'INSERT INTO word_reports '
-            '(id,owner_id,word_id,category_id,word_revision,snapshot_json,snapshot_sha256,reason,comment,queued_at_utc_ms) '
-            'VALUES (?,?,?,?,?,?,?,?,?,?)',
-            variables: [
-              Variable<String>(expected.id),
-              Variable<String>(expected.ownerId),
-              Variable<String>(expected.target.wordId),
-              Variable<String>(expected.target.categoryId),
-              Variable<int>(expected.target.wordRevision),
-              Variable<String>(expected.target.snapshotJson),
-              Variable<String>(expected.target.snapshotSha256),
-              Variable<String>(expected.reason.name),
-              Variable<String>(expected.comment),
-              Variable<int>(expected.queuedAtUtc.millisecondsSinceEpoch),
-            ],
-            updates: {database.wordReports},
-          );
-          inserted = true;
-        }
-        return _ownerWrites.writeForActiveOwner(
-          expectedOwnerId: command.expectedOwnerId,
-          write: () async {
-            if (inserted) {
-              await _requireFreshTarget(
-                command.expectedOwnerId,
-                command.target,
-              );
-            }
-            final finalRow = await _row(command.id);
-            if (finalRow == null ||
-                finalRow.data['owner_id'] != command.expectedOwnerId) {
-              _unavailable();
-            }
-            final stored = _decode(finalRow);
-            if (!stored.sameFacts(expected) ||
-                !stored.matchesCommand(command)) {
-              _unavailable();
-            }
-            return SubmitResult(
-              status: inserted ? SubmitStatus.queued : SubmitStatus.replayed,
-              report: stored,
-            );
-          },
+    var valid = true;
+    final changes = Zone.root
+        .run(
+          () => database.tableUpdates(
+            TableUpdateQuery.onTable(database.localOwners),
+          ),
+        )
+        .listen(
+          (_) => valid = false,
+          onError: (Object _) => valid = false,
+          onDone: () => valid = false,
         );
-      },
-    );
+    void requireCurrent() {
+      if (!valid) _unavailable();
+    }
+
+    Future<void> revalidate() async {
+      requireCurrent();
+      await command.revalidate?.call();
+      requireCurrent();
+    }
+
+    try {
+      if (await _ownerWrites.hasAmbientTransaction()) {
+        _unavailable();
+      }
+      requireCurrent();
+      return await _ownerWrites.writeForActiveOwner(
+        expectedOwnerId: command.expectedOwnerId,
+        write: () async {
+          await revalidate();
+          final existing = await _row(command.id);
+          final StoredWordReport expected;
+          final bool inserted;
+          if (existing != null) {
+            if (existing.data['owner_id'] != command.expectedOwnerId) {
+              _unavailable();
+            }
+            expected = _decode(existing);
+            if (!expected.matchesCommand(command)) {
+              throw const WordReportException(WordReportFailureCode.collision);
+            }
+            inserted = false;
+          } else {
+            await _requireFreshTarget(command.expectedOwnerId, command.target);
+            expected = StoredWordReport(
+              id: command.id,
+              ownerId: command.expectedOwnerId,
+              target: command.target,
+              reason: command.reason,
+              comment: command.comment,
+              queuedAtUtc: command.queuedAtUtc,
+            );
+            await database.customInsert(
+              'INSERT INTO word_reports '
+              '(id,owner_id,word_id,category_id,word_revision,snapshot_json,snapshot_sha256,reason,comment,queued_at_utc_ms) '
+              'VALUES (?,?,?,?,?,?,?,?,?,?)',
+              variables: [
+                Variable<String>(expected.id),
+                Variable<String>(expected.ownerId),
+                Variable<String>(expected.target.wordId),
+                Variable<String>(expected.target.categoryId),
+                Variable<int>(expected.target.wordRevision),
+                Variable<String>(expected.target.snapshotJson),
+                Variable<String>(expected.target.snapshotSha256),
+                Variable<String>(expected.reason.name),
+                Variable<String>(expected.comment),
+                Variable<int>(expected.queuedAtUtc.millisecondsSinceEpoch),
+              ],
+              updates: {database.wordReports},
+            );
+            inserted = true;
+          }
+          return _ownerWrites.writeForActiveOwner(
+            expectedOwnerId: command.expectedOwnerId,
+            write: () async {
+              if (inserted) {
+                await _requireFreshTarget(
+                  command.expectedOwnerId,
+                  command.target,
+                );
+              }
+              final finalRow = await _row(command.id);
+              if (finalRow == null ||
+                  finalRow.data['owner_id'] != command.expectedOwnerId) {
+                _unavailable();
+              }
+              final stored = _decode(finalRow);
+              if (!stored.sameFacts(expected) ||
+                  !stored.matchesCommand(command)) {
+                _unavailable();
+              }
+              await contentReports?.put(
+                expectedOwnerId: command.expectedOwnerId,
+                payload: ContentReportPayload.fromWordReport(stored),
+              );
+              await revalidate();
+              return SubmitResult(
+                status: inserted ? SubmitStatus.queued : SubmitStatus.replayed,
+                report: stored,
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      await changes.cancel();
+    }
   }
 
   @override

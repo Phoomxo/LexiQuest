@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
@@ -311,81 +313,153 @@ void main() {
     },
   );
 
-  test('owner transition during purchase never debits the new owner', () async {
-    await database
-        .into(database.localOwners)
-        .insert(
-          LocalOwnersCompanion.insert(
-            id: 'owner-b',
-            createdAtUtcMs: 2,
-            isActive: const Value(false),
+  test(
+    'owner transition during purchase rolls back both owners and every projection',
+    () async {
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-b',
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      final transitioningRewards = RewardUseCases(
+        owners: owners,
+        repository: DriftRewardRepository(database),
+        generateId: () => 'transition-tx',
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      );
+      final before = await _snapshot(database);
+      final interference = _AfterRewardInsert();
+
+      await expectLater(
+        database.runWithInterceptor(
+          () => transitioningRewards.purchase(
+            expectedOwnerId: 'local:owner',
+            itemId: 'theme_ocean',
+            catalogVersion: RewardCatalog.version,
+            idempotencyKey: 'transition-buy',
           ),
+          interceptor: interference,
+        ),
+        throwsA(
+          isA<AccountDeletionException>().having(
+            (error) => error.code,
+            'code',
+            AccountDeletionFailureCode.ownerChanged,
+          ),
+        ),
+      );
+      expect(interference.fired, isTrue);
+
+      final transactions = await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.transactionType.equals('purchase'))).get();
+      expect(
+        transactions.where((row) => row.ownerId == 'local:owner'),
+        isEmpty,
+      );
+      expect(transactions.where((row) => row.ownerId == 'owner-b'), isEmpty);
+      expect(await _snapshot(database), before);
+    },
+  );
+
+  test(
+    'owner transition during equip rolls back both owners and every projection',
+    () async {
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-b',
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      final transitioningRewards = RewardUseCases(
+        owners: owners,
+        repository: DriftRewardRepository(database),
+        generateId: () => 'transition-equip-tx',
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      );
+      final before = await _snapshot(database);
+      final interference = _AfterRewardInsert();
+
+      await expectLater(
+        database.runWithInterceptor(
+          () => transitioningRewards.equip(
+            expectedOwnerId: 'local:owner',
+            itemId: 'theme_default',
+            idempotencyKey: 'transition-equip',
+          ),
+          interceptor: interference,
+        ),
+        throwsA(
+          isA<AccountDeletionException>().having(
+            (error) => error.code,
+            'code',
+            AccountDeletionFailureCode.ownerChanged,
+          ),
+        ),
+      );
+      expect(interference.fired, isTrue);
+
+      final transactions = await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.transactionType.equals('equip'))).get();
+      expect(
+        transactions.where((row) => row.ownerId == 'local:owner'),
+        isEmpty,
+      );
+      expect(transactions.where((row) => row.ownerId == 'owner-b'), isEmpty);
+      expect(await _snapshot(database), before);
+    },
+  );
+
+  for (final purchase in [true, false]) {
+    test(
+      'post-SQL owner change rolls back cosmetic ${purchase ? 'purchase' : 'equip'} and outbox atomically',
+      () async {
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'owner-b',
+                createdAtUtcMs: 2,
+                isActive: const Value(false),
+              ),
+            );
+        final before = await _snapshot(database);
+        final interference = _AfterRewardInsert();
+        final actual = DriftRewardRepository(database);
+        await expectLater(
+          database.runWithInterceptor(
+            () => purchase
+                ? actual.purchase(
+                    ownerId: 'local:owner',
+                    item: RewardCatalog.byId('theme_ocean')!,
+                    idempotencyKey: 'synthetic-post-sql-buy',
+                    transactionId: 'synthetic-post-sql-buy',
+                    occurredAtUtc: DateTime.utc(2026, 7, 30, 12),
+                  )
+                : actual.equip(
+                    ownerId: 'local:owner',
+                    item: RewardCatalog.byId('theme_default')!,
+                    idempotencyKey: 'synthetic-post-sql-equip',
+                    transactionId: 'synthetic-post-sql-equip',
+                    occurredAtUtc: DateTime.utc(2026, 7, 30, 12),
+                  ),
+            interceptor: interference,
+          ),
+          throwsA(isA<AccountDeletionException>()),
         );
-    final transitioningRewards = RewardUseCases(
-      owners: _SequencedOwnerRepository(<String>['local:owner', 'owner-b']),
-      repository: DriftRewardRepository(database),
-      generateId: () => 'transition-tx',
-      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+        expect(interference.fired, isTrue);
+        expect(await _snapshot(database), before);
+      },
     );
-
-    await expectLater(
-      transitioningRewards.purchase(
-        expectedOwnerId: 'local:owner',
-        itemId: 'theme_ocean',
-        catalogVersion: RewardCatalog.version,
-        idempotencyKey: 'transition-buy',
-      ),
-      throwsA(
-        isA<RewardException>().having(
-          (error) => error.code,
-          'code',
-          RewardFailureCode.ownerChanged,
-        ),
-      ),
-    );
-
-    final transactions = await (database.select(
-      database.rewardTransactions,
-    )..where((row) => row.transactionType.equals('purchase'))).get();
-    expect(
-      transactions.where((row) => row.ownerId == 'local:owner'),
-      hasLength(1),
-    );
-    expect(transactions.where((row) => row.ownerId == 'owner-b'), isEmpty);
-  });
-
-  test('owner transition during equip never equips the new owner', () async {
-    final transitioningRewards = RewardUseCases(
-      owners: _SequencedOwnerRepository(<String>['local:owner', 'owner-b']),
-      repository: DriftRewardRepository(database),
-      generateId: () => 'transition-equip-tx',
-      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
-    );
-
-    await expectLater(
-      transitioningRewards.equip(
-        expectedOwnerId: 'local:owner',
-        itemId: 'theme_default',
-        idempotencyKey: 'transition-equip',
-      ),
-      throwsA(
-        isA<RewardException>().having(
-          (error) => error.code,
-          'code',
-          RewardFailureCode.ownerChanged,
-        ),
-      ),
-    );
-
-    final transactions = await (database.select(
-      database.rewardTransactions,
-    )..where((row) => row.transactionType.equals('equip'))).get();
-    expect(
-      transactions.where((row) => row.ownerId == 'local:owner'),
-      hasLength(1),
-    );
-    expect(transactions.where((row) => row.ownerId == 'owner-b'), isEmpty);
-  });
+  }
 
   test(
     'loadSession rejects an owner snapshot that changed during load',
@@ -409,6 +483,40 @@ void main() {
       );
     },
   );
+}
+
+Future<Map<String, List<String>>> _snapshot(AppDatabase database) async => {
+  for (final table in database.allTables)
+    table.actualTableName:
+        (await database
+                .customSelect('SELECT * FROM ${table.actualTableName}')
+                .get())
+            .map((row) => jsonEncode(row.data))
+            .toList()
+          ..sort(),
+};
+
+final class _AfterRewardInsert extends QueryInterceptor {
+  bool fired = false;
+  @override
+  Future<int> runInsert(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    final result = await executor.runInsert(statement, args);
+    if (!fired &&
+        RegExp(
+          r'^INSERT INTO\s+"?reward_transactions"?\s',
+          caseSensitive: false,
+        ).hasMatch(statement)) {
+      fired = true;
+      await executor.runCustom('UPDATE local_owners SET is_active = (id = ?)', [
+        'owner-b',
+      ]);
+    }
+    return result;
+  }
 }
 
 final class _SequencedOwnerRepository implements LocalOwnerRepository {

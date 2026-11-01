@@ -16,6 +16,7 @@ final class WordReportUseCases {
     required WordReportTarget target,
     required ReportReason reason,
     String? comment,
+    Future<void> Function()? revalidate,
   }) {
     final now = nowUtc();
     if (!now.isUtc || now.microsecondsSinceEpoch < 0) {
@@ -32,6 +33,7 @@ final class WordReportUseCases {
         now.millisecondsSinceEpoch,
         isUtc: true,
       ),
+      revalidate: revalidate,
     );
   }
 

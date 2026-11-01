@@ -477,12 +477,15 @@ def test_export_and_delete_share_the_exact_owner_data_inventory() -> None:
         ("research_enrollments", "firebaseUid", False),
         ("research_consents", "firebaseUid", False),
         ("research_study_archives", "firebaseUid", False),
+        ("content_reports", "firebaseUid", False),
+        ("content_report_limits", "firebaseUid", False),
     ]
 
 
 @pytest.mark.parametrize('collections', [
     ('billing_accounts', 'billing_purchases', 'billing_usage', 'billing_usage_windows'),
     ('research_enrollments', 'research_consents', 'research_study_archives'),
+    ('content_reports', 'content_report_limits'),
 ])
 def test_server_only_namespaces_are_exported_and_deleted_for_only_the_authenticated_owner(collections):
     records = {f'{collection}/synthetic-a': {'firebaseUid': 'firebase-user', 'synthetic': collection}

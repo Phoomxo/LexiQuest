@@ -215,17 +215,22 @@ final class LearningPackUiHarness {
       generateId: id,
       nowUtc: now,
     );
-    final repository = LearningPackUiRepository(
-      DriftLearningPackRepository(database: database, ownerWrites: writes),
-      loseAck: loseAck,
+    final packReader = DriftLearningPackRepository(
+      database: database,
+      ownerWrites: writes,
     );
+    final repository = LearningPackUiRepository(packReader, loseAck: loseAck);
     return LearningPackUiHarness(
       database,
       LearningPackUseCases(repository: repository, nowUtc: now, generateId: id),
       repository,
       LearningUseCases(
         owners: owners,
-        repository: DriftLearningRepository(database, ownerWrites: writes),
+        repository: DriftLearningRepository(
+          database,
+          ownerWrites: writes,
+          lexicalContent: packReader,
+        ),
         generateId: id,
         nowUtc: now,
         buildInfo: const AppBuildInfo(

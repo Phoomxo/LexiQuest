@@ -178,7 +178,7 @@ void main() {
           'UPDATE learning_sessions SET accepted_plan_id = ?, accepted_plan_json = ?, '
           'checkpoint_revision = 3, checkpoint_json = ? WHERE id = ?',
           [
-            'synthetic-plan-$mode',
+            'quiz-plan:synthetic-$mode',
             'synthetic-plan-body-$mode',
             'synthetic-checkpoint-$mode',
             mode,

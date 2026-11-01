@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/populated_owner_migration_fixture.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
@@ -62,7 +63,7 @@ void main() {
       expect(column.read<int>('notnull'), 0);
       expect(column.read<String>('type'), 'TEXT');
     }
-    expect(database.allTables, hasLength(43));
+    expect(database.allTables, hasLength(45));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,
@@ -299,10 +300,10 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      23,
+      25,
     );
     expect(before, hasLength(34));
-    expect(database.allTables, hasLength(43));
+    expect(database.allTables, hasLength(45));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,
@@ -321,28 +322,10 @@ void main() {
           .get(),
       hasLength(2),
     );
-    for (final table in before.entries) {
-      final after = await database
-          .customSelect('SELECT * FROM "${table.key}" ORDER BY rowid')
-          .get();
-      expect(
-        after
-            .map(
-              (row) => Map<String, Object?>.from(row.data)
-                ..remove('accepted_plan_id')
-                ..remove('accepted_plan_json')
-                ..remove('checkpoint_revision')
-                ..remove('checkpoint_json')
-                ..remove('last_switch_ordinal')
-                ..remove('suppressed_switch_count')
-                ..remove('started_effective_presentation')
-                ..remove('pending_presentation_change_json'),
-            )
-            .toList(),
-        table.value,
-        reason: table.key,
-      );
-    }
+    expectHistoricalOwnerMigrationRows(
+      await ownerMigrationRows(database),
+      before,
+    );
     final sessions = await database
         .customSelect(
           'SELECT accepted_plan_id, accepted_plan_json, checkpoint_revision, checkpoint_json '

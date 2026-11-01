@@ -20,7 +20,7 @@ void main() {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       await _seed(database, 'a', 200);
-      await _seed(database, 'b', 10);
+      await _seed(database, 'b', 10, active: false);
       final rewards = DriftRewardRepository(database);
 
       final before = await _progress(database, 'a');
@@ -93,7 +93,7 @@ void main() {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       await _seed(database, 'a', 200);
-      await _seed(database, 'b', 10);
+      await _seed(database, 'b', 10, active: false);
       final rewards = DriftRewardRepository(database);
       await _purchase(rewards, 'a');
       for (final owner in ['a', 'b']) {
@@ -184,10 +184,21 @@ void main() {
   );
 }
 
-Future<void> _seed(AppDatabase db, String owner, int credits) async {
+Future<void> _seed(
+  AppDatabase db,
+  String owner,
+  int credits, {
+  bool active = true,
+}) async {
   await db
       .into(db.localOwners)
-      .insert(LocalOwnersCompanion.insert(id: owner, createdAtUtcMs: 1));
+      .insert(
+        LocalOwnersCompanion.insert(
+          id: owner,
+          createdAtUtcMs: 1,
+          isActive: Value(active),
+        ),
+      );
   await db
       .into(db.vocabularyCategories)
       .insert(

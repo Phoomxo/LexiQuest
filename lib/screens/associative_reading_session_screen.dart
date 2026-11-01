@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show listEquals, mapEquals;
 import 'package:flutter/material.dart';
 
+import '../features/content_reports/domain/content_report.dart';
+import '../features/content_reports/presentation/content_report_button.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
@@ -690,7 +692,49 @@ class _AssociativeReadingSessionScreenState
   Widget build(BuildContext context) {
     _timeBinding?.syncVisibility();
     return Scaffold(
-      appBar: AppBar(title: Text('อ่านแบบเชื่อมโยง (${widget.cefrLevel})')),
+      appBar: AppBar(
+        title: Text('อ่านแบบเชื่อมโยง (${widget.cefrLevel})'),
+        actions: [
+          if (widget.timeCallerContext == LearningTimeCallerContext.ordinary &&
+              (widget.ownerId ?? _time?.ownerId) != null &&
+              !_timeSourceRetired)
+            ContentReportButton.content(
+              key: const ValueKey('content-report-reading'),
+              expectedOwnerId: (widget.ownerId ?? _time?.ownerId)!,
+              sourceIdentity: (
+                widget.documentId,
+                widget.documentRevision,
+                widget.passageText,
+              ),
+              sourceText: widget.passageText,
+              compact: true,
+              sessionId: _sessionId,
+              callerContext: widget.timeCallerContext,
+              canOpen: () =>
+                  mounted &&
+                  !_loading &&
+                  !_saving &&
+                  !_timeSourceRetired &&
+                  (ModalRoute.of(context)?.isCurrent ?? false),
+              targetForSelection: (text, excerpt) {
+                final digest = sha256
+                    .convert(utf8.encode(widget.passageText))
+                    .toString();
+                final supplied = widget.documentId?.trim();
+                return ContentReportTarget.readingDocument(
+                  text: text,
+                  isExcerpt: excerpt,
+                  documentId: supplied?.isNotEmpty == true ? supplied! : digest,
+                  documentRevision: widget.documentRevision,
+                  documentSha256: digest,
+                  identityKind: supplied?.isNotEmpty == true
+                      ? ContentReportDocumentIdentity.supplied
+                      : ContentReportDocumentIdentity.contentDigest,
+                );
+              },
+            ),
+        ],
+      ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(

@@ -40,6 +40,23 @@ abstract interface class LearningRepository {
 abstract interface class NativeExerciseRepository {
   Future<bool> hasAmbientTransaction();
 
+  Future<NativeExerciseState> resumeNativeExercise({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  });
+
+  Future<NativeExerciseState> readNativeExerciseState(
+    AcceptedNativeExercise exercise, {
+    required bool Function() stillCurrent,
+  });
+
+  Future<NativeExerciseState> saveNativeCheckpoint(
+    NativeExerciseState state,
+    NativeCheckpoint checkpoint, {
+    required bool Function() stillCurrent,
+  });
+
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
     T exercise, {
     required bool Function() stillCurrent,
@@ -53,6 +70,14 @@ abstract interface class NativeExerciseRepository {
 
   Future<LearningSessionSummary> finishNativeExercise(
     NativeFinishIntent intent, {
+    required bool Function() stillCurrent,
+  });
+}
+
+abstract interface class LexicalQuizRepository {
+  Future<AcceptedQuizPlan> prepareLexicalQuizPlan({
+    required LearningSessionDraft session,
+    required LexicalQuizConfiguration configuration,
     required bool Function() stillCurrent,
   });
 }

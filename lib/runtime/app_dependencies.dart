@@ -5,12 +5,15 @@ import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account_deletion/application/account_deletion_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/content_reports/application/content_report_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/matching_use_cases.dart';
+import '../features/learning/domain/recall_ladder.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/learning_profile/application/learning_profile_use_cases.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
@@ -20,6 +23,7 @@ import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
+import 'motivation_runtime.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/application/review_center_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
@@ -31,6 +35,7 @@ import '../features/research/application/controlled_study_upload_use_cases.dart'
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
+import '../features/study_reminders/application/study_reminder_runtime.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/saved_words_use_cases.dart';
@@ -67,6 +72,9 @@ final class AppDependencies {
     this.syncTrigger,
     this.syncStatus,
     this.learning,
+    this.matching,
+    this.recallLadder,
+    this.studyReminders,
     this.learningTime,
     this.learningProfile,
     this.learningPacks,
@@ -78,6 +86,7 @@ final class AppDependencies {
     this.vocabulary,
     this.savedWords,
     this.wordReports,
+    this.contentReports,
     this.vocabularyImporter,
     this.vocabularyImportFilePicker,
     this.sourcePracticeFilePicker,
@@ -98,6 +107,7 @@ final class AppDependencies {
     this.voice,
     this.quest,
     this.streak,
+    this.motivation,
     this.associativeLearning,
     this.disposeResources,
   });
@@ -119,6 +129,9 @@ final class AppDependencies {
   final SyncTrigger? syncTrigger;
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
+  final MatchingUseCases? matching;
+  final RecallLadderReader? recallLadder;
+  final StudyReminderRuntime? studyReminders;
   final LearningTimeUseCases? learningTime;
   final LearningProfileUseCases? learningProfile;
   final LearningPackUseCases? learningPacks;
@@ -130,6 +143,7 @@ final class AppDependencies {
   final VocabularyUseCases? vocabulary;
   final SavedWordsUseCases? savedWords;
   final WordReportUseCases? wordReports;
+  final ContentReportUseCases? contentReports;
   final ImportVocabulary? vocabularyImporter;
   final VocabularyImportFilePicker? vocabularyImportFilePicker;
   final SourcePracticeFilePicker? sourcePracticeFilePicker;
@@ -157,6 +171,7 @@ final class AppDependencies {
 
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;
+  final MotivationRuntime? motivation;
 
   /// Associative learning persistence port.
   /// Falls back to [InMemoryAssociativeLearningAdapter] when null.

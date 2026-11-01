@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
-import '../config/m3_theme.dart';
+import '../features/content_reports/domain/content_report.dart';
+import '../features/content_reports/presentation/content_report_button.dart';
+import '../features/learning/domain/learning_evidence_contract.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning/presentation/lesson_scaffold.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/sentence_scramble_content.dart';
+import '../features/learning/presentation/native_exercise_checkpoint_binding.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
@@ -18,12 +23,14 @@ class SentenceScrambleScreen extends StatefulWidget {
     super.key,
     required this.session,
     required this.learning,
+    this.resumeState,
     this.ownerChanges,
     this.voice,
     this.languageCode = 'th',
   });
   final SentenceScrambleSession session;
   final LearningUseCases learning;
+  final NativeExerciseState? resumeState;
   final Stream<String?>? ownerChanges;
   final VoiceUseCases? voice;
   final String languageCode;
@@ -59,6 +66,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   bool _bound = false;
   bool _invalidated = false;
   bool _routeVisible = false;
+  bool _reportOverlay = false;
   bool _startRequested = false;
   bool _writeInFlight = false;
   bool _redrawScheduled = false;
@@ -76,8 +84,13 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   int _epoch = 0;
   int _audioEpoch = 0;
   _Step _step = _Step.starting;
-  RecordAnswerCommand? _pendingAnswer;
-  NativeFinishIntent? _pendingFinish;
+  NativeExerciseCheckpointBinding? _checkpoint;
+  RecordAnswerCommand? get _pendingAnswer =>
+      _invalidated ? null : _checkpoint?.answer;
+  bool _draftBusy = false;
+  bool _draftFailed = false;
+  bool _draftDirty = false;
+  List<int?>? _tileDraft;
 
   String _copy(String th, String en) => widget.languageCode == 'th' ? th : en;
 
@@ -155,7 +168,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     }
     final visible =
         ModalRoute.isCurrentOf(context) == true && Visibility.of(context);
-    if ((_routeVisible && !visible && !_confirmingExit) ||
+    if ((_routeVisible && !visible && !_confirmingExit && !_reportOverlay) ||
         !Visibility.of(context)) {
       _invalidate();
     }
@@ -167,6 +180,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   void didUpdateWidget(covariant SentenceScrambleScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.session, oldWidget.session) ||
+        !identical(widget.resumeState, oldWidget.resumeState) ||
         !identical(widget.learning, oldWidget.learning) ||
         !identical(widget.ownerChanges, oldWidget.ownerChanges) ||
         !identical(widget.voice, oldWidget.voice) ||
@@ -191,9 +205,15 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
       Visibility.of(context) &&
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
   bool get _canAnswer =>
-      _current(_epoch) && _step == _Step.answering && _pendingAnswer == null;
+      _current(_epoch) &&
+      _step == _Step.answering &&
+      _pendingAnswer == null &&
+      !_draftBusy &&
+      _checkpoint?.hasPendingDraft != true;
   bool get _canListen =>
       _current(_epoch) &&
+      !_draftBusy &&
+      _checkpoint?.hasPendingDraft != true &&
       _voice != null &&
       widget.session.content.sentence.length <= 500;
 
@@ -201,6 +221,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     if (!mounted || _invalidated) return;
     _invalidated = true;
     _epoch++;
+    _checkpoint?.retire();
     _latency.stop();
     _slots.fillRange(0, _slots.length, null);
     _filledSlots.clear();
@@ -214,23 +235,74 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     unawaited(_start());
   }
 
+  NativeExerciseDraft _captureDraft() => NativeExerciseDraft(
+    text: _tileDraft == null ? _response.text : _arranged,
+    tileSlots: _tileDraft,
+    responseTimeMs: _checkpoint!.elapsedMilliseconds(_latency.elapsed),
+  );
+
+  void _restoreCheckpoint() {
+    final state = _checkpoint!.state!;
+    final draft = state.checkpoint.draft;
+    _latency
+      ..stop()
+      ..reset();
+    _response.text = draft.tileSlots == null ? draft.text : '';
+    _slots.setAll(0, draft.tileSlots ?? List<int?>.filled(_slots.length, null));
+    _tileDraft = draft.tileSlots == null ? null : _slots;
+    _filledSlots.clear();
+    _draftDirty = false;
+    _step = switch (state.phase) {
+      NativeCheckpointPhase.awaitingAnswer => _Step.answering,
+      NativeCheckpointPhase.pendingAnswer => _Step.saveFailed,
+      NativeCheckpointPhase.answered ||
+      NativeCheckpointPhase.completed => _Step.saved,
+      NativeCheckpointPhase.closing => _Step.finishFailed,
+      NativeCheckpointPhase.abandoned => _Step.startFailed,
+    };
+    if (_step == _Step.answering) _latency.start();
+  }
+
   Future<void> _start() async {
     final epoch = _epoch;
     if (!_current(epoch) || _writeInFlight) return;
     _step = _Step.starting;
     _writeInFlight = true;
     _redraw();
+    _checkpoint ??= NativeExerciseCheckpointBinding(
+      learning: widget.learning,
+      display: widget.session,
+      resumeState: widget.resumeState,
+      stillCurrent: () => _current(epoch),
+    );
     try {
-      await widget.learning.startNativeExercise(
-        widget.session,
-        stillCurrent: () => _current(epoch),
-      );
-      if (!_current(epoch)) return;
-      _latency.start();
-      _step = _Step.answering;
+      await _checkpoint!.initialize();
+      if (_current(epoch)) _restoreCheckpoint();
     } on Object {
       if (_current(epoch)) _step = _Step.startFailed;
     } finally {
+      _writeInFlight = false;
+      _redraw();
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    final epoch = _epoch;
+    if (!_current(epoch) || _writeInFlight || _step != _Step.answering) return;
+    _latency.stop();
+    _draftBusy = true;
+    _writeInFlight = true;
+    _draftFailed = false;
+    _redraw();
+    try {
+      await _checkpoint!.saveDraft(
+        _checkpoint!.hasPendingDraft ? null : _captureDraft(),
+      );
+      if (_current(epoch)) _restoreCheckpoint();
+    } on Object {
+      if (_current(epoch)) _draftFailed = true;
+    } finally {
+      _draftBusy = false;
       _writeInFlight = false;
       _redraw();
     }
@@ -250,30 +322,15 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
         (!retry && (!_canAnswer || !_hasAnswer))) {
       return;
     }
-    try {
-      _pendingAnswer ??= widget.learning.prepareNativeAnswer(
-        SentenceScrambleAnswerInput(
-          exercise: widget.session,
-          response: _response.text.isNotEmpty ? _response.text : _arranged,
-          responseTime: _latency.elapsed,
-        ),
-      );
-    } on Object {
-      _step = _Step.saveFailed;
-      _redraw();
-      return;
-    }
     _latency.stop();
     _step = _Step.saving;
     _writeInFlight = true;
     _redraw();
     try {
-      await widget.learning.commitNativeAnswer(
-        widget.session,
-        _pendingAnswer!,
-        stillCurrent: () => _current(epoch),
+      await _checkpoint!.saveAnswer(
+        _checkpoint!.hasPendingInput ? null : _captureDraft(),
       );
-      if (_current(epoch)) _step = _Step.saved;
+      if (_current(epoch)) _restoreCheckpoint();
     } on Object {
       if (_current(epoch)) _step = _Step.saveFailed;
     } finally {
@@ -289,24 +346,11 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
         (_step != _Step.saved && _step != _Step.finishFailed)) {
       return;
     }
-    try {
-      _pendingFinish ??= widget.learning.prepareNativeFinish(
-        widget.session,
-        _pendingAnswer!,
-      );
-    } on Object {
-      _step = _Step.finishFailed;
-      _redraw();
-      return;
-    }
     _step = _Step.finishing;
     _writeInFlight = true;
     _redraw();
     try {
-      final summary = await widget.learning.finishNativeExercise(
-        _pendingFinish!,
-        stillCurrent: () => _current(epoch),
-      );
+      final summary = await _checkpoint!.finish();
       if (_current(epoch)) _leaveRoute(summary: summary, expectedEpoch: epoch);
     } on Object {
       if (_current(epoch)) _step = _Step.finishFailed;
@@ -314,6 +358,67 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
       _writeInFlight = false;
       _redraw();
     }
+  }
+
+  Widget _draftPanel() {
+    final state = _checkpoint!.state!;
+    final awaiting = state.phase == NativeCheckpointPhase.awaitingAnswer;
+    final message = _draftBusy
+        ? _copy('กำลังบันทึกฉบับร่าง', 'Saving draft')
+        : _draftFailed
+        ? _copy(
+            'ยังยืนยันฉบับร่างไม่ได้ ลองบันทึกอีกครั้ง',
+            'Draft save is not confirmed. Retry saving.',
+          )
+        : _draftDirty
+        ? _copy('มีการแก้ไขที่ยังไม่ได้บันทึก', 'Unsaved changes')
+        : awaiting
+        ? (widget.resumeState != null || state.checkpointRevision > 1
+              ? _copy(
+                  'ฉบับร่างบันทึกแล้ว ยังไม่เป็นคำตอบที่ส่ง',
+                  'Draft saved. Answer not recorded.',
+                )
+              : _copy('ฉบับร่างยังไม่ได้บันทึก', 'Draft not saved'))
+        : state.phase == NativeCheckpointPhase.pendingAnswer
+        ? _copy(
+            'ฉบับร่างบันทึกแล้ว รอยืนยันคำตอบเดิม',
+            'Draft saved. Confirm the original answer.',
+          )
+        : _copy('คำตอบบันทึกแล้ว', 'Answer recorded');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            liveRegion: true,
+            child: Text(message, key: const ValueKey('native-draft-status')),
+          ),
+          if (awaiting)
+            OutlinedButton.icon(
+              key: const ValueKey('native-draft-save'),
+              onPressed:
+                  _current(_epoch) &&
+                      !_draftBusy &&
+                      _step == _Step.answering &&
+                      !_writeInFlight
+                  ? _saveDraft
+                  : null,
+              icon: const Icon(Icons.save_outlined),
+              label: Text(
+                _copy(
+                  _checkpoint!.hasPendingDraft
+                      ? 'ลองบันทึกฉบับร่างอีกครั้ง'
+                      : 'บันทึกฉบับร่าง',
+                  _checkpoint!.hasPendingDraft
+                      ? 'Retry draft save'
+                      : 'Save draft',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _stopPlayback() {
@@ -454,8 +559,8 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
             ),
             content: Text(
               _copy(
-                'หากออกต้องเริ่มรอบใหม่ กลับมารอบนี้ไม่ได้ รายการที่บันทึกแล้วจะยังคงอยู่',
-                'Leaving requires a new round; this round cannot be resumed. Already saved records stay saved.',
+                'เล่นต่อจากฉบับร่างที่ยืนยันแล้วได้ในประวัติ การแก้ไขที่ยังไม่บันทึกจะไม่ถูกเก็บ',
+                'Continue acknowledged drafts from History. Unsaved changes will not be kept.',
               ),
             ),
             actions: [
@@ -508,6 +613,8 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     if (!_canDrop(slot, source)) return;
     _response.clear();
     _slots[slot] = source;
+    _tileDraft = _slots;
+    _draftDirty = true;
     _filledSlots.add(slot);
     _redraw();
   }
@@ -519,6 +626,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
 
   void _undo() {
     if (!_canAnswer) return;
+    _draftDirty = true;
     if (_response.text.isNotEmpty) {
       _response.text = _response.text.characters
           .take(_response.text.characters.length - 1)
@@ -534,6 +642,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
 
   void _clear() {
     if (!_canAnswer) return;
+    _draftDirty = true;
     _response.clear();
     _slots.fillRange(0, _slots.length, null);
     _filledSlots.clear();
@@ -543,6 +652,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   @override
   void dispose() {
     _epoch++;
+    _checkpoint?.retire();
     _invalidated = true;
     unawaited(_owners?.cancel());
     unawaited(_stopPlayback());
@@ -653,306 +763,330 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
           unawaited(_requestBack());
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          toolbarHeight: M3Theme.appBarToolbarHeight(context),
-          title: M3Theme.appBarTitle(
-            context,
-            _copy('เรียงคำเป็นประโยค', 'Sentence Scramble'),
-          ),
-          leading: IconButton(
-            key: const ValueKey('sentence-back'),
-            tooltip: _copy('กลับ', 'Back'),
-            onPressed: _writeInFlight ? null : _requestBack,
-            icon: const Icon(Icons.arrow_back),
-          ),
+      child: LessonScaffold(
+        title: _copy('เรียงคำเป็นประโยค', 'Sentence Scramble'),
+        leading: IconButton(
+          key: const ValueKey('sentence-back'),
+          tooltip: _copy('กลับ', 'Back'),
+          onPressed: _writeInFlight ? null : _requestBack,
+          icon: const Icon(Icons.arrow_back),
         ),
-        body: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                if (_invalidated) ...[
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _copy(
-                        'กิจกรรมนี้ไม่พร้อมใช้งาน กลับไปเริ่มใหม่เมื่อพร้อม',
-                        'This activity is no longer available. Go back to start again.',
-                      ),
-                    ),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            if (!_invalidated) ...[
+              LessonProgress(
+                current: 1,
+                total: 1,
+                languageCode: widget.languageCode,
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (_invalidated) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _copy(
+                    'กิจกรรมนี้ไม่พร้อมใช้งาน กลับไปเริ่มใหม่เมื่อพร้อม',
+                    'This activity is no longer available. Go back to start again.',
                   ),
-                  OutlinedButton(
-                    onPressed: _writeInFlight ? null : _requestBack,
-                    child: Text(_copy('กลับไปหน้าเรียน', 'Back to learning')),
+                ),
+              ),
+              OutlinedButton(
+                onPressed: _writeInFlight ? null : _requestBack,
+                child: Text(_copy('กลับไปหน้าเรียน', 'Back to learning')),
+              ),
+            ] else ...[
+              Text(
+                _copy(
+                  'เรียงชิ้นคำให้เป็นประโยคเดิม',
+                  'Arrange the pieces into the original sentence.',
+                ),
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _copy(
+                  'เกมเรียงประโยคเพื่อความสนุก',
+                  'A sentence game for fun.',
+                ),
+              ),
+              Text(_copy('ประโยคสร้างด้วย AI', 'AI-generated sentence')),
+              if (showForm) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _copy(
+                    'ความหมายของคำศัพท์ที่ใช้: ${widget.session.word.meaning}',
+                    'Owned vocabulary meaning: ${widget.session.word.meaning}',
                   ),
-                ] else ...[
-                  Text(
-                    _copy(
-                      'เรียงชิ้นคำให้เป็นประโยคเดิม',
-                      'Arrange the pieces into the original sentence.',
-                    ),
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  key: const ValueKey('sentence-meaning-cue'),
+                ),
+                Text(
+                  _copy(
+                    'ความหมายของคำศัพท์ ไม่ใช่คำแปลประโยค',
+                    'Vocabulary meaning, not a sentence translation.',
                   ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _copy(
+                    'คงตัวพิมพ์และเครื่องหมายวรรคตอนตามชิ้นคำ',
+                    'Keep the displayed capitalization and punctuation.',
+                  ),
+                ),
+                if (_voice != null) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    _copy(
-                      'เกมเรียงประโยคเพื่อความสนุก',
-                      'A sentence game for fun.',
-                    ),
-                  ),
-                  Text(_copy('ประโยคสร้างด้วย AI', 'AI-generated sentence')),
-                  if (showForm) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      _copy(
-                        'ความหมายของคำศัพท์ที่ใช้: ${widget.session.word.meaning}',
-                        'Owned vocabulary meaning: ${widget.session.word.meaning}',
-                      ),
-                      key: const ValueKey('sentence-meaning-cue'),
-                    ),
-                    Text(
-                      _copy(
-                        'ความหมายของคำศัพท์ ไม่ใช่คำแปลประโยค',
-                        'Vocabulary meaning, not a sentence translation.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _copy(
-                        'คงตัวพิมพ์และเครื่องหมายวรรคตอนตามชิ้นคำ',
-                        'Keep the displayed capitalization and punctuation.',
-                      ),
-                    ),
-                    if (_voice != null) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton.icon(
-                            key: const ValueKey('sentence-listen-original'),
-                            onPressed: _canListen && !_voiceBusy
-                                ? _listen
-                                : null,
-                            icon: const Icon(Icons.volume_up_outlined),
-                            label: Text(
-                              _heardOriginal
-                                  ? _copy('ฟังอีกครั้ง', 'Replay original')
-                                  : _copy(
-                                      'ฟังประโยคต้นฉบับ',
-                                      'Listen to original',
-                                    ),
-                            ),
-                          ),
-                          OutlinedButton(
-                            key: const ValueKey('sentence-stop'),
-                            onPressed: _current(_epoch) && _ownsPlayback
-                                ? () {
-                                    unawaited(_stopPlayback());
-                                    _redraw();
-                                  }
-                                : null,
-                            child: Text(_copy('หยุดเสียง', 'Stop')),
-                          ),
-                        ],
-                      ),
-                      if (widget.session.content.sentence.length > 500)
-                        Text(
-                          _copy(
-                            'ประโยคนี้ยาวเกินขอบเขตเสียง แต่ยังตอบแบบฝึกได้',
-                            'This sentence exceeds the voice limit. You can still answer.',
-                          ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        key: const ValueKey('sentence-listen-original'),
+                        onPressed: _canListen && !_voiceBusy ? _listen : null,
+                        icon: const Icon(Icons.volume_up_outlined),
+                        label: Text(
+                          _heardOriginal
+                              ? _copy('ฟังอีกครั้ง', 'Replay original')
+                              : _copy('ฟังประโยคต้นฉบับ', 'Listen to original'),
                         ),
-                      if (_voiceFailed)
-                        Text(
-                          _copy(
-                            'เล่นเสียงไม่สำเร็จ ลองอีกครั้งได้',
-                            'Audio is unavailable. You may retry.',
-                          ),
-                        ),
+                      ),
+                      OutlinedButton(
+                        key: const ValueKey('sentence-stop'),
+                        onPressed: _current(_epoch) && _ownsPlayback
+                            ? () {
+                                unawaited(_stopPlayback());
+                                _redraw();
+                              }
+                            : null,
+                        child: Text(_copy('หยุดเสียง', 'Stop')),
+                      ),
                     ],
-                    const SizedBox(height: 24),
-                    Text(
-                      _copy(
-                        'ลากชิ้นคำลงช่อง หรือกดเลือกตามลำดับ',
-                        'Drag pieces into slots, or tap them in order.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_slots.length, _slot),
-                    ),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _arranged,
-                        key: const ValueKey('sentence-arranged'),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_bank.length, _token),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(
-                          key: const ValueKey('sentence-undo'),
-                          onPressed:
-                              _canAnswer &&
-                                  (_filledSlots.isNotEmpty ||
-                                      _response.text.isNotEmpty)
-                              ? _undo
-                              : null,
-                          child: Text(_copy('ย้อนกลับ', 'Undo')),
-                        ),
-                        OutlinedButton(
-                          key: const ValueKey('sentence-clear'),
-                          onPressed:
-                              _canAnswer &&
-                                  (_filledSlots.isNotEmpty ||
-                                      _response.text.isNotEmpty)
-                              ? _clear
-                              : null,
-                          child: Text(_copy('ล้างคำตอบ', 'Clear')),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      key: const ValueKey('sentence-response'),
-                      controller: _response,
-                      enabled: _canAnswer,
-                      minLines: 2,
-                      maxLines: 5,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textCapitalization: TextCapitalization.none,
-                      textInputAction: TextInputAction.done,
-                      inputFormatters: [
-                        TextInputFormatter.withFunction(
-                          (oldValue, newValue) =>
-                              newValue.text.runes.length <=
-                                      SentenceScrambleContent
-                                          .maxSentenceRunes &&
-                                  utf8.encode(newValue.text).length <=
-                                      SentenceScrambleContent
-                                          .maxSentenceUtf8Bytes
-                              ? newValue
-                              : oldValue,
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: _copy(
-                          'หรือพิมพ์ประโยคแทนการเรียง',
-                          'Or type the sentence',
-                        ),
-                        helperText: _copy(
-                          'สูงสุด 1,024 ตัวอักษร',
-                          'Up to 1,024 characters',
-                        ),
-                        helperMaxLines: 3,
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (_) {
-                        if (!_canAnswer) return;
-                        _slots.fillRange(0, _slots.length, null);
-                        _filledSlots.clear();
-                        _redraw();
-                      },
-                      onSubmitted: (_) => _save(),
-                    ),
-                    const SizedBox(height: 16),
-                    if (!saved)
-                      FilledButton(
-                        key: const ValueKey('sentence-save'),
-                        onPressed: _canAnswer && _hasAnswer ? _save : null,
-                        child: Text(_copy('บันทึกคำตอบ', 'Save answer')),
-                      ),
-                  ],
-                  if (_writeInFlight) ...[
-                    const SizedBox(height: 16),
-                    const LinearProgressIndicator(),
-                  ],
-                  const SizedBox(height: 16),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _copy(
-                        failed
-                            ? 'ยังยืนยันผลไม่ได้ กรุณาลองส่งรายการเดิมอีกครั้ง'
-                            : _writeInFlight
-                            ? 'กำลังดำเนินการ…'
-                            : saved
-                            ? 'บันทึกคำตอบแล้ว กดเสร็จสิ้นเพื่อปิดกิจกรรม'
-                            : 'ตอบเมื่อพร้อม แล้วกดบันทึกคำตอบ',
-                        failed
-                            ? 'Confirmation is unavailable. Retry the original request.'
-                            : _writeInFlight
-                            ? 'Working…'
-                            : saved
-                            ? 'Answer saved. Finish to close this activity.'
-                            : 'Answer when ready, then save your response.',
-                      ),
-                      key: const ValueKey('sentence-status'),
-                    ),
                   ),
-                  if (failed)
-                    OutlinedButton(
-                      key: const ValueKey('sentence-retry'),
-                      onPressed: _writeInFlight
-                          ? null
-                          : () => switch (_step) {
-                              _Step.startFailed => _start(),
-                              _Step.saveFailed => _save(),
-                              _Step.finishFailed => _finish(),
-                              _ => Future<void>.value(),
-                            },
-                      child: Text(
-                        _copy('ลองส่งอีกครั้ง', 'Retry original request'),
-                      ),
-                    ),
-                  if (saved) ...[
-                    const SizedBox(height: 16),
+                  if (widget.session.content.sentence.length > 500)
                     Text(
-                      _pendingAnswer!.isCorrect
-                          ? _copy(
-                              'ตรงกับประโยคต้นฉบับ · บันทึกแล้ว',
-                              'Matches the original sentence · Saved',
-                            )
-                          : _copy(
-                              'บันทึกคำตอบแล้ว ประโยคต้นฉบับคือ',
-                              'Answer saved. The original sentence is',
-                            ),
-                    ),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        widget.session.content.sentence,
-                        key: const ValueKey('sentence-feedback'),
-                        style: Theme.of(context).textTheme.titleLarge,
+                      _copy(
+                        'ประโยคนี้ยาวเกินขอบเขตเสียง แต่ยังตอบแบบฝึกได้',
+                        'This sentence exceeds the voice limit. You can still answer.',
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      key: const ValueKey('sentence-finish'),
-                      onPressed: _step == _Step.saved ? _finish : null,
-                      child: Text(_copy('เสร็จสิ้น', 'Finish')),
+                  if (_voiceFailed)
+                    Text(
+                      _copy(
+                        'เล่นเสียงไม่สำเร็จ ลองอีกครั้งได้',
+                        'Audio is unavailable. You may retry.',
+                      ),
+                    ),
+                ],
+                const SizedBox(height: 24),
+                Text(
+                  _copy(
+                    'ลากชิ้นคำลงช่อง หรือกดเลือกตามลำดับ',
+                    'Drag pieces into slots, or tap them in order.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(_slots.length, _slot),
+                ),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _arranged,
+                    key: const ValueKey('sentence-arranged'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(_bank.length, _token),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton(
+                      key: const ValueKey('sentence-undo'),
+                      onPressed:
+                          _canAnswer &&
+                              (_filledSlots.isNotEmpty ||
+                                  _response.text.isNotEmpty)
+                          ? _undo
+                          : null,
+                      child: Text(_copy('ย้อนกลับ', 'Undo')),
+                    ),
+                    OutlinedButton(
+                      key: const ValueKey('sentence-clear'),
+                      onPressed:
+                          _canAnswer &&
+                              (_filledSlots.isNotEmpty ||
+                                  _response.text.isNotEmpty)
+                          ? _clear
+                          : null,
+                      child: Text(_copy('ล้างคำตอบ', 'Clear')),
                     ),
                   ],
-                ],
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  key: const ValueKey('sentence-response'),
+                  controller: _response,
+                  enabled: _canAnswer,
+                  minLines: 2,
+                  maxLines: 5,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.none,
+                  textInputAction: TextInputAction.done,
+                  inputFormatters: [
+                    TextInputFormatter.withFunction(
+                      (oldValue, newValue) =>
+                          newValue.text.runes.length <=
+                                  SentenceScrambleContent.maxSentenceRunes &&
+                              utf8.encode(newValue.text).length <=
+                                  SentenceScrambleContent.maxSentenceUtf8Bytes
+                          ? newValue
+                          : oldValue,
+                    ),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: _copy(
+                      'หรือพิมพ์ประโยคแทนการเรียง',
+                      'Or type the sentence',
+                    ),
+                    helperText: _copy(
+                      'สูงสุด 1,024 ตัวอักษร',
+                      'Up to 1,024 characters',
+                    ),
+                    helperMaxLines: 3,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (_) {
+                    if (!_canAnswer) return;
+                    _tileDraft = null;
+                    _draftDirty = true;
+                    _slots.fillRange(0, _slots.length, null);
+                    _filledSlots.clear();
+                    _redraw();
+                  },
+                  onSubmitted: (_) => _save(),
+                ),
+                const SizedBox(height: 16),
+                if (!saved)
+                  if (_checkpoint?.state != null) _draftPanel(),
+                if (!saved)
+                  FilledButton(
+                    key: const ValueKey('sentence-save'),
+                    onPressed: _canAnswer && _hasAnswer ? _save : null,
+                    child: Text(_copy('บันทึกคำตอบ', 'Save answer')),
+                  ),
               ],
-            ),
-          ),
+              if (_writeInFlight) ...[
+                const SizedBox(height: 16),
+                const LinearProgressIndicator(),
+              ],
+              const SizedBox(height: 16),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _copy(
+                    failed
+                        ? 'ยังยืนยันผลไม่ได้ กรุณาลองส่งรายการเดิมอีกครั้ง'
+                        : _writeInFlight
+                        ? 'กำลังดำเนินการ…'
+                        : saved
+                        ? 'บันทึกคำตอบแล้ว กดเสร็จสิ้นเพื่อปิดกิจกรรม'
+                        : 'ตอบเมื่อพร้อม แล้วกดบันทึกคำตอบ',
+                    failed
+                        ? 'Confirmation is unavailable. Retry the original request.'
+                        : _writeInFlight
+                        ? 'Working…'
+                        : saved
+                        ? 'Answer saved. Finish to close this activity.'
+                        : 'Answer when ready, then save your response.',
+                  ),
+                  key: const ValueKey('sentence-status'),
+                ),
+              ),
+              if (failed)
+                OutlinedButton(
+                  key: const ValueKey('sentence-retry'),
+                  onPressed: _writeInFlight
+                      ? null
+                      : () => switch (_step) {
+                          _Step.startFailed => _start(),
+                          _Step.saveFailed => _save(),
+                          _Step.finishFailed => _finish(),
+                          _ => Future<void>.value(),
+                        },
+                  child: Text(
+                    _copy('ลองส่งอีกครั้ง', 'Retry original request'),
+                  ),
+                ),
+              if (saved) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _pendingAnswer!.isCorrect
+                      ? _copy(
+                          'ตรงกับประโยคต้นฉบับ · บันทึกแล้ว',
+                          'Matches the original sentence · Saved',
+                        )
+                      : _copy(
+                          'บันทึกคำตอบแล้ว ประโยคต้นฉบับคือ',
+                          'Answer saved. The original sentence is',
+                        ),
+                ),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    widget.session.content.sentence,
+                    key: const ValueKey('sentence-feedback'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  key: const ValueKey('sentence-finish'),
+                  onPressed: _step == _Step.saved ? _finish : null,
+                  child: Text(_copy('เสร็จสิ้น', 'Finish')),
+                ),
+                if (_step == _Step.saved &&
+                    LearningEvidenceContract.isOrdinaryEvidence(
+                      _pendingAnswer!.evidenceContext,
+                    ))
+                  ContentReportButton.content(
+                    key: const ValueKey('content-report-sentence-scramble'),
+                    expectedOwnerId: widget.session.ownerId,
+                    sessionId: widget.session.id,
+                    sourceIdentity: (
+                      _checkpoint!.state!.plan.id,
+                      _checkpoint!.state!.checkpointRevision,
+                    ),
+                    sourceText: widget.session.content.sentence,
+                    callerContext: LearningTimeCallerContext.ordinary,
+                    canOpen: () => _current(_epoch) && _step == _Step.saved,
+                    onOverlayChanged: (open) {
+                      _reportOverlay = open;
+                    },
+                    targetForSelection: (text, excerpt) =>
+                        ContentReportTarget.aiOutput(
+                          text: text,
+                          isExcerpt: excerpt,
+                          sessionId: widget.session.id,
+                          acceptedPlanId: _checkpoint!.state!.plan.id,
+                          contentKind: widget.session.content.kind.wire,
+                          modelVersion: widget.session.content.modelVersion,
+                          cached: widget.session.content.cached,
+                          origin: ContentReportAiOrigin.unrecorded,
+                        ),
+                    languageCode: widget.languageCode,
+                  ),
+              ],
+            ],
+          ],
         ),
       ),
     );

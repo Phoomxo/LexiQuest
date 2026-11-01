@@ -18,8 +18,8 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 23);
-      expect(database.allTables, hasLength(43));
+      expect(database.schemaVersion, 25);
+      expect(database.allTables, hasLength(45));
       final columns = await database
           .customSelect('PRAGMA table_info(word_reports)')
           .get();
@@ -250,9 +250,9 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        23,
+        25,
       );
-      expect(database.allTables, hasLength(43));
+      expect(database.allTables, hasLength(45));
       expect(before, rows);
       final after = await ownerMigrationRows(database);
       expect(after['word_reports'], isEmpty);
@@ -262,17 +262,9 @@ void main() {
       expect(after['learning_profiles'], isEmpty);
       expect(after['learning_pack_versions'], isEmpty);
       expect(after['lexical_content_snapshots'], isEmpty);
-      expect(
-        Map<String, List<Map<String, Object?>>>.of(after)
-          ..remove('word_reports')
-          ..remove('learning_time_preferences')
-          ..remove('learning_time_scopes')
-          ..remove('learning_time_segments')
-          ..remove('learning_profiles')
-          ..remove('learning_pack_versions')
-          ..remove('lexical_content_snapshots'),
-        before,
-      );
+      expect(after['content_reports'], isEmpty);
+      expect(after['study_reminder_preferences'], isEmpty);
+      expectHistoricalOwnerMigrationRows(after, before);
       final objects = await database
           .customSelect(
             "SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'",
@@ -293,14 +285,11 @@ void main() {
         'lexical_content_snapshots',
         'idx_lexical_content_owner_word',
         'idx_learning_time_scopes_owner_session',
+        'content_reports',
+        'study_reminder_preferences',
+        'idx_content_reports_owner_queue',
       });
-      for (final object in oldObjects.entries) {
-        expect(
-          byName[object.key],
-          object.value,
-          reason: 'Retain exact old DDL ${object.key}',
-        );
-      }
+      expectHistoricalMigrationObjects(oldObjects, byName);
       expect(after['assessment_runs']!.single['database_schema_version'], 19);
       expect(after['saved_words']!.map((row) => row['is_saved']).toSet(), {
         0,

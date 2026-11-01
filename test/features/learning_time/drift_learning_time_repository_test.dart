@@ -101,7 +101,7 @@ void main() {
       addTearDown(h.close);
       await h.enable();
       final before = await h.base.snapshotAllTables();
-      expect(before, hasLength(43));
+      expect(before, hasLength(45));
       final lease = await h.attach(_reading());
       h.advance(const Duration(minutes: 2));
       h.useCases.detach(lease);

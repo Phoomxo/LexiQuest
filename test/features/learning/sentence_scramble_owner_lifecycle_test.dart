@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 import '../../support/sentence_scramble_native_harness.dart';
+import '../../support/native_checkpoint_privacy.dart';
 
 void main() {
   late SentenceScrambleNativeHarness h;
@@ -46,7 +47,14 @@ void main() {
           expect(await h.storage.snapshot(), afterFirstBind);
         }
       }
-      expect(jsonEncode(before), isNot(contains(exercise.content.sentence)));
+      expect(
+        (await h.storage.session(exercise.id))['accepted_plan_json'],
+        contains(exercise.content.sentence),
+      );
+      expect(
+        nativeSnapshotWithoutPrivateSlots(await h.storage.snapshot()),
+        isNot(contains(exercise.content.sentence)),
+      );
       final research = await h.storage.researchCounts();
       expect(research, hasLength(7));
       expect(research.values, everyElement(0));
@@ -180,8 +188,20 @@ void main() {
         source.providerProvenance,
       );
       expect(exported.coveredScopes, requiredFullAccountExportScopes);
+      final exportedSession = (data['learning_sessions'] as List).single as Map;
       expect(
-        utf8.decode(exported.bytes),
+        exportedSession['accepted_plan_json'],
+        contains(source.content.sentence),
+      );
+      expect(
+        exportedSession['checkpoint_json'],
+        contains(source.content.sentence),
+      );
+      expect(
+        nativeSnapshotWithoutPrivateSlots({
+          for (final entry in data.entries)
+            entry.key as String: (entry.value as List).map(jsonEncode).toList(),
+        }),
         isNot(contains(source.content.sentence)),
       );
 

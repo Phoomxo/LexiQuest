@@ -18,6 +18,85 @@ void main() {
   });
   tearDown(() => h.close());
 
+  test(
+    'copied state and unbound checkpoint cannot mint a configured write',
+    () async {
+      final first = await repository.startConfiguredQuiz(
+        session: _session(),
+        plan: await _plan(h),
+      );
+      final copy = ConfiguredQuizState(
+        sessionId: first.sessionId,
+        ownerId: first.ownerId,
+        activityType: first.activityType,
+        startedAtUtc: first.startedAtUtc,
+        appVersion: first.appVersion,
+        buildId: first.buildId,
+        state: first.state,
+        endedAtUtc: first.endedAtUtc,
+        plan: first.plan,
+        checkpointRevision: first.checkpointRevision,
+        checkpoint: first.checkpoint,
+      );
+      final next = AwaitingQuizAnswer(
+        planId: first.plan.id,
+        questionOrdinal: 0,
+        assistance: QuizAssistance().showHint(
+          configuredStart.millisecondsSinceEpoch,
+        ),
+      );
+      final before = await h.snapshot();
+      expect(() => copy.bindCheckpointWrite(next), throwsStateError);
+      await expectLater(
+        repository.saveQuizCheckpoint(
+          sessionId: first.sessionId,
+          expectedOwnerId: configuredOwnerId,
+          expectedRevision: first.checkpointRevision,
+          checkpoint: next,
+        ),
+        throwsStateError,
+      );
+      expect(await h.snapshot(), before);
+    },
+  );
+
+  test(
+    'actual owner ABA after binding rejects the pending checkpoint before SQL',
+    () async {
+      final first = await repository.startConfiguredQuiz(
+        session: _session(),
+        plan: await _plan(h),
+      );
+      final next = first.bindCheckpointWrite(
+        AwaitingQuizAnswer(
+          planId: first.plan.id,
+          questionOrdinal: 0,
+          assistance: QuizAssistance().showHint(
+            configuredStart.millisecondsSinceEpoch,
+          ),
+        ),
+      );
+      final upgrades = _upgrade(h);
+      final guest = await upgrades.createLocalGuestAfterLogout();
+      await upgrades.rollbackLocalGuestLogout(
+        previousOwnerId: configuredOwnerId,
+        guestOwnerId: guest.targetOwnerId,
+      );
+      await Future<void>.delayed(Duration.zero);
+      final before = await h.snapshot();
+      await expectLater(
+        repository.saveQuizCheckpoint(
+          sessionId: first.sessionId,
+          expectedOwnerId: configuredOwnerId,
+          expectedRevision: first.checkpointRevision,
+          checkpoint: next,
+        ),
+        throwsStateError,
+      );
+      expect(await h.snapshot(), before);
+    },
+  );
+
   test('rejects a coordinator from another database before writing', () async {
     final other = await ConfiguredQuizHarness.open();
     addTearDown(other.close);
@@ -68,11 +147,13 @@ void main() {
         sessionId: first.sessionId,
         expectedOwnerId: configuredOwnerId,
         expectedRevision: first.checkpointRevision,
-        checkpoint: AwaitingQuizAnswer(
-          planId: first.plan.id,
-          questionOrdinal: 0,
-          assistance: QuizAssistance().showHint(
-            configuredStart.millisecondsSinceEpoch,
+        checkpoint: first.bindCheckpointWrite(
+          AwaitingQuizAnswer(
+            planId: first.plan.id,
+            questionOrdinal: 0,
+            assistance: QuizAssistance().showHint(
+              configuredStart.millisecondsSinceEpoch,
+            ),
           ),
         ),
       );
@@ -376,11 +457,13 @@ void main() {
         session: _session(),
         plan: await _plan(h),
       );
-      final hinted = AwaitingQuizAnswer(
-        planId: first.plan.id,
-        questionOrdinal: 0,
-        assistance: QuizAssistance().showHint(
-          configuredStart.millisecondsSinceEpoch,
+      final hinted = first.bindCheckpointWrite(
+        AwaitingQuizAnswer(
+          planId: first.plan.id,
+          questionOrdinal: 0,
+          assistance: QuizAssistance().showHint(
+            configuredStart.millisecondsSinceEpoch,
+          ),
         ),
       );
       final saved = await repository.saveQuizCheckpoint(
@@ -398,11 +481,13 @@ void main() {
       final before = await h.snapshot();
 
       await expectLater(
-        _repository(h).saveQuizCheckpoint(
+        repository.saveQuizCheckpoint(
           sessionId: first.sessionId,
           expectedOwnerId: configuredOwnerId,
           expectedRevision: 1,
-          checkpoint: QuizCheckpoint.initial(first.plan),
+          checkpoint: first.bindCheckpointWrite(
+            QuizCheckpoint.initial(first.plan),
+          ),
         ),
         throwsA(anything),
       );
@@ -597,11 +682,13 @@ void main() {
             sessionId: first.sessionId,
             expectedOwnerId: configuredOwnerId,
             expectedRevision: first.checkpointRevision,
-            checkpoint: PendingQuizAnswer(
-              planId: first.plan.id,
-              questionOrdinal: 0,
-              assistance: QuizAssistance(),
-              answer: _answer(first),
+            checkpoint: first.bindCheckpointWrite(
+              PendingQuizAnswer(
+                planId: first.plan.id,
+                questionOrdinal: 0,
+                assistance: QuizAssistance(),
+                answer: _answer(first),
+              ),
             ),
           ),
           _unavailable('contentChanged'),
@@ -646,10 +733,12 @@ void main() {
           sessionId: pending.sessionId,
           expectedOwnerId: configuredOwnerId,
           expectedRevision: replay.state.checkpointRevision,
-          checkpoint: AwaitingQuizAnswer(
-            planId: replay.state.plan.id,
-            questionOrdinal: 1,
-            assistance: QuizAssistance(),
+          checkpoint: replay.state.bindCheckpointWrite(
+            AwaitingQuizAnswer(
+              planId: replay.state.plan.id,
+              questionOrdinal: 1,
+              assistance: QuizAssistance(),
+            ),
           ),
         ),
         _unavailable('contentChanged'),
@@ -799,11 +888,13 @@ Future<ConfiguredQuizState> _pending(
     sessionId: first.sessionId,
     expectedOwnerId: configuredOwnerId,
     expectedRevision: first.checkpointRevision,
-    checkpoint: PendingQuizAnswer(
-      planId: first.plan.id,
-      questionOrdinal: 0,
-      assistance: QuizAssistance(),
-      answer: _answer(first),
+    checkpoint: first.bindCheckpointWrite(
+      PendingQuizAnswer(
+        planId: first.plan.id,
+        questionOrdinal: 0,
+        assistance: QuizAssistance(),
+        answer: _answer(first),
+      ),
     ),
   );
 }

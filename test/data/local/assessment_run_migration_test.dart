@@ -21,8 +21,8 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 23);
-      expect(database.allTables, hasLength(43));
+      expect(database.schemaVersion, 25);
+      expect(database.allTables, hasLength(45));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -232,7 +232,7 @@ void main() {
           idempotencyKey: 'delete:synthetic-assessment-v17-migration',
         );
         await source.participation.ownerWrites.markPending(token);
-        oldRows = (await ownerMigrationRows(source.database))
+        oldRows = (await ownerMigrationRowsBeforeV24(source.database))
           ..remove('assessment_runs')
           ..remove('saved_words')
           ..remove('word_reports');
@@ -308,13 +308,13 @@ void main() {
         );
         await Directory(resolved).delete(recursive: true);
       });
-      expect(database.schemaVersion, 23);
+      expect(database.schemaVersion, 25);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        23,
+        25,
       );
-      expect(database.allTables, hasLength(43));
+      expect(database.allTables, hasLength(45));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -333,19 +333,9 @@ void main() {
         reason:
             'A migration cannot fabricate Assessment runs, responses or grants',
       );
-      expect(
-        Map<String, List<Map<String, Object?>>>.of(after)
-          ..remove('assessment_runs')
-          ..remove('saved_words')
-          ..remove('word_reports')
-          ..remove('learning_time_preferences')
-          ..remove('learning_time_scopes')
-          ..remove('learning_time_segments')
-          ..remove('learning_profiles')
-          ..remove('learning_pack_versions')
-          ..remove('lexical_content_snapshots'),
-        before,
-      );
+      expect(after['content_reports'], isEmpty);
+      expect(after['study_reminder_preferences'], isEmpty);
+      expectHistoricalOwnerMigrationRows(after, before);
       final newObjects = await database
           .customSelect(
             "SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'",
@@ -355,13 +345,7 @@ void main() {
         for (final row in newObjects)
           row.read<String>('name'): row.read<String>('sql'),
       };
-      for (final object in oldObjects.entries) {
-        expect(
-          byName[object.key],
-          object.value,
-          reason: 'Do not rewrite old DDL ${object.key}',
-        );
-      }
+      expectHistoricalMigrationObjects(oldObjects, byName);
       final pendingQuiz = after['learning_sessions']!.singleWhere(
         (row) => row['id'] == 'synthetic-retained-pending-quiz',
       );

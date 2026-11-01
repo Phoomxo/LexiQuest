@@ -7,6 +7,7 @@ import '../../../runtime/app_dependencies.dart';
 import '../../../widgets/adaptive_content_pane.dart';
 import '../application/learning_profile_use_cases.dart';
 import '../domain/learning_profile.dart';
+import '../domain/learning_timezone.dart';
 
 class LearningProfileEditorScreen extends StatefulWidget {
   const LearningProfileEditorScreen({
@@ -35,6 +36,7 @@ class _LearningProfileEditorScreenState
   LearningProfileChange? _pending;
   String? _owner;
   String? _status;
+  String? _timezone;
   var _generation = 0;
   var _readRevision = 0;
   var _loading = true;
@@ -113,6 +115,7 @@ class _LearningProfileEditorScreenState
       _date.clear();
       _minutes.clear();
       _interests.clear();
+      _timezone = null;
       _dirty = false;
     });
     if (owner != null) unawaited(_load(owner, generation));
@@ -136,6 +139,7 @@ class _LearningProfileEditorScreenState
         _goal.text = draft?.goalText ?? '';
         _date.text = draft?.targetDate?.toString() ?? '';
         _minutes.text = draft?.dailyMinutes?.toString() ?? '';
+        _timezone = draft?.learningTimezoneId;
         _interests
           ..clear()
           ..addAll(draft?.interestCodes ?? const []);
@@ -190,6 +194,7 @@ class _LearningProfileEditorScreenState
                     ? null
                     : int.parse(_minutes.text.trim()),
                 interestCodes: _interests.toList(),
+                learningTimezoneId: _timezone,
               ),
         stillCurrent: () => _current(owner, generation),
       );
@@ -360,6 +365,44 @@ class _LearningProfileEditorScreenState
                                 : null;
                           },
                           onChanged: (_) => _edited(),
+                        ),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                          key: ValueKey(
+                            'learning-profile-timezone-${_snapshot?.revision}',
+                          ),
+                          initialValue: _timezone ?? '',
+                          isExpanded: true,
+                          itemHeight: null,
+                          menuMaxHeight: 320,
+                          decoration: const InputDecoration(
+                            labelText: 'เขตเวลาสำหรับวันเรียนและภารกิจ',
+                            helperText:
+                                'ใช้กับวันเรียนและรอบภารกิจใหม่ ประวัติเดิมคงเขตเวลาเดิม',
+                            helperMaxLines: 3,
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: '',
+                              child: Text('UTC (ค่าเริ่มต้น)'),
+                            ),
+                            for (final zone in learningTimezoneIds)
+                              DropdownMenuItem(
+                                value: zone,
+                                child: Text(
+                                  zone,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: _busy || _pending != null
+                              ? null
+                              : (value) {
+                                  _timezone = value == null || value.isEmpty
+                                      ? null
+                                      : value;
+                                  _edited();
+                                },
                         ),
                         const SizedBox(height: 20),
                         Text(

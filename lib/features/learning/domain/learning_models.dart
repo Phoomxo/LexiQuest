@@ -6,8 +6,11 @@ import 'accepted_quiz_plan.dart';
 import 'cloze_content.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
+import 'native_exercise_checkpoint.dart';
 import 'sentence_scramble_content.dart';
 import 'word_scramble_letters.dart';
+
+export 'native_exercise_checkpoint.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -28,12 +31,28 @@ final class QuizWord {
 }
 
 final class QuizQuestion {
-  const QuizQuestion({required this.word, required this.options});
+  const QuizQuestion({required this.word, required this.options})
+    : lexical = null;
+
+  QuizQuestion.lexical(LexicalQuestionContent content)
+    : word = content.target.word,
+      options = List.unmodifiable(content.optionLabels),
+      lexical = content;
 
   final QuizWord word;
   final List<String> options;
+  final LexicalQuestionContent? lexical;
 
-  String get correctAnswer => word.meaning;
+  String get correctAnswer => lexical == null ? word.meaning : word.spelling;
+  String get prompt => lexical?.target.entry.definition ?? word.spelling;
+  String get promptMode => lexical?.input.name ?? 'meaningChoice';
+  String get skillId =>
+      lexical == null ? 'meaning-recall' : 'definition-recall';
+  String get evidenceContentRevision =>
+      lexical?.contentRevision ?? word.contentRevision!;
+  EvidenceClass get unassistedEvidenceClass => lexical is DefinitionTypedContent
+      ? EvidenceClass.independentRecall
+      : EvidenceClass.recognition;
 }
 
 final class QuizSession {
@@ -93,6 +112,7 @@ final class RecordAnswerCommand {
     required this.attemptNumber,
     required this.occurredAtUtc,
     this.providerProvenance,
+    this.nativeDraft,
     this._evidenceContext,
   });
 
@@ -106,6 +126,7 @@ final class RecordAnswerCommand {
   final int attemptNumber;
   final DateTime occurredAtUtc;
   final String? providerProvenance;
+  final NativeExerciseDraft? nativeDraft;
   final EvidenceContext? _evidenceContext;
 
   EvidenceContext get evidenceContext =>
@@ -239,6 +260,24 @@ final class AnswerRecordResult {
 
   final bool inserted;
   final SrsSnapshot? srs;
+}
+
+enum NativeCheckpointPhase {
+  awaitingAnswer,
+  pendingAnswer,
+  answered,
+  closing,
+  completed,
+  abandoned,
+}
+
+abstract interface class NativeExerciseState {
+  AcceptedNativeExercise get exercise;
+  AcceptedNativePlan get plan;
+  NativeCheckpoint get checkpoint;
+  NativeCheckpointPhase get phase;
+  int get checkpointRevision;
+  LearningSessionSummary? get completedSummary;
 }
 
 sealed class AcceptedNativeExercise {
@@ -584,11 +623,13 @@ final class WordScrambleAnswerInput extends NativeAnswerInput {
     required this.exercise,
     required this.response,
     required this.responseTime,
+    this.tileSlots,
   });
 
   @override
   final WordScrambleSession exercise;
   final String response;
+  final List<int?>? tileSlots;
   @override
   final Duration responseTime;
 }
@@ -598,11 +639,13 @@ final class SentenceScrambleAnswerInput extends NativeAnswerInput {
     required this.exercise,
     required this.response,
     required this.responseTime,
+    this.tileSlots,
   });
 
   @override
   final SentenceScrambleSession exercise;
   final String response;
+  final List<int?>? tileSlots;
   @override
   final Duration responseTime;
 }
@@ -716,14 +759,18 @@ final class ReadingProgressSnapshot {
   );
 }
 
+enum LexicalQuizInput { definitionChoice, definitionTyped }
+
 final class ConfiguredQuizLaunch {
   const ConfiguredQuizLaunch({
     required this.session,
     required this.configuration,
+    this.preparedPlan,
   });
 
   final LearningSessionDraft session;
   final QuizConfiguration configuration;
+  final AcceptedQuizPlan? preparedPlan;
 }
 
 enum ConfiguredQuizUnavailableReason {
@@ -745,6 +792,11 @@ final class ConfiguredQuizUnavailable implements Exception {
   String toString() => 'Configured quiz unavailable: ${reason.name}';
 }
 
+abstract interface class ConfiguredQuizReadBinding {
+  void requireCurrent();
+  QuizCheckpoint bindCheckpointWrite(QuizCheckpoint checkpoint);
+}
+
 final class ConfiguredQuizState {
   ConfiguredQuizState({
     required this.sessionId,
@@ -760,6 +812,7 @@ final class ConfiguredQuizState {
     required this.checkpoint,
     Iterable<QuizWord> mistakeWords = const [],
     this.restored = false,
+    this._readBinding,
   }) : mistakeWords = List.unmodifiable(mistakeWords);
 
   final String sessionId;
@@ -775,6 +828,33 @@ final class ConfiguredQuizState {
   final QuizCheckpoint checkpoint;
   final List<QuizWord> mistakeWords;
   final bool restored;
+  final ConfiguredQuizReadBinding? _readBinding;
+
+  void requireCurrent() {
+    final binding = _readBinding;
+    if (binding == null) {
+      throw StateError('Original configured quiz read is required');
+    }
+    binding.requireCurrent();
+  }
+
+  QuizCheckpoint bindCheckpointWrite(QuizCheckpoint checkpoint) {
+    requireCurrent();
+    return _readBinding!.bindCheckpointWrite(checkpoint);
+  }
+
+  String? get acknowledgedContrastiveExplanation {
+    final checkpoint = this.checkpoint;
+    if (checkpoint is! AnsweredQuizQuestion ||
+        checkpoint.answer.isCorrect ||
+        checkpoint.answer.revealed) {
+      return null;
+    }
+    final content = plan.questions[checkpoint.questionOrdinal].lexical;
+    final selected = checkpoint.answer.selectedOptionOrdinal;
+    if (content is! DefinitionChoiceContent || selected == null) return null;
+    return content.authoredOptions[selected].contrastiveExplanation;
+  }
 
   QuizSession get asQuizSession => QuizSession(
     id: sessionId,
@@ -797,6 +877,7 @@ final class ConfiguredQuizState {
     checkpoint: checkpoint,
     mistakeWords: mistakeWords,
     restored: true,
+    readBinding: _readBinding,
   );
 }
 

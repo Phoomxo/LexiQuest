@@ -4,9 +4,11 @@ import 'package:crypto/crypto.dart';
 
 import 'evidence_context.dart';
 import 'learning_models.dart';
+import 'matching_exercise.dart';
 
 enum CanonicalLearningTimeSourceKind {
   configuredQuiz,
+  matching,
   ownedSrs,
   dictation,
   cloze,
@@ -54,6 +56,12 @@ final class ConfiguredQuizTimeAdmission
     extends CanonicalLearningTimeAdmissionRequest {
   const ConfiguredQuizTimeAdmission(this.state, {required super.callerContext});
   final ConfiguredQuizState state;
+}
+
+final class MatchingTimeAdmission
+    extends CanonicalLearningTimeAdmissionRequest {
+  const MatchingTimeAdmission(this.state, {required super.callerContext});
+  final MatchingState state;
 }
 
 enum SrsTimePhase { front, revealed }

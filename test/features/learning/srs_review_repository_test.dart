@@ -140,7 +140,7 @@ void main() {
           final operation = await _operation(h, stage);
           await h.settleNotifications();
           final before = await h.storage.snapshot();
-          expect(before, hasLength(43));
+          expect(before, hasLength(45));
           final hooks = (h.notifications, h.questEvents, h.streakEvents);
           final probe = _AfterSrsWrite(
             stage == _Stage.rating ? 'answer_attempts' : 'learning_sessions',
@@ -371,7 +371,7 @@ void main() {
         [operation.review.ownerId, target.id],
       );
       final before = await h.storage.snapshot();
-      expect(before, hasLength(43));
+      expect(before, hasLength(45));
       final hooks = (h.notifications, h.questEvents, h.streakEvents);
       final spy = _BusinessWrites();
       await h.database.runWithInterceptor(() async {

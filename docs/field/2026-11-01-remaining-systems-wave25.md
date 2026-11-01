@@ -1,12 +1,85 @@
-# Wave25: packs and Research transport in progress
+# Wave25: accepted local packs, profile, billing and Research transport
 
 ## Current checkpoint, 2026-11-01 (active)
 
 This section supersedes the initial grounding notes below. The all-feature
-implementation remains active on the same worktree/branch/HEAD; no completion,
+implementation remains active on the same worktree/branch; no completion,
 deployment, real payment, enrollment or real-data upload is claimed.
 
-### Current integration gate
+Accepted local code checkpoint is `0255f8431ec2eeaf36759ae9c240b4b764ccd1b3`
+at schema23/43 in the existing cycle12-release worktree and branch
+`codex/remaining-system-readiness`. The203file commit contains the implementation
+and reviewed fixture corrections. The two pre-existing critique notes and
+`test/screens/failures/` remain untracked and untouched. All earlier receipts,
+including failing runs, are preserved.
+
+### Accepted integration gate
+
+Evidence root is `D:/LexiQuest-Storage/maintenance/2026-11-01/`.
+
+- `wave25-verification/recheck/full-flutter-final-result.json`:5080PASS/0FAIL,
+  exit0; all1194inputs/877Dart unchanged at0255f843. Actual logSHA256
+  `822015f42c7386992962d66f735ab9e2eb6523b5cc9d01d98d47c6aa55230460`.
+- Analysis after the eight reviewed fixture corrections:0issues,22.6s,
+  `wave25-analysis-after-fixtures.log`; its source bytes are in0255f843.
+- `wave25-cli-recheck/summary.json`:23/23PASS at0255f843; summarySHA256
+  `42d8de7dc301adeea749ca491c3463a9fc2ca62bb403f4edb466ebf8cdb3bd4c`.
+- Offline backend563PASS/one existing opt-in skip/0errors/0failures. All107
+  recorded backend inputs still match0255f843; the earlier receipt's baseline
+  Git label does not replace this byte comparison. ManifestSHA256
+  `2f62ebc333bbd6789cca8ec54665b63e08e337b8f35c595c83bca8dd1c1fa82d`.
+- Full Firestore rules emulator52PASS/0skip, including billing and Research
+  server-only namespaces. LogSHA256
+  `326d14f529243a2b17d4472b49addb8e90e023377360e117ce62bf6b3f93f2ab`.
+- Normal `lib/main.dart` debug APK passed, buildID`wave25-9977742574f4`.
+  Source inputs, three assets and restored Gradle environment passed the build
+  receipt. Retained APK is `wave25-verification/recheck/lexiquest-wave25-debug.apk`,
+  221674605bytes, SHA256
+  `bac3132fc61c22b4b6e46afc2405e393e52e779ff549c269014530674ab3cddf`.
+- Independent actual APK/source/log attestation ACCEPT:
+  `wave25-verification/recheck/wave25-artifact-attestation.md`, SHA256
+  `438c8c0328aeac8b105d7781d3b93357965cf4cae8bd0f3c2160737ebf868d37`.
+  All765ZIPentries passed CRC/no duplicates; the actual kernel contains the
+  unique buildID and current pack/Research/profile markers. Manifest and12native
+  libraries across three ABIs passed. This was a read-only artifact check.
+
+The local matrix is24Connected/14Partial/6Missing across the frozen44IDs. Promote
+f01/f02/f26/f35 from Missing and f25/f28/f36/f44 from Partial on their accepted
+local runtime scope. f03 remains Partial pending wider lexical-card integration;
+f04 remains Partial pending quality/report transport and moderation.
+
+Research engineering R1/R2 is locally complete at this snapshot:1022subsystem
+checks, actual bootstrap/Settings/Export/identity callers, paired authority,
+signature rejection, withdrawal, owner isolation, before/after linkage and
+archive/upload/export/deletion gates are included in the accepted integration.
+Three independent client P2s and two backend P2s are resolved and accepted.
+Research stays default-off. Supplied trusted issuer/instrument/notice/approval
+artifacts, permission to enroll or upload real data, and device/live-service UAT
+remain external release dependencies. This engineering result makes the L2
+predecessor satisfied; Matching implementation and a separate user task have not
+started. No efficacy or instrument-validation claim follows.
+
+Source freeze is released after independent acceptance. Root continues L1 native
+durable resume and M1 recurring Quest, then the remaining lesson/motivation,
+Q1 reports/reminders, L2 and X1 journeys. Native plans and acknowledged drafts use
+existing owner-local session slots and explicit personal export; they must not
+enter attempt sync or Research. M1's bounded policy is one freeze per completed
+weekly Quest, with no coins, paid acquisition or learning-day credit. Genuine
+schema23 capture precedes any24reservation. Initial RED patches were prepared
+on D; this checkpoint does not claim their compilation or execution.
+
+There are no Wave25 test/build processes left running. Future Flutter/pub/codegen/
+build remain one Root-controlled lane. The161028617byte stopped-run temp target
+`C:/Users/Phet/AppData/Local/Temp/flutter_tools.65b972c7` remains intact: automatic
+approval rejected its exact-target deletion with `blocked by policy`. Do not
+retry that cleanup through another mechanism; no storage saving is claimed.
+
+## Intermediate Wave25 integration notes (historical)
+
+The following records the earlier in-progress gates and corrections. Its pending
+statements and writer list are superseded by the accepted checkpoint above.
+
+### Earlier integration gate
 
 All source writers are stopped. The first frozen source v2 is1194files/877Dart at the same
 baseline HEAD, `D:/LexiQuest-Storage/maintenance/2026-11-01/wave25-verification/frozen-source-v2.json`.

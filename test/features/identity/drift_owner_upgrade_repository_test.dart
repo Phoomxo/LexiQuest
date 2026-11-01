@@ -5,12 +5,16 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
+import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/account_deletion/data/drift_account_snapshot.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
@@ -40,27 +44,169 @@ void main() {
     await database.close();
   });
 
-  for (final targetExists in [false, true]) {
-    test('learning profile merge preserves ${targetExists ? 'target choice' : 'source-only choice'} and personal export', () async {
-      Future<void> profile(String owner, String goal) => database.customStatement(
-        'INSERT INTO learning_profiles (owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms) '
-        'VALUES (?,1,\'completed\',?,\'2026-12-01\',25,?,20)',
-        [owner, goal, '{"schemaVersion":1,"codes":["study"]}'],
+  test(
+    'owner merge retains distinct pinned periods and snapshots the same-period collision',
+    () async {
+      var now = DateTime.utc(2026, 7, 28, 12);
+      var ids = 0;
+      final quests = QuestUseCases(
+        repository: DriftQuestRepository(
+          database,
+          ownerWrites: DriftOwnerWriteCoordinator(database, nowUtc: () => now),
+          nowUtc: () => now,
+        ),
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => now,
+        ),
+        generateId: () => 'synthetic-period-${++ids}',
+        nowUtc: () => now,
+        timezoneId: 'UTC',
       );
-      await profile('guest-owner', 'Source goal');
-      if (targetExists) await profile('account-owner', 'Target goal');
-      await repository.upgrade(activeOwnerId: 'guest-owner', firebaseUid: 'firebase-user');
-      final rows = await database.customSelect('SELECT * FROM learning_profiles').get();
-      expect(rows, hasLength(1));
-      expect(rows.single.data['owner_id'], 'account-owner');
-      expect(rows.single.data['goal_text'], targetExists ? 'Target goal' : 'Source goal');
-      expect(await database.customSelect('SELECT * FROM outbox_operations').get(), isEmpty);
-      final snapshot = await DriftAccountSnapshotBuilder(database, nowUtc: () => DateTime.utc(2026, 11, 1))
-          .build(ownerId: 'account-owner');
-      final data = (jsonDecode(utf8.decode(snapshot.bytes)) as Map)['data'] as Map;
-      expect(data['learning_profiles'], [rows.single.data]);
-      expect(await database.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
-    });
+      final first = (await quests.startQuest(
+        QuestCatalogProvider.dailyCorrectAnswers,
+      ))!;
+      now = DateTime.utc(2026, 7, 29, 12);
+      final second = (await quests.startQuest(
+        QuestCatalogProvider.dailyCorrectAnswers,
+      ))!;
+      final moved =
+          (await database
+                  .customSelect(
+                    'SELECT * FROM quest_instances WHERE instance_id=?',
+                    variables: [Variable<String>(second.instanceId)],
+                  )
+                  .getSingle())
+              .data;
+      await database.customStatement(
+        "UPDATE local_owners SET is_active=(id='account-owner')",
+      );
+      now = DateTime.utc(2026, 7, 28, 12);
+      final targetFirst = (await quests.startQuest(
+        QuestCatalogProvider.dailyCorrectAnswers,
+      ))!;
+      now = DateTime.utc(2026, 7, 30, 0);
+      final targetThird = (await quests.startQuest(
+        QuestCatalogProvider.dailyCorrectAnswers,
+      ))!;
+      await database.customStatement(
+        "UPDATE local_owners SET is_active=(id='guest-owner')",
+      );
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      final rows = await database
+          .customSelect('SELECT * FROM quest_instances ORDER BY instance_id')
+          .get();
+      expect(rows.map((row) => row.read<String>('instance_id')).toSet(), {
+        second.instanceId,
+        targetFirst.instanceId,
+        targetThird.instanceId,
+      });
+      expect(
+        rows.every((row) => row.read<String>('owner_id') == 'account-owner'),
+        isTrue,
+      );
+      expect(
+        rows
+            .singleWhere(
+              (row) => row.read<String>('instance_id') == second.instanceId,
+            )
+            .data,
+        {...moved, 'owner_id': 'account-owner'},
+      );
+      final conflict =
+          (await database
+                  .customSelect(
+                    "SELECT * FROM sync_conflicts WHERE entity_type='questInstance'",
+                  )
+                  .get())
+              .single;
+      expect(conflict.read<String>('entity_id'), targetFirst.instanceId);
+      expect(jsonEncode(conflict.data), contains(first.instanceId));
+      expect(jsonEncode(conflict.data), contains('objectiveProgress'));
+      final snapshot = await DriftAccountSnapshotBuilder(
+        database,
+        nowUtc: () => now,
+      ).build(ownerId: 'account-owner');
+      final data =
+          (jsonDecode(utf8.decode(snapshot.bytes)) as Map)['data'] as Map;
+      expect(
+        (data['quest_instances'] as List)
+            .map((row) => (row as Map)['instance_id'])
+            .toSet(),
+        rows.map((row) => row.read<String>('instance_id')).toSet(),
+      );
+      expect(
+        await database.customSelect('SELECT * FROM events_v2').get(),
+        isEmpty,
+      );
+      expect(
+        await database.customSelect('SELECT * FROM outbox_operations').get(),
+        isEmpty,
+      );
+      expect(
+        await database.customSelect('PRAGMA foreign_key_check').get(),
+        isEmpty,
+      );
+    },
+  );
+
+  for (final targetExists in [false, true]) {
+    test(
+      'learning profile merge preserves ${targetExists ? 'target choice' : 'source-only choice'} and personal export',
+      () async {
+        Future<void> profile(
+          String owner,
+          String goal,
+        ) => database.customStatement(
+          'INSERT INTO learning_profiles (owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms,learning_timezone_id) '
+          'VALUES (?,1,\'completed\',?,\'2026-12-01\',25,?,20,?)',
+          [
+            owner,
+            goal,
+            '{"schemaVersion":1,"codes":["study"]}',
+            owner == 'guest-owner' ? 'Asia/Bangkok' : 'America/New_York',
+          ],
+        );
+        await profile('guest-owner', 'Source goal');
+        if (targetExists) await profile('account-owner', 'Target goal');
+        await repository.upgrade(
+          activeOwnerId: 'guest-owner',
+          firebaseUid: 'firebase-user',
+        );
+        final rows = await database
+            .customSelect('SELECT * FROM learning_profiles')
+            .get();
+        expect(rows, hasLength(1));
+        expect(rows.single.data['owner_id'], 'account-owner');
+        expect(
+          rows.single.data['goal_text'],
+          targetExists ? 'Target goal' : 'Source goal',
+        );
+        expect(
+          rows.single.data['learning_timezone_id'],
+          targetExists ? 'America/New_York' : 'Asia/Bangkok',
+        );
+        expect(
+          await database.customSelect('SELECT * FROM outbox_operations').get(),
+          isEmpty,
+        );
+        final snapshot = await DriftAccountSnapshotBuilder(
+          database,
+          nowUtc: () => DateTime.utc(2026, 11, 1),
+        ).build(ownerId: 'account-owner');
+        final data =
+            (jsonDecode(utf8.decode(snapshot.bytes)) as Map)['data'] as Map;
+        expect(data['learning_profiles'], [rows.single.data]);
+        expect(
+          await database.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+      },
+    );
   }
 
   test(
@@ -155,15 +301,28 @@ void main() {
         )
         .get();
 
-    final sourceTimeScopeBefore = (await database.customSelect(
-      "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
-    ).getSingle()).data;
-    final timeSegmentsBefore = (await database.customSelect(
-      "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
-    ).get()).map((row) => row.data).toList();
-    final targetTimePreferenceBefore = (await database.customSelect(
-      "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
-    ).getSingle()).data;
+    final sourceTimeScopeBefore =
+        (await database
+                .customSelect(
+                  "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
+                )
+                .getSingle())
+            .data;
+    final timeSegmentsBefore =
+        (await database
+                .customSelect(
+                  "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
+                )
+                .get())
+            .map((row) => row.data)
+            .toList();
+    final targetTimePreferenceBefore =
+        (await database
+                .customSelect(
+                  "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
+                )
+                .getSingle())
+            .data;
 
     final result = await repository.upgrade(
       activeOwnerId: 'guest-owner',
@@ -178,21 +337,31 @@ void main() {
     expect(result.targetOwnerId, 'account-owner');
     expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
     expect(
-      (await database.customSelect(
-        "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
-      ).getSingle()).data,
+      (await database
+              .customSelect(
+                "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
+              )
+              .getSingle())
+          .data,
       {...sourceTimeScopeBefore, 'owner_id': 'account-owner'},
     );
     expect(
-      (await database.customSelect(
-        "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
-      ).get()).map((row) => row.data).toList(),
+      (await database
+              .customSelect(
+                "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
+              )
+              .get())
+          .map((row) => row.data)
+          .toList(),
       timeSegmentsBefore,
     );
     expect(
-      (await database.customSelect(
-        "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
-      ).getSingle()).data,
+      (await database
+              .customSelect(
+                "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
+              )
+              .getSingle())
+          .data,
       targetTimePreferenceBefore,
     );
     expect(targetTimePreferenceBefore['enabled'], 0);

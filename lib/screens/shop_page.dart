@@ -1,23 +1,32 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 
 import '../config/m3_theme.dart';
+import '../features/motivation/presentation/avatar_progress_panel.dart';
+import '../features/progress/presentation/progress_host_binding.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/domain/reward_models.dart';
 import '../runtime/app_dependencies.dart';
 
 class ShopPage extends StatefulWidget {
-  const ShopPage({super.key, this.rewards, this.generateIntentId});
+  const ShopPage({
+    super.key,
+    this.rewards,
+    this.generateIntentId,
+    this.progressLoader,
+  });
 
   final RewardShopOperations? rewards;
   final String Function()? generateIntentId;
+  final ProgressLoader? progressLoader;
 
   @override
   State<ShopPage> createState() => _ShopPageState();
 }
 
-class _ShopPageState extends State<ShopPage> {
+class _ShopPageState extends State<ShopPage> with WidgetsBindingObserver {
   RewardShopOperations? _rewards;
   Future<RewardSession>? _session;
   final Set<String> _busyItems = <String>{};
@@ -28,10 +37,63 @@ class _ShopPageState extends State<ShopPage> {
   var _hasAppearanceSnapshot = false;
   var _section = _CatalogSection.themes;
   var _requestSequence = 0;
+  StreamSubscription<void>? _ownerUpdates;
+  AppDependencies? _dependencies;
+  ModalRoute<dynamic>? _route;
+  var _bound = false;
+  var _retired = false;
+  var _foreground = true;
+  var _generation = 0;
+  var _ownsOverlay = false;
+  var _wasRouteCurrent = true;
+  var _externalCover = false;
+  Map<String, String> _appearanceEquipment = const {};
+  final _scopeChanges = ValueNotifier<int>(0);
+
+  void _invalidateScope() {
+    _generation++;
+    _scopeChanges.value++;
+  }
+
+  bool _current(RewardSession session, int generation, {bool route = false}) =>
+      mounted &&
+      !_retired &&
+      _foreground &&
+      generation == _generation &&
+      (!_hasAppearanceSnapshot ||
+          session.ownerId == _activeAppearanceOwnerId) &&
+      (!route || (_route?.isCurrent ?? true));
+
+  @override
+  void initState() {
+    super.initState();
+    final state = WidgetsBinding.instance.lifecycleState;
+    _foreground = state == null || state == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+    ModalRoute.isCurrentOf(context);
+    final routeCurrent = _route?.isCurrent ?? true;
+    if (_wasRouteCurrent && !routeCurrent && !_ownsOverlay) {
+      _externalCover = true;
+      _invalidateScope();
+    } else if (routeCurrent && _externalCover) {
+      _externalCover = false;
+      _invalidateScope();
+      _reloadSession();
+    }
+    _wasRouteCurrent = routeCurrent;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (_bound && !identical(_dependencies, dependencies)) {
+      _retire();
+      return;
+    }
+    _dependencies = dependencies;
+    _bound = true;
     _rewards ??=
         widget.rewards ?? AppDependenciesScope.maybeOf(context)?.rewards;
     _session ??= _rewards == null
@@ -41,7 +103,52 @@ class _ShopPageState extends State<ShopPage> {
         : _loadCurrentSession();
     _appearanceSubscription ??= _rewards?.watchAppearance().listen(
       _onAppearance,
+      onError: (Object _) => _retire(),
+      onDone: _retire,
     );
+    final rewards = _rewards;
+    if (rewards is RewardUseCases) {
+      _ownerUpdates ??= rewards.watchOwnerInvalidations().listen(
+        (_) {
+          if (!mounted) return;
+          _invalidateScope();
+          _purchaseIntents.clear();
+          _equipIntents.clear();
+          setState(() {
+            _hasAppearanceSnapshot = true;
+            _activeAppearanceOwnerId = null;
+          });
+        },
+        onError: (Object _) => _retire(),
+        onDone: _retire,
+      );
+    }
+  }
+
+  void _retire() {
+    if (!mounted || _retired) return;
+    _invalidateScope();
+    setState(() => _retired = true);
+  }
+
+  @override
+  void didUpdateWidget(ShopPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.rewards, oldWidget.rewards) ||
+        !identical(widget.progressLoader, oldWidget.progressLoader)) {
+      _retire();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _invalidateScope();
+    if (_foreground && !_retired) {
+      _reloadSession();
+    } else if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<RewardSession> _loadCurrentSession() async {
@@ -55,16 +162,24 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void _onAppearance(RewardAppearance appearance) {
-    if (!mounted) return;
+    if (!mounted || _retired) return;
     final hadSnapshot = _hasAppearanceSnapshot;
     final previousOwnerId = _activeAppearanceOwnerId;
+    final equipmentChanged = !mapEquals(
+      _appearanceEquipment,
+      appearance.equippedBySlot,
+    );
+    _appearanceEquipment = Map.of(appearance.equippedBySlot);
     _hasAppearanceSnapshot = true;
     _activeAppearanceOwnerId = appearance.ownerId;
-    if (!hadSnapshot || previousOwnerId == appearance.ownerId) {
+    if (!hadSnapshot) return;
+    if (previousOwnerId == appearance.ownerId) {
+      if (equipmentChanged) _reloadSession();
       return;
     }
     _purchaseIntents.clear();
     _equipIntents.clear();
+    _invalidateScope();
     if (appearance.ownerId == null) {
       setState(() {});
     } else {
@@ -75,7 +190,10 @@ class _ShopPageState extends State<ShopPage> {
   Future<void> _confirmPurchase(
     RewardCatalogItem item,
     RewardSession session,
+    int generation,
   ) async {
+    if (!_current(session, generation, route: true)) return;
+    _ownsOverlay = true;
     final balance = session.account.balance;
     final hasUncertainIntent =
         _purchaseIntents[item.id]?.ownerId == session.ownerId;
@@ -83,85 +201,140 @@ class _ShopPageState extends State<ShopPage> {
       final missing = item.price - balance;
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          scrollable: true,
-          title: const Text('เหรียญไม่เพียงพอ'),
-          content: Semantics(
-            key: const ValueKey<String>('insufficient-purchase-message'),
-            container: true,
-            excludeSemantics: true,
-            label:
-                'ไม่สามารถซื้อ${item.name} ยอดคงเหลือ $balance เหรียญ '
-                'ราคา ${item.price} เหรียญ ขาดอีก $missing เหรียญ '
-                'สะสมเหรียญเพิ่มแล้วลองอีกครั้ง',
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.name),
-                Text('ยอดคงเหลือ $balance เหรียญ'),
-                Text('ราคา ${item.price} เหรียญ'),
-                const SizedBox(height: 12),
-                Text('ขาดอีก $missing เหรียญ'),
-                const SizedBox(height: 12),
-                const Text('สะสมเหรียญเพิ่มแล้วลองอีกครั้ง'),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              key: const ValueKey<String>('insufficient-purchase-close'),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('ยกเลิก'),
-            ),
-          ],
+        builder: (dialogContext) => AnimatedBuilder(
+          animation: _scopeChanges,
+          builder: (_, _) => !_current(session, generation)
+              ? _stalePurchaseDialog(dialogContext, confirm: false)
+              : AlertDialog(
+                  scrollable: true,
+                  title: const Text('เหรียญไม่เพียงพอ'),
+                  content: Semantics(
+                    key: const ValueKey<String>(
+                      'insufficient-purchase-message',
+                    ),
+                    container: true,
+                    excludeSemantics: true,
+                    label:
+                        'ไม่สามารถซื้อ${item.name} ยอดคงเหลือ $balance เหรียญ '
+                        'ราคา ${item.price} เหรียญ ขาดอีก $missing เหรียญ '
+                        'สะสมเหรียญเพิ่มแล้วลองอีกครั้ง',
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.name),
+                        Text('ยอดคงเหลือ $balance เหรียญ'),
+                        Text('ราคา ${item.price} เหรียญ'),
+                        const SizedBox(height: 12),
+                        Text('ขาดอีก $missing เหรียญ'),
+                        const SizedBox(height: 12),
+                        const Text('สะสมเหรียญเพิ่มแล้วลองอีกครั้ง'),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      key: const ValueKey<String>(
+                        'insufficient-purchase-close',
+                      ),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('ยกเลิก'),
+                    ),
+                  ],
+                ),
         ),
       );
+      _ownsOverlay = false;
+      _refreshAfterOverlay();
       return;
     }
     var confirmed = false;
     final shouldPurchase = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        title: const Text('ยืนยันการซื้อ'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.name),
-            Text('${item.price} เหรียญ'),
-            const SizedBox(height: 12),
-            Text(
-              '${session.account.balance} → ${session.account.balance - item.price} เหรียญ',
-            ),
-            const SizedBox(height: 12),
-            const Text('เป็นของตกแต่งเท่านั้น ไม่เพิ่มความได้เปรียบในการเรียน'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            key: const ValueKey<String>('confirm-purchase'),
-            onPressed: () {
-              if (confirmed) return;
-              confirmed = true;
-              Navigator.of(dialogContext).pop(true);
-            },
-            child: const Text('ยืนยันซื้อ'),
-          ),
-        ],
+      builder: (dialogContext) => AnimatedBuilder(
+        animation: _scopeChanges,
+        builder: (_, _) => !_current(session, generation)
+            ? _stalePurchaseDialog(dialogContext, confirm: true)
+            : AlertDialog(
+                scrollable: true,
+                title: const Text('ยืนยันการซื้อ'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.name),
+                    Text('${item.price} เหรียญ'),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${session.account.balance} → ${session.account.balance - item.price} เหรียญ',
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'เป็นของตกแต่งเท่านั้น ไม่เพิ่มความได้เปรียบในการเรียน',
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('ยกเลิก'),
+                  ),
+                  FilledButton(
+                    key: const ValueKey<String>('confirm-purchase'),
+                    onPressed: () {
+                      if (confirmed) return;
+                      confirmed = true;
+                      Navigator.of(dialogContext).pop(true);
+                    },
+                    child: const Text('ยืนยันซื้อ'),
+                  ),
+                ],
+              ),
       ),
     );
-    if (shouldPurchase == true && mounted) await _purchase(item, session);
+    _ownsOverlay = false;
+    if (shouldPurchase == true && mounted) {
+      if (_current(session, generation)) {
+        await _purchase(item, session, generation);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บัญชีเปลี่ยนแล้ว กรุณาลองใหม่')),
+        );
+      }
+    }
+    _refreshAfterOverlay();
   }
 
-  Future<void> _purchase(RewardCatalogItem item, RewardSession session) async {
+  void _refreshAfterOverlay() {
+    if (!mounted || _retired) return;
+    _invalidateScope();
+    _reloadSession();
+  }
+
+  Widget _stalePurchaseDialog(BuildContext context, {required bool confirm}) =>
+      AlertDialog(
+        title: const Text('บัญชีหรือหน้าจอเปลี่ยนแล้ว'),
+        content: const Text('ยังไม่ซื้อจากคำขอนี้ โปรดปิดและอ่านข้อมูลใหม่'),
+        actions: [
+          TextButton(
+            key: confirm ? const ValueKey<String>('confirm-purchase') : null,
+            onPressed: () => Navigator.of(context).pop(confirm ? true : null),
+            child: const Text('ปิดและอ่านใหม่'),
+          ),
+        ],
+      );
+
+  Future<void> _purchase(
+    RewardCatalogItem item,
+    RewardSession session,
+    int generation,
+  ) async {
     final rewards = _rewards;
-    if (rewards == null || _busyItems.contains(item.id)) return;
+    if (rewards == null ||
+        _busyItems.contains(item.id) ||
+        !_current(session, generation)) {
+      return;
+    }
     final intent = _intentFor(
       _purchaseIntents,
       ownerId: session.ownerId,
@@ -176,7 +349,7 @@ class _ShopPageState extends State<ShopPage> {
         catalogVersion: item.catalogVersion,
         idempotencyKey: intent.idempotencyKey,
       );
-      if (!mounted) return;
+      if (!mounted || !_current(session, generation)) return;
       _purchaseIntents.remove(item.id);
       setState(() {
         _session = Future.value(
@@ -212,9 +385,17 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
-  Future<void> _equip(RewardCatalogItem item, RewardSession session) async {
+  Future<void> _equip(
+    RewardCatalogItem item,
+    RewardSession session,
+    int generation,
+  ) async {
     final rewards = _rewards;
-    if (rewards == null || _busyItems.contains(item.id)) return;
+    if (rewards == null ||
+        _busyItems.contains(item.id) ||
+        !_current(session, generation, route: true)) {
+      return;
+    }
     final intent = _intentFor(
       _equipIntents,
       ownerId: session.ownerId,
@@ -228,7 +409,7 @@ class _ShopPageState extends State<ShopPage> {
         itemId: item.id,
         idempotencyKey: intent.idempotencyKey,
       );
-      if (!mounted) return;
+      if (!mounted || !_current(session, generation)) return;
       _equipIntents.remove(item.id);
       setState(() {
         _session = Future.value(
@@ -279,7 +460,7 @@ class _ShopPageState extends State<ShopPage> {
 
   void _reloadSession() {
     final rewards = _rewards;
-    if (rewards == null || !mounted) return;
+    if (rewards == null || !mounted || _retired) return;
     setState(() {
       _session = _loadCurrentSession();
     });
@@ -287,6 +468,10 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   void dispose() {
+    _generation++;
+    _scopeChanges.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_ownerUpdates?.cancel());
     unawaited(_appearanceSubscription?.cancel());
     super.dispose();
   }
@@ -296,7 +481,9 @@ class _ShopPageState extends State<ShopPage> {
     required bool owned,
     required bool equipped,
     required Map<String, String> equippedBySlot,
+    required RewardAccount account,
   }) {
+    _ownsOverlay = true;
     final previewThemeId = item.kind == RewardItemKind.theme
         ? item.id
         : equippedBySlot['theme'];
@@ -315,8 +502,12 @@ class _ShopPageState extends State<ShopPage> {
         equipped: equipped,
         previewThemeId: previewThemeId,
         previewWallpaperId: previewWallpaperId,
+        account: account,
       ),
-    );
+    ).whenComplete(() {
+      _ownsOverlay = false;
+      _refreshAfterOverlay();
+    });
   }
 
   @override
@@ -326,7 +517,11 @@ class _ShopPageState extends State<ShopPage> {
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
         title: M3Theme.appBarTitle(context, 'ร้านค้ารางวัล'),
       ),
-      body: _hasAppearanceSnapshot && _activeAppearanceOwnerId == null
+      body: _retired
+          ? const Center(
+              child: Text('พื้นที่ข้อมูลเปลี่ยนแล้ว โปรดเปิดร้านค้าใหม่'),
+            )
+          : _hasAppearanceSnapshot && _activeAppearanceOwnerId == null
           ? const Center(
               child: CircularProgressIndicator(
                 semanticsLabel: 'กำลังโหลดร้านค้ารางวัล',
@@ -363,6 +558,7 @@ class _ShopPageState extends State<ShopPage> {
                   );
                 }
                 final session = snapshot.data!;
+                final generation = _generation;
                 if (_hasAppearanceSnapshot &&
                     session.ownerId != _activeAppearanceOwnerId) {
                   return const Center(
@@ -377,6 +573,17 @@ class _ShopPageState extends State<ShopPage> {
                     MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
                   ),
                   children: [
+                    if (widget.progressLoader != null ||
+                        _dependencies?.progress != null)
+                      AvatarProgressPanel(
+                        key: ValueKey('avatar:${session.ownerId}:$generation'),
+                        ownerId: session.ownerId,
+                        account: account,
+                        progress: _dependencies?.progress,
+                        loader: widget.progressLoader,
+                        stillCurrent: () =>
+                            _current(session, generation, route: true),
+                      ),
                     Semantics(
                       label: 'เหรียญคงเหลือ ${account.balance} เหรียญ',
                       child: Card(
@@ -468,19 +675,35 @@ class _ShopPageState extends State<ShopPage> {
                                       account.equippedBySlot[item.slot] ==
                                       item.id,
                                   busy: _busyItems.contains(item.id),
-                                  onPurchase: () =>
-                                      _confirmPurchase(item, session),
-                                  onEquip: () => _equip(item, session),
-                                  onOpenDetail: () => _showDetail(
-                                    item: item,
-                                    owned:
-                                        item.price == 0 ||
-                                        account.ownedItemIds.contains(item.id),
-                                    equipped:
-                                        account.equippedBySlot[item.slot] ==
-                                        item.id,
-                                    equippedBySlot: account.equippedBySlot,
+                                  onPurchase: () => _confirmPurchase(
+                                    item,
+                                    session,
+                                    generation,
                                   ),
+                                  onEquip: () =>
+                                      _equip(item, session, generation),
+                                  onOpenDetail: () {
+                                    if (!_current(
+                                      session,
+                                      generation,
+                                      route: true,
+                                    )) {
+                                      return;
+                                    }
+                                    _showDetail(
+                                      item: item,
+                                      owned:
+                                          item.price == 0 ||
+                                          account.ownedItemIds.contains(
+                                            item.id,
+                                          ),
+                                      equipped:
+                                          account.equippedBySlot[item.slot] ==
+                                          item.id,
+                                      equippedBySlot: account.equippedBySlot,
+                                      account: account,
+                                    );
+                                  },
                                 ),
                               ),
                           ],
@@ -610,6 +833,7 @@ class _CatalogDetailSheet extends StatelessWidget {
     required this.equipped,
     required this.previewThemeId,
     required this.previewWallpaperId,
+    required this.account,
   });
 
   final RewardCatalogItem item;
@@ -617,6 +841,7 @@ class _CatalogDetailSheet extends StatelessWidget {
   final bool equipped;
   final String? previewThemeId;
   final String? previewWallpaperId;
+  final RewardAccount account;
 
   @override
   Widget build(BuildContext context) {
@@ -741,13 +966,7 @@ class _CatalogDetailSheet extends StatelessWidget {
                   colors: colors,
                 ),
               ),
-              child: Center(
-                child: Icon(
-                  _icon(item.kind),
-                  size: 72,
-                  color: scheme.onSurface,
-                ),
-              ),
+              child: AvatarCosmeticPreview(account: account, preview: item),
             ),
           );
 

@@ -20,6 +20,8 @@ from lexiquest_ai.billing import build_billing_service
 from lexiquest_ai.play_billing import GooglePubSubPushVerifier
 from lexiquest_ai.research import ResearchService
 from lexiquest_ai.firestore_research import FirestoreResearchStore
+from lexiquest_ai.content_reports import ContentReportService
+from lexiquest_ai.firestore_content_reports import FirestoreContentReportStore
 from lexiquest_ai.firebase_account_deletion import (
     build_firebase_account_deletion_service,
 )
@@ -120,6 +122,17 @@ except Exception as error:
     logger.error('Research service composition failed: %s', type(error).__name__)
     research_service = None
 
+try:
+    content_report_service = ContentReportService(
+        store=FirestoreContentReportStore.production(),
+        now_utc=lambda: datetime.now(UTC),
+        moderator_uids=settings.content_report_moderators(),
+        submissions_per_minute=settings.content_report_submissions_per_minute,
+    ) if settings.content_reports_enabled else None
+except Exception as error:
+    logger.error('Report service composition failed: %s', type(error).__name__)
+    content_report_service = None
+
 app = create_app(
     content_service=content_service,
     token_verifier=token_verifier,
@@ -129,6 +142,7 @@ app = create_app(
     billing_service=billing_service,
     billing_notification_verifier=billing_notification_verifier,
     research_service=research_service,
+    content_report_service=content_report_service,
 )
 
 __all__ = ["app"]

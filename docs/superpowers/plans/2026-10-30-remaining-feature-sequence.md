@@ -4,10 +4,10 @@
 
 The latest user instruction authorizes implementation of every audited remaining
 capability, including the commercial billing gap. This section supersedes older
-queue counts below. Baseline HEAD is `7c2a02393bb4fd600f2968c5996ce8cdf7773c2f`,
+queue counts below. Accepted local HEAD is `0255f8431ec2eeaf36759ae9c240b4b764ccd1b3`,
 branch `codex/remaining-system-readiness`, existing cycle12-release worktree.
-The current matrix has16 Connected,18 Partial and10 Missing capabilities. The
-catalog remains8 domains/44 capabilities; executable schema is23/43. Billing is
+The accepted matrix has24 Connected,14 Partial and6 Missing capabilities. The
+catalog remains8 domains/44 capabilities; executable schema is25/45. Billing is
 additional commercial infrastructure, not a new catalog ID.
 
 The outcome is complete user journeys for all44 catalog IDs and commercial
@@ -21,16 +21,16 @@ payment-provider activation, research authority, device UAT or efficacy evidence
 
 | Card | Outcome and scope | Initial state and predecessor | Writer and acceptance |
 | --- | --- | --- | --- |
-| R1 | Controlled one-cycle Study archive with distinct instrument export receipts and no cross-assignment disclosure | Running; reviewed design `D:/LexiQuest-Storage/maintenance/2026-11-01/research-archive-next.md` | Archive worker owns new archive domain/data/application and tests. Root owns optional bootstrap/dependencies/Export Center integration. All40 tables unchanged by reads; same-owner A/B rejection; picker/lifecycle revalidation; actual UI caller. |
-| P1 | Editable owner learning profile, goal/countdown and optional onboarding, f26/f35/f36 | Grounding alongside R1 | Profile reader proposes minimal owner-authority shape. Root alone reserves migrations and integrates shared owner lifecycle. Persist/restart/export/purge/rehome and owner-change tests. |
-| B1 | Server-verified paid rights and quotas with purchase/restore/revocation, commercial infrastructure | Grounding alongside R1 | Billing reader compares two actual Android/server shapes. No prices, provider account writes or real transactions. Synthetic replay/owner/cancellation tests before live activation. |
-| A1 | Calendar/weekly analytics and Today aggregation, f25/f42 | After P1; reuse acknowledged time and canonical learning reads | Root assigns a disjoint writer after interfaces settle. Descriptive counts/time, no invented attention or efficacy; pure read and owner isolation checks. |
-| C1 | Versioned packs/catalog/detail and safe offline install/repair/remove, f01/f02/f04/f44 | Queued; content provenance and owner lifecycle first | Signed/checksummed immutable manifests, actual download and entry callers; removing a pack preserves learning evidence. No invented licensed content. |
-| L1 | Rich cards, Definition Quiz, explanation/hints, shared lesson/config/typed/recall policy and durable native resume, f03/f05/f08/f11/f13/f15/f16/f18/f19 | Queued behind concrete content contracts | Reuse canonical writer/answer identity. Exact replay/resume, genuine definitions/explanations, IME/owner fences and results checks. |
-| M1 | Quest periods/recovery/grants, unified streak/freezes, avatar presentation and contextual companion/share, f29/f30/f32/f33/f34 | Queued after recurrence/reward integrity design | One reward authority; no duplicate progress/payout. Share previews contain no owner/research identifiers. Reduced Motion and accessible alternatives. |
+| R1 | Controlled one-cycle Study archive with distinct instrument export receipts and no cross-assignment disclosure | Done locally at0255f843 | Scoped archive and actual Export/UI callers accepted; all43 tables unchanged by reads, exact assignment/owner isolation, picker/lifecycle and export/deletion checks. Real-data export/upload remains separately authorized. |
+| P1 | Editable owner learning profile, goal/countdown and optional onboarding, f26/f35/f36 | Done locally at0255f843 | One owner authority with persisted CAS/restart/retry, actual callers and export/purge/rehome checks. |
+| B1 | Server-verified paid rights and quotas with purchase/restore/revocation, commercial infrastructure | Done locally at0255f843; external activation pending | Real SDK/server interfaces and synthetic replay/owner/quota/revocation checks accepted. Merchant/store/RTDN configuration and device/live transaction UAT remain release dependencies; billing default-off. |
+| A1 | Calendar/weekly analytics and Today aggregation, f25/f42 | Calendar Done locally; Today remains queued | Accepted canonical answer/session/time pure reads and actual calendar caller. Complete Today after L1/M1 without inventing attention or efficacy. |
+| C1 | Versioned packs/catalog/detail and safe offline install/repair/remove, f01/f02/f04/f44 | Catalog/detail/offline Done locally at0255f843; f04 remains Partial | Immutable checksummed versions, bounded HTTP, actual callers and evidence-preserving lifecycle accepted. Quality/report moderation remains Q1; no invented licensed corpus. |
+| L1 | Rich cards, Definition Quiz, explanation/hints, shared lesson/config/typed/recall policy and durable native resume, f03/f05/f08/f11/f13/f15/f16/f18/f19 | Ready; native resume starts after accepted Wave25 gate | Reuse canonical writer/answer identity and existing session plan/checkpoint slots. Exact replay/resume, genuine definitions/explanations, IME/owner fences and results checks. Local acknowledged drafts stay out of attempt sync/Research. |
+| M1 | Quest periods/recovery/grants, unified streak/freezes, avatar presentation and contextual companion/share, f29/f30/f32/f33/f34 | Ready; initial period RED prepared on D | Pinned civil periods and canonical recovery; genuine23 capture before any24 reservation. One reward authority; one freeze per completed weekly Quest, no coins/paid acquisition/learning-day credit. Private share preview, Reduced Motion and accessible alternatives. |
 | Q1 | Remaining report targets/transport and opt-in reminders, f21/f27 | Queued after backend/permission contracts | Truthful queued/sent receipts; explicit permission/schedule/cancel and default-off reminder. |
-| R2 | Trusted authority/lifecycle transport and dedicated Research upload, remaining f28 | After R1; synthetic interfaces can proceed without real issuer | Fail closed for Research while ordinary learning works. Owner/consent/assignment/revision/expiry/revocation and both instrument pins at every boundary; withdrawal/export/deletion end to end. |
-| L2 | Pair Matching, f10 | After Research engineering completion; current all-feature instruction includes its requested outcome | Do not open a separate task before its prerequisite. Canonical evidence and accessibility checks. |
+| R2 | Trusted authority/lifecycle transport and dedicated Research upload, remaining f28 | Done engineering locally at0255f843; real rollout default-off | Accepted owner/consent/assignment/revision/expiry/revocation, both instrument pins, signature rejection, UI, withdrawal/upload/export/deletion. Supplied trusted artifacts and real enrollment/upload authority remain external. |
+| L2 | Pair Matching, f10 | Core/time/UI20 accepted focused cases; independent5 corrected; caller integration in progress | Recognition policy, canonical retry/owner fences and confirmed time; actual ChooseMode/History and lifecycle/full gates remain. No separate user task created. |
 | X1 | Accessibility closure, integration review and release evidence, f38 and all touched journeys | Applied in every card; final gate after all cards | Pause writers for full checks. Physical-device, live-service and store evidence remain explicit external prerequisites. |
 
 Tests/build/code generation share one serialized lane controlled by Root. Source
@@ -41,17 +41,24 @@ decision trail in `docs/field/2026-11-01-completion-decisions.tsv` and updates t
 matrix only after acceptance. No production deployment, purchase, enrollment,
 real-data upload or broad destructive cleanup is authorized by implementation.
 
-Wave25 checkpoint: R1/P1/A1/B1 have implemented local callers with focused evidence.
-R2 current Research/consent/Assessment1022PASS plus actual factory/UI5PASS,
-bootstrap/entry/identity8PASS, backend359PASS and independent49PASS; three client
-P2 fixes are independently accepted. Research remains default-off and local
-engineering evidence does not authorize enrollment or rollout. C1 storage,
-download, owner lifecycle and UI journeys pass, with two independently reproduced
-voice cancellation P2s under correction before its review closes. Shared native
-voice cancellation is a bounded adjacent fix. See the active Wave25 checkpoint
-for exact logs and prior failures. L1 grounding proceeds read-only; no L2 Matching
-implementation has started. Full current integration/analysis/build is pending.
-The entire program remains open until every acceptance condition above has evidence.
+Wave25 accepted snapshot0255f843 passes Flutter5080/0FAIL, analysis0, CLI23/23,
+offline backend563/one existing opt-in skip and Firestore emulator52/0skip.
+All1194frozen inputs/877Dart and three assets match through the normal debug APK;
+independent actual artifact/source/log review ACCEPT releases the source freeze.
+R2 includes1022Research/consent/Assessment checks, actual factory/UI/bootstrap/
+identity, independent accepted client/backend corrections and archive/upload gates.
+C1 and shared native voice cancellation corrections are accepted, including the
+unchanged independent canaries. See the [Wave25 checkpoint](../../field/2026-11-01-remaining-systems-wave25.md)
+for exact receipts, hashes and preserved failures. Research and billing remain
+default-off; device, merchant, trusted Research artifacts and rollout are separate.
+Root continues L1/M1 and the remaining cards; no L2 implementation has started.
+The whole44-feature program remains active until every acceptance condition has evidence.
+
+The stopped-run161028617byte temp cleanup was rejected by automatic policy with
+`blocked by policy`. Keep that exact target intact and do not retry through
+another mechanism. No freed-space claim follows from the read-only inventory.
+
+## Earlier grounding and queue history
 
 Grounded 2026-10-30 ที่ source `e6996b1a54b4619ecb5140ec1fda53409a333460`,
 worktree `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch

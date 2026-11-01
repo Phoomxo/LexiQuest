@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
+import '../../motivation/data/drift_streak_repository.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -13,10 +14,13 @@ final class DriftProgressQueries {
   Future<ProgressSnapshot> load({
     required String ownerId,
     required DateTime nowUtc,
-  }) async {
+  }) => database.transaction(() async {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
+    final motivation = await DriftStreakRepository(
+      database,
+    ).readForProjection(ownerId: ownerId, nowUtc: nowUtc);
     final stored =
         await (database.select(database.answerAttempts)
               ..where((row) => row.ownerId.equals(ownerId))
@@ -34,7 +38,6 @@ final class DriftProgressQueries {
     final nativeXpIneligibleSessions = <String>{};
     final xpEligibleSessions = <String>{};
     final attempts = <AnswerAttempt>[];
-    final streakAttempts = <AnswerAttempt>[];
     for (final row in stored) {
       if (excludedSessions.contains(row.sessionId) ||
           !LearningEvidenceContract.validEvidenceMetadata(
@@ -50,9 +53,6 @@ final class DriftProgressQueries {
       } else {
         if (_eligible(row, LearningProjection.masterySrs)) {
           attempts.add(row);
-        }
-        if (_eligible(row, LearningProjection.streak)) {
-          streakAttempts.add(row);
         }
         if (_eligible(row, LearningProjection.xp)) {
           xpEligibleSessions.add(row.sessionId);
@@ -79,9 +79,11 @@ final class DriftProgressQueries {
                   row.entryType.equals('rewardPurchase').not(),
             ))
             .get();
-    final totalXp = pointsRows
-        .where((row) => !excludedSources.contains(row.sourceEventId))
-        .fold<int>(0, (sum, row) => sum + row.amount);
+    final totalXp =
+        pointsRows
+            .where((row) => !excludedSources.contains(row.sourceEventId))
+            .fold<int>(0, (sum, row) => sum + row.amount) +
+        motivation.questXp;
     final completedCount = database.learningSessions.id.count();
     final completedRow =
         await (database.selectOnly(database.learningSessions)
@@ -172,10 +174,7 @@ final class DriftProgressQueries {
       accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
       totalXp: totalXp,
       completedSessions: completedRow.read(completedCount) ?? 0,
-      streakDays: _streakDays(
-        streakAttempts.map((row) => row.occurredAtUtcMs),
-        nowUtc,
-      ),
+      streakDays: motivation.state.currentStreakDays,
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
@@ -218,7 +217,7 @@ final class DriftProgressQueries {
               isUtc: true,
             ),
     );
-  }
+  });
 
   Future<List<WeaknessEvidence>> _loadWeaknesses(
     String ownerId,
@@ -306,7 +305,13 @@ final class DriftProgressQueries {
       (
         'retention',
         'การจำและเรียกคืน',
-        {'meaningChoice', 'srsRecall', 'activeRecall', 'associativeRecall'},
+        {
+          'meaningChoice',
+          'definitionTyped',
+          'srsRecall',
+          'activeRecall',
+          'associativeRecall',
+        },
       ),
     ];
     return definitions
@@ -323,24 +328,5 @@ final class DriftProgressQueries {
           );
         })
         .toList(growable: false);
-  }
-
-  int _streakDays(Iterable<int> timestamps, DateTime nowUtc) {
-    final days = timestamps
-        .map((value) => DateTime.fromMillisecondsSinceEpoch(value, isUtc: true))
-        .map((value) => DateTime.utc(value.year, value.month, value.day))
-        .toSet();
-    if (days.isEmpty) return 0;
-    final today = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
-    var cursor = days.contains(today)
-        ? today
-        : today.subtract(const Duration(days: 1));
-    if (!days.contains(cursor)) return 0;
-    var streak = 0;
-    while (days.contains(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
   }
 }

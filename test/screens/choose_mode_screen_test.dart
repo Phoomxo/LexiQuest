@@ -58,7 +58,7 @@ void main() {
       final navigation = _FocusEntryNavigation();
       try {
         final before = (await tester.runAsync(h.snapshotAllTables))!;
-        expect(before, hasLength(43));
+        expect(before, hasLength(45));
         await _pumpFocusEntry(tester, h, navigation: navigation);
         await _scrollFocusEntry(tester);
         await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
@@ -653,6 +653,13 @@ void main() {
                 .first,
           );
           await tester.ensureVisible(finish);
+          await _dictationEntryUntil(
+            tester,
+            () => tester.widget<FilledButton>(finish).onPressed != null,
+          );
+          await Scrollable.ensureVisible(tester.element(finish), alignment: 0.5);
+          await tester.pumpAndSettle();
+          expect(finish.hitTestable(), findsOneWidget);
           await tester.tap(finish);
           await _dictationEntryUntil(
             tester,

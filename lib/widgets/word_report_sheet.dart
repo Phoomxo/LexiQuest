@@ -135,9 +135,11 @@ class WordReportDetails extends StatelessWidget {
     super.key,
     required this.report,
     this.languageCode = 'th',
+    this.showLocalOnlyNotice = true,
   });
   final StoredWordReport report;
   final String languageCode;
+  final bool showLocalOnlyNotice;
   @override
   Widget build(BuildContext context) {
     final en = languageCode == 'en';
@@ -145,11 +147,12 @@ class WordReportDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          en
-              ? 'Saved on this device. Not sent.'
-              : 'บันทึกรายงานในเครื่องแล้ว ยังไม่ได้ส่ง',
-        ),
+        if (showLocalOnlyNotice)
+          Text(
+            en
+                ? 'Saved on this device. Not sent.'
+                : 'บันทึกรายงานในเครื่องแล้ว ยังไม่ได้ส่ง',
+          ),
         const SizedBox(height: 8),
         Text('${en ? 'Receipt' : 'เลขรายงาน'}: ${report.id}'),
         Text(
@@ -177,12 +180,14 @@ class WordReportSheet extends StatefulWidget {
     this.wordReports,
     this.ownerChanges,
     this.languageCode = 'th',
+    this.revalidate,
   });
   final String expectedOwnerId;
   final WordReportTarget target;
   final WordReportUseCases? wordReports;
   final Stream<String?>? ownerChanges;
   final String languageCode;
+  final Future<void> Function()? revalidate;
   @override
   State<WordReportSheet> createState() => _WordReportSheetState();
 }
@@ -347,33 +352,41 @@ class _WordReportSheetState extends State<WordReportSheet>
       return;
     }
     final epoch = scope.generation;
-    if (_command == null) {
-      if (!_reviewing || _reviewReason == null) {
-        return;
-      }
-      try {
-        _command = reports.prepareSubmit(
-          expectedOwnerId: widget.expectedOwnerId,
-          target: widget.target,
-          reason: _reviewReason!,
-          comment: _reviewComment,
-        );
-      } on Object {
-        setState(
-          () => _validation = _text(
-            'เตรียมรายงานไม่สำเร็จ',
-            'Could not prepare this report.',
-          ),
-        );
-        return;
-      }
-    }
-    final command = _command!;
     setState(() {
       _submitting = true;
       _uncertain = false;
     });
     try {
+      await (_command?.revalidate ?? widget.revalidate)?.call();
+      if (!mounted ||
+          _invalidated ||
+          !scope.isCurrent(epoch) ||
+          !identical(reports, _reports)) {
+        return;
+      }
+      if (_command == null) {
+        if (!_reviewing || _reviewReason == null) {
+          return;
+        }
+        try {
+          _command = reports.prepareSubmit(
+            expectedOwnerId: widget.expectedOwnerId,
+            target: widget.target,
+            reason: _reviewReason!,
+            comment: _reviewComment,
+            revalidate: widget.revalidate,
+          );
+        } on Object {
+          setState(
+            () => _validation = _text(
+              'เตรียมรายงานไม่สำเร็จ',
+              'Could not prepare this report.',
+            ),
+          );
+          return;
+        }
+      }
+      final command = _command!;
       final result = await reports.submit(command);
       if (!mounted ||
           _invalidated ||
