@@ -9,7 +9,7 @@ Intent: continue the existing request to inspect LexiQuest in poteto-mode and co
 - [x] Design the workflow. Continue the approved active-learning-time cards before adding another schema or collection authority.
 - [x] Run the loop. Connect real learning inputs and waits, settings and acknowledged readback; verify each unit.
 - [x] Keep the audit trail. Record decisions and actual results with source boundaries.
-- [ ] Verify and hand back. Independent connected-code review, focused and affected tests, analysis, full regression and normal debug APK for a consistent source.
+- [x] Verify and hand back. Independent connected-code review, focused and affected tests, analysis, full regression and normal debug APK for a consistent source.
 
 Parallel audit stages are Frame, Fan out, Aggregate and Report. Read-only partitions cover feature readiness and research integrity. Draft writers use disjoint output paths on D; root alone promotes application edits. Flutter, generators and builds run serially.
 
@@ -18,11 +18,11 @@ Parallel audit stages are Frame, Fan out, Aggregate and Report. Read-only partit
 | Card | State | Acceptance |
 | --- | --- | --- |
 | Baseline time core/store/lifecycle | Done | Fresh focused run passed 120 cases on the starting dirty source. Command includes time suites, migration, canonical/live/source admission and owner lifecycle. |
-| Collection adapters | Review accepted | Final focused116 PASS includes real Quiz/SRS/native/Reading/Tutor input, context replacement, delayed audio-stop ACK, source preservation and actual native results. Full regression remains required. |
-| Settings and readback | Review accepted | Owner-scoped setting, independent Mastery history, actual session Score and captured callbacks. |
+| Collection adapters | Done locally | Final focused116 and full4717 PASS cover the connected approved scope; physical UAT remains separate. |
+| Settings and readback | Done locally | Owner-scoped setting, independent Mastery history, actual session Score and captured callbacks pass the final gates. |
 | Research engineering audit | Done, issues | Trusted authority adapter/lifecycle, controlled Study archive and upload lane remain unfinished. Default deny-all production composition is intentional. |
-| Integration | Running | Focused116 PASS and analysis0. First full at4322fd1e completed4716 PASS/one async-disposal fixture failure in11:10 with all984 inputs unchanged. Actual close observation fixes the fixture; entire runtime file9 PASS. Fresh full Flutter/APK remain pending. |
-| Temporary storage | Done | User additionally authorized removal of unnecessary files. Verified ZIP retains all789 lint scratch files; exact scratch tree removed, reducing logical bytes by7834456. |
+| Integration | Done for time unit | Sourcefdf8f3b9 has full4717 PASS/0FAIL, analysis0, backend390 PASS/one opt-in skip, CLI23 PASS and normal debug APK. Independent artifact/source acceptance and post-cleanup984-input readback pass. The first full4716/1 is retained separately. |
+| Temporary storage | Done | Verified ZIP retains all789 lint scratch files. Post-build cache/duplicate APK removal deletes646165042 logical bytes from C; retained D APK and all source hashes match. |
 
 Data remains local and collection defaults off. No deployment, real enrollment/upload, live data deletion, new Pair Matching task, or efficacy claim is authorized. Historical readiness counts and prior passing suites do not certify the current source.
 
@@ -41,6 +41,10 @@ Independent review accepted the six corrected source findings. Full regression,
 normal debug APK, real-device UAT and Research rollout are separate evidence states.
 The overall44-capability completion request is still open; completing this local
 time unit does not close the missing catalog systems or controlled Research transport.
+
+Final handoff is [Wave23](2026-11-01-remaining-systems-wave23.md). Runtime coverage
+is16 Connected/18 Partial/10 Missing. Both approved f23/f24 units are locally
+connected; the whole application and Research production readiness remain open.
 
 The first full failure is reproduced in `disposal-focused-red.log`. The corrected
 fixture waits for the synthetic client's actual close Future without invoking

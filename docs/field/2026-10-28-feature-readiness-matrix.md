@@ -1,6 +1,8 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Current Wave22 local attestation updated2026-10-31 is application71a230a4 at schema20/37. Full4552/11m45s, analysis0/18.1s, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK121.2s/native-provider0/restoredtrue are verified. Exact767Dart/54CLI/92backend inputs and independent actual-APK/source/log acceptance bind this source. Coverage is14 connected/19 partial/11 missing. Only f23 changes Missing-to-Partial; f24Missing, f22Connected and f21Partial remain. See [Wave22](2026-10-31-remaining-systems-wave22.md).
+Current local attestation updated2026-11-01 is sourcefdf8f3b9 at schema21/40. Flutter4717PASS/0FAIL, analysis0, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK pass. All984 frozen inputs plus3assets remain identical and independent actual-APK/source/log verification passes. f23 and f24 are Connected for their approved local runtime scope. Coverage is16 connected/18 partial/10 missing across44 IDs. This does not complete the whole system or authorize Research collection/upload. See [Wave23](2026-11-01-remaining-systems-wave23.md).
+
+Historical Wave22 local attestation updated2026-10-31 is application71a230a4 at schema20/37. Full4552/11m45s, analysis0/18.1s, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK121.2s/native-provider0/restoredtrue are verified. Exact767Dart/54CLI/92backend inputs and independent actual-APK/source/log acceptance bind this source. Coverage is14 connected/19 partial/11 missing. Only f23 changes Missing-to-Partial; f24Missing, f22Connected and f21Partial remain. See [Wave22](2026-10-31-remaining-systems-wave22.md).
 
 Historical Wave21 summary retained verbatim:
 
@@ -65,7 +67,7 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 14 connected runtime capabilities, 19 partial capabilities and 11
+There are 16 connected runtime capabilities, 18 partial capabilities and 10
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
@@ -112,8 +114,8 @@ Wave21 changes only f22 from Partial to Connected after actual current-source ga
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f22 | Review Center | Connected | Actual four-reason local Hub, full filtered lists, unavailable reasons and immutable not-sent receipts; captured-owner pure reads across ChooseMode/Clinic/Mastery and same canonical practice/History callers. Sourcea54ac2e2 passes full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source and independent artifact acceptance. No all37-table changes from reads. f21 broader report targets/transport and the P3 test cleanup counter follow-up remain separate. |
-| f23 | Focus Timer | Partial | Actual optional P06 tool at71a230a4 supports1-180/default25 minutes, configured/running/paused/stopped/finished states, same-owner explicit Resume, safe exits/IME and fresh-open reset. Current full4552, analysis0, CLI23, offline390/one existing skip and normal APK with exact-source/independent acceptance pass. All37-table snapshots show no timer learning/reward/Research writes. Active-time capture f24 remains absent, so this UI slice does not make f23 Connected; no stored presets, cold-restart recovery or background service. See [Wave22](2026-10-31-remaining-systems-wave22.md). |
-| f24 | Automatic Learning-Time Capture | Missing | Timestamps and answer response times exist. Foreground active-time capture is absent. Session elapsed time is not treated as learning time. |
+| f23 | Focus Timer | Connected | Optional P06 timer supports1-180/default25 minutes, configured/running/paused/stopped/finished states, explicit same-owner Resume and safe exits. Its f24 dependency is now locally connected atfdf8f3b9 with full4717, analysis0 and normal APK acceptance. Timer elapsed creates no learning credit. Presets, cold-restart recovery and background service are outside the approved transient scope. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
+| f24 | Automatic Learning-Time Capture | Connected | Default-off per-owner confirmed interaction capture uses one durable authority across eligible Quiz/SRS/native/Voice/Reading/Tutor paths. Provider/audio/save waits, background and unconfirmed terminal gaps are excluded. Actual P23 session/scope results and independent P24 owner readback work with empty/failed Progress. Schema21/40 migration, owner lifecycle, personal export/purge and sync/Research exclusion pass atfdf8f3b9, full4717/analysis0/normal APK and independent artifact acceptance. Silent reading may be undercounted; no attention or efficacy claim. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
