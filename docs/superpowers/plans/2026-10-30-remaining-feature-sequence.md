@@ -4,9 +4,11 @@
 
 The latest user instruction authorizes implementation of every audited remaining
 capability, including the commercial billing gap. This section supersedes older
-queue counts below. Accepted local HEAD is `0255f8431ec2eeaf36759ae9c240b4b764ccd1b3`,
+queue counts below. Last accepted baseline is `0255f8431ec2eeaf36759ae9c240b4b764ccd1b3`;
+the accepted Wave26 source is `e803d552bc3ba7a678dfbada8ab4fca0f043c64f`,
 branch `codex/remaining-system-readiness`, existing cycle12-release worktree.
-The accepted matrix has24 Connected,14 Partial and6 Missing capabilities. The
+The accepted matrix is44 Connected,0 Partial and0 Missing after full regression
+and independent actual-APK acceptance. All local engineering cards are done. The
 catalog remains8 domains/44 capabilities; executable schema is25/45. Billing is
 additional commercial infrastructure, not a new catalog ID.
 
@@ -24,14 +26,14 @@ payment-provider activation, research authority, device UAT or efficacy evidence
 | R1 | Controlled one-cycle Study archive with distinct instrument export receipts and no cross-assignment disclosure | Done locally at0255f843 | Scoped archive and actual Export/UI callers accepted; all43 tables unchanged by reads, exact assignment/owner isolation, picker/lifecycle and export/deletion checks. Real-data export/upload remains separately authorized. |
 | P1 | Editable owner learning profile, goal/countdown and optional onboarding, f26/f35/f36 | Done locally at0255f843 | One owner authority with persisted CAS/restart/retry, actual callers and export/purge/rehome checks. |
 | B1 | Server-verified paid rights and quotas with purchase/restore/revocation, commercial infrastructure | Done locally at0255f843; external activation pending | Real SDK/server interfaces and synthetic replay/owner/quota/revocation checks accepted. Merchant/store/RTDN configuration and device/live transaction UAT remain release dependencies; billing default-off. |
-| A1 | Calendar/weekly analytics and Today aggregation, f25/f42 | Calendar Done locally; Today remains queued | Accepted canonical answer/session/time pure reads and actual calendar caller. Complete Today after L1/M1 without inventing attention or efficacy. |
-| C1 | Versioned packs/catalog/detail and safe offline install/repair/remove, f01/f02/f04/f44 | Catalog/detail/offline Done locally at0255f843; f04 remains Partial | Immutable checksummed versions, bounded HTTP, actual callers and evidence-preserving lifecycle accepted. Quality/report moderation remains Q1; no invented licensed corpus. |
-| L1 | Rich cards, Definition Quiz, explanation/hints, shared lesson/config/typed/recall policy and durable native resume, f03/f05/f08/f11/f13/f15/f16/f18/f19 | Ready; native resume starts after accepted Wave25 gate | Reuse canonical writer/answer identity and existing session plan/checkpoint slots. Exact replay/resume, genuine definitions/explanations, IME/owner fences and results checks. Local acknowledged drafts stay out of attempt sync/Research. |
-| M1 | Quest periods/recovery/grants, unified streak/freezes, avatar presentation and contextual companion/share, f29/f30/f32/f33/f34 | Ready; initial period RED prepared on D | Pinned civil periods and canonical recovery; genuine23 capture before any24 reservation. One reward authority; one freeze per completed weekly Quest, no coins/paid acquisition/learning-day credit. Private share preview, Reduced Motion and accessible alternatives. |
-| Q1 | Remaining report targets/transport and opt-in reminders, f21/f27 | Queued after backend/permission contracts | Truthful queued/sent receipts; explicit permission/schedule/cancel and default-off reminder. |
+| A1 | Calendar/weekly analytics and Today aggregation, f25/f42 | Done locally at e803d552 | Canonical answer/session/time pure reads feed actual calendar, Today and guarded History/resume callers. Ordinary/Study separation, owner/fence checks and pure-view tests are implemented; no attention or efficacy is inferred. |
+| C1 | Versioned packs/catalog/detail and safe offline install/repair/remove, f01/f02/f04/f44 | Done locally at e803d552 | Immutable checksummed versions, bounded HTTP, actual callers and evidence-preserving lifecycle remain. Reports retain actual source/version pins; publisher curation, licensing, human moderation and live-service acceptance remain external. |
+| L1 | Rich cards, Definition Quiz, explanation/hints, shared lesson/config/typed/recall policy and durable native resume, f03/f05/f08/f11/f13/f15/f16/f18/f19 | Done locally at e803d552 | Actual lexical setup/Quiz, shared lesson, recall ladder and four native History/resume/result journeys reuse canonical answer/finish identities. Authored help, IME, original input/time, lost-ACK and owner/fence checks are implemented. Local acknowledged drafts stay out of attempt sync/Research. |
+| M1 | Quest periods/recovery/grants, unified streak/freezes, avatar presentation and contextual companion/share, f29/f30/f32/f33/f34 | Done locally at e803d552 | Actual Quest/Today, canonical recovery, streak/freeze, avatar/shop, companion and private achievement preview/save/share flows are connected. One reward authority remains; one freeze per completed weekly Quest gives no paid acquisition or learning-day credit. Reduced Motion and keyboard alternatives are implemented; native ACK/chooser launch does not prove delivery. |
+| Q1 | Remaining report targets/transport and opt-in reminders, f21/f27 | Done locally at e803d552 | Actual source review, durable report queue/send receipts and backend contracts are connected with explicit send/retry. Reminder settings retain absence=disabled, explicit permission/time/zone/save/cancel, owner/revision checks and Android inexact scheduling. Live transport/moderation and physical notification delivery remain external; unsupported platforms report unsupported. |
 | R2 | Trusted authority/lifecycle transport and dedicated Research upload, remaining f28 | Done engineering locally at0255f843; real rollout default-off | Accepted owner/consent/assignment/revision/expiry/revocation, both instrument pins, signature rejection, UI, withdrawal/upload/export/deletion. Supplied trusted artifacts and real enrollment/upload authority remain external. |
-| L2 | Pair Matching, f10 | Core/time/UI20 accepted focused cases; independent5 corrected; caller integration in progress | Recognition policy, canonical retry/owner fences and confirmed time; actual ChooseMode/History and lifecycle/full gates remain. No separate user task created. |
-| X1 | Accessibility closure, integration review and release evidence, f38 and all touched journeys | Applied in every card; final gate after all cards | Pause writers for full checks. Physical-device, live-service and store evidence remain explicit external prerequisites. |
+| L2 | Pair Matching, f10 | Done locally at e803d552 | Actual ChooseMode, canonical matching board/checkpoint, guarded History/resume/results and confirmed-time callers are connected. Recognition retains its declared eligibility and cannot gain recall mastery or reward authority. No separate user task was created. |
+| X1 | Accessibility closure, integration review and release evidence, f38 and all touched journeys | Done locally at e803d552; physical UAT pending | Current-source full regression, analysis, unchanged policy/backend input comparison, normal APK build and independent source/artifact attestation accept this local unit. Physical-device, live-service and store evidence remain external prerequisites. |
 
 Tests/build/code generation share one serialized lane controlled by Root. Source
 writes are disjoint by card; shared composition and schema files have one writer.
@@ -51,8 +53,26 @@ C1 and shared native voice cancellation corrections are accepted, including the
 unchanged independent canaries. See the [Wave25 checkpoint](../../field/2026-11-01-remaining-systems-wave25.md)
 for exact receipts, hashes and preserved failures. Research and billing remain
 default-off; device, merchant, trusted Research artifacts and rollout are separate.
-Root continues L1/M1 and the remaining cards; no L2 implementation has started.
-The whole44-feature program remains active until every acceptance condition has evidence.
+Wave26 accepts L1/M1/Q1/L2, Today and local X1 on1333 inputs/1002 Dart files.
+Focused receipts and preserved failed full runs retain their original scope.
+The [Wave26 checkpoint](../../field/2026-11-01-remaining-systems-wave26.md)
+records the retained paths, hashes, review dispositions and release boundaries:
+
+- Source: e803d552; all1333 inputs/1002 Dart unchanged through full tests, build and independent attestation.
+- Flutter:5493PASS/0FAIL; full runner13m08s; analysis0 in20.3s.
+- Unchanged-input gates: CLI23/23, Firestore and gax66/66, CPU backend458+76+140. No live Voice/GPU integration; OSV retains two GPU package findings behind the startup guard.
+- Normal lib/main.dart debug APK:258069483 bytes; SHA256 `a46bb9fddb31ab0daf29734c8c866a715e94dcd6774ea4d03dc4bd54f0b68157`; Gradle127.7s; environment restored.
+- Independent disposition: ACCEPT_BOUNDED_DEBUG_ARTIFACT at `apk-review/current-corrected/artifact-attestation.json`; native runtime PASS; matrix44/0/0. These are local engineering results.
+
+Local acceptance does not activate merchant/store products, server entitlements,
+RTDN or live payments; trusted Research issuer/instrument/consent/enrollment and
+real upload authority remain external. Billing and Research stay default-off.
+Physical Android alarm/share/audio/accessibility UAT, intended release signing,
+trusted/licensed catalog curation, live report transport/moderation and rollout
+authorization remain separate. The GPU Voice engine deliberately blocks the
+affected supported stack before loading; a patched compatible paired runtime
+and actual GPU acceptance are still required. No guard waiver, device delivery,
+research efficacy, deployment, publication or live transaction is inferred.
 
 The stopped-run161028617byte temp cleanup was rejected by automatic policy with
 `blocked by policy`. Keep that exact target intact and do not retry through

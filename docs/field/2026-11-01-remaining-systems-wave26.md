@@ -497,3 +497,87 @@ The matrix remains24Connected/14Partial/6Missing until these gates accept.
 Merchant/RTDN/live purchase, trusted Research authority/real enrollment or upload,
 physical Android alarm/share/audio/accessibility UAT and release signing remain
 external. Billing and Research stay default-off; no deployment is authorized.
+
+## Accepted local engineering completion
+
+Accepted application/test source is `e803d552bc3ba7a678dfbada8ab4fca0f043c64f`
+on `codex/remaining-system-readiness` in the cycle12-release worktree. The following
+results supersede the earlier pending integration paragraphs. Later documentation
+commits do not rebuild or relabel this APK; compare their exact input arrays with
+this frozen source before relying on the same engineering evidence.
+
+Evidence root: `D:/LexiQuest-Storage/maintenance/2026-11-01/`.
+
+- `wave26-verification/final-recheck/source-before.json` records1333 inputs and
+  1002 Dart files; SHA256 `61f66630ec442698f22b36bdcc2c0da216bfe752b5eb123b5cc1becc5dbeabe4`.
+  Every input is unchanged after the full suite, build and independent review.
+- Full Flutter terminates5493PASS/0FAIL, runner13m08s, exit0. Receipt and log are
+  `wave26-verification/final-recheck/full-flutter-result.json` and `full-flutter.log`.
+  Log SHA256 `6132ec951f9f96d46079b942d48bc8af0ba829b47e962b24c7c228be1c779dfb`.
+  Current analysis reports no issues in20.3s (`wave26-verification/final-recheck/analysis.log`).
+- CLI23/23, Firestore policy plus actual gax compatibility66/66 without skips,
+  and CPU backend AI458/Voice76/LM140 pass on unchanged inputs. The reuse comparison
+  `wave26-verification/final-recheck/reused-subsystem-input-comparison.json` proves that only three
+  screen tests and one golden differ from the preceding checked manifest.
+  These are separate backend/CLI/policy gates. Earlier focused Dart subsystem
+  counts overlap the full Flutter suite and must not be added to5493.
+  Opt-in live Voice integration, GPU inference and device checks were not run.
+- OSV still exits1 for the Torch/setuptools GPU findings. Both patched CPU
+  pyasn1 environments and the npm parent-chain closure are verified. No available
+  approved patched GPU pair meets both the security floor and exact compatibility
+  guard; the default GPU engine refuses startup. This is an explicit release
+  dependency, not a clean dependency-audit result or a guard waiver.
+- Normal `lib/main.dart` debug build exits0; Gradle127.7s, runner134.1s,
+  `GRADLE_OPTS` restored and source unchanged. Build ID is
+  `wave26-61f66630ec44`. The retained APK is
+  [lexiquest-wave26-debug.apk](D:/LexiQuest-Storage/maintenance/2026-11-01/wave26-verification/final-recheck/lexiquest-wave26-debug.apk),
+  258069483 bytes, SHA256
+  `a46bb9fddb31ab0daf29734c8c866a715e94dcd6774ea4d03dc4bd54f0b68157`.
+  Build receipt/log are `wave26-verification/final-recheck/normal-debug-build-result.json`
+  and `normal-debug-build.log` in that same directory. KGP migration and SDK XML warnings do not
+  fail this build; future Flutter upgrades need compatible plugin versions.
+- Independent actual-APK disposition is `ACCEPT_BOUNDED_DEBUG_ARTIFACT` in
+  `wave26-verification/apk-review/current-corrected/artifact-attestation.json`,
+  SHA256 `7c9facc0dc1dfb113282accdc2622b1bcdac7eaf3b0a24791d2bd35c5c77474e`.
+  ZIP CRC/duplicates, kernel build ID, actual DEX definitions, Android package,
+  non-exported reminder receiver, narrow FileProvider path, Thai font and native
+  runtime pins pass. Signing-fixture/private-PEM checks and post-source verification
+  pass. This verifies the debug artifact; no device installation is claimed.
+
+The first APK-wrapper attempt exited1 without retained child stderr. That missing
+evidence is not reconstructed. An instrumented reproducer proves inherited PS7
+module paths shadow PS5 Utility, making `Get-FileHash` unavailable. The D-only
+wrapper now selects the native executable's modules in its child environment and
+saves stdout/stderr/exit before raising. A deliberate exit7 self-check proves both
+streams survive failure. The same PS5 executable and unmodified repository native
+verifier then pass the complete corrected artifact review. Initial failure,
+reproducer, direct native pass, module proof and corrected receipt remain retained.
+No application source, native pin, global environment or security guard changed.
+
+Root accepts the minimal final test diff; prior bounded client/backend/UI reviews
+and the independent final artifact review are accepted. The matrix is now
+44Connected/0Partial/0Missing for local engineering, with the same8 domains,
+catalog revision1.3.0 and contract hash
+`41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`.
+Schema is25/45; capabilities are not tables. EvidenceContext/EventEnvelopeV2
+remain byte-identical to the accepted Wave25 contracts.
+
+After independent acceptance, Root compares the normal C APK with the retained D
+copy, confirms no active consumer, and deletes only that exact generated duplicate.
+`wave26-final-duplicate-apk-cleanup.json` records258069483 bytes removed. Together
+with the earlier221674605-byte duplicate, this removes479744088 duplicate file
+bytes; it is not a measurement of total free space. The retained D APK is unchanged.
+All three denied stopped-run temp targets remain untouched. Automatic approval
+review rejected their cleanup with `blocked by policy`; no alternate deletion was
+attempted. Pre-existing critiques/failure artifacts and the original checkout's
+changes are preserved.
+
+Local engineering is complete. Before commercial rollout, supply merchant/store
+products and RTDN/server authority, intended release signing and real transaction
+tests; deploy and validate the configured live services and licensed content;
+complete physical Android notification/share/audio/accessibility UAT; and obtain
+explicit rollout permission. GPU Voice remains unsupported until its runtime is
+patched and accepted. Optional Research remains default-off until genuine trusted
+issuer/protocol/instrument/consent/ethics artifacts and explicit enrollment/upload
+authority exist. No live purchase, deployment, participant enrollment, real upload,
+physical UAT or research efficacy is asserted.

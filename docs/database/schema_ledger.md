@@ -749,7 +749,8 @@ and lexical-card callers. Trusted catalog content and rollout remain external.
 ### v24 — Pinned Quest periods and canonical learning days
 
 **Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
-**Status:** reserved for implementation; no current-source completion claim.
+**Status:** accepted locally at e803d552; v24 migration keeps43 tables.
+**Final acceptance evidence:** [Wave26 attestation](../field/2026-11-01-remaining-systems-wave26.md): current migration/lifecycle checks, Flutter5493/0, analysis0 and independently accepted normal debug APK; deployment remains separate.
 
 Keep43 tables. Rebuild `quest_instances` with unique
 `(owner_id,quest_id,period_key)` and bounded nullable period/definition JSON plus
@@ -793,7 +794,8 @@ acquisition or learning-day credit. Root owns schema and shared lifecycle edits.
 ### v25 — Local content-report queue and opt-in reminder preference
 
 **Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
-**Status:** implemented locally; current-source release gates pending.
+**Status:** accepted locally at e803d552; current runtime v25/45 tables.
+**Final acceptance evidence:** [Wave26 attestation](../field/2026-11-01-remaining-systems-wave26.md): current migration/lifecycle checks, Flutter5493/0, analysis0 and independently accepted normal debug APK; deployment remains separate.
 
 Add `content_reports` and `study_reminder_preferences`:45 tables, unchanged
 8/44 feature catalog. Reports pin immutable original payload/digest/time, durable

@@ -1,6 +1,16 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Current accepted local attestation,2026-11-01: source`0255f843` at schema23/43,
+Current accepted local attestation, 2026-11-01: Wave26 at schema25/45.
+The final source/build identifiers, full regression, analysis, CLI/policy,
+offline-backend, normal main/debug APK and exact-input/independent acceptance
+receipts are recorded in [Wave26 evidence](2026-11-01-remaining-systems-wave26.md).
+Coverage is 44 Connected / 0 Partial / 0 Missing across the unchanged 44 IDs in eight
+domains. This is connected local engineering, not production/service operation,
+curated-content approval, physical-device certification or Research efficacy.
+Research enrollment/upload remains default-off and requires supplied authority
+and explicit rollout permission.
+
+Historical accepted Wave25 local attestation,2026-11-01: source`0255f843` at schema23/43,
 Flutter5080PASS/0FAIL, analysis0, CLI23/23, offline backend563PASS/one existing
 opt-in skip and Firestore emulator52PASS/0skip. All1194frozen inputs/877Dart and
 three assets match through the normal main/debug APK; independent actual-APK,
@@ -79,14 +89,15 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 24 connected runtime capabilities, 14 partial capabilities and 6
-missing runtime capabilities under this source-based classification. Every
-capability still needs the applicable acceptance and release checks.
+There are 44 connected local runtime capabilities, 0 partial capabilities and 0
+missing runtime capabilities after the accepted Wave26 source gates. Connected
+means local engineering coverage; applicable release checks remain separate.
 
-Wave25 promotes f01/f02/f26/f35 from Missing and f25/f28/f36/f44 from Partial
-after the accepted source gates. f03/f04 remain Partial. Earlier Wave21 status
-changes above are historical; device UAT, commercial activation and Research
-rollout remain separate from this local runtime classification.
+Wave25 promoted f01/f02/f26/f35 from Missing and f25/f28/f36/f44 from Partial;
+f03/f04 were still Partial in that historical snapshot. Wave26 promotes exactly
+f03/f04/f05/f08/f10/f11/f13/f15/f16/f18/f19/f21/f27/f29/f30/f32/f33/f34/f38/f42
+after the final accepted source gates. The other 24 states are unchanged. Device
+UAT, commercial activation and Research rollout remain separate.
 
 ## Content
 
@@ -94,58 +105,58 @@ rollout remain separate from this local runtime classification.
 | --- | --- | --- | --- |
 | f01 | Curriculum & Learning Pack Catalog | Connected | Actual Settings/ChooseMode entries open a searchable CEFR/version/provenance catalog, bounded configured HTTPS downloads and explicit reviewed file import. Immutable codec/hash checks precede install; no invented curated publisher or bundled licensed corpus. Accepted at0255f843. |
 | f02 | Learning Pack Detail | Connected | Detail combines objectives, original version/provenance, download/cache/install state, lexical previews and canonical SRS start in groups of at most20. Invalid or stale words cannot start practice; owner/route/retry guards and actual UI pass at0255f843. |
-| f03 | Rich Lexical Card | Partial | Installed packs now show a combined current-word definition/examples/image/memory/hint card with existing voice/save/report actions and stale-content rejection. Reuse in main vocabulary, SRS and the shared lesson experience remains incomplete. |
-| f04 | Content Version & Quality Control | Partial | Immutable pack versions, package/content hashes, provenance, lexical snapshots and original report versions now persist through owner lifecycle. Imported content truthfully remains user-provided/unreviewed. Curated quality control and broader report transport/moderation remain incomplete. |
+| f03 | Rich Lexical Card | Connected | `RichLexicalCard`, `LexicalEntryDetails`, and `OwnedLexicalDetails` render the actual authored definition, examples, image description, pack CEFR, IPA, synonyms, and antonyms. Pack detail, vocabulary expansion, SRS after flip, and lexical Quiz reuse these details. Owner, revision, dependency, and route checks clear stale content. Rich codec/rendering 15 and actual vocabulary/SRS 2 receipts cover this connection. Imported content remains unreviewed. |
+| f04 | Content Version & Quality Control | Connected | The C1 codec retains immutable package, entry, version, provenance, and lexical snapshot pins. Lexical learning revalidates those pins. Actual pack, Quiz, native AI, Tutor, and Reading report callers preserve the selected source version in an explicit reviewed local report. Report 74 and lexical/rich source tests cover stale and malformed rejection. Publisher curation, licensing, human moderation, and live transport operation still require external evidence. |
 
 ## Learning experience
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f05 | Unified Lesson Shell | Partial | Meaning Quiz has a durable accepted plan/checkpoint and canonical finish. Other modes still use their separate screens; a common lesson shell is absent. |
+| f05 | Unified Lesson Shell | Connected | `LessonScaffold` supplies the common adaptive page and control settings to Quiz, SRS, Matching, Dictation, Cloze, Word Scramble, and Sentence Scramble. `LessonProgress` and acknowledged feedback use the existing accepted plan/checkpoint lifecycle. Canonical results and History retain the original session. Definition, Matching, native resume, and lesson UI tests cover the supported callers. This does not make pronunciation, assisted practice, or recreational modes independent recall. |
 | f06 | Flashcard Mode | Connected | Learn, Weakness and Source open owner-bound SrsFlashcardsScreen through the same canonical writer. Original1-20-card deck/rating/end intents, start/save/finish ACKs, owner/fence/current checks and guarded autoplay are verified at`dd45f862`. Raw previews are labelled unsaved and create no learning facts. Durable SRS restart/resume and host Progress read corrections remain separate. Wave21 host-read correction is now verified at a54ac2e2 with its separate pure-read checks. |
 | f07 | Meaning Quiz | Connected | `QuizScreen` persists exact questions/options, sticky assistance, pending answer and original finish. History resumes the same owner/session without duplicate answers or rewards; drift/legacy data has an explicit unavailable path. |
-| f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
+| f08 | Definition Quiz | Connected | Installed pack entries open `LexicalQuizSetupDialog` and the actual `QuizScreen` choice or typed definition route. `prepareLexicalQuiz` pins the authored definition, options, source hashes, and settings before the existing configured Quiz start, answer, and finish writers run. Private drafts, IME submission, restart, assistance, and acknowledged feedback have core and actual Definition UI tests. Available content still depends on valid authored entries and their licenses. |
 | f09 | Cloze Test | Connected | Owned category and explicit typed/three-choice variant use the configured existing ContentProvider, immutable accepted gap/choices and canonical answer/finish/history. Guided/recognition facts gain no SRS/mastery or engagement. Invalid/unavailable content creates no session. Both actual UI flows and owner/lifecycle/retry isolation pass at55f9c407. A2/content efficacy and real service availability are not certified. |
-| f10 | Matching Mode | Missing | No current route. Follow the approved Research completion sequence before this unit. |
-| f11 | Typed Recall / Writing | Partial | Associative reading, Ghost, owned Dictation and typed Cloze save canonical answers with immutable retries/IME guards. Cloze is explicitly assisted and does not claim independent mastery. Shared typed lesson/draft/IME contract remains incomplete. |
-| f12 | Handwriting Scratchpad | Connected | P18 typed Cloze/P35 hosts local ephemeral64-stroke/4096-point ink, Undo/Clear and its existing typed fallback. Ink alone cannot save; actual typed ACK freezes ink for manual self-check. Owner/frame/gesture/IME, pixel and canonical no-extra-effects checks pass atf3301403. No OCR, ink score, persistence or physical stylus/TalkBack certification; f03/f05 remain partial. |
-| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech, owned Dictation, typed/choice Cloze and Word/Sentence Scramble have persisted paths. Four accepted native modes share canonical lifecycle, exact retries, owner/deletion pins and scoped projections. Sentence Scramble adds actual guarded P23 results and accessible UI at29038b4a. Durable native restart/resume and a shared shell/results for every mode remain incomplete. |
+| f10 | Matching Mode | Connected | ChooseMode opens `MatchingQuizScreen` from a pure `MatchingUseCases.prepare` read of 2–8 unambiguous owned word/meaning pairs. Immutable board/checkpoint pins use the existing canonical learning writer. History resumes the original board or reads its canonical score. Core/UI 20, independent boundary 5, and actual entry/History 2 receipts cover the flow. Matching remains recognition and does not grant recall mastery, Quest, streak, achievements, XP, or coins. |
+| f11 | Typed Recall / Writing | Connected | Definition typed input and the accepted native modes use private durable drafts, explicit submission, immutable pending answers, and original finish identities. The shared native checkpoint binding restores typed input through History without starting another session. Definition UI and native 34 tests cover IME, lost acknowledgements, owner changes, and restart phases. Learner draft text does not become event, outbox, sync, or time-proof text. Assisted Cloze retains its declared evidence class. |
+| f12 | Handwriting Scratchpad | Connected | P18 typed Cloze/P35 hosts local ephemeral64-stroke/4096-point ink, Undo/Clear and its existing typed fallback. Ink alone cannot save; actual typed ACK freezes ink for manual self-check. Owner/frame/gesture/IME, pixel and canonical no-extra-effects checks pass atf3301403. No OCR, ink score, persistence or physical stylus/TalkBack certification. |
+| f13 | LexiQuest Native Modes Integration | Connected | Actual ChooseMode category/variant entry, the shared lesson shell, canonical answer/finish, guarded results, History, and `NativeExerciseResumeScreen` connect Dictation, typed/choice Cloze, Word Scramble, and Sentence Scramble. Native 34 tests cover restart at acknowledged phases, original input, retries, owner isolation, and no regeneration. Existing Reading, Ghost, Shadowing, and speech paths keep their prior authorities. Device voice, keyboard, stylus, and service UAT remain separate. |
 
 ## Feedback
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f14 | Flashcard-First Recommendation | Connected | `ChooseModeScreen` uses actual due counts and explains its SRS recommendation. |
-| f15 | Active-Recall Ladder | Partial | Associative reading has stages and recommendations use due/weakness facts. A common ladder policy is absent. |
-| f16 | Session Configuration | Partial | Supported category/targeted meaning-quiz configuration and exact accepted deck are immutable and recoverable. Combined user-facing count/time/mode/audio/accessibility configuration remains absent. |
+| f15 | Active-Recall Ladder | Connected | `RecallLadderPanel` in ChooseMode uses the SELECT-only `DriftRecallLadderReader` and the seven-stage suggestion policy. It validates current owned content and eligible ordinary observations, including source and policy pins, before a guarded practice launch. Ladder 25 and actual entry 2 tests cover pure reads, owner ABA, and SRS launch. Research, Assessment, stale, and recreational evidence do not enter suggestions. The ladder is a recommendation, not a mastery or efficacy score. |
+| f16 | Session Configuration | Connected | The actual pack Definition setup lets the learner choose valid entry count, choice or typed input, an optional 1–180 minute advisory goal, manual audio, larger controls, and Reduced Motion. `LexicalQuizConfiguration` and `LexicalQuizSettings` become immutable accepted-plan pins. Setup cancellation is pure, and actual pack-to-Quiz/result tests verify the choices. The advisory goal does not finish an unfinished deck or create learning-time credit. OS accessibility settings remain authoritative. |
 | f17 | Immediate Answer Feedback | Connected | Quiz waits for save acknowledgement, supports retry and shows selected/correct answers; SRS acknowledges saves. |
-| f18 | Contrastive Distractor Explanation | Missing | Selected/correct answers appear, but no explanation distinguishes a distractor. |
-| f19 | Hint, Strategy & Context | Partial | Quiz hints/reveals, reading associations and AI context exist. No shared hint/strategy contract. |
+| f18 | Contrastive Distractor Explanation | Connected | `ConfiguredQuizState.acknowledgedContrastiveExplanation` exposes the selected authored wrong-choice explanation only after an Answered acknowledgement. `QuizScreen` renders that pinned explanation. Pending, correct, and reveal states do not invent one. Lexical core and actual Definition tests cover the source and acknowledgement boundaries. Explanations depend on supplied authored content. No generated explanation or instructional-effectiveness validation is claimed. |
+| f19 | Hint, Strategy & Context | Connected | The accepted lexical entry carries its authored hint, strategy, memory cue, and examples. `QuizScreen` exposes them through explicit help and preserves cumulative assistance in the checkpoint and evidence classification. Shared lexical details keep assistance hidden where the caller requires it, including SRS before its allowed reveal. Lexical, rich-card, and actual Definition/SRS tests cover the connection. Help does not gain unassisted recall eligibility. Content quality remains an external editorial concern. |
 | f20 | Bookmark / Save | Connected | Actual owned-word save/unsave, immutable retry, local restart, saved list and canonical targeted practice are verified at597187e5. Missing/deleted parents remain unavailable/removable; owner merge/export/purge and tombstones are covered. No cloud bookmark sync is claimed. |
-| f21 | Flag / Report Content | Partial | Actual owned-word form/review/edit then immutable local queue, exact retries, historical receipt, restart/list and owner merge/export/purge are verified at158d2115. UI truthfully says not sent. AI/chat/document targets and production transport/moderation remain separate. |
+| f21 | Flag / Report Content | Connected | Owned-word reports preserve their original nine-field snapshot and writer; new submissions atomically mirror that immutable report into the content-report queue, while historical rows mirror only by an explicit action. Pack entries, accepted AI output, assistant replies, and Reading documents offer explicit unchanged text/excerpt selection and review with original source pins. Owner/session/source checks exclude controlled Study content and learner prompt/answer fields. The queue distinguishes locally queued with no server receipt, delivery unconfirmed, and received with a verified UID-bound receipt. Moderation is separate (awaiting review, resolved, or dismissed) and does not prove that source content changed. Send and receipt/status refresh are separate explicit actions; startup, ordinary sync, and reads never automatically POST. Exact body/SHA retries and lost-ACK reconciliation are implemented, with transport default-disabled. The focused 74-case receipt covers local callers, privacy, lifecycle, queue/receipt handling and retries; it is not evidence of a live production send or moderator operation. |
 
 ## Review and assessment
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f22 | Review Center | Connected | Actual four-reason local Hub, full filtered lists, unavailable reasons and immutable not-sent receipts; captured-owner pure reads across ChooseMode/Clinic/Mastery and same canonical practice/History callers. Sourcea54ac2e2 passes full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source and independent artifact acceptance. No all37-table changes from reads. f21 broader report targets/transport and the P3 test cleanup counter follow-up remain separate. |
+| f22 | Review Center | Connected | The four-reason local Hub, filtered lists, unavailable reasons, captured-owner pure reads, and existing canonical practice/History callers remain connected. Local word-report history opens the separate content-report Inbox, which distinguishes queued/no-receipt, unconfirmed, and received reports and displays moderation separately; viewing or refreshing does not send a report. History hides the blanket not-sent notice when delivery state belongs in the Inbox. Historical source a54ac2e2 passed full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source/independent acceptance; its pure-read fixture preserved all37 tables of that historical schema. Current Q1 targets and receipt handling are implemented; live endpoint/moderator acceptance remains a release prerequisite. |
 | f23 | Focus Timer | Connected | Optional P06 timer supports1-180/default25 minutes, configured/running/paused/stopped/finished states, explicit same-owner Resume and safe exits. Its f24 dependency is now locally connected atfdf8f3b9 with full4717, analysis0 and normal APK acceptance. Timer elapsed creates no learning credit. Presets, cold-restart recovery and background service are outside the approved transient scope. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
 | f24 | Automatic Learning-Time Capture | Connected | Default-off per-owner confirmed interaction capture uses one durable authority across eligible Quiz/SRS/native/Voice/Reading/Tutor paths. Provider/audio/save waits, background and unconfirmed terminal gaps are excluded. Actual P23 session/scope results and independent P24 owner readback work with empty/failed Progress. Schema21/40 migration, owner lifecycle, personal export/purge and sync/Research exclusion pass atfdf8f3b9, full4717/analysis0/normal APK and independent artifact acceptance. Silent reading may be undercounted; no attention or efficacy claim. See [Wave23](2026-11-01-remaining-systems-wave23.md). |
 | f25 | Learning Calendar & Weekly Analytics | Connected | Actual Mastery calendar provides month/seven-day views from canonical answer/correct/completed-session facts and acknowledged observed-END learning time, including failed aggregate Progress. Owner-bound pure reads exclude Research/Assessment, invalid, foreign and future facts. Descriptive counts do not establish attention or learning efficacy. Accepted at0255f843. |
 | f26 | Goal / Test Countdown | Connected | The owner profile editor persists an optional goal and validated civil target/test date, with a day countdown and later editing. Immutable retry/revision conflicts, restart, owner change, export/purge/rehome and actual Profile/Settings/ChooseMode callers pass at0255f843. |
-| f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
+| f27 | Opt-in Study Reminder | Connected | ChooseMode opens explicit default-off time/zone settings backed by one owner-scoped preference and revision. Runtime permission inspection, owned-dialog resume, enable/disable, reconciliation, and original-request retries connect to the Android inexact one-shot bridge. The receiver rereads the actual private SQLite owner, deletion fence, and revision before a generic notification. Reminder 27 tests cover database/runtime/channel/UI boundaries. APK/device permission, boot, clock-change, battery-policy, and delivery behavior still need platform validation. An accepted request is not delivery evidence. |
 | f28 | Learning Assessment & Progress Comparison | Connected | Optional supplied Assessment pre/post and compatible descriptive comparison connect the exact Study quiz, paired signed authority lifecycle, explicit preprovisioned participation activation, authoritative consent/withdrawal and scoped archive/upload. Actual UI/bootstrap/identity, signatures, owner/assignment isolation, before/after linkage and export/deletion pass1022subsystem checks, independent client/backend review and the full0255f843 gate. Research stays default-off; supplied issuer/instrument/notice/approval, real enrollment/upload permission and device/live-service UAT remain release dependencies. No efficacy/instrument-validation claim. |
 
 ## Motivation
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f29 | Evidence-Based Quest | Partial | Source2702e008 verifies persisted attempt IDs in actual optional hooks, per-objective dedup, canonical-chain/catalog/window/owner validation and atomic progress/completion. Terminal CAS and immutable authored inputs are protected. Runtime activation, delivery recovery, recurring periods, grants/freeze and actual Quest/Today UI remain incomplete. |
-| f30 | Gentle Streak | Partial | Mastery/Profile show the existing progress-derived streak. V2 streak/freezes are not composed into one authority. |
+| f29 | Evidence-Based Quest | Connected | `MotivationRuntime` composes the canonical database/coordinator with recurring Quest periods, actual eligible attempt validation, recovery, terminal completion, and idempotent grants. ChooseMode Today and `QuestScreen` show actual current progress and history independently of aggregate Progress failure. Runtime, receipt/recovery, Quest UI, and Today tests cover the connected paths. Unsupported or Research/Assessment evidence grants nothing. No motivation, retention, or learning-effect claim follows from the engineering checks. |
+| f30 | Gentle Streak | Connected | The composed motivation runtime uses canonical eligible ordinary learning days and the existing freeze/reward authority. Today and Quest display actual streak and freeze state. Yesterday protection requires explicit review and confirmation, and a lost acknowledgement reuses the original consume receipt. Runtime and actual Quest UI tests verify owner isolation, recurrence, exact replay, and no minted learned day. Time spent, background activity, and controlled Study sessions do not become streak evidence. |
 | f31 | Achievement & Milestone | Connected | Mastery opens achievements backed by persisted unlock facts and dates. |
-| f32 | Avatar Level-Up & Cosmetic Unlock | Partial | XP, level and Shop preview/purchase/owned/equip use the current reward authority. Combined avatar level-up/unlock presentation is incomplete. |
-| f33 | Contextual Companion | Missing | No event-driven companion with controlled messages and Reduced Motion. |
-| f34 | Achievement Share Card | Missing | No private preview/save/share workflow. |
+| f32 | Avatar Level-Up & Cosmetic Unlock | Connected | `AvatarEquipmentScreen` and Shop combine canonical game level/XP with actual catalog, locked, owned, equipped, and preview states. Confirmed purchase/equip use the existing reward writer, with owner-epoch invalidation and original uncertain request identities. M1 preview/privacy tests and the corrected Shop 3 receipt cover the flow. Preview creates no reward facts. No level-number unlock policy is invented where the catalog only defines price and ownership. Commercial activation and asset licensing remain separate. |
+| f33 | Contextual Companion | Connected | `ContextualCompanionPanel` in ChooseMode chooses controlled messages from the actual current motivation/progress state. It supports text, hide/show, keyboard controls, and static Reduced Motion behavior. Runtime, route, dependency, lifecycle, and owner checks reject retained actions. Companion tests verify actual stored state, owner ABA, and pure reads. Aggregate Progress failure does not disable the independent motivation entry. No Research profiling or behavioral-effect evidence is implied. |
+| f34 | Achievement Share Card | Connected | Achievements validate actual canonical unlock sources before an explicit private PNG preview, optional date, save, share, or cancel. Source checks reject orphan, malformed, and controlled Study/Research facts. The image saver and native prepare/revalidate/launch bridge preserve owner checks and cancellation. PNG/export, source-boundary, native-channel, compact keyboard, and retained-action tests cover the flow. Cards omit owner IDs and answers. Android chooser/file-provider/device behavior and actual destination delivery remain unverified release checks. |
 
 ## Personalization
 
@@ -154,7 +165,7 @@ rollout remain separate from this local runtime classification.
 | f35 | Learning Preference & Goal Quiz | Connected | Optional onboarding accepts goal, civil target date,1-180daily minutes and up to eight interest codes, with explicit completed/skipped states and later editing. Merely reading absence creates no row; it enables no reminders, time capture or Research. Actual persisted callers/retry/owner tests pass at0255f843. |
 | f36 | Personal Learning Profile | Connected | One owner-scoped profile authority powers Profile/Settings/ChooseMode editing and countdown. Revision CAS, exact immutable retries, failed reload/late hydration protection, owner A-B-A, restart and personal export/purge/rehome are verified at0255f843; no second learning/reward authority. |
 | f37 | Recommendation Panel | Connected | Choose Mode and Weakness offer rule-based due/weakness/quiz recommendations and targeted practice. |
-| f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Dictation has reachable Thai/English200% keyboard flows and the actual Thai320px hub entry. Cloze adds masked meaning semantics and an English320px/200% keyboard flow. Coverage remains incomplete; physical TalkBack is unverified. |
+| f38 | Accessibility | Connected | Supported local flows use adaptive lesson panes, semantic progress/feedback, typed alternatives, IME guards, reachable keyboard controls, and OS Reduced Motion propagation. Actual tests include 320px/200% layouts, light/dark M1 flows, Definition, native modes, Matching, and reminder controls. The instant-route focus correction preserves Tab/Enter navigation. This is automated local coverage. Physical TalkBack, hardware keyboard/stylus, native TTS, gesture, contrast, and device UAT are still required where applicable. |
 | f39 | Motion & Theme Controls | Connected | Commit `0eedc90b` wires saved theme/Reduced Motion, OS accessibility propagation and route/card/chat/sheet consumers. Focused 153 tests and Android light 100% settings fixture pass; native dark/200% and hardware gestures remain release checks. |
 
 ## Local operation and rollout
@@ -169,26 +180,34 @@ rollout remain separate from this local runtime classification.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f42 | Today Hub | Partial | Choose Mode has due/weakness recommendations and an optional eligible Study entry with exact first-index resume. General assigned/resume/quest aggregation remains incomplete; eager page rendering creates no Research facts. |
+| f42 | Today Hub | Connected | ChooseMode combines due/weakness recommendations, actual Today motivation, ordinary resume discovery, and the separately gated optional Study entry. `TodayResumePanel` reports resumable accepted activities within the latest 50 history rows and rereads the captured owner/fence before opening History. Today 6 tests cover pure reads, actual original-Quiz resume, no-owner behavior, ABA, deletion, and Study exclusion. The count is bounded, not an all-history total. Reading the hub does not enroll or upload Research. |
 | f43 | Learning History | Connected | Mastery opens owner-scoped pages of 50 sessions and seven local-date answer counts. Active stored meaning quizzes have an exact owner/session resume action; refresh, pagination and owner-change hiding remain. |
 
 ## Current engineering boundaries
 
-The v11 metadata retains activity class, cumulative hint use, shown revision and
-immutable retry/sync identity. Wave12 applies the existing eligibility policy
-only to current declared Dictation: assisted practice retains session/history,
-normal independent recall can update SRS, and the current false engagement flag
-denies motivation for both. Other admitted ordinary/inferred prompts retain
-compatibility. No Research collection is activated; ordinary write/sync reject
-Research pins.
+The existing canonical learning writer, accepted plans/checkpoints and frozen
+EvidenceContext/EventEnvelopeV2 contracts remain the learning authority. Native,
+assisted, recognition and recreational modes retain their declared projection
+and engagement floors. Motivation uses eligible canonical ordinary facts and
+the existing reward authority; timers, backgrounds and private drafts do not
+invent learning or rewards. Ordinary reads and sync do not collect Research.
+
+Wave26 connects the L1 lessons/native resume, M1 motivation, Q1 reports/reminders,
+L2 Matching and X1 supported local accessibility/integration paths. Those units
+are no longer an implementation backlog under this accepted snapshot. Report
+delivery and moderation remain distinct; source quality, publisher curation and
+learning efficacy are not certified by version hashes or a review status.
 
 The distinct P256 participation validator, supplied instrument contracts and
-frozen catalog remain foundations. Default bootstrap still denies Research
-operations. Approved protocol/instrument/issuer/ethics artifacts, participant
-rollout authority, live model/service evidence and physical UAT are separate
-requirements. No capability is described as complete merely because an
-external gate also remains.
+unchanged 8-domain/44-capability catalog remain foundations. Research is optional
+and real enrollment/upload stays default-off without supplied trusted authority
+and explicit rollout permission. Approved protocol/instrument/issuer/ethics
+artifacts, live-service operation, commercial activation and physical UAT remain
+separate release requirements. GPU Voice startup deliberately rejects the
+current affected stack pending a patched, supported paired runtime; ordinary
+practice retains native/device TTS fallback.
 
 The [active completion plan](../superpowers/plans/2026-10-30-remaining-feature-sequence.md)
-continues L1 lessons/native resume, M1 motivation, Q1 reports/reminders, L2 Matching
-after accepted local Research engineering, and X1 accessibility/integration.
+and [Wave26 evidence](2026-11-01-remaining-systems-wave26.md) record the final
+source/build attestation and the remaining release-only dependencies. Connected
+local runtime coverage does not authorize deployment, enrollment or upload.
