@@ -812,7 +812,7 @@ void main() {
   }
 
   testWidgets(
-    'real owner timer operations preserve all40 tables and ordinary learning',
+    'real owner timer operations preserve all43 tables and ordinary learning',
     (tester) async {
       late final Zone ioZone;
       final h = (await tester.runAsync(() {
@@ -828,7 +828,7 @@ void main() {
           observation = ioZone.run(() => h.ownerChanges.listen(observed.add));
         });
         final before = (await tester.runAsync(h.snapshotAllTables))!;
-        expect(before, hasLength(40));
+        expect(before, hasLength(43));
         await _mount(
           tester,
           navigation: navigation,

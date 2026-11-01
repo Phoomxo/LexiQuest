@@ -55,6 +55,49 @@ void main() {
 
   tearDown(() => database.close());
 
+  test(
+    'scoped Study transport disables the legacy owner-wide Research payload',
+    () async {
+      final scoped = ExportUseCases(
+        owners: exports.owners,
+        reader: exports.reader,
+        store: store,
+        nowUtc: exports.nowUtc,
+        loadThaiFont: exports.loadThaiFont,
+        researchConsent: exports.researchConsent,
+        researchAuthorizer: exports.researchAuthorizer,
+        ownerWideResearchEnabled: false,
+      );
+      const selection = ExportSelection(
+        includeVocabulary: true,
+        includeAttempts: true,
+        includeReading: false,
+      );
+      await expectLater(
+        scoped.prepare(
+          format: ExportFormat.researchJson,
+          selection: selection,
+          cancellation: ExportCancellation(),
+        ),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.unavailable,
+          ),
+        ),
+      );
+      expect(
+        (await scoped.prepare(
+          format: ExportFormat.csv,
+          selection: selection,
+          cancellation: ExportCancellation(),
+        )).bytes,
+        isNotEmpty,
+      );
+    },
+  );
+
   test('personal time export is an explicit opt-in independent selection', () {
     const selection = ExportSelection(
       includeVocabulary: false,
@@ -164,8 +207,8 @@ void main() {
     'real personal time reader preserves all19 stored fields and isolates two owners',
     () async {
       final expected = await _seedPersonalTimeExportPair(database);
-      expect(database.schemaVersion, 21);
-      expect(database.allTables, hasLength(40));
+      expect(database.schemaVersion, 23);
+      expect(database.allTables, hasLength(43));
       final before = await _personalTimeExportSnapshot(database);
       final data = await DriftExportReader(database).load(
         ownerId: 'local:owner',

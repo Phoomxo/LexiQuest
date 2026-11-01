@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/export/domain/export_contracts.dart';
 import '../features/research/domain/research_runtime_availability.dart';
+import '../features/research/presentation/study_archive_screen.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 
@@ -34,6 +36,10 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   ExportCancellation? _cancellation;
   String? _status;
 
+  bool get _ownerWideResearchAvailable =>
+      _researchAvailability.isEnabled &&
+      _exports?.ownerWideResearchEnabled == true;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -43,8 +49,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         widget.researchAvailability ??
         dependencies?.researchAvailability ??
         ResearchRuntimeAvailability.disabled;
-    if (!_researchAvailability.isEnabled &&
-        _format == ExportFormat.researchJson) {
+    if (!_ownerWideResearchAvailable && _format == ExportFormat.researchJson) {
       _format = ExportFormat.csv;
       _rewards = false;
       _learningTime = false;
@@ -111,6 +116,25 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_researchAvailability.isEnabled &&
+                AppDependenciesScope.maybeOf(context)?.studyArchives != null)
+              ListTile(
+                key: const ValueKey<String>('export-controlled-study'),
+                leading: const Icon(Icons.fact_check_outlined),
+                title: const Text('ส่งออกข้อมูล Study เฉพาะรอบ'),
+                subtitle: const Text(
+                  'ตรวจสิทธิ์และเชื่อมผลก่อน/หลังตามรอบจริง',
+                ),
+                onTap: _busy
+                    ? null
+                    : () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: '/export/study',
+                          builder: (_) => const StudyArchiveScreen(),
+                        ),
+                      ),
+              ),
             Text(
               'เลือกรูปแบบไฟล์',
               style: Theme.of(context).textTheme.titleMedium,
@@ -134,7 +158,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                       value: ExportFormat.anki,
                       label: Text('Anki'),
                     ),
-                    if (_researchAvailability.isEnabled)
+                    if (_ownerWideResearchAvailable)
                       const ButtonSegment(
                         value: ExportFormat.researchJson,
                         label: Text('งานวิจัย'),

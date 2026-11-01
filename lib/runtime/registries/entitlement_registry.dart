@@ -5,11 +5,9 @@
 /// - [FeatureRegistry]: build-time feature flags (no ownership required)
 /// - [ExperimentRegistry]: A/B cohort assignment
 /// - [ConsentRegistry]: explicit learner consent
-///
-/// Entitlement checks are reserved for Phase 3+; this interface is defined
-/// now so that call sites can be written against the contract without any
-/// concrete billing back-end.
 library;
+
+import '../../features/billing/application/billing_use_cases.dart';
 
 /// Durable access rights that may require a purchase or subscription.
 enum Entitlement {
@@ -21,6 +19,7 @@ enum Entitlement {
 
   /// Access to advanced export formats (PDF, Anki deck).
   advancedExport,
+  managedContent,
 }
 
 /// Read-only contract for querying learner entitlements.
@@ -30,13 +29,18 @@ abstract interface class EntitlementRegistry {
 }
 
 /// No-op [EntitlementRegistry] that denies all entitlements.
-///
-/// Safe default for Phase -1 / Phase 0 before billing is integrated.
-/// Production code that gates on an entitlement will fall back to the free
-/// tier, which is the intended behaviour when no billing back-end is present.
 final class NoOpEntitlementRegistry implements EntitlementRegistry {
   const NoOpEntitlementRegistry();
 
   @override
   bool hasAccess(Entitlement entitlement, String ownerId) => false;
+}
+
+final class BillingEntitlementRegistry implements EntitlementRegistry {
+  const BillingEntitlementRegistry(this.billing);
+  final BillingUseCases billing;
+
+  @override
+  bool hasAccess(Entitlement entitlement, String ownerId) =>
+      billing.hasAccess(entitlement.name, ownerId: ownerId);
 }

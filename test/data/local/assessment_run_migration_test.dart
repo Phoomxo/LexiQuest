@@ -21,8 +21,8 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 21);
-      expect(database.allTables, hasLength(40));
+      expect(database.schemaVersion, 23);
+      expect(database.allTables, hasLength(43));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -239,6 +239,9 @@ void main() {
         expect(oldRows.remove('learning_time_preferences'), isEmpty);
         expect(oldRows.remove('learning_time_scopes'), isEmpty);
         expect(oldRows.remove('learning_time_segments'), isEmpty);
+        expect(oldRows.remove('learning_profiles'), isEmpty);
+        expect(oldRows.remove('learning_pack_versions'), isEmpty);
+        expect(oldRows.remove('lexical_content_snapshots'), isEmpty);
         expect(oldRows, hasLength(34));
         for (final table in oldRows.entries) {
           expect(
@@ -305,13 +308,13 @@ void main() {
         );
         await Directory(resolved).delete(recursive: true);
       });
-      expect(database.schemaVersion, 21);
+      expect(database.schemaVersion, 23);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        21,
+        23,
       );
-      expect(database.allTables, hasLength(40));
+      expect(database.allTables, hasLength(43));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -321,6 +324,9 @@ void main() {
       expect(after['learning_time_preferences'], isEmpty);
       expect(after['learning_time_scopes'], isEmpty);
       expect(after['learning_time_segments'], isEmpty);
+      expect(after['learning_profiles'], isEmpty);
+      expect(after['learning_pack_versions'], isEmpty);
+      expect(after['lexical_content_snapshots'], isEmpty);
       expect(
         after['assessment_runs'],
         isEmpty,
@@ -334,7 +340,10 @@ void main() {
           ..remove('word_reports')
           ..remove('learning_time_preferences')
           ..remove('learning_time_scopes')
-          ..remove('learning_time_segments'),
+          ..remove('learning_time_segments')
+          ..remove('learning_profiles')
+          ..remove('learning_pack_versions')
+          ..remove('lexical_content_snapshots'),
         before,
       );
       final newObjects = await database

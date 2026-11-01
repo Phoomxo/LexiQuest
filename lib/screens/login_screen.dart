@@ -171,6 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_researchAvailability.isEnabled) return;
     final consent = _researchConsent;
     if (consent == null ||
+        consent.remoteDecisions != null ||
         consent.version != ResearchConsentUseCases.currentVersion) {
       return;
     }

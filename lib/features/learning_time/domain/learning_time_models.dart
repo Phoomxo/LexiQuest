@@ -330,6 +330,15 @@ final class SessionTimeRead extends TimeReadTarget {
   final String sessionId;
 }
 
+final class ObservedEndRangeTimeRead extends TimeReadTarget {
+  const ObservedEndRangeTimeRead({
+    required this.startInclusiveUtc,
+    required this.endExclusiveUtc,
+  });
+  final DateTime startInclusiveUtc;
+  final DateTime endExclusiveUtc;
+}
+
 enum RecordedTimeStatus { recorded, noneRecorded, unsupported, unavailable }
 
 final class RecordedTimeRead {

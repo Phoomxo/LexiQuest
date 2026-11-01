@@ -6,6 +6,7 @@ import '../../assessment/application/study_assessment.dart';
 import '../../assessment/data/drift_assessment_repository.dart';
 import '../../assessment/domain/assessment_models.dart';
 import '../../consent/application/research_consent_use_cases.dart';
+import '../../consent/domain/research_consent.dart';
 import '../../learning/application/learning_use_cases.dart';
 import '../../learning/data/drift_learning_repository.dart';
 import '../../learning/data/learning_session_lifecycle_observer.dart';
@@ -27,6 +28,7 @@ import '../domain/research_operation_authorizer.dart';
 import '../domain/research_participant_snapshot.dart';
 import '../domain/research_runtime_availability.dart';
 import '../domain/research_trusted_time.dart';
+import '../data/local_research_authority_cache.dart';
 import 'research_participation_permit_validator.dart';
 import 'study_runtime.dart';
 
@@ -69,27 +71,16 @@ final class LocalStudyRuntime implements StudyRuntime {
     required this.context,
     required this.authorities,
     required this.catalog,
-    this.assessment,
-  }) {
+    StudyAssessment? assessment,
+    StudyAssessment? Function()? assessmentFactory,
+    this.remoteConsentDecisions,
+  }) : _suppliedAssessment = assessment,
+       _assessmentFactory = assessmentFactory {
     final study = authorities.binding.study;
-    final suppliedAssessment = assessment;
-    if (suppliedAssessment != null) {
-      final writer = suppliedAssessment.repository;
-      if (writer is! DriftAssessmentRepository ||
-          !identical(writer.database, context.database) ||
-          !identical(writer.authority.mapping, suppliedAssessment.mapping) ||
-          !identical(writer.authority.cache.ownerWrites, context.ownerWrites) ||
-          !identical(writer.authority.cache, suppliedAssessment.trustedTime) ||
-          !identical(writer.cycleReader, suppliedAssessment.cycleReader) ||
-          !identical(
-            writer.contentAuthority,
-            suppliedAssessment.contentAuthority,
-          )) {
-        throw ArgumentError(
-          'Study Assessment must use its explicit canonical database and authority binding',
-        );
-      }
+    if (assessment != null && assessmentFactory != null) {
+      throw ArgumentError('Supply one Assessment instance or one lazy factory');
     }
+    _validateAssessment(assessment);
     if (!identical(context.database, context.ownerWrites.database) ||
         !identical(context.database, context.consentRepository.database) ||
         catalog.version != study.catalogVersion ||
@@ -103,13 +94,65 @@ final class LocalStudyRuntime implements StudyRuntime {
       repository: context.consentRepository,
       nowUtc: context.nowUtc,
       version: study.consentVersion,
+      remoteDecisions: remoteConsentDecisions,
     );
     _timing = DriftMotivationMeasurementTimingReader(context.database);
     lifecycleObserver = _StudyObserver(this);
   }
 
   final StudyRuntimeContext context;
-  final StudyAssessment? assessment;
+  final StudyAssessment? _suppliedAssessment;
+  final StudyAssessment? Function()? _assessmentFactory;
+
+  bool get hasConfiguredAssessment =>
+      _suppliedAssessment != null || _assessmentFactory != null;
+
+  StudyAssessment? get assessment {
+    if (_assessmentFactory == null) return _suppliedAssessment;
+    try {
+      final value = _assessmentFactory();
+      _validateAssessment(value);
+      if (value == null) return null;
+      final writer = value.repository as DriftAssessmentRepository;
+      final motivation = authorities.permits;
+      final scope = writer.authority.cache.currentScope();
+      if (motivation is! LocalResearchAuthorityCache ||
+          scope == null ||
+          motivation.currentScope()?.binding != scope.binding) {
+        return null;
+      }
+      return value;
+    } on Object {
+      return null;
+    }
+  }
+
+  StudyAssessment? _assessmentForOwner(String ownerId) {
+    final value = assessment;
+    if (_assessmentFactory == null || value == null) return value;
+    final writer = value.repository as DriftAssessmentRepository;
+    return writer.authority.cache.currentScope()?.binding.ownerId == ownerId
+        ? value
+        : null;
+  }
+
+  void _validateAssessment(StudyAssessment? value) {
+    if (value == null) return;
+    final writer = value.repository;
+    if (writer is! DriftAssessmentRepository ||
+        !identical(writer.database, context.database) ||
+        !identical(writer.authority.mapping, value.mapping) ||
+        !identical(writer.authority.cache.ownerWrites, context.ownerWrites) ||
+        !identical(writer.authority.cache, value.trustedTime) ||
+        !identical(writer.cycleReader, value.cycleReader) ||
+        !identical(writer.contentAuthority, value.contentAuthority)) {
+      throw ArgumentError(
+        'Study Assessment must use its explicit canonical database and authority binding',
+      );
+    }
+  }
+
+  final ResearchConsentRemoteDecisions? remoteConsentDecisions;
   final StudyLocalAuthorities authorities;
   @override
   final StudyPresentationCatalog catalog;
@@ -188,6 +231,7 @@ final class LocalStudyRuntime implements StudyRuntime {
       participation: participation,
       timing: _timing,
       consentNowUtc: context.nowUtc,
+      remoteConsentDecisions: remoteConsentDecisions,
     );
     return _OwnerStudy(
       participation,
@@ -222,6 +266,10 @@ final class LocalStudyRuntime implements StudyRuntime {
   Future<StudyView> _inspect(String ownerId, {_StudyOpening? opening}) async {
     await _requireOwner(ownerId);
     if (!authorities.availability.isEnabled) {
+      _deny(ResearchCaptureReason.noPermit);
+    }
+    final configuredAssessment = _assessmentForOwner(ownerId);
+    if (_assessmentFactory != null && configuredAssessment == null) {
       _deny(ResearchCaptureReason.noPermit);
     }
     final scope = _forOwner(ownerId);
@@ -340,8 +388,8 @@ final class LocalStudyRuntime implements StudyRuntime {
     }
     final freshAuthority = await scope.participation
         .inspectParticipantWithReceipt(ownerId: ownerId);
-    final assessmentStatus = assessment != null && run != null
-        ? await assessment!.inspect(
+    final assessmentStatus = configuredAssessment != null && run != null
+        ? await configuredAssessment.inspect(
             cycle: run,
             opportunity: opportunity,
             index: index,
@@ -1215,7 +1263,7 @@ final class LocalStudyRuntime implements StudyRuntime {
     index: index,
     evaluatedAtUtc: evaluatedAtUtc,
     promptExpiresAtUtc: promptExpiresAtUtc,
-    assessment: assessment,
+    assessment: _assessmentForOwner(ownerId),
     assessmentCommand: assessmentCommand,
     hasCompletedAssessmentPair: hasCompletedAssessmentPair,
   );

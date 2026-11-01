@@ -12,6 +12,10 @@ import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_profile/application/learning_profile_use_cases.dart';
+import '../features/learning_packs/application/learning_pack_use_cases.dart';
+import '../features/learning_packs/data/http_learning_pack_source.dart';
+import '../features/billing/application/billing_use_cases.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -22,6 +26,8 @@ import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/domain/research_runtime_availability.dart';
 import '../features/research/application/study_runtime.dart';
+import '../features/research/application/controlled_study_archive_use_cases.dart';
+import '../features/research/application/controlled_study_upload_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -36,6 +42,7 @@ import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
+import 'research_transport_composition.dart';
 import 'field_feature_registry.dart';
 import 'registries/consent_registry.dart';
 import 'registries/entitlement_registry.dart';
@@ -61,6 +68,10 @@ final class AppDependencies {
     this.syncStatus,
     this.learning,
     this.learningTime,
+    this.learningProfile,
+    this.learningPacks,
+    this.learningPackDownloads,
+    this.billing,
     this.progress,
     this.reviewCenter,
     this.rewards,
@@ -76,6 +87,9 @@ final class AppDependencies {
     this.researchConsent,
     this.researchAvailability = ResearchRuntimeAvailability.disabled,
     this.studyRuntime,
+    this.studyArchives,
+    this.studyUploads,
+    this.researchTransport,
     this.exports,
     this.geminiTutor,
     this.objectScanner,
@@ -106,6 +120,10 @@ final class AppDependencies {
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final LearningTimeUseCases? learningTime;
+  final LearningProfileUseCases? learningProfile;
+  final LearningPackUseCases? learningPacks;
+  final HttpLearningPackSource? learningPackDownloads;
+  final BillingUseCases? billing;
   final ProgressUseCases? progress;
   final ReviewCenterUseCases? reviewCenter;
   final RewardUseCases? rewards;
@@ -123,6 +141,9 @@ final class AppDependencies {
   final ResearchConsentUseCases? researchConsent;
   final ResearchRuntimeAvailability researchAvailability;
   final StudyRuntime? studyRuntime;
+  final ControlledStudyArchiveUseCases? studyArchives;
+  final ControlledStudyUploadUseCases? studyUploads;
+  final ResearchTransportComposition? researchTransport;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;

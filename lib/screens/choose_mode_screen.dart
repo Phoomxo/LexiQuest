@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../ai/ai_models.dart';
+import '../features/billing/presentation/subscription_screen.dart';
+import '../features/learning_profile/presentation/learning_profile_editor_screen.dart';
+import '../features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
@@ -706,6 +710,40 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 ),
               ),
             ),
+          if (AppDependenciesScope.maybeOf(context)?.learningPacks
+              case final packs?)
+            _LearningTile(
+              key: const ValueKey('learning-packs-entry'),
+              icon: Icons.library_books_outlined,
+              title: 'แพ็กบทเรียนและคำศัพท์',
+              subtitle: 'ดูเนื้อหา นำเข้า และฝึกจากแพ็กออฟไลน์',
+              onTap: () => _push(
+                context,
+                LearningPackCatalogScreen(
+                  packs: packs,
+                  downloads: AppDependenciesScope.maybeOf(
+                    context,
+                  )?.learningPackDownloads,
+                ),
+              ),
+            ),
+          if (AppDependenciesScope.maybeOf(context)?.learningProfile
+              case final profile?)
+            _LearningTile(
+              key: const ValueKey('learning-goal-onboarding-entry'),
+              icon: Icons.flag_outlined,
+              title: 'เป้าหมายและแผนการเรียน',
+              subtitle: 'เลือกตั้งเป้าหมายและความชอบ หรือข้ามได้',
+              onTap: _readAction(
+                () => _push(
+                  context,
+                  LearningProfileEditorScreen(
+                    profile: profile,
+                    onboarding: true,
+                  ),
+                ),
+              ),
+            ),
           _LearningTile(
             key: const ValueKey('focus-timer-entry'),
             icon: Icons.timer_outlined,
@@ -1051,6 +1089,55 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       }
       if (mounted) {
         _syncProgress();
+      }
+    } on AiFailure catch (failure) {
+      if (_canOpenNative(generation, ownerId, learning, dependencies)) {
+        final message = switch (failure.category) {
+          AiFailureCategory.paymentRequired =>
+            'ตรวจสอบหรือกู้คืนสิทธิ์สมาชิกก่อนใช้ AI ในส่วนนี้',
+          AiFailureCategory.quotaExhausted =>
+            'ใช้โควตา AI ของรอบนี้ครบแล้ว ตรวจสอบแพ็กเกจสมาชิกได้',
+          AiFailureCategory.operationUncertain =>
+            'ยังยืนยันผลคำขอ AI เดิมไม่ได้ กรุณารอตรวจสอบก่อนเริ่มคำขอใหม่',
+          AiFailureCategory.authentication =>
+            'ยังยืนยันบัญชีสำหรับ AI ไม่ได้ โปรดตรวจสอบการเข้าสู่ระบบ',
+          _ => null,
+        };
+        if (message == null) {
+          unavailable();
+        } else {
+          final billing = dependencies.billing;
+          final canReviewMembership =
+              failure.category == AiFailureCategory.paymentRequired ||
+              failure.category == AiFailureCategory.quotaExhausted;
+          final openMembership = billing == null || !canReviewMembership
+              ? null
+              : _readAction(() {
+                  if (mounted &&
+                      _canOpenNative(
+                        generation,
+                        ownerId,
+                        learning,
+                        dependencies,
+                      )) {
+                    unawaited(
+                      _push(context, SubscriptionScreen(billing: billing)),
+                    );
+                  }
+                });
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              action: openMembership == null
+                  ? null
+                  : SnackBarAction(
+                      label: 'ตรวจสอบสมาชิก',
+                      onPressed: openMembership,
+                    ),
+            ),
+          );
+        }
       }
     } on Object {
       if (_canOpenNative(generation, ownerId, learning, dependencies)) {

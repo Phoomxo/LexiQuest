@@ -92,6 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ? _researchConsent
           : null;
       if (researchConsent != null &&
+          researchConsent.remoteDecisions == null &&
           researchConsent.version == ResearchConsentUseCases.currentVersion) {
         try {
           final consentContext = await researchConsent.load();

@@ -39,7 +39,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       )
       ..orderBy([(row) => OrderingTerm.asc(row.normalizedSpelling)]);
     return query.watch().map(
-      (rows) => rows.map(_wordToDomain).toList(growable: false),
+      (rows) => rows.map(wordToDomain).toList(growable: false),
     );
   }
 
@@ -228,7 +228,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
             existingById.normalizedMeaning != word.normalizedMeaning) {
           throw const DuplicateVocabularyFailure();
         }
-        if (!existingById.isDeleted) return _wordToDomain(existingById);
+        if (!existingById.isDeleted) return wordToDomain(existingById);
       }
       final previous = await _wordByNaturalKey(word);
       if (previous != null && !previous.isDeleted) {
@@ -264,7 +264,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
           revision: revision,
           nowUtc: word.updatedAtUtc,
         );
-        return _wordToDomain((await _wordById(previous.id))!);
+        return wordToDomain((await _wordById(previous.id))!);
       }
 
       await database
@@ -494,7 +494,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     );
   }
 
-  VocabularyWord _wordToDomain(db.VocabularyWord row) {
+  static VocabularyWord wordToDomain(db.VocabularyWord row) {
     return VocabularyWord(
       id: row.id,
       ownerId: row.ownerId,
@@ -514,7 +514,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     );
   }
 
-  DateTime _fromEpoch(int value) =>
+  static DateTime _fromEpoch(int value) =>
       DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
 
   void _requireUtc(DateTime value) {

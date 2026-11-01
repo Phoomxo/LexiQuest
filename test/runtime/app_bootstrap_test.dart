@@ -13,9 +13,11 @@ import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/features/billing/billing_runtime.dart';
 import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
+import '../features/billing/support/billing_fixture.dart';
 import 'package:vocab_learning_app/features/learning/data/learning_session_lifecycle_observer.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_saved_words_repository.dart';
@@ -63,6 +65,61 @@ AppDatabase _testDatabase() {
 }
 
 void main() {
+  test(
+    'enabled billing composition reaches the application and disposes once',
+    () async {
+      final fixture = BillingFixture();
+      addTearDown(fixture.dispose);
+      var calls = 0;
+      var disposals = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        billingEnabled: true,
+        billingFactory: (database, baseUri) async {
+          calls++;
+          expect(database.schemaVersion, 23);
+          expect(baseUri, _validConfig().aiApiBaseUri);
+          return BillingComposition(
+            useCases: fixture.billing,
+            dispose: () async {
+              disposals++;
+              await fixture.dispose();
+            },
+          );
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(calls, 1);
+      expect(dependencies.billing, same(fixture.billing));
+      await dependencies.dispose();
+      await dependencies.dispose();
+      expect(disposals, 1);
+    },
+  );
+
+  test('disabled billing never invokes a payment factory', () async {
+    var calls = 0;
+    final dependencies = await AppBootstrap(
+      createDatabase: _testDatabase,
+      initializeFirebase: () async {},
+      initializeSupabase: () async {},
+      loadConfig: _validConfig,
+      guestSessionService: _StubGuestSessionService(),
+      billingFactory: (_, _) async {
+        calls++;
+        throw StateError('disabled');
+      },
+    ).initialize();
+    addTearDown(dependencies.dispose);
+    expect(calls, 0);
+    expect(dependencies.billing, isNull);
+    expect(AppBootstrap.production().billingEnabled, isFalse);
+  });
+
   test(
     'ordinary local time composes disabled and reads without new facts',
     () async {

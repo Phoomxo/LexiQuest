@@ -20,7 +20,7 @@ import 'research_p256_signature_verifier.dart';
 /// Refresh is the only installation boundary. All five authority reads below
 /// consult memory and the monotonic clock, never SQLite or the gateway.
 /// The caller must suspend on every unproven lifecycle/auth interval; resuming
-/// never restores a prior lease. No production gateway or rollout is supplied.
+/// never restores a prior lease.
 final class LocalResearchAuthorityCache
     implements
         ResearchPermitSource,
@@ -38,6 +38,7 @@ final class LocalResearchAuthorityCache
     required this.maximumAcceptedAge,
     required bool initiallyForeground,
     Duration Function()? monotonicElapsed,
+    this.readGate,
   }) : _foreground = initiallyForeground {
     if (maximumAcceptedAge <= Duration.zero) {
       throw ArgumentError('A positive authority freshness limit is required');
@@ -53,6 +54,7 @@ final class LocalResearchAuthorityCache
   final ResearchP256SignatureVerifier participationSignatures;
   final String Function() generateRequestId;
   final Duration maximumAcceptedAge;
+  final ResearchAuthorityReadGate? readGate;
   final _stopwatch = Stopwatch();
   final _clockSessionId = const Uuid().v4();
   late final Duration Function() _monotonicElapsed;
@@ -435,11 +437,14 @@ final class LocalResearchAuthorityCache
     return elapsed;
   }
 
-  _VerifiedAuthoritySnapshot? _current() {
+  bool get hasFreshSnapshot => _current(respectReadGate: false) != null;
+
+  _VerifiedAuthoritySnapshot? _current({bool respectReadGate = true}) {
     try {
       final snapshot = _snapshot;
       if (_disposed ||
           !_foreground ||
+          (respectReadGate && readGate?.isOpen == false) ||
           snapshot == null ||
           snapshot.packet.scope != currentScope() ||
           !_time(snapshot.packet).isFresh) {

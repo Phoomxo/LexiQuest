@@ -27695,6 +27695,2444 @@ class LearningTimeSegmentsCompanion
   }
 }
 
+class $LearningProfilesTable extends LearningProfiles
+    with TableInfo<$LearningProfilesTable, LearningProfile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _onboardingStateMeta = const VerificationMeta(
+    'onboardingState',
+  );
+  @override
+  late final GeneratedColumn<String> onboardingState = GeneratedColumn<String>(
+    'onboarding_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalTextMeta = const VerificationMeta(
+    'goalText',
+  );
+  @override
+  late final GeneratedColumn<String> goalText = GeneratedColumn<String>(
+    'goal_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetDateMeta = const VerificationMeta(
+    'targetDate',
+  );
+  @override
+  late final GeneratedColumn<String> targetDate = GeneratedColumn<String>(
+    'target_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dailyMinutesMeta = const VerificationMeta(
+    'dailyMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> dailyMinutes = GeneratedColumn<int>(
+    'daily_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _interestCodesJsonMeta = const VerificationMeta(
+    'interestCodesJson',
+  );
+  @override
+  late final GeneratedColumn<String> interestCodesJson =
+      GeneratedColumn<String>(
+        'interest_codes_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    revision,
+    onboardingState,
+    goalText,
+    targetDate,
+    dailyMinutes,
+    interestCodesJson,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningProfile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('onboarding_state')) {
+      context.handle(
+        _onboardingStateMeta,
+        onboardingState.isAcceptableOrUnknown(
+          data['onboarding_state']!,
+          _onboardingStateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_onboardingStateMeta);
+    }
+    if (data.containsKey('goal_text')) {
+      context.handle(
+        _goalTextMeta,
+        goalText.isAcceptableOrUnknown(data['goal_text']!, _goalTextMeta),
+      );
+    }
+    if (data.containsKey('target_date')) {
+      context.handle(
+        _targetDateMeta,
+        targetDate.isAcceptableOrUnknown(data['target_date']!, _targetDateMeta),
+      );
+    }
+    if (data.containsKey('daily_minutes')) {
+      context.handle(
+        _dailyMinutesMeta,
+        dailyMinutes.isAcceptableOrUnknown(
+          data['daily_minutes']!,
+          _dailyMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('interest_codes_json')) {
+      context.handle(
+        _interestCodesJsonMeta,
+        interestCodesJson.isAcceptableOrUnknown(
+          data['interest_codes_json']!,
+          _interestCodesJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_interestCodesJsonMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  LearningProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningProfile(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      onboardingState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}onboarding_state'],
+      )!,
+      goalText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal_text'],
+      ),
+      targetDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_date'],
+      ),
+      dailyMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}daily_minutes'],
+      ),
+      interestCodesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interest_codes_json'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningProfilesTable createAlias(String alias) {
+    return $LearningProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class LearningProfile extends DataClass implements Insertable<LearningProfile> {
+  final String ownerId;
+  final int revision;
+  final String onboardingState;
+  final String? goalText;
+  final String? targetDate;
+  final int? dailyMinutes;
+  final String interestCodesJson;
+  final int updatedAtUtcMs;
+  const LearningProfile({
+    required this.ownerId,
+    required this.revision,
+    required this.onboardingState,
+    this.goalText,
+    this.targetDate,
+    this.dailyMinutes,
+    required this.interestCodesJson,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['revision'] = Variable<int>(revision);
+    map['onboarding_state'] = Variable<String>(onboardingState);
+    if (!nullToAbsent || goalText != null) {
+      map['goal_text'] = Variable<String>(goalText);
+    }
+    if (!nullToAbsent || targetDate != null) {
+      map['target_date'] = Variable<String>(targetDate);
+    }
+    if (!nullToAbsent || dailyMinutes != null) {
+      map['daily_minutes'] = Variable<int>(dailyMinutes);
+    }
+    map['interest_codes_json'] = Variable<String>(interestCodesJson);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  LearningProfilesCompanion toCompanion(bool nullToAbsent) {
+    return LearningProfilesCompanion(
+      ownerId: Value(ownerId),
+      revision: Value(revision),
+      onboardingState: Value(onboardingState),
+      goalText: goalText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalText),
+      targetDate: targetDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetDate),
+      dailyMinutes: dailyMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dailyMinutes),
+      interestCodesJson: Value(interestCodesJson),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory LearningProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningProfile(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      onboardingState: serializer.fromJson<String>(json['onboardingState']),
+      goalText: serializer.fromJson<String?>(json['goalText']),
+      targetDate: serializer.fromJson<String?>(json['targetDate']),
+      dailyMinutes: serializer.fromJson<int?>(json['dailyMinutes']),
+      interestCodesJson: serializer.fromJson<String>(json['interestCodesJson']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'revision': serializer.toJson<int>(revision),
+      'onboardingState': serializer.toJson<String>(onboardingState),
+      'goalText': serializer.toJson<String?>(goalText),
+      'targetDate': serializer.toJson<String?>(targetDate),
+      'dailyMinutes': serializer.toJson<int?>(dailyMinutes),
+      'interestCodesJson': serializer.toJson<String>(interestCodesJson),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  LearningProfile copyWith({
+    String? ownerId,
+    int? revision,
+    String? onboardingState,
+    Value<String?> goalText = const Value.absent(),
+    Value<String?> targetDate = const Value.absent(),
+    Value<int?> dailyMinutes = const Value.absent(),
+    String? interestCodesJson,
+    int? updatedAtUtcMs,
+  }) => LearningProfile(
+    ownerId: ownerId ?? this.ownerId,
+    revision: revision ?? this.revision,
+    onboardingState: onboardingState ?? this.onboardingState,
+    goalText: goalText.present ? goalText.value : this.goalText,
+    targetDate: targetDate.present ? targetDate.value : this.targetDate,
+    dailyMinutes: dailyMinutes.present ? dailyMinutes.value : this.dailyMinutes,
+    interestCodesJson: interestCodesJson ?? this.interestCodesJson,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  LearningProfile copyWithCompanion(LearningProfilesCompanion data) {
+    return LearningProfile(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      onboardingState: data.onboardingState.present
+          ? data.onboardingState.value
+          : this.onboardingState,
+      goalText: data.goalText.present ? data.goalText.value : this.goalText,
+      targetDate: data.targetDate.present
+          ? data.targetDate.value
+          : this.targetDate,
+      dailyMinutes: data.dailyMinutes.present
+          ? data.dailyMinutes.value
+          : this.dailyMinutes,
+      interestCodesJson: data.interestCodesJson.present
+          ? data.interestCodesJson.value
+          : this.interestCodesJson,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningProfile(')
+          ..write('ownerId: $ownerId, ')
+          ..write('revision: $revision, ')
+          ..write('onboardingState: $onboardingState, ')
+          ..write('goalText: $goalText, ')
+          ..write('targetDate: $targetDate, ')
+          ..write('dailyMinutes: $dailyMinutes, ')
+          ..write('interestCodesJson: $interestCodesJson, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    revision,
+    onboardingState,
+    goalText,
+    targetDate,
+    dailyMinutes,
+    interestCodesJson,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningProfile &&
+          other.ownerId == this.ownerId &&
+          other.revision == this.revision &&
+          other.onboardingState == this.onboardingState &&
+          other.goalText == this.goalText &&
+          other.targetDate == this.targetDate &&
+          other.dailyMinutes == this.dailyMinutes &&
+          other.interestCodesJson == this.interestCodesJson &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class LearningProfilesCompanion extends UpdateCompanion<LearningProfile> {
+  final Value<String> ownerId;
+  final Value<int> revision;
+  final Value<String> onboardingState;
+  final Value<String?> goalText;
+  final Value<String?> targetDate;
+  final Value<int?> dailyMinutes;
+  final Value<String> interestCodesJson;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const LearningProfilesCompanion({
+    this.ownerId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.onboardingState = const Value.absent(),
+    this.goalText = const Value.absent(),
+    this.targetDate = const Value.absent(),
+    this.dailyMinutes = const Value.absent(),
+    this.interestCodesJson = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningProfilesCompanion.insert({
+    required String ownerId,
+    required int revision,
+    required String onboardingState,
+    this.goalText = const Value.absent(),
+    this.targetDate = const Value.absent(),
+    this.dailyMinutes = const Value.absent(),
+    required String interestCodesJson,
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       revision = Value(revision),
+       onboardingState = Value(onboardingState),
+       interestCodesJson = Value(interestCodesJson),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearningProfile> custom({
+    Expression<String>? ownerId,
+    Expression<int>? revision,
+    Expression<String>? onboardingState,
+    Expression<String>? goalText,
+    Expression<String>? targetDate,
+    Expression<int>? dailyMinutes,
+    Expression<String>? interestCodesJson,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (revision != null) 'revision': revision,
+      if (onboardingState != null) 'onboarding_state': onboardingState,
+      if (goalText != null) 'goal_text': goalText,
+      if (targetDate != null) 'target_date': targetDate,
+      if (dailyMinutes != null) 'daily_minutes': dailyMinutes,
+      if (interestCodesJson != null) 'interest_codes_json': interestCodesJson,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningProfilesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<int>? revision,
+    Value<String>? onboardingState,
+    Value<String?>? goalText,
+    Value<String?>? targetDate,
+    Value<int?>? dailyMinutes,
+    Value<String>? interestCodesJson,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningProfilesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      revision: revision ?? this.revision,
+      onboardingState: onboardingState ?? this.onboardingState,
+      goalText: goalText ?? this.goalText,
+      targetDate: targetDate ?? this.targetDate,
+      dailyMinutes: dailyMinutes ?? this.dailyMinutes,
+      interestCodesJson: interestCodesJson ?? this.interestCodesJson,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (onboardingState.present) {
+      map['onboarding_state'] = Variable<String>(onboardingState.value);
+    }
+    if (goalText.present) {
+      map['goal_text'] = Variable<String>(goalText.value);
+    }
+    if (targetDate.present) {
+      map['target_date'] = Variable<String>(targetDate.value);
+    }
+    if (dailyMinutes.present) {
+      map['daily_minutes'] = Variable<int>(dailyMinutes.value);
+    }
+    if (interestCodesJson.present) {
+      map['interest_codes_json'] = Variable<String>(interestCodesJson.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningProfilesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('revision: $revision, ')
+          ..write('onboardingState: $onboardingState, ')
+          ..write('goalText: $goalText, ')
+          ..write('targetDate: $targetDate, ')
+          ..write('dailyMinutes: $dailyMinutes, ')
+          ..write('interestCodesJson: $interestCodesJson, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningPackVersionsTable extends LearningPackVersions
+    with TableInfo<$LearningPackVersionsTable, LearningPackVersion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningPackVersionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _packIdMeta = const VerificationMeta('packId');
+  @override
+  late final GeneratedColumn<String> packId = GeneratedColumn<String>(
+    'pack_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packVersionMeta = const VerificationMeta(
+    'packVersion',
+  );
+  @override
+  late final GeneratedColumn<String> packVersion = GeneratedColumn<String>(
+    'pack_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestJsonMeta = const VerificationMeta(
+    'manifestJson',
+  );
+  @override
+  late final GeneratedColumn<String> manifestJson = GeneratedColumn<String>(
+    'manifest_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestSha256Meta = const VerificationMeta(
+    'manifestSha256',
+  );
+  @override
+  late final GeneratedColumn<String> manifestSha256 = GeneratedColumn<String>(
+    'manifest_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packageSha256Meta = const VerificationMeta(
+    'packageSha256',
+  );
+  @override
+  late final GeneratedColumn<String> packageSha256 = GeneratedColumn<String>(
+    'package_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packageByteCountMeta = const VerificationMeta(
+    'packageByteCount',
+  );
+  @override
+  late final GeneratedColumn<int> packageByteCount = GeneratedColumn<int>(
+    'package_byte_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packageBytesMeta = const VerificationMeta(
+    'packageBytes',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> packageBytes =
+      GeneratedColumn<Uint8List>(
+        'package_bytes',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _retainedMediaJsonMeta = const VerificationMeta(
+    'retainedMediaJson',
+  );
+  @override
+  late final GeneratedColumn<String> retainedMediaJson =
+      GeneratedColumn<String>(
+        'retained_media_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _retainedMediaSha256Meta =
+      const VerificationMeta('retainedMediaSha256');
+  @override
+  late final GeneratedColumn<String> retainedMediaSha256 =
+      GeneratedColumn<String>(
+        'retained_media_sha256',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _sourceDescriptorJsonMeta =
+      const VerificationMeta('sourceDescriptorJson');
+  @override
+  late final GeneratedColumn<String> sourceDescriptorJson =
+      GeneratedColumn<String>(
+        'source_descriptor_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES vocabulary_categories (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _importIdMeta = const VerificationMeta(
+    'importId',
+  );
+  @override
+  late final GeneratedColumn<String> importId = GeneratedColumn<String>(
+    'import_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES vocabulary_imports (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _installedAtUtcMsMeta = const VerificationMeta(
+    'installedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> installedAtUtcMs = GeneratedColumn<int>(
+    'installed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastMutationIdMeta = const VerificationMeta(
+    'lastMutationId',
+  );
+  @override
+  late final GeneratedColumn<String> lastMutationId = GeneratedColumn<String>(
+    'last_mutation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastMutationSha256Meta =
+      const VerificationMeta('lastMutationSha256');
+  @override
+  late final GeneratedColumn<String> lastMutationSha256 =
+      GeneratedColumn<String>(
+        'last_mutation_sha256',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    packId,
+    packVersion,
+    manifestJson,
+    manifestSha256,
+    packageSha256,
+    packageByteCount,
+    packageBytes,
+    retainedMediaJson,
+    retainedMediaSha256,
+    sourceDescriptorJson,
+    isPinned,
+    categoryId,
+    importId,
+    installedAtUtcMs,
+    revision,
+    lastMutationId,
+    lastMutationSha256,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_pack_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningPackVersion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('pack_id')) {
+      context.handle(
+        _packIdMeta,
+        packId.isAcceptableOrUnknown(data['pack_id']!, _packIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_packIdMeta);
+    }
+    if (data.containsKey('pack_version')) {
+      context.handle(
+        _packVersionMeta,
+        packVersion.isAcceptableOrUnknown(
+          data['pack_version']!,
+          _packVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_packVersionMeta);
+    }
+    if (data.containsKey('manifest_json')) {
+      context.handle(
+        _manifestJsonMeta,
+        manifestJson.isAcceptableOrUnknown(
+          data['manifest_json']!,
+          _manifestJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestJsonMeta);
+    }
+    if (data.containsKey('manifest_sha256')) {
+      context.handle(
+        _manifestSha256Meta,
+        manifestSha256.isAcceptableOrUnknown(
+          data['manifest_sha256']!,
+          _manifestSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestSha256Meta);
+    }
+    if (data.containsKey('package_sha256')) {
+      context.handle(
+        _packageSha256Meta,
+        packageSha256.isAcceptableOrUnknown(
+          data['package_sha256']!,
+          _packageSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_packageSha256Meta);
+    }
+    if (data.containsKey('package_byte_count')) {
+      context.handle(
+        _packageByteCountMeta,
+        packageByteCount.isAcceptableOrUnknown(
+          data['package_byte_count']!,
+          _packageByteCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_packageByteCountMeta);
+    }
+    if (data.containsKey('package_bytes')) {
+      context.handle(
+        _packageBytesMeta,
+        packageBytes.isAcceptableOrUnknown(
+          data['package_bytes']!,
+          _packageBytesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('retained_media_json')) {
+      context.handle(
+        _retainedMediaJsonMeta,
+        retainedMediaJson.isAcceptableOrUnknown(
+          data['retained_media_json']!,
+          _retainedMediaJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_retainedMediaJsonMeta);
+    }
+    if (data.containsKey('retained_media_sha256')) {
+      context.handle(
+        _retainedMediaSha256Meta,
+        retainedMediaSha256.isAcceptableOrUnknown(
+          data['retained_media_sha256']!,
+          _retainedMediaSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_retainedMediaSha256Meta);
+    }
+    if (data.containsKey('source_descriptor_json')) {
+      context.handle(
+        _sourceDescriptorJsonMeta,
+        sourceDescriptorJson.isAcceptableOrUnknown(
+          data['source_descriptor_json']!,
+          _sourceDescriptorJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceDescriptorJsonMeta);
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('import_id')) {
+      context.handle(
+        _importIdMeta,
+        importId.isAcceptableOrUnknown(data['import_id']!, _importIdMeta),
+      );
+    }
+    if (data.containsKey('installed_at_utc_ms')) {
+      context.handle(
+        _installedAtUtcMsMeta,
+        installedAtUtcMs.isAcceptableOrUnknown(
+          data['installed_at_utc_ms']!,
+          _installedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('last_mutation_id')) {
+      context.handle(
+        _lastMutationIdMeta,
+        lastMutationId.isAcceptableOrUnknown(
+          data['last_mutation_id']!,
+          _lastMutationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastMutationIdMeta);
+    }
+    if (data.containsKey('last_mutation_sha256')) {
+      context.handle(
+        _lastMutationSha256Meta,
+        lastMutationSha256.isAcceptableOrUnknown(
+          data['last_mutation_sha256']!,
+          _lastMutationSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastMutationSha256Meta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, packId, packVersion, packageSha256},
+  ];
+  @override
+  LearningPackVersion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningPackVersion(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      packId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pack_id'],
+      )!,
+      packVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pack_version'],
+      )!,
+      manifestJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_json'],
+      )!,
+      manifestSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_sha256'],
+      )!,
+      packageSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}package_sha256'],
+      )!,
+      packageByteCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}package_byte_count'],
+      )!,
+      packageBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}package_bytes'],
+      ),
+      retainedMediaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}retained_media_json'],
+      )!,
+      retainedMediaSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}retained_media_sha256'],
+      )!,
+      sourceDescriptorJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_descriptor_json'],
+      )!,
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      ),
+      importId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}import_id'],
+      ),
+      installedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}installed_at_utc_ms'],
+      ),
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      lastMutationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_mutation_id'],
+      )!,
+      lastMutationSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_mutation_sha256'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningPackVersionsTable createAlias(String alias) {
+    return $LearningPackVersionsTable(attachedDatabase, alias);
+  }
+}
+
+class LearningPackVersion extends DataClass
+    implements Insertable<LearningPackVersion> {
+  final String id;
+  final String ownerId;
+  final String packId;
+  final String packVersion;
+  final String manifestJson;
+  final String manifestSha256;
+  final String packageSha256;
+  final int packageByteCount;
+  final Uint8List? packageBytes;
+  final String retainedMediaJson;
+  final String retainedMediaSha256;
+  final String sourceDescriptorJson;
+  final bool isPinned;
+  final String? categoryId;
+  final String? importId;
+  final int? installedAtUtcMs;
+  final int revision;
+  final String lastMutationId;
+  final String lastMutationSha256;
+  final int createdAtUtcMs;
+  final int updatedAtUtcMs;
+  const LearningPackVersion({
+    required this.id,
+    required this.ownerId,
+    required this.packId,
+    required this.packVersion,
+    required this.manifestJson,
+    required this.manifestSha256,
+    required this.packageSha256,
+    required this.packageByteCount,
+    this.packageBytes,
+    required this.retainedMediaJson,
+    required this.retainedMediaSha256,
+    required this.sourceDescriptorJson,
+    required this.isPinned,
+    this.categoryId,
+    this.importId,
+    this.installedAtUtcMs,
+    required this.revision,
+    required this.lastMutationId,
+    required this.lastMutationSha256,
+    required this.createdAtUtcMs,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['pack_id'] = Variable<String>(packId);
+    map['pack_version'] = Variable<String>(packVersion);
+    map['manifest_json'] = Variable<String>(manifestJson);
+    map['manifest_sha256'] = Variable<String>(manifestSha256);
+    map['package_sha256'] = Variable<String>(packageSha256);
+    map['package_byte_count'] = Variable<int>(packageByteCount);
+    if (!nullToAbsent || packageBytes != null) {
+      map['package_bytes'] = Variable<Uint8List>(packageBytes);
+    }
+    map['retained_media_json'] = Variable<String>(retainedMediaJson);
+    map['retained_media_sha256'] = Variable<String>(retainedMediaSha256);
+    map['source_descriptor_json'] = Variable<String>(sourceDescriptorJson);
+    map['is_pinned'] = Variable<bool>(isPinned);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
+    }
+    if (!nullToAbsent || importId != null) {
+      map['import_id'] = Variable<String>(importId);
+    }
+    if (!nullToAbsent || installedAtUtcMs != null) {
+      map['installed_at_utc_ms'] = Variable<int>(installedAtUtcMs);
+    }
+    map['revision'] = Variable<int>(revision);
+    map['last_mutation_id'] = Variable<String>(lastMutationId);
+    map['last_mutation_sha256'] = Variable<String>(lastMutationSha256);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  LearningPackVersionsCompanion toCompanion(bool nullToAbsent) {
+    return LearningPackVersionsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      packId: Value(packId),
+      packVersion: Value(packVersion),
+      manifestJson: Value(manifestJson),
+      manifestSha256: Value(manifestSha256),
+      packageSha256: Value(packageSha256),
+      packageByteCount: Value(packageByteCount),
+      packageBytes: packageBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageBytes),
+      retainedMediaJson: Value(retainedMediaJson),
+      retainedMediaSha256: Value(retainedMediaSha256),
+      sourceDescriptorJson: Value(sourceDescriptorJson),
+      isPinned: Value(isPinned),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      importId: importId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importId),
+      installedAtUtcMs: installedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(installedAtUtcMs),
+      revision: Value(revision),
+      lastMutationId: Value(lastMutationId),
+      lastMutationSha256: Value(lastMutationSha256),
+      createdAtUtcMs: Value(createdAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory LearningPackVersion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningPackVersion(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      packId: serializer.fromJson<String>(json['packId']),
+      packVersion: serializer.fromJson<String>(json['packVersion']),
+      manifestJson: serializer.fromJson<String>(json['manifestJson']),
+      manifestSha256: serializer.fromJson<String>(json['manifestSha256']),
+      packageSha256: serializer.fromJson<String>(json['packageSha256']),
+      packageByteCount: serializer.fromJson<int>(json['packageByteCount']),
+      packageBytes: serializer.fromJson<Uint8List?>(json['packageBytes']),
+      retainedMediaJson: serializer.fromJson<String>(json['retainedMediaJson']),
+      retainedMediaSha256: serializer.fromJson<String>(
+        json['retainedMediaSha256'],
+      ),
+      sourceDescriptorJson: serializer.fromJson<String>(
+        json['sourceDescriptorJson'],
+      ),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
+      importId: serializer.fromJson<String?>(json['importId']),
+      installedAtUtcMs: serializer.fromJson<int?>(json['installedAtUtcMs']),
+      revision: serializer.fromJson<int>(json['revision']),
+      lastMutationId: serializer.fromJson<String>(json['lastMutationId']),
+      lastMutationSha256: serializer.fromJson<String>(
+        json['lastMutationSha256'],
+      ),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'packId': serializer.toJson<String>(packId),
+      'packVersion': serializer.toJson<String>(packVersion),
+      'manifestJson': serializer.toJson<String>(manifestJson),
+      'manifestSha256': serializer.toJson<String>(manifestSha256),
+      'packageSha256': serializer.toJson<String>(packageSha256),
+      'packageByteCount': serializer.toJson<int>(packageByteCount),
+      'packageBytes': serializer.toJson<Uint8List?>(packageBytes),
+      'retainedMediaJson': serializer.toJson<String>(retainedMediaJson),
+      'retainedMediaSha256': serializer.toJson<String>(retainedMediaSha256),
+      'sourceDescriptorJson': serializer.toJson<String>(sourceDescriptorJson),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'categoryId': serializer.toJson<String?>(categoryId),
+      'importId': serializer.toJson<String?>(importId),
+      'installedAtUtcMs': serializer.toJson<int?>(installedAtUtcMs),
+      'revision': serializer.toJson<int>(revision),
+      'lastMutationId': serializer.toJson<String>(lastMutationId),
+      'lastMutationSha256': serializer.toJson<String>(lastMutationSha256),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  LearningPackVersion copyWith({
+    String? id,
+    String? ownerId,
+    String? packId,
+    String? packVersion,
+    String? manifestJson,
+    String? manifestSha256,
+    String? packageSha256,
+    int? packageByteCount,
+    Value<Uint8List?> packageBytes = const Value.absent(),
+    String? retainedMediaJson,
+    String? retainedMediaSha256,
+    String? sourceDescriptorJson,
+    bool? isPinned,
+    Value<String?> categoryId = const Value.absent(),
+    Value<String?> importId = const Value.absent(),
+    Value<int?> installedAtUtcMs = const Value.absent(),
+    int? revision,
+    String? lastMutationId,
+    String? lastMutationSha256,
+    int? createdAtUtcMs,
+    int? updatedAtUtcMs,
+  }) => LearningPackVersion(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    packId: packId ?? this.packId,
+    packVersion: packVersion ?? this.packVersion,
+    manifestJson: manifestJson ?? this.manifestJson,
+    manifestSha256: manifestSha256 ?? this.manifestSha256,
+    packageSha256: packageSha256 ?? this.packageSha256,
+    packageByteCount: packageByteCount ?? this.packageByteCount,
+    packageBytes: packageBytes.present ? packageBytes.value : this.packageBytes,
+    retainedMediaJson: retainedMediaJson ?? this.retainedMediaJson,
+    retainedMediaSha256: retainedMediaSha256 ?? this.retainedMediaSha256,
+    sourceDescriptorJson: sourceDescriptorJson ?? this.sourceDescriptorJson,
+    isPinned: isPinned ?? this.isPinned,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    importId: importId.present ? importId.value : this.importId,
+    installedAtUtcMs: installedAtUtcMs.present
+        ? installedAtUtcMs.value
+        : this.installedAtUtcMs,
+    revision: revision ?? this.revision,
+    lastMutationId: lastMutationId ?? this.lastMutationId,
+    lastMutationSha256: lastMutationSha256 ?? this.lastMutationSha256,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  LearningPackVersion copyWithCompanion(LearningPackVersionsCompanion data) {
+    return LearningPackVersion(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      packId: data.packId.present ? data.packId.value : this.packId,
+      packVersion: data.packVersion.present
+          ? data.packVersion.value
+          : this.packVersion,
+      manifestJson: data.manifestJson.present
+          ? data.manifestJson.value
+          : this.manifestJson,
+      manifestSha256: data.manifestSha256.present
+          ? data.manifestSha256.value
+          : this.manifestSha256,
+      packageSha256: data.packageSha256.present
+          ? data.packageSha256.value
+          : this.packageSha256,
+      packageByteCount: data.packageByteCount.present
+          ? data.packageByteCount.value
+          : this.packageByteCount,
+      packageBytes: data.packageBytes.present
+          ? data.packageBytes.value
+          : this.packageBytes,
+      retainedMediaJson: data.retainedMediaJson.present
+          ? data.retainedMediaJson.value
+          : this.retainedMediaJson,
+      retainedMediaSha256: data.retainedMediaSha256.present
+          ? data.retainedMediaSha256.value
+          : this.retainedMediaSha256,
+      sourceDescriptorJson: data.sourceDescriptorJson.present
+          ? data.sourceDescriptorJson.value
+          : this.sourceDescriptorJson,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      importId: data.importId.present ? data.importId.value : this.importId,
+      installedAtUtcMs: data.installedAtUtcMs.present
+          ? data.installedAtUtcMs.value
+          : this.installedAtUtcMs,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      lastMutationId: data.lastMutationId.present
+          ? data.lastMutationId.value
+          : this.lastMutationId,
+      lastMutationSha256: data.lastMutationSha256.present
+          ? data.lastMutationSha256.value
+          : this.lastMutationSha256,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPackVersion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('packId: $packId, ')
+          ..write('packVersion: $packVersion, ')
+          ..write('manifestJson: $manifestJson, ')
+          ..write('manifestSha256: $manifestSha256, ')
+          ..write('packageSha256: $packageSha256, ')
+          ..write('packageByteCount: $packageByteCount, ')
+          ..write('packageBytes: $packageBytes, ')
+          ..write('retainedMediaJson: $retainedMediaJson, ')
+          ..write('retainedMediaSha256: $retainedMediaSha256, ')
+          ..write('sourceDescriptorJson: $sourceDescriptorJson, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('importId: $importId, ')
+          ..write('installedAtUtcMs: $installedAtUtcMs, ')
+          ..write('revision: $revision, ')
+          ..write('lastMutationId: $lastMutationId, ')
+          ..write('lastMutationSha256: $lastMutationSha256, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    ownerId,
+    packId,
+    packVersion,
+    manifestJson,
+    manifestSha256,
+    packageSha256,
+    packageByteCount,
+    $driftBlobEquality.hash(packageBytes),
+    retainedMediaJson,
+    retainedMediaSha256,
+    sourceDescriptorJson,
+    isPinned,
+    categoryId,
+    importId,
+    installedAtUtcMs,
+    revision,
+    lastMutationId,
+    lastMutationSha256,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningPackVersion &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.packId == this.packId &&
+          other.packVersion == this.packVersion &&
+          other.manifestJson == this.manifestJson &&
+          other.manifestSha256 == this.manifestSha256 &&
+          other.packageSha256 == this.packageSha256 &&
+          other.packageByteCount == this.packageByteCount &&
+          $driftBlobEquality.equals(other.packageBytes, this.packageBytes) &&
+          other.retainedMediaJson == this.retainedMediaJson &&
+          other.retainedMediaSha256 == this.retainedMediaSha256 &&
+          other.sourceDescriptorJson == this.sourceDescriptorJson &&
+          other.isPinned == this.isPinned &&
+          other.categoryId == this.categoryId &&
+          other.importId == this.importId &&
+          other.installedAtUtcMs == this.installedAtUtcMs &&
+          other.revision == this.revision &&
+          other.lastMutationId == this.lastMutationId &&
+          other.lastMutationSha256 == this.lastMutationSha256 &&
+          other.createdAtUtcMs == this.createdAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class LearningPackVersionsCompanion
+    extends UpdateCompanion<LearningPackVersion> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> packId;
+  final Value<String> packVersion;
+  final Value<String> manifestJson;
+  final Value<String> manifestSha256;
+  final Value<String> packageSha256;
+  final Value<int> packageByteCount;
+  final Value<Uint8List?> packageBytes;
+  final Value<String> retainedMediaJson;
+  final Value<String> retainedMediaSha256;
+  final Value<String> sourceDescriptorJson;
+  final Value<bool> isPinned;
+  final Value<String?> categoryId;
+  final Value<String?> importId;
+  final Value<int?> installedAtUtcMs;
+  final Value<int> revision;
+  final Value<String> lastMutationId;
+  final Value<String> lastMutationSha256;
+  final Value<int> createdAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const LearningPackVersionsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.packId = const Value.absent(),
+    this.packVersion = const Value.absent(),
+    this.manifestJson = const Value.absent(),
+    this.manifestSha256 = const Value.absent(),
+    this.packageSha256 = const Value.absent(),
+    this.packageByteCount = const Value.absent(),
+    this.packageBytes = const Value.absent(),
+    this.retainedMediaJson = const Value.absent(),
+    this.retainedMediaSha256 = const Value.absent(),
+    this.sourceDescriptorJson = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.importId = const Value.absent(),
+    this.installedAtUtcMs = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.lastMutationId = const Value.absent(),
+    this.lastMutationSha256 = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningPackVersionsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String packId,
+    required String packVersion,
+    required String manifestJson,
+    required String manifestSha256,
+    required String packageSha256,
+    required int packageByteCount,
+    this.packageBytes = const Value.absent(),
+    required String retainedMediaJson,
+    required String retainedMediaSha256,
+    required String sourceDescriptorJson,
+    this.isPinned = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.importId = const Value.absent(),
+    this.installedAtUtcMs = const Value.absent(),
+    required int revision,
+    required String lastMutationId,
+    required String lastMutationSha256,
+    required int createdAtUtcMs,
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       packId = Value(packId),
+       packVersion = Value(packVersion),
+       manifestJson = Value(manifestJson),
+       manifestSha256 = Value(manifestSha256),
+       packageSha256 = Value(packageSha256),
+       packageByteCount = Value(packageByteCount),
+       retainedMediaJson = Value(retainedMediaJson),
+       retainedMediaSha256 = Value(retainedMediaSha256),
+       sourceDescriptorJson = Value(sourceDescriptorJson),
+       revision = Value(revision),
+       lastMutationId = Value(lastMutationId),
+       lastMutationSha256 = Value(lastMutationSha256),
+       createdAtUtcMs = Value(createdAtUtcMs),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearningPackVersion> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? packId,
+    Expression<String>? packVersion,
+    Expression<String>? manifestJson,
+    Expression<String>? manifestSha256,
+    Expression<String>? packageSha256,
+    Expression<int>? packageByteCount,
+    Expression<Uint8List>? packageBytes,
+    Expression<String>? retainedMediaJson,
+    Expression<String>? retainedMediaSha256,
+    Expression<String>? sourceDescriptorJson,
+    Expression<bool>? isPinned,
+    Expression<String>? categoryId,
+    Expression<String>? importId,
+    Expression<int>? installedAtUtcMs,
+    Expression<int>? revision,
+    Expression<String>? lastMutationId,
+    Expression<String>? lastMutationSha256,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (packId != null) 'pack_id': packId,
+      if (packVersion != null) 'pack_version': packVersion,
+      if (manifestJson != null) 'manifest_json': manifestJson,
+      if (manifestSha256 != null) 'manifest_sha256': manifestSha256,
+      if (packageSha256 != null) 'package_sha256': packageSha256,
+      if (packageByteCount != null) 'package_byte_count': packageByteCount,
+      if (packageBytes != null) 'package_bytes': packageBytes,
+      if (retainedMediaJson != null) 'retained_media_json': retainedMediaJson,
+      if (retainedMediaSha256 != null)
+        'retained_media_sha256': retainedMediaSha256,
+      if (sourceDescriptorJson != null)
+        'source_descriptor_json': sourceDescriptorJson,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (categoryId != null) 'category_id': categoryId,
+      if (importId != null) 'import_id': importId,
+      if (installedAtUtcMs != null) 'installed_at_utc_ms': installedAtUtcMs,
+      if (revision != null) 'revision': revision,
+      if (lastMutationId != null) 'last_mutation_id': lastMutationId,
+      if (lastMutationSha256 != null)
+        'last_mutation_sha256': lastMutationSha256,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningPackVersionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? packId,
+    Value<String>? packVersion,
+    Value<String>? manifestJson,
+    Value<String>? manifestSha256,
+    Value<String>? packageSha256,
+    Value<int>? packageByteCount,
+    Value<Uint8List?>? packageBytes,
+    Value<String>? retainedMediaJson,
+    Value<String>? retainedMediaSha256,
+    Value<String>? sourceDescriptorJson,
+    Value<bool>? isPinned,
+    Value<String?>? categoryId,
+    Value<String?>? importId,
+    Value<int?>? installedAtUtcMs,
+    Value<int>? revision,
+    Value<String>? lastMutationId,
+    Value<String>? lastMutationSha256,
+    Value<int>? createdAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningPackVersionsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      packId: packId ?? this.packId,
+      packVersion: packVersion ?? this.packVersion,
+      manifestJson: manifestJson ?? this.manifestJson,
+      manifestSha256: manifestSha256 ?? this.manifestSha256,
+      packageSha256: packageSha256 ?? this.packageSha256,
+      packageByteCount: packageByteCount ?? this.packageByteCount,
+      packageBytes: packageBytes ?? this.packageBytes,
+      retainedMediaJson: retainedMediaJson ?? this.retainedMediaJson,
+      retainedMediaSha256: retainedMediaSha256 ?? this.retainedMediaSha256,
+      sourceDescriptorJson: sourceDescriptorJson ?? this.sourceDescriptorJson,
+      isPinned: isPinned ?? this.isPinned,
+      categoryId: categoryId ?? this.categoryId,
+      importId: importId ?? this.importId,
+      installedAtUtcMs: installedAtUtcMs ?? this.installedAtUtcMs,
+      revision: revision ?? this.revision,
+      lastMutationId: lastMutationId ?? this.lastMutationId,
+      lastMutationSha256: lastMutationSha256 ?? this.lastMutationSha256,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (packId.present) {
+      map['pack_id'] = Variable<String>(packId.value);
+    }
+    if (packVersion.present) {
+      map['pack_version'] = Variable<String>(packVersion.value);
+    }
+    if (manifestJson.present) {
+      map['manifest_json'] = Variable<String>(manifestJson.value);
+    }
+    if (manifestSha256.present) {
+      map['manifest_sha256'] = Variable<String>(manifestSha256.value);
+    }
+    if (packageSha256.present) {
+      map['package_sha256'] = Variable<String>(packageSha256.value);
+    }
+    if (packageByteCount.present) {
+      map['package_byte_count'] = Variable<int>(packageByteCount.value);
+    }
+    if (packageBytes.present) {
+      map['package_bytes'] = Variable<Uint8List>(packageBytes.value);
+    }
+    if (retainedMediaJson.present) {
+      map['retained_media_json'] = Variable<String>(retainedMediaJson.value);
+    }
+    if (retainedMediaSha256.present) {
+      map['retained_media_sha256'] = Variable<String>(
+        retainedMediaSha256.value,
+      );
+    }
+    if (sourceDescriptorJson.present) {
+      map['source_descriptor_json'] = Variable<String>(
+        sourceDescriptorJson.value,
+      );
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (importId.present) {
+      map['import_id'] = Variable<String>(importId.value);
+    }
+    if (installedAtUtcMs.present) {
+      map['installed_at_utc_ms'] = Variable<int>(installedAtUtcMs.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (lastMutationId.present) {
+      map['last_mutation_id'] = Variable<String>(lastMutationId.value);
+    }
+    if (lastMutationSha256.present) {
+      map['last_mutation_sha256'] = Variable<String>(lastMutationSha256.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPackVersionsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('packId: $packId, ')
+          ..write('packVersion: $packVersion, ')
+          ..write('manifestJson: $manifestJson, ')
+          ..write('manifestSha256: $manifestSha256, ')
+          ..write('packageSha256: $packageSha256, ')
+          ..write('packageByteCount: $packageByteCount, ')
+          ..write('packageBytes: $packageBytes, ')
+          ..write('retainedMediaJson: $retainedMediaJson, ')
+          ..write('retainedMediaSha256: $retainedMediaSha256, ')
+          ..write('sourceDescriptorJson: $sourceDescriptorJson, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('importId: $importId, ')
+          ..write('installedAtUtcMs: $installedAtUtcMs, ')
+          ..write('revision: $revision, ')
+          ..write('lastMutationId: $lastMutationId, ')
+          ..write('lastMutationSha256: $lastMutationSha256, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LexicalContentSnapshotsTable extends LexicalContentSnapshots
+    with TableInfo<$LexicalContentSnapshotsTable, LexicalContentSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LexicalContentSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _packVersionIdMeta = const VerificationMeta(
+    'packVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> packVersionId = GeneratedColumn<String>(
+    'pack_version_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_pack_versions (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _wordIdMeta = const VerificationMeta('wordId');
+  @override
+  late final GeneratedColumn<String> wordId = GeneratedColumn<String>(
+    'word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES vocabulary_words (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _boundWordRevisionMeta = const VerificationMeta(
+    'boundWordRevision',
+  );
+  @override
+  late final GeneratedColumn<int> boundWordRevision = GeneratedColumn<int>(
+    'bound_word_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _boundWordSha256Meta = const VerificationMeta(
+    'boundWordSha256',
+  );
+  @override
+  late final GeneratedColumn<String> boundWordSha256 = GeneratedColumn<String>(
+    'bound_word_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entryCodeMeta = const VerificationMeta(
+    'entryCode',
+  );
+  @override
+  late final GeneratedColumn<String> entryCode = GeneratedColumn<String>(
+    'entry_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lexicalJsonMeta = const VerificationMeta(
+    'lexicalJson',
+  );
+  @override
+  late final GeneratedColumn<String> lexicalJson = GeneratedColumn<String>(
+    'lexical_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lexicalSha256Meta = const VerificationMeta(
+    'lexicalSha256',
+  );
+  @override
+  late final GeneratedColumn<String> lexicalSha256 = GeneratedColumn<String>(
+    'lexical_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    packVersionId,
+    wordId,
+    boundWordRevision,
+    boundWordSha256,
+    entryCode,
+    lexicalJson,
+    lexicalSha256,
+    createdAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lexical_content_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LexicalContentSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('pack_version_id')) {
+      context.handle(
+        _packVersionIdMeta,
+        packVersionId.isAcceptableOrUnknown(
+          data['pack_version_id']!,
+          _packVersionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_packVersionIdMeta);
+    }
+    if (data.containsKey('word_id')) {
+      context.handle(
+        _wordIdMeta,
+        wordId.isAcceptableOrUnknown(data['word_id']!, _wordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordIdMeta);
+    }
+    if (data.containsKey('bound_word_revision')) {
+      context.handle(
+        _boundWordRevisionMeta,
+        boundWordRevision.isAcceptableOrUnknown(
+          data['bound_word_revision']!,
+          _boundWordRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_boundWordRevisionMeta);
+    }
+    if (data.containsKey('bound_word_sha256')) {
+      context.handle(
+        _boundWordSha256Meta,
+        boundWordSha256.isAcceptableOrUnknown(
+          data['bound_word_sha256']!,
+          _boundWordSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_boundWordSha256Meta);
+    }
+    if (data.containsKey('entry_code')) {
+      context.handle(
+        _entryCodeMeta,
+        entryCode.isAcceptableOrUnknown(data['entry_code']!, _entryCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entryCodeMeta);
+    }
+    if (data.containsKey('lexical_json')) {
+      context.handle(
+        _lexicalJsonMeta,
+        lexicalJson.isAcceptableOrUnknown(
+          data['lexical_json']!,
+          _lexicalJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lexicalJsonMeta);
+    }
+    if (data.containsKey('lexical_sha256')) {
+      context.handle(
+        _lexicalSha256Meta,
+        lexicalSha256.isAcceptableOrUnknown(
+          data['lexical_sha256']!,
+          _lexicalSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lexicalSha256Meta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LexicalContentSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LexicalContentSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      packVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pack_version_id'],
+      )!,
+      wordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_id'],
+      )!,
+      boundWordRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bound_word_revision'],
+      )!,
+      boundWordSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bound_word_sha256'],
+      )!,
+      entryCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_code'],
+      )!,
+      lexicalJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lexical_json'],
+      )!,
+      lexicalSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lexical_sha256'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LexicalContentSnapshotsTable createAlias(String alias) {
+    return $LexicalContentSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class LexicalContentSnapshot extends DataClass
+    implements Insertable<LexicalContentSnapshot> {
+  final String id;
+  final String ownerId;
+  final String packVersionId;
+  final String wordId;
+  final int boundWordRevision;
+  final String boundWordSha256;
+  final String entryCode;
+  final String lexicalJson;
+  final String lexicalSha256;
+  final int createdAtUtcMs;
+  const LexicalContentSnapshot({
+    required this.id,
+    required this.ownerId,
+    required this.packVersionId,
+    required this.wordId,
+    required this.boundWordRevision,
+    required this.boundWordSha256,
+    required this.entryCode,
+    required this.lexicalJson,
+    required this.lexicalSha256,
+    required this.createdAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['pack_version_id'] = Variable<String>(packVersionId);
+    map['word_id'] = Variable<String>(wordId);
+    map['bound_word_revision'] = Variable<int>(boundWordRevision);
+    map['bound_word_sha256'] = Variable<String>(boundWordSha256);
+    map['entry_code'] = Variable<String>(entryCode);
+    map['lexical_json'] = Variable<String>(lexicalJson);
+    map['lexical_sha256'] = Variable<String>(lexicalSha256);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    return map;
+  }
+
+  LexicalContentSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return LexicalContentSnapshotsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      packVersionId: Value(packVersionId),
+      wordId: Value(wordId),
+      boundWordRevision: Value(boundWordRevision),
+      boundWordSha256: Value(boundWordSha256),
+      entryCode: Value(entryCode),
+      lexicalJson: Value(lexicalJson),
+      lexicalSha256: Value(lexicalSha256),
+      createdAtUtcMs: Value(createdAtUtcMs),
+    );
+  }
+
+  factory LexicalContentSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LexicalContentSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      packVersionId: serializer.fromJson<String>(json['packVersionId']),
+      wordId: serializer.fromJson<String>(json['wordId']),
+      boundWordRevision: serializer.fromJson<int>(json['boundWordRevision']),
+      boundWordSha256: serializer.fromJson<String>(json['boundWordSha256']),
+      entryCode: serializer.fromJson<String>(json['entryCode']),
+      lexicalJson: serializer.fromJson<String>(json['lexicalJson']),
+      lexicalSha256: serializer.fromJson<String>(json['lexicalSha256']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'packVersionId': serializer.toJson<String>(packVersionId),
+      'wordId': serializer.toJson<String>(wordId),
+      'boundWordRevision': serializer.toJson<int>(boundWordRevision),
+      'boundWordSha256': serializer.toJson<String>(boundWordSha256),
+      'entryCode': serializer.toJson<String>(entryCode),
+      'lexicalJson': serializer.toJson<String>(lexicalJson),
+      'lexicalSha256': serializer.toJson<String>(lexicalSha256),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+    };
+  }
+
+  LexicalContentSnapshot copyWith({
+    String? id,
+    String? ownerId,
+    String? packVersionId,
+    String? wordId,
+    int? boundWordRevision,
+    String? boundWordSha256,
+    String? entryCode,
+    String? lexicalJson,
+    String? lexicalSha256,
+    int? createdAtUtcMs,
+  }) => LexicalContentSnapshot(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    packVersionId: packVersionId ?? this.packVersionId,
+    wordId: wordId ?? this.wordId,
+    boundWordRevision: boundWordRevision ?? this.boundWordRevision,
+    boundWordSha256: boundWordSha256 ?? this.boundWordSha256,
+    entryCode: entryCode ?? this.entryCode,
+    lexicalJson: lexicalJson ?? this.lexicalJson,
+    lexicalSha256: lexicalSha256 ?? this.lexicalSha256,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+  );
+  LexicalContentSnapshot copyWithCompanion(
+    LexicalContentSnapshotsCompanion data,
+  ) {
+    return LexicalContentSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      packVersionId: data.packVersionId.present
+          ? data.packVersionId.value
+          : this.packVersionId,
+      wordId: data.wordId.present ? data.wordId.value : this.wordId,
+      boundWordRevision: data.boundWordRevision.present
+          ? data.boundWordRevision.value
+          : this.boundWordRevision,
+      boundWordSha256: data.boundWordSha256.present
+          ? data.boundWordSha256.value
+          : this.boundWordSha256,
+      entryCode: data.entryCode.present ? data.entryCode.value : this.entryCode,
+      lexicalJson: data.lexicalJson.present
+          ? data.lexicalJson.value
+          : this.lexicalJson,
+      lexicalSha256: data.lexicalSha256.present
+          ? data.lexicalSha256.value
+          : this.lexicalSha256,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LexicalContentSnapshot(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('packVersionId: $packVersionId, ')
+          ..write('wordId: $wordId, ')
+          ..write('boundWordRevision: $boundWordRevision, ')
+          ..write('boundWordSha256: $boundWordSha256, ')
+          ..write('entryCode: $entryCode, ')
+          ..write('lexicalJson: $lexicalJson, ')
+          ..write('lexicalSha256: $lexicalSha256, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    packVersionId,
+    wordId,
+    boundWordRevision,
+    boundWordSha256,
+    entryCode,
+    lexicalJson,
+    lexicalSha256,
+    createdAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LexicalContentSnapshot &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.packVersionId == this.packVersionId &&
+          other.wordId == this.wordId &&
+          other.boundWordRevision == this.boundWordRevision &&
+          other.boundWordSha256 == this.boundWordSha256 &&
+          other.entryCode == this.entryCode &&
+          other.lexicalJson == this.lexicalJson &&
+          other.lexicalSha256 == this.lexicalSha256 &&
+          other.createdAtUtcMs == this.createdAtUtcMs);
+}
+
+class LexicalContentSnapshotsCompanion
+    extends UpdateCompanion<LexicalContentSnapshot> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> packVersionId;
+  final Value<String> wordId;
+  final Value<int> boundWordRevision;
+  final Value<String> boundWordSha256;
+  final Value<String> entryCode;
+  final Value<String> lexicalJson;
+  final Value<String> lexicalSha256;
+  final Value<int> createdAtUtcMs;
+  final Value<int> rowid;
+  const LexicalContentSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.packVersionId = const Value.absent(),
+    this.wordId = const Value.absent(),
+    this.boundWordRevision = const Value.absent(),
+    this.boundWordSha256 = const Value.absent(),
+    this.entryCode = const Value.absent(),
+    this.lexicalJson = const Value.absent(),
+    this.lexicalSha256 = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LexicalContentSnapshotsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String packVersionId,
+    required String wordId,
+    required int boundWordRevision,
+    required String boundWordSha256,
+    required String entryCode,
+    required String lexicalJson,
+    required String lexicalSha256,
+    required int createdAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       packVersionId = Value(packVersionId),
+       wordId = Value(wordId),
+       boundWordRevision = Value(boundWordRevision),
+       boundWordSha256 = Value(boundWordSha256),
+       entryCode = Value(entryCode),
+       lexicalJson = Value(lexicalJson),
+       lexicalSha256 = Value(lexicalSha256),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<LexicalContentSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? packVersionId,
+    Expression<String>? wordId,
+    Expression<int>? boundWordRevision,
+    Expression<String>? boundWordSha256,
+    Expression<String>? entryCode,
+    Expression<String>? lexicalJson,
+    Expression<String>? lexicalSha256,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (packVersionId != null) 'pack_version_id': packVersionId,
+      if (wordId != null) 'word_id': wordId,
+      if (boundWordRevision != null) 'bound_word_revision': boundWordRevision,
+      if (boundWordSha256 != null) 'bound_word_sha256': boundWordSha256,
+      if (entryCode != null) 'entry_code': entryCode,
+      if (lexicalJson != null) 'lexical_json': lexicalJson,
+      if (lexicalSha256 != null) 'lexical_sha256': lexicalSha256,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LexicalContentSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? packVersionId,
+    Value<String>? wordId,
+    Value<int>? boundWordRevision,
+    Value<String>? boundWordSha256,
+    Value<String>? entryCode,
+    Value<String>? lexicalJson,
+    Value<String>? lexicalSha256,
+    Value<int>? createdAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LexicalContentSnapshotsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      packVersionId: packVersionId ?? this.packVersionId,
+      wordId: wordId ?? this.wordId,
+      boundWordRevision: boundWordRevision ?? this.boundWordRevision,
+      boundWordSha256: boundWordSha256 ?? this.boundWordSha256,
+      entryCode: entryCode ?? this.entryCode,
+      lexicalJson: lexicalJson ?? this.lexicalJson,
+      lexicalSha256: lexicalSha256 ?? this.lexicalSha256,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (packVersionId.present) {
+      map['pack_version_id'] = Variable<String>(packVersionId.value);
+    }
+    if (wordId.present) {
+      map['word_id'] = Variable<String>(wordId.value);
+    }
+    if (boundWordRevision.present) {
+      map['bound_word_revision'] = Variable<int>(boundWordRevision.value);
+    }
+    if (boundWordSha256.present) {
+      map['bound_word_sha256'] = Variable<String>(boundWordSha256.value);
+    }
+    if (entryCode.present) {
+      map['entry_code'] = Variable<String>(entryCode.value);
+    }
+    if (lexicalJson.present) {
+      map['lexical_json'] = Variable<String>(lexicalJson.value);
+    }
+    if (lexicalSha256.present) {
+      map['lexical_sha256'] = Variable<String>(lexicalSha256.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LexicalContentSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('packVersionId: $packVersionId, ')
+          ..write('wordId: $wordId, ')
+          ..write('boundWordRevision: $boundWordRevision, ')
+          ..write('boundWordSha256: $boundWordSha256, ')
+          ..write('entryCode: $entryCode, ')
+          ..write('lexicalJson: $lexicalJson, ')
+          ..write('lexicalSha256: $lexicalSha256, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -27771,6 +30209,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $LearningTimeScopesTable(this);
   late final $LearningTimeSegmentsTable learningTimeSegments =
       $LearningTimeSegmentsTable(this);
+  late final $LearningProfilesTable learningProfiles = $LearningProfilesTable(
+    this,
+  );
+  late final $LearningPackVersionsTable learningPackVersions =
+      $LearningPackVersionsTable(this);
+  late final $LexicalContentSnapshotsTable lexicalContentSnapshots =
+      $LexicalContentSnapshotsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -27816,6 +30261,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningTimePreferences,
     learningTimeScopes,
     learningTimeSegments,
+    learningProfiles,
+    learningPackVersions,
+    lexicalContentSnapshots,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -28586,6 +31034,76 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _learningTimeScopesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LearningProfilesTable, List<LearningProfile>>
+  _learningProfilesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.learningProfiles,
+    aliasName: 'local_owners__id__learning_profiles__owner_id',
+  );
+
+  $$LearningProfilesTableProcessedTableManager get learningProfilesRefs {
+    final manager = $$LearningProfilesTableTableManager(
+      $_db,
+      $_db.learningProfiles,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningProfilesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearningPackVersionsTable,
+    List<LearningPackVersion>
+  >
+  _learningPackVersionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningPackVersions,
+        aliasName: 'local_owners__id__learning_pack_versions__owner_id',
+      );
+
+  $$LearningPackVersionsTableProcessedTableManager
+  get learningPackVersionsRefs {
+    final manager = $$LearningPackVersionsTableTableManager(
+      $_db,
+      $_db.learningPackVersions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningPackVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LexicalContentSnapshotsTable,
+    List<LexicalContentSnapshot>
+  >
+  _lexicalContentSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.lexicalContentSnapshots,
+        aliasName: 'local_owners__id__lexical_content_snapshots__owner_id',
+      );
+
+  $$LexicalContentSnapshotsTableProcessedTableManager
+  get lexicalContentSnapshotsRefs {
+    final manager = $$LexicalContentSnapshotsTableTableManager(
+      $_db,
+      $_db.lexicalContentSnapshots,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _lexicalContentSnapshotsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -29466,6 +31984,82 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> learningProfilesRefs(
+    Expression<bool> Function($$LearningProfilesTableFilterComposer f) f,
+  ) {
+    final $$LearningProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningProfiles,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.learningProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningPackVersionsRefs(
+    Expression<bool> Function($$LearningPackVersionsTableFilterComposer f) f,
+  ) {
+    final $$LearningPackVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPackVersions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPackVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPackVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> lexicalContentSnapshotsRefs(
+    Expression<bool> Function($$LexicalContentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$LexicalContentSnapshotsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableFilterComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -30392,6 +32986,84 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> learningProfilesRefs<T extends Object>(
+    Expression<T> Function($$LearningProfilesTableAnnotationComposer a) f,
+  ) {
+    final $$LearningProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningProfiles,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> learningPackVersionsRefs<T extends Object>(
+    Expression<T> Function($$LearningPackVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPackVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningPackVersions,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPackVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> lexicalContentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$LexicalContentSnapshotsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LexicalContentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -30441,6 +33113,9 @@ class $$LocalOwnersTableTableManager
             bool assessmentRunsRefs,
             bool learningTimePreferencesRefs,
             bool learningTimeScopesRefs,
+            bool learningProfilesRefs,
+            bool learningPackVersionsRefs,
+            bool lexicalContentSnapshotsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -30533,6 +33208,9 @@ class $$LocalOwnersTableTableManager
                 assessmentRunsRefs = false,
                 learningTimePreferencesRefs = false,
                 learningTimeScopesRefs = false,
+                learningProfilesRefs = false,
+                learningPackVersionsRefs = false,
+                lexicalContentSnapshotsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -30573,6 +33251,9 @@ class $$LocalOwnersTableTableManager
                     if (assessmentRunsRefs) db.assessmentRuns,
                     if (learningTimePreferencesRefs) db.learningTimePreferences,
                     if (learningTimeScopesRefs) db.learningTimeScopes,
+                    if (learningProfilesRefs) db.learningProfiles,
+                    if (learningPackVersionsRefs) db.learningPackVersions,
+                    if (lexicalContentSnapshotsRefs) db.lexicalContentSnapshots,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -31270,6 +33951,69 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningProfilesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningProfile
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningProfilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningProfilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (learningPackVersionsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningPackVersion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningPackVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPackVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (lexicalContentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LexicalContentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._lexicalContentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).lexicalContentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -31324,6 +34068,9 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool assessmentRunsRefs,
         bool learningTimePreferencesRefs,
         bool learningTimeScopesRefs,
+        bool learningProfilesRefs,
+        bool learningPackVersionsRefs,
+        bool lexicalContentSnapshotsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -35461,6 +38208,32 @@ final class $$VocabularyCategoriesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $LearningPackVersionsTable,
+    List<LearningPackVersion>
+  >
+  _learningPackVersionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningPackVersions,
+        aliasName:
+            'vocabulary_categories__id__learning_pack_versions__category_id',
+      );
+
+  $$LearningPackVersionsTableProcessedTableManager
+  get learningPackVersionsRefs {
+    final manager = $$LearningPackVersionsTableTableManager(
+      $_db,
+      $_db.learningPackVersions,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningPackVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VocabularyCategoriesTableFilterComposer
@@ -35591,6 +38364,31 @@ class $$VocabularyCategoriesTableFilterComposer
           }) => $$VocabularyImportsTableFilterComposer(
             $db: $db,
             $table: $db.vocabularyImports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningPackVersionsRefs(
+    Expression<bool> Function($$LearningPackVersionsTableFilterComposer f) f,
+  ) {
+    final $$LearningPackVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPackVersions,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPackVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPackVersions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -35818,6 +38616,32 @@ class $$VocabularyCategoriesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> learningPackVersionsRefs<T extends Object>(
+    Expression<T> Function($$LearningPackVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPackVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningPackVersions,
+          getReferencedColumn: (t) => t.categoryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPackVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VocabularyCategoriesTableTableManager
@@ -35837,6 +38661,7 @@ class $$VocabularyCategoriesTableTableManager
             bool ownerId,
             bool vocabularyWordsRefs,
             bool vocabularyImportsRefs,
+            bool learningPackVersionsRefs,
           })
         > {
   $$VocabularyCategoriesTableTableManager(
@@ -35931,12 +38756,14 @@ class $$VocabularyCategoriesTableTableManager
                 ownerId = false,
                 vocabularyWordsRefs = false,
                 vocabularyImportsRefs = false,
+                learningPackVersionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
+                    if (learningPackVersionsRefs) db.learningPackVersions,
                   ],
                   addJoins:
                       <
@@ -36016,6 +38843,27 @@ class $$VocabularyCategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningPackVersionsRefs)
+                        await $_getPrefetchedData<
+                          VocabularyCategory,
+                          $VocabularyCategoriesTable,
+                          LearningPackVersion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VocabularyCategoriesTableReferences
+                              ._learningPackVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VocabularyCategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPackVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -36040,6 +38888,7 @@ typedef $$VocabularyCategoriesTableProcessedTableManager =
         bool ownerId,
         bool vocabularyWordsRefs,
         bool vocabularyImportsRefs,
+        bool learningPackVersionsRefs,
       })
     >;
 typedef $$VocabularyWordsTableCreateCompanionBuilder =
@@ -36180,6 +39029,31 @@ final class $$VocabularyWordsTableReferences
     ).filter((f) => f.wordId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_srsStatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LexicalContentSnapshotsTable,
+    List<LexicalContentSnapshot>
+  >
+  _lexicalContentSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.lexicalContentSnapshots,
+        aliasName: 'vocabulary_words__id__lexical_content_snapshots__word_id',
+      );
+
+  $$LexicalContentSnapshotsTableProcessedTableManager
+  get lexicalContentSnapshotsRefs {
+    final manager = $$LexicalContentSnapshotsTableTableManager(
+      $_db,
+      $_db.lexicalContentSnapshots,
+    ).filter((f) => f.wordId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _lexicalContentSnapshotsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -36393,6 +39267,32 @@ class $$VocabularyWordsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> lexicalContentSnapshotsRefs(
+    Expression<bool> Function($$LexicalContentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$LexicalContentSnapshotsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.wordId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableFilterComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -36730,6 +39630,33 @@ class $$VocabularyWordsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> lexicalContentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$LexicalContentSnapshotsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LexicalContentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.wordId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VocabularyWordsTableTableManager
@@ -36751,6 +39678,7 @@ class $$VocabularyWordsTableTableManager
             bool savedWordsRefs,
             bool answerAttemptsRefs,
             bool srsStatesRefs,
+            bool lexicalContentSnapshotsRefs,
           })
         > {
   $$VocabularyWordsTableTableManager(
@@ -36865,6 +39793,7 @@ class $$VocabularyWordsTableTableManager
                 savedWordsRefs = false,
                 answerAttemptsRefs = false,
                 srsStatesRefs = false,
+                lexicalContentSnapshotsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -36872,6 +39801,7 @@ class $$VocabularyWordsTableTableManager
                     if (savedWordsRefs) db.savedWords,
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (srsStatesRefs) db.srsStates,
+                    if (lexicalContentSnapshotsRefs) db.lexicalContentSnapshots,
                   ],
                   addJoins:
                       <
@@ -36987,6 +39917,27 @@ class $$VocabularyWordsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (lexicalContentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          VocabularyWord,
+                          $VocabularyWordsTable,
+                          LexicalContentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VocabularyWordsTableReferences
+                              ._lexicalContentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VocabularyWordsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).lexicalContentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.wordId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -37013,6 +39964,7 @@ typedef $$VocabularyWordsTableProcessedTableManager =
         bool savedWordsRefs,
         bool answerAttemptsRefs,
         bool srsStatesRefs,
+        bool lexicalContentSnapshotsRefs,
       })
     >;
 typedef $$SavedWordsTableCreateCompanionBuilder =
@@ -37993,6 +40945,31 @@ final class $$VocabularyImportsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $LearningPackVersionsTable,
+    List<LearningPackVersion>
+  >
+  _learningPackVersionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningPackVersions,
+        aliasName: 'vocabulary_imports__id__learning_pack_versions__import_id',
+      );
+
+  $$LearningPackVersionsTableProcessedTableManager
+  get learningPackVersionsRefs {
+    final manager = $$LearningPackVersionsTableTableManager(
+      $_db,
+      $_db.learningPackVersions,
+    ).filter((f) => f.importId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningPackVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VocabularyImportsTableFilterComposer
@@ -38116,6 +41093,31 @@ class $$VocabularyImportsTableFilterComposer
           }) => $$VocabularyImportRowsTableFilterComposer(
             $db: $db,
             $table: $db.vocabularyImportRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningPackVersionsRefs(
+    Expression<bool> Function($$LearningPackVersionsTableFilterComposer f) f,
+  ) {
+    final $$LearningPackVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPackVersions,
+      getReferencedColumn: (t) => t.importId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPackVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPackVersions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -38360,6 +41362,32 @@ class $$VocabularyImportsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> learningPackVersionsRefs<T extends Object>(
+    Expression<T> Function($$LearningPackVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPackVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningPackVersions,
+          getReferencedColumn: (t) => t.importId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPackVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VocabularyImportsTableTableManager
@@ -38379,6 +41407,7 @@ class $$VocabularyImportsTableTableManager
             bool ownerId,
             bool categoryId,
             bool vocabularyImportRowsRefs,
+            bool learningPackVersionsRefs,
           })
         > {
   $$VocabularyImportsTableTableManager(
@@ -38470,11 +41499,13 @@ class $$VocabularyImportsTableTableManager
                 ownerId = false,
                 categoryId = false,
                 vocabularyImportRowsRefs = false,
+                learningPackVersionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (vocabularyImportRowsRefs) db.vocabularyImportRows,
+                    if (learningPackVersionsRefs) db.learningPackVersions,
                   ],
                   addJoins:
                       <
@@ -38548,6 +41579,27 @@ class $$VocabularyImportsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningPackVersionsRefs)
+                        await $_getPrefetchedData<
+                          VocabularyImport,
+                          $VocabularyImportsTable,
+                          LearningPackVersion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VocabularyImportsTableReferences
+                              ._learningPackVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VocabularyImportsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPackVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.importId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -38572,6 +41624,7 @@ typedef $$VocabularyImportsTableProcessedTableManager =
         bool ownerId,
         bool categoryId,
         bool vocabularyImportRowsRefs,
+        bool learningPackVersionsRefs,
       })
     >;
 typedef $$VocabularyImportRowsTableCreateCompanionBuilder =
@@ -53091,6 +56144,2000 @@ typedef $$LearningTimeSegmentsTableProcessedTableManager =
       LearningTimeSegment,
       PrefetchHooks Function({bool scopeId})
     >;
+typedef $$LearningProfilesTableCreateCompanionBuilder =
+    LearningProfilesCompanion Function({
+      required String ownerId,
+      required int revision,
+      required String onboardingState,
+      Value<String?> goalText,
+      Value<String?> targetDate,
+      Value<int?> dailyMinutes,
+      required String interestCodesJson,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningProfilesTableUpdateCompanionBuilder =
+    LearningProfilesCompanion Function({
+      Value<String> ownerId,
+      Value<int> revision,
+      Value<String> onboardingState,
+      Value<String?> goalText,
+      Value<String?> targetDate,
+      Value<int?> dailyMinutes,
+      Value<String> interestCodesJson,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningProfilesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $LearningProfilesTable, LearningProfile> {
+  $$LearningProfilesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_profiles__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningProfilesTable> {
+  $$LearningProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goalText => $composableBuilder(
+    column: $table.goalText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dailyMinutes => $composableBuilder(
+    column: $table.dailyMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get interestCodesJson => $composableBuilder(
+    column: $table.interestCodesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningProfilesTable> {
+  $$LearningProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goalText => $composableBuilder(
+    column: $table.goalText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dailyMinutes => $composableBuilder(
+    column: $table.dailyMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get interestCodesJson => $composableBuilder(
+    column: $table.interestCodesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningProfilesTable> {
+  $$LearningProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get goalText =>
+      $composableBuilder(column: $table.goalText, builder: (column) => column);
+
+  GeneratedColumn<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dailyMinutes => $composableBuilder(
+    column: $table.dailyMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get interestCodesJson => $composableBuilder(
+    column: $table.interestCodesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningProfilesTable,
+          LearningProfile,
+          $$LearningProfilesTableFilterComposer,
+          $$LearningProfilesTableOrderingComposer,
+          $$LearningProfilesTableAnnotationComposer,
+          $$LearningProfilesTableCreateCompanionBuilder,
+          $$LearningProfilesTableUpdateCompanionBuilder,
+          (LearningProfile, $$LearningProfilesTableReferences),
+          LearningProfile,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LearningProfilesTableTableManager(
+    _$AppDatabase db,
+    $LearningProfilesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> onboardingState = const Value.absent(),
+                Value<String?> goalText = const Value.absent(),
+                Value<String?> targetDate = const Value.absent(),
+                Value<int?> dailyMinutes = const Value.absent(),
+                Value<String> interestCodesJson = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningProfilesCompanion(
+                ownerId: ownerId,
+                revision: revision,
+                onboardingState: onboardingState,
+                goalText: goalText,
+                targetDate: targetDate,
+                dailyMinutes: dailyMinutes,
+                interestCodesJson: interestCodesJson,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required int revision,
+                required String onboardingState,
+                Value<String?> goalText = const Value.absent(),
+                Value<String?> targetDate = const Value.absent(),
+                Value<int?> dailyMinutes = const Value.absent(),
+                required String interestCodesJson,
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningProfilesCompanion.insert(
+                ownerId: ownerId,
+                revision: revision,
+                onboardingState: onboardingState,
+                goalText: goalText,
+                targetDate: targetDate,
+                dailyMinutes: dailyMinutes,
+                interestCodesJson: interestCodesJson,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningProfilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LearningProfilesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearningProfilesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningProfilesTable,
+      LearningProfile,
+      $$LearningProfilesTableFilterComposer,
+      $$LearningProfilesTableOrderingComposer,
+      $$LearningProfilesTableAnnotationComposer,
+      $$LearningProfilesTableCreateCompanionBuilder,
+      $$LearningProfilesTableUpdateCompanionBuilder,
+      (LearningProfile, $$LearningProfilesTableReferences),
+      LearningProfile,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$LearningPackVersionsTableCreateCompanionBuilder =
+    LearningPackVersionsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String packId,
+      required String packVersion,
+      required String manifestJson,
+      required String manifestSha256,
+      required String packageSha256,
+      required int packageByteCount,
+      Value<Uint8List?> packageBytes,
+      required String retainedMediaJson,
+      required String retainedMediaSha256,
+      required String sourceDescriptorJson,
+      Value<bool> isPinned,
+      Value<String?> categoryId,
+      Value<String?> importId,
+      Value<int?> installedAtUtcMs,
+      required int revision,
+      required String lastMutationId,
+      required String lastMutationSha256,
+      required int createdAtUtcMs,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningPackVersionsTableUpdateCompanionBuilder =
+    LearningPackVersionsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> packId,
+      Value<String> packVersion,
+      Value<String> manifestJson,
+      Value<String> manifestSha256,
+      Value<String> packageSha256,
+      Value<int> packageByteCount,
+      Value<Uint8List?> packageBytes,
+      Value<String> retainedMediaJson,
+      Value<String> retainedMediaSha256,
+      Value<String> sourceDescriptorJson,
+      Value<bool> isPinned,
+      Value<String?> categoryId,
+      Value<String?> importId,
+      Value<int?> installedAtUtcMs,
+      Value<int> revision,
+      Value<String> lastMutationId,
+      Value<String> lastMutationSha256,
+      Value<int> createdAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningPackVersionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningPackVersionsTable,
+          LearningPackVersion
+        > {
+  $$LearningPackVersionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_pack_versions__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VocabularyCategoriesTable _categoryIdTable(_$AppDatabase db) =>
+      db.vocabularyCategories.createAlias(
+        'learning_pack_versions__category_id__vocabulary_categories__id',
+      );
+
+  $$VocabularyCategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<String>('category_id');
+    if ($_column == null) return null;
+    final manager = $$VocabularyCategoriesTableTableManager(
+      $_db,
+      $_db.vocabularyCategories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VocabularyImportsTable _importIdTable(_$AppDatabase db) => db
+      .vocabularyImports
+      .createAlias('learning_pack_versions__import_id__vocabulary_imports__id');
+
+  $$VocabularyImportsTableProcessedTableManager? get importId {
+    final $_column = $_itemColumn<String>('import_id');
+    if ($_column == null) return null;
+    final manager = $$VocabularyImportsTableTableManager(
+      $_db,
+      $_db.vocabularyImports,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_importIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LexicalContentSnapshotsTable,
+    List<LexicalContentSnapshot>
+  >
+  _lexicalContentSnapshotsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.lexicalContentSnapshots,
+    aliasName:
+        'learning_pack_versions__id__lexical_content_snapshots__pack_version_id',
+  );
+
+  $$LexicalContentSnapshotsTableProcessedTableManager
+  get lexicalContentSnapshotsRefs {
+    final manager = $$LexicalContentSnapshotsTableTableManager(
+      $_db,
+      $_db.lexicalContentSnapshots,
+    ).filter((f) => f.packVersionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _lexicalContentSnapshotsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LearningPackVersionsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningPackVersionsTable> {
+  $$LearningPackVersionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packId => $composableBuilder(
+    column: $table.packId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packVersion => $composableBuilder(
+    column: $table.packVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manifestJson => $composableBuilder(
+    column: $table.manifestJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packageSha256 => $composableBuilder(
+    column: $table.packageSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get packageByteCount => $composableBuilder(
+    column: $table.packageByteCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get packageBytes => $composableBuilder(
+    column: $table.packageBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get retainedMediaJson => $composableBuilder(
+    column: $table.retainedMediaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get retainedMediaSha256 => $composableBuilder(
+    column: $table.retainedMediaSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceDescriptorJson => $composableBuilder(
+    column: $table.sourceDescriptorJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get installedAtUtcMs => $composableBuilder(
+    column: $table.installedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastMutationSha256 => $composableBuilder(
+    column: $table.lastMutationSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyCategoriesTableFilterComposer get categoryId {
+    final $$VocabularyCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.vocabularyCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.vocabularyCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyImportsTableFilterComposer get importId {
+    final $$VocabularyImportsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importId,
+      referencedTable: $db.vocabularyImports,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyImportsTableFilterComposer(
+            $db: $db,
+            $table: $db.vocabularyImports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> lexicalContentSnapshotsRefs(
+    Expression<bool> Function($$LexicalContentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$LexicalContentSnapshotsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.packVersionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableFilterComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$LearningPackVersionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningPackVersionsTable> {
+  $$LearningPackVersionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packId => $composableBuilder(
+    column: $table.packId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packVersion => $composableBuilder(
+    column: $table.packVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manifestJson => $composableBuilder(
+    column: $table.manifestJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packageSha256 => $composableBuilder(
+    column: $table.packageSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get packageByteCount => $composableBuilder(
+    column: $table.packageByteCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get packageBytes => $composableBuilder(
+    column: $table.packageBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get retainedMediaJson => $composableBuilder(
+    column: $table.retainedMediaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get retainedMediaSha256 => $composableBuilder(
+    column: $table.retainedMediaSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceDescriptorJson => $composableBuilder(
+    column: $table.sourceDescriptorJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get installedAtUtcMs => $composableBuilder(
+    column: $table.installedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastMutationSha256 => $composableBuilder(
+    column: $table.lastMutationSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyCategoriesTableOrderingComposer get categoryId {
+    final $$VocabularyCategoriesTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.categoryId,
+          referencedTable: $db.vocabularyCategories,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VocabularyCategoriesTableOrderingComposer(
+                $db: $db,
+                $table: $db.vocabularyCategories,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$VocabularyImportsTableOrderingComposer get importId {
+    final $$VocabularyImportsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importId,
+      referencedTable: $db.vocabularyImports,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyImportsTableOrderingComposer(
+            $db: $db,
+            $table: $db.vocabularyImports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPackVersionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningPackVersionsTable> {
+  $$LearningPackVersionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get packId =>
+      $composableBuilder(column: $table.packId, builder: (column) => column);
+
+  GeneratedColumn<String> get packVersion => $composableBuilder(
+    column: $table.packVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manifestJson => $composableBuilder(
+    column: $table.manifestJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get packageSha256 => $composableBuilder(
+    column: $table.packageSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get packageByteCount => $composableBuilder(
+    column: $table.packageByteCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get packageBytes => $composableBuilder(
+    column: $table.packageBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get retainedMediaJson => $composableBuilder(
+    column: $table.retainedMediaJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get retainedMediaSha256 => $composableBuilder(
+    column: $table.retainedMediaSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceDescriptorJson => $composableBuilder(
+    column: $table.sourceDescriptorJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<int> get installedAtUtcMs => $composableBuilder(
+    column: $table.installedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastMutationSha256 => $composableBuilder(
+    column: $table.lastMutationSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyCategoriesTableAnnotationComposer get categoryId {
+    final $$VocabularyCategoriesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.categoryId,
+          referencedTable: $db.vocabularyCategories,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VocabularyCategoriesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.vocabularyCategories,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$VocabularyImportsTableAnnotationComposer get importId {
+    final $$VocabularyImportsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.importId,
+          referencedTable: $db.vocabularyImports,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VocabularyImportsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.vocabularyImports,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<T> lexicalContentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$LexicalContentSnapshotsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LexicalContentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.lexicalContentSnapshots,
+          getReferencedColumn: (t) => t.packVersionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LexicalContentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.lexicalContentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$LearningPackVersionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningPackVersionsTable,
+          LearningPackVersion,
+          $$LearningPackVersionsTableFilterComposer,
+          $$LearningPackVersionsTableOrderingComposer,
+          $$LearningPackVersionsTableAnnotationComposer,
+          $$LearningPackVersionsTableCreateCompanionBuilder,
+          $$LearningPackVersionsTableUpdateCompanionBuilder,
+          (LearningPackVersion, $$LearningPackVersionsTableReferences),
+          LearningPackVersion,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool categoryId,
+            bool importId,
+            bool lexicalContentSnapshotsRefs,
+          })
+        > {
+  $$LearningPackVersionsTableTableManager(
+    _$AppDatabase db,
+    $LearningPackVersionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningPackVersionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningPackVersionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearningPackVersionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> packId = const Value.absent(),
+                Value<String> packVersion = const Value.absent(),
+                Value<String> manifestJson = const Value.absent(),
+                Value<String> manifestSha256 = const Value.absent(),
+                Value<String> packageSha256 = const Value.absent(),
+                Value<int> packageByteCount = const Value.absent(),
+                Value<Uint8List?> packageBytes = const Value.absent(),
+                Value<String> retainedMediaJson = const Value.absent(),
+                Value<String> retainedMediaSha256 = const Value.absent(),
+                Value<String> sourceDescriptorJson = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<String?> importId = const Value.absent(),
+                Value<int?> installedAtUtcMs = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> lastMutationId = const Value.absent(),
+                Value<String> lastMutationSha256 = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPackVersionsCompanion(
+                id: id,
+                ownerId: ownerId,
+                packId: packId,
+                packVersion: packVersion,
+                manifestJson: manifestJson,
+                manifestSha256: manifestSha256,
+                packageSha256: packageSha256,
+                packageByteCount: packageByteCount,
+                packageBytes: packageBytes,
+                retainedMediaJson: retainedMediaJson,
+                retainedMediaSha256: retainedMediaSha256,
+                sourceDescriptorJson: sourceDescriptorJson,
+                isPinned: isPinned,
+                categoryId: categoryId,
+                importId: importId,
+                installedAtUtcMs: installedAtUtcMs,
+                revision: revision,
+                lastMutationId: lastMutationId,
+                lastMutationSha256: lastMutationSha256,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String packId,
+                required String packVersion,
+                required String manifestJson,
+                required String manifestSha256,
+                required String packageSha256,
+                required int packageByteCount,
+                Value<Uint8List?> packageBytes = const Value.absent(),
+                required String retainedMediaJson,
+                required String retainedMediaSha256,
+                required String sourceDescriptorJson,
+                Value<bool> isPinned = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<String?> importId = const Value.absent(),
+                Value<int?> installedAtUtcMs = const Value.absent(),
+                required int revision,
+                required String lastMutationId,
+                required String lastMutationSha256,
+                required int createdAtUtcMs,
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPackVersionsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                packId: packId,
+                packVersion: packVersion,
+                manifestJson: manifestJson,
+                manifestSha256: manifestSha256,
+                packageSha256: packageSha256,
+                packageByteCount: packageByteCount,
+                packageBytes: packageBytes,
+                retainedMediaJson: retainedMediaJson,
+                retainedMediaSha256: retainedMediaSha256,
+                sourceDescriptorJson: sourceDescriptorJson,
+                isPinned: isPinned,
+                categoryId: categoryId,
+                importId: importId,
+                installedAtUtcMs: installedAtUtcMs,
+                revision: revision,
+                lastMutationId: lastMutationId,
+                lastMutationSha256: lastMutationSha256,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningPackVersionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                ownerId = false,
+                categoryId = false,
+                importId = false,
+                lexicalContentSnapshotsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (lexicalContentSnapshotsRefs) db.lexicalContentSnapshots,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$LearningPackVersionsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$LearningPackVersionsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (categoryId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.categoryId,
+                                    referencedTable:
+                                        $$LearningPackVersionsTableReferences
+                                            ._categoryIdTable(db),
+                                    referencedColumn:
+                                        $$LearningPackVersionsTableReferences
+                                            ._categoryIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (importId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.importId,
+                                    referencedTable:
+                                        $$LearningPackVersionsTableReferences
+                                            ._importIdTable(db),
+                                    referencedColumn:
+                                        $$LearningPackVersionsTableReferences
+                                            ._importIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (lexicalContentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          LearningPackVersion,
+                          $LearningPackVersionsTable,
+                          LexicalContentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningPackVersionsTableReferences
+                              ._lexicalContentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningPackVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).lexicalContentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.packVersionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LearningPackVersionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningPackVersionsTable,
+      LearningPackVersion,
+      $$LearningPackVersionsTableFilterComposer,
+      $$LearningPackVersionsTableOrderingComposer,
+      $$LearningPackVersionsTableAnnotationComposer,
+      $$LearningPackVersionsTableCreateCompanionBuilder,
+      $$LearningPackVersionsTableUpdateCompanionBuilder,
+      (LearningPackVersion, $$LearningPackVersionsTableReferences),
+      LearningPackVersion,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool categoryId,
+        bool importId,
+        bool lexicalContentSnapshotsRefs,
+      })
+    >;
+typedef $$LexicalContentSnapshotsTableCreateCompanionBuilder =
+    LexicalContentSnapshotsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String packVersionId,
+      required String wordId,
+      required int boundWordRevision,
+      required String boundWordSha256,
+      required String entryCode,
+      required String lexicalJson,
+      required String lexicalSha256,
+      required int createdAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LexicalContentSnapshotsTableUpdateCompanionBuilder =
+    LexicalContentSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> packVersionId,
+      Value<String> wordId,
+      Value<int> boundWordRevision,
+      Value<String> boundWordSha256,
+      Value<String> entryCode,
+      Value<String> lexicalJson,
+      Value<String> lexicalSha256,
+      Value<int> createdAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LexicalContentSnapshotsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LexicalContentSnapshotsTable,
+          LexicalContentSnapshot
+        > {
+  $$LexicalContentSnapshotsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('lexical_content_snapshots__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningPackVersionsTable _packVersionIdTable(
+    _$AppDatabase db,
+  ) => db.learningPackVersions.createAlias(
+    'lexical_content_snapshots__pack_version_id__learning_pack_versions__id',
+  );
+
+  $$LearningPackVersionsTableProcessedTableManager get packVersionId {
+    final $_column = $_itemColumn<String>('pack_version_id')!;
+
+    final manager = $$LearningPackVersionsTableTableManager(
+      $_db,
+      $_db.learningPackVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_packVersionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VocabularyWordsTable _wordIdTable(_$AppDatabase db) => db
+      .vocabularyWords
+      .createAlias('lexical_content_snapshots__word_id__vocabulary_words__id');
+
+  $$VocabularyWordsTableProcessedTableManager get wordId {
+    final $_column = $_itemColumn<String>('word_id')!;
+
+    final manager = $$VocabularyWordsTableTableManager(
+      $_db,
+      $_db.vocabularyWords,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_wordIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LexicalContentSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $LexicalContentSnapshotsTable> {
+  $$LexicalContentSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get boundWordRevision => $composableBuilder(
+    column: $table.boundWordRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get boundWordSha256 => $composableBuilder(
+    column: $table.boundWordSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entryCode => $composableBuilder(
+    column: $table.entryCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lexicalJson => $composableBuilder(
+    column: $table.lexicalJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lexicalSha256 => $composableBuilder(
+    column: $table.lexicalSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningPackVersionsTableFilterComposer get packVersionId {
+    final $$LearningPackVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.packVersionId,
+      referencedTable: $db.learningPackVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPackVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPackVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableFilterComposer get wordId {
+    final $$VocabularyWordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableFilterComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LexicalContentSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LexicalContentSnapshotsTable> {
+  $$LexicalContentSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get boundWordRevision => $composableBuilder(
+    column: $table.boundWordRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get boundWordSha256 => $composableBuilder(
+    column: $table.boundWordSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entryCode => $composableBuilder(
+    column: $table.entryCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lexicalJson => $composableBuilder(
+    column: $table.lexicalJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lexicalSha256 => $composableBuilder(
+    column: $table.lexicalSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningPackVersionsTableOrderingComposer get packVersionId {
+    final $$LearningPackVersionsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.packVersionId,
+          referencedTable: $db.learningPackVersions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackVersionsTableOrderingComposer(
+                $db: $db,
+                $table: $db.learningPackVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$VocabularyWordsTableOrderingComposer get wordId {
+    final $$VocabularyWordsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableOrderingComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LexicalContentSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LexicalContentSnapshotsTable> {
+  $$LexicalContentSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get boundWordRevision => $composableBuilder(
+    column: $table.boundWordRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get boundWordSha256 => $composableBuilder(
+    column: $table.boundWordSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entryCode =>
+      $composableBuilder(column: $table.entryCode, builder: (column) => column);
+
+  GeneratedColumn<String> get lexicalJson => $composableBuilder(
+    column: $table.lexicalJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lexicalSha256 => $composableBuilder(
+    column: $table.lexicalSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningPackVersionsTableAnnotationComposer get packVersionId {
+    final $$LearningPackVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.packVersionId,
+          referencedTable: $db.learningPackVersions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPackVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$VocabularyWordsTableAnnotationComposer get wordId {
+    final $$VocabularyWordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LexicalContentSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LexicalContentSnapshotsTable,
+          LexicalContentSnapshot,
+          $$LexicalContentSnapshotsTableFilterComposer,
+          $$LexicalContentSnapshotsTableOrderingComposer,
+          $$LexicalContentSnapshotsTableAnnotationComposer,
+          $$LexicalContentSnapshotsTableCreateCompanionBuilder,
+          $$LexicalContentSnapshotsTableUpdateCompanionBuilder,
+          (LexicalContentSnapshot, $$LexicalContentSnapshotsTableReferences),
+          LexicalContentSnapshot,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool packVersionId,
+            bool wordId,
+          })
+        > {
+  $$LexicalContentSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $LexicalContentSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LexicalContentSnapshotsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LexicalContentSnapshotsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LexicalContentSnapshotsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> packVersionId = const Value.absent(),
+                Value<String> wordId = const Value.absent(),
+                Value<int> boundWordRevision = const Value.absent(),
+                Value<String> boundWordSha256 = const Value.absent(),
+                Value<String> entryCode = const Value.absent(),
+                Value<String> lexicalJson = const Value.absent(),
+                Value<String> lexicalSha256 = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LexicalContentSnapshotsCompanion(
+                id: id,
+                ownerId: ownerId,
+                packVersionId: packVersionId,
+                wordId: wordId,
+                boundWordRevision: boundWordRevision,
+                boundWordSha256: boundWordSha256,
+                entryCode: entryCode,
+                lexicalJson: lexicalJson,
+                lexicalSha256: lexicalSha256,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String packVersionId,
+                required String wordId,
+                required int boundWordRevision,
+                required String boundWordSha256,
+                required String entryCode,
+                required String lexicalJson,
+                required String lexicalSha256,
+                required int createdAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LexicalContentSnapshotsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                packVersionId: packVersionId,
+                wordId: wordId,
+                boundWordRevision: boundWordRevision,
+                boundWordSha256: boundWordSha256,
+                entryCode: entryCode,
+                lexicalJson: lexicalJson,
+                lexicalSha256: lexicalSha256,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LexicalContentSnapshotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, packVersionId = false, wordId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (packVersionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.packVersionId,
+                                    referencedTable:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._packVersionIdTable(db),
+                                    referencedColumn:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._packVersionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (wordId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.wordId,
+                                    referencedTable:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._wordIdTable(db),
+                                    referencedColumn:
+                                        $$LexicalContentSnapshotsTableReferences
+                                            ._wordIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LexicalContentSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LexicalContentSnapshotsTable,
+      LexicalContentSnapshot,
+      $$LexicalContentSnapshotsTableFilterComposer,
+      $$LexicalContentSnapshotsTableOrderingComposer,
+      $$LexicalContentSnapshotsTableAnnotationComposer,
+      $$LexicalContentSnapshotsTableCreateCompanionBuilder,
+      $$LexicalContentSnapshotsTableUpdateCompanionBuilder,
+      (LexicalContentSnapshot, $$LexicalContentSnapshotsTableReferences),
+      LexicalContentSnapshot,
+      PrefetchHooks Function({bool ownerId, bool packVersionId, bool wordId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -53197,4 +58244,13 @@ class $AppDatabaseManager {
       $$LearningTimeScopesTableTableManager(_db, _db.learningTimeScopes);
   $$LearningTimeSegmentsTableTableManager get learningTimeSegments =>
       $$LearningTimeSegmentsTableTableManager(_db, _db.learningTimeSegments);
+  $$LearningProfilesTableTableManager get learningProfiles =>
+      $$LearningProfilesTableTableManager(_db, _db.learningProfiles);
+  $$LearningPackVersionsTableTableManager get learningPackVersions =>
+      $$LearningPackVersionsTableTableManager(_db, _db.learningPackVersions);
+  $$LexicalContentSnapshotsTableTableManager get lexicalContentSnapshots =>
+      $$LexicalContentSnapshotsTableTableManager(
+        _db,
+        _db.lexicalContentSnapshots,
+      );
 }

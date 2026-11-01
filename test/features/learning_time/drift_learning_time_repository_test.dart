@@ -89,19 +89,19 @@ void main() {
         );
         expect(await h.rows('learning_sessions'), isEmpty);
         expect(await h.oldRows(), before);
-        expect(before, hasLength(37));
+        expect(before, hasLength(40));
       },
     );
   }
 
   test(
-    'opening ready waiting and closing with no user pair leave all40 tables unchanged',
+    'opening ready waiting and closing with no user pair leave all43 tables unchanged',
     () async {
       final h = await _Harness.open();
       addTearDown(h.close);
       await h.enable();
       final before = await h.base.snapshotAllTables();
-      expect(before, hasLength(40));
+      expect(before, hasLength(43));
       final lease = await h.attach(_reading());
       h.advance(const Duration(minutes: 2));
       h.useCases.detach(lease);
@@ -759,7 +759,7 @@ final class _Harness {
   Future<Map<String, List<String>>> oldRows() async {
     final result = await base.snapshotAllTables();
     result.removeWhere((table, _) => table.startsWith('learning_time_'));
-    expect(result, hasLength(37));
+    expect(result, hasLength(40));
     return result;
   }
 

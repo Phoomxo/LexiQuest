@@ -14,6 +14,7 @@ import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'achievements_screen.dart';
 import 'learning_history_screen.dart';
+import 'learning_calendar_screen.dart';
 import 'review_center_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
@@ -277,16 +278,44 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
         title: M3Theme.appBarTitle(context, 'ภาพรวมการเรียน'),
-        actions: widget.onOpenMenu == null
-            ? null
-            : [
-                IconButton(
-                  key: const ValueKey<String>('shell-drawer-button'),
-                  tooltip: 'เปิดเมนูเพิ่มเติม',
-                  onPressed: widget.onOpenMenu,
-                  icon: const Icon(Icons.menu),
+        actions: [
+          if (_dependencies?.progress != null)
+            IconButton(
+              key: const ValueKey('mastery-learning-calendar'),
+              tooltip: 'ปฏิทินและสรุปรายสัปดาห์',
+              onPressed: _action(
+                'progress/calendar',
+                (owner, owners, current) => LearningCalendarScreen(
+                  ownerChanges: owners,
+                  loader:
+                      ({
+                        required period,
+                        required expectedOwnerId,
+                        required stillCurrent,
+                      }) {
+                        final progress = _dependencies?.progress;
+                        if (progress == null || expectedOwnerId != owner) {
+                          throw StateError('calendar owner unavailable');
+                        }
+                        return progress.loadCalendarForOwner(
+                          period: period,
+                          expectedOwnerId: owner,
+                          stillCurrent: () => current() && stillCurrent(),
+                          learningTime: _dependencies?.learningTime,
+                        );
+                      },
                 ),
-              ],
+              ),
+              icon: const Icon(Icons.calendar_month_outlined),
+            ),
+          if (widget.onOpenMenu != null)
+            IconButton(
+              key: const ValueKey<String>('shell-drawer-button'),
+              tooltip: 'เปิดเมนูเพิ่มเติม',
+              onPressed: widget.onOpenMenu,
+              icon: const Icon(Icons.menu),
+            ),
+        ],
       ),
       body: AdaptiveContentPane(
         child: Column(

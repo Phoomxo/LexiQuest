@@ -57,6 +57,14 @@ def test_firebase_verifier_returns_authenticated_user() -> None:
     assert verifier.verify("token-abc").uid == "user-123"
 
 
+@pytest.mark.parametrize(('provider', 'anonymous'), [('anonymous', True), ('google.com', False),
+    ('password', False), (None, None)])
+def test_verified_firebase_provider_distinguishes_registered_and_anonymous_accounts(provider, anonymous):
+    claims = {'uid': 'synthetic-a', 'firebase': {'sign_in_provider': provider}}
+    user = FirebaseTokenVerifier(verify_id_token=lambda _: claims).verify('synthetic-token')
+    assert user.is_anonymous is anonymous
+
+
 def test_firebase_verifier_hides_rejected_token() -> None:
     secret_token = "super-secret-token-value"
 

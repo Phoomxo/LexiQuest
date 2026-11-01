@@ -1,10 +1,13 @@
 import 'package:drift/drift.dart' show TableUpdateQuery;
 
 import '../../identity/domain/local_owner_repository.dart';
+import '../../learning_time/application/learning_time_use_cases.dart';
+import '../data/drift_learning_calendar_queries.dart';
 import '../data/drift_learning_history_queries.dart';
 import '../data/drift_progress_queries.dart';
 import '../data/drift_review_center_queries.dart';
 import '../domain/learning_history_models.dart';
+import '../domain/learning_calendar.dart';
 import '../domain/progress_models.dart';
 import '../domain/review_center_models.dart';
 
@@ -72,6 +75,45 @@ final class ProgressUseCases {
       ).load(ownerId: expectedOwnerId, nowUtc: now, before: before),
     );
   }
+
+  Future<LearningCalendarSnapshot> loadCalendarForOwner({
+    required LearningCalendarPeriod period,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+    LearningTimeUseCases? learningTime,
+  }) => _readForOwner(
+    expectedOwnerId,
+    stillCurrent,
+    (now) => queries.database.transaction(() async {
+      final facts = await DriftLearningCalendarQueries(
+        queries.database,
+      ).load(ownerId: expectedOwnerId, period: period, nowUtc: now);
+      final days = <LearningCalendarDay>[];
+      for (var index = 0; index < facts.days.length; index++) {
+        var time = const RecordedTimeRead.unavailable();
+        try {
+          time =
+              await learningTime?.readForOwner(
+                ObservedEndRangeTimeRead(
+                  startInclusiveUtc: period.dayAt(index).toUtc(),
+                  endExclusiveUtc: period.dayAt(index + 1).toUtc(),
+                ),
+                expectedOwnerId: expectedOwnerId,
+                stillCurrent: stillCurrent,
+              ) ??
+              const RecordedTimeRead.unavailable();
+        } on Object {
+          time = const RecordedTimeRead.unavailable();
+        }
+        days.add(facts.days[index].withTime(time));
+      }
+      return LearningCalendarSnapshot(
+        ownerId: expectedOwnerId,
+        period: period,
+        days: days,
+      );
+    }),
+  );
 
   Future<T> _readForOwner<T>(
     String expectedOwnerId,

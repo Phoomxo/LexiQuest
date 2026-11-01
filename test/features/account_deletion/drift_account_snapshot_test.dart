@@ -126,6 +126,14 @@ void main() {
   test(
     'covers every required local scope and isolates the requested owner',
     () async {
+      for (final owner in ['owner-a', 'owner-b']) {
+        await database.customStatement(
+          'INSERT INTO learning_profiles '
+          '(owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms) '
+          'VALUES (?,1,\'completed\',?,NULL,25,?,20)',
+          [owner, 'Synthetic $owner goal', '{"schemaVersion":1,"codes":["study"]}'],
+        );
+      }
       final snapshot = await DriftAccountSnapshotBuilder(
         database,
         nowUtc: () => now,
@@ -135,11 +143,16 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 21);
+      expect(json['schemaVersion'], 23);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
       expect(data['assessment_runs'], isEmpty);
+      expect(data['learning_pack_versions'], isEmpty);
+      expect(data['lexical_content_snapshots'], isEmpty);
+      final profile = (data['learning_profiles'] as List).single as Map;
+      expect(profile['owner_id'], 'owner-a');
+      expect(profile['goal_text'], 'Synthetic owner-a goal');
       final saved = (data['saved_words'] as List).single as Map;
       expect(saved, hasLength(7));
       expect(saved, savedA);

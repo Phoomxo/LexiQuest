@@ -10,12 +10,15 @@ against both services.
 from __future__ import annotations
 
 import logging
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Protocol
 from uuid import uuid4
 
 from fastapi import FastAPI, Header
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from lexiquest_ai.auth import TokenVerifier, extract_bearer_token
@@ -28,6 +31,12 @@ from lexiquest_ai.account_deletion import (
     RecentAuthenticationRequired,
 )
 from lexiquest_ai.config import Settings
+from lexiquest_ai.billing import BillingError, BillingService
+from lexiquest_ai.play_billing import GooglePubSubPushVerifier, decode_play_notification
+from lexiquest_ai.research import (
+    ResearchConsentRequest, ResearchError, ResearchRefreshRequest, ResearchService,
+    StudyUploadRequest, unique_json,
+)
 from lexiquest_ai.errors import (
     content_generation_failed,
     provider_rate_limited,
@@ -47,6 +56,12 @@ from lexiquest_ai.services.rate_limiter import ProviderRateLimited
 logger = logging.getLogger(__name__)
 
 
+class PlayVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', hide_input_in_errors=True)
+    purchaseToken: str = Field(min_length=1, max_length=4096, repr=False)
+    requestId: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$')
+
+
 class RequestBodyLimitMiddleware:
     maximum_bytes = 100_000
 
@@ -58,6 +73,8 @@ class RequestBodyLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
+        maximum_bytes = 768 * 1024 if scope.get('path') == '/v1/research/study-archives' else self.maximum_bytes
+
         async def reject(status_code: int) -> None:
             response = JSONResponse(
                 status_code=status_code,
@@ -68,7 +85,7 @@ class RequestBodyLimitMiddleware:
                             if status_code == 413 else "INVALID_CONTENT_LENGTH"
                         ),
                         "message": (
-                            "Request body exceeds 100KB."
+                            "Request body exceeds the route limit."
                             if status_code == 413 else "Content-Length is invalid."
                         ),
                     }
@@ -85,7 +102,7 @@ class RequestBodyLimitMiddleware:
         ):
             await reject(400)
             return
-        if lengths and int(lengths[0]) > self.maximum_bytes:
+        if lengths and int(lengths[0]) > maximum_bytes:
             await reject(413)
             return
 
@@ -95,12 +112,20 @@ class RequestBodyLimitMiddleware:
             if message["type"] == "http.disconnect":
                 return
             chunk = message.get("body", b"")
-            if len(body) + len(chunk) > self.maximum_bytes:
+            if len(body) + len(chunk) > maximum_bytes:
                 await reject(413)
                 return
             body.extend(chunk)
             if not message.get("more_body", False):
                 break
+
+        if scope.get('path', '').startswith('/v1/research/'):
+            try:
+                unique_json(bytes(body), maximum_bytes)
+            except ResearchError:
+                await JSONResponse(status_code=400, content={'detail': {
+                    'code': 'RESEARCH_INVALID_REQUEST', 'message': 'The research request is invalid.'}})(scope, receive, send)
+                return
 
         delivered = False
 
@@ -134,6 +159,9 @@ def create_app(
     account_deletion_readiness_probe: (
         AccountDeletionReadinessProbe | None
     ) = None,
+    billing_service: BillingService | None = None,
+    billing_notification_verifier: GooglePubSubPushVerifier | None = None,
+    research_service: ResearchService | None = None,
 ) -> FastAPI:
     """Create the HTTP API without loading production dependencies."""
 
@@ -147,6 +175,138 @@ def create_app(
     )
     app.state.settings = settings
     app.add_middleware(RequestBodyLimitMiddleware)
+
+    def require_billing():
+        if not settings.billing_enabled:
+            raise HTTPException(503, detail={'code': 'BILLING_DISABLED', 'message': 'Billing is not enabled.'})
+        if billing_service is None:
+            raise HTTPException(503, detail={'code': 'BILLING_UNAVAILABLE', 'message': 'Billing is unavailable.'})
+        return billing_service
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request, error):
+        if request.url.path.startswith('/v1/research/'):
+            return JSONResponse(status_code=422, content={'detail': {
+                'code': 'RESEARCH_INVALID_REQUEST', 'message': 'The research request is invalid.'}})
+        if request.url.path.startswith('/v1/billing/'):
+            return JSONResponse(status_code=422, content={'detail': {
+                'code': 'BILLING_INVALID_REQUEST', 'message': 'The billing request is invalid.'}})
+        return await request_validation_exception_handler(request, error)
+
+    def registered_user(user):
+        if user.is_anonymous is not False:
+            raise HTTPException(403, detail={'code': 'BILLING_ACCOUNT_REQUIRED', 'message': 'A registered account is required.'})
+        return user
+
+    def billing_error(error):
+        statuses = {'invalid_request': 400, 'owner_mismatch': 403, 'purchase_denied': 403,
+            'entitlement_required': 402, 'quota_exhausted': 429, 'verification_rate_limited': 429,
+            'request_conflict': 409,
+            'operation_uncertain': 409, 'purchase_refresh_pending': 409,
+            'owner_deletion_pending': 409, 'authority_changed': 409}
+        statuses['notification_unauthenticated'] = 401
+        code = error.code if error.code in statuses else 'billing_unavailable'
+        return HTTPException(statuses.get(code, 503), detail={
+            'code': 'BILLING_' + code.upper(), 'message': 'The billing operation could not be completed.'},
+            headers={'Retry-After': '60'} if code == 'verification_rate_limited' else None)
+
+    def snapshot_json(snapshot):
+        return {'schemaVersion': 1, 'serverTimeUtc': snapshot.checked_at_utc.isoformat(),
+            'acknowledgementPending': snapshot.acknowledgement_pending,
+            'refreshRequired': snapshot.refresh_required,
+            'grants': [{'entitlement': grant.entitlement, 'expiresAtUtc': grant.expires_at_utc.isoformat(),
+                'checkedAtUtc': grant.checked_at_utc.isoformat(), 'dailyManagedUnits': grant.daily_managed_units}
+                for grant in snapshot.grants]}
+
+    @app.get('/v1/billing/catalog')
+    def billing_catalog(authorization: str | None = Header(default=None)):
+        user = token_verifier.verify(extract_bearer_token(authorization))
+        service = require_billing()
+        registered_user(user)
+        return {'schemaVersion': 1, 'packageName': service.policy.package_name,
+            'policyRevision': service.policy.revision, 'accountIdentifier': service.account_identifier(user.uid),
+            'products': [{'productId': product.product_id, 'basePlanId': product.base_plan_id,
+                'entitlements': sorted(product.entitlements)} for product in service.policy.products]}
+
+    @app.post('/v1/billing/play/verify')
+    def billing_verify(request: PlayVerifyRequest, authorization: str | None = Header(default=None)):
+        user = token_verifier.verify(extract_bearer_token(authorization))
+        service = require_billing()
+        registered_user(user)
+        try:
+            return snapshot_json(service.verify_purchase(firebase_uid=user.uid, purchase_token=request.purchaseToken))
+        except BillingError as error:
+            raise billing_error(error) from None
+        except Exception:
+            raise billing_error(BillingError('billing_unavailable')) from None
+
+    @app.get('/v1/billing/entitlements')
+    def billing_entitlements(authorization: str | None = Header(default=None)):
+        user = token_verifier.verify(extract_bearer_token(authorization))
+        service = require_billing()
+        registered_user(user)
+        try:
+            return snapshot_json(service.entitlements(firebase_uid=user.uid))
+        except BillingError as error:
+            raise billing_error(error) from None
+        except Exception:
+            raise billing_error(BillingError('billing_unavailable')) from None
+
+    @app.post('/v1/billing/play/notifications')
+    def billing_notification(request: dict, authorization: str | None = Header(default=None)):
+        service = require_billing()
+        if billing_notification_verifier is None:
+            raise HTTPException(503, detail={'code': 'BILLING_NOTIFICATION_UNAVAILABLE',
+                'message': 'Authenticated billing notifications are not configured.'})
+        try:
+            billing_notification_verifier.verify(extract_bearer_token(authorization))
+            token = decode_play_notification(request, package_name=service.policy.package_name)
+            handled = token is not None and service.refresh_notification(purchase_token=token)
+            return {'accepted': True, 'knownPurchase': handled}
+        except HTTPException:
+            raise
+        except BillingError as error:
+            raise billing_error(error) from None
+        except Exception:
+            raise billing_error(BillingError('billing_unavailable')) from None
+
+    def research_call(authorization, command):
+        user = token_verifier.verify(extract_bearer_token(authorization))
+        if not settings.research_enabled:
+            raise HTTPException(503, detail={'code': 'RESEARCH_DISABLED', 'message': 'Research is disabled.'})
+        if user.is_anonymous is not False:
+            raise HTTPException(403, detail={'code': 'RESEARCH_ACCOUNT_REQUIRED', 'message': 'A registered account is required.'})
+        if research_service is None:
+            raise HTTPException(503, detail={'code': 'RESEARCH_AUTHORITY_UNAVAILABLE', 'message': 'Research authority is unavailable.'})
+        try:
+            result = command(research_service, user.uid)
+            return JSONResponse(content=result, headers={'Cache-Control': 'no-store'})
+        except ResearchError as error:
+            statuses = {'not_enrolled': 404, 'invalid_payload': 400, 'invalid_time': 400,
+                'digest_mismatch': 400, 'owner_mismatch': 403, 'archive_denied': 403,
+                'authority_denied': 403, 'invalid_signature': 403, 'consent_required': 409,
+                'request_conflict': 409, 'deletion_pending': 409}
+            raise HTTPException(statuses.get(error.code, 503), detail={
+                'code': 'RESEARCH_' + error.code.upper(), 'message': 'The research operation could not be completed.'}) from None
+        except Exception:
+            raise HTTPException(503, detail={'code': 'RESEARCH_AUTHORITY_UNAVAILABLE',
+                'message': 'Research authority is unavailable.'}) from None
+
+    @app.get('/v1/research/enrollment-context')
+    def research_context(authorization: str | None = Header(default=None)):
+        return research_call(authorization, lambda service, uid: service.context(uid))
+
+    @app.post('/v1/research/consent')
+    def research_consent(request: ResearchConsentRequest, authorization: str | None = Header(default=None)):
+        return research_call(authorization, lambda service, uid: service.decide(uid, request))
+
+    @app.post('/v1/research/authority/refresh')
+    def research_refresh(request: ResearchRefreshRequest, authorization: str | None = Header(default=None)):
+        return research_call(authorization, lambda service, uid: service.refresh(uid, request))
+
+    @app.post('/v1/research/study-archives')
+    def research_upload(request: StudyUploadRequest, authorization: str | None = Header(default=None)):
+        return research_call(authorization, lambda service, uid: service.upload(uid, request))
 
     def account_deletion_infrastructure_ready() -> bool:
         if (
@@ -181,6 +341,10 @@ def create_app(
                     }
                 },
             )
+        if settings.billing_enabled and (billing_service is None
+                or (settings.environment.lower() == 'production' and billing_notification_verifier is None)):
+            return JSONResponse(status_code=503, content={'detail': {
+                'code': 'BILLING_UNAVAILABLE', 'message': 'Billing is unavailable.'}})
         deletion_configured = bool(
             settings.account_deletion_enabled
             or settings.account_deletion_server_export_authority
@@ -207,15 +371,35 @@ def create_app(
     def generate_content(
         request: ContentRequest,
         authorization: str | None = Header(default=None),
+        idempotency_key: str | None = Header(default=None),
     ) -> ContentResponse:
         token = extract_bearer_token(authorization)
-        token_verifier.verify(token)
+        user = token_verifier.verify(token)
         if len(request.text) > settings.max_text_length:
             raise text_too_long(settings.max_text_length)
 
         request_id = str(uuid4())
         try:
+            if settings.billing_managed_content_required:
+                service = require_billing()
+                if user.is_anonymous is not False:
+                    raise HTTPException(403, detail={'code': 'BILLING_ACCOUNT_REQUIRED', 'message': 'A registered account is required.'})
+                if not idempotency_key:
+                    raise HTTPException(400, detail={'code': 'BILLING_REQUEST_ID_REQUIRED', 'message': 'Idempotency-Key is required.'})
+
+                def managed_result():
+                    value = content_service.generate(request)
+                    return ContentResponse(text=value.text, kind=value.kind, language=request.language,
+                        cefr=request.cefr, model_version=value.model_version, cached=value.cached).model_dump_json()
+
+                encoded = service.run_managed(firebase_uid=user.uid, request_id=idempotency_key,
+                    entitlement='managedContent', request_json=request.model_dump_json(), generate=managed_result)
+                return ContentResponse.model_validate_json(encoded)
             result = content_service.generate(request)
+        except HTTPException:
+            raise
+        except BillingError as error:
+            raise billing_error(error) from None
         except ProviderUnauthorized:
             logger.warning(
                 "Content provider rejected credentials (request_id=%s)", request_id

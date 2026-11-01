@@ -72,7 +72,8 @@ void main() {
       await tester.pump();
       expect(tile().value, isTrue);
       await tester.scrollUntilVisible(
-        find.text('PDF'), -200,
+        find.text('PDF'),
+        -200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
@@ -90,7 +91,8 @@ void main() {
       await tester.tap(find.byKey(timeKey));
       await tester.pump();
       await tester.scrollUntilVisible(
-        find.text('งานวิจัย'), -200,
+        find.text('งานวิจัย'),
+        -200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
@@ -115,6 +117,26 @@ void main() {
     expect(find.text('CSV'), findsOneWidget);
     expect(find.text('PDF'), findsOneWidget);
     expect(find.text('Anki'), findsOneWidget);
+  });
+
+  testWidgets('scoped transport hides owner-wide Research format', (
+    tester,
+  ) async {
+    final scoped = ExportUseCases(
+      owners: exports.owners,
+      reader: exports.reader,
+      store: store,
+      nowUtc: exports.nowUtc,
+      loadThaiFont: exports.loadThaiFont,
+      researchConsent: consent,
+      ownerWideResearchEnabled: false,
+    );
+    await _pumpExport(tester, scoped);
+    expect(find.text('งานวิจัย'), findsNothing);
+    expect(find.text('CSV'), findsOneWidget);
+    expect(find.text('PDF'), findsOneWidget);
+    expect(find.text('Anki'), findsOneWidget);
+    expect(store.saved, isNull);
   });
 
   testWidgets('reward export is default-off and limited to CSV and PDF', (

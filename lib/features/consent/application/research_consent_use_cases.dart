@@ -9,6 +9,7 @@ final class ResearchConsentUseCases {
     required this.repository,
     required this.nowUtc,
     this.version = currentVersion,
+    this.remoteDecisions,
   });
 
   static const currentVersion = 1;
@@ -17,6 +18,7 @@ final class ResearchConsentUseCases {
   final ResearchConsentRepository repository;
   final ConsentUtcNow nowUtc;
   final int version;
+  final ResearchConsentRemoteDecisions? remoteDecisions;
 
   Future<ResearchConsentStatus> load() async {
     _requireVersion();
@@ -60,6 +62,8 @@ final class ResearchConsentUseCases {
     int? expectedVersion,
   }) async {
     _requireVersion();
+    // Remote acceptance requires the matching supplied-notice control surface.
+    if (accepted && remoteDecisions != null) return false;
     if (expectedVersion != null && expectedVersion != version) return false;
     final now = nowUtc();
     if (!now.isUtc) {
@@ -68,6 +72,13 @@ final class ResearchConsentUseCases {
     final status = await load();
     if (expectedOwnerId != null && status.ownerId != expectedOwnerId) {
       return false;
+    }
+    final remote = remoteDecisions;
+    if (remote != null) {
+      if (!identical(remote.repository, repository)) {
+        throw StateError('Research consent must share its actual repository');
+      }
+      return remote.withdraw(status, now);
     }
     return repository.decide(
       ownerId: status.ownerId,

@@ -420,6 +420,24 @@ final class DriftLearningTimeRepository implements LearningTimeRepository {
           }
           predicate = ' AND s.linked_session_id = ?';
           variables.add(Variable<String>(sessionId));
+        case ObservedEndRangeTimeRead(
+          :final startInclusiveUtc,
+          :final endExclusiveUtc,
+        ):
+          if (!startInclusiveUtc.isUtc ||
+              !endExclusiveUtc.isUtc ||
+              startInclusiveUtc.microsecondsSinceEpoch % 1000 != 0 ||
+              endExclusiveUtc.microsecondsSinceEpoch % 1000 != 0 ||
+              !endExclusiveUtc.isAfter(startInclusiveUtc)) {
+            _unavailable();
+          }
+          _utc(startInclusiveUtc.millisecondsSinceEpoch);
+          _utc(endExclusiveUtc.millisecondsSinceEpoch);
+          predicate = ' AND g.ended_at_utc_ms >= ? AND g.ended_at_utc_ms < ?';
+          variables.add(
+            Variable<int>(startInclusiveUtc.millisecondsSinceEpoch),
+          );
+          variables.add(Variable<int>(endExclusiveUtc.millisecondsSinceEpoch));
       }
       final rows = await database
           .customSelect(

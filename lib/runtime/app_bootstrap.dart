@@ -16,6 +16,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../ai/ai_service_factory.dart';
+import 'configured_research_transport_factory.dart';
+import 'firebase_research_identity.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../data/local/shared_preferences_account_deletion_journal.dart';
@@ -34,6 +36,15 @@ import '../features/account_deletion/domain/account_deletion_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/research/application/study_runtime.dart';
+import '../features/research/application/controlled_study_archive_use_cases.dart';
+import '../features/learning_profile/application/learning_profile_use_cases.dart';
+import '../features/learning_profile/data/drift_learning_profile_repository.dart';
+import '../features/billing/billing_runtime.dart';
+import '../features/learning_packs/application/learning_pack_use_cases.dart';
+import '../features/learning_packs/data/drift_learning_pack_repository.dart';
+import '../features/learning_packs/data/http_learning_pack_source.dart';
+import '../features/learning_packs/domain/learning_pack_download.dart';
+import 'registries/entitlement_registry.dart';
 import '../features/learning/data/learning_session_lifecycle_observer.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/application/model_download_manager.dart';
@@ -95,8 +106,13 @@ import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
 import 'registries/drift_consent_registry.dart';
+import 'research_transport_composition.dart';
 import 'supabase_client_config.dart';
 
+typedef StudyArchiveFactory =
+    ControlledStudyArchiveUseCases Function(StudyRuntime study);
+typedef BillingRuntimeFactory =
+    Future<BillingComposition> Function(AppDatabase database, Uri baseUri);
 typedef RuntimeInitializer = Future<void> Function();
 typedef FirebaseAppCheckTokenLoader = Future<String?> Function();
 typedef AppConfigLoader = AppConfig Function();
@@ -328,6 +344,11 @@ final class AppBootstrap {
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
     this.researchAvailability = ResearchRuntimeAvailability.disabled,
     this.studyRuntimeFactory,
+    this.studyArchiveFactory,
+    this.researchTransportFactory,
+    this.billingEnabled = false,
+    this.billingFactory,
+    this.learningPackCatalog = const [],
   });
 
   factory AppBootstrap.production({
@@ -336,7 +357,28 @@ final class AppBootstrap {
     ResearchRuntimeAvailability researchAvailability =
         ResearchRuntimeAvailability.disabled,
     StudyRuntimeFactory? studyRuntimeFactory,
+    StudyArchiveFactory? studyArchiveFactory,
+    ResearchTransportFactory? researchTransportFactory,
+    ResearchTransportConfiguration? researchTransportConfiguration,
+    List<LearningPackDownloadDescriptor> learningPackCatalog = const [],
   }) {
+    if (researchTransportFactory != null &&
+        researchTransportConfiguration != null) {
+      throw ArgumentError('Choose one Research transport composition');
+    }
+    final configuredResearch = researchTransportConfiguration;
+    final createResearch =
+        researchTransportFactory ??
+        (configuredResearch == null
+            ? null
+            : ConfiguredResearchTransportFactory(
+                configuration: configuredResearch,
+                createIdentity: (study) => createFirebaseResearchIdentity(
+                  study,
+                  auth: FirebaseAuth.instance,
+                ),
+                store: const FileSelectorExportStore(),
+              ).create);
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
       initializeSupabase: _initializeSupabaseProduction,
@@ -370,8 +412,21 @@ final class AppBootstrap {
       watchGeminiSessions: () =>
           FirebaseAuth.instance.userChanges().map(_geminiAuthSession),
       researchAuthorizer: researchAuthorizer,
-      researchAvailability: researchAvailability,
+      researchAvailability:
+          configuredResearch?.availability ?? researchAvailability,
       studyRuntimeFactory: studyRuntimeFactory,
+      studyArchiveFactory: studyArchiveFactory,
+      researchTransportFactory: createResearch,
+      learningPackCatalog: learningPackCatalog,
+      billingEnabled:
+          const bool.fromEnvironment('LEXIQUEST_BILLING_ENABLED') &&
+          !kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.android,
+      billingFactory: (database, baseUri) => createProductionBilling(
+        database: database,
+        baseUri: baseUri,
+        auth: FirebaseAuth.instance,
+      ),
     );
   }
 
@@ -397,6 +452,11 @@ final class AppBootstrap {
   final ResearchOperationAuthorizer researchAuthorizer;
   final ResearchRuntimeAvailability researchAvailability;
   final StudyRuntimeFactory? studyRuntimeFactory;
+  final StudyArchiveFactory? studyArchiveFactory;
+  final ResearchTransportFactory? researchTransportFactory;
+  final bool billingEnabled;
+  final BillingRuntimeFactory? billingFactory;
+  final List<LearningPackDownloadDescriptor> learningPackCatalog;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -566,30 +626,70 @@ final class AppBootstrap {
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
     );
-    final consentRepository = DriftResearchConsentRepository(database);
+    final consentRepository = DriftResearchConsentRepository(
+      database,
+      ownerWrites: ownerWrites,
+    );
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
       repository: consentRepository,
       nowUtc: () => DateTime.now().toUtc(),
     );
     late final LearningUseCases learning;
+    final studyContext = StudyRuntimeContext(
+      database: database,
+      owners: localOwners,
+      ownerWrites: ownerWrites,
+      consentRepository: consentRepository,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+      buildInfo: const AppBuildInfo.fromEnvironment(),
+      getLearning: () => learning,
+    );
     StudyRuntime? studyRuntime;
     LearningSessionLifecycleObserver? studyObserver;
+    ResearchTransportComposition? researchTransport;
+    var activeResearchConsent = researchConsent;
+    var effectiveResearchAvailability = researchAvailability;
+    final createTransport = researchTransportFactory;
     final createStudy = studyRuntimeFactory;
-    if (researchAvailability.isEnabled && createStudy != null) {
+    if (createTransport != null) {
+      effectiveResearchAvailability = ResearchRuntimeAvailability.disabled;
+      if (researchAvailability.isEnabled &&
+          config != null &&
+          firebase == RuntimeAvailability.ready) {
+        ResearchTransportComposition? candidate;
+        try {
+          final context = ResearchTransportFactoryContext(
+            study: studyContext,
+            baseUri: config.aiApiBaseUri,
+          );
+          candidate = await createTransport(context);
+          candidate.validate(context);
+          if (!identical(
+            candidate.studyRuntime.lifecycleObserver.database,
+            database,
+          )) {
+            throw ArgumentError(
+              'Research observer must share the canonical database',
+            );
+          }
+          researchTransport = candidate;
+          studyRuntime = candidate.studyRuntime;
+          studyObserver = candidate.studyRuntime.lifecycleObserver;
+          activeResearchConsent = candidate.studyRuntime.consent;
+          effectiveResearchAvailability = researchAvailability;
+        } on Object {
+          try {
+            await candidate?.dispose();
+          } on Object {
+            // A failed optional factory cannot disable ordinary learning.
+          }
+        }
+      }
+    } else if (researchAvailability.isEnabled && createStudy != null) {
       try {
-        final candidate = createStudy(
-          StudyRuntimeContext(
-            database: database,
-            owners: localOwners,
-            ownerWrites: ownerWrites,
-            consentRepository: consentRepository,
-            generateId: idGenerator.v4,
-            nowUtc: () => DateTime.now().toUtc(),
-            buildInfo: const AppBuildInfo.fromEnvironment(),
-            getLearning: () => learning,
-          ),
-        );
+        final candidate = createStudy(studyContext);
         final observer = candidate.lifecycleObserver;
         if (!identical(observer.database, database)) {
           throw ArgumentError(
@@ -598,6 +698,7 @@ final class AppBootstrap {
         }
         studyRuntime = candidate;
         studyObserver = observer;
+        activeResearchConsent = candidate.consent;
       } on Object {
         // Optional research composition must not disable ordinary learning.
       }
@@ -617,6 +718,10 @@ final class AppBootstrap {
       }
     }
     LearningTimeUseCases? learningTime;
+    LearningProfileUseCases? learningProfile;
+    LearningPackUseCases? learningPacks;
+    HttpLearningPackSource? learningPackDownloads;
+    BillingComposition? billingComposition;
     final learningTimeClock = Stopwatch();
     try {
       final learningRepository = DriftLearningRepository(
@@ -671,9 +776,57 @@ final class AppBootstrap {
         nowUtc: () => DateTime.now().toUtc(),
         loadThaiFont: () =>
             rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
-        researchConsent: researchConsent,
+        researchConsent: activeResearchConsent,
         researchAuthorizer: researchAuthorizer,
+        ownerWideResearchEnabled: createTransport == null,
       );
+      learningProfile = LearningProfileUseCases(
+        repository: DriftLearningProfileRepository(
+          database: database,
+          ownerWrites: ownerWrites,
+        ),
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      final createBilling = billingFactory;
+      learningPackDownloads = HttpLearningPackSource(
+        client: http.Client(),
+        catalog: learningPackCatalog,
+      );
+      learningPacks = LearningPackUseCases(
+        repository: DriftLearningPackRepository(
+          database: database,
+          ownerWrites: ownerWrites,
+        ),
+        nowUtc: () => DateTime.now().toUtc(),
+        generateId: idGenerator.v4,
+        onLocalMutation: notifyLocalMutation,
+      );
+      if (billingEnabled &&
+          config != null &&
+          firebase == RuntimeAvailability.ready &&
+          createBilling != null) {
+        try {
+          billingComposition = await createBilling(
+            database,
+            config.aiApiBaseUri,
+          );
+        } on Object {
+          billingComposition = null;
+        }
+      }
+      ControlledStudyArchiveUseCases? studyArchives =
+          researchTransport?.studyArchives;
+      final createArchives = studyArchiveFactory;
+      if (studyArchives == null &&
+          effectiveResearchAvailability.isEnabled &&
+          studyRuntime != null &&
+          createArchives != null) {
+        try {
+          studyArchives = createArchives(studyRuntime);
+        } on Object {
+          studyArchives = null;
+        }
+      }
       final modelRepository = DriftModelDownloadRepository(database);
       final modelByteSource = HttpModelByteSource(http.Client());
       final modelDownloadManager = ModelDownloadManager(
@@ -818,6 +971,13 @@ final class AppBootstrap {
         syncStatus: syncStore,
         learning: learning,
         learningTime: learningTime,
+        learningProfile: learningProfile,
+        learningPacks: learningPacks,
+        learningPackDownloads: learningPackDownloads,
+        billing: billingComposition?.useCases,
+        entitlements: billingComposition == null
+            ? const NoOpEntitlementRegistry()
+            : BillingEntitlementRegistry(billingComposition.useCases),
         associativeLearning: DriftAssociativeLearningAdapter(database),
         progress: progress,
         reviewCenter: reviewCenter,
@@ -833,40 +993,56 @@ final class AppBootstrap {
         deviceModels: deviceModels,
         account: account,
         accountDeletion: accountDeletionComposition?.useCases,
-        researchConsent: researchAvailability.isEnabled
-            ? researchConsent
+        researchConsent: effectiveResearchAvailability.isEnabled
+            ? activeResearchConsent
             : null,
-        consents: DriftConsentRegistry(researchConsent.repository),
-        researchAvailability: researchAvailability,
+        consents: DriftConsentRegistry(activeResearchConsent.repository),
+        researchAvailability: effectiveResearchAvailability,
         studyRuntime: studyRuntime,
+        studyArchives: studyArchives,
+        studyUploads: researchTransport?.studyUploads,
+        researchTransport: researchTransport,
         geminiTutor: geminiTutor,
         objectScanner: objectScanner,
         devicePermissions: const PluginDevicePermissionAccess(),
         speechPractice: speechPractice,
         disposeResources: () async {
           try {
+            await researchTransport?.dispose();
             await learningTime?.dispose();
+            await learningProfile?.dispose();
+            await learningPacks?.dispose();
+            learningPackDownloads?.dispose();
             learningTimeClock.stop();
             await contentService?.dispose();
           } finally {
             learningTimeClock.stop();
-            await accountDeletionComposition?.dispose();
-            await geminiAuthSubscription?.cancel();
-            await geminiOwnerUpdatesSubscription.cancel();
-            await geminiOwnerSubscription.cancel();
-            await geminiTutor.dispose();
-            geminiHttpClient.close();
-            await objectScanner.dispose();
-            await speechPractice.dispose();
-            await deviceModels.dispose();
-            modelByteSource.close();
-            await database.close();
+            try {
+              await billingComposition?.dispose();
+            } finally {
+              await accountDeletionComposition?.dispose();
+              await geminiAuthSubscription?.cancel();
+              await geminiOwnerUpdatesSubscription.cancel();
+              await geminiOwnerSubscription.cancel();
+              await geminiTutor.dispose();
+              geminiHttpClient.close();
+              await objectScanner.dispose();
+              await speechPractice.dispose();
+              await deviceModels.dispose();
+              modelByteSource.close();
+              await database.close();
+            }
           }
         },
       );
     } on Object {
       try {
+        await researchTransport?.dispose();
         await learningTime?.dispose();
+        await learningProfile?.dispose();
+        await learningPacks?.dispose();
+        learningPackDownloads?.dispose();
+        await billingComposition?.dispose();
         learningTimeClock.stop();
         await contentService?.dispose();
       } on Object {

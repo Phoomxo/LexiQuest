@@ -26,6 +26,7 @@ final class ExportUseCases {
     required this.loadThaiFont,
     required this.researchConsent,
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
+    this.ownerWideResearchEnabled = true,
   });
 
   final LocalOwnerRepository owners;
@@ -35,6 +36,7 @@ final class ExportUseCases {
   final ExportFontLoader loadThaiFont;
   final ResearchConsentUseCases researchConsent;
   final ResearchOperationAuthorizer researchAuthorizer;
+  final bool ownerWideResearchEnabled;
 
   Future<ExportArtifact> prepare({
     required ExportFormat format,
@@ -51,6 +53,9 @@ final class ExportUseCases {
     required ExportSelection selection,
     required ExportCancellation cancellation,
   }) async {
+    if (format == ExportFormat.researchJson && !ownerWideResearchEnabled) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }

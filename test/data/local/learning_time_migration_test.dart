@@ -14,12 +14,12 @@ import '../../support/populated_owner_migration_fixture.dart';
 
 void main() {
   test(
-    'fresh v21 has three empty local time relations and no backfill',
+    'fresh current schema has three empty local time relations and no backfill',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 21);
-      expect(database.allTables, hasLength(40));
+      expect(database.schemaVersion, 23);
+      expect(database.allTables, hasLength(43));
       for (final table in const [
         'learning_time_preferences',
         'learning_time_scopes',
@@ -257,17 +257,23 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        21,
+        23,
       );
-      expect(database.allTables, hasLength(40));
+      expect(database.allTables, hasLength(43));
       expect(before, rows);
       final after = await ownerMigrationRows(database);
       for (final table in _newTimeTables) {
         expect(after[table], isEmpty);
       }
+      expect(after['learning_profiles'], isEmpty);
+      expect(after['learning_pack_versions'], isEmpty);
+      expect(after['lexical_content_snapshots'], isEmpty);
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
-          ..removeWhere((key, value) => _newTimeTables.contains(key)),
+          ..removeWhere((key, value) => _newTimeTables.contains(key))
+          ..remove('learning_profiles')
+          ..remove('learning_pack_versions')
+          ..remove('lexical_content_snapshots'),
         before,
       );
       final objects = await database
@@ -282,6 +288,10 @@ void main() {
       expect(byName.keys.toSet(), {
         ...oldObjects.keys,
         ..._newTimeTables,
+        'learning_profiles',
+        'learning_pack_versions',
+        'lexical_content_snapshots',
+        'idx_lexical_content_owner_word',
         'idx_learning_time_scopes_owner_session',
       });
       for (final object in oldObjects.entries) {

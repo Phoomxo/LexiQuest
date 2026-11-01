@@ -409,6 +409,7 @@ final class LearningUseCases {
         kind: ContentKind.sentence,
         cefr: CefrLevel.a2,
         language: 'en',
+        stillCurrent: stillCurrent,
       ),
     );
     _requireCurrentNativeExercise(stillCurrent);
@@ -543,6 +544,7 @@ final class LearningUseCases {
         kind: ContentKind.sentence,
         cefr: CefrLevel.a2,
         language: 'en',
+        stillCurrent: stillCurrent,
       ),
     );
     _requireCurrentNativeExercise(stillCurrent);

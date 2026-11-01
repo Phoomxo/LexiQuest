@@ -631,9 +631,25 @@ final class LearningTimeUseCases {
 
   Future<RecordedTimeRead> read(TimeReadTarget target) async {
     final owner = _ownerId;
+    if (owner == null) return const RecordedTimeRead.unavailable();
+    return readForOwner(
+      target,
+      expectedOwnerId: owner,
+      stillCurrent: () => true,
+    );
+  }
+
+  Future<RecordedTimeRead> readForOwner(
+    TimeReadTarget target, {
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    final owner = _ownerId;
     final epoch = _ownerEpoch;
-    if (owner == null || _disposed) return const RecordedTimeRead.unavailable();
-    bool current() => _ownerCurrent(owner, epoch);
+    if (owner == null || owner != expectedOwnerId || _disposed) {
+      return const RecordedTimeRead.unavailable();
+    }
+    bool current() => _ownerCurrent(owner, epoch) && stillCurrent();
     try {
       final result = await _repository.read(
         target: target,

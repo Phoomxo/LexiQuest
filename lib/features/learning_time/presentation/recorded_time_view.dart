@@ -63,6 +63,11 @@ class _RecordedTimeViewState extends State<RecordedTimeView> {
     OwnerTimeRead(:final sourceKind) => 'owner:${sourceKind?.name ?? ''}',
     ScopeTimeRead(:final scopeId) => 'scope:$scopeId',
     SessionTimeRead(:final sessionId) => 'session:$sessionId',
+    ObservedEndRangeTimeRead(
+      :final startInclusiveUtc,
+      :final endExclusiveUtc,
+    ) =>
+      'end-range:${startInclusiveUtc.microsecondsSinceEpoch}:${endExclusiveUtc.microsecondsSinceEpoch}',
   };
 
   bool _visible() =>

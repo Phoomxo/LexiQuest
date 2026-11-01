@@ -4,6 +4,8 @@ import '../config/m3_theme.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/learning_profile/presentation/learning_profile_editor_screen.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 
@@ -80,22 +82,38 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final learningProfile = AppDependenciesScope.maybeOf(
+      context,
+    )?.learningProfile;
     final session = _account?.currentSession;
     final account = session?.isAnonymous == false ? session : null;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
         title: M3Theme.appBarTitle(context, 'โปรไฟล์'),
-        actions: widget.onOpenMenu == null
-            ? null
-            : [
-                IconButton(
-                  key: const ValueKey<String>('shell-drawer-button'),
-                  tooltip: 'เปิดเมนูเพิ่มเติม',
-                  onPressed: widget.onOpenMenu,
-                  icon: const Icon(Icons.menu),
+        actions: [
+          if (learningProfile != null)
+            IconButton(
+              key: const ValueKey<String>('profile-learning-preferences'),
+              tooltip: 'เป้าหมายและความชอบในการเรียน',
+              onPressed: () => AppNavigator.pushPage<void>(
+                context,
+                AppPage<void>(
+                  name: '/learning-profile',
+                  builder: (_) =>
+                      LearningProfileEditorScreen(profile: learningProfile),
                 ),
-              ],
+              ),
+              icon: const Icon(Icons.tune),
+            ),
+          if (widget.onOpenMenu != null)
+            IconButton(
+              key: const ValueKey<String>('shell-drawer-button'),
+              tooltip: 'เปิดเมนูเพิ่มเติม',
+              onPressed: widget.onOpenMenu,
+              icon: const Icon(Icons.menu),
+            ),
+        ],
       ),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,

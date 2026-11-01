@@ -42,6 +42,7 @@ class AuthenticatedUser:
 
     uid: str
     authenticated_at_utc: datetime | None = None
+    is_anonymous: bool | None = None
 
 
 class TokenVerifier(Protocol):
@@ -119,6 +120,13 @@ class FirebaseTokenVerifier:
         return AuthenticatedUser(
             uid=uid,
             authenticated_at_utc=authenticated_at_utc,
+            is_anonymous=(
+                claims['firebase']['sign_in_provider'] == 'anonymous'
+                if isinstance(claims.get('firebase'), Mapping)
+                and isinstance(claims['firebase'].get('sign_in_provider'), str)
+                and claims['firebase']['sign_in_provider']
+                else None
+            ),
         )
 
 

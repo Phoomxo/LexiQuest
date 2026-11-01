@@ -5,8 +5,13 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_pack_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/account_deletion/data/drift_account_snapshot.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
 import '../../support/measurement_opportunity_fixture.dart';
@@ -34,6 +39,29 @@ void main() {
   tearDown(() async {
     await database.close();
   });
+
+  for (final targetExists in [false, true]) {
+    test('learning profile merge preserves ${targetExists ? 'target choice' : 'source-only choice'} and personal export', () async {
+      Future<void> profile(String owner, String goal) => database.customStatement(
+        'INSERT INTO learning_profiles (owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms) '
+        'VALUES (?,1,\'completed\',?,\'2026-12-01\',25,?,20)',
+        [owner, goal, '{"schemaVersion":1,"codes":["study"]}'],
+      );
+      await profile('guest-owner', 'Source goal');
+      if (targetExists) await profile('account-owner', 'Target goal');
+      await repository.upgrade(activeOwnerId: 'guest-owner', firebaseUid: 'firebase-user');
+      final rows = await database.customSelect('SELECT * FROM learning_profiles').get();
+      expect(rows, hasLength(1));
+      expect(rows.single.data['owner_id'], 'account-owner');
+      expect(rows.single.data['goal_text'], targetExists ? 'Target goal' : 'Source goal');
+      expect(await database.customSelect('SELECT * FROM outbox_operations').get(), isEmpty);
+      final snapshot = await DriftAccountSnapshotBuilder(database, nowUtc: () => DateTime.utc(2026, 11, 1))
+          .build(ownerId: 'account-owner');
+      final data = (jsonDecode(utf8.decode(snapshot.bytes)) as Map)['data'] as Map;
+      expect(data['learning_profiles'], [rows.single.data]);
+      expect(await database.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+    });
+  }
 
   test(
     'local credits keep stable identities through rehome without reward outbox',
@@ -101,6 +129,7 @@ void main() {
 
   test('moves relocatable rows and keeps target signed facts', () async {
     await _seedEveryOwnerScopedTable(database);
+    await _seedOwnerUpgradePack(database);
     final measurementsBefore = <String, List<Map<String, Object?>>>{};
     for (final table in [
       'motivation_measurement_runs',
@@ -521,6 +550,57 @@ void main() {
   );
 }
 
+Future<void> _seedOwnerUpgradePack(AppDatabase database) async {
+  final now = DateTime.utc(2026, 7, 30, 11);
+  var sequence = 0;
+  final packs = LearningPackUseCases(
+    repository: DriftLearningPackRepository(
+      database: database,
+      ownerWrites: DriftOwnerWriteCoordinator(database, nowUtc: () => now),
+    ),
+    nowUtc: () => now,
+    generateId: () => 'synthetic-owner-upgrade-pack-${sequence++}',
+  );
+  try {
+    final scope = (await packs.captureOwner(stillCurrent: () => true))!;
+    expect(scope.ownerId, 'guest-owner');
+    final content = const LearningPackCodec().decode(
+      const LearningPackCodec().encode(
+        metadata: LearningPackMetadata(
+          packId: 'synthetic-owner-upgrade',
+          version: '1',
+          title: 'Synthetic owner upgrade pack',
+          objectives: ['Retain installed content through owner upgrade'],
+          cefrLevel: 'A1',
+          language: 'en',
+          meaningLanguage: 'th',
+          provenance: const LearningPackProvenance(
+            author: 'Synthetic test author',
+            source: 'Synthetic owner migration fixture',
+            license: 'Synthetic tests only',
+            attribution: 'No real publisher',
+          ),
+        ),
+        entries: [
+          LearningPackEntry(
+            code: 'harbor',
+            spelling: 'harbor',
+            meaning: 'ท่าเรือ',
+            partOfSpeech: 'noun',
+          ),
+        ],
+      ),
+    );
+    final installed = await packs.importPack(
+      packs.prepareImport(scope: scope, pack: content, pinned: true),
+    );
+    expect(installed.isInstalled, isTrue);
+    expect((await packs.detail(scope, installed.id)).bindings, hasLength(1));
+  } finally {
+    await packs.dispose();
+  }
+}
+
 Future<void> _seedOwners(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO local_owners '
@@ -535,6 +615,14 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  for (final owner in ['guest-owner', 'account-owner']) {
+    await database.customStatement(
+      'INSERT INTO learning_profiles '
+      '(owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms) '
+      'VALUES (?,1,\'completed\',?,NULL,25,?,20)',
+      [owner, 'Synthetic $owner goal', '{"schemaVersion":1,"codes":["study"]}'],
+    );
+  }
   await seedOwnerAssignment(database, 'guest-owner');
   final targetAssignment = await seedOwnerAssignment(database, 'account-owner');
   final targetPermit = await insertOwnerParticipation(

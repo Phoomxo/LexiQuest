@@ -21,7 +21,6 @@ final class MotivationStudyProtocol {
       protocolId,
       protocolVersion,
       experimentId,
-      appVersion,
       buildId,
       contentRevision,
       evidencePolicyVersion,
@@ -29,7 +28,10 @@ final class MotivationStudyProtocol {
     ]) {
       requireResearchCode(value);
     }
-    if (consentVersion <= 0 ||
+    if (appVersion.isEmpty ||
+        appVersion.length > 128 ||
+        RegExp(r'[^A-Za-z0-9_.:+\-]').hasMatch(appVersion) ||
+        consentVersion <= 0 ||
         experimentVersion <= 0 ||
         instrument.checksumSha256 != approvedInstrumentChecksum) {
       throw const FormatException(

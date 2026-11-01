@@ -4,6 +4,21 @@ import 'motivation_study_protocol.dart';
 import 'research_operation_authorizer.dart';
 import 'research_participation_permit.dart';
 
+final class ResearchAuthorityReadGate {
+  bool Function()? _current;
+
+  bool get isOpen {
+    try {
+      return _current?.call() ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  void close() => _current = null;
+  void open({required bool Function() stillCurrent}) => _current = stillCurrent;
+}
+
 final class ResearchAuthorityBinding {
   ResearchAuthorityBinding({
     required this.ownerId,
@@ -137,7 +152,7 @@ final class ResearchAuthorityReceipt {
 }
 
 /// Input from the explicit trusted gateway, not an independently verified proof.
-/// There is deliberately no JSON/signature protocol or production issuer here.
+/// Signed documents are independently verified by the local authority cache.
 final class ServerAttestedResearchAuthorityPacket {
   ServerAttestedResearchAuthorityPacket({
     required this.scope,
@@ -189,9 +204,8 @@ final class ServerAttestedResearchAuthorityPacket {
 /// and freshness lease. A submitted permit, cached SDK document, wall clock, or
 /// a locally asserted boolean cannot establish that contract.
 ///
-/// No production implementation is supplied. Issuer/current-state/freshness
-/// artifacts remain external dependencies. This port is invoked only by an
-/// explicit refresh outside SQLite transactions, never by the five local reads.
+/// This port is invoked only by an explicit refresh outside SQLite transactions,
+/// never by the five local reads. Trusted issuer artifacts remain external.
 abstract interface class ResearchAuthorityGateway {
   Future<ServerAttestedResearchAuthorityPacket?> fetchCurrent(
     ResearchAuthorityRefreshRequest request,

@@ -66,6 +66,11 @@ const _nativePlaybackFailure = VoiceFailure(
   message: 'On-device speech playback failed.',
 );
 
+const _nativeCancelledFailure = VoiceFailure(
+  category: VoiceFailureCategory.cancelled,
+  message: 'The voice request was cancelled.',
+);
+
 String _languageTagFor(String language) => language == 'th' ? 'th-TH' : 'en-US';
 
 /// Synthesizes speech through the native on-device TTS engine.
@@ -73,15 +78,22 @@ final class NativeTtsProvider implements VoiceProvider {
   NativeTtsProvider(this._adapter);
 
   final NativeTtsAdapter _adapter;
+  int _generation = 0;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    final generation = ++_generation;
     try {
       await _adapter.setLanguage(_languageTagFor(request.language));
+      _requireCurrentGeneration(generation);
       await _adapter.setSpeechRate(request.speed / 2);
+      _requireCurrentGeneration(generation);
       await _adapter.setVolume(1.0);
+      _requireCurrentGeneration(generation);
       await _adapter.setPitch(1.0);
+      _requireCurrentGeneration(generation);
       await _adapter.speak(request.text);
+      _requireCurrentGeneration(generation);
       return VoicePlaybackResult(
         requestedEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
         actualEngine: VoiceEngine.nativeTts,
@@ -89,16 +101,24 @@ final class NativeTtsProvider implements VoiceProvider {
         cacheHit: false,
       );
     } on Object {
+      _requireCurrentGeneration(generation);
       throw _nativeSynthesisFailure;
     }
   }
 
   @override
   Future<void> stop() async {
+    _generation++;
     try {
       await _adapter.stop();
     } on Object {
       throw _nativePlaybackFailure;
+    }
+  }
+
+  void _requireCurrentGeneration(int generation) {
+    if (generation != _generation) {
+      throw _nativeCancelledFailure;
     }
   }
 }

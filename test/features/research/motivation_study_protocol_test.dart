@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/research/domain/motivation_instrument.dart';
 import 'package:vocab_learning_app/features/research/domain/motivation_study_protocol.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
   // Synthetic contracts only, without validated questionnaire content.
@@ -35,6 +36,7 @@ void main() {
   MotivationStudyProtocol protocol({
     String? checksum,
     String id = 'synthetic',
+    String appVersion = 'test-1',
   }) => MotivationStudyProtocol(
     protocolId: id,
     protocolVersion: '1',
@@ -43,7 +45,7 @@ void main() {
     experimentVersion: 1,
     instrument: instrument,
     approvedInstrumentChecksum: checksum ?? instrument.checksumSha256,
-    appVersion: 'test-1',
+    appVersion: appVersion,
     buildId: 'synthetic-build',
     contentRevision: 'synthetic-content',
     evidencePolicyVersion: 'learning-evidence-v1',
@@ -81,4 +83,22 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test(
+    'app build metadata preserves the actual version including build suffix',
+    () {
+      const actual = AppBuildInfo.fromEnvironment();
+      expect(protocol(appVersion: actual.version).appVersion, actual.version);
+      expect(protocol(appVersion: '1.2.3-rc.1+42').appVersion, '1.2.3-rc.1+42');
+      for (final invalid in [
+        '',
+        'contains spaces',
+        'person@example.test',
+        'v' * 129,
+      ]) {
+        expect(() => protocol(appVersion: invalid), throwsFormatException);
+      }
+      expect(() => protocol(id: 'protocol+alias'), throwsFormatException);
+    },
+  );
 }

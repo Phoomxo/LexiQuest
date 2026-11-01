@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocab_learning_app/config/app_config.dart';
 
@@ -25,30 +28,51 @@ final class AiServiceFactory {
     http.Client? client,
     FirebaseTokenReader? firebaseTokenReader,
     Duration timeout = const Duration(seconds: 20),
+    AiAuthBindingReader? readAuthBinding,
   }) {
     final resolvedConfig = config ?? AppConfig.fromEnvironment();
     final resolvedClient = client ?? http.Client();
-    final authTokenProvider = FirebaseVoiceAuthTokenProvider(
-      firebaseTokenReader ?? FirebaseAuthTokenReader(),
-    );
-    final provider = HttpContentProvider(
-      client: resolvedClient,
-      authTokenProvider: authTokenProvider,
-      baseUri: resolvedConfig.aiApiBaseUri,
-      timeout: timeout,
-    );
-
-    return ManagedAiService._(provider: provider, client: resolvedClient);
+    _FirebaseAiAuthBinding? authBinding;
+    try {
+      if (firebaseTokenReader == null && readAuthBinding == null) {
+        authBinding = _FirebaseAiAuthBinding(FirebaseAuth.instance);
+      }
+      final authTokenProvider = FirebaseVoiceAuthTokenProvider(
+        firebaseTokenReader ?? FirebaseAuthTokenReader(),
+      );
+      final provider = HttpContentProvider(
+        client: resolvedClient,
+        authTokenProvider: authTokenProvider,
+        baseUri: resolvedConfig.aiApiBaseUri,
+        timeout: timeout,
+        readAuthBinding: readAuthBinding ?? authBinding?.read,
+      );
+      return ManagedAiService._(
+        provider: provider,
+        client: resolvedClient,
+        authBinding: authBinding,
+      );
+    } on Object {
+      unawaited(authBinding?.dispose());
+      resolvedClient.close();
+      rethrow;
+    }
   }
 }
 
 /// Lifecycle-managed [ContentProvider] returned by [AiServiceFactory].
 final class ManagedAiService implements ContentProvider {
-  ManagedAiService._({required this._provider, required this._client});
+  ManagedAiService._({
+    required this._provider,
+    required this._client,
+    required this._authBinding,
+  });
 
   final HttpContentProvider _provider;
   final http.Client _client;
+  final _FirebaseAiAuthBinding? _authBinding;
   bool _disposed = false;
+  Future<void>? _disposeFuture;
 
   @override
   Future<ContentResponse> generate(ContentRequest request) {
@@ -59,11 +83,58 @@ final class ManagedAiService implements ContentProvider {
   }
 
   /// Closes the HTTP client exactly once and preserves any error.
-  Future<void> dispose() async {
-    if (_disposed) {
-      return;
-    }
+  Future<void> dispose() => _disposeFuture ??= _dispose();
+
+  Future<void> _dispose() async {
     _disposed = true;
-    _client.close();
+    try {
+      _client.close();
+    } finally {
+      await _authBinding?.dispose();
+    }
+  }
+}
+
+final class _FirebaseAiAuthBinding {
+  _FirebaseAiAuthBinding(this.auth) {
+    _identity = _key(auth.currentUser);
+    _changes = auth.authStateChanges().listen(
+      (user) {
+        final next = _key(user);
+        if (next != _identity || !_available) _epoch++;
+        _identity = next;
+        _available = true;
+      },
+      onError: (Object _) {
+        _epoch++;
+        _available = false;
+      },
+      onDone: () {
+        _epoch++;
+        _available = false;
+      },
+    );
+  }
+  final FirebaseAuth auth;
+  late final StreamSubscription<User?> _changes;
+  var _epoch = 0;
+  var _available = true;
+  var _disposed = false;
+  (String, bool)? _identity;
+
+  (String, bool)? _key(User? user) =>
+      user == null ? null : (user.uid, user.isAnonymous);
+
+  Object? read() {
+    final user = auth.currentUser;
+    return !_disposed && _available && user != null && _key(user) == _identity
+        ? (user.uid, user.isAnonymous, _epoch)
+        : null;
+  }
+
+  Future<void> dispose() {
+    _disposed = true;
+    _epoch++;
+    return _changes.cancel();
   }
 }

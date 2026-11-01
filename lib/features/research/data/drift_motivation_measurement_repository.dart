@@ -5,13 +5,17 @@ import '../../account_deletion/domain/account_deletion_contracts.dart';
 import '../../adventure/domain/adventure_entry.dart';
 import '../../consent/application/research_consent_use_cases.dart'
     show ConsentUtcNow;
+import '../../consent/domain/research_consent.dart';
 import '../domain/experiment_assignment.dart';
 import '../domain/motivation_instrument.dart';
 import '../domain/motivation_measurement.dart';
 import '../domain/motivation_measurement_repository.dart';
 import '../domain/motivation_study_protocol.dart';
 import '../domain/research_operation_authorizer.dart';
+import '../domain/research_transport_contracts.dart';
 import 'drift_research_participation_repository.dart';
+
+enum _MeasurementReadPurpose { currentCollection, historicalArchive }
 
 final class DriftMotivationMeasurementRepository
     implements MotivationMeasurementRepository {
@@ -20,8 +24,14 @@ final class DriftMotivationMeasurementRepository
     required this.participation,
     required this.timing,
     required this.consentNowUtc,
+    this.remoteConsentDecisions,
   }) {
-    if (!identical(participation.database, database)) {
+    if (!identical(participation.database, database) ||
+        (remoteConsentDecisions != null &&
+            !identical(
+              remoteConsentDecisions!.repository,
+              participation.assignments.consent,
+            ))) {
       throw ArgumentError('Measurement and participation databases must match');
     }
   }
@@ -30,6 +40,7 @@ final class DriftMotivationMeasurementRepository
   final DriftResearchParticipationRepository participation;
   final MotivationMeasurementTimingReader timing;
   final ConsentUtcNow consentNowUtc;
+  final ResearchConsentRemoteDecisions? remoteConsentDecisions;
   MotivationStudyProtocol get _study => participation.assignments.binding.study;
 
   Future<T> writeForActiveRun<T>({
@@ -271,6 +282,8 @@ final class DriftMotivationMeasurementRepository
   Future<MotivationMeasurementRun> _withdraw(
     MotivationMeasurementClose command,
   ) async {
+    final remote = remoteConsentDecisions;
+    if (remote != null) return _withdrawRemote(command, remote);
     final consent = participation.assignments.consent;
     final existing = await consent.load(
       ownerId: command.ownerId,
@@ -305,6 +318,67 @@ final class DriftMotivationMeasurementRepository
     });
   }
 
+  Future<MotivationMeasurementRun> _withdrawRemote(
+    MotivationMeasurementClose command,
+    ResearchConsentRemoteDecisions remote,
+  ) async {
+    if (await participation.assignments.ownerWrites.hasAmbientTransaction()) {
+      _deny(ResearchCaptureReason.ownerConflict);
+    }
+    DateTime? trustedBeforeWithdrawal;
+    try {
+      trustedBeforeWithdrawal = await _now();
+    } on Object {
+      // A missing authority interval must not prevent local denial.
+    }
+    final consent = participation.assignments.consent;
+    final existing = await consent.load(
+      ownerId: command.ownerId,
+      version: _study.consentVersion,
+    );
+    final deniedAt = consentNowUtc();
+    _validTime(deniedAt);
+    var acknowledged = false;
+    ResearchTransportException? pending;
+    try {
+      acknowledged = await remote.withdraw(existing, _milliseconds(deniedAt));
+    } on ResearchTransportException catch (error) {
+      if (error.code != ResearchTransportFailureCode.withdrawalPending) rethrow;
+      pending = error;
+    }
+    final denied = await consent.load(
+      ownerId: command.ownerId,
+      version: _study.consentVersion,
+    );
+    if (denied.accepted || denied.withdrawnAtUtc == null) {
+      _deny(ResearchCaptureReason.ownerConflict);
+    }
+    var closeAt = trustedBeforeWithdrawal;
+    if (acknowledged &&
+        (closeAt == null || denied.withdrawnAtUtc!.isAfter(closeAt))) {
+      closeAt = denied.withdrawnAtUtc;
+    }
+    final closed = await _owner(command.ownerId, () async {
+      final run = await _requiredRun(command.ownerId, command.runId);
+      if (run.state == MotivationMeasurementRunState.withdrawn) return run;
+      final now = closeAt;
+      if (now == null) {
+        if (pending != null) throw pending;
+        _deny(ResearchCaptureReason.invalidPermit);
+      }
+      _validTime(now);
+      _factTimes(run, now);
+      await _transition(
+        run,
+        MotivationMeasurementRunState.withdrawn,
+        run.closedAtUtc ?? _milliseconds(now),
+      );
+      return _requiredRun(run.ownerId, run.id);
+    });
+    if (pending != null) throw pending;
+    return closed;
+  }
+
   @override
   Future<MotivationMeasurementRun?> load(String ownerId, String runId) {
     _codes([ownerId, runId]);
@@ -312,12 +386,21 @@ final class DriftMotivationMeasurementRepository
   }
 
   /// Historical read only. Callers still reauthorize every collection command.
-  Future<MotivationMeasurementRun?> inspect(
+  Future<MotivationMeasurementRun?> inspect(String ownerId, String runId) =>
+      _inspect(ownerId, runId, _MeasurementReadPurpose.currentCollection);
+
+  Future<MotivationMeasurementRun?> inspectForArchive(
     String ownerId,
     String runId,
+  ) => _inspect(ownerId, runId, _MeasurementReadPurpose.historicalArchive);
+
+  Future<MotivationMeasurementRun?> _inspect(
+    String ownerId,
+    String runId,
+    _MeasurementReadPurpose purpose,
   ) async {
     _codes([ownerId, runId]);
-    final run = await _read(ownerId, runId);
+    final run = await _read(ownerId, runId, purpose: purpose);
     if (run == null) return null;
     MotivationTimingFacts? facts;
     try {
@@ -646,6 +729,7 @@ final class DriftMotivationMeasurementRepository
     String ownerId,
     String runId, {
     MotivationTimingFacts? timingFacts,
+    _MeasurementReadPurpose purpose = _MeasurementReadPurpose.currentCollection,
   }) async {
     final row = await database
         .customSelect(
@@ -655,6 +739,26 @@ final class DriftMotivationMeasurementRepository
         .getSingleOrNull();
     if (row == null) return null;
     final r = row.data;
+    final storedSchema = r['database_schema_version'];
+    final historicalSchema =
+        purpose == _MeasurementReadPurpose.historicalArchive;
+    if (historicalSchema &&
+        (storedSchema is! int ||
+            !const {
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+            }.contains(storedSchema) ||
+            storedSchema > database.schemaVersion)) {
+      _deny(ResearchCaptureReason.versionConflict);
+    }
     final binding = participation.assignments.binding;
     final expected = <String, Object?>{
       'owner_id': ownerId,
@@ -678,7 +782,9 @@ final class DriftMotivationMeasurementRepository
       'scoring_rule_version': motivationScoringRuleVersion,
       'app_version': _study.appVersion,
       'build_id': _study.buildId,
-      'database_schema_version': database.schemaVersion,
+      'database_schema_version': historicalSchema
+          ? storedSchema
+          : database.schemaVersion,
       'content_revision': _study.contentRevision,
       'evidence_policy_version': _study.evidencePolicyVersion,
       'catalog_version': _study.catalogVersion,
@@ -770,7 +876,9 @@ final class DriftMotivationMeasurementRepository
       consentDecidedAtUtc: decision,
       treatment: _text(r['treatment']),
       study: _study,
-      databaseSchemaVersion: database.schemaVersion,
+      databaseSchemaVersion: historicalSchema
+          ? storedSchema! as int
+          : database.schemaVersion,
       state: state,
       startedAtUtc: started,
       closedAtUtc: closed,

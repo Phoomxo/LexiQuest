@@ -11,11 +11,15 @@ Run locally::
 """
 
 import logging
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from lexiquest_ai.app import create_app
 from lexiquest_ai.auth import FirebaseTokenVerifier
 from lexiquest_ai.config import Settings
+from lexiquest_ai.billing import build_billing_service
+from lexiquest_ai.play_billing import GooglePubSubPushVerifier
+from lexiquest_ai.research import ResearchService
+from lexiquest_ai.firestore_research import FirestoreResearchStore
 from lexiquest_ai.firebase_account_deletion import (
     build_firebase_account_deletion_service,
 )
@@ -96,12 +100,35 @@ except Exception as error:
     account_deletion_service = None
     account_deletion_readiness_probe = None
 
+try:
+    billing_service = build_billing_service(settings)
+    billing_notification_verifier = (
+        GooglePubSubPushVerifier(audience=settings.billing_rtdn_audience,
+            service_account_email=settings.billing_rtdn_service_account_email)
+        if settings.billing_enabled and settings.billing_rtdn_audience else None)
+except Exception as error:
+    logger.error('Billing service composition failed: %s', type(error).__name__)
+    billing_service = None
+    billing_notification_verifier = None
+
+try:
+    research_service = ResearchService(store=FirestoreResearchStore.production(),
+        signatures=settings.research_signatures(),
+        now_utc=lambda: datetime.now(UTC),
+        maximum_age=timedelta(seconds=settings.research_authority_max_age_seconds)) if settings.research_enabled else None
+except Exception as error:
+    logger.error('Research service composition failed: %s', type(error).__name__)
+    research_service = None
+
 app = create_app(
     content_service=content_service,
     token_verifier=token_verifier,
     settings=settings,
     account_deletion_service=account_deletion_service,
     account_deletion_readiness_probe=account_deletion_readiness_probe,
+    billing_service=billing_service,
+    billing_notification_verifier=billing_notification_verifier,
+    research_service=research_service,
 )
 
 __all__ = ["app"]

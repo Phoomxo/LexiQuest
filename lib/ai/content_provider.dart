@@ -46,6 +46,26 @@ const _unknownFailure = AiFailure(
   message: 'Content generation is unavailable.',
 );
 
+const _cancelledFailure = AiFailure(
+  category: AiFailureCategory.cancelled,
+  message: 'The content request is no longer current.',
+);
+const _paymentRequiredFailure = AiFailure(
+  category: AiFailureCategory.paymentRequired,
+  message: 'Verify or restore your membership before using managed AI.',
+);
+const _quotaExhaustedFailure = AiFailure(
+  category: AiFailureCategory.quotaExhausted,
+  message: 'The managed AI quota for this period has been used.',
+);
+const _operationUncertainFailure = AiFailure(
+  category: AiFailureCategory.operationUncertain,
+  message:
+      'The previous managed AI request has an uncertain outcome. Do not automatically start another request.',
+);
+
+typedef AiAuthBindingReader = Object? Function();
+
 /// Boundary for acquiring a Firebase ID token for AI requests.
 ///
 /// Re-uses [VoiceAuthTokenProvider] verbatim because the token is identical
@@ -73,12 +93,14 @@ final class HttpContentProvider implements ContentProvider {
     required AiAuthTokenProvider authTokenProvider,
     required Uri baseUri,
     Duration timeout = const Duration(seconds: 20),
+    AiAuthBindingReader? readAuthBinding,
   }) {
     return HttpContentProvider._(
       client,
       authTokenProvider,
       baseUri.resolve('/v1/content'),
       timeout,
+      readAuthBinding,
     );
   }
 
@@ -87,15 +109,42 @@ final class HttpContentProvider implements ContentProvider {
     this._authTokenProvider,
     this._contentUri,
     this._timeout,
+    this._readAuthBinding,
   );
 
   final http.Client _client;
   final AiAuthTokenProvider _authTokenProvider;
   final Uri _contentUri;
   final Duration _timeout;
+  final AiAuthBindingReader? _readAuthBinding;
 
   @override
   Future<ContentResponse> generate(ContentRequest request) async {
+    Object? binding;
+    try {
+      if (!request.isCurrent) throw _cancelledFailure;
+      binding = _readAuthBinding?.call();
+    } on AiFailure {
+      rethrow;
+    } on Object {
+      throw _authenticationFailure;
+    }
+    if (_readAuthBinding != null && binding == null) {
+      throw _authenticationFailure;
+    }
+    void requireCurrent() {
+      try {
+        if (!request.isCurrent ||
+            (_readAuthBinding != null && _readAuthBinding() != binding)) {
+          throw _cancelledFailure;
+        }
+      } on AiFailure {
+        rethrow;
+      } on Object {
+        throw _cancelledFailure;
+      }
+    }
+
     final body = <String, Object>{
       'text': request.text,
       'kind': request.kind.wire,
@@ -103,14 +152,27 @@ final class HttpContentProvider implements ContentProvider {
       'language': request.language,
     };
 
-    final token = await _authTokenProvider.getIdToken(forceRefresh: false);
-    var response = await _post(token, body);
+    requireCurrent();
+    final token = await _token(forceRefresh: false);
+    requireCurrent();
+    var response = await _post(
+      token,
+      body,
+      request.operationId,
+      requireCurrent,
+    );
+    requireCurrent();
 
     if (response.statusCode == 401) {
-      final refreshedToken = await _authTokenProvider.getIdToken(
-        forceRefresh: true,
+      final refreshedToken = await _token(forceRefresh: true);
+      requireCurrent();
+      response = await _post(
+        refreshedToken,
+        body,
+        request.operationId,
+        requireCurrent,
       );
-      response = await _post(refreshedToken, body);
+      requireCurrent();
       if (response.statusCode == 401) {
         throw _authenticationFailure;
       }
@@ -123,10 +185,30 @@ final class HttpContentProvider implements ContentProvider {
     return _contentFrom(response);
   }
 
-  Future<http.Response> _post(String token, Map<String, Object> body) async {
+  Future<String> _token({required bool forceRefresh}) async {
+    try {
+      return await _authTokenProvider
+          .getIdToken(forceRefresh: forceRefresh)
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw _timeoutFailure;
+    } on Object {
+      throw _authenticationFailure;
+    }
+  }
+
+  Future<http.Response> _post(
+    String token,
+    Map<String, Object> body,
+    String operationId,
+    void Function() requireCurrent,
+  ) async {
+    requireCurrent();
     final request = http.Request('POST', _contentUri)
+      ..followRedirects = false
       ..headers['authorization'] = 'Bearer $token'
       ..headers['content-type'] = 'application/json'
+      ..headers['idempotency-key'] = operationId
       ..body = jsonEncode(body);
     try {
       final response = () async {
@@ -146,11 +228,25 @@ final class HttpContentProvider implements ContentProvider {
   AiFailure _failureFor(http.Response response) {
     final code = _detailCode(response);
     switch (response.statusCode) {
+      case 402:
+      case 403:
+        if (code == 'BILLING_ENTITLEMENT_REQUIRED') {
+          return _paymentRequiredFailure;
+        }
+        if (code == 'BILLING_ACCOUNT_REQUIRED') return _authenticationFailure;
+        return _unknownFailure;
       case 400:
       case 422:
         return _validationFailure;
       case 429:
+        if (code == 'BILLING_QUOTA_EXHAUSTED') return _quotaExhaustedFailure;
         return _rateLimitedFailure;
+      case 409:
+        if (code == 'BILLING_OPERATION_UNCERTAIN') {
+          return _operationUncertainFailure;
+        }
+        if (code == 'BILLING_REQUEST_CONFLICT') return _validationFailure;
+        return _unknownFailure;
       case 503:
         switch (code) {
           case 'PROVIDER_UNAVAILABLE':

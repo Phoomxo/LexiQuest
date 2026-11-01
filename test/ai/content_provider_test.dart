@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +52,13 @@ class _NeverRefreshTokenProvider implements VoiceAuthTokenProvider {
   Future<String> getIdToken({bool forceRefresh = false}) async => _oldToken;
 }
 
+class _CallbackTokenProvider implements VoiceAuthTokenProvider {
+  _CallbackTokenProvider(this.read);
+  final Future<String> Function(bool forceRefresh) read;
+  @override
+  Future<String> getIdToken({bool forceRefresh = false}) => read(forceRefresh);
+}
+
 http.Response _okResponse({
   String text = 'The cat sleeps peacefully.',
   String kind = 'sentence',
@@ -92,6 +100,348 @@ http.Response _statusResponse(int status, {required String code}) {
 }
 
 void main() {
+  test(
+    'authenticated content requests disable redirects at the configured origin',
+    () async {
+      final client = MockClient((request) async {
+        expect(request.url, _contentUri);
+        expect(request.headers['authorization'], 'Bearer $_oldToken');
+        expect(request.headers['idempotency-key'], isNotEmpty);
+        expect(
+          request.followRedirects,
+          isFalse,
+          reason: 'a redirect must not forward a paid command or bearer token',
+        );
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _StubTokenProvider(),
+        baseUri: _baseUri,
+      );
+
+      expect(
+        (await provider.generate(_validRequest())).text,
+        'The cat sleeps peacefully.',
+      );
+    },
+  );
+
+  test(
+    'retiring a content command while its token is pending prevents every POST',
+    () async {
+      final pending = Completer<String>();
+      var current = true;
+      var posts = 0;
+      final client = MockClient((_) async {
+        posts++;
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _CallbackTokenProvider((_) => pending.future),
+        baseUri: _baseUri,
+      );
+      final result = provider.generate(
+        ContentRequest.create(
+          text: 'cat',
+          kind: ContentKind.sentence,
+          stillCurrent: () => current,
+        ),
+      );
+      current = false;
+      pending.complete(_oldToken);
+      await expectLater(
+        result,
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.cancelled,
+          ),
+        ),
+      );
+      expect(posts, 0);
+    },
+  );
+
+  test(
+    'an A-B-A auth generation cannot submit a retired paid content command',
+    () async {
+      final pending = Completer<String>();
+      Object binding = ('synthetic-a', 0);
+      var posts = 0;
+      final client = MockClient((_) async {
+        posts++;
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _CallbackTokenProvider((_) => pending.future),
+        baseUri: _baseUri,
+        readAuthBinding: () => binding,
+      );
+      final result = provider.generate(_validRequest());
+      binding = ('synthetic-b', 1);
+      binding = ('synthetic-a', 2);
+      pending.complete(_oldToken);
+      await expectLater(
+        result,
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.cancelled,
+          ),
+        ),
+      );
+      expect(posts, 0);
+    },
+  );
+
+  test(
+    'switching auth during a 401 refresh cannot send the second POST',
+    () async {
+      Object binding = ('synthetic-a', 0);
+      var posts = 0;
+      final client = MockClient((_) async {
+        posts++;
+        return _unauthorizedResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _CallbackTokenProvider((refresh) async {
+          if (refresh) binding = ('synthetic-b', 1);
+          return refresh ? _freshToken : _oldToken;
+        }),
+        baseUri: _baseUri,
+        readAuthBinding: () => binding,
+      );
+      await expectLater(
+        provider.generate(_validRequest()),
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.cancelled,
+          ),
+        ),
+      );
+      expect(posts, 1);
+    },
+  );
+
+  test(
+    'a missing current auth binding does not acquire a token or POST',
+    () async {
+      var tokenReads = 0;
+      var posts = 0;
+      final client = MockClient((_) async {
+        posts++;
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _CallbackTokenProvider((_) async {
+          tokenReads++;
+          return _oldToken;
+        }),
+        baseUri: _baseUri,
+        readAuthBinding: () => null,
+      );
+      await expectLater(
+        provider.generate(_validRequest()),
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.authentication,
+          ),
+        ),
+      );
+      expect((tokenReads, posts), (0, 0));
+    },
+  );
+
+  test(
+    'content returned after the caller is retired cannot be accepted',
+    () async {
+      var current = true;
+      final client = MockClient((_) async {
+        current = false;
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _StubTokenProvider(),
+        baseUri: _baseUri,
+      );
+      await expectLater(
+        provider.generate(
+          ContentRequest.create(
+            text: 'cat',
+            kind: ContentKind.sentence,
+            stillCurrent: () => current,
+          ),
+        ),
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.cancelled,
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'token failures and token timeouts have fixed safe errors and never POST',
+    () async {
+      var posts = 0;
+      final client = MockClient((_) async {
+        posts++;
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      for (final hanging in [false, true]) {
+        final provider = HttpContentProvider(
+          client: client,
+          authTokenProvider: _CallbackTokenProvider((_) {
+            if (hanging) return Completer<String>().future;
+            throw StateError('PRIVATE-CREDENTIAL-SENTINEL');
+          }),
+          baseUri: _baseUri,
+          timeout: const Duration(milliseconds: 5),
+        );
+        await expectLater(
+          provider.generate(_validRequest()),
+          throwsA(
+            isA<AiFailure>()
+                .having(
+                  (failure) => failure.category,
+                  'category',
+                  hanging
+                      ? AiFailureCategory.timeout
+                      : AiFailureCategory.authentication,
+                )
+                .having(
+                  (failure) => failure.toString(),
+                  'safe error',
+                  isNot(contains('PRIVATE-CREDENTIAL-SENTINEL')),
+                ),
+          ),
+        );
+      }
+      expect(posts, 0);
+    },
+  );
+
+  for (final (status, code, category) in [
+    (402, 'BILLING_ENTITLEMENT_REQUIRED', AiFailureCategory.paymentRequired),
+    (403, 'BILLING_ENTITLEMENT_REQUIRED', AiFailureCategory.paymentRequired),
+    (403, 'BILLING_ACCOUNT_REQUIRED', AiFailureCategory.authentication),
+    (429, 'BILLING_QUOTA_EXHAUSTED', AiFailureCategory.quotaExhausted),
+    (409, 'BILLING_OPERATION_UNCERTAIN', AiFailureCategory.operationUncertain),
+    (409, 'BILLING_REQUEST_CONFLICT', AiFailureCategory.validation),
+  ]) {
+    test(
+      '$status $code preserves a typed managed content outcome without leaking the response',
+      () async {
+        var posts = 0;
+        final client = MockClient((_) async {
+          posts++;
+          return http.Response(
+            jsonEncode({
+              'detail': {
+                'code': code,
+                'message': 'PRIVATE-MANAGED-CONTENT-SENTINEL',
+              },
+            }),
+            status,
+          );
+        });
+        addTearDown(client.close);
+        final provider = HttpContentProvider(
+          client: client,
+          authTokenProvider: _StubTokenProvider(),
+          baseUri: _baseUri,
+        );
+        await expectLater(
+          provider.generate(_validRequest()),
+          throwsA(
+            isA<AiFailure>()
+                .having((failure) => failure.category, 'category', category)
+                .having(
+                  (failure) => failure.toString(),
+                  'safe error',
+                  isNot(contains('PRIVATE-MANAGED-CONTENT-SENTINEL')),
+                ),
+          ),
+        );
+        expect(posts, 1);
+      },
+    );
+  }
+
+  test(
+    'one content intent keeps its operation identity through auth and manual retries',
+    () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        if (requests.length == 1) return _unauthorizedResponse();
+        if (requests.length == 2) {
+          throw http.ClientException('synthetic response lost');
+        }
+        return _okResponse();
+      });
+      addTearDown(client.close);
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: _StubTokenProvider(),
+        baseUri: _baseUri,
+      );
+      final original = _validRequest();
+      await expectLater(
+        provider.generate(original),
+        throwsA(
+          isA<AiFailure>().having(
+            (failure) => failure.category,
+            'category',
+            AiFailureCategory.network,
+          ),
+        ),
+      );
+      await provider.generate(original);
+      await provider.generate(_validRequest());
+
+      expect(requests, hasLength(4));
+      final identities = requests
+          .map((request) => request.headers['idempotency-key'])
+          .toList();
+      for (final identity in identities) {
+        expect(
+          identity,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
+      }
+      expect(identities.take(3).toSet(), hasLength(1));
+      expect(identities.last, isNot(identities.first));
+      expect(requests.map((request) => request.body).toSet(), hasLength(1));
+    },
+  );
+
   test('posts to /v1/content and parses a successful response', () async {
     final tokenProvider = _StubTokenProvider();
     String? sentToken;

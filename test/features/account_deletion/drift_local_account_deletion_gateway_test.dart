@@ -31,6 +31,14 @@ void main() {
     database = AppDatabase(NativeDatabase.memory());
     await database.customStatement('PRAGMA foreign_keys = ON');
     await _seed(database);
+    for (final owner in ['owner-a', 'owner-b']) {
+      await database.customStatement(
+        'INSERT INTO learning_profiles '
+        '(owner_id,revision,onboarding_state,goal_text,target_date,daily_minutes,interest_codes_json,updated_at_utc_ms) '
+        'VALUES (?,1,\'completed\',?,NULL,25,?,20)',
+        [owner, 'Synthetic $owner goal', '{"schemaVersion":1,"codes":["study"]}'],
+      );
+    }
   });
 
   tearDown(() => database.close());
@@ -46,6 +54,7 @@ void main() {
         'events_v2',
         'saved_words',
         'word_reports',
+        'learning_profiles',
       ]) {
         retained[table] =
             (await database
@@ -54,6 +63,8 @@ void main() {
                           ? 'event_id'
                           : table == 'saved_words'
                           ? 'word_id'
+                          : table == 'learning_profiles'
+                          ? 'owner_id'
                           : 'id'}',
                       variables: const [Variable<String>('owner-b')],
                     )
@@ -131,6 +142,8 @@ void main() {
                   ? 'event_id'
                   : entry.key == 'saved_words'
                   ? 'word_id'
+                  : entry.key == 'learning_profiles'
+                  ? 'owner_id'
                   : 'id'}',
               variables: const [Variable<String>('owner-b')],
             )

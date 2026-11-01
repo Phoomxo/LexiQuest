@@ -51,7 +51,7 @@ void main() {
       expect(first.target.wordRevision, 1);
       expect(second.target.wordRevision, 2);
       expect(value.reportCount, 2);
-      expect(before.length, 40);
+      expect(before.length, 43);
       expect(await h.snapshotAllTables(), before);
     },
   );
@@ -87,7 +87,7 @@ void main() {
     expect((value.queueStates[ReviewQueue.saved] as ReviewQueueReady).count, 0);
   });
 
-  test('real reads refresh and reopen leave all40 tables unchanged', () async {
+  test('real reads refresh and reopen leave all43 tables unchanged', () async {
     await h.seedDue(configuredWordIds.first);
     await h.seedWrong(
       wordId: configuredWordIds[1],

@@ -1,0 +1,185 @@
+{
+  "schema": "lexiquest.synthetic.research-server-wire.v1",
+  "synthetic": true,
+  "operationPublicKeysBase64": {
+    "synthetic-ed": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+  },
+  "participationPublicKeysSec1Hex": {
+    "synthetic-p256": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+  },
+  "enrollment": {
+    "schemaVersion": 1,
+    "firebaseUid": "synthetic-research-uid",
+    "enrollmentId": "synthetic-enrollment",
+    "ownerId": "synthetic-research-owner",
+    "revision": 1,
+    "active": true,
+    "consentVersion": 1,
+    "consentReceiptId": "synthetic-consent",
+    "protocolVersion": "synthetic-protocol-v1",
+    "issuedAtUtc": "2026-10-31T12:00:00.000Z",
+    "expiresAtUtc": "2026-11-02T12:00:00.000Z",
+    "scopes": [
+      {
+        "role": "motivation",
+        "requirements": {
+          "supportedFormatVersion": 1,
+          "trustedIssuerId": "synthetic-issuer",
+          "trustedIssuerKeyId": "synthetic-ed",
+          "signatureAlgorithm": "EdDSA",
+          "assignmentId": "synthetic-assignment",
+          "assignmentRevision": 1,
+          "protocolId": "synthetic-protocol",
+          "protocolRevision": 1,
+          "instrumentId": "synthetic-motivation",
+          "instrumentRevision": 1
+        },
+        "operationDocuments": [
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1tb3RpdmF0aW9uLWNvbGxlY3QiLCJpc3N1ZXJJZCI6InN5bnRoZXRpYy1pc3N1ZXIiLCJpc3N1ZXJLZXlJZCI6InN5bnRoZXRpYy1lZCIsInNpZ25hdHVyZUFsZ29yaXRobSI6IkVkRFNBIiwib3duZXJJZCI6InN5bnRoZXRpYy1yZXNlYXJjaC1vd25lciIsIm9wZXJhdGlvbiI6ImNvbGxlY3QiLCJhc3NpZ25tZW50SWQiOiJzeW50aGV0aWMtYXNzaWdubWVudCIsImFzc2lnbm1lbnRSZXZpc2lvbiI6MSwicHJvdG9jb2xJZCI6InN5bnRoZXRpYy1wcm90b2NvbCIsInByb3RvY29sUmV2aXNpb24iOjEsImluc3RydW1lbnRJZCI6InN5bnRoZXRpYy1tb3RpdmF0aW9uIiwiaW5zdHJ1bWVudFJldmlzaW9uIjoxLCJyZXZpc2lvbiI6MSwiaXNzdWVkQXRVdGNNcyI6MTc5MzQ0ODAwMDAwMCwiZXhwaXJlc0F0VXRjTXMiOjE3OTM2MjA4MDAwMDAsInNpZ25hdHVyZSI6IjAwUHpoTFUzR2twUFlrR0RnSUc3N2RweGNpYXR2anBvYzFZa3pUbUhieVNnM1lXWXFCZEQwc3VuUVo3dUNsV09OMGpLREtSR19ZYnRuSjF4R1JoVUFRIn0=",
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1tb3RpdmF0aW9uLWV4cG9ydCIsImlzc3VlcklkIjoic3ludGhldGljLWlzc3VlciIsImlzc3VlcktleUlkIjoic3ludGhldGljLWVkIiwic2lnbmF0dXJlQWxnb3JpdGhtIjoiRWREU0EiLCJvd25lcklkIjoic3ludGhldGljLXJlc2VhcmNoLW93bmVyIiwib3BlcmF0aW9uIjoiZXhwb3J0IiwiYXNzaWdubWVudElkIjoic3ludGhldGljLWFzc2lnbm1lbnQiLCJhc3NpZ25tZW50UmV2aXNpb24iOjEsInByb3RvY29sSWQiOiJzeW50aGV0aWMtcHJvdG9jb2wiLCJwcm90b2NvbFJldmlzaW9uIjoxLCJpbnN0cnVtZW50SWQiOiJzeW50aGV0aWMtbW90aXZhdGlvbiIsImluc3RydW1lbnRSZXZpc2lvbiI6MSwicmV2aXNpb24iOjEsImlzc3VlZEF0VXRjTXMiOjE3OTM0NDgwMDAwMDAsImV4cGlyZXNBdFV0Y01zIjoxNzkzNjIwODAwMDAwLCJzaWduYXR1cmUiOiJCU0lNQl9SeXdHNWYwZ0JZeHBwMFYwRDRSbzlSRi1jSjZiVjJXVEpSRnY1aDQzc3hwMXcxaFZwTGpwUkh6QW13UmZ5ZUdRN2s1cnh0T040ZkkydnhDZyJ9",
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1tb3RpdmF0aW9uLXVwbG9hZCIsImlzc3VlcklkIjoic3ludGhldGljLWlzc3VlciIsImlzc3VlcktleUlkIjoic3ludGhldGljLWVkIiwic2lnbmF0dXJlQWxnb3JpdGhtIjoiRWREU0EiLCJvd25lcklkIjoic3ludGhldGljLXJlc2VhcmNoLW93bmVyIiwib3BlcmF0aW9uIjoidXBsb2FkIiwiYXNzaWdubWVudElkIjoic3ludGhldGljLWFzc2lnbm1lbnQiLCJhc3NpZ25tZW50UmV2aXNpb24iOjEsInByb3RvY29sSWQiOiJzeW50aGV0aWMtcHJvdG9jb2wiLCJwcm90b2NvbFJldmlzaW9uIjoxLCJpbnN0cnVtZW50SWQiOiJzeW50aGV0aWMtbW90aXZhdGlvbiIsImluc3RydW1lbnRSZXZpc2lvbiI6MSwicmV2aXNpb24iOjEsImlzc3VlZEF0VXRjTXMiOjE3OTM0NDgwMDAwMDAsImV4cGlyZXNBdFV0Y01zIjoxNzkzNjIwODAwMDAwLCJzaWduYXR1cmUiOiJmUFVVN0pDNUJmenpEYjdZWkxVcHp3a1l3NThpRk1oX0Z3NDVNcWo2Nm5zaEhERjVvZkN4RDhEU2dCeUFWX3JiNWxXMnRnaDJfZ0pmMkt0Z0VUaVNCQSJ9"
+        ],
+        "operationStates": {
+          "synthetic-motivation-collect": {
+            "currentRevision": 1,
+            "revoked": false
+          },
+          "synthetic-motivation-export": {
+            "currentRevision": 1,
+            "revoked": false
+          },
+          "synthetic-motivation-upload": {
+            "currentRevision": 1,
+            "revoked": false
+          }
+        },
+        "participationDocuments": [
+          "{\"schema\":\"lexiquest.research-participation-permit.v1\",\"id\":\"synthetic-participation\",\"ownerId\":\"synthetic-research-owner\",\"participantClass\":\"adult\",\"ageBandCode\":\"synthetic-age-band\",\"assignmentId\":\"synthetic-assignment\",\"assignedTreatment\":\"standard\",\"consentReceiptId\":\"synthetic-consent\",\"guardianPermissionReceiptRef\":null,\"learnerAssentReceiptRef\":null,\"protocolId\":\"synthetic-protocol\",\"protocolVersion\":\"synthetic-protocol-v1\",\"issuedAtUtc\":\"2026-10-31T12:00:00.000Z\",\"expiresAtUtc\":\"2026-11-02T12:00:00.000Z\",\"revokedAtUtc\":null,\"issuerKeyId\":\"synthetic-p256\",\"localRevision\":1,\"cloudRevision\":1,\"isDeleted\":false,\"payloadSha256\":\"d0b63fa4747f94b07e4b208b4423583d639dfa4d388129bd17d425b9e6df17a0\",\"signature\":\"jCJbhKpB59/Xerw+t6bBZf6WDxxmCeoCwQrHRbBI37XNR1GOP25n3SdQL3DOSZ41ILkW660HNndSPtzVM5FvCA==\"}"
+        ],
+        "receipts": [
+          {
+            "ownerId": "synthetic-research-owner",
+            "receiptId": "synthetic-consent",
+            "kind": "consent",
+            "revision": 1,
+            "active": true,
+            "issuedAtUtc": "2026-10-31T12:00:00.000Z",
+            "expiresAtUtc": "2026-11-02T12:00:00.000Z",
+            "consentVersion": 1,
+            "decidedAtUtc": null
+          }
+        ],
+        "archivePins": {
+          "instrumentVersion": "synthetic-v1",
+          "instrumentChecksumSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "formId": "synthetic-motivation-form",
+          "formVersion": "synthetic-v1",
+          "itemCatalogVersion": "synthetic-v1",
+          "scoringRuleVersion": "normalized-score-v1",
+          "items": {
+            "baseline-item": {
+              "timepoint": "baseline",
+              "responseCodes": {
+                "agree": 1,
+                "disagree": 0
+              }
+            },
+            "post-item": {
+              "timepoint": "post",
+              "responseCodes": {
+                "agree": 1,
+                "disagree": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "role": "assessment",
+        "requirements": {
+          "supportedFormatVersion": 1,
+          "trustedIssuerId": "synthetic-issuer",
+          "trustedIssuerKeyId": "synthetic-ed",
+          "signatureAlgorithm": "EdDSA",
+          "assignmentId": "synthetic-assignment",
+          "assignmentRevision": 1,
+          "protocolId": "synthetic-protocol",
+          "protocolRevision": 1,
+          "instrumentId": "synthetic-assessment",
+          "instrumentRevision": 1
+        },
+        "operationDocuments": [
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1hc3Nlc3NtZW50LWNvbGxlY3QiLCJpc3N1ZXJJZCI6InN5bnRoZXRpYy1pc3N1ZXIiLCJpc3N1ZXJLZXlJZCI6InN5bnRoZXRpYy1lZCIsInNpZ25hdHVyZUFsZ29yaXRobSI6IkVkRFNBIiwib3duZXJJZCI6InN5bnRoZXRpYy1yZXNlYXJjaC1vd25lciIsIm9wZXJhdGlvbiI6ImNvbGxlY3QiLCJhc3NpZ25tZW50SWQiOiJzeW50aGV0aWMtYXNzaWdubWVudCIsImFzc2lnbm1lbnRSZXZpc2lvbiI6MSwicHJvdG9jb2xJZCI6InN5bnRoZXRpYy1wcm90b2NvbCIsInByb3RvY29sUmV2aXNpb24iOjEsImluc3RydW1lbnRJZCI6InN5bnRoZXRpYy1hc3Nlc3NtZW50IiwiaW5zdHJ1bWVudFJldmlzaW9uIjoxLCJyZXZpc2lvbiI6MSwiaXNzdWVkQXRVdGNNcyI6MTc5MzQ0ODAwMDAwMCwiZXhwaXJlc0F0VXRjTXMiOjE3OTM2MjA4MDAwMDAsInNpZ25hdHVyZSI6Ik50QmY5SkhBZ25pMHZVcGVHdkZ2NS1iaWxYTXJOVWx6OGRpYWxUbTVqX0gxMWZublZpbXc3M044MFBpRUN6M0J6NEg5MEV0aGtrQ2h6bW5zZzlwUkFBIn0=",
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1hc3Nlc3NtZW50LWV4cG9ydCIsImlzc3VlcklkIjoic3ludGhldGljLWlzc3VlciIsImlzc3VlcktleUlkIjoic3ludGhldGljLWVkIiwic2lnbmF0dXJlQWxnb3JpdGhtIjoiRWREU0EiLCJvd25lcklkIjoic3ludGhldGljLXJlc2VhcmNoLW93bmVyIiwib3BlcmF0aW9uIjoiZXhwb3J0IiwiYXNzaWdubWVudElkIjoic3ludGhldGljLWFzc2lnbm1lbnQiLCJhc3NpZ25tZW50UmV2aXNpb24iOjEsInByb3RvY29sSWQiOiJzeW50aGV0aWMtcHJvdG9jb2wiLCJwcm90b2NvbFJldmlzaW9uIjoxLCJpbnN0cnVtZW50SWQiOiJzeW50aGV0aWMtYXNzZXNzbWVudCIsImluc3RydW1lbnRSZXZpc2lvbiI6MSwicmV2aXNpb24iOjEsImlzc3VlZEF0VXRjTXMiOjE3OTM0NDgwMDAwMDAsImV4cGlyZXNBdFV0Y01zIjoxNzkzNjIwODAwMDAwLCJzaWduYXR1cmUiOiJNQzhZWXBWblVTWjNBc0gtRkZveXh2T3lNaDFPWG42aURkSVN2eUJzemZldHBWWnZ1Ym5XUVotQlNsWXIzNzJKY1JsSEhCSkpUUnZMUkZyMDBpUHFBUSJ9",
+          "eyJmb3JtYXRWZXJzaW9uIjoxLCJwZXJtaXRJZCI6InN5bnRoZXRpYy1hc3Nlc3NtZW50LXVwbG9hZCIsImlzc3VlcklkIjoic3ludGhldGljLWlzc3VlciIsImlzc3VlcktleUlkIjoic3ludGhldGljLWVkIiwic2lnbmF0dXJlQWxnb3JpdGhtIjoiRWREU0EiLCJvd25lcklkIjoic3ludGhldGljLXJlc2VhcmNoLW93bmVyIiwib3BlcmF0aW9uIjoidXBsb2FkIiwiYXNzaWdubWVudElkIjoic3ludGhldGljLWFzc2lnbm1lbnQiLCJhc3NpZ25tZW50UmV2aXNpb24iOjEsInByb3RvY29sSWQiOiJzeW50aGV0aWMtcHJvdG9jb2wiLCJwcm90b2NvbFJldmlzaW9uIjoxLCJpbnN0cnVtZW50SWQiOiJzeW50aGV0aWMtYXNzZXNzbWVudCIsImluc3RydW1lbnRSZXZpc2lvbiI6MSwicmV2aXNpb24iOjEsImlzc3VlZEF0VXRjTXMiOjE3OTM0NDgwMDAwMDAsImV4cGlyZXNBdFV0Y01zIjoxNzkzNjIwODAwMDAwLCJzaWduYXR1cmUiOiJ6RXBfOE81WGwtc0QyeEtnMnRuaEV4OTZMMUMxTDNLLWJqUzdmVGVoT2pXNi1mMHpNdnJqU1dFUS1ZVkxKQXdLMkRDYkxlOTF0RzNnUWRfdmU4UVZDUSJ9"
+        ],
+        "operationStates": {
+          "synthetic-assessment-collect": {
+            "currentRevision": 1,
+            "revoked": false
+          },
+          "synthetic-assessment-export": {
+            "currentRevision": 1,
+            "revoked": false
+          },
+          "synthetic-assessment-upload": {
+            "currentRevision": 1,
+            "revoked": false
+          }
+        },
+        "participationDocuments": [
+          "{\"schema\":\"lexiquest.research-participation-permit.v1\",\"id\":\"synthetic-participation\",\"ownerId\":\"synthetic-research-owner\",\"participantClass\":\"adult\",\"ageBandCode\":\"synthetic-age-band\",\"assignmentId\":\"synthetic-assignment\",\"assignedTreatment\":\"standard\",\"consentReceiptId\":\"synthetic-consent\",\"guardianPermissionReceiptRef\":null,\"learnerAssentReceiptRef\":null,\"protocolId\":\"synthetic-protocol\",\"protocolVersion\":\"synthetic-protocol-v1\",\"issuedAtUtc\":\"2026-10-31T12:00:00.000Z\",\"expiresAtUtc\":\"2026-11-02T12:00:00.000Z\",\"revokedAtUtc\":null,\"issuerKeyId\":\"synthetic-p256\",\"localRevision\":1,\"cloudRevision\":1,\"isDeleted\":false,\"payloadSha256\":\"d0b63fa4747f94b07e4b208b4423583d639dfa4d388129bd17d425b9e6df17a0\",\"signature\":\"jCJbhKpB59/Xerw+t6bBZf6WDxxmCeoCwQrHRbBI37XNR1GOP25n3SdQL3DOSZ41ILkW660HNndSPtzVM5FvCA==\"}"
+        ],
+        "receipts": [
+          {
+            "ownerId": "synthetic-research-owner",
+            "receiptId": "synthetic-consent",
+            "kind": "consent",
+            "revision": 1,
+            "active": true,
+            "issuedAtUtc": "2026-10-31T12:00:00.000Z",
+            "expiresAtUtc": "2026-11-02T12:00:00.000Z",
+            "consentVersion": 1,
+            "decidedAtUtc": null
+          }
+        ],
+        "archivePins": {
+          "instrumentVersion": "synthetic-v1",
+          "instrumentChecksumSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "featureContractRevision": "synthetic-v1",
+          "featureContractHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "forms": {
+            "pre": {
+              "formId": "synthetic-form-pre",
+              "formVersion": "synthetic-v1",
+              "formContentRevision": 1,
+              "formChecksumSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "items": {
+                "pre-item": {
+                  "responseCodes": {
+                    "correct": true,
+                    "other": false
+                  }
+                }
+              }
+            },
+            "post": {
+              "formId": "synthetic-form-post",
+              "formVersion": "synthetic-v1",
+              "formContentRevision": 1,
+              "formChecksumSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "items": {
+                "post-item": {
+                  "responseCodes": {
+                    "correct": true,
+                    "other": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../features/learning_profile/presentation/learning_profile_editor_screen.dart';
+import '../features/billing/presentation/subscription_screen.dart';
+import '../features/learning_packs/presentation/learning_pack_catalog_screen.dart';
+import '../features/research/presentation/research_authority_screen.dart';
 
 import '../config/app_appearance_preferences.dart';
 import '../features/account/application/account_use_cases.dart';
@@ -755,6 +759,8 @@ class _SettingScreenState extends State<SettingScreen>
     final timeOwnerGeneration = time?.ownerGeneration;
     final timeEntryGeneration = _timeEntryGeneration;
     final route = ModalRoute.of(context);
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final researchTransport = dependencies?.researchTransport;
     ModalRoute.isCurrentOf(context);
     final thai = Localizations.localeOf(context).languageCode == 'th';
     return Scaffold(
@@ -849,7 +855,39 @@ class _SettingScreenState extends State<SettingScreen>
                       },
               ),
             ),
-            if (_researchConsent != null)
+            if (researchTransport != null)
+              ListTile(
+                key: const ValueKey('settings-research-authority'),
+                minTileHeight: 48,
+                leading: const Icon(Icons.fact_check_outlined),
+                title: const Text('การเข้าร่วมงานวิจัย'),
+                subtitle: const Text(
+                  'ตรวจสิทธิ์ อ่านเอกสาร และจัดการความยินยอม',
+                ),
+                onTap: _busy || _syncBusy
+                    ? null
+                    : () {
+                        if (!mounted ||
+                            route?.isCurrent != true ||
+                            !identical(
+                              AppDependenciesScope.maybeOf(context),
+                              dependencies,
+                            )) {
+                          return;
+                        }
+                        _openSettingsPage(
+                          'settings/research-authority',
+                          ResearchAuthorityScreen(
+                            consent: researchTransport.consent,
+                            authority: researchTransport.lifecycle,
+                            notice: researchTransport.notice,
+                            participationActivation:
+                                researchTransport.participationActivation,
+                          ),
+                        );
+                      },
+              ),
+            if (_researchConsent != null && researchTransport == null)
               FutureBuilder(
                 future: _researchStatus,
                 builder: (context, snapshot) {
@@ -986,6 +1024,74 @@ class _SettingScreenState extends State<SettingScreen>
                 ),
               ),
             ),
+            if (AppDependenciesScope.maybeOf(context)?.learningProfile
+                case final profile?)
+              ListTile(
+                key: const ValueKey<String>('settings-learning-profile'),
+                minTileHeight: 48,
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('เป้าหมายและความชอบในการเรียน'),
+                subtitle: const Text(
+                  'ตั้งเป้าหมาย วันสอบ และเวลาเรียนที่ต้องการ',
+                ),
+                onTap: _busy || _syncBusy
+                    ? null
+                    : () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: '/learning-profile',
+                          builder: (_) =>
+                              LearningProfileEditorScreen(profile: profile),
+                        ),
+                      ),
+              ),
+            if (dependencies?.learningPacks case final packs?)
+              ListTile(
+                key: const ValueKey('settings-learning-packs'),
+                minTileHeight: 48,
+                leading: const Icon(Icons.library_books_outlined),
+                title: const Text('แพ็กบทเรียนและคำศัพท์'),
+                subtitle: const Text('นำเข้า ตรวจเนื้อหา และจัดการไฟล์ออฟไลน์'),
+                onTap: _busy || _syncBusy
+                    ? null
+                    : () {
+                        if (!mounted ||
+                            route?.isCurrent != true ||
+                            !identical(
+                              AppDependenciesScope.maybeOf(context),
+                              dependencies,
+                            )) {
+                          return;
+                        }
+                        _openSettingsPage(
+                          'settings/learning-packs',
+                          LearningPackCatalogScreen(
+                            packs: packs,
+                            downloads: dependencies?.learningPackDownloads,
+                          ),
+                        );
+                      },
+              ),
+            if (AppDependenciesScope.maybeOf(context)?.billing
+                case final billing?)
+              ListTile(
+                key: const ValueKey<String>('settings-subscription'),
+                minTileHeight: 48,
+                leading: const Icon(Icons.workspace_premium_outlined),
+                title: const Text('แพ็กเกจสมาชิก'),
+                subtitle: const Text(
+                  'ดูแพ็กเกจและกู้คืนการซื้อผ่าน Google Play',
+                ),
+                onTap: _busy || _syncBusy
+                    ? null
+                    : () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: '/subscription',
+                          builder: (_) => SubscriptionScreen(billing: billing),
+                        ),
+                      ),
+              ),
             if (isRegistered) ...[
               ListTile(
                 minTileHeight: 48,

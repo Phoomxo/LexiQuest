@@ -13,62 +13,65 @@ import 'package:vocab_learning_app/features/research/domain/measurement_opportun
 import '../../support/populated_owner_migration_fixture.dart';
 
 void main() {
-  test('fresh v21 has one empty ten-column historical report queue', () async {
-    final database = AppDatabase(NativeDatabase.memory());
-    addTearDown(database.close);
-    expect(database.schemaVersion, 21);
-    expect(database.allTables, hasLength(40));
-    final columns = await database
-        .customSelect('PRAGMA table_info(word_reports)')
-        .get();
-    expect(columns.map((row) => row.read<String>('name')), [
-      'id',
-      'owner_id',
-      'word_id',
-      'category_id',
-      'word_revision',
-      'snapshot_json',
-      'snapshot_sha256',
-      'reason',
-      'comment',
-      'queued_at_utc_ms',
-    ]);
-    expect(columns.map((row) => row.read<int>('notnull')), [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      0,
-      1,
-    ]);
-    expect(columns.map((row) => row.read<int>('pk')), [
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-    ]);
-    final keys = await database
-        .customSelect('PRAGMA foreign_key_list(word_reports)')
-        .get();
-    expect(keys, hasLength(1));
-    expect(keys.single.read<String>('from'), 'owner_id');
-    expect(keys.single.read<String>('table'), 'local_owners');
-    expect(keys.single.read<String>('on_delete'), 'RESTRICT');
-    expect(
-      await database.customSelect('SELECT * FROM word_reports').get(),
-      isEmpty,
-    );
-  });
+  test(
+    'fresh current schema has one empty ten-column historical report queue',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      expect(database.schemaVersion, 23);
+      expect(database.allTables, hasLength(43));
+      final columns = await database
+          .customSelect('PRAGMA table_info(word_reports)')
+          .get();
+      expect(columns.map((row) => row.read<String>('name')), [
+        'id',
+        'owner_id',
+        'word_id',
+        'category_id',
+        'word_revision',
+        'snapshot_json',
+        'snapshot_sha256',
+        'reason',
+        'comment',
+        'queued_at_utc_ms',
+      ]);
+      expect(columns.map((row) => row.read<int>('notnull')), [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+      ]);
+      expect(columns.map((row) => row.read<int>('pk')), [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ]);
+      final keys = await database
+          .customSelect('PRAGMA foreign_key_list(word_reports)')
+          .get();
+      expect(keys, hasLength(1));
+      expect(keys.single.read<String>('from'), 'owner_id');
+      expect(keys.single.read<String>('table'), 'local_owners');
+      expect(keys.single.read<String>('on_delete'), 'RESTRICT');
+      expect(
+        await database.customSelect('SELECT * FROM word_reports').get(),
+        isEmpty,
+      );
+    },
+  );
 
   test(
     'report queue enforces scalar constraints without requiring a live target',
@@ -247,21 +250,27 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        21,
+        23,
       );
-      expect(database.allTables, hasLength(40));
+      expect(database.allTables, hasLength(43));
       expect(before, rows);
       final after = await ownerMigrationRows(database);
       expect(after['word_reports'], isEmpty);
       expect(after['learning_time_preferences'], isEmpty);
       expect(after['learning_time_scopes'], isEmpty);
       expect(after['learning_time_segments'], isEmpty);
+      expect(after['learning_profiles'], isEmpty);
+      expect(after['learning_pack_versions'], isEmpty);
+      expect(after['lexical_content_snapshots'], isEmpty);
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
           ..remove('word_reports')
           ..remove('learning_time_preferences')
           ..remove('learning_time_scopes')
-          ..remove('learning_time_segments'),
+          ..remove('learning_time_segments')
+          ..remove('learning_profiles')
+          ..remove('learning_pack_versions')
+          ..remove('lexical_content_snapshots'),
         before,
       );
       final objects = await database
@@ -279,6 +288,10 @@ void main() {
         'learning_time_preferences',
         'learning_time_scopes',
         'learning_time_segments',
+        'learning_profiles',
+        'learning_pack_versions',
+        'lexical_content_snapshots',
+        'idx_lexical_content_owner_word',
         'idx_learning_time_scopes_owner_session',
       });
       for (final object in oldObjects.entries) {

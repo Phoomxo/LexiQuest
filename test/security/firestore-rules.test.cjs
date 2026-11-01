@@ -1269,3 +1269,27 @@ describe('ordinary answer evidence v2 contract', () => {
   });
 });
 
+describe('server-only billing and Research namespaces', () => {
+  for (const collection of [
+    'billing_accounts', 'billing_purchases', 'billing_usage', 'billing_usage_windows',
+    'research_enrollments', 'research_consents', 'research_study_archives',
+  ]) {
+    it(`denies client access to ${collection}`, async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), collection, 'synthetic-record'), {
+          owner_uid: alice, synthetic: true,
+        });
+      });
+      const clients = [authDb(alice), authDb(bob), authDb(alice, true),
+        testEnv.unauthenticatedContext().firestore()];
+      for (const db of clients) {
+        const record = doc(db, collection, 'synthetic-record');
+        await assertFails(getDoc(record));
+        await assertFails(setDoc(doc(db, collection, 'synthetic-new'), { owner_uid: alice }));
+        await assertFails(updateDoc(record, { synthetic: false }));
+        await assertFails(deleteDoc(record));
+      }
+    });
+  }
+});
+

@@ -470,7 +470,45 @@ def test_export_and_delete_share_the_exact_owner_data_inventory() -> None:
         ("categories", "uid", True),
         ("purchased_items", "user_id", False),
         ("vocabulary", "uid", False),
+        ("billing_accounts", "firebaseUid", False),
+        ("billing_purchases", "firebaseUid", False),
+        ("billing_usage", "firebaseUid", False),
+        ("billing_usage_windows", "firebaseUid", False),
+        ("research_enrollments", "firebaseUid", False),
+        ("research_consents", "firebaseUid", False),
+        ("research_study_archives", "firebaseUid", False),
     ]
+
+
+@pytest.mark.parametrize('collections', [
+    ('billing_accounts', 'billing_purchases', 'billing_usage', 'billing_usage_windows'),
+    ('research_enrollments', 'research_consents', 'research_study_archives'),
+])
+def test_server_only_namespaces_are_exported_and_deleted_for_only_the_authenticated_owner(collections):
+    records = {f'{collection}/synthetic-a': {'firebaseUid': 'firebase-user', 'synthetic': collection}
+        for collection in collections}
+    other = {f'{collection}/synthetic-b': {'firebaseUid': 'other-user'} for collection in collections}
+    all_records = {**records, **other}
+    reader = FirebaseOwnedAccountSnapshotReader(
+        read_path=lambda path, recursive, at: [FirebaseExportDocument(path, all_records[path])] if path in all_records else [],
+        find_owned_paths=lambda collection, field, uid, at: [path for path, row in all_records.items()
+            if path.split('/')[0] == collection and row.get(field) == uid],
+        read_auth_user=_auth_user, now_utc=lambda: NOW)
+    snapshot = reader.read_complete_snapshot('firebase-user')
+    assert {row['path'] for row in snapshot['firestoreDocuments']} == set(records)
+    deleted = []
+    trees = []
+    deleter = FirebaseOwnerIsolatedAccountDeleter(
+        delete_tree=lambda target, operation_id: trees.append(target.path),
+        delete_document=lambda target: deleted.append(target.path), read_owned_path=lambda _: None,
+        find_owned_paths=lambda collection, field, uid: [FirebaseOwnedDeleteTarget(path, NOW, field, uid)
+            for path, row in all_records.items() if path.split('/')[0] == collection and row.get(field) == uid],
+        delete_user=lambda uid: None)
+    deleter.delete_owned_data(owner_id='owner-a', firebase_uid='firebase-user',
+        scopes=ACCOUNT_DELETION_SCOPES, operation_id='synthetic-delete')
+    assert set(deleted) == set(records)
+    assert not set(deleted) & set(other)
+    assert trees == ['field_users/firebase-user']
 
 
 def test_snapshot_reader_uses_one_read_time_and_allowlists_auth_metadata() -> None:
@@ -521,7 +559,7 @@ def test_snapshot_reader_uses_one_read_time_and_allowlists_auth_metadata() -> No
             "categories": ["categories/category-a"],
             "purchased_items": ["purchased_items/purchase-a"],
             "vocabulary": ["vocabulary/private-a"],
-        }[collection]
+        }.get(collection, [])
 
     provider = SimpleNamespace(
         provider_id="google.com",

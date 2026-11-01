@@ -683,6 +683,69 @@ No old row/column is rewritten or time backfilled. Capture is per-owner default-
 
 Acceptance: genuine populated20→21 migration/reopen retains every old row and DDL; strict SQL/domain constraints, exact closed-intent replay/readback/link collisions and owner/gate/fence/ambient-transaction races; closed A commit after B live handoff; every actual eligible caller's ready/input/wait guards; owner preference merge, personal/full export, reverse purge/cascade and sync exclusion. No feature-readiness or rollout claim follows from reservation or partial tests.
 
+### v22 — Owner learning profile, optional onboarding and dated goal
+
+**Reserved:** 2026-11-01, Root integration, branch codex/remaining-system-readiness.
+**Status:** RESERVED. Executable baseline21/40 captured before this reservation.
+Expected inventory41 after one additive relation; v23+ remains unreserved.
+**Plan:** active completion run in `2026-10-30-remaining-feature-sequence.md`, P1.
+
+`learning_profiles` has one restrictive owner FK/primary key, positive safe-integer
+revision, completed/skipped onboarding state, nullable bounded goal/civil target
+date/daily minutes, strict versioned bounded interests JSON and a UTC update time.
+Absence is revision0 and creates no row on read. Save uses an immutable complete
+intent with expected revision and exact replay. Profile choices are personal
+preferences, not learning/reward/Research evidence or a sync collection.
+
+The genuine v21 capture ran against actual AppDatabase21 before any schema edit.
+It preserves all64 earlier synthetic rows and adds three time rows, including
+reversed UTC observations with independent monotonic duration. It captured40
+tables and67 synthetic rows, with foreign-key and integrity checks. Files are
+`test/fixtures/schema_v21.sql`, SHA256
+`3de70742fe0d7a06daaa9b516910c7cbdc84ebac98cb690f0df46872f1e87a99`, and
+`test/fixtures/populated_schema_v21.json`, SHA256
+`5347e5ba364f32e3929199a34886fe083cbdc31d79d467381d5369673e67d750`.
+The reproducible capture is `tool/capture_schema_v21_test.dart`; its source-version
+assertion intentionally requires the v21 baseline. First migration RED observed
+expected22 versus actual21 before reservation.
+
+Acceptance requires populated21-to22 migration/reopen preserving old rows/DDL,
+no backfill, constraints, exact retry/conflict/owner ABA/deletion fence, optional
+onboarding/editor/countdown UI, full personal export/purge, target-wins merge and
+source-only move. Root owns shared schema and lifecycle. Research, uploads and
+payments remain default-off. No readiness claim follows from reservation.
+
+### v23 — Immutable learning packs and retained lexical snapshots
+
+**Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
+**Status:** reserved for implementation; no full-source or release attestation.
+
+Add `learning_pack_versions` and `lexical_content_snapshots`, taking the runtime
+inventory from41 to43 tables. Cache bytes are nullable; pin requires bytes.
+Canonical category/import links and installation time are all present or absent.
+Package identity includes its digest so owner merge can retain conflicting
+variants. Lexical records retain original word revision/content pins and shared
+media; removing cached package bytes cannot delete words or learning history.
+Root owns schema and lifecycle; existing canonical vocabulary writers are reused.
+
+Genuine pre-migration22 capture ran successfully against AppDatabase22/41 before
+any v23 edit, preserving all67 previous rows and adding one synthetic profile.
+`tool/capture_schema_v22_test.dart` captures68 rows with FK/integrity checks.
+`test/fixtures/schema_v22.sql` SHA256 is
+`d2a56b57253db3664e30a2e117f902be5b1f8cf8c854489028982b50578541bc`;
+`test/fixtures/populated_schema_v22.json` SHA256 is
+`d09dc35bc9103456092c5f133bca2a62540f49dd3bfe0525f1d48252d2e839e9`.
+The capture records the generated database-source hash and explicitly uncommitted
+Wave24 state. The migration test observed expected23 versus actual22 before
+reservation. Existing older fixtures and stored Research pins remain untouched.
+
+Acceptance requires populated22-to23 migration/reopen with every old row and DDL
+preserved; bounded constraints and exact retry; owner ABA/fence/ambient rejection;
+atomic canonical install rollback; remove/repair preserving learning facts;
+category/word/pack parent merge reconciliation; full personal export/purge; no
+Research or pack-specific ordinary sync writes; actual accessible catalog/detail
+and lexical-card callers. Trusted catalog content and rollout remain external.
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |

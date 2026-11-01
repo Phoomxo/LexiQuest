@@ -53,6 +53,13 @@ FIREBASE_ACCOUNT_DATA_SOURCES = (
     FirebaseOwnedDataSource("categories", "uid", True),
     FirebaseOwnedDataSource("purchased_items", "user_id", False),
     FirebaseOwnedDataSource("vocabulary", "uid", False),
+    FirebaseOwnedDataSource("billing_accounts", "firebaseUid", False),
+    FirebaseOwnedDataSource("billing_purchases", "firebaseUid", False),
+    FirebaseOwnedDataSource("billing_usage", "firebaseUid", False),
+    FirebaseOwnedDataSource("billing_usage_windows", "firebaseUid", False),
+    FirebaseOwnedDataSource("research_enrollments", "firebaseUid", False),
+    FirebaseOwnedDataSource("research_consents", "firebaseUid", False),
+    FirebaseOwnedDataSource("research_study_archives", "firebaseUid", False),
 )
 
 _OPERATION_COMMON_KEYS = frozenset(

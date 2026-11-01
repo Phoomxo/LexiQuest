@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
@@ -89,6 +90,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         conflicts += await _mergeWords(source.id, target.id, upgradedAt);
         await _moveSavedWords(source.id, target.id, upgradedAt);
         await _makeImportKeysUnique(source.id, target.id);
+        conflicts += await _mergeLearningPacks(
+          source.id,
+          target.id,
+          upgradedAt,
+        );
         conflicts += await _makeRewardKeysUnique(
           source.id,
           target.id,
@@ -100,6 +106,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           upgradedAt,
         );
         await _mergeExperimentAssignments(source.id, target.id);
+        await _mergeLearningProfile(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
         await _database.customUpdate(
           'DELETE FROM learning_time_preferences WHERE owner_id = ?',
@@ -254,6 +261,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         ],
         updates: {_database.vocabularyImports},
       );
+      await _database.customUpdate(
+        'UPDATE learning_pack_versions SET category_id = ? WHERE category_id = ?',
+        variables: [
+          Variable<String>(targetCategoryId),
+          Variable<String>(guestId),
+        ],
+        updates: {_database.learningPackVersions},
+      );
       await _retireDuplicateOutbox(sourceId, 'category', guestId);
       await _remapEntityReferences(
         sourceId,
@@ -326,6 +341,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         'UPDATE vocabulary_import_rows SET word_id = ? WHERE word_id = ?',
         variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
         updates: {_database.vocabularyImportRows},
+      );
+      await _database.customUpdate(
+        'UPDATE lexical_content_snapshots SET word_id = ? WHERE word_id = ?',
+        variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
+        updates: {_database.lexicalContentSnapshots},
       );
       await _database.customUpdate(
         'UPDATE srs_states SET word_id = ? WHERE word_id = ?',
@@ -896,6 +916,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
       if (table == 'learning_time_preferences' ||
+          table == 'learning_profiles' ||
           table == 'saved_words' ||
           table == 'experiment_assignments' ||
           table == 'research_participation_permits' ||
@@ -914,6 +935,128 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       variables: [Variable<String>(targetId)],
       updates: {_database.outboxOperations},
     );
+  }
+
+  Future<int> _mergeLearningPacks(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final sources =
+        await (_database.select(_database.learningPackVersions)
+              ..where((row) => row.ownerId.equals(sourceId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    var conflicts = 0;
+    for (final source in sources) {
+      final target =
+          await (_database.select(_database.learningPackVersions)..where(
+                (row) =>
+                    row.ownerId.equals(targetId) &
+                    row.packId.equals(source.packId) &
+                    row.packVersion.equals(source.packVersion) &
+                    row.packageSha256.equals(source.packageSha256),
+              ))
+              .getSingleOrNull();
+      if (target == null) continue;
+      if (target.manifestJson != source.manifestJson ||
+          target.manifestSha256 != source.manifestSha256 ||
+          target.packageByteCount != source.packageByteCount ||
+          target.retainedMediaJson != source.retainedMediaJson ||
+          target.retainedMediaSha256 != source.retainedMediaSha256 ||
+          target.revision >= 9007199254740991) {
+        throw StateError('Colliding pack metadata cannot be reconciled');
+      }
+      for (final pack in [source, target]) {
+        final bytes = pack.packageBytes;
+        if (bytes != null &&
+            (bytes.length != pack.packageByteCount ||
+                crypto.sha256.convert(bytes).toString() !=
+                    pack.packageSha256)) {
+          throw StateError('Colliding pack cache integrity is invalid');
+        }
+      }
+      final mergeHash = crypto.sha256
+          .convert(
+            utf8.encode(
+              jsonEncode({
+                'policy': 'owner-pack-merge-v1',
+                'sourceOwnerId': sourceId,
+                'targetOwnerId': targetId,
+                'sourceId': source.id,
+                'sourceRevision': source.revision,
+                'targetId': target.id,
+                'targetRevision': target.revision,
+              }),
+            ),
+          )
+          .toString();
+      final promote = target.categoryId == null && source.categoryId != null;
+      await (_database.update(
+        _database.learningPackVersions,
+      )..where((row) => row.id.equals(target.id))).write(
+        db.LearningPackVersionsCompanion(
+          packageBytes: Value(target.packageBytes ?? source.packageBytes),
+          categoryId: Value(promote ? source.categoryId : target.categoryId),
+          importId: Value(promote ? source.importId : target.importId),
+          installedAtUtcMs: Value(
+            promote ? source.installedAtUtcMs : target.installedAtUtcMs,
+          ),
+          revision: Value(target.revision + 1),
+          lastMutationId: Value('pack-merge:$mergeHash'),
+          lastMutationSha256: Value(mergeHash),
+          updatedAtUtcMs: Value(resolvedAt),
+        ),
+      );
+      await (_database.update(
+        _database.lexicalContentSnapshots,
+      )..where((row) => row.packVersionId.equals(source.id))).write(
+        db.LexicalContentSnapshotsCompanion(packVersionId: Value(target.id)),
+      );
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'learningPack',
+        entityId: target.id,
+        localSnapshot: _packMergeSnapshot(source),
+        targetSnapshot: _packMergeSnapshot(target),
+        resolvedAt: resolvedAt,
+      );
+      await (_database.delete(
+        _database.learningPackVersions,
+      )..where((row) => row.id.equals(source.id))).go();
+      conflicts++;
+    }
+    return conflicts;
+  }
+
+  Map<String, Object?> _packMergeSnapshot(db.LearningPackVersion pack) => {
+    ...pack.toJson(),
+    'packageBytes': pack.packageBytes == null
+        ? null
+        : {
+            'retainedPackageSha256': pack.packageSha256,
+            'byteCount': pack.packageByteCount,
+          },
+    // Content-addressed references survive further owner merges without another blob copy.
+    'retainedMediaJson': {
+      'retainedPackageSha256': pack.packageSha256,
+      'sha256': pack.retainedMediaSha256,
+    },
+  };
+
+  Future<void> _mergeLearningProfile(String sourceId, String targetId) async {
+    final target = await (_database.select(
+      _database.learningProfiles,
+    )..where((row) => row.ownerId.equals(targetId))).getSingleOrNull();
+    if (target != null) {
+      await (_database.delete(
+        _database.learningProfiles,
+      )..where((row) => row.ownerId.equals(sourceId))).go();
+    } else {
+      await (_database.update(_database.learningProfiles)
+            ..where((row) => row.ownerId.equals(sourceId)))
+          .write(db.LearningProfilesCompanion(ownerId: Value(targetId)));
+    }
   }
 
   Future<void> _requeueOwnerForNewCloudNamespace(

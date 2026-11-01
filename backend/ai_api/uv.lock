@@ -572,6 +572,7 @@ name = "lexiquest-ai-api"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "firebase-admin" },
     { name = "google-cloud-kms" },
@@ -592,6 +593,7 @@ llm = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", specifier = "==50.0.2" },
     { name = "fastapi", specifier = "==0.140.0" },
     { name = "firebase-admin", specifier = "==7.5.0" },
     { name = "google-cloud-kms", specifier = "==3.18.0" },

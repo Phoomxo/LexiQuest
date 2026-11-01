@@ -8,12 +8,14 @@ root (``backend/ai_api/.env``).
 from __future__ import annotations
 
 import ipaddress
+import json
 import re
+from datetime import timedelta
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from lexiquest_ai.models import MAX_TEXT_LENGTH_CEILING
@@ -105,6 +107,7 @@ class Settings(BaseSettings):
         env_file=_ENV_FILE,
         extra="ignore",
         frozen=True,
+        hide_input_in_errors=True,
     )
 
     # --- Service identity ---
@@ -137,6 +140,82 @@ class Settings(BaseSettings):
         ge=1,
         le=512 * 1024 * 1024,
     )
+
+    research_enabled: bool = False
+    research_operation_public_keys_json: str = Field(default='{}', max_length=16384)
+    research_participation_public_keys_json: str = Field(default='{}', max_length=16384)
+    research_authority_max_age_seconds: int = Field(default=300, ge=1, le=3600)
+
+    def research_signatures(self):
+        from lexiquest_ai.research import ResearchError, ResearchSignatures, unbase64, unique_json
+        try:
+            operations = unique_json(self.research_operation_public_keys_json.encode('utf-8'), 16384)
+            participation = unique_json(self.research_participation_public_keys_json.encode('utf-8'), 16384)
+            if not isinstance(operations, dict) or not isinstance(participation, dict) or not 1 <= len(operations) <= 32 or not 1 <= len(participation) <= 32:
+                raise ValueError()
+            operation_keys = {key: unbase64(value, 32) for key, value in operations.items()}
+            if any(len(value) != 32 for value in operation_keys.values()) or any(not isinstance(value, str) or re.fullmatch(r'04[0-9a-fA-F]{128}', value) is None for value in participation.values()):
+                raise ValueError()
+            return ResearchSignatures(operation_keys, {key: bytes.fromhex(value) for key, value in participation.items()})
+        except (ValueError, TypeError, ResearchError):
+            raise ValueError('Research requires explicit valid trusted public keys') from None
+
+    @model_validator(mode='after')
+    def _validate_research(self):
+        if self.research_enabled:
+            self.research_signatures()
+        return self
+
+    billing_enabled: bool = False
+    billing_managed_content_required: bool = False
+    billing_package_name: str = 'com.lexiquest.app'
+    billing_policy_revision: str = ''
+    billing_products_json: str = Field(default='[]', max_length=16384)
+    billing_account_binding_key: SecretStr = Field(default=SecretStr(''), repr=False)
+    billing_authority_max_age_seconds: int = Field(default=300, ge=1, le=3600)
+    billing_verification_requests_per_minute: int = Field(default=20, ge=1, le=120)
+    billing_rtdn_audience: str = Field(default='', max_length=2048)
+    billing_rtdn_service_account_email: str = Field(default='', max_length=320)
+
+    def billing_policy(self):
+        from lexiquest_ai.billing import BillingError, BillingPolicy, BillingProduct
+        try:
+            values = json.loads(self.billing_products_json)
+            if not isinstance(values, list) or not 1 <= len(values) <= 32:
+                raise ValueError()
+            products = []
+            for value in values:
+                if not isinstance(value, dict) or set(value) != {
+                    'productId', 'basePlanId', 'entitlements', 'dailyManagedUnits',
+                }:
+                    raise ValueError()
+                rights = value['entitlements']
+                if not isinstance(rights, list) or not all(isinstance(right, str) for right in rights) or len(rights) != len(set(rights)):
+                    raise ValueError()
+                products.append(BillingProduct(value['productId'], value['basePlanId'],
+                    frozenset(rights), value['dailyManagedUnits']))
+            return BillingPolicy(self.billing_package_name, self.billing_policy_revision,
+                tuple(products), timedelta(seconds=self.billing_authority_max_age_seconds),
+                verification_requests_per_minute=self.billing_verification_requests_per_minute)
+        except (ValueError, TypeError, KeyError, BillingError):
+            raise ValueError('Billing requires an explicit valid product policy') from None
+
+    @model_validator(mode='after')
+    def _validate_billing(self):
+        if self.billing_managed_content_required and not self.billing_enabled:
+            raise ValueError('Managed content billing requires billing to be enabled')
+        if self.billing_enabled:
+            self.billing_policy()
+            if not 32 <= len(self.billing_account_binding_key.get_secret_value().encode()) <= 256:
+                raise ValueError('Billing requires an account binding key of 32 to 256 bytes')
+            if self.environment.lower() == 'production' and not self.billing_rtdn_audience:
+                raise ValueError('Production billing requires authenticated Pub/Sub configuration')
+        if bool(self.billing_rtdn_audience) != bool(self.billing_rtdn_service_account_email):
+            raise ValueError('Pub/Sub audience and service account must be configured together')
+        if self.billing_rtdn_audience and (not self.billing_rtdn_audience.startswith('https://')
+                or not self.billing_rtdn_service_account_email.endswith('.gserviceaccount.com')):
+            raise ValueError('Pub/Sub requires an HTTPS audience and service account email')
+        return self
 
     # --- Response cache (primary cost control) ---
     cache_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=1, le=365 * 24 * 3600)

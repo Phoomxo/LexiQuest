@@ -5,6 +5,8 @@ import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
+import 'tables/learning_pack_tables.dart';
+import 'tables/learning_profile_tables.dart';
 import 'tables/learning_time_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
@@ -67,6 +69,9 @@ final _productionNativeOptions = DriftNativeOptions(
     LearningTimePreferences,
     LearningTimeScopes,
     LearningTimeSegments,
+    LearningProfiles,
+    LearningPackVersions,
+    LexicalContentSnapshots,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -76,7 +81,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -259,15 +264,31 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 21) {
         await _createMissingTables(migrator);
       }
+      if (from < 22) {
+        await _createMissingTables(migrator);
+      }
+      if (from < 23) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
       await _createLearningTimeIndexes();
+      await _createLearningPackIndexes();
       await _createEventIndexes();
       await _createMeasurementOpportunityIndexes();
     },
   );
+
+  Future<void> _createLearningPackIndexes() async {
+    if (await _tableExists('lexical_content_snapshots')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_lexical_content_owner_word '
+        'ON lexical_content_snapshots(owner_id, word_id)',
+      );
+    }
+  }
 
   Future<void> _createLearningTimeIndexes() async {
     if (await _tableExists('learning_time_scopes')) {
@@ -379,6 +400,15 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('learning_time_segments')) {
       await migrator.createTable(learningTimeSegments);
+    }
+    if (!await _tableExists('learning_profiles')) {
+      await migrator.createTable(learningProfiles);
+    }
+    if (!await _tableExists('learning_pack_versions')) {
+      await migrator.createTable(learningPackVersions);
+    }
+    if (!await _tableExists('lexical_content_snapshots')) {
+      await migrator.createTable(lexicalContentSnapshots);
     }
     if (!await _tableExists('answer_attempts')) {
       await migrator.createTable(answerAttempts);

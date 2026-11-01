@@ -38,14 +38,14 @@ void main() {
       },
     );
 
-    test('fresh database reports current schema version 21', () async {
+    test('fresh database reports current schema version 23', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 21);
-      expect(db.allTables, hasLength(40));
+      expect(version, 23);
+      expect(db.allTables, hasLength(43));
       expect(
         await db.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,

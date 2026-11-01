@@ -58,7 +58,7 @@ void main() {
       final navigation = _FocusEntryNavigation();
       try {
         final before = (await tester.runAsync(h.snapshotAllTables))!;
-        expect(before, hasLength(40));
+        expect(before, hasLength(43));
         await _pumpFocusEntry(tester, h, navigation: navigation);
         await _scrollFocusEntry(tester);
         await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);

@@ -7,6 +7,8 @@
 /// immutable request/response pair keeps the wire contract explicit.
 library;
 
+import 'package:uuid/uuid.dart';
+
 /// Kinds of teaching content the LexiQuest-LM (or any compatible provider)
 /// can generate. Matches the `ContentKind` literal on the backend so the
 /// wire contract cannot drift.
@@ -67,6 +69,9 @@ enum AiFailureCategory {
   generation,
   cancelled,
   configuration,
+  paymentRequired,
+  quotaExhausted,
+  operationUncertain,
   unknown,
 }
 
@@ -89,12 +94,17 @@ class ContentRequest {
     required this.kind,
     required this.cefr,
     required this.language,
+    required this.operationId,
+    this._stillCurrent,
   });
 
   final String text;
   final ContentKind kind;
   final CefrLevel cefr;
   final String language; // 'en' or 'th'
+  final String operationId;
+  final bool Function()? _stillCurrent;
+  bool get isCurrent => _stillCurrent?.call() ?? true;
 
   /// Validates inputs against the same rules as the backend schema, so a
   /// caller-side error throws before we even cross the network.
@@ -103,6 +113,7 @@ class ContentRequest {
     required ContentKind kind,
     CefrLevel cefr = CefrLevel.unknown,
     String language = 'en',
+    bool Function()? stillCurrent,
   }) {
     final normalizedText = _normalizeText(text);
     if (normalizedText.isEmpty || normalizedText.length > 500) {
@@ -125,6 +136,8 @@ class ContentRequest {
       kind: kind,
       cefr: cefr,
       language: normalizedLanguage,
+      operationId: const Uuid().v4(),
+      stillCurrent: stillCurrent,
     );
   }
 

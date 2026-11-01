@@ -22,15 +22,15 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
   test(
-    'fresh v18 has35 tables and retains the four bounded v17 opportunity fields',
+    'fresh current schema retains the four bounded v17 opportunity fields',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 21);
+      expect(database.schemaVersion, 23);
       final columns = await database
           .customSelect('PRAGMA table_info(measurement_opportunities)')
           .get();
-      expect(database.allTables, hasLength(40));
+      expect(database.allTables, hasLength(43));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -147,6 +147,9 @@ void main() {
           expect(oldRows.remove('learning_time_preferences'), isEmpty);
           expect(oldRows.remove('learning_time_scopes'), isEmpty);
           expect(oldRows.remove('learning_time_segments'), isEmpty);
+          expect(oldRows.remove('learning_profiles'), isEmpty);
+          expect(oldRows.remove('learning_pack_versions'), isEmpty);
+          expect(oldRows.remove('lexical_content_snapshots'), isEmpty);
           expect(oldRows, hasLength(34));
         } finally {
           await source.database.close();
@@ -220,10 +223,10 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          21,
+          23,
         );
         expect(before, hasLength(34));
-        expect(database.allTables, hasLength(40));
+        expect(database.allTables, hasLength(43));
         expect(
           await database.customSelect('SELECT * FROM word_reports').get(),
           isEmpty,
@@ -235,6 +238,9 @@ void main() {
         expect(after['learning_time_preferences'], isEmpty);
         expect(after['learning_time_scopes'], isEmpty);
         expect(after['learning_time_segments'], isEmpty);
+        expect(after['learning_profiles'], isEmpty);
+        expect(after['learning_pack_versions'], isEmpty);
+        expect(after['lexical_content_snapshots'], isEmpty);
         for (final table in before.entries) {
           final retained = after[table.key]!.map((row) {
             final old = Map<String, Object?>.from(row);

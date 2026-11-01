@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from lexiquest_ai.app import RequestBodyLimitMiddleware, create_app
 from lexiquest_ai.config import Settings
+from lexiquest_ai.auth import AuthenticatedUser
 
 from conftest import (
     FailingContentService,
@@ -27,6 +28,172 @@ _CONTENT_BODY = {
     "cefr": "a1",
     "language": "en",
 }
+
+
+def test_billing_is_explicitly_disabled_without_affecting_free_content(client):
+    response = client.get('/v1/billing/catalog', headers={'Authorization': 'Bearer valid-token'})
+    assert response.status_code == 503
+    assert response.json()['detail']['code'] == 'BILLING_DISABLED'
+    free = client.post('/v1/content', json={'text': 'synthetic', **_CONTENT_BODY},
+        headers={'Authorization': 'Bearer valid-token'})
+    assert free.status_code == 200
+
+
+def billing_client(*, anonymous=False, compose_service=True, notification_verifier=None):
+    from test_billing import service_fixture
+    service, play, documents, clock = service_fixture()
+    verifier = FakeTokenVerifier()
+    verifier.verify = lambda token: AuthenticatedUser('synthetic-a', is_anonymous=anonymous)
+    settings = Settings(billing_enabled=True, billing_managed_content_required=True,
+        billing_policy_revision=service.policy.revision,
+        billing_account_binding_key='synthetic-only-account-key-00000000',
+        billing_products_json=json.dumps([{'productId': product.product_id,
+            'basePlanId': product.base_plan_id, 'entitlements': sorted(product.entitlements),
+            'dailyManagedUnits': product.daily_managed_units} for product in service.policy.products]))
+    content = FakeContentService()
+    client = TestClient(create_app(content_service=content, token_verifier=verifier,
+        settings=settings, billing_service=service if compose_service else None,
+        billing_notification_verifier=notification_verifier))
+    return client, service, play, documents, content
+
+
+def test_billing_verification_budget_stops_before_refresh_and_play_even_with_reused_request_ids():
+    from lexiquest_ai.billing import BillingError
+    client, service, play, documents, _ = billing_client()
+    refreshes = []
+    begin_refresh = service.store.begin_refresh
+    def begin(**arguments):
+        refreshes.append(arguments)
+        return begin_refresh(**arguments)
+    service.store.begin_refresh = begin
+    def denied(**arguments):
+        play.verifications.append(arguments)
+        raise BillingError('purchase_denied')
+    play.verify = denied
+    responses = [client.post('/v1/billing/play/verify',
+        headers={'Authorization': 'Bearer valid-token'},
+        json={'purchaseToken': f'synthetic-invalid-token-{index}',
+              'requestId': f'synthetic-request-{index % 2}'}) for index in range(40)]
+
+    assert [response.status_code for response in responses[:20]] == [403] * 20
+    assert [response.status_code for response in responses[20:]] == [429] * 20
+    assert responses[-1].json()['detail']['code'] == 'BILLING_VERIFICATION_RATE_LIMITED'
+    assert responses[-1].headers['Retry-After'] == '60'
+    assert len(play.verifications) == len(refreshes) == 20
+    assert not any(path.startswith('billing_purchases/') for path in documents.values)
+    assert not any(path.startswith('billing_accounts/') for path in documents.values)
+
+
+def test_billing_catalog_verify_and_entitlement_read_have_no_owner_or_token_fields():
+    client, service, _, _, _ = billing_client()
+    headers = {'Authorization': 'Bearer valid-token'}
+    catalog = client.get('/v1/billing/catalog', headers=headers)
+    assert catalog.status_code == 200
+    assert catalog.json()['accountIdentifier'] == service.account_identifier('synthetic-a')
+    verified = client.post('/v1/billing/play/verify', headers=headers,
+        json={'purchaseToken': 'synthetic-token-secret', 'requestId': 'synthetic-verify'})
+    assert verified.status_code == 200
+    assert verified.json()['grants'][0]['entitlement'] == 'managedContent'
+    assert client.get('/v1/billing/entitlements', headers=headers).json() == verified.json()
+    for response in (catalog, verified):
+        assert 'synthetic-token-secret' not in response.text
+        assert 'synthetic-a' not in response.text
+        assert 'firebaseUid' not in response.text
+
+
+@pytest.mark.parametrize('anonymous', [True, None])
+def test_billing_requires_a_known_registered_identity(anonymous):
+    client, _, _, documents, content = billing_client(anonymous=anonymous)
+    headers = {'Authorization': 'Bearer valid-token', 'Idempotency-Key': 'synthetic-1'}
+    for method, path, body in [
+        ('get', '/v1/billing/catalog', None),
+        ('post', '/v1/billing/play/verify', {'purchaseToken': 'synthetic-token-secret', 'requestId': 'synthetic-verify'}),
+        ('post', '/v1/content', {'text': 'synthetic', **_CONTENT_BODY}),
+    ]:
+        response = getattr(client, method)(path, headers=headers, **({'json': body} if body else {}))
+        assert response.status_code == 403
+        assert response.json()['detail']['code'] == 'BILLING_ACCOUNT_REQUIRED'
+    assert documents.values == {}
+    assert content.calls == []
+
+
+def test_paid_content_verifies_quota_before_provider_and_replays_identical_response():
+    client, service, _, _, content = billing_client()
+    headers = {'Authorization': 'Bearer valid-token', 'Idempotency-Key': 'synthetic-1'}
+    body = {'text': 'synthetic', **_CONTENT_BODY}
+    denied = client.post('/v1/content', headers=headers, json=body)
+    assert denied.status_code == 402
+    assert content.calls == []
+    service.verify_purchase(firebase_uid='synthetic-a', purchase_token='synthetic-token-secret')
+    first = client.post('/v1/content', headers=headers, json=body)
+    assert first.status_code == 200
+    assert client.post('/v1/content', headers=headers, json=body).json() == first.json()
+    assert len(content.calls) == 1
+    conflict = client.post('/v1/content', headers=headers, json={**body, 'text': 'different'})
+    assert conflict.status_code == 409
+    assert len(content.calls) == 1
+
+
+def test_paid_content_without_idempotency_or_backend_fails_closed():
+    client, _, _, _, content = billing_client()
+    missing = client.post('/v1/content', headers={'Authorization': 'Bearer valid-token'},
+        json={'text': 'synthetic', **_CONTENT_BODY})
+    assert missing.status_code == 400
+    assert content.calls == []
+    unavailable, _, _, _, content = billing_client(compose_service=False)
+    assert unavailable.get('/health/ready').status_code == 503
+    assert unavailable.get('/v1/billing/catalog', headers={'Authorization': 'Bearer valid-token'}).status_code == 503
+    assert content.calls == []
+
+
+def test_invalid_purchase_body_never_echoes_its_token():
+    client, _, _, documents, _ = billing_client()
+    secret = 'synthetic-token-secret-' * 220
+    response = client.post('/v1/billing/play/verify', headers={'Authorization': 'Bearer valid-token'},
+        json={'purchaseToken': secret, 'requestId': 'synthetic-verify', 'firebaseUid': 'attacker-selected-owner'})
+    assert response.status_code == 422
+    assert response.json()['detail']['code'] == 'BILLING_INVALID_REQUEST'
+    assert secret not in response.text
+    assert 'attacker-selected-owner' not in response.text
+    assert documents.values == {}
+
+
+def test_billing_notifications_stay_unavailable_without_configured_push_identity():
+    client, _, _, documents, _ = billing_client()
+    response = client.post('/v1/billing/play/notifications', json={'message': {'data': 'e30='}},
+        headers={'Authorization': 'Bearer valid-token'})
+    assert response.status_code == 503
+    assert response.json()['detail']['code'] == 'BILLING_NOTIFICATION_UNAVAILABLE'
+    assert documents.values == {}
+
+
+def test_billing_notification_rejects_user_token_then_refreshes_actual_purchase():
+    from test_play_billing import AUDIENCE, EMAIL, notification, push_claims
+    from lexiquest_ai.play_billing import GooglePubSubPushVerifier
+    from lexiquest_ai.billing import VerifiedPlayPurchase
+    from test_billing import NOW
+    def decode(token, audience):
+        if token != 'synthetic-pubsub-signed-token':
+            raise ValueError('synthetic-invalid-push-token')
+        return push_claims()
+    verifier = GooglePubSubPushVerifier(audience=AUDIENCE, service_account_email=EMAIL, decode=decode)
+    client, service, play, documents, content = billing_client(notification_verifier=verifier)
+    service.verify_purchase(firebase_uid='synthetic-a', purchase_token='synthetic-token-secret')
+    payload = notification({'packageName': service.policy.package_name,
+        'subscriptionNotification': {'notificationType': 2, 'purchaseToken': 'synthetic-token-secret'}})
+    before = repr(documents.values)
+    denied = client.post('/v1/billing/play/notifications', json=payload,
+        headers={'Authorization': 'Bearer valid-token'})
+    assert denied.status_code == 401
+    assert repr(documents.values) == before
+    play.result = VerifiedPlayPurchase('synthetic-premium', 'synthetic-monthly',
+        service.account_identifier('synthetic-a'), 'SUBSCRIPTION_STATE_EXPIRED', NOW, NOW, True)
+    accepted = client.post('/v1/billing/play/notifications', json=payload,
+        headers={'Authorization': 'Bearer synthetic-pubsub-signed-token'})
+    assert accepted.status_code == 200
+    assert accepted.json() == {'accepted': True, 'knownPurchase': True}
+    assert service.entitlements(firebase_uid='synthetic-a').grants == ()
+    assert content.calls == []
 
 
 @pytest.mark.parametrize("length", [None, "1"])
