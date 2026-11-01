@@ -5,7 +5,7 @@
   },
   "scripts": {
     "seed": "node lib/add_default_categories.js",
-    "test:rules": "firebase emulators:exec --project demo-lexiquest-rules-test --only firestore \"node --test test/security/firestore-rules.test.cjs\"",
+    "test:rules": "firebase emulators:exec --project demo-lexiquest-rules-test --only firestore \"node --test test/security/firestore-rules.test.cjs test/security/firestore-admin-gax-compat.test.cjs\"",
     "test:auth": "firebase emulators:exec --project demo-lexiquest-auth-test --only auth \"node --test test/security/firebase-auth-emulator.test.cjs\""
   },
   "dependencies": {
@@ -19,6 +19,9 @@
     "@grpc/grpc-js": "^1.14.6",
     "firebase-admin": {
       "brace-expansion": "^2.1.4"
+    },
+    "@google-cloud/firestore-api": {
+      "google-gax": "6.13.0"
     }
   }
 }
