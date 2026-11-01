@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -288,6 +289,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.pumpWidget(MyApp(dependencies: newDependencies));
         await tester.pumpAndSettle();
+        await _drainWidgetDisposal(tester, () => oldClient.whenClosed);
         expect(oldClient.closes, 1);
         expect(newClient.closes, 0);
         await _drainWidgetDisposal(tester, oldDependencies.dispose);
@@ -299,6 +301,7 @@ void main() {
         expect(generated!.text, contains('station'));
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
+        await _drainWidgetDisposal(tester, () => newClient.whenClosed);
         expect(oldClient.closes, 1);
         expect(newClient.closes, 1);
         await _drainWidgetDisposal(tester, newDependencies.dispose);
@@ -351,12 +354,17 @@ http.Response _response(String target) => http.Response(
 
 final class _Client extends MockClient {
   _Client(super.handler);
+  final _closed = Completer<void>();
+  Future<void> get whenClosed => _closed.future;
   int closes = 0;
   Object? closeFailure;
   @override
   void close() {
     closes++;
     super.close();
+    if (!_closed.isCompleted) {
+      _closed.complete();
+    }
     if (closeFailure case final failure?) throw failure;
   }
 }

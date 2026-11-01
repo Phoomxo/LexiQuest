@@ -21,7 +21,7 @@ Parallel audit stages are Frame, Fan out, Aggregate and Report. Read-only partit
 | Collection adapters | Review accepted | Final focused116 PASS includes real Quiz/SRS/native/Reading/Tutor input, context replacement, delayed audio-stop ACK, source preservation and actual native results. Full regression remains required. |
 | Settings and readback | Review accepted | Owner-scoped setting, independent Mastery history, actual session Score and captured callbacks. |
 | Research engineering audit | Done, issues | Trusted authority adapter/lifecycle, controlled Study archive and upload lane remain unfinished. Default deny-all production composition is intentional. |
-| Integration | Running | Current final focused116 PASS and analysis0. Independent backend390 PASS/one existing opt-in skip and CLI23 PASS have unchanged inputs. Full Flutter/APK are pending. |
+| Integration | Running | Focused116 PASS and analysis0. First full at4322fd1e completed4716 PASS/one async-disposal fixture failure in11:10 with all984 inputs unchanged. Actual close observation fixes the fixture; entire runtime file9 PASS. Fresh full Flutter/APK remain pending. |
 | Temporary storage | Done | User additionally authorized removal of unnecessary files. Verified ZIP retains all789 lint scratch files; exact scratch tree removed, reducing logical bytes by7834456. |
 
 Data remains local and collection defaults off. No deployment, real enrollment/upload, live data deletion, new Pair Matching task, or efficacy claim is authorized. Historical readiness counts and prior passing suites do not certify the current source.
@@ -41,3 +41,11 @@ Independent review accepted the six corrected source findings. Full regression,
 normal debug APK, real-device UAT and Research rollout are separate evidence states.
 The overall44-capability completion request is still open; completing this local
 time unit does not close the missing catalog systems or controlled Research transport.
+
+The first full failure is reproduced in `disposal-focused-red.log`. The corrected
+fixture waits for the synthetic client's actual close Future without invoking
+disposal to make the assertion pass. All original count and idempotency assertions
+remain. `disposal-runtime-green.log` is9 PASS. Application source is unchanged by
+this correction. `render-time-ui.log` passes two real-font rendered fixtures at
+320px/200 percent with IME, Light/Dark and a reachable action. Root inspected
+`time-light-top.png` and `time-dark-action.png`; these are not physical-device UAT.
