@@ -800,18 +800,14 @@ final class LearningUseCases {
   }
 
   RecordAnswerCommand prepareNativeAnswer(NativeAnswerInput input) {
-    return _prepareNativeAnswer(
-      input,
-      _nativeNow(),
-      NativeExerciseDraft.fromInput(input),
-    );
+    return _prepareNativeAnswer(input, _nativeNow());
   }
 
   RecordAnswerCommand _prepareNativeAnswer(
     NativeAnswerInput input,
-    DateTime occurredAt,
-    NativeExerciseDraft draft,
-  ) {
+    DateTime occurredAt, [
+    NativeExerciseDraft? capturedDraft,
+  ]) {
     final exercise = input.exercise;
     if (occurredAt.isBefore(exercise.startedAtUtc)) {
       throw StateError('Dictation clock precedes its original start');
@@ -847,6 +843,7 @@ final class LearningUseCases {
         'Cloze response is not one of its original choices',
       ),
     };
+    final draft = capturedDraft ?? NativeExerciseDraft.fromInput(input);
     return RecordAnswerCommand(
       id: 'attempt:${_nextId()}',
       ownerId: exercise.ownerId,
