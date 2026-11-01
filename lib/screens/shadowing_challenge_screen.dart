@@ -6,6 +6,9 @@ import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
@@ -22,12 +25,16 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.voice,
     this.speechPractice,
     this.learning,
+    this.learningTime,
+    this.learningTimeCallerContext = LearningTimeCallerContext.unavailable,
   });
 
   final String? referenceSentence;
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext learningTimeCallerContext;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -54,6 +61,15 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   String _transcript = '';
   String? _error;
   TranscriptPronunciationAssessment? _assessment;
+  LearningTimeUseCases? _time;
+  LearningTimeBinding? _timeBinding;
+  PreparedSourceBoundVocabularyStart? _sourceStart;
+  bool _timeDependenciesBound = false;
+  bool _timeRetired = false;
+  bool _foreground = true;
+  int _referencePlaying = 0;
+  bool _referencePlaybackUnconfirmed = false;
+  bool _recognitionPending = false;
 
   @override
   void initState() {
@@ -67,13 +83,35 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
     _speech ??=
         widget.speechPractice ??
         AppDependenciesScope.maybeOf(context)?.speechPractice;
     _learning ??=
         widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    final time = widget.learningTime ?? dependencies?.learningTime;
+    if (_timeDependenciesBound && !identical(_time, time)) {
+      _timeRetired = true;
+      _timeBinding?.retireDependencies();
+    }
+    _timeDependenciesBound = true;
+    _time = time;
+    _timeBinding?.syncVisibility();
     if (_referenceSentence == null && _learningLoad == null) {
       _learningLoad = _loadLocalPrompt();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ShadowingChallengeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.learning, widget.learning) ||
+        !identical(oldWidget.learningTime, widget.learningTime) ||
+        oldWidget.referenceSentence != widget.referenceSentence ||
+        oldWidget.learningTimeCallerContext !=
+            widget.learningTimeCallerContext) {
+      _timeRetired = true;
+      _timeBinding?.retireDependencies();
     }
   }
 
@@ -86,7 +124,30 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     try {
-      final session = await learning.startShadowing(limit: 1);
+      final QuizSession session;
+      if (learning.repository is SourceBoundVocabularyStartRepository) {
+        final epoch = _speechEpoch;
+        final owner = await learning.owners.getOrCreateActiveOwner();
+        bool current() => mounted && epoch == _speechEpoch;
+        if (!current()) return;
+        final start = await learning.prepareSourceBoundVoicePracticeStart(
+          expectedOwnerId: owner.id,
+          practiceKind: VoiceLearningTimePracticeKind.shadowing,
+          callerContext: widget.learningTimeCallerContext,
+          stillCurrent: current,
+        );
+        if (start == null) {
+          if (mounted) setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');
+          return;
+        }
+        _sourceStart = start;
+        session = await learning.startSourceBoundVocabularySession(
+          start,
+          operationStillCurrent: current,
+        );
+      } else {
+        session = await learning.startShadowing(limit: 1);
+      }
       if (!mounted) return;
       if (session.isEmpty) {
         setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');
@@ -98,6 +159,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         _wordContentRevision = session.questions.single.word.contentRevision;
         _referenceSentence = session.questions.single.word.spelling;
       });
+      unawaited(_readyTime());
     } catch (_) {
       if (mounted) setState(() => _error = 'ไม่สามารถเริ่มการฝึกพูดได้');
     }
@@ -106,6 +168,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   Future<void> _playReference() async {
     final reference = _referenceSentence;
     if (reference == null) return;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
+    _referencePlaying++;
+    _referencePlaybackUnconfirmed = true;
     try {
       await _voice.speak(
         VoiceRequest.create(
@@ -120,11 +186,86 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       );
     } catch (_) {
       if (mounted) setState(() => _error = 'ระบบอ่านเสียงต้นแบบไม่พร้อมใช้งาน');
+    } finally {
+      _referencePlaying--;
+      unawaited(_readyTime());
+    }
+  }
+
+  bool get _timeReady =>
+      mounted &&
+      !_timeRetired &&
+      _foreground &&
+      !_starting &&
+      !_listening &&
+      _referencePlaying == 0 &&
+      !_referencePlaybackUnconfirmed &&
+      !_recognitionPending &&
+      !_evidenceSaved &&
+      _pendingAnswer == null &&
+      _referenceSentence != null &&
+      ModalRoute.isCurrentOf(context) == true &&
+      TickerMode.valuesOf(context).enabled &&
+      Visibility.of(context);
+
+  Future<void> _readyTime() async {
+    final time = _time;
+    final learning = _learning;
+    final start = _sourceStart;
+    if (time == null ||
+        learning == null ||
+        start == null ||
+        !_timeReady ||
+        widget.learningTimeCallerContext !=
+            LearningTimeCallerContext.ordinary) {
+      return;
+    }
+    final binding = _timeBinding ??= LearningTimeBinding(
+      time: time,
+      expectedOwnerId: start.ownerId,
+      visible: () =>
+          mounted &&
+          !_timeRetired &&
+          _foreground &&
+          ModalRoute.isCurrentOf(context) == true &&
+          TickerMode.valuesOf(context).enabled &&
+          Visibility.of(context),
+    );
+    final visibility = binding.visibilityGeneration;
+    final capture = time.captureGeneration;
+    bool current() =>
+        _timeReady &&
+        identical(start, _sourceStart) &&
+        binding.current &&
+        binding.visibilityGeneration == visibility &&
+        time.captureGeneration == capture;
+    try {
+      final proof = await learning.admitCanonicalLearningTime(
+        SourceBoundVocabularyTimeAdmission(
+          start,
+          wordIndex: 0,
+          callerContext: widget.learningTimeCallerContext,
+        ),
+        expectedOwnerId: start.ownerId,
+        stillCurrent: current,
+      );
+      if (current()) {
+        await binding.ready(
+          CanonicalTimeSource(
+            proof,
+            callerContext: widget.learningTimeCallerContext,
+          ),
+        );
+      }
+    } on Object {
+      binding.suspend();
     }
   }
 
   Future<void> _toggleListening() async {
     if (_starting) return;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
     if (_pendingAnswer != null && !_evidenceSaved) {
       await _recordEvidence();
       return;
@@ -132,6 +273,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     if (_listening) {
       await _speech?.stop();
       if (mounted) setState(() => _listening = false);
+      unawaited(_readyTime());
       return;
     }
     final speech = _speech;
@@ -140,6 +282,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     final epoch = ++_speechEpoch;
+    _recognitionPending = true;
     setState(() {
       _starting = true;
       _error = null;
@@ -147,6 +290,13 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       _assessment = null;
     });
     try {
+      await _voice.stop();
+      if (!mounted || !_foreground || epoch != _speechEpoch) {
+        return;
+      }
+      if (_referencePlaying == 0) {
+        _referencePlaybackUnconfirmed = false;
+      }
       await speech.start(
         locale: 'en-US',
         onEvent: (event) {
@@ -170,6 +320,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
             if (event.isFinal) _listening = false;
           });
           if (event.isFinal) {
+            _recognitionPending = false;
             unawaited(_recordEvidence(event, assessment));
           }
         },
@@ -177,13 +328,16 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           if (!mounted || epoch != _speechEpoch) return;
           setState(() {
             _listening = false;
+            _recognitionPending = false;
             _assessment = null;
             _error = _failureText(failure);
           });
+          unawaited(_readyTime());
         },
         onStatus: (status) {
           if (mounted && epoch == _speechEpoch) {
             setState(() => _listening = status == 'listening');
+            if (!_listening) unawaited(_readyTime());
           }
         },
       );
@@ -191,11 +345,13 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         setState(() => _listening = speech.isListening);
       }
     } on SpeechPracticeException catch (error) {
+      _recognitionPending = false;
       if (mounted && epoch == _speechEpoch) {
         setState(() => _error = _failureText(error.code));
       }
     } finally {
       if (mounted && epoch == _speechEpoch) setState(() => _starting = false);
+      unawaited(_readyTime());
     }
   }
 
@@ -214,6 +370,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     _evidenceSaved = true;
+    _timeBinding?.close();
     try {
       final owner = await learning.owners.getOrCreateActiveOwner();
       final answer = _pendingAnswer ??= RecordAnswerCommand(
@@ -263,6 +420,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
@@ -272,6 +430,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _cancelForLifecycle() async {
+    _timeBinding?.suspend();
     _speechEpoch += 1;
     if (mounted) {
       setState(() {
@@ -284,6 +443,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     _speechEpoch += 1;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());

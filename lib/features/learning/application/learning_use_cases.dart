@@ -14,6 +14,7 @@ import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/learning_time_admission.dart';
 import '../domain/sentence_scramble_content.dart';
 import 'current_activity_evidence.dart';
 
@@ -79,6 +80,211 @@ final class LearningUseCases {
   ///
   /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
   final StreakEventSink? streakEventSink;
+
+  CanonicalLearningTimeAdmissionRepository get _timeAdmission =>
+      switch (repository) {
+        CanonicalLearningTimeAdmissionRepository repository => repository,
+        _ => throw StateError(
+          'Canonical learning-time admission is unavailable',
+        ),
+      };
+
+  Future<CanonicalLearningTimeAdmission> admitCanonicalLearningTime(
+    CanonicalLearningTimeAdmissionRequest request, {
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => _timeAdmission.admitCanonicalLearningTime(
+    request,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  Future<void> requireLiveCanonicalLearningTimeAdmission(
+    CanonicalLearningTimeAdmission admission, {
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => _timeAdmission.requireLiveCanonicalLearningTimeAdmission(
+    admission,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  Future<void> requireCanonicalLearningTimeAdmission(
+    CanonicalLearningTimeAdmission admission, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) => _timeAdmission.requireCanonicalLearningTimeAdmission(
+    admission,
+    expectedOwnerId: expectedOwnerId,
+    ownerStillCurrent: ownerStillCurrent,
+  );
+
+  Future<CanonicalLearningTimeSessionLinkReceipt>
+  readSourceBoundVocabularyStartReceipt(
+    PreparedSourceBoundVocabularyStart intent, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) => _sourceBoundVocabulary.readSourceBoundVocabularyStartReceipt(
+    intent,
+    expectedOwnerId: expectedOwnerId,
+    ownerStillCurrent: ownerStillCurrent,
+  );
+
+  Future<void> requireCanonicalLearningTimeSessionLinkReceipt(
+    CanonicalLearningTimeSessionLinkReceipt receipt, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) => _timeAdmission.requireCanonicalLearningTimeSessionLinkReceipt(
+    receipt,
+    expectedOwnerId: expectedOwnerId,
+    ownerStillCurrent: ownerStillCurrent,
+  );
+
+  SourceBoundVocabularyStartRepository get _sourceBoundVocabulary =>
+      switch (repository) {
+        SourceBoundVocabularyStartRepository repository => repository,
+        _ => throw StateError('Source-bound vocabulary starts are unavailable'),
+      };
+
+  /// Prepare only when the existing Reading flow actually needs its canonical
+  /// recall session. Early Reading time must never call this method.
+  Future<PreparedSourceBoundVocabularyStart?> prepareSourceBoundReadingStart({
+    required String expectedOwnerId,
+    required Iterable<String> wordIds,
+    required ReadingLearningTimeSourcePin source,
+    required LearningTimeCallerContext callerContext,
+    required bool Function() stillCurrent,
+    int limit = 100,
+  }) => _prepareSourceBoundVocabularyStart(
+    expectedOwnerId: expectedOwnerId,
+    wordIds: wordIds,
+    limit: limit,
+    activityType: 'associativeReading',
+    sourceFor: (_, words) {
+      if (source.targetPinsSha256 != learningTimeTargetPinsSha256(words)) {
+        throw StateError(
+          'Displayed Reading targets changed before actual start',
+        );
+      }
+      return source;
+    },
+    callerContext: callerContext,
+    stillCurrent: stillCurrent,
+  );
+
+  /// Replaces the actual local-prompt Shadowing/Pronunciation start, using the
+  /// original selected words. A supplied external reference needs no fake start.
+  Future<PreparedSourceBoundVocabularyStart?>
+  prepareSourceBoundVoicePracticeStart({
+    required String expectedOwnerId,
+    required VoiceLearningTimePracticeKind practiceKind,
+    required LearningTimeCallerContext callerContext,
+    required bool Function() stillCurrent,
+    Iterable<String>? wordIds,
+    int limit = 1,
+  }) => _prepareSourceBoundVocabularyStart(
+    expectedOwnerId: expectedOwnerId,
+    wordIds: wordIds,
+    limit: limit,
+    activityType: practiceKind.name,
+    sourceFor: (draft, words) => VoiceLearningTimeSourcePin.capture(
+      sessionId: draft.id,
+      practiceKind: practiceKind,
+      words: words,
+    ),
+    callerContext: callerContext,
+    stillCurrent: stillCurrent,
+  );
+
+  Future<QuizSession> startSourceBoundVocabularySession(
+    PreparedSourceBoundVocabularyStart intent, {
+    required bool Function() operationStillCurrent,
+  }) => _sourceBoundVocabulary.startSourceBoundVocabularySession(
+    intent,
+    operationStillCurrent: operationStillCurrent,
+  );
+
+  Future<PreparedSourceBoundVocabularyStart?>
+  _prepareSourceBoundVocabularyStart({
+    required String expectedOwnerId,
+    required Iterable<String>? wordIds,
+    required int limit,
+    required String activityType,
+    required VocabularyLearningTimeSourcePin Function(
+      LearningSessionDraft draft,
+      List<QuizWord> words,
+    )
+    sourceFor,
+    required LearningTimeCallerContext callerContext,
+    required bool Function() stillCurrent,
+  }) async {
+    if (!stillCurrent()) throw StateError('Canonical start context changed');
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
+    final requested = wordIds
+        ?.map((id) => _requiredId(id, 'wordId'))
+        .toList(growable: false);
+    if (requested != null &&
+        (requested.isEmpty ||
+            requested.length > limit ||
+            requested.toSet().length != requested.length)) {
+      throw ArgumentError('Source-bound target selection must be exact');
+    }
+    // This belongs to the existing canonical start flow, not a time read or
+    // collector admission. It preserves its existing owner-creation semantics.
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId || !stillCurrent()) {
+      throw StateError('Canonical start owner changed');
+    }
+    final selected = await repository.listQuizWords(
+      ownerId: expectedOwnerId,
+      wordIds: requested,
+      limit: limit,
+    );
+    if (!stillCurrent()) throw StateError('Canonical start context changed');
+    if (selected.isEmpty) return null;
+    final byId = {for (final word in selected) word.id: word};
+    final List<QuizWord> words;
+    if (requested == null) {
+      words = List<QuizWord>.unmodifiable(selected);
+    } else {
+      if (selected.length != requested.length ||
+          requested.any((id) => !byId.containsKey(id))) {
+        throw StateError('Source-bound targets are unavailable');
+      }
+      words = List<QuizWord>.unmodifiable([
+        for (final id in requested) byId[id]!,
+      ]);
+    }
+    final optionWords = await repository.listQuizWords(
+      ownerId: expectedOwnerId,
+      limit: 100,
+    );
+    if (!stillCurrent()) throw StateError('Canonical start context changed');
+    final now = _now();
+    final draft = LearningSessionDraft(
+      id: 'session:${_nextId()}',
+      ownerId: expectedOwnerId,
+      activityType: activityType,
+      startedAtUtc: now,
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
+    final source = sourceFor(draft, words);
+    return _sourceBoundVocabulary.prepareSourceBoundVocabularyStart(
+      session: draft,
+      words: words,
+      presentation: QuizSession(
+        id: draft.id,
+        startedAtUtc: now,
+        questions: _questions(words, optionWords: optionWords),
+      ),
+      source: source,
+      callerContext: callerContext,
+      stillCurrent: stillCurrent,
+    );
+  }
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
       _startConfigured(

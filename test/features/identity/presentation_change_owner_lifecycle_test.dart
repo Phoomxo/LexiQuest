@@ -46,7 +46,7 @@ void main() {
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       expect(decoded['ownerId'], _owner);
-      expect(decoded['schemaVersion'], 20);
+      expect(decoded['schemaVersion'], 21);
       expect(data['saved_words'], isEmpty);
       expect(data['word_reports'], isEmpty);
       expect(data['assessment_runs'], isEmpty);

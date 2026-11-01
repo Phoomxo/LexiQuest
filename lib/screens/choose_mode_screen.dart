@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
 import '../features/progress/presentation/progress_host_binding.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/presentation/study_host.dart';
@@ -998,6 +999,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           },
           builder: (_) => switch (session) {
             final DictationSession exercise => DictationQuizScreen(
+              learningTimeCallerContext: LearningTimeCallerContext.ordinary,
               session: exercise,
               learning: learning,
               voice: dependencies.voice,
@@ -1015,6 +1017,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               voice: dependencies.voice,
             ),
             final ClozeSession exercise => FillInTheBlanksScreen(
+              learningTimeCallerContext: LearningTimeCallerContext.ordinary,
               session: exercise,
               learning: learning,
               ownerChanges: screenOwners,
@@ -1022,7 +1025,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           },
         ),
       );
-      if (mode == _NativeMode.sentenceScramble &&
+      final hasResult = switch (mode) {
+        _NativeMode.dictation ||
+        _NativeMode.cloze ||
+        _NativeMode.sentenceScramble => true,
+        _NativeMode.wordScramble => false,
+      };
+      if (hasResult &&
           summary != null &&
           summary.id == session.id &&
           summary.state == 'completed' &&
@@ -1037,6 +1046,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           ownerId: ownerId,
           learning: learning,
           dependencies: dependencies,
+          mode: mode,
         );
       }
       if (mounted) {
@@ -1058,10 +1068,16 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     required String ownerId,
     required LearningUseCases learning,
     required AppDependencies dependencies,
+    required _NativeMode mode,
   }) => AppNavigator.pushPage<void>(
     context,
     AppPage<void>(
-      name: 'learning/sentence-scramble-result',
+      name: switch (mode) {
+        _NativeMode.dictation => 'learning/dictation-result',
+        _NativeMode.cloze => 'learning/cloze-result',
+        _NativeMode.sentenceScramble => 'learning/sentence-scramble-result',
+        _NativeMode.wordScramble => 'learning/word-scramble-result',
+      },
       builder: (scoreContext) => ValueListenableBuilder<int>(
         valueListenable: _nativeChanges,
         builder: (_, _, _) {
@@ -1098,6 +1114,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             );
           }
           return ScoreScreen(
+            learningTime: switch (mode) {
+              _NativeMode.dictation ||
+              _NativeMode.cloze => dependencies.learningTime,
+              _NativeMode.wordScramble || _NativeMode.sentenceScramble => null,
+            },
+            resultOwnerId: ownerId,
+            resultSessionId: summary.id,
             correctAnswers: summary.correctCount,
             wrongAnswers: summary.wrongCount,
             score: summary.score,

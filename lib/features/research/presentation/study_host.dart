@@ -13,6 +13,7 @@ import '../../assessment/domain/assessment_models.dart';
 import '../../adventure/domain/adventure_entry.dart';
 import '../../adventure/presentation/study_presentations.dart';
 import '../../learning/domain/learning_models.dart';
+import '../../learning/domain/learning_time_admission.dart';
 import '../application/study_runtime.dart';
 import '../domain/motivation_instrument.dart';
 import '../domain/measurement_opportunity.dart' show oppositePresentation;
@@ -613,6 +614,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       AppPage<void>(
         name: 'study/quiz',
         builder: (quizContext) => QuizScreen(
+          timeCallerContext: LearningTimeCallerContext.researchControlled,
           learning: widget.runtime.learning,
           resumeSessionId: index.sessionId,
           expectedOwnerId: index.ownerId,

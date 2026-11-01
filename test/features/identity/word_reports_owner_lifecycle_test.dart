@@ -318,7 +318,7 @@ void main() {
         ..remove('word_reports');
       final actual = await reported.snapshot()
         ..remove('word_reports');
-      expect(actual, hasLength(36));
+      expect(actual, hasLength(39));
       expect(actual, expected);
     },
   );

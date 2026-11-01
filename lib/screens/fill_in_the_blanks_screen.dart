@@ -6,6 +6,9 @@ import 'package:flutter/scheduler.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/handwriting_scratchpad.dart';
 
@@ -15,11 +18,15 @@ class FillInTheBlanksScreen extends StatefulWidget {
     required this.session,
     required this.learning,
     this.ownerChanges,
+    this.learningTime,
+    this.learningTimeCallerContext = LearningTimeCallerContext.unavailable,
     this.languageCode = 'th',
   });
   final ClozeSession session;
   final LearningUseCases learning;
   final Stream<String?>? ownerChanges;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext learningTimeCallerContext;
   final String languageCode;
 
   @override
@@ -54,6 +61,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
   _Step _step = _Step.starting;
   RecordAnswerCommand? _pendingAnswer;
   NativeFinishIntent? _pendingFinish;
+  LearningTimeBinding? _timeBinding;
 
   String _copy(String th, String en) => widget.languageCode == 'th' ? th : en;
 
@@ -99,6 +107,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     if (!_bound) {
       _bind(dependencies);
     } else if (!identical(_dependencies, dependencies)) {
+      _timeBinding?.retireDependencies();
       _invalidate();
     }
     final visible =
@@ -107,6 +116,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
       _invalidate();
     }
     _routeVisible = visible;
+    _timeBinding?.syncVisibility();
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryStart());
   }
 
@@ -142,6 +152,14 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
   @override
   void didUpdateWidget(covariant FillInTheBlanksScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(widget.learningTime, oldWidget.learningTime) ||
+        widget.learningTimeCallerContext !=
+            oldWidget.learningTimeCallerContext) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      unawaited(_readyTime());
+    }
     if (!identical(widget.session, oldWidget.session) ||
         !identical(widget.learning, oldWidget.learning) ||
         !identical(widget.ownerChanges, oldWidget.ownerChanges) ||
@@ -173,6 +191,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
       return;
     }
     _invalidated = true;
+    _timeBinding?.close();
     _epoch++;
     _selected = null;
     _latency.stop();
@@ -203,10 +222,57 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
       }
       _latency.start();
       setState(() => _step = _Step.answering);
+      unawaited(_readyTime());
     } on Object {
       if (_current(epoch)) {
         setState(() => _step = _Step.startFailed);
       }
+    }
+  }
+
+  Future<void> _readyTime() async {
+    final time = widget.learningTime ?? _dependencies?.learningTime;
+    final epoch = _epoch;
+    if (time == null ||
+        !_canAnswer ||
+        widget.learningTimeCallerContext !=
+            LearningTimeCallerContext.ordinary) {
+      return;
+    }
+    final binding = _timeBinding ??= LearningTimeBinding(
+      time: time,
+      expectedOwnerId: widget.session.ownerId,
+      visible: () => _current(epoch) && TickerMode.valuesOf(context).enabled,
+    );
+    final visibility = binding.visibilityGeneration;
+    final capture = time.captureGeneration;
+    try {
+      final proof = await widget.learning.admitCanonicalLearningTime(
+        NativeLearningTimeAdmission(
+          widget.session,
+          hintLevel: 0,
+          callerContext: widget.learningTimeCallerContext,
+        ),
+        expectedOwnerId: widget.session.ownerId,
+        stillCurrent: () =>
+            _canAnswer &&
+            _current(epoch) &&
+            binding.visibilityGeneration == visibility &&
+            time.captureGeneration == capture,
+      );
+      if (_canAnswer &&
+          _current(epoch) &&
+          binding.visibilityGeneration == visibility &&
+          time.captureGeneration == capture) {
+        await binding.ready(
+          CanonicalTimeSource(
+            proof,
+            callerContext: widget.learningTimeCallerContext,
+          ),
+        );
+      }
+    } on Object {
+      binding.suspend();
     }
   }
 
@@ -219,6 +285,8 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     if (!_current(epoch) || (!retry && (!_canAnswer || !hasAnswer))) {
       return;
     }
+    if (!retry) _timeBinding?.interacted();
+    _timeBinding?.suspend();
     try {
       _pendingAnswer ??= widget.learning.prepareNativeAnswer(
         switch (widget.session) {
@@ -257,12 +325,26 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     }
   }
 
+  void _timeInput() {
+    if (!_canAnswer) {
+      return;
+    }
+    final time = widget.learningTime ?? _dependencies?.learningTime;
+    final binding = _timeBinding;
+    binding?.interacted();
+    final lease = binding?.lease;
+    if (lease == null || time?.acceptsInteraction(lease) != true) {
+      unawaited(_readyTime());
+    }
+  }
+
   Future<void> _finish() async {
     final epoch = _epoch;
     if (!_current(epoch) ||
         (_step != _Step.saved && _step != _Step.finishFailed)) {
       return;
     }
+    _timeBinding?.close();
     try {
       _pendingFinish ??= widget.learning.prepareNativeFinish(
         widget.session,
@@ -296,6 +378,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     _epoch++;
     _invalidated = true;
     _owners?.cancel();
@@ -401,6 +484,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                         groupValue: _selected,
                         onChanged: (value) {
                           if (_canAnswer) {
+                            _timeInput();
                             setState(() => _selected = value);
                           }
                         },
@@ -429,7 +513,10 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                           border: const OutlineInputBorder(),
                         ),
                         onChanged: (_) {
-                          if (_canAnswer) _redraw();
+                          if (_canAnswer) {
+                            _timeInput();
+                            _redraw();
+                          }
                         },
                         onSubmitted: (_) => _save(),
                       ),

@@ -17,11 +17,11 @@ import '../../support/populated_owner_migration_fixture.dart';
 import '../../support/configured_quiz_harness.dart';
 
 void main() {
-  test('fresh v20 has one empty seven-column SavedWords relation', () async {
+  test('fresh v21 has one empty seven-column SavedWords relation', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    expect(database.schemaVersion, 20);
-    expect(database.allTables, hasLength(37));
+    expect(database.schemaVersion, 21);
+    expect(database.allTables, hasLength(40));
     expect(
       await database.customSelect('SELECT * FROM word_reports').get(),
       isEmpty,
@@ -196,6 +196,9 @@ void main() {
         oldRows = await ownerMigrationRows(source.database);
         expect(oldRows.remove('saved_words'), isEmpty);
         expect(oldRows.remove('word_reports'), isEmpty);
+        expect(oldRows.remove('learning_time_preferences'), isEmpty);
+        expect(oldRows.remove('learning_time_scopes'), isEmpty);
+        expect(oldRows.remove('learning_time_segments'), isEmpty);
         expect(oldRows, hasLength(35));
         for (final table in oldRows.entries) {
           expect(
@@ -266,9 +269,9 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        20,
+        21,
       );
-      expect(database.allTables, hasLength(37));
+      expect(database.allTables, hasLength(40));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -277,10 +280,16 @@ void main() {
       final after = await ownerMigrationRows(database);
       expect(after['saved_words'], isEmpty);
       expect(after['word_reports'], isEmpty);
+      expect(after['learning_time_preferences'], isEmpty);
+      expect(after['learning_time_scopes'], isEmpty);
+      expect(after['learning_time_segments'], isEmpty);
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
           ..remove('saved_words')
-          ..remove('word_reports'),
+          ..remove('word_reports')
+          ..remove('learning_time_preferences')
+          ..remove('learning_time_scopes')
+          ..remove('learning_time_segments'),
         before,
       );
       final newObjects = await database
@@ -296,6 +305,10 @@ void main() {
         ...oldObjects.keys,
         'saved_words',
         'word_reports',
+        'learning_time_preferences',
+        'learning_time_scopes',
+        'learning_time_segments',
+        'idx_learning_time_scopes_owner_session',
       });
       for (final object in oldObjects.entries) {
         expect(

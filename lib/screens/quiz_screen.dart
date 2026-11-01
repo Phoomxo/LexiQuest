@@ -9,6 +9,9 @@ import '../features/account_deletion/domain/account_deletion_contracts.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/accepted_quiz_plan.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'score_screen.dart';
@@ -28,6 +31,8 @@ class QuizScreen extends StatefulWidget {
     this.ownerChanges,
     this.onCanonicalFinished,
     this.onScoreRouteChanged,
+    this.learningTime,
+    this.timeCallerContext = LearningTimeCallerContext.ordinary,
   });
 
   final String? categoryId;
@@ -40,6 +45,8 @@ class QuizScreen extends StatefulWidget {
   final Future<void> Function(ConfiguredQuizFinishResult result)?
   onCanonicalFinished;
   final void Function(Route<dynamic>? route, bool current)? onScoreRouteChanged;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext timeCallerContext;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -86,6 +93,76 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _finishDelivered = false;
   bool _scoreOpen = false;
   bool _practicingMistakes = false;
+  LearningTimeUseCases? _time;
+  LearningTimeBinding? _timeBinding;
+  int _timeRequest = 0;
+
+  void _suspendTime() {
+    _timeRequest++;
+    _timeBinding?.suspend();
+  }
+
+  void _retireTime() {
+    _timeRequest++;
+    _timeBinding?.retireDependencies();
+    _timeBinding?.dispose();
+    _timeBinding = null;
+  }
+
+  Future<void> _readyTime() async {
+    final quiz = _quiz;
+    final learning = _learning;
+    final time = _time;
+    final generation = _generation;
+    if (quiz == null ||
+        learning == null ||
+        time == null ||
+        widget.timeCallerContext != LearningTimeCallerContext.ordinary ||
+        !_current(generation) ||
+        _saving ||
+        _retryAction != null ||
+        quiz.checkpoint is! AwaitingQuizAnswer) {
+      return;
+    }
+    var binding = _timeBinding;
+    if (binding == null || binding.expectedOwnerId != quiz.ownerId) {
+      _retireTime();
+      binding = LearningTimeBinding(
+        time: time,
+        expectedOwnerId: quiz.ownerId,
+        visible: () =>
+            _current(_generation) &&
+            TickerMode.valuesOf(context).enabled &&
+            Visibility.of(context),
+      );
+      _timeBinding = binding;
+    }
+    final request = ++_timeRequest;
+    bool current() =>
+        request == _timeRequest &&
+        identical(_timeBinding, binding) &&
+        identical(_quiz, quiz) &&
+        identical(_time, time) &&
+        _current(generation) &&
+        !_saving &&
+        _retryAction == null;
+    try {
+      final proof = await learning.admitCanonicalLearningTime(
+        ConfiguredQuizTimeAdmission(
+          quiz,
+          callerContext: widget.timeCallerContext,
+        ),
+        expectedOwnerId: quiz.ownerId,
+        stillCurrent: current,
+      );
+      if (!current()) return;
+      await binding.ready(
+        CanonicalTimeSource(proof, callerContext: widget.timeCallerContext),
+      );
+    } on Object {
+      if (current()) binding.suspend();
+    }
+  }
 
   int get _index => _quiz!.checkpoint.questionOrdinal;
   bool get _answered => _quiz!.checkpoint is AnsweredQuizQuestion;
@@ -137,7 +214,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         !listEquals(oldWidget.wordIds, widget.wordIds) ||
         oldWidget.selectionMode != widget.selectionMode ||
         oldWidget.resumeSessionId != widget.resumeSessionId ||
-        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+        oldWidget.expectedOwnerId != widget.expectedOwnerId ||
+        oldWidget.timeCallerContext != widget.timeCallerContext) {
+      _retireTime();
       _binding++;
       _generation++;
       _launch = null;
@@ -163,6 +242,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void _configure() {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final learning = widget.learning ?? dependencies?.learning;
+    final time = widget.learningTime ?? dependencies?.learningTime;
+    if (!identical(_time, time) || !identical(_learning, learning)) {
+      _retireTime();
+      _time = time;
+    }
     if (!identical(_learning, learning)) {
       _binding++;
       _generation++;
@@ -201,6 +285,13 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     if (_visible && _load == null) {
       _load = _open(_generation, _binding);
     }
+    final timeBinding = _timeBinding;
+    final visibility = timeBinding?.visibilityGeneration;
+    timeBinding?.syncVisibility();
+    if (timeBinding != null && visibility != timeBinding.visibilityGeneration) {
+      _timeRequest++;
+      if (timeBinding.current) unawaited(_readyTime());
+    }
   }
 
   void _ownerChanged(String? owner) {
@@ -208,6 +299,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _ownerToken.value = owner;
     _ownerKnown = true;
     if (!_ownerCurrent) {
+      _retireTime();
       _generation++;
       setState(() {
         _quiz = null;
@@ -227,6 +319,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void _updateVisibility() {
     final visible = _foreground && (_route?.isCurrent ?? true);
     if (_visible == visible) return;
+    _suspendTime();
     _visible = visible;
     _generation++;
     _quiz = null;
@@ -306,12 +399,15 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           _questionClock = Stopwatch()..start();
         }
       });
+      unawaited(_readyTime());
     }
     return saved;
   }
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
+    _timeRequest++;
     _generation++;
     _binding++;
     WidgetsBinding.instance.removeObserver(this);
@@ -621,6 +717,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     Future<void> Function(int generation) action,
   ) async {
     if (_saving || !_current(_generation)) return;
+    _suspendTime();
     final generation = _generation;
     setState(() => _saving = true);
     try {
@@ -668,7 +765,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         );
       }
     } finally {
-      if (_current(generation)) setState(() => _saving = false);
+      if (_current(generation)) {
+        setState(() => _saving = false);
+        unawaited(_readyTime());
+      }
     }
   }
 
@@ -678,6 +778,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       return;
     }
     final visible = !quiz.checkpoint.assistance.hintVisible;
+    _timeBinding?.interacted();
     await _run(_QuizOperation.hint, (generation) async {
       final saved = await _learning!.setQuizHint(
         sessionId: quiz.sessionId,
@@ -711,6 +812,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     if (quiz.checkpoint is! AwaitingQuizAnswer) return;
     final ordinal = option == null ? null : question.options.indexOf(option);
     if (!reveal && (ordinal == null || ordinal < 0)) return;
+    _timeBinding?.interacted();
     final intent = (
       revision: quiz.checkpointRevision,
       optionOrdinal: ordinal,
@@ -839,6 +941,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               valueListenable: _ownerToken,
               builder: (context, owner, _) => owner == result.state.ownerId
                   ? ScoreScreen(
+                      learningTime: _time,
+                      resultOwnerId: result.state.ownerId,
+                      resultSessionId: result.summary.id,
                       correctAnswers: result.summary.correctCount,
                       wrongAnswers: result.summary.wrongCount,
                       score: result.summary.score,
@@ -890,6 +995,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             learning: _learning,
             expectedOwnerId: _boundOwnerId,
             ownerChanges: widget.ownerChanges,
+            learningTime: _time,
+            timeCallerContext: widget.timeCallerContext,
           ),
         ),
       );

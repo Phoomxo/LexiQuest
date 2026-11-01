@@ -82,6 +82,10 @@ final class DriftAccountSnapshotBuilder {
       'SELECT p.* FROM quest_objective_progress p '
           'INNER JOIN quest_instances i ON i.instance_id = p.instance_id '
           'WHERE i.owner_id = ? ORDER BY p.instance_id, p.objective_id',
+    'learning_time_segments' =>
+      'SELECT g.* FROM learning_time_segments g '
+          'INNER JOIN learning_time_scopes s ON s.id = g.scope_id '
+          'WHERE s.owner_id = ? ORDER BY g.scope_id, g.ordinal, g.id',
     _ => 'SELECT * FROM $scope WHERE owner_id = ? ORDER BY rowid',
   };
 

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../features/progress/presentation/progress_host_binding.dart';
 import '../navigation/app_routes.dart';
@@ -26,12 +28,14 @@ class MasteryDashboardScreen extends StatefulWidget {
     this.featureRegistry,
     this.onOpenMenu,
     this.ownerChanges,
+    this.learningTime,
   });
 
   final ProgressLoader? loader;
   final FieldFeatureRegistry? featureRegistry;
   final VoidCallback? onOpenMenu;
   final Stream<String?>? ownerChanges;
+  final LearningTimeUseCases? learningTime;
 
   @override
   State<MasteryDashboardScreen> createState() => _MasteryDashboardScreenState();
@@ -53,6 +57,8 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
   bool _bound = false;
   bool _paneVisible = false;
   bool _foreground = false;
+  LearningTimeUseCases? _learningTime;
+  StreamSubscription<void>? _timeSubscription;
 
   bool get _visible =>
       mounted && _foreground && _paneVisible && _route?.isCurrent == true;
@@ -93,13 +99,22 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
 
   void _bind() {
     final dependencies = AppDependenciesScope.maybeOf(context);
+    final time = widget.learningTime ?? dependencies?.learningTime;
     if (_bound &&
         identical(_dependencies, dependencies) &&
         identical(_loader, widget.loader) &&
+        identical(_learningTime, time) &&
         identical(_ownerSource, widget.ownerChanges)) {
       return;
     }
     _bound = true;
+    final oldTimeSubscription = _timeSubscription;
+    _timeSubscription = null;
+    if (oldTimeSubscription != null) unawaited(oldTimeSubscription.cancel());
+    _learningTime = time;
+    _timeSubscription = time?.changes.listen((_) {
+      if (identical(time, _learningTime)) _changed();
+    });
     _childCovered = true;
     final old = _binding;
     old?.removeListener(_changed);
@@ -245,6 +260,8 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
 
   @override
   void dispose() {
+    final timeSubscription = _timeSubscription;
+    if (timeSubscription != null) unawaited(timeSubscription.cancel());
     final binding = _binding;
     _binding = null;
     binding?.removeListener(_changed);
@@ -373,33 +390,65 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
         !_visible ||
         binding.ownerChanges == null ||
         (binding.ownerObserved && binding.ownerId == null)) {
-      return const _DashboardMessage('บัญชีไม่พร้อมใช้งานสำหรับอ่านประวัติ');
+      return _withRecordedTime(
+        const _DashboardMessage('บัญชีไม่พร้อมใช้งานสำหรับอ่านประวัติ'),
+      );
     }
     if (binding.readFailed) {
       final epoch = binding.readEpoch;
-      return _DashboardMessage(
-        'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
-        onRetry: () {
-          if (identical(binding, _binding) && binding.isReadCurrent(epoch)) {
-            binding.refresh();
-          }
-        },
+      return _withRecordedTime(
+        _DashboardMessage(
+          'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
+          onRetry: () {
+            if (identical(binding, _binding) && binding.isReadCurrent(epoch)) {
+              binding.refresh();
+            }
+          },
+        ),
       );
     }
     final progress = binding.snapshot;
     if (progress == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          semanticsLabel: 'กำลังอ่านประวัติการเรียน',
+      return _withRecordedTime(
+        const Center(
+          child: CircularProgressIndicator(
+            semanticsLabel: 'กำลังอ่านประวัติการเรียน',
+          ),
         ),
       );
     }
     if (progress.sampleSize == 0) {
-      return const _DashboardMessage(
-        'ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ',
+      return _withRecordedTime(
+        const _DashboardMessage('ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ'),
       );
     }
-    return _DashboardBody(progress);
+    return _DashboardBody(progress, recordedTime: _recordedTime());
+  }
+
+  Widget? _recordedTime() {
+    final time = _learningTime;
+    final owner = time?.ownerId;
+    if (!_visible || time == null || owner == null) return null;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: RecordedTimeView(
+          key: ValueKey((time, owner, time.ownerGeneration)),
+          time: time,
+          expectedOwnerId: owner,
+          target: const OwnerTimeRead(),
+        ),
+      ),
+    );
+  }
+
+  Widget _withRecordedTime(Widget body) {
+    final recordedTime = _recordedTime();
+    if (recordedTime == null) return body;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [recordedTime, const SizedBox(height: 20), body],
+    );
   }
 }
 
@@ -429,15 +478,20 @@ class _MasteryChildVisibilityState extends State<_MasteryChildVisibility> {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody(this.progress);
+  const _DashboardBody(this.progress, {this.recordedTime});
 
   final ProgressSnapshot progress;
+  final Widget? recordedTime;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (recordedTime != null) ...[
+          recordedTime!,
+          const SizedBox(height: 20),
+        ],
         Wrap(
           spacing: 8,
           runSpacing: 8,

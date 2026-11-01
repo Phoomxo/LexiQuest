@@ -286,17 +286,18 @@ void main() {
         expect(dbContent.contains('from < 18'), isTrue);
         expect(dbContent.contains('from < 19'), isTrue);
         expect(dbContent.contains('from < 20'), isTrue);
-        expect(dbContent.contains('from < 21'), isFalse);
+        expect(dbContent.contains('from < 21'), isTrue);
+        expect(dbContent.contains('from < 22'), isFalse);
       },
     );
 
-    test('current schemaVersion in code is 20', () {
+    test('current schemaVersion in code is 21', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 20'),
+        dbContent.contains('schemaVersion => 21'),
         isTrue,
         reason:
-            'schema v20 adds local word reports and retains SavedWords, Assessment, quiz recovery and presentation changes',
+            'schema v21 adds local learning-time tables and retains WordReports, SavedWords, Assessment, quiz recovery and presentation changes',
       );
     });
   });

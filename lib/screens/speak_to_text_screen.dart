@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
@@ -26,6 +29,9 @@ class SpeakToTextScreen extends StatefulWidget {
     this.learning,
     this.sourceOwnerId,
     this.contentRevision,
+    this.sourceStart,
+    this.learningTime,
+    this.learningTimeCallerContext = LearningTimeCallerContext.unavailable,
   });
 
   final String correctWord;
@@ -37,6 +43,9 @@ class SpeakToTextScreen extends StatefulWidget {
   final LearningUseCases? learning;
   final String? sourceOwnerId;
   final String? contentRevision;
+  final PreparedSourceBoundVocabularyStart? sourceStart;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext learningTimeCallerContext;
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
@@ -66,6 +75,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   bool _sourceSaved = false;
   int _eventSequence = 0;
   RecordAnswerCommand? _sourceAnswer;
+  LearningTimeBinding? _timeBinding;
+  LearningTimeUseCases? _time;
+  bool _timeBound = false;
+  int _referencePlaying = 0;
+  bool _referencePlaybackUnconfirmed = false;
+  bool _recognitionPending = false;
 
   bool get _isSource => widget.sourceOwnerId != null;
   bool get _audioBlocked =>
@@ -96,17 +111,38 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
     _learning ??= widget.learning ?? dependencies?.learning;
+    final time = widget.learningTime ?? dependencies?.learningTime;
+    if (_timeBound && !identical(_time, time)) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+    }
+    _timeBound = true;
+    _time = time;
+    _timeBinding?.syncVisibility();
   }
 
   @override
   void didUpdateWidget(SpeakToTextScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.learningTime, widget.learningTime) ||
+        oldWidget.learningTimeCallerContext !=
+            widget.learningTimeCallerContext) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      _time =
+          widget.learningTime ??
+          AppDependenciesScope.maybeOf(context)?.learningTime;
+      unawaited(_readyTime());
+    }
     if ((_isSource || oldWidget.sourceOwnerId != null) &&
         (oldWidget.sourceOwnerId != widget.sourceOwnerId ||
             oldWidget.sessionId != widget.sessionId ||
             oldWidget.wordId != widget.wordId ||
             oldWidget.correctWord != widget.correctWord ||
             oldWidget.attemptNumber != widget.attemptNumber ||
+            !identical(oldWidget.sourceStart, widget.sourceStart) ||
             !identical(oldWidget.learning, widget.learning))) {
       _invalidateSource();
     }
@@ -115,6 +151,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   Future<void> _speakWord() async {
     if (_audioBlocked || _listening) return;
     final epoch = _speechEpoch;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
+    _referencePlaying++;
+    _referencePlaybackUnconfirmed = true;
     try {
       if (!await _sourceOwnerCurrent() || !_current(epoch)) return;
       await _voice.speak(
@@ -133,17 +173,108 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       if (_current(epoch)) {
         setState(() => _error = 'ระบบอ่านออกเสียงไม่พร้อมใช้งาน');
       }
+    } finally {
+      _referencePlaying--;
+      if (_current(epoch)) unawaited(_readyTime());
+    }
+  }
+
+  bool get _timeReady =>
+      mounted &&
+      _foreground &&
+      !_sourceOwnerInvalid &&
+      !_starting &&
+      !_listening &&
+      !_stopping &&
+      !_saving &&
+      !_finishing &&
+      !_leaving &&
+      _referencePlaying == 0 &&
+      !_referencePlaybackUnconfirmed &&
+      !_recognitionPending &&
+      !_sourceFinalPending &&
+      _sourceAnswer == null &&
+      ModalRoute.isCurrentOf(context) == true &&
+      TickerMode.valuesOf(context).enabled &&
+      Visibility.of(context);
+
+  Future<void> _readyTime() async {
+    final time = _time;
+    final learning = _learning;
+    final start = widget.sourceStart;
+    if (time == null ||
+        learning == null ||
+        start == null ||
+        !_timeReady ||
+        start.ownerId != widget.sourceOwnerId ||
+        start.sessionId != widget.sessionId ||
+        widget.learningTimeCallerContext !=
+            LearningTimeCallerContext.ordinary) {
+      return;
+    }
+    final source = start.source;
+    final questions = start.presentation.questions;
+    if (source is! VoiceLearningTimeSourcePin ||
+        source.practiceKind != VoiceLearningTimePracticeKind.pronunciation ||
+        questions.length != 1 ||
+        questions.single.word.id != widget.wordId ||
+        questions.single.word.spelling != widget.correctWord ||
+        questions.single.word.contentRevision != widget.contentRevision) {
+      return;
+    }
+    final binding = _timeBinding ??= LearningTimeBinding(
+      time: time,
+      expectedOwnerId: start.ownerId,
+      visible: () =>
+          mounted &&
+          _foreground &&
+          !_sourceOwnerInvalid &&
+          ModalRoute.isCurrentOf(context) == true &&
+          TickerMode.valuesOf(context).enabled &&
+          Visibility.of(context),
+    );
+    final visibility = binding.visibilityGeneration;
+    final capture = time.captureGeneration;
+    bool current() =>
+        _timeReady &&
+        identical(start, widget.sourceStart) &&
+        binding.current &&
+        binding.visibilityGeneration == visibility &&
+        time.captureGeneration == capture;
+    try {
+      final proof = await learning.admitCanonicalLearningTime(
+        SourceBoundVocabularyTimeAdmission(
+          start,
+          wordIndex: 0,
+          callerContext: widget.learningTimeCallerContext,
+        ),
+        expectedOwnerId: start.ownerId,
+        stillCurrent: current,
+      );
+      if (current()) {
+        await binding.ready(
+          CanonicalTimeSource(
+            proof,
+            callerContext: widget.learningTimeCallerContext,
+          ),
+        );
+      }
+    } on Object {
+      binding.suspend();
     }
   }
 
   Future<void> _startListening() async {
     if (_audioBlocked || _listening) return;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
     final speech = _speech;
     if (speech == null) {
       setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งานบนอุปกรณ์นี้');
       return;
     }
     final epoch = ++_speechEpoch;
+    _recognitionPending = true;
     setState(() {
       _starting = true;
       _error = null;
@@ -154,6 +285,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       if (!await _sourceOwnerCurrent() || !_current(epoch)) return;
       await _voice.stop();
       if (!await _sourceOwnerCurrent() || !_current(epoch)) return;
+      if (_referencePlaying == 0) {
+        _referencePlaybackUnconfirmed = false;
+      }
       _startedAtUtc = DateTime.now().toUtc();
       await speech.start(
         locale: 'en-US',
@@ -162,14 +296,17 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
           if (!_current(epoch) || (_isSource && _sourceAnswer != null)) return;
           setState(() {
             _listening = false;
+            _recognitionPending = false;
             _sourceFinalPending = false;
             _assessment = null;
             _error = _speechFailureText(failure);
           });
+          unawaited(_readyTime());
         },
         onStatus: (status) {
           if (!_current(epoch) || (_isSource && _sourceAnswer != null)) return;
           setState(() => _listening = status == 'listening');
+          if (!_listening) unawaited(_readyTime());
         },
       );
       if (!await _sourceOwnerCurrent() || !_current(epoch)) return;
@@ -177,6 +314,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         setState(() => _listening = speech.isListening);
       }
     } on SpeechPracticeException catch (error) {
+      _recognitionPending = false;
       if (_current(epoch) && !(_isSource && _sourceAnswer != null)) {
         setState(() {
           _listening = false;
@@ -184,6 +322,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         });
       }
     } on Object {
+      _recognitionPending = false;
       if (_current(epoch)) {
         setState(
           () => _error = 'หยุดเสียงหรือเริ่มไมโครโฟนไม่สำเร็จ กรุณาลองใหม่',
@@ -191,6 +330,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       }
     } finally {
       if (mounted && epoch == _speechEpoch) setState(() => _starting = false);
+      if (_current(epoch)) unawaited(_readyTime());
     }
   }
 
@@ -225,6 +365,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       if (event.isFinal) _listening = false;
     });
     if (!event.isFinal) return;
+    _recognitionPending = false;
     if (_isSource) {
       final elapsed = _startedAtUtc == null
           ? null
@@ -277,6 +418,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
 
   void _invalidateSource() {
     if (!mounted) return;
+    _timeBinding?.close();
     _speechEpoch++;
     setState(() {
       _sourceOwnerInvalid = true;
@@ -301,6 +443,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       return;
     }
     final epoch = _speechEpoch;
+    _timeBinding?.suspend();
     setState(() {
       _saving = true;
       _error = null;
@@ -345,6 +488,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       return;
     }
     final epoch = _speechEpoch;
+    _timeBinding?.close();
     setState(() {
       _finishing = true;
       _error = null;
@@ -377,6 +521,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
 
   Future<void> _leaveSource() async {
     if (_saving || _finishing || _leaving) return;
+    _timeBinding?.close();
     setState(() => _leaving = true);
     final stopped = await _cancelForLifecycle();
     if (mounted) {
@@ -436,6 +581,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       }
     } finally {
       if (mounted) setState(() => _stopping = false);
+      if (_current(epoch)) unawaited(_readyTime());
     }
   }
 
@@ -453,6 +599,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<bool> _cancelForLifecycle() async {
+    _timeBinding?.suspend();
     _speechEpoch += 1;
     _eventSequence++;
     if (mounted) {
@@ -482,10 +629,14 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       if (_speech != null) _speech!.cancel(),
       _voice.stop(),
     ]);
+    if (_referencePlaying == 0) {
+      _referencePlaybackUnconfirmed = false;
+    }
   }
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     _speechEpoch += 1;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_stopAudio().catchError((Object _) {}));

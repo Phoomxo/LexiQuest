@@ -101,6 +101,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         );
         await _mergeExperimentAssignments(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+        await _database.customUpdate(
+          'DELETE FROM learning_time_preferences WHERE owner_id = ?',
+          variables: [Variable<String>(source.id)],
+          updates: {_database.learningTimePreferences},
+        );
         await _moveOwnerRows(source.id, target.id);
         await _validateSavedWordRelations(target.id);
         if ((await _savedWordsFor(source.id)).isNotEmpty) {
@@ -890,7 +895,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
-      if (table == 'saved_words' ||
+      if (table == 'learning_time_preferences' ||
+          table == 'saved_words' ||
           table == 'experiment_assignments' ||
           table == 'research_participation_permits' ||
           table == 'motivation_measurement_runs' ||

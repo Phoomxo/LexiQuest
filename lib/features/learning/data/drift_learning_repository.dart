@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../identity/data/drift_owner_write_coordinator.dart';
+import '../../account_deletion/domain/account_deletion_contracts.dart';
+import '../domain/learning_time_admission.dart';
 import '../domain/accepted_quiz_plan.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_projection_rebuilder.dart';
@@ -20,7 +23,9 @@ final class DriftLearningRepository
         LearningRepository,
         ConfiguredQuizRepository,
         NativeExerciseRepository,
-        SrsReviewRepository {
+        SrsReviewRepository,
+        CanonicalLearningTimeAdmissionRepository,
+        SourceBoundVocabularyStartRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -57,6 +62,649 @@ final class DriftLearningRepository
   final DriftRewardProjectionRebuilder rewardProjections;
   // shortcut: Dictation retry handles are in-process; restart resume needs a canonical versioned checkpoint.
   final Expando<_NativeBinding> _nativeBindings = Expando<_NativeBinding>();
+
+  final Expando<_DriftSourceBoundVocabularyStart>
+  _sourceBoundVocabularyLinkReceipts =
+      Expando<_DriftSourceBoundVocabularyStart>();
+
+  @override
+  Future<CanonicalLearningTimeSessionLinkReceipt>
+  readSourceBoundVocabularyStartReceipt(
+    PreparedSourceBoundVocabularyStart intent, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) => database.transaction(() async {
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+    final original = _requireSourceBoundVocabularyStart(intent);
+    if (!original.started ||
+        original.ownerId != expectedOwnerId ||
+        original.callerContext != LearningTimeCallerContext.ordinary) {
+      throw StateError('Original acknowledged ordinary start is unavailable');
+    }
+    final row = await _requireSourceBoundVocabularyFacts(original);
+    await _requireTimeOrdinarySession(row.id);
+    final receipt = _DriftVocabularySessionLinkReceipt(
+      ownerId: original.ownerId,
+      sessionId: original.sessionId,
+      activityType: original.session.activityType,
+      sourceKind: original.source.sourceKind,
+      sourceBindingJson: original.source.sourceBindingJson,
+    );
+    _sourceBoundVocabularyLinkReceipts[receipt] = original;
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+    return receipt;
+  });
+
+  @override
+  Future<void> requireCanonicalLearningTimeSessionLinkReceipt(
+    CanonicalLearningTimeSessionLinkReceipt receipt, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) async {
+    if (receipt is CanonicalLearningTimeAdmission) {
+      return requireCanonicalLearningTimeAdmission(
+        receipt,
+        expectedOwnerId: expectedOwnerId,
+        ownerStillCurrent: ownerStillCurrent,
+      );
+    }
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+    final original = _sourceBoundVocabularyLinkReceipts[receipt];
+    if (receipt is! _DriftVocabularySessionLinkReceipt ||
+        original == null ||
+        _sourceBoundVocabularyStarts[original] != true ||
+        !original.started ||
+        original.ownerId != expectedOwnerId ||
+        receipt.ownerId != expectedOwnerId ||
+        original.callerContext != LearningTimeCallerContext.ordinary) {
+      throw StateError(
+        'Original canonical session-link receipt is unavailable',
+      );
+    }
+    final row = await _requireSourceBoundVocabularyFacts(original);
+    await _requireTimeOrdinarySession(row.id);
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+  }
+
+  final Expando<bool> _sourceBoundVocabularyStarts = Expando<bool>();
+
+  @override
+  Future<PreparedSourceBoundVocabularyStart> prepareSourceBoundVocabularyStart({
+    required LearningSessionDraft session,
+    required List<QuizWord> words,
+    required QuizSession presentation,
+    required VocabularyLearningTimeSourcePin source,
+    required LearningTimeCallerContext callerContext,
+    required bool Function() stillCurrent,
+  }) => database.transaction(() async {
+    await _requireTimeReadOwner(session.ownerId, stillCurrent);
+    if (words.isEmpty ||
+        words.length > 100 ||
+        words.map((word) => word.id).toSet().length != words.length ||
+        session.activityType != source.activityType ||
+        presentation.id != session.id ||
+        presentation.startedAtUtc != session.startedAtUtc ||
+        presentation.configured != null ||
+        presentation.questions.length != words.length ||
+        source.targetPinsSha256 != learningTimeTargetPinsSha256(words)) {
+      throw StateError('Source-bound canonical start facts differ');
+    }
+    _required(session.id, 'sessionId');
+    _requiredUtc(session.startedAtUtc, 'startedAtUtc');
+    _required(session.appVersion, 'appVersion');
+    _required(session.buildId, 'buildId');
+    for (var index = 0; index < words.length; index++) {
+      if (_timeVocabularyWordIdentity(presentation.questions[index].word) !=
+          _timeVocabularyWordIdentity(words[index])) {
+        throw StateError('Source-bound displayed word differs');
+      }
+    }
+    if (source case VoiceLearningTimeSourcePin()) {
+      final actual = VoiceLearningTimeSourcePin.capture(
+        sessionId: session.id,
+        practiceKind: source.practiceKind,
+        words: words,
+      );
+      if (source.sourceBindingJson != actual.sourceBindingJson) {
+        throw StateError('Source-bound voice prompt differs');
+      }
+    }
+    final prepared = _DriftSourceBoundVocabularyStart(
+      session: session,
+      words: List<QuizWord>.unmodifiable(words),
+      presentation: QuizSession(
+        id: presentation.id,
+        startedAtUtc: presentation.startedAtUtc,
+        questions: List<QuizQuestion>.unmodifiable([
+          for (final question in presentation.questions)
+            QuizQuestion(
+              word: question.word,
+              options: List<String>.unmodifiable(question.options),
+            ),
+        ]),
+      ),
+      source: source,
+      callerContext: callerContext,
+    );
+    await _requireSourceBoundVocabularyTargets(prepared);
+    _timeJson(jsonDecode(source.sourceBindingJson) as Map<String, Object?>);
+    _sourceBoundVocabularyStarts[prepared] = true;
+    await _requireTimeReadOwner(session.ownerId, stillCurrent);
+    return prepared;
+  });
+
+  @override
+  Future<QuizSession> startSourceBoundVocabularySession(
+    PreparedSourceBoundVocabularyStart intent, {
+    required bool Function() operationStillCurrent,
+  }) async {
+    final original = _requireSourceBoundVocabularyStart(intent);
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('Canonical vocabulary start requires its own ACK');
+    }
+    await _requireTimeReadOwner(original.ownerId, operationStillCurrent);
+    await _ownerWrites.writeForActiveOwner(
+      expectedOwnerId: original.ownerId,
+      write: () async {
+        await _requireTimeReadOwner(original.ownerId, operationStillCurrent);
+        final existing = await _session(original.sessionId);
+        if (existing == null) {
+          if (original.started) {
+            throw StateError(
+              'Acknowledged canonical vocabulary session is missing',
+            );
+          }
+          await _requireSourceBoundVocabularyTargets(original);
+          original.startAttempted = true;
+          // Same guarded canonical operation used by _startWordPractice and
+          // _startVocabularySession, once under the original fixed draft.
+          await startSession(original.session);
+        } else if (!original.startAttempted) {
+          throw StateError(
+            'Canonical start requires its original prepared intent',
+          );
+        }
+        await _requireSourceBoundVocabularyFacts(original);
+        await _requireTimeReadOwner(original.ownerId, operationStillCurrent);
+      },
+    );
+    // A return here acknowledges this coordinator-owned transaction, rather
+    // than an inherited outer transaction or the best-effort Study observer.
+    await _requireTimeReadOwner(original.ownerId, operationStillCurrent);
+    await _requireSourceBoundVocabularyFacts(original);
+    original.started = true;
+    return original.presentation;
+  }
+
+  _DriftSourceBoundVocabularyStart _requireSourceBoundVocabularyStart(
+    PreparedSourceBoundVocabularyStart intent,
+  ) {
+    if (intent is! _DriftSourceBoundVocabularyStart ||
+        _sourceBoundVocabularyStarts[intent] != true) {
+      throw StateError('Original source-bound canonical start is unavailable');
+    }
+    return intent;
+  }
+
+  Future<db.LearningSession> _requireSourceBoundVocabularyFacts(
+    _DriftSourceBoundVocabularyStart original,
+  ) async {
+    final row = await _session(original.sessionId);
+    final draft = original.session;
+    if (row == null ||
+        row.ownerId != draft.ownerId ||
+        row.activityType != draft.activityType ||
+        row.startedAtUtcMs != draft.startedAtUtc?.millisecondsSinceEpoch ||
+        row.appVersion != draft.appVersion ||
+        row.buildId != draft.buildId ||
+        row.acceptedPlanId != null ||
+        row.acceptedPlanJson != null ||
+        row.checkpointRevision != 0 ||
+        row.checkpointJson != null ||
+        (row.state != 'active' && row.state != 'completed')) {
+      throw StateError('Original source-bound canonical facts changed');
+    }
+    return row;
+  }
+
+  Future<void> _requireSourceBoundVocabularyTargets(
+    _DriftSourceBoundVocabularyStart original,
+  ) async {
+    final current = await listQuizWords(
+      ownerId: original.ownerId,
+      wordIds: original.words.map((word) => word.id),
+      limit: original.words.length,
+    );
+    final byId = {for (final word in current) word.id: word};
+    if (current.length != original.words.length) {
+      throw StateError('Original source-bound vocabulary is unavailable');
+    }
+    for (final expected in original.words) {
+      final actual = byId[expected.id];
+      if (actual == null ||
+          _timeVocabularyWordIdentity(actual) !=
+              _timeVocabularyWordIdentity(expected)) {
+        throw StateError('Original source-bound vocabulary changed');
+      }
+    }
+  }
+
+  String _timeVocabularyWordIdentity(QuizWord word) => _timeDigest([
+    word.id,
+    word.categoryId,
+    word.spelling,
+    word.meaning,
+    word.partOfSpeech,
+    word.contentRevision,
+  ]);
+
+  final Expando<_CanonicalTimeBinding> _canonicalTimeBindings =
+      Expando<_CanonicalTimeBinding>();
+
+  @override
+  Future<CanonicalLearningTimeAdmission> admitCanonicalLearningTime(
+    CanonicalLearningTimeAdmissionRequest request, {
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('Learning-time admission requires a committed source');
+    }
+    return database.transaction(() async {
+      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
+      if (request.callerContext != LearningTimeCallerContext.ordinary) {
+        throw StateError('Ordinary learning-time context is unavailable');
+      }
+      late db.LearningSession row;
+      late CanonicalLearningTimeSourceKind kind;
+      late EvidenceContext evidence;
+      late Map<String, Object?> source;
+      late Map<String, Object?> context;
+      switch (request) {
+        case ConfiguredQuizTimeAdmission(:final state):
+          final saved = await _loadQuiz(state.sessionId, expectedOwnerId);
+          if (saved.state != 'active' ||
+              saved.checkpoint is! AwaitingQuizAnswer ||
+              !saved.plan.supportsCurrentPolicy ||
+              saved.plan.id != state.plan.id ||
+              saved.plan.stableSerialization !=
+                  state.plan.stableSerialization ||
+              saved.checkpointRevision != state.checkpointRevision ||
+              saved.checkpoint.stableSerialization !=
+                  state.checkpoint.stableSerialization) {
+            throw StateError('Original acknowledged quiz context changed');
+          }
+          row = (await _session(saved.sessionId))!;
+          final ordinal = saved.checkpoint.questionOrdinal;
+          final word = saved.plan.questions[ordinal].word;
+          final hint = saved.checkpoint.assistance.hintFirstShownAtUtcMs == null
+              ? 0
+              : 1;
+          kind = CanonicalLearningTimeSourceKind.configuredQuiz;
+          evidence = EvidenceContext.forNewEvidence(
+            evidenceClass: hint == 0
+                ? EvidenceClass.recognition
+                : EvidenceClass.guidedPractice,
+            skillId: 'meaning-recall',
+            hintLevel: hint,
+            contentRevision: word.contentRevision!,
+            rolloutMode: EvidencePolicyRolloutMode.legacy,
+          );
+          source = {
+            'schemaVersion': 1,
+            'kind': kind.name,
+            'sessionId': row.id,
+            'activityType': row.activityType,
+            'acceptedPlanId': saved.plan.id,
+          };
+          context = {
+            'schemaVersion': 1,
+            'questionOrdinal': ordinal,
+            'checkpointRevision': saved.checkpointRevision,
+            'wordId': word.id,
+            'contentRevision': word.contentRevision,
+            'promptMode': 'meaningChoice',
+            'phase': 'awaitingAnswer',
+            'evidenceContext': evidence.toJson(),
+          };
+        case OwnedSrsTimeAdmission(:final review, :final cardIndex):
+          final binding = _srsBinding(review);
+          final facts = await _requireSrsFacts(review, binding);
+          if (!binding.started ||
+              binding.closing != null ||
+              facts.session.state != 'active' ||
+              cardIndex != facts.attempts.length ||
+              cardIndex < 0 ||
+              cardIndex >= review.words.length) {
+            throw StateError('Original acknowledged SRS context changed');
+          }
+          await _requireSrsTargets(review, [cardIndex]);
+          row = facts.session;
+          final word = review.words[cardIndex];
+          kind = CanonicalLearningTimeSourceKind.ownedSrs;
+          evidence = EvidenceContext.forNewEvidence(
+            evidenceClass: EvidenceClass.independentRecall,
+            skillId: 'srs-recall',
+            hintLevel: 0,
+            contentRevision: word.contentRevision!,
+            rolloutMode: EvidencePolicyRolloutMode.legacy,
+          );
+          source = {
+            'schemaVersion': 1,
+            'kind': kind.name,
+            'sessionId': row.id,
+            'selection': review.selection.name,
+            'deckPinsSha256': _timeDigest([
+              for (final word in review.words)
+                [word.id, word.categoryId, word.contentRevision],
+            ]),
+          };
+          context = {
+            'schemaVersion': 1,
+            'cardIndex': cardIndex,
+            'phase': request.phase.name,
+            'wordId': word.id,
+            'contentRevision': word.contentRevision,
+            'promptMode': 'srsRecall',
+            'evidenceContext': evidence.toJson(),
+          };
+        case SourceBoundVocabularyTimeAdmission(:final start, :final wordIndex):
+          final original = _requireSourceBoundVocabularyStart(start);
+          if (!original.started ||
+              original.callerContext != LearningTimeCallerContext.ordinary ||
+              original.ownerId != expectedOwnerId ||
+              wordIndex < 0 ||
+              wordIndex >= original.words.length) {
+            throw StateError(
+              'Acknowledged ordinary vocabulary source is unavailable',
+            );
+          }
+          row = await _requireSourceBoundVocabularyFacts(original);
+          if (row.state != 'active') {
+            throw StateError('Canonical vocabulary source has completed');
+          }
+          await _requireSourceBoundVocabularyTargets(original);
+          final word = original.words[wordIndex];
+          final (prompt, evidenceClass, skill) = switch (original.source) {
+            ReadingLearningTimeSourcePin() => throw StateError(
+              'Reading collection requires its actual displayed snapshot source',
+            ),
+            VoiceLearningTimeSourcePin(:final practiceKind) => (
+              practiceKind == VoiceLearningTimePracticeKind.shadowing
+                  ? 'shadowing'
+                  : 'pronunciationTranscript',
+              EvidenceClass.pronunciation,
+              practiceKind == VoiceLearningTimePracticeKind.shadowing
+                  ? 'shadowing-pronunciation'
+                  : 'pronunciation-transcript',
+            ),
+          };
+          kind = original.source.sourceKind;
+          evidence = EvidenceContext.forNewEvidence(
+            evidenceClass: evidenceClass,
+            skillId: skill,
+            hintLevel: 0,
+            contentRevision: word.contentRevision!,
+            rolloutMode: EvidencePolicyRolloutMode.legacy,
+          );
+          source =
+              jsonDecode(original.source.sourceBindingJson)
+                  as Map<String, Object?>;
+          context = {
+            'schemaVersion': 1,
+            'wordIndex': wordIndex,
+            'wordId': word.id,
+            'contentRevision': word.contentRevision,
+            'promptMode': prompt,
+            'evidenceContext': evidence.toJson(),
+          };
+        case NativeLearningTimeAdmission(:final exercise, :final hintLevel):
+          final binding = _requireNativeBinding(exercise);
+          if (exercise is WordScrambleSession ||
+              exercise is SentenceScrambleSession ||
+              hintLevel < 0 ||
+              hintLevel > 2 ||
+              binding.answer != null ||
+              binding.closing != null) {
+            throw StateError('Native learning-time context is unavailable');
+          }
+          row = await _requireNativeSession(exercise);
+          await _requireNativeTargets(exercise);
+          final attempts = await (database.select(
+            database.answerAttempts,
+          )..where((attempt) => attempt.sessionId.equals(exercise.id))).get();
+          if (row.state != 'active' || attempts.isNotEmpty) {
+            throw StateError(
+              'Original native prompt is no longer accepting input',
+            );
+          }
+          final (prompt, evidenceClass, skill, actualHint) = switch (exercise) {
+            DictationSession() => (
+              'dictation',
+              hintLevel == 0
+                  ? EvidenceClass.independentRecall
+                  : EvidenceClass.guidedPractice,
+              'dictation-spelling',
+              hintLevel,
+            ),
+            TypedClozeSession() => (
+              'clozeTyped',
+              EvidenceClass.guidedPractice,
+              'cloze-context',
+              1,
+            ),
+            ChoiceClozeSession() => (
+              'clozeChoice',
+              EvidenceClass.recognition,
+              'cloze-context',
+              0,
+            ),
+            _ => throw StateError('Unsupported native learning-time source'),
+          };
+          kind = exercise is DictationSession
+              ? CanonicalLearningTimeSourceKind.dictation
+              : CanonicalLearningTimeSourceKind.cloze;
+          evidence = EvidenceContext.forNewEvidence(
+            evidenceClass: evidenceClass,
+            skillId: skill,
+            hintLevel: actualHint,
+            contentRevision: exercise.evidenceContentRevision,
+            rolloutMode: EvidencePolicyRolloutMode.legacy,
+          );
+          source = {
+            'schemaVersion': 1,
+            'kind': kind.name,
+            'sessionId': row.id,
+            'wordId': exercise.word.id,
+            'wordContentRevision': exercise.wordContentRevision,
+            'evidenceContentRevision': exercise.evidenceContentRevision,
+          };
+          context = {
+            'schemaVersion': 1,
+            'wordId': exercise.word.id,
+            'promptMode': prompt,
+            'evidenceContext': evidence.toJson(),
+          };
+      }
+      if (row.ownerId != expectedOwnerId) {
+        throw StateError('Learning-time owner changed');
+      }
+      await _requireTimeOrdinarySession(row.id);
+      final decision = EvidenceProjectionDecision.resolve(
+        context: evidence,
+        projection: LearningProjection.activeLearningEffort,
+      );
+      if (!decision.isEligible) {
+        throw StateError('Evidence is ineligible for active learning effort');
+      }
+      final proof = _DriftCanonicalLearningTimeAdmission(
+        ownerId: row.ownerId,
+        sessionId: row.id,
+        activityType: row.activityType,
+        sourceKind: kind,
+        sourceBindingJson: _timeJson(source),
+        contextBindingJson: _timeJson(context),
+        evidenceContext: evidence,
+      );
+      _canonicalTimeBindings[proof] = _CanonicalTimeBinding(
+        request: request,
+        sessionFingerprint: _timeSessionFingerprint(row),
+      );
+      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
+      return proof;
+    });
+  }
+
+  @override
+  Future<void> requireLiveCanonicalLearningTimeAdmission(
+    CanonicalLearningTimeAdmission admission, {
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    final original = _canonicalTimeBindings[admission];
+    if (admission is! _DriftCanonicalLearningTimeAdmission ||
+        original == null ||
+        admission.ownerId != expectedOwnerId) {
+      throw StateError(
+        'Original live canonical learning-time proof is unavailable',
+      );
+    }
+    // LIVE admission performs the inherited-transaction rejection before its
+    // own consistent read. Do not replace this with CLOSED verification.
+    final refreshed = await admitCanonicalLearningTime(
+      original.request,
+      expectedOwnerId: expectedOwnerId,
+      stillCurrent: stillCurrent,
+    );
+    if (refreshed.ownerId != admission.ownerId ||
+        refreshed.sessionId != admission.sessionId ||
+        refreshed.activityType != admission.activityType ||
+        refreshed.sourceKind != admission.sourceKind ||
+        refreshed.sourceBindingJson != admission.sourceBindingJson ||
+        refreshed.contextBindingJson != admission.contextBindingJson) {
+      throw StateError('Original live canonical learning-time context changed');
+    }
+  }
+
+  @override
+  Future<void> requireCanonicalLearningTimeAdmission(
+    CanonicalLearningTimeAdmission admission, {
+    required String expectedOwnerId,
+    required bool Function() ownerStillCurrent,
+  }) async {
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+    final binding = _canonicalTimeBindings[admission];
+    if (admission is! _DriftCanonicalLearningTimeAdmission ||
+        binding == null ||
+        admission.ownerId != expectedOwnerId ||
+        binding.request.callerContext != LearningTimeCallerContext.ordinary) {
+      throw StateError('Original canonical learning-time proof is unavailable');
+    }
+    final row = await _session(admission.sessionId);
+    if (row == null ||
+        _timeSessionFingerprint(row) != binding.sessionFingerprint ||
+        !{'active', 'completed', 'abandoned'}.contains(row.state)) {
+      throw StateError('Original canonical learning-time identity changed');
+    }
+    // No old checkpoint/prompt/content-currentness check belongs here. The
+    // immutable window was admitted before closing. The time writer checks its
+    // captured owner and preference epoch, independently of the new live slot.
+    switch (binding.request) {
+      case ConfiguredQuizTimeAdmission():
+        break;
+      case OwnedSrsTimeAdmission(:final review):
+        final original = _srsBindings[review];
+        if (original == null || !original.started) {
+          throw StateError('Original acknowledged SRS handle is unavailable');
+        }
+        // Deliberately not _srsBinding: its original route may have ended.
+        await _requireSrsFacts(review, original);
+      case SourceBoundVocabularyTimeAdmission(:final start):
+        final original = _requireSourceBoundVocabularyStart(start);
+        if (!original.started ||
+            original.callerContext != LearningTimeCallerContext.ordinary) {
+          throw StateError('Original ordinary vocabulary ACK is unavailable');
+        }
+        await _requireSourceBoundVocabularyFacts(original);
+      case NativeLearningTimeAdmission(:final exercise):
+        _requireNativeBinding(exercise);
+        await _requireNativeSession(exercise);
+    }
+    await _requireTimeOrdinarySession(row.id);
+    if (!EvidenceProjectionDecision.resolve(
+      context: admission.evidenceContext,
+      projection: LearningProjection.activeLearningEffort,
+    ).isEligible) {
+      throw StateError('Evidence is ineligible for active learning effort');
+    }
+    await _requireTimeReadOwner(expectedOwnerId, ownerStillCurrent);
+  }
+
+  Future<void> _requireTimeReadOwner(
+    String expectedOwnerId,
+    bool Function() stillCurrent,
+  ) async {
+    if (!stillCurrent()) throw StateError('Learning-time scope changed');
+    final owners =
+        await (database.select(database.localOwners)
+              ..where((owner) => owner.isActive.equals(true))
+              ..limit(2))
+            .get();
+    if (owners.length != 1 || owners.single.id != expectedOwnerId) {
+      throw StateError('Learning-time owner changed');
+    }
+    // inspect is SELECT-only. requireOwnerUnfenced intentionally acquires a
+    // writer and must not be substituted into this read-only capability.
+    final fence = await _ownerWrites.inspect();
+    if (fence != null &&
+        (fence.casToken == null ||
+            fence.casToken!.matchesOwner(expectedOwnerId) ||
+            (fence.cloudReceipt != null &&
+                expectedOwnerId ==
+                    accountDeletionReplacementGuestOwnerId(
+                      fence.cloudReceipt!,
+                    )))) {
+      throw StateError('Learning-time owner is fenced');
+    }
+    if (!stillCurrent()) throw StateError('Learning-time scope changed');
+  }
+
+  Future<void> _requireTimeOrdinarySession(String sessionId) async {
+    final controlled = await database
+        .customSelect(
+          'SELECT 1 AS controlled FROM assessment_runs '
+          'WHERE learning_session_id = ? '
+          'UNION ALL SELECT 1 AS controlled FROM measurement_opportunities '
+          'WHERE learning_session_id = ? LIMIT 1',
+          variables: [Variable<String>(sessionId), Variable<String>(sessionId)],
+        )
+        .getSingleOrNull();
+    if (controlled != null) {
+      throw StateError('Research-controlled time collection is excluded');
+    }
+  }
+
+  String _timeSessionFingerprint(db.LearningSession row) => _timeDigest([
+    row.id,
+    row.ownerId,
+    row.activityType,
+    row.startedAtUtcMs,
+    row.appVersion,
+    row.buildId,
+    row.acceptedPlanId,
+    row.acceptedPlanJson,
+  ]);
+
+  String _timeDigest(Object? body) =>
+      sha256.convert(utf8.encode(jsonEncode(body))).toString();
+
+  String _timeJson(Map<String, Object?> body) {
+    final result = jsonEncode(body);
+    if (utf8.encode(result).length > 16384) {
+      throw StateError('Learning-time binding exceeds its storage limit');
+    }
+    return result;
+  }
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -2220,4 +2868,86 @@ final class _SrsReviewBinding {
   bool finishAttempted = false;
   final answers = <int, SrsReviewAnswerIntent>{};
   SrsReviewFinishIntent? closing;
+}
+
+final class _CanonicalTimeBinding {
+  const _CanonicalTimeBinding({
+    required this.request,
+    required this.sessionFingerprint,
+  });
+  final CanonicalLearningTimeAdmissionRequest request;
+  final String sessionFingerprint;
+}
+
+final class _DriftCanonicalLearningTimeAdmission
+    implements CanonicalLearningTimeAdmission {
+  const _DriftCanonicalLearningTimeAdmission({
+    required this.ownerId,
+    required this.sessionId,
+    required this.activityType,
+    required this.sourceKind,
+    required this.sourceBindingJson,
+    required this.contextBindingJson,
+    required this.evidenceContext,
+  });
+  @override
+  final String ownerId;
+  @override
+  final String sessionId;
+  @override
+  final String activityType;
+  @override
+  final CanonicalLearningTimeSourceKind sourceKind;
+  @override
+  final String sourceBindingJson;
+  @override
+  final String contextBindingJson;
+  @override
+  final EvidenceContext evidenceContext;
+}
+
+final class _DriftSourceBoundVocabularyStart
+    implements PreparedSourceBoundVocabularyStart {
+  _DriftSourceBoundVocabularyStart({
+    required this.session,
+    required this.words,
+    required this.presentation,
+    required this.source,
+    required this.callerContext,
+  });
+  final LearningSessionDraft session;
+  final List<QuizWord> words;
+  @override
+  final QuizSession presentation;
+  @override
+  final VocabularyLearningTimeSourcePin source;
+  @override
+  final LearningTimeCallerContext callerContext;
+  @override
+  String get ownerId => session.ownerId;
+  @override
+  String get sessionId => session.id;
+  bool startAttempted = false;
+  bool started = false;
+}
+
+final class _DriftVocabularySessionLinkReceipt
+    implements CanonicalLearningTimeSessionLinkReceipt {
+  const _DriftVocabularySessionLinkReceipt({
+    required this.ownerId,
+    required this.sessionId,
+    required this.activityType,
+    required this.sourceKind,
+    required this.sourceBindingJson,
+  });
+  @override
+  final String ownerId;
+  @override
+  final String sessionId;
+  @override
+  final String activityType;
+  @override
+  final CanonicalLearningTimeSourceKind sourceKind;
+  @override
+  final String sourceBindingJson;
 }

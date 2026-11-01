@@ -54,6 +54,8 @@ import '../features/identity/domain/local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/data/drift_learning_time_repository.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
@@ -614,14 +616,17 @@ final class AppBootstrap {
         backends = RuntimeAvailability.unavailable;
       }
     }
+    LearningTimeUseCases? learningTime;
+    final learningTimeClock = Stopwatch();
     try {
+      final learningRepository = DriftLearningRepository(
+        database,
+        ownerWrites: ownerWrites,
+        lifecycleObserver: studyObserver,
+      );
       learning = LearningUseCases(
         owners: localOwners,
-        repository: DriftLearningRepository(
-          database,
-          ownerWrites: ownerWrites,
-          lifecycleObserver: studyObserver,
-        ),
+        repository: learningRepository,
         generateId: idGenerator.v4,
         nowUtc: () => DateTime.now().toUtc(),
         buildInfo: const AppBuildInfo.fromEnvironment(),
@@ -632,6 +637,18 @@ final class AppBootstrap {
         owners: localOwners,
         queries: DriftProgressQueries(database),
         nowUtc: () => DateTime.now().toUtc(),
+      );
+      learningTimeClock.start();
+      learningTime = LearningTimeUseCases(
+        repository: DriftLearningTimeRepository(
+          database: database,
+          ownerWrites: ownerWrites,
+          learning: learningRepository,
+        ),
+        ownerChanges: progress.watchActiveOwnerId(),
+        monotonicMicros: () => learningTimeClock.elapsedMicroseconds,
+        nowUtc: () => DateTime.now().toUtc(),
+        generateId: idGenerator.v4,
       );
       final reviewCenter = ReviewCenterUseCases(
         queries: DriftReviewCenterQueries(database),
@@ -800,6 +817,7 @@ final class AppBootstrap {
         syncTrigger: syncTrigger,
         syncStatus: syncStore,
         learning: learning,
+        learningTime: learningTime,
         associativeLearning: DriftAssociativeLearningAdapter(database),
         progress: progress,
         reviewCenter: reviewCenter,
@@ -827,8 +845,11 @@ final class AppBootstrap {
         speechPractice: speechPractice,
         disposeResources: () async {
           try {
+            await learningTime?.dispose();
+            learningTimeClock.stop();
             await contentService?.dispose();
           } finally {
+            learningTimeClock.stop();
             await accountDeletionComposition?.dispose();
             await geminiAuthSubscription?.cancel();
             await geminiOwnerUpdatesSubscription.cancel();
@@ -845,6 +866,8 @@ final class AppBootstrap {
       );
     } on Object {
       try {
+        await learningTime?.dispose();
+        learningTimeClock.stop();
         await contentService?.dispose();
       } on Object {
         // Preserve the original bootstrap failure after best-effort cleanup.

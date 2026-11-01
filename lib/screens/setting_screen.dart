@@ -11,6 +11,8 @@ import '../features/consent/domain/research_consent.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/device_model/domain/model_manifest.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning/domain/learning_time_admission.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -23,6 +25,7 @@ import 'export_center_screen.dart';
 import 'account_deletion_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'gemini_settings_screen.dart';
+import 'learning_time_settings_screen.dart';
 import 'device_permission_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'shadowing_challenge_screen.dart';
@@ -36,6 +39,7 @@ class SettingScreen extends StatefulWidget {
     this.deviceModels,
     this.featureRegistry,
     this.deviceModelDownload,
+    this.learningTime,
   });
 
   final AccountUseCases? account;
@@ -44,12 +48,14 @@ class SettingScreen extends StatefulWidget {
   final DeviceModelUseCases? deviceModels;
   final FieldFeatureRegistry? featureRegistry;
   final Future<ModelDownloadRecord> Function()? deviceModelDownload;
+  final LearningTimeUseCases? learningTime;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _SettingScreenState extends State<SettingScreen>
+    with WidgetsBindingObserver {
   AccountUseCases? _account;
   AccountDeletionUseCases? _accountDeletion;
   ResearchConsentUseCases? _researchConsent;
@@ -73,11 +79,42 @@ class _SettingScreenState extends State<SettingScreen> {
   int _modelStatusGeneration = 0;
   bool _modelBusy = false;
   String? _modelFeedback;
+  LearningTimeUseCases? _learningTime;
+  StreamSubscription<void>? _timeSubscription;
+  int _timeEntryGeneration = 0;
+  bool _timeEntryVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _syncTimeEntryVisibility() {
+    final visible =
+        ModalRoute.isCurrentOf(context) == true &&
+        Visibility.of(context) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (_timeEntryVisible == visible) return;
+    _timeEntryVisible = visible;
+    _timeEntryGeneration++;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _timeEntryVisible = false;
+      _timeEntryGeneration++;
+    }
+    if (mounted) setState(() {});
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncTimeEntryVisibility();
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _replaceLearningTime(widget.learningTime ?? dependencies?.learningTime);
     _account ??= widget.account ?? dependencies?.account;
     _accountDeletion ??=
         widget.accountDeletion ?? dependencies?.accountDeletion;
@@ -98,6 +135,10 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   void didUpdateWidget(covariant SettingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _replaceLearningTime(
+      widget.learningTime ??
+          AppDependenciesScope.maybeOf(context)?.learningTime,
+    );
     if (!identical(oldWidget.researchConsent, widget.researchConsent)) {
       final dependencies = AppDependenciesScope.maybeOf(context);
       _replaceResearchConsent(
@@ -112,6 +153,18 @@ class _SettingScreenState extends State<SettingScreen> {
     if (identical(_researchConsent, consent)) return;
     _researchConsent = consent;
     _researchStatus = consent == null ? null : _loadResearchStatus(consent);
+  }
+
+  void _replaceLearningTime(LearningTimeUseCases? time) {
+    if (identical(_learningTime, time)) return;
+    _timeEntryGeneration++;
+    final previous = _timeSubscription;
+    _timeSubscription = null;
+    if (previous != null) unawaited(previous.cancel());
+    _learningTime = time;
+    _timeSubscription = time?.changes.listen((_) {
+      if (mounted && identical(_learningTime, time)) setState(() {});
+    });
   }
 
   Future<ResearchConsentStatus> _loadResearchStatus(
@@ -165,6 +218,9 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    final timeSubscription = _timeSubscription;
+    if (timeSubscription != null) unawaited(timeSubscription.cancel());
     _syncStatusGeneration++;
     _modelStatusGeneration++;
     final subscription = _syncStatusSubscription;
@@ -691,8 +747,16 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _syncTimeEntryVisibility();
     final session = _account?.currentSession;
     final isRegistered = session != null && !session.isAnonymous;
+    final time = _learningTime;
+    final timeOwner = time?.ownerId;
+    final timeOwnerGeneration = time?.ownerGeneration;
+    final timeEntryGeneration = _timeEntryGeneration;
+    final route = ModalRoute.of(context);
+    ModalRoute.isCurrentOf(context);
+    final thai = Localizations.localeOf(context).languageCode == 'th';
     return Scaffold(
       appBar: AppBar(title: const Text('ตั้งค่า')),
       body: AdaptiveContentPane(
@@ -741,6 +805,48 @@ class _SettingScreenState extends State<SettingScreen> {
                         'settings/appearance',
                         const AppearanceSettingsScreen(),
                       ),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                key: const ValueKey<String>('settings-learning-time'),
+                minTileHeight: 64,
+                leading: const Icon(Icons.timer_outlined),
+                title: Text(
+                  thai ? 'เวลาการเรียนในเครื่อง' : 'Local learning time',
+                ),
+                subtitle: Text(
+                  timeOwner == null
+                      ? (thai
+                            ? 'บัญชีในเครื่องยังไม่พร้อม'
+                            : 'Local user unavailable')
+                      : (thai
+                            ? 'เลือกบันทึกเวลาจากการโต้ตอบ แยกตามผู้ใช้'
+                            : 'Choose whether to record interaction time for this user'),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: time == null || timeOwner == null
+                    ? null
+                    : () {
+                        if (!mounted ||
+                            !identical(time, _learningTime) ||
+                            time.ownerId != timeOwner ||
+                            time.ownerGeneration != timeOwnerGeneration ||
+                            _timeEntryGeneration != timeEntryGeneration ||
+                            route?.isCurrent != true ||
+                            !Visibility.of(context) ||
+                            WidgetsBinding.instance.lifecycleState !=
+                                AppLifecycleState.resumed) {
+                          return;
+                        }
+                        _openSettingsPage(
+                          'settings/learning-time',
+                          LearningTimeSettingsScreen(
+                            time: time,
+                            expectedOwnerId: timeOwner,
+                          ),
+                        );
+                      },
               ),
             ),
             if (_researchConsent != null)
@@ -979,7 +1085,10 @@ class _SettingScreenState extends State<SettingScreen> {
                           'และใช้ระบบรู้จำเสียงของอุปกรณ์',
                       onTap: () => _openSettingsPage(
                         'practice/shadowing',
-                        const ShadowingChallengeScreen(),
+                        const ShadowingChallengeScreen(
+                          learningTimeCallerContext:
+                              LearningTimeCallerContext.ordinary,
+                        ),
                       ),
                     ),
                   if (_fieldFeatures.isVisible(FieldFeature.objectScanner))

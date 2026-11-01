@@ -21,8 +21,8 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 20);
-      expect(database.allTables, hasLength(37));
+      expect(database.schemaVersion, 21);
+      expect(database.allTables, hasLength(40));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -236,6 +236,9 @@ void main() {
           ..remove('assessment_runs')
           ..remove('saved_words')
           ..remove('word_reports');
+        expect(oldRows.remove('learning_time_preferences'), isEmpty);
+        expect(oldRows.remove('learning_time_scopes'), isEmpty);
+        expect(oldRows.remove('learning_time_segments'), isEmpty);
         expect(oldRows, hasLength(34));
         for (final table in oldRows.entries) {
           expect(
@@ -302,19 +305,22 @@ void main() {
         );
         await Directory(resolved).delete(recursive: true);
       });
-      expect(database.schemaVersion, 20);
+      expect(database.schemaVersion, 21);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        20,
+        21,
       );
-      expect(database.allTables, hasLength(37));
+      expect(database.allTables, hasLength(40));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
       );
       expect(before, oldRows);
       final after = await ownerMigrationRows(database);
+      expect(after['learning_time_preferences'], isEmpty);
+      expect(after['learning_time_scopes'], isEmpty);
+      expect(after['learning_time_segments'], isEmpty);
       expect(
         after['assessment_runs'],
         isEmpty,
@@ -325,7 +331,10 @@ void main() {
         Map<String, List<Map<String, Object?>>>.of(after)
           ..remove('assessment_runs')
           ..remove('saved_words')
-          ..remove('word_reports'),
+          ..remove('word_reports')
+          ..remove('learning_time_preferences')
+          ..remove('learning_time_scopes')
+          ..remove('learning_time_segments'),
         before,
       );
       final newObjects = await database

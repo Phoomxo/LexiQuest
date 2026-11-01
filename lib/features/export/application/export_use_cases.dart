@@ -54,7 +54,7 @@ final class ExportUseCases {
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }
-    if (selection.includeRewards &&
+    if ((selection.includeRewards || selection.includeLearningTime) &&
         (format == ExportFormat.researchJson || format == ExportFormat.anki)) {
       throw const ExportException(ExportFailureCode.unavailable);
     }
@@ -78,6 +78,7 @@ final class ExportUseCases {
       attempts: selection.includeAttempts,
       reading: selection.includeReading,
       rewards: selection.includeRewards,
+      learningTime: selection.includeLearningTime,
     );
     cancellation.throwIfCancelled();
     await _requireCurrentScope(ownerId, format, cancellation);
@@ -106,9 +107,7 @@ final class ExportUseCases {
       recordCount: data.recordCount,
       schemaVersion: format == ExportFormat.researchJson
           ? _researchSchemaVersion
-          : data.rewards == null
-          ? 1
-          : 2,
+          : _personalSchemaVersion(data),
       algorithmVersion: 1,
       generatedAtUtc: generatedAt,
       timeZone: 'UTC',
@@ -217,6 +216,7 @@ final class ExportUseCases {
     required bool attempts,
     required bool reading,
     required bool rewards,
+    required bool learningTime,
   }) async {
     try {
       return await reader.load(
@@ -225,6 +225,7 @@ final class ExportUseCases {
         attempts: attempts,
         reading: reading,
         rewards: rewards,
+        learningTime: learningTime,
       );
     } on ExportException {
       rethrow;
@@ -233,10 +234,16 @@ final class ExportUseCases {
     }
   }
 
+  int _personalSchemaVersion(ExportDataSet data) => data.learningTime.isNotEmpty
+      ? 3
+      : data.rewards == null
+      ? 1
+      : 2;
+
   Uint8List _csv(ExportDataSet data, DateTime generatedAt) {
     final out = StringBuffer()
       ..writeln(
-        '# LexiQuest export schema=${data.rewards == null ? 1 : 2} algorithm=1 timezone=UTC',
+        '# LexiQuest export schema=${_personalSchemaVersion(data)} algorithm=1 timezone=UTC',
       )
       ..writeln('# generated_at=${generatedAt.toIso8601String()}')
       ..writeln('# sample_size=${data.recordCount}')
@@ -285,6 +292,20 @@ final class ExportUseCases {
           '',
           row.updatedAtUtc.toIso8601String(),
           'position=${row.lastPosition}',
+        ]),
+      );
+    }
+    for (final row in data.learningTime) {
+      out.writeln(
+        _csvRow([
+          row.recordType,
+          row.id,
+          '',
+          '',
+          '',
+          '',
+          '',
+          jsonEncode(row.detail),
         ]),
       );
     }
@@ -429,7 +450,7 @@ final class ExportUseCases {
           pw.Header(level: 0, text: 'LexiQuest รายงานข้อมูลการเรียน'),
           pw.Text('สร้างเมื่อ: ${generatedAt.toIso8601String()}'),
           pw.Text('เขตเวลา: UTC'),
-          pw.Text('Schema v${data.rewards == null ? 1 : 2} · Algorithm v1'),
+          pw.Text('Schema v${_personalSchemaVersion(data)} · Algorithm v1'),
           pw.Text('จำนวนข้อมูลทั้งหมด: ${data.recordCount}'),
           pw.SizedBox(height: 12),
           pw.Header(level: 1, text: 'คำศัพท์ (${data.vocabulary.length})'),
@@ -458,6 +479,16 @@ final class ExportUseCases {
                 'ตำแหน่ง ${row.lastPosition} · '
                 '${row.isCompleted ? 'อ่านจบ' : 'กำลังอ่าน'}',
               ),
+          if (data.learningTime.isNotEmpty) ...[
+            pw.Header(level: 1, text: 'เวลาเรียนที่บันทึกในเครื่อง'),
+            pw.Text(
+              'active_duration_us คือช่วงปฏิสัมพันธ์ที่ยืนยันได้ หน่วยไมโครวินาที ไม่ใช่เวลาตอบหรือผลการเรียน',
+            ),
+            for (final row in data.learningTime)
+              pw.Text(
+                '${row.recordType} · ${row.id} · ${jsonEncode(row.detail)}',
+              ),
+          ],
           if (data.rewards != null) ...[
             pw.Header(level: 1, text: 'Coins (${data.rewards!.balance})'),
             for (final effect in data.rewards!.effects)

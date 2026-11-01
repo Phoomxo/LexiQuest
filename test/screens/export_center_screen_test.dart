@@ -58,6 +58,52 @@ void main() {
 
   tearDown(() => database.close());
 
+  testWidgets(
+    'personal time export defaults off and clears for nonpersonal formats',
+    (tester) async {
+      await _pumpExport(tester, exports);
+      const timeKey = ValueKey<String>('export-learning-time');
+      CheckboxListTile tile() =>
+          tester.widget<CheckboxListTile>(find.byKey(timeKey));
+      expect(tile().value, isFalse);
+      await tester.ensureVisible(find.byKey(timeKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(timeKey));
+      await tester.pump();
+      expect(tile().value, isTrue);
+      await tester.scrollUntilVisible(
+        find.text('PDF'), -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PDF'));
+      await tester.pump();
+      expect(tile().value, isTrue);
+      await tester.tap(find.text('Anki'));
+      await tester.pump();
+      expect(find.byKey(timeKey), findsNothing);
+      await tester.tap(find.text('CSV'));
+      await tester.pump();
+      expect(tile().value, isFalse);
+      await tester.ensureVisible(find.byKey(timeKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(timeKey));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.text('งานวิจัย'), -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('งานวิจัย'));
+      await tester.pump();
+      expect(find.byKey(timeKey), findsNothing);
+      await tester.tap(find.text('CSV'));
+      await tester.pump();
+      expect(tile().value, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('production-style default hides research export', (tester) async {
     await _pumpExport(
       tester,

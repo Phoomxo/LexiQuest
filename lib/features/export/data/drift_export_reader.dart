@@ -64,24 +64,39 @@ final class ExportReadingRow {
   final DateTime updatedAtUtc;
 }
 
+final class ExportLearningTimeRow {
+  const ExportLearningTimeRow({
+    required this.recordType,
+    required this.id,
+    required this.detail,
+  });
+
+  final String recordType;
+  final String id;
+  final Map<String, Object?> detail;
+}
+
 final class ExportDataSet {
   const ExportDataSet({
     required this.vocabulary,
     required this.attempts,
     required this.reading,
     this.rewards,
+    this.learningTime = const [],
   });
 
   final List<ExportVocabularyRow> vocabulary;
   final List<ExportAttemptRow> attempts;
   final List<ExportReadingRow> reading;
   final RewardLedger? rewards;
+  final List<ExportLearningTimeRow> learningTime;
 
   int get recordCount =>
       vocabulary.length +
       attempts.length +
       reading.length +
-      (rewards?.effects.length ?? 0);
+      (rewards?.effects.length ?? 0) +
+      learningTime.length;
 }
 
 abstract interface class ExportReader {
@@ -91,6 +106,7 @@ abstract interface class ExportReader {
     required bool attempts,
     required bool reading,
     bool rewards = false,
+    bool learningTime = false,
   });
 }
 
@@ -106,6 +122,7 @@ final class DriftExportReader implements ExportReader {
     required bool attempts,
     required bool reading,
     bool rewards = false,
+    bool learningTime = false,
   }) async {
     final vocabularyRows = vocabulary
         ? await database
@@ -155,6 +172,7 @@ final class DriftExportReader implements ExportReader {
               .get()
         : const <ReadingProgressEntry>[];
     return ExportDataSet(
+      learningTime: learningTime ? await _loadLearningTime(ownerId) : const [],
       rewards: rewards
           ? await DriftRewardProjectionRebuilder(database).readLedger(ownerId)
           : null,
@@ -207,4 +225,47 @@ final class DriftExportReader implements ExportReader {
           .toList(growable: false),
     );
   }
+
+  Future<List<ExportLearningTimeRow>> _loadLearningTime(String ownerId) =>
+      database.transaction(() async {
+        final result = <ExportLearningTimeRow>[];
+        for (final (table, recordType, idColumn) in const [
+          ('learning_time_preferences', 'learning_time_preference', 'owner_id'),
+          ('learning_time_scopes', 'learning_time_scope', 'id'),
+        ]) {
+          final rows = await database
+              .customSelect(
+                'SELECT * FROM $table WHERE owner_id = ? ORDER BY $idColumn',
+                variables: [Variable<String>(ownerId)],
+              )
+              .get();
+          result.addAll(
+            rows.map(
+              (row) => ExportLearningTimeRow(
+                recordType: recordType,
+                id: row.read<String>(idColumn),
+                detail: Map.unmodifiable(row.data),
+              ),
+            ),
+          );
+        }
+        final segments = await database
+            .customSelect(
+              'SELECT g.* FROM learning_time_segments g '
+              'JOIN learning_time_scopes s ON s.id = g.scope_id '
+              'WHERE s.owner_id = ? ORDER BY g.scope_id,g.ordinal',
+              variables: [Variable<String>(ownerId)],
+            )
+            .get();
+        result.addAll(
+          segments.map(
+            (row) => ExportLearningTimeRow(
+              recordType: 'learning_time_segment',
+              id: row.read<String>('id'),
+              detail: Map.unmodifiable(row.data),
+            ),
+          ),
+        );
+        return List.unmodifiable(result);
+      });
 }

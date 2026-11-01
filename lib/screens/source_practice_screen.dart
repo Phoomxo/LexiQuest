@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
 import '../features/vocabulary/application/source_practice.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
@@ -42,6 +44,8 @@ class SourcePracticeScreen extends StatefulWidget {
 
 class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
   static const _maxPracticeWords = 20;
+  PreparedSourceBoundVocabularyStart? _pendingVoiceStart;
+  int? _pendingVoiceStartContext;
 
   final TextEditingController _textController = TextEditingController();
   SourcePracticePreview? _preview;
@@ -487,6 +491,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
       words: words,
       learning: widget.learning,
       vocabulary: widget.vocabulary,
+      learningTime: AppDependenciesScope.maybeOf(context)?.learningTime,
     );
   }
 
@@ -627,6 +632,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                 correctAnswers: summary.correctCount,
                 wrongAnswers: summary.wrongCount,
                 score: summary.score,
+                learningTime: captured.learningTime,
+                resultOwnerId: captured.ownerId,
+                resultSessionId: summary.id,
                 mistakes: mistakes,
                 onPracticeMistakes: mistakes.isEmpty
                     ? null
@@ -695,6 +703,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
     final vocabulary = widget.vocabulary;
     final categoryId = widget.categoryId;
     final voiceContext = _voiceContext.value;
+    final learningTime = AppDependenciesScope.maybeOf(context)?.learningTime;
     final target = _preview!.matchedWords.first;
     bool contextCurrent() =>
         mounted &&
@@ -745,10 +754,37 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         });
         return;
       }
-      final session = await learning.startSourcePronunciationForWords(
-        wordIds: [target.id],
-        limit: 1,
-      );
+      PreparedSourceBoundVocabularyStart? sourceStart;
+      final QuizSession session;
+      if (learning.repository is SourceBoundVocabularyStartRepository) {
+        sourceStart = _pendingVoiceStartContext == voiceContext
+            ? _pendingVoiceStart
+            : null;
+        sourceStart ??= await learning.prepareSourceBoundVoicePracticeStart(
+          expectedOwnerId: ownerId,
+          practiceKind: VoiceLearningTimePracticeKind.pronunciation,
+          callerContext: LearningTimeCallerContext.ordinary,
+          stillCurrent: contextCurrent,
+          wordIds: [target.id],
+          limit: 1,
+        );
+        if (sourceStart == null || !contextCurrent()) return;
+        _pendingVoiceStart = sourceStart;
+        _pendingVoiceStartContext = voiceContext;
+        session = await learning.startSourceBoundVocabularySession(
+          sourceStart,
+          operationStillCurrent: contextCurrent,
+        );
+        if (identical(_pendingVoiceStart, sourceStart)) {
+          _pendingVoiceStart = null;
+          _pendingVoiceStartContext = null;
+        }
+      } else {
+        session = await learning.startSourcePronunciationForWords(
+          wordIds: [target.id],
+          limit: 1,
+        );
+      }
       if (!mounted) return;
       final current = await _validatedPreviewForLaunch();
       if (current == null || !mounted || !contextCurrent()) return;
@@ -775,6 +811,11 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
             wordId: target.id,
             sessionId: session.id,
             sourceOwnerId: ownerId,
+            sourceStart: sourceStart,
+            learningTimeCallerContext: sourceStart == null
+                ? LearningTimeCallerContext.unavailable
+                : LearningTimeCallerContext.ordinary,
+            learningTime: learningTime,
             contentRevision: 'local-vocabulary-v1:${target.localRevision}',
             learning: learning,
             voice: widget.voice,
@@ -841,6 +882,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                   correctAnswers: summary.correctCount,
                   wrongAnswers: summary.wrongCount,
                   score: summary.score,
+                  learningTime: learningTime,
+                  resultOwnerId: ownerId,
+                  resultSessionId: summary.id,
                   mistakes: summary.wrongCount == 1 ? [word] : const [],
                   onPracticeMistakes: summary.wrongCount == 0
                       ? null
@@ -1119,6 +1163,7 @@ final class _SourceResultContext {
     required List<VocabularyWord> words,
     required this.learning,
     required this.vocabulary,
+    required this.learningTime,
   }) : words = List.unmodifiable(words);
 
   final int epoch;
@@ -1131,6 +1176,7 @@ final class _SourceResultContext {
   final List<VocabularyWord> words;
   final LearningUseCases learning;
   final VocabularyUseCases vocabulary;
+  final LearningTimeUseCases? learningTime;
 }
 
 bool _sameWordSnapshots(List<VocabularyWord> left, List<VocabularyWord> right) {

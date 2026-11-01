@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/learning/domain/learning_time_admission.dart';
 
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
@@ -258,11 +259,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           'ต้องอนุญาตไมโครโฟน และใช้ระบบรู้จำเสียงของอุปกรณ์',
                       onTap: () => _pushDestination(
                         'practice/shadowing',
-                        const ShadowingChallengeScreen(),
+                        const ShadowingChallengeScreen(
+                          learningTimeCallerContext:
+                              LearningTimeCallerContext.ordinary,
+                        ),
                       ),
                       onSetup: () => _pushDestination(
                         'practice/shadowing',
-                        const ShadowingChallengeScreen(),
+                        const ShadowingChallengeScreen(
+                          learningTimeCallerContext:
+                              LearningTimeCallerContext.ordinary,
+                        ),
                       ),
                     ),
                   if (features.isVisible(FieldFeature.ghostDuel))

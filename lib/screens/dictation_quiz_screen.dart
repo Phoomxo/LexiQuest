@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
@@ -18,6 +21,8 @@ class DictationQuizScreen extends StatefulWidget {
     required this.learning,
     this.voice,
     this.ownerChanges,
+    this.learningTime,
+    this.learningTimeCallerContext = LearningTimeCallerContext.unavailable,
     this.languageCode = 'th',
   });
 
@@ -25,6 +30,8 @@ class DictationQuizScreen extends StatefulWidget {
   final LearningUseCases learning;
   final VoiceUseCases? voice;
   final Stream<String?>? ownerChanges;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext learningTimeCallerContext;
   final String languageCode;
 
   @override
@@ -64,6 +71,11 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   _Step _step = _Step.starting;
   RecordAnswerCommand? _pendingAnswer;
   NativeFinishIntent? _pendingFinish;
+  LearningTimeBinding? _timeBinding;
+  // speak() acknowledges playback start; only a later stop ACK clears this.
+  bool _referencePlaybackUnconfirmed = false;
+  bool _timePlaybackStopPending = false;
+  int _playbackGeneration = 0;
 
   bool get _thai => widget.languageCode == 'th';
   String _copy(String th, String en) => _thai ? th : en;
@@ -81,6 +93,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     if (!_bound) {
       _bind(dependencies);
     } else if (!identical(_dependencies, dependencies)) {
+      _timeBinding?.retireDependencies();
       _invalidate();
     }
     final visible =
@@ -89,6 +102,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       _invalidate();
     }
     _routeVisible = visible;
+    _timeBinding?.syncVisibility();
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryStart());
   }
 
@@ -126,6 +140,14 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   @override
   void didUpdateWidget(covariant DictationQuizScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(widget.learningTime, oldWidget.learningTime) ||
+        widget.learningTimeCallerContext !=
+            oldWidget.learningTimeCallerContext) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      unawaited(_readyTime());
+    }
     if (!identical(widget.session, oldWidget.session) ||
         !identical(widget.learning, oldWidget.learning) ||
         !identical(widget.voice, oldWidget.voice) ||
@@ -157,6 +179,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       return;
     }
     _epoch++;
+    _playbackGeneration++;
+    _timeBinding?.close();
     _latency.stop();
     _response.clear();
     setState(() => _invalidated = true);
@@ -211,6 +235,10 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     if (!_current(epoch) || _step != _Step.answering || _playBusy) {
       return;
     }
+    _playbackGeneration++;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
+    _referencePlaybackUnconfirmed = true;
     // Assistance is a captured interaction, including an unsuccessful request.
     setState(() {
       if (speed < 1) {
@@ -256,6 +284,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     } finally {
       if (_current(epoch)) {
         setState(() => _playBusy = false);
+        unawaited(_readyTime());
       }
     }
   }
@@ -266,6 +295,106 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       _playSucceeded &&
       !_playBusy;
 
+  Future<void> _readyTime() async {
+    final time = widget.learningTime ?? _dependencies?.learningTime;
+    final epoch = _epoch;
+    if (time == null ||
+        !_canAnswer ||
+        _referencePlaybackUnconfirmed ||
+        _timePlaybackStopPending ||
+        widget.learningTimeCallerContext !=
+            LearningTimeCallerContext.ordinary) {
+      return;
+    }
+    final binding = _timeBinding ??= LearningTimeBinding(
+      time: time,
+      expectedOwnerId: widget.session.ownerId,
+      visible: () => _current(epoch) && TickerMode.valuesOf(context).enabled,
+    );
+    final visibility = binding.visibilityGeneration;
+    final capture = time.captureGeneration;
+    final assisted = _assisted;
+    try {
+      final proof = await widget.learning.admitCanonicalLearningTime(
+        NativeLearningTimeAdmission(
+          widget.session,
+          hintLevel: assisted ? 1 : 0,
+          callerContext: widget.learningTimeCallerContext,
+        ),
+        expectedOwnerId: widget.session.ownerId,
+        stillCurrent: () =>
+            _canAnswer &&
+            !_referencePlaybackUnconfirmed &&
+            !_timePlaybackStopPending &&
+            _assisted == assisted &&
+            _current(epoch) &&
+            binding.visibilityGeneration == visibility &&
+            time.captureGeneration == capture,
+      );
+      if (_canAnswer &&
+          !_referencePlaybackUnconfirmed &&
+          !_timePlaybackStopPending &&
+          _assisted == assisted &&
+          _current(epoch) &&
+          binding.visibilityGeneration == visibility &&
+          time.captureGeneration == capture) {
+        await binding.ready(
+          CanonicalTimeSource(
+            proof,
+            callerContext: widget.learningTimeCallerContext,
+          ),
+        );
+      }
+    } on Object {
+      binding.suspend();
+    }
+  }
+
+  void _timeInput() {
+    final time = widget.learningTime ?? _dependencies?.learningTime;
+    if (!_canAnswer ||
+        time == null ||
+        !time.captureEnabled ||
+        widget.learningTimeCallerContext !=
+            LearningTimeCallerContext.ordinary) {
+      return;
+    }
+    if (_referencePlaybackUnconfirmed) {
+      unawaited(_stopPlaybackForTime());
+      return;
+    }
+    final binding = _timeBinding;
+    binding?.interacted();
+    final lease = binding?.lease;
+    if (lease == null || !time.acceptsInteraction(lease)) {
+      unawaited(_readyTime());
+    }
+  }
+
+  Future<void> _stopPlaybackForTime() async {
+    if (_timePlaybackStopPending) {
+      return;
+    }
+    final epoch = _epoch;
+    final playback = ++_playbackGeneration;
+    _timePlaybackStopPending = true;
+    var stopped = false;
+    try {
+      await _voice!.stop();
+      if (_current(epoch) && !_playBusy && playback == _playbackGeneration) {
+        _referencePlaybackUnconfirmed = false;
+        stopped = true;
+      }
+    } on Object {
+      return;
+    } finally {
+      _timePlaybackStopPending = false;
+      if (stopped && _current(epoch) && playback == _playbackGeneration) {
+        unawaited(_readyTime());
+      }
+    }
+  }
+
   Future<void> _save() async {
     final epoch = _epoch;
     final retry = _step == _Step.saveFailed;
@@ -273,6 +402,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
         (!retry && (!_canAnswer || _response.text.trim().isEmpty))) {
       return;
     }
+    if (!retry) _timeBinding?.interacted();
+    _timeBinding?.suspend();
     try {
       _pendingAnswer ??= widget.learning.prepareNativeAnswer(
         DictationAnswerInput(
@@ -315,6 +446,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
         (_step != _Step.saved && _step != _Step.finishFailed)) {
       return;
     }
+    _timeBinding?.close();
     try {
       _pendingFinish ??= widget.learning.prepareNativeFinish(
         widget.session,
@@ -352,6 +484,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     _epoch++;
     _invalidated = true;
     _owners?.cancel();
@@ -483,7 +616,10 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
                       labelText: _copy('คำตอบของคุณ', 'Your spelling'),
                       border: const OutlineInputBorder(),
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) {
+                      _timeInput();
+                      setState(() {});
+                    },
                     onSubmitted: (_) => _save(),
                   ),
                   const SizedBox(height: 16),

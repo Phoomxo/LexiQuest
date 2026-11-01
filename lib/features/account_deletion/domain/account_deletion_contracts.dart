@@ -8,6 +8,7 @@ const Set<String> requiredFullAccountExportScopes = <String>{
   ...ownerUpgradeInventory,
   'vocabulary_import_rows',
   'quest_objective_progress',
+  'learning_time_segments',
   'local_owners',
 };
 

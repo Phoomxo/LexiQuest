@@ -42,7 +42,7 @@ void main() {
             await h.seedWrong();
           });
           final before = (await tester.runAsync(h.snapshotAllTables))!;
-          expect(before, hasLength(37));
+          expect(before, hasLength(40));
           final dependencies = AppDependencies(
             runtimeStatus: const AppRuntimeStatus(
               localData: RuntimeAvailability.ready,

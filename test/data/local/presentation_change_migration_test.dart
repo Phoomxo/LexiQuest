@@ -26,11 +26,11 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 20);
+      expect(database.schemaVersion, 21);
       final columns = await database
           .customSelect('PRAGMA table_info(measurement_opportunities)')
           .get();
-      expect(database.allTables, hasLength(37));
+      expect(database.allTables, hasLength(40));
       expect(
         await database.customSelect('SELECT * FROM word_reports').get(),
         isEmpty,
@@ -144,6 +144,9 @@ void main() {
           expect(oldRows.remove('assessment_runs'), isEmpty);
           expect(oldRows.remove('saved_words'), isEmpty);
           expect(oldRows.remove('word_reports'), isEmpty);
+          expect(oldRows.remove('learning_time_preferences'), isEmpty);
+          expect(oldRows.remove('learning_time_scopes'), isEmpty);
+          expect(oldRows.remove('learning_time_segments'), isEmpty);
           expect(oldRows, hasLength(34));
         } finally {
           await source.database.close();
@@ -217,10 +220,10 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          20,
+          21,
         );
         expect(before, hasLength(34));
-        expect(database.allTables, hasLength(37));
+        expect(database.allTables, hasLength(40));
         expect(
           await database.customSelect('SELECT * FROM word_reports').get(),
           isEmpty,
@@ -229,6 +232,9 @@ void main() {
         expect(after['assessment_runs'], isEmpty);
         expect(after['saved_words'], isEmpty);
         expect(after['word_reports'], isEmpty);
+        expect(after['learning_time_preferences'], isEmpty);
+        expect(after['learning_time_scopes'], isEmpty);
+        expect(after['learning_time_segments'], isEmpty);
         for (final table in before.entries) {
           final retained = after[table.key]!.map((row) {
             final old = Map<String, Object?>.from(row);

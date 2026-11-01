@@ -8,18 +8,21 @@ final class ExportSelection {
     required this.includeAttempts,
     required this.includeReading,
     this.includeRewards = false,
+    this.includeLearningTime = false,
   });
 
   final bool includeVocabulary;
   final bool includeAttempts;
   final bool includeReading;
   final bool includeRewards;
+  final bool includeLearningTime;
 
   bool get isEmpty =>
       !includeVocabulary &&
       !includeAttempts &&
       !includeReading &&
-      !includeRewards;
+      !includeRewards &&
+      !includeLearningTime;
 }
 
 final class ExportArtifact {

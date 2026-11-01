@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show listEquals, mapEquals;
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -7,6 +10,10 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
+import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../runtime/app_dependencies.dart';
 
 /// Six-stage Associative Reading Loop screen.
@@ -34,6 +41,8 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.targetWordContentRevisions,
     this.sessionId,
     this.ownerId,
+    this.learningTime,
+    this.timeCallerContext = LearningTimeCallerContext.ordinary,
   });
 
   final String cefrLevel;
@@ -59,6 +68,8 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// navigating to this screen.
   final String? sessionId;
   final String? ownerId;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext timeCallerContext;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -88,6 +99,11 @@ class _AssociativeReadingSessionScreenState
   String? _sessionId;
   bool _sessionFinished = false;
   LearningSessionSummary? _sessionSummary;
+  LearningTimeUseCases? _time;
+  LearningTimeBinding? _timeBinding;
+  ReadingLearningTimeSourcePin? _timePin;
+  PreparedSourceBoundVocabularyStart? _timeStart;
+  bool _timeSourceRetired = false;
 
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
@@ -132,8 +148,34 @@ class _AssociativeReadingSessionScreenState
   }
 
   @override
+  void didUpdateWidget(AssociativeReadingSessionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.passageText != widget.passageText ||
+        oldWidget.documentId != widget.documentId ||
+        oldWidget.documentRevision != widget.documentRevision ||
+        oldWidget.cefrLevel != widget.cefrLevel ||
+        oldWidget.ownerId != widget.ownerId ||
+        oldWidget.timeCallerContext != widget.timeCallerContext ||
+        !identical(oldWidget.learning, widget.learning) ||
+        !listEquals(oldWidget.targetWords, widget.targetWords) ||
+        !mapEquals(oldWidget.targetWordIds, widget.targetWordIds) ||
+        !mapEquals(
+          oldWidget.targetWordContentRevisions,
+          widget.targetWordContentRevisions,
+        )) {
+      _timeSourceRetired = true;
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      _timePin = null;
+      _timeStart = null;
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _configureReadingTime();
     if (!_loading || _learning != null) return;
     _learning =
         widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
@@ -160,10 +202,138 @@ class _AssociativeReadingSessionScreenState
             if (_restartedRound) _sessionId = null;
             _loading = false;
           });
+          unawaited(_readyReadingTime());
         })
         .catchError((Object _) {
           if (mounted) setState(() => _loading = false);
         });
+  }
+
+  void _configureReadingTime() {
+    if (_timeSourceRetired) return;
+    final time =
+        widget.learningTime ??
+        AppDependenciesScope.maybeOf(context)?.learningTime;
+    if (_timeBinding != null && identical(time, _time)) {
+      _timeBinding!.syncVisibility();
+      return;
+    }
+    _timeBinding?.retireDependencies();
+    _timeBinding?.dispose();
+    _time = time;
+    final owner = widget.ownerId ?? time?.ownerId;
+    if (time == null || owner == null) {
+      _timeBinding = null;
+      return;
+    }
+    _timeBinding = LearningTimeBinding(
+      time: time,
+      expectedOwnerId: owner,
+      visible: () =>
+          mounted &&
+          (ModalRoute.of(context)?.isCurrent ?? true) &&
+          TickerMode.valuesOf(context).enabled,
+    );
+    final ids = widget.targetWordIds;
+    final revisions = widget.targetWordContentRevisions;
+    if (widget.targetWords.isEmpty ||
+        ids == null ||
+        revisions == null ||
+        widget.targetWords.any(
+          (word) =>
+              ids[word]?.isNotEmpty != true ||
+              revisions[word]?.isNotEmpty != true,
+        )) {
+      return;
+    }
+    try {
+      _timePin = ReadingLearningTimeSourcePin(
+        documentId: _documentId,
+        documentRevision: widget.documentRevision,
+        snapshotSha256: sha256
+            .convert(
+              utf8.encode(
+                jsonEncode([
+                  widget.cefrLevel,
+                  widget.passageText,
+                  for (final word in widget.targetWords)
+                    [word, ids[word], revisions[word]],
+                ]),
+              ),
+            )
+            .toString(),
+        targetPinsSha256: sha256
+            .convert(
+              utf8.encode(
+                jsonEncode([
+                  for (final word in widget.targetWords)
+                    [ids[word], revisions[word]],
+                ]),
+              ),
+            )
+            .toString(),
+      );
+    } on Object {
+      _timePin = null;
+    }
+  }
+
+  Future<void> _readyReadingTime() async {
+    final pin = _timePin;
+    final binding = _timeBinding;
+    if (pin == null ||
+        binding == null ||
+        _loading ||
+        _saving ||
+        _completed ||
+        _currentStage > 5) {
+      return;
+    }
+    try {
+      await binding.ready(
+        ReadingTimeSource(
+          documentId: pin.documentId,
+          documentRevision: pin.documentRevision,
+          snapshotSha256: pin.snapshotSha256,
+          targetPinsSha256: pin.targetPinsSha256,
+          readingStage: _currentStage,
+          callerContext: widget.timeCallerContext,
+        ),
+      );
+    } on Object {
+      binding.suspend();
+    }
+  }
+
+  void _readingInput() {
+    if (_loading || _saving || _completed) return;
+    _timeBinding?.interacted();
+    final lease = _timeBinding?.lease;
+    if (lease == null || _time?.acceptsInteraction(lease) != true) {
+      unawaited(_readyReadingTime());
+    }
+  }
+
+  Future<void> _linkReadingTime(
+    PreparedSourceBoundVocabularyStart start,
+  ) async {
+    final binding = _timeBinding;
+    final time = _time;
+    final ownerGeneration = time?.ownerGeneration;
+    if (binding == null || time == null) return;
+    try {
+      final receipt = await _learning!.readSourceBoundVocabularyStartReceipt(
+        start,
+        expectedOwnerId: start.ownerId,
+        ownerStillCurrent: () =>
+            time.ownerId == start.ownerId &&
+            time.ownerGeneration == ownerGeneration,
+      );
+      final admission = await binding.prepareSessionLink(receipt);
+      if (admission != null) binding.acknowledgeSessionLink(admission);
+    } on Object {
+      return;
+    }
   }
 
   @override
@@ -176,6 +346,7 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     for (final c in _recallControllers) {
       c.dispose();
@@ -190,6 +361,8 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _nextStage() async {
     if (_saving) return;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
     setState(() => _saving = true);
 
     // Stage-specific side effects before advancing.
@@ -261,6 +434,7 @@ class _AssociativeReadingSessionScreenState
       _currentStage = nextStage;
       _saving = false;
     });
+    unawaited(_readyReadingTime());
   }
 
   // ── Stage 3: Active Recall ─────────────────────────────────────────────────
@@ -269,15 +443,43 @@ class _AssociativeReadingSessionScreenState
     final learning = _learning;
     final wordIds = widget.targetWordIds;
     if (learning == null || wordIds == null) return true;
-    if (await _ownerForWrite(showFailure: true) == null) return false;
+    final owner = await _ownerForWrite(showFailure: true);
+    if (owner == null) return false;
 
     var sessionId = _sessionId;
     if (sessionId == null) {
       try {
-        final session = await learning.startReadingForWords(
-          wordIds: wordIds.values,
-          limit: wordIds.length,
-        );
+        final QuizSession session;
+        final pin = _timePin;
+        final binding = _timeBinding;
+        if (pin != null &&
+            binding != null &&
+            learning.repository is SourceBoundVocabularyStartRepository) {
+          final start = _timeStart ??= await learning
+              .prepareSourceBoundReadingStart(
+                expectedOwnerId: owner,
+                wordIds: [
+                  for (final word in widget.targetWords) wordIds[word]!,
+                ],
+                source: pin,
+                callerContext: widget.timeCallerContext,
+                stillCurrent: () =>
+                    mounted && (ModalRoute.of(context)?.isCurrent ?? true),
+                limit: wordIds.length,
+              );
+          if (start == null) return true;
+          session = await learning.startSourceBoundVocabularySession(
+            start,
+            operationStillCurrent: () =>
+                mounted && (ModalRoute.of(context)?.isCurrent ?? true),
+          );
+          unawaited(_linkReadingTime(start));
+        } else {
+          session = await learning.startReadingForWords(
+            wordIds: wordIds.values,
+            limit: wordIds.length,
+          );
+        }
         if (session.isEmpty) return true;
         sessionId = session.id;
         _sessionId = sessionId;
@@ -486,6 +688,7 @@ class _AssociativeReadingSessionScreenState
 
   @override
   Widget build(BuildContext context) {
+    _timeBinding?.syncVisibility();
     return Scaffold(
       appBar: AppBar(title: Text('อ่านแบบเชื่อมโยง (${widget.cefrLevel})')),
       body: _loading
@@ -494,43 +697,75 @@ class _AssociativeReadingSessionScreenState
                 semanticsLabel: 'กำลังเตรียมบทอ่านแบบเชื่อมโยง',
               ),
             )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(
-                    value: _currentStage / 6,
-                    semanticsLabel:
-                        'ความคืบหน้าการอ่านแบบเชื่อมโยง ขั้นตอน $_currentStage จาก 6',
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _stageTitles[_currentStage - 1],
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(child: _buildStageContent()),
-                  ),
-                  if (_saving)
-                    const LinearProgressIndicator(
-                      semanticsLabel: 'กำลังบันทึกผลการอ่าน',
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final scrollAll =
+                    constraints.maxHeight < 440 ||
+                    MediaQuery.textScalerOf(context).scale(16) > 24;
+                final stage = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_timeBinding != null)
+                      StreamBuilder<void>(
+                        stream: _time?.changes,
+                        builder: (context, _) {
+                          final scope = _timeBinding?.lease?.scope;
+                          return scope == null
+                              ? const SizedBox.shrink()
+                              : RecordedTimeView(
+                                  time: _time,
+                                  expectedOwnerId: scope.ownerId,
+                                  target: ScopeTimeRead(scope.id),
+                                  showExplanation: false,
+                                );
+                        },
+                      ),
+                    _buildStageContent(),
+                  ],
+                );
+                final content = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(
+                      value: _currentStage / 6,
+                      semanticsLabel:
+                          'ความคืบหน้าการอ่านแบบเชื่อมโยง ขั้นตอน $_currentStage จาก 6',
                     ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _saving || _completed ? null : _nextStage,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
+                    const SizedBox(height: 12),
+                    Text(
+                      _stageTitles[_currentStage - 1],
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    child: Text(
-                      _currentStage < 6
-                          ? 'เสร็จแล้ว ไปขั้นถัดไป'
-                          : 'บันทึกและจบการฝึก',
+                    const SizedBox(height: 16),
+                    if (scrollAll)
+                      stage
+                    else
+                      Expanded(child: SingleChildScrollView(child: stage)),
+                    if (_saving)
+                      const LinearProgressIndicator(
+                        semanticsLabel: 'กำลังบันทึกผลการอ่าน',
+                      ),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _saving || _completed ? null : _nextStage,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                      ),
+                      child: Text(
+                        _currentStage < 6
+                            ? 'เสร็จแล้ว ไปขั้นถัดไป'
+                            : 'บันทึกและจบการฝึก',
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: scrollAll
+                      ? SingleChildScrollView(child: content)
+                      : content,
+                );
+              },
             ),
     );
   }
@@ -584,6 +819,7 @@ class _AssociativeReadingSessionScreenState
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextField(
                   controller: _recallControllers[i],
+                  onChanged: (_) => _readingInput(),
                   decoration: InputDecoration(
                     labelText: 'คำที่ ${i + 1}',
                     hintText: 'พิมพ์จากความจำ',
@@ -643,6 +879,7 @@ class _AssociativeReadingSessionScreenState
                     const SizedBox(height: 6),
                     TextField(
                       controller: _cueControllers[i],
+                      onChanged: (_) => _readingInput(),
                       decoration: const InputDecoration(
                         hintText: 'คำใบ้ เรื่องสั้น หรือภาพที่นึกถึง',
                         border: OutlineInputBorder(),
@@ -664,6 +901,7 @@ class _AssociativeReadingSessionScreenState
             const Text('นำคำศัพท์เป้าหมายหนึ่งคำไปแต่งประโยคใหม่'),
             const SizedBox(height: 12),
             TextField(
+              onChanged: (_) => _readingInput(),
               decoration: const InputDecoration(
                 hintText: 'พิมพ์ประโยคใหม่',
                 border: OutlineInputBorder(),

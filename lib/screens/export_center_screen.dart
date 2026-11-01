@@ -29,6 +29,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   bool _attempts = true;
   bool _reading = true;
   bool _rewards = false;
+  bool _learningTime = false;
   bool _busy = false;
   ExportCancellation? _cancellation;
   String? _status;
@@ -46,6 +47,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         _format == ExportFormat.researchJson) {
       _format = ExportFormat.csv;
       _rewards = false;
+      _learningTime = false;
     }
   }
 
@@ -66,6 +68,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
           includeAttempts: _attempts,
           includeReading: _reading,
           includeRewards: _rewards,
+          includeLearningTime: _learningTime,
         ),
         cancellation: cancellation,
       );
@@ -153,6 +156,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                             if (format == ExportFormat.anki ||
                                 format == ExportFormat.researchJson) {
                               _rewards = false;
+                              _learningTime = false;
                             }
                           });
                         },
@@ -197,6 +201,19 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                 title: const Text('เหรียญและของตกแต่งส่วนตัว'),
                 subtitle: const Text(
                   'ประวัติการได้รับและใช้เหรียญ พร้อมของตกแต่ง '
+                  'ใช้ได้เฉพาะ CSV/PDF',
+                ),
+              ),
+            if (_format == ExportFormat.csv || _format == ExportFormat.pdf)
+              CheckboxListTile(
+                key: const ValueKey<String>('export-learning-time'),
+                value: _learningTime,
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _learningTime = value ?? false),
+                title: const Text('เวลาเรียนที่บันทึกในเครื่อง'),
+                subtitle: const Text(
+                  'เฉพาะช่วงปฏิสัมพันธ์ที่ยืนยันได้ พร้อมข้อมูลแหล่งกิจกรรม '
                   'ใช้ได้เฉพาะ CSV/PDF',
                 ),
               ),

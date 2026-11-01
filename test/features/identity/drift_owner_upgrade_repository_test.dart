@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
@@ -124,6 +126,16 @@ void main() {
         )
         .get();
 
+    final sourceTimeScopeBefore = (await database.customSelect(
+      "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
+    ).getSingle()).data;
+    final timeSegmentsBefore = (await database.customSelect(
+      "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
+    ).get()).map((row) => row.data).toList();
+    final targetTimePreferenceBefore = (await database.customSelect(
+      "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
+    ).getSingle()).data;
+
     final result = await repository.upgrade(
       activeOwnerId: 'guest-owner',
       firebaseUid: 'firebase-user',
@@ -136,6 +148,25 @@ void main() {
     expect(result.mode, OwnerUpgradeMode.mergedExisting);
     expect(result.targetOwnerId, 'account-owner');
     expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
+    expect(
+      (await database.customSelect(
+        "SELECT * FROM learning_time_scopes WHERE id = 'time-scope:synthetic-owner-upgrade'",
+      ).getSingle()).data,
+      {...sourceTimeScopeBefore, 'owner_id': 'account-owner'},
+    );
+    expect(
+      (await database.customSelect(
+        "SELECT * FROM learning_time_segments WHERE scope_id = 'time-scope:synthetic-owner-upgrade' ORDER BY ordinal",
+      ).get()).map((row) => row.data).toList(),
+      timeSegmentsBefore,
+    );
+    expect(
+      (await database.customSelect(
+        "SELECT * FROM learning_time_preferences WHERE owner_id = 'account-owner'",
+      ).getSingle()).data,
+      targetTimePreferenceBefore,
+    );
+    expect(targetTimePreferenceBefore['enabled'], 0);
     final signedAfter = await database
         .customSelect(
           'SELECT * FROM research_participation_permits WHERE owner_id = ?',
@@ -678,6 +709,54 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   );
   await insertOwnerSavedWord(database, 'guest-owner', wordId: 'word-1');
   await insertOwnerWordReport(database, 'guest-owner', wordId: 'word-1');
+  await database.customStatement(
+    'INSERT INTO learning_time_preferences '
+    '(owner_id,enabled,revision,updated_at_utc_ms) VALUES (?,?,?,?),(?,?,?,?)',
+    ['guest-owner', 1, 1, 20, 'account-owner', 0, 4, 10],
+  );
+  final sourceBinding = jsonEncode({
+    'schemaVersion': 1,
+    'kind': 'reading',
+    'documentId': 'synthetic-owner-upgrade-reading',
+    'documentRevision': 1,
+    'snapshotSha256': 'a' * 64,
+    'targetPinsSha256': 'b' * 64,
+  });
+  await database.customStatement(
+    'INSERT INTO learning_time_scopes '
+    '(id,owner_id,source_kind,source_binding_json,created_at_utc_ms,linked_session_id,session_link_binding_json) '
+    'VALUES (?,?,?,?,?,?,?)',
+    [
+      'time-scope:synthetic-owner-upgrade',
+      'guest-owner',
+      'reading',
+      sourceBinding,
+      20,
+      null,
+      null,
+    ],
+  );
+  await database.customStatement(
+    'INSERT INTO learning_time_segments '
+    '(id,scope_id,ordinal,eligibility_context_json,started_at_utc_ms,ended_at_utc_ms,active_duration_us,capture_policy_revision) '
+    'VALUES (?,?,?,?,?,?,?,?)',
+    [
+      'time-segment:synthetic-owner-upgrade-0',
+      'time-scope:synthetic-owner-upgrade',
+      0,
+      jsonEncode({
+        'schemaVersion': 1,
+        'readingStage': 1,
+        'promptMode': 'associativeReading',
+        'wordId': null,
+        'contentRevision': null,
+      }),
+      20,
+      21,
+      1000,
+      'confirmed-interaction-v1',
+    ],
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

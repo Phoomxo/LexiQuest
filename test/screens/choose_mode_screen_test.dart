@@ -8,6 +8,9 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_time/data/drift_learning_time_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
@@ -26,6 +29,7 @@ import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -54,7 +58,7 @@ void main() {
       final navigation = _FocusEntryNavigation();
       try {
         final before = (await tester.runAsync(h.snapshotAllTables))!;
-        expect(before, hasLength(37));
+        expect(before, hasLength(40));
         await _pumpFocusEntry(tester, h, navigation: navigation);
         await _scrollFocusEntry(tester);
         await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
@@ -566,8 +570,15 @@ void main() {
       tester,
     ) async {
       final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      LearningTimeUseCases? resultTime;
       try {
-        await _pumpClozeEntry(tester, h);
+        if (variant == ClozeVariant.typed) {
+          resultTime = await tester.runAsync(
+            () => _nativeResultTime(h.storage, h.repository),
+          );
+          expect(resultTime, isNotNull);
+        }
+        await _pumpClozeEntry(tester, h, learningTime: resultTime);
         expect(h.provider.requests, isEmpty);
         await tester.scrollUntilVisible(
           find.text('เติมคำในบริบท').hitTestable(),
@@ -611,10 +622,72 @@ void main() {
           await tester.runAsync(() => h.storage.count('learning_sessions')),
           1,
         );
+        if (variant == ClozeVariant.typed) {
+          final input = find.byKey(const ValueKey('cloze-response'));
+          await tester.ensureVisible(input);
+          await tester.enterText(input, screen.session.word.spelling);
+          final save = find.byKey(const ValueKey('cloze-save'));
+          await _dictationEntryUntil(
+            tester,
+            () =>
+                save.evaluate().isNotEmpty &&
+                tester.widget<FilledButton>(save).onPressed != null,
+          );
+          await tester.ensureVisible(save);
+          final notificationsBeforeSave = h.notifications;
+          await tester.tap(save);
+          final finish = find.byKey(const ValueKey('cloze-finish'));
+          await _dictationEntryUntil(
+            tester,
+            () => h.notifications > notificationsBeforeSave,
+          );
+          await tester.pumpAndSettle();
+          await tester.scrollUntilVisible(
+            finish,
+            160,
+            scrollable: find
+                .descendant(
+                  of: find.byType(FillInTheBlanksScreen),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await tester.ensureVisible(finish);
+          await tester.tap(finish);
+          await _dictationEntryUntil(
+            tester,
+            () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+          );
+          final result = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+          expect(result.resultOwnerId, screen.session.ownerId);
+          expect(result.resultSessionId, screen.session.id);
+          expect(result.learningTime, same(resultTime));
+          expect(result.correctAnswers, 1);
+          expect(result.wrongAnswers, 0);
+          final saved = await tester.runAsync(
+            () => (h.database.select(
+              h.database.learningSessions,
+            )..where((row) => row.id.equals(screen.session.id))).getSingle(),
+          );
+          expect(saved!.state, 'completed');
+          expect(
+            await tester.runAsync(() => h.storage.count('answer_attempts')),
+            1,
+          );
+          expect(
+            await tester.runAsync(
+              () => h.storage.count('learning_time_scopes'),
+            ),
+            0,
+          );
+        }
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
-        await tester.runAsync(h.close);
+        await tester.runAsync(() async {
+          await resultTime?.dispose();
+          await h.close();
+        });
       }
     });
   }
@@ -859,7 +932,14 @@ void main() {
       'dictation selects one actual owned category target (empty=$empty)',
       (tester) async {
         final h = (await tester.runAsync(DictationSessionHarness.open))!;
+        LearningTimeUseCases? resultTime;
         try {
+          if (!empty) {
+            resultTime = await tester.runAsync(
+              () => _nativeResultTime(h.storage, h.repository),
+            );
+            expect(resultTime, isNotNull);
+          }
           if (empty) {
             await tester.runAsync(
               () =>
@@ -874,7 +954,7 @@ void main() {
             );
           }
           final voice = _DictationEntryVoice();
-          await _pumpDictationEntry(tester, h, voice);
+          await _pumpDictationEntry(tester, h, voice, learningTime: resultTime);
           await tester.scrollUntilVisible(
             find.byKey(const ValueKey('dictation-entry')),
             200,
@@ -924,11 +1004,59 @@ void main() {
               startsWith('local-vocabulary-v1:'),
             );
             expect(voice.requests.single.text, screen.session.word.spelling);
+            final input = find.byKey(const ValueKey('dictation-response'));
+            await tester.ensureVisible(input);
+            await tester.enterText(input, screen.session.word.spelling);
+            final save = find.byKey(const ValueKey('dictation-save'));
+            await _dictationEntryUntil(
+              tester,
+              () =>
+                  save.evaluate().isNotEmpty &&
+                  tester.widget<FilledButton>(save).onPressed != null,
+            );
+            await tester.ensureVisible(save);
+            await tester.tap(save);
+            final finish = find.byKey(const ValueKey('dictation-finish'));
+            await _dictationEntryUntil(
+              tester,
+              () => finish.evaluate().isNotEmpty,
+            );
+            await tester.ensureVisible(finish);
+            await tester.tap(finish);
+            await _dictationEntryUntil(
+              tester,
+              () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+            );
+            final result = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+            expect(result.resultOwnerId, screen.session.ownerId);
+            expect(result.resultSessionId, screen.session.id);
+            expect(result.learningTime, same(resultTime));
+            expect(result.correctAnswers, 1);
+            expect(result.wrongAnswers, 0);
+            final saved = await tester.runAsync(
+              () => (h.database.select(
+                h.database.learningSessions,
+              )..where((row) => row.id.equals(screen.session.id))).getSingle(),
+            );
+            expect(saved!.state, 'completed');
+            expect(
+              await tester.runAsync(() => h.storage.count('answer_attempts')),
+              1,
+            );
+            expect(
+              await tester.runAsync(
+                () => h.storage.count('learning_time_scopes'),
+              ),
+              0,
+            );
           }
         } finally {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();
-          await tester.runAsync(h.close);
+          await tester.runAsync(() async {
+            await resultTime?.dispose();
+            await h.close();
+          });
         }
       },
     );
@@ -1660,6 +1788,7 @@ Future<void> _pumpDictationEntry(
   DictationSessionHarness h,
   _DictationEntryVoice voice, {
   double textScale = 1,
+  LearningTimeUseCases? learningTime,
 }) async {
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   final dependencies = AppDependencies(
@@ -1674,6 +1803,7 @@ Future<void> _pumpDictationEntry(
     database: h.database,
     localOwners: h.storage.owners,
     learning: h.learning,
+    learningTime: learningTime,
     progress: ProgressUseCases(
       owners: h.storage.owners,
       queries: DriftProgressQueries(h.database),
@@ -1769,10 +1899,40 @@ Future<void> _dictationEntryUntil(
   );
 }
 
+Future<LearningTimeUseCases> _nativeResultTime(
+  cloze.ConfiguredQuizHarness storage,
+  DriftLearningRepository learning,
+) async {
+  final progress = ProgressUseCases(
+    owners: storage.owners,
+    queries: DriftProgressQueries(storage.database),
+    nowUtc: () => storage.now,
+  );
+  var sequence = 0;
+  final time = LearningTimeUseCases(
+    repository: DriftLearningTimeRepository(
+      database: storage.database,
+      ownerWrites: storage.ownerWrites,
+      learning: learning,
+    ),
+    ownerChanges: progress.watchActiveOwnerId(),
+    monotonicMicros: () => 0,
+    nowUtc: () => storage.now,
+    generateId: () => 'synthetic-native-result-time-${++sequence}',
+  );
+  if (time.preference?.ownerId != configuredOwnerId) {
+    await time.changes
+        .firstWhere((_) => time.preference?.ownerId == configuredOwnerId)
+        .timeout(const Duration(seconds: 5));
+  }
+  return time;
+}
+
 Future<void> _pumpClozeEntry(
   WidgetTester tester,
   cloze.ClozeSessionHarness h, {
   LearningUseCases? learning,
+  LearningTimeUseCases? learningTime,
 }) async {
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   final dependencies = AppDependencies(
@@ -1787,6 +1947,7 @@ Future<void> _pumpClozeEntry(
     database: h.database,
     localOwners: h.storage.owners,
     learning: learning ?? h.learning,
+    learningTime: learningTime,
     progress: ProgressUseCases(
       owners: h.storage.owners,
       queries: DriftProgressQueries(h.database),

@@ -43,6 +43,8 @@ const Set<String> ownerUpgradeInventory = <String>{
   'word_reports',
   'vocabulary_imports',
   'learning_sessions',
+  'learning_time_scopes',
+  'learning_time_preferences',
   'answer_attempts',
   'srs_states',
   'reading_progress_entries',

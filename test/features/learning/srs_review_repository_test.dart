@@ -135,12 +135,12 @@ void main() {
   for (final stage in [_Stage.start, _Stage.rating, _Stage.finish]) {
     for (final change in ['owner', 'fence', 'word', 'category', 'current']) {
       test(
-        'actual ${stage.name} SQL then $change loss rolls back all 37 tables',
+        'actual ${stage.name} SQL then $change loss rolls back all 40 tables',
         () async {
           final operation = await _operation(h, stage);
           await h.settleNotifications();
           final before = await h.storage.snapshot();
-          expect(before, hasLength(37));
+          expect(before, hasLength(40));
           final hooks = (h.notifications, h.questEvents, h.streakEvents);
           final probe = _AfterSrsWrite(
             stage == _Stage.rating ? 'answer_attempts' : 'learning_sessions',
@@ -371,7 +371,7 @@ void main() {
         [operation.review.ownerId, target.id],
       );
       final before = await h.storage.snapshot();
-      expect(before, hasLength(37));
+      expect(before, hasLength(40));
       final hooks = (h.notifications, h.questEvents, h.streakEvents);
       final spy = _BusinessWrites();
       await h.database.runWithInterceptor(() async {

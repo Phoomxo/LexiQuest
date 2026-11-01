@@ -1,10 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import '../config/m3_theme.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
+import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
@@ -56,6 +61,8 @@ class AiTutorScreen extends StatefulWidget {
     this.speechPractice,
     this.wordDraft,
     this.learning,
+    this.learningTime,
+    this.timeCallerContext = LearningTimeCallerContext.ordinary,
   });
 
   final VoiceUseCases? voice;
@@ -63,6 +70,8 @@ class AiTutorScreen extends StatefulWidget {
   final SpeechPracticeUseCases? speechPractice;
   final TutorWordDraft? wordDraft;
   final LearningUseCases? learning;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext timeCallerContext;
 
   @override
   State<AiTutorScreen> createState() => _AiTutorScreenState();
@@ -107,6 +116,14 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   bool _wordDraftNotice = false;
   TutorWordDraft? _wordTarget;
   bool _openingTargetPractice = false;
+  LearningTimeUseCases? _time;
+  LearningTimeBinding? _timeBinding;
+  String _timeEpisode = 'tutor:${const Uuid().v4()}';
+  String _timeDisplay = 'tutor-task:${const Uuid().v4()}';
+  String? _timeModel;
+  bool _timeAudioBusy = false;
+  bool _timeStoppingAudio = false;
+  int _timeAudioGeneration = 0;
   static const _draftUnavailable =
       'เตรียมคำถามไม่ได้ กรุณาพิมพ์ใหม่ในบัญชีปัจจุบัน หรือกลับไปฝึกคำศัพท์';
 
@@ -128,7 +145,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   @override
   void didUpdateWidget(AiTutorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.geminiTutor, widget.geminiTutor)) _resolveTutor();
+    if (oldWidget.timeCallerContext != widget.timeCallerContext) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      _time = null;
+    }
+    _resolveTutor();
   }
 
   void _resolveTutor() {
@@ -138,6 +161,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     _draftHandled = true;
     _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
     if (!identical(resolvedTutor, _tutor)) {
+      _timeBinding?.retireDependencies();
+      _timeBinding?.dispose();
+      _timeBinding = null;
+      _time = null;
       _interactionEpoch += 1;
       _generationCancellation?.cancel();
       _inputController.clear();
@@ -161,6 +188,94 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       unawaited(_loadKeyStatus(draft: draft));
     } else if (draft != null) {
       _error = _draftUnavailable;
+    }
+    _bindTutorTime(widget.learningTime ?? dependencies?.learningTime);
+  }
+
+  void _bindTutorTime(LearningTimeUseCases? time) {
+    final owner = _tutor?.scope?.ownerId;
+    if (identical(_time, time) && _timeBinding?.expectedOwnerId == owner) {
+      _timeBinding?.syncVisibility();
+      return;
+    }
+    _timeBinding?.retireDependencies();
+    _timeBinding?.dispose();
+    _time = time;
+    _timeBinding = owner == null
+        ? null
+        : LearningTimeBinding(
+            time: time,
+            expectedOwnerId: owner,
+            visible: () =>
+                mounted &&
+                (ModalRoute.of(context)?.isCurrent ?? true) &&
+                TickerMode.valuesOf(context).enabled,
+          );
+    _timeEpisode = 'tutor:${const Uuid().v4()}';
+    _timeDisplay = 'tutor-task:${const Uuid().v4()}';
+    _timeModel = null;
+  }
+
+  Future<void> _readyTutorTime() async {
+    final binding = _timeBinding;
+    if (binding == null ||
+        !_hasKey ||
+        !_providerActive ||
+        _sending ||
+        _isGenerating ||
+        _startingSpeech ||
+        _isListening ||
+        _timeAudioBusy ||
+        _visibleScope != _tutor?.scope) {
+      return;
+    }
+    try {
+      await binding.ready(
+        TutorTimeSource(
+          episodeId: _timeEpisode,
+          mode: _selectedMode == GeminiTutorMode.guided
+              ? TutorTimeMode.guided
+              : TutorTimeMode.direct,
+          scenario:
+              TutorTimeScenario.values[_scenarios.indexOf(_selectedScenario)],
+          responseDisplayId: _timeDisplay,
+          model: _timeModel,
+          callerContext: widget.timeCallerContext,
+        ),
+      );
+    } on Object {
+      binding.suspend();
+    }
+  }
+
+  void _tutorInput() {
+    if (_sending || _isGenerating || _startingSpeech || _isListening) return;
+    if (_timeAudioBusy) {
+      unawaited(_stopForTimeInput());
+      return;
+    }
+    _timeBinding?.interacted();
+    final lease = _timeBinding?.lease;
+    if (lease == null || _time?.acceptsInteraction(lease) != true) {
+      unawaited(_readyTutorTime());
+    }
+  }
+
+  Future<void> _stopForTimeInput() async {
+    if (_timeStoppingAudio) return;
+    _timeStoppingAudio = true;
+    final binding = _timeBinding;
+    final epoch = _interactionEpoch;
+    final scopeEpoch = _tutor?.epoch;
+    final audioGeneration = _timeAudioGeneration;
+    final stopped = await _stopAudio();
+    _timeStoppingAudio = false;
+    if (stopped &&
+        audioGeneration == _timeAudioGeneration &&
+        identical(binding, _timeBinding) &&
+        _current(epoch, scopeEpoch)) {
+      _timeAudioBusy = false;
+      unawaited(_readyTutorTime());
     }
   }
 
@@ -195,6 +310,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
             }
           }
         });
+        unawaited(_readyTutorTime());
       }
     } on GeminiException {
       if (_current(epoch, scopeEpoch)) {
@@ -250,6 +366,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     final cancellation = GeminiCancellation();
     final epoch = ++_interactionEpoch;
     final scopeEpoch = tutor.epoch;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
     _generationCancellation = cancellation;
     setState(() {
       _messages.add(message);
@@ -276,6 +394,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       if (!_current(epoch, scopeEpoch) || cancellation.isCancelled) return;
       setState(() {
         _pendingMessage = null;
+        _timeDisplay = 'tutor-reply:${const Uuid().v4()}';
+        _timeModel = reply.model;
         _inputController.clear();
         _messages.add(
           ChatMessage(
@@ -322,6 +442,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
           identical(_generationCancellation, cancellation)) {
         _generationCancellation = null;
       }
+      if (_current(epoch, scopeEpoch)) unawaited(_readyTutorTime());
     }
   }
 
@@ -342,6 +463,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   Future<void> _toggleMicListening() async {
     if (_startingSpeech || _sending) return;
+    _timeBinding?.interacted();
+    _timeBinding?.suspend();
     final epoch = _interactionEpoch;
     final scopeEpoch = _tutor?.epoch;
     final speech = _speech;
@@ -391,10 +514,14 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       }
     } finally {
       if (_current(epoch, scopeEpoch)) setState(() => _startingSpeech = false);
+      if (_current(epoch, scopeEpoch)) unawaited(_readyTutorTime());
     }
   }
 
   Future<void> _speakAiResponse(String text) async {
+    _timeBinding?.suspend();
+    _timeAudioGeneration++;
+    _timeAudioBusy = true;
     try {
       await _voiceProvider.speak(
         VoiceRequest.create(
@@ -423,10 +550,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _cancelAudioForLifecycle() async {
+    _timeBinding?.suspend();
     _draftPending = false;
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _generationCancellation = null;
+    final epoch = _interactionEpoch;
+    final audioGeneration = _timeAudioGeneration;
     if (mounted) {
       setState(() {
         if (_pendingMessage != null) {
@@ -440,10 +570,16 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         _isGenerating = false;
       });
     }
-    await _stopAudio(reportFailure: true);
+    final stopped = await _stopAudio(reportFailure: true);
+    if (stopped &&
+        mounted &&
+        epoch == _interactionEpoch &&
+        audioGeneration == _timeAudioGeneration) {
+      _timeAudioBusy = false;
+    }
   }
 
-  Future<void> _stopAudio({bool reportFailure = false}) async {
+  Future<bool> _stopAudio({bool reportFailure = false}) async {
     final epoch = _interactionEpoch;
     final scopeEpoch = _tutor?.epoch;
     try {
@@ -451,10 +587,12 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         if (_speech != null) _speech!.cancel(),
         _voiceProvider.stop(),
       ]);
+      return true;
     } on Object {
       if (reportFailure && _current(epoch, scopeEpoch)) {
         setState(() => _error = 'หยุดเสียงไม่สำเร็จ กรุณาลองอีกครั้ง');
       }
+      return false;
     }
   }
 
@@ -466,7 +604,9 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   void _onScopeInvalidated() {
     if (!mounted) return;
+    _timeBinding?.retireDependencies();
     _visibleScope = _tutor?.scope;
+    _bindTutorTime(_time);
     unawaited(_cancelAudioForLifecycle());
     setState(() {
       _inputController.clear();
@@ -503,6 +643,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   void _startNewRound() {
     if (_sending || _startingSpeech || _isListening) return;
+    _timeBinding?.interacted();
+    _timeBinding?.close();
+    _timeEpisode = 'tutor:${const Uuid().v4()}';
+    _timeDisplay = 'tutor-task:${const Uuid().v4()}';
+    _timeModel = null;
     _interactionEpoch += 1;
     _draftPending = false;
     unawaited(_stopAudio(reportFailure: true));
@@ -621,6 +766,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   void dispose() {
+    _timeBinding?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
@@ -634,6 +780,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   Widget build(BuildContext context) {
+    _timeBinding?.syncVisibility();
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -653,6 +800,21 @@ class _AiTutorScreenState extends State<AiTutorScreen>
             controller: _scrollController,
             child: Column(
               children: [
+                if (_timeBinding != null)
+                  StreamBuilder<void>(
+                    stream: _time?.changes,
+                    builder: (context, _) {
+                      final scope = _timeBinding?.lease?.scope;
+                      return scope == null
+                          ? const SizedBox.shrink()
+                          : RecordedTimeView(
+                              time: _time,
+                              expectedOwnerId: scope.ownerId,
+                              target: ScopeTimeRead(scope.id),
+                              showExplanation: false,
+                            );
+                    },
+                  ),
                 if (_wordTarget != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -719,7 +881,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                           selected: _selectedMode == mode,
                           onSelected: _sending
                               ? null
-                              : (_) => setState(() => _selectedMode = mode),
+                              : (_) {
+                                  _timeBinding?.interacted();
+                                  _timeBinding?.close();
+                                  _timeEpisode = 'tutor:${const Uuid().v4()}';
+                                  setState(() => _selectedMode = mode);
+                                  unawaited(_readyTutorTime());
+                                },
                         ),
                     ],
                   ),
@@ -747,7 +915,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                         ? null
                         : (value) {
                             if (value != null) {
+                              _timeBinding?.interacted();
+                              _timeBinding?.close();
+                              _timeEpisode = 'tutor:${const Uuid().v4()}';
                               setState(() => _selectedScenario = value);
+                              unawaited(_readyTutorTime());
                             }
                           },
                   ),
@@ -940,6 +1112,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                     child: TextField(
                       key: const ValueKey<String>('ai-tutor-input'),
                       controller: _inputController,
+                      onChanged: (_) => _tutorInput(),
                       enabled: !_sending,
                       maxLength: 500,
                       minLines: 1,

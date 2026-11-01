@@ -13,11 +13,11 @@ import 'package:vocab_learning_app/features/research/domain/measurement_opportun
 import '../../support/populated_owner_migration_fixture.dart';
 
 void main() {
-  test('fresh v20 has one empty ten-column historical report queue', () async {
+  test('fresh v21 has one empty ten-column historical report queue', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    expect(database.schemaVersion, 20);
-    expect(database.allTables, hasLength(37));
+    expect(database.schemaVersion, 21);
+    expect(database.allTables, hasLength(40));
     final columns = await database
         .customSelect('PRAGMA table_info(word_reports)')
         .get();
@@ -247,15 +247,21 @@ void main() {
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        20,
+        21,
       );
-      expect(database.allTables, hasLength(37));
+      expect(database.allTables, hasLength(40));
       expect(before, rows);
       final after = await ownerMigrationRows(database);
       expect(after['word_reports'], isEmpty);
+      expect(after['learning_time_preferences'], isEmpty);
+      expect(after['learning_time_scopes'], isEmpty);
+      expect(after['learning_time_segments'], isEmpty);
       expect(
         Map<String, List<Map<String, Object?>>>.of(after)
-          ..remove('word_reports'),
+          ..remove('word_reports')
+          ..remove('learning_time_preferences')
+          ..remove('learning_time_scopes')
+          ..remove('learning_time_segments'),
         before,
       );
       final objects = await database
@@ -267,7 +273,14 @@ void main() {
         for (final row in objects)
           row.read<String>('name'): row.read<String>('sql'),
       };
-      expect(byName.keys.toSet(), {...oldObjects.keys, 'word_reports'});
+      expect(byName.keys.toSet(), {
+        ...oldObjects.keys,
+        'word_reports',
+        'learning_time_preferences',
+        'learning_time_scopes',
+        'learning_time_segments',
+        'idx_learning_time_scopes_owner_session',
+      });
       for (final object in oldObjects.entries) {
         expect(
           byName[object.key],

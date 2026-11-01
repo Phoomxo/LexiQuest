@@ -15,6 +15,8 @@ import 'package:vocab_learning_app/features/consent/domain/research_consent.dart
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_time_admission.dart';
+import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 
 void main() {
@@ -52,6 +54,292 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test('personal time export is an explicit opt-in independent selection', () {
+    const selection = ExportSelection(
+      includeVocabulary: false,
+      includeAttempts: false,
+      includeReading: false,
+      includeLearningTime: true,
+    );
+    expect(selection.isEmpty, isFalse);
+    expect(_all.includeLearningTime, isFalse);
+  });
+
+  test('time export cannot enter Research JSON or Anki', () async {
+    for (final format in [ExportFormat.researchJson, ExportFormat.anki]) {
+      await expectLater(
+        exports.prepare(
+          format: format,
+          selection: const ExportSelection(
+            includeVocabulary: true,
+            includeAttempts: false,
+            includeReading: false,
+            includeLearningTime: true,
+          ),
+          cancellation: ExportCancellation(),
+        ),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.unavailable,
+          ),
+        ),
+      );
+    }
+    expect(store.saved, isNull);
+  });
+
+  test(
+    'personal time CSV preserves microseconds and distinct time records',
+    () async {
+      final reader = _FixedExportReader(
+        const ExportDataSet(
+          vocabulary: [],
+          attempts: [],
+          reading: [],
+          learningTime: [
+            ExportLearningTimeRow(
+              recordType: 'learning_time_preference',
+              id: 'synthetic-owner',
+              detail: {'enabled': 0, 'revision': 2},
+            ),
+            ExportLearningTimeRow(
+              recordType: 'learning_time_scope',
+              id: 'time-scope:synthetic-export',
+              detail: {'source_kind': 'reading', 'linked_session_id': null},
+            ),
+            ExportLearningTimeRow(
+              recordType: 'learning_time_segment',
+              id: 'time-segment:synthetic-export',
+              detail: {
+                'scope_id': 'time-scope:synthetic-export',
+                'active_duration_us': 1234567,
+                'capture_policy_revision': 'confirmed-interaction-v1',
+              },
+            ),
+          ],
+        ),
+      );
+      final scoped = ExportUseCases(
+        owners: exports.owners,
+        reader: reader,
+        store: store,
+        nowUtc: exports.nowUtc,
+        loadThaiFont: exports.loadThaiFont,
+        researchConsent: exports.researchConsent,
+      );
+      final artifact = await scoped.prepare(
+        format: ExportFormat.csv,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+          includeLearningTime: true,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final text = utf8.decode(artifact.bytes);
+      expect(artifact.schemaVersion, 3);
+      expect(artifact.recordCount, 3);
+      expect(text, contains('"learning_time_preference","synthetic-owner"'));
+      expect(
+        text,
+        contains('"learning_time_scope","time-scope:synthetic-export"'),
+      );
+      expect(
+        text,
+        contains('"learning_time_segment","time-segment:synthetic-export"'),
+      );
+      expect(text, contains('""active_duration_us"":1234567'));
+      expect(text, contains('""linked_session_id"":null'));
+      expect(text, contains('""enabled"":0'));
+      expect(text, contains('confirmed-interaction-v1'));
+      expect(text, isNot(contains('response_time_ms=1234567')));
+    },
+  );
+
+  test(
+    'real personal time reader preserves all19 stored fields and isolates two owners',
+    () async {
+      final expected = await _seedPersonalTimeExportPair(database);
+      expect(database.schemaVersion, 21);
+      expect(database.allTables, hasLength(40));
+      final before = await _personalTimeExportSnapshot(database);
+      final data = await DriftExportReader(database).load(
+        ownerId: 'local:owner',
+        vocabulary: false,
+        attempts: false,
+        reading: false,
+        learningTime: true,
+      );
+      expect(data.recordCount, 3);
+      expect(data.learningTime.map((row) => row.recordType).toList(), [
+        'learning_time_preference',
+        'learning_time_scope',
+        'learning_time_segment',
+      ]);
+      expect(data.learningTime.map((row) => row.id).toList(), [
+        'local:owner',
+        'time-scope:synthetic-personal-export-a',
+        'time-segment:synthetic-personal-export-a-0',
+      ]);
+      final detail = {
+        for (final row in data.learningTime) row.recordType: row.detail,
+      };
+      expect(
+        detail['learning_time_preference'],
+        expected['learning_time_preferences'],
+      );
+      expect(detail['learning_time_scope'], expected['learning_time_scopes']);
+      expect(
+        detail['learning_time_segment'],
+        expected['learning_time_segments'],
+      );
+      expect(detail['learning_time_preference'], hasLength(4));
+      expect(detail['learning_time_scope'], hasLength(7));
+      expect(detail['learning_time_segment'], hasLength(8));
+      expect(detail.values.fold(0, (sum, row) => sum + row.length), 19);
+      expect(detail['learning_time_preference']!['enabled'], 0);
+      expect(detail['learning_time_segment']!['active_duration_us'], 1);
+      expect(detail['learning_time_segment']!['owner_id'], isNull);
+      final foreign = await DriftExportReader(database).load(
+        ownerId: 'synthetic-personal-export-owner-b',
+        vocabulary: false,
+        attempts: false,
+        reading: false,
+        learningTime: true,
+      );
+      expect(foreign.recordCount, 3);
+      expect(
+        foreign.learningTime.last.id,
+        'time-segment:synthetic-personal-export-b-0',
+      );
+      expect(foreign.learningTime.last.detail['active_duration_us'], 9876543);
+      expect(
+        jsonEncode(detail),
+        isNot(contains('synthetic-personal-export-b')),
+      );
+      expect(jsonEncode(detail), isNot(contains('9876543')));
+      expect(await _personalTimeExportSnapshot(database), before);
+    },
+  );
+
+  test(
+    'real time CSV has exact8 columns and metadata while default selection remains three ordinary records',
+    () async {
+      final expected = await _seedPersonalTimeExportPair(database);
+      final before = await _personalTimeExportSnapshot(database);
+      const selected = ExportSelection(
+        includeVocabulary: false,
+        includeAttempts: false,
+        includeReading: false,
+        includeLearningTime: true,
+      );
+      final artifact = await exports.prepare(
+        format: ExportFormat.csv,
+        selection: selected,
+        cancellation: ExportCancellation(),
+      );
+      expect(artifact.schemaVersion, 3);
+      expect(artifact.algorithmVersion, 1);
+      expect(artifact.recordCount, 3);
+      expect(artifact.timeZone, 'UTC');
+      expect(artifact.generatedAtUtc, DateTime.utc(2026, 7, 30, 12));
+      expect(artifact.bytes.take(3), [0xef, 0xbb, 0xbf]);
+      final lines = const LineSplitter().convert(utf8.decode(artifact.bytes));
+      expect(lines, hasLength(7));
+      expect(lines[0], '# LexiQuest export schema=3 algorithm=1 timezone=UTC');
+      expect(
+        lines[1],
+        '# generated_at=${artifact.generatedAtUtc.toIso8601String()}',
+      );
+      expect(lines[2], '# sample_size=3');
+      expect(lines[3].split(','), [
+        'record_type',
+        'evidence_id',
+        'subject',
+        'prompt_mode',
+        'is_correct',
+        'response_time_ms',
+        'occurred_at_utc',
+        'detail',
+      ]);
+      final parsed = lines.skip(4).map(_personalTimeCsvCells).toList();
+      final detail = <String, Map<String, Object?>>{};
+      for (final cells in parsed) {
+        expect(cells, hasLength(8));
+        expect(cells.sublist(2, 7), everyElement(''));
+        detail[cells[0]] = (jsonDecode(cells[7]) as Map)
+            .cast<String, Object?>();
+      }
+      expect(detail, {
+        'learning_time_preference': expected['learning_time_preferences'],
+        'learning_time_scope': expected['learning_time_scopes'],
+        'learning_time_segment': expected['learning_time_segments'],
+      });
+      expect(detail['learning_time_segment']!['active_duration_us'], 1);
+      final text = utf8.decode(artifact.bytes);
+      expect(text, isNot(contains('synthetic-personal-export-owner-b')));
+      expect(
+        text,
+        isNot(contains('time-segment:synthetic-personal-export-b-0')),
+      );
+      expect(text, isNot(contains('9876543')));
+      final ordinary = await exports.prepare(
+        format: ExportFormat.csv,
+        selection: _all,
+        cancellation: ExportCancellation(),
+      );
+      expect(_all.includeLearningTime, isFalse);
+      expect(ordinary.schemaVersion, 1);
+      expect(ordinary.recordCount, 3);
+      expect(utf8.decode(ordinary.bytes), isNot(contains('learning_time_')));
+      final combined = await exports.prepare(
+        format: ExportFormat.csv,
+        selection: const ExportSelection(
+          includeVocabulary: true,
+          includeAttempts: true,
+          includeReading: true,
+          includeLearningTime: true,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      expect(combined.schemaVersion, 3);
+      expect(combined.recordCount, 6);
+      expect(await _personalTimeExportSnapshot(database), before);
+    },
+  );
+
+  test(
+    'real disabled-owner time history renders and saves a personal PDF without Research consent',
+    () async {
+      await _seedPersonalTimeExportPair(database);
+      await exports.researchConsent.withdraw();
+      final before = await _personalTimeExportSnapshot(database);
+      final saved = await exports.export(
+        format: ExportFormat.pdf,
+        selection: const ExportSelection(
+          includeVocabulary: true,
+          includeAttempts: true,
+          includeReading: true,
+          includeLearningTime: true,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final artifact = store.saved;
+      expect(artifact, isNotNull);
+      expect(artifact!.format, ExportFormat.pdf);
+      expect(artifact.mimeType, 'application/pdf');
+      expect(artifact.schemaVersion, 3);
+      expect(artifact.algorithmVersion, 1);
+      expect(artifact.recordCount, 6);
+      expect(ascii.decode(artifact.bytes.take(4).toList()), '%PDF');
+      expect(saved.bytesWritten, artifact.bytes.length);
+      expect(await _personalTimeExportSnapshot(database), before);
+    },
+  );
 
   test(
     'personal reward CSV explicitly opts in to the shared effective ledger',
@@ -1846,6 +2134,7 @@ final class _DelayedExportReader implements ExportReader {
     required bool attempts,
     required bool reading,
     bool rewards = false,
+    bool learningTime = false,
   }) {
     ownerIds.add(ownerId);
     if (!started.isCompleted) started.complete();
@@ -1866,6 +2155,7 @@ final class _FixedExportReader implements ExportReader {
     required bool attempts,
     required bool reading,
     bool rewards = false,
+    bool learningTime = false,
   }) async {
     ownerIds.add(ownerId);
     return data;
@@ -1882,6 +2172,7 @@ final class _FailingExportReader implements ExportReader {
     required bool attempts,
     required bool reading,
     bool rewards = false,
+    bool learningTime = false,
   }) => throw StateError('synthetic export read failure');
 }
 
@@ -1999,6 +2290,92 @@ final class _FailingConsentRepository implements ResearchConsentRepository {
     required DateTime decidedAtUtc,
   }) => throw UnimplementedError();
 }
+
+Future<Map<String, Map<String, Object?>>> _seedPersonalTimeExportPair(
+  AppDatabase database,
+) async {
+  await _seedOwnerWord(
+    database,
+    ownerId: 'synthetic-personal-export-owner-b',
+    spelling: 'synthetic-personal-export-foreign-word',
+  );
+  Map<String, Map<String, Object?>>? expectedA;
+  for (final (owner, suffix, enabled) in [
+    ('local:owner', 'a', 0),
+    ('synthetic-personal-export-owner-b', 'b', 1),
+  ]) {
+    final source = ReadingTimeSource(
+      documentId: 'synthetic-personal-export-doc-$suffix',
+      documentRevision: 1,
+      snapshotSha256: (suffix == 'a' ? 'a' : 'c') * 64,
+      targetPinsSha256: (suffix == 'a' ? 'b' : 'd') * 64,
+      readingStage: 1,
+      callerContext: LearningTimeCallerContext.ordinary,
+    );
+    final scopeId = 'time-scope:synthetic-personal-export-$suffix';
+    final rows = <String, Map<String, Object?>>{
+      'learning_time_preferences': {
+        'owner_id': owner,
+        'enabled': enabled,
+        'revision': suffix == 'a' ? 3 : 8,
+        'updated_at_utc_ms': 1000,
+      },
+      'learning_time_scopes': {
+        'id': scopeId,
+        'owner_id': owner,
+        'source_kind': 'reading',
+        'source_binding_json': source.sourceBindingJson,
+        'created_at_utc_ms': 1000,
+        'linked_session_id': null,
+        'session_link_binding_json': null,
+      },
+      'learning_time_segments': {
+        'id': 'time-segment:synthetic-personal-export-$suffix-0',
+        'scope_id': scopeId,
+        'ordinal': 0,
+        'eligibility_context_json': source.contextBindingJson,
+        'started_at_utc_ms': 1000,
+        'ended_at_utc_ms': suffix == 'a' ? 1000 : 10876,
+        'active_duration_us': suffix == 'a' ? 1 : 9876543,
+        'capture_policy_revision': 'confirmed-interaction-v1',
+      },
+    };
+    for (final entry in rows.entries) {
+      await database.customStatement(
+        'INSERT INTO "${entry.key}" (${entry.value.keys.join(',')}) '
+        'VALUES (${List.filled(entry.value.length, '?').join(',')})',
+        entry.value.values.toList(),
+      );
+    }
+    if (suffix == 'a') expectedA = rows;
+  }
+  expect(
+    await database.customSelect('PRAGMA foreign_key_check').get(),
+    isEmpty,
+  );
+  return expectedA!;
+}
+
+List<String> _personalTimeCsvCells(String line) {
+  final matches = RegExp(r'"((?:""|[^"])*)"(?:,|$)').allMatches(line).toList();
+  expect(matches.map((match) => match.group(0)).join(), line);
+  return [for (final match in matches) match.group(1)!.replaceAll('""', '"')];
+}
+
+Future<Map<String, List<String>>> _personalTimeExportSnapshot(
+  AppDatabase database,
+) async => {
+  for (final table in database.allTables)
+    table.actualTableName: [
+      for (final row
+          in await database
+              .customSelect(
+                'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+              )
+              .get())
+        jsonEncode(row.data),
+    ],
+};
 
 Future<void> _seedOwnerWord(
   AppDatabase database, {

@@ -5,6 +5,7 @@ import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
+import 'tables/learning_time_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
@@ -63,6 +64,9 @@ final _productionNativeOptions = DriftNativeOptions(
     AssociativeMemoryStates,
     MeasurementOpportunities,
     AssessmentRuns,
+    LearningTimePreferences,
+    LearningTimeScopes,
+    LearningTimeSegments,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -72,7 +76,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -252,14 +256,27 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 20) {
         await _createMissingTables(migrator);
       }
+      if (from < 21) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
+      await _createLearningTimeIndexes();
       await _createEventIndexes();
       await _createMeasurementOpportunityIndexes();
     },
   );
+
+  Future<void> _createLearningTimeIndexes() async {
+    if (await _tableExists('learning_time_scopes')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_learning_time_scopes_owner_session '
+        'ON learning_time_scopes(owner_id, linked_session_id)',
+      );
+    }
+  }
 
   Future<void> _createEventIndexes() async {
     final tables = await customSelect(
@@ -353,6 +370,15 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('learning_sessions')) {
       await migrator.createTable(learningSessions);
+    }
+    if (!await _tableExists('learning_time_preferences')) {
+      await migrator.createTable(learningTimePreferences);
+    }
+    if (!await _tableExists('learning_time_scopes')) {
+      await migrator.createTable(learningTimeScopes);
+    }
+    if (!await _tableExists('learning_time_segments')) {
+      await migrator.createTable(learningTimeSegments);
     }
     if (!await _tableExists('answer_attempts')) {
       await migrator.createTable(answerAttempts);

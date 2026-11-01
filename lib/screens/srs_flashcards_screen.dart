@@ -7,6 +7,10 @@ import 'package:flutter/scheduler.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_time_admission.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/learning_time_binding.dart';
+import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
@@ -21,6 +25,8 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.expectedOwnerId,
     this.ownerChanges,
     this.languageCode = 'th',
+    this.learningTime,
+    this.timeCallerContext = LearningTimeCallerContext.ordinary,
   }) : assert(wordList == null || sourceWordIds == null);
 
   /// A presentation-only snapshot. Preview ratings never create learning facts.
@@ -31,6 +37,8 @@ class SrsFlashcardsScreen extends StatefulWidget {
   final String? expectedOwnerId;
   final Stream<String?>? ownerChanges;
   final String languageCode;
+  final LearningTimeUseCases? learningTime;
+  final LearningTimeCallerContext timeCallerContext;
 
   @override
   State<SrsFlashcardsScreen> createState() => _SrsFlashcardsScreenState();
@@ -88,6 +96,72 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   int _index = 0;
   int _correctCount = 0;
   _Step _step = _Step.waiting;
+  LearningTimeUseCases? _time;
+  LearningTimeBinding? _timeBinding;
+  LearningSessionSummary? _summary;
+  int _timeRequest = 0;
+
+  void _suspendTime() {
+    _timeRequest++;
+    _timeBinding?.suspend();
+  }
+
+  Future<void> _readyTime() async {
+    final learning = _learning;
+    final review = _review;
+    final time = _time;
+    final epoch = _epoch;
+    final index = _index;
+    final flipped = _isFlipped;
+    bool ready() =>
+        !_isPreview &&
+        widget.timeCallerContext == LearningTimeCallerContext.ordinary &&
+        _cardCurrent(epoch, index) &&
+        _step == _Step.answering &&
+        !_operationPending &&
+        !_voiceBusy &&
+        !_ownsPlayback &&
+        _playbackStop == null &&
+        _isFlipped == flipped;
+    if (learning == null || review == null || time == null || !ready()) return;
+    var binding = _timeBinding;
+    if (binding == null) {
+      binding = LearningTimeBinding(
+        time: time,
+        expectedOwnerId: review.ownerId,
+        visible: () =>
+            _current(_epoch) &&
+            TickerMode.valuesOf(context).enabled &&
+            Visibility.of(context),
+      );
+      _timeBinding = binding;
+    }
+    final request = ++_timeRequest;
+    bool current() =>
+        request == _timeRequest &&
+        identical(_timeBinding, binding) &&
+        identical(_time, time) &&
+        identical(_review, review) &&
+        ready();
+    try {
+      final proof = await learning.admitCanonicalLearningTime(
+        OwnedSrsTimeAdmission(
+          review,
+          cardIndex: index,
+          phase: flipped ? SrsTimePhase.revealed : SrsTimePhase.front,
+          callerContext: widget.timeCallerContext,
+        ),
+        expectedOwnerId: review.ownerId,
+        stillCurrent: current,
+      );
+      if (!current()) return;
+      await binding.ready(
+        CanonicalTimeSource(proof, callerContext: widget.timeCallerContext),
+      );
+    } on Object {
+      if (current()) binding.suspend();
+    }
+  }
 
   bool get _isPreview => _preview != null;
   bool get _isSource => _sourceIds != null;
@@ -168,11 +242,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     final learning = widget.learning ?? dependencies?.learning;
     final voice = widget.voice ?? dependencies?.voice;
+    final time = widget.learningTime ?? dependencies?.learningTime;
     if (!_bound) {
       _bound = true;
       _dependencies = dependencies;
       _learning = learning;
       _voice = voice;
+      _time = time;
       final source =
           widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
       _ownerRequired = source != null;
@@ -204,8 +280,17 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       }
     } else if (!identical(_dependencies, dependencies) ||
         !identical(_learning, learning) ||
-        !identical(_voice, voice)) {
+        !identical(_voice, voice) ||
+        !identical(_time, time)) {
+      _timeBinding?.retireDependencies();
       _invalidate();
+    }
+    final timeBinding = _timeBinding;
+    final visibility = timeBinding?.visibilityGeneration;
+    timeBinding?.syncVisibility();
+    if (timeBinding != null && visibility != timeBinding.visibilityGeneration) {
+      _timeRequest++;
+      if (timeBinding.current) unawaited(_readyTime());
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryBegin());
   }
@@ -227,8 +312,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         !identical(oldWidget.ownerChanges, widget.ownerChanges) ||
         oldWidget.expectedOwnerId != widget.expectedOwnerId ||
         oldWidget.languageCode != widget.languageCode ||
+        oldWidget.timeCallerContext != widget.timeCallerContext ||
+        !identical(oldWidget.learningTime, widget.learningTime) ||
         !listEquals(_sourceIds, widget.sourceWordIds) ||
         !samePreview) {
+      _timeBinding?.retireDependencies();
       _invalidate();
     }
   }
@@ -272,6 +360,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       return;
     }
     _invalidated = true;
+    _timeRequest++;
+    _timeBinding?.close();
     _epoch++;
     _latency.stop();
     unawaited(_stopPlayback());
@@ -351,6 +441,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     if (_current(epoch) && _step == _Step.answering) {
       _autoplay(epoch, _index);
+      unawaited(_readyTime());
     }
   }
 
@@ -369,6 +460,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _selectedRating != null) {
       return;
     }
+    _timeBinding?.interacted();
+    _suspendTime();
     _isFlipped = !_isFlipped;
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.value = _isFlipped ? 1 : 0;
@@ -378,6 +471,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _controller.reverse();
     }
     _redraw();
+    unawaited(_readyTime());
   }
 
   Future<void> _rate(int epoch, int index, bool recalled) async {
@@ -388,6 +482,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         (_selectedRating != null && _selectedRating != recalled)) {
       return;
     }
+    if (_step == _Step.answering) _timeBinding?.interacted();
+    _suspendTime();
     _selectedRating ??= recalled;
     _operationPending = true;
     _step = _Step.saving;
@@ -435,6 +531,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     _operationPending = true;
     final last = index == _length - 1;
+    _suspendTime();
     try {
       if (last && !_isPreview) {
         _finish ??= _learning!.prepareSrsFinish(_review!);
@@ -485,6 +582,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     if (!last && _cardCurrent(epoch, _index) && _step == _Step.answering) {
       _autoplay(epoch, _index);
+      unawaited(_readyTime());
     }
   }
 
@@ -511,8 +609,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           )
         : null;
     _step = _Step.completed;
+    _timeRequest++;
+    _timeBinding?.close();
+    _summary = summary;
     _epoch++;
     _latency.stop();
+    if (!_isSource && !_isPreview && _time != null && summary != null) {
+      _redraw();
+      return;
+    }
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop(result);
     }
@@ -562,6 +667,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       stopping.whenComplete(() {
         if (identical(_playbackStop, stopping)) {
           _playbackStop = null;
+          unawaited(_readyTime());
         }
       }),
     );
@@ -589,6 +695,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       return;
     }
     final voice = _voice!;
+    _timeBinding?.interacted();
+    _suspendTime();
     final card = _card;
     final contentId = _isPreview ? 'preview:$index' : _review!.words[index].id;
     final stop = _stopPlayback();
@@ -648,6 +756,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   @override
   void dispose() {
+    _timeRequest++;
+    _timeBinding?.dispose();
     _invalidated = true;
     _epoch++;
     _latency.stop();
@@ -725,6 +835,40 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                 ),
         );
       case _Step.completed:
+        final summary = _summary;
+        if (!_isPreview && !_isSource && summary != null && _time != null) {
+          final epoch = _epoch;
+          final route = _route;
+          return SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Text(
+                  _copy(
+                    'ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว',
+                    'Due flashcards complete',
+                  ),
+                  key: const Key('srs-status'),
+                ),
+                const SizedBox(height: 16),
+                RecordedTimeView(
+                  time: _time,
+                  expectedOwnerId: _ownerId!,
+                  target: SessionTimeRead(summary.id),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  key: const Key('srs-done'),
+                  onPressed: () {
+                    if (!_current(epoch) || _step != _Step.completed) return;
+                    _leave(route);
+                  },
+                  child: Text(_copy('เสร็จแล้ว', 'Done')),
+                ),
+              ],
+            ),
+          );
+        }
         return _message(
           _isPreview
               ? _copy(

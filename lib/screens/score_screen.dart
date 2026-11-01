@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning_time/application/learning_time_use_cases.dart';
+import '../features/learning_time/presentation/recorded_time_view.dart';
 import '../widgets/adaptive_content_pane.dart';
 
 class ScoreScreen extends StatelessWidget {
@@ -13,6 +15,9 @@ class ScoreScreen extends StatelessWidget {
     this.mistakes = const [],
     this.onPracticeMistakes,
     this.onBack,
+    this.learningTime,
+    this.resultOwnerId,
+    this.resultSessionId,
   });
 
   final int correctAnswers;
@@ -21,6 +26,9 @@ class ScoreScreen extends StatelessWidget {
   final List<QuizWord> mistakes;
   final VoidCallback? onPracticeMistakes;
   final VoidCallback? onBack;
+  final LearningTimeUseCases? learningTime;
+  final String? resultOwnerId;
+  final String? resultSessionId;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -65,6 +73,21 @@ class ScoreScreen extends StatelessWidget {
                   icon: Icons.dataset_outlined,
                 ),
                 const SizedBox(height: 24),
+                if (learningTime != null &&
+                    resultOwnerId?.trim().isNotEmpty == true &&
+                    resultSessionId?.trim().isNotEmpty == true) ...[
+                  RecordedTimeView(
+                    key: ValueKey((
+                      resultOwnerId,
+                      resultSessionId,
+                      learningTime?.ownerGeneration,
+                    )),
+                    time: learningTime,
+                    expectedOwnerId: resultOwnerId!,
+                    target: SessionTimeRead(resultSessionId!),
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 if (mistakes.isNotEmpty) ...[
                   Text(
                     'คำที่ควรฝึกต่อ',

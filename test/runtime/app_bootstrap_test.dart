@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/learning_session_lifecycle_observer.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_saved_words_repository.dart';
@@ -62,6 +63,53 @@ AppDatabase _testDatabase() {
 }
 
 void main() {
+  test(
+    'ordinary local time composes disabled and reads without new facts',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async =>
+            throw StateError('synthetic offline Firebase'),
+        initializeSupabase: () async =>
+            throw StateError('synthetic offline Supabase'),
+        loadConfig: () =>
+            throw const AppConfigException('synthetic unavailable config'),
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final time = dependencies.learningTime;
+      expect(time, isNotNull);
+      if (time!.preference == null) {
+        await time.changes
+            .firstWhere((_) => time.preference != null)
+            .timeout(const Duration(seconds: 5));
+      }
+      expect(time.preference!.enabled, isFalse);
+      expect(time.preference!.revision, 0);
+      Future<Map<String, List<String>>> facts() async => {
+        for (final table in database.allTables)
+          table.actualTableName: [
+            for (final row
+                in await database
+                    .customSelect(
+                      'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+                    )
+                    .get())
+              jsonEncode(row.data),
+          ],
+      };
+      final before = await facts();
+      expect(
+        (await time.read(const OwnerTimeRead())).status,
+        RecordedTimeStatus.noneRecorded,
+      );
+      expect(await facts(), before);
+      await dependencies.dispose();
+      expect(time.captureEnabled, isFalse);
+    },
+  );
   test(
     'saved words and local reports compose on the real database without backend or sync work',
     () async {
@@ -1196,6 +1244,8 @@ void main() {
 
       final dependencies = await bootstrap.initialize();
 
+      addTearDown(dependencies.dispose);
+
       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
@@ -1223,6 +1273,8 @@ void main() {
         );
 
         final dependencies = await bootstrap.initialize();
+
+        addTearDown(dependencies.dispose);
         final owners = await database.select(database.localOwners).get();
 
         expect(dependencies.localOwners, isNotNull);
@@ -1242,6 +1294,8 @@ void main() {
       );
 
       final dependencies = await bootstrap.initialize();
+
+      addTearDown(dependencies.dispose);
 
       expect(
         dependencies.runtimeStatus.firebase,
@@ -1264,6 +1318,7 @@ void main() {
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
       ).initialize();
+      addTearDown(dependencies.dispose);
 
       final status = await dependencies.syncStatus!
           .watchCurrentOwnerSyncStatus()
@@ -1286,6 +1341,8 @@ void main() {
 
       final dependencies = await bootstrap.initialize();
 
+      addTearDown(dependencies.dispose);
+
       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
       expect(
         dependencies.runtimeStatus.supabase,
@@ -1304,6 +1361,8 @@ void main() {
       );
 
       final dependencies = await bootstrap.initialize();
+
+      addTearDown(dependencies.dispose);
 
       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
@@ -1324,6 +1383,8 @@ void main() {
       );
 
       final dependencies = await bootstrap.initialize();
+
+      addTearDown(dependencies.dispose);
 
       expect(
         dependencies.runtimeStatus.firebase,
@@ -1353,6 +1414,8 @@ void main() {
       );
 
       final dependencies = await bootstrap.initialize();
+
+      addTearDown(dependencies.dispose);
       final rendered = <String>[
         dependencies.toString(),
         dependencies.runtimeStatus.toString(),
@@ -1386,6 +1449,8 @@ void main() {
 
       final dependencies = await bootstrap.initialize();
 
+      addTearDown(dependencies.dispose);
+
       expect(
         identical(dependencies.guestSessionService, guestSessionService),
         isTrue,
@@ -1406,6 +1471,8 @@ void main() {
         );
 
         final dependencies = await bootstrap.initialize();
+
+        addTearDown(dependencies.dispose);
         final result = await dependencies.guestSessionService.start();
         LocalOwner? owner;
         for (var attempt = 0; attempt < 20; attempt++) {
@@ -1444,6 +1511,8 @@ void main() {
       );
 
       final dependencies = await bootstrap.initialize();
+
+      addTearDown(dependencies.dispose);
       await dependencies.vocabulary!.createCategory('Travel');
       await Future<void>.delayed(Duration.zero);
 

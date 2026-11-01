@@ -26289,6 +26289,1412 @@ class AssessmentRunsCompanion extends UpdateCompanion<AssessmentRunRow> {
   }
 }
 
+class $LearningTimePreferencesTable extends LearningTimePreferences
+    with TableInfo<$LearningTimePreferencesTable, LearningTimePreference> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningTimePreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    enabled,
+    revision,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_time_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningTimePreference> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_enabledMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  LearningTimePreference map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningTimePreference(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningTimePreferencesTable createAlias(String alias) {
+    return $LearningTimePreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class LearningTimePreference extends DataClass
+    implements Insertable<LearningTimePreference> {
+  final String ownerId;
+  final bool enabled;
+  final int revision;
+  final int updatedAtUtcMs;
+  const LearningTimePreference({
+    required this.ownerId,
+    required this.enabled,
+    required this.revision,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['enabled'] = Variable<bool>(enabled);
+    map['revision'] = Variable<int>(revision);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  LearningTimePreferencesCompanion toCompanion(bool nullToAbsent) {
+    return LearningTimePreferencesCompanion(
+      ownerId: Value(ownerId),
+      enabled: Value(enabled),
+      revision: Value(revision),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory LearningTimePreference.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningTimePreference(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      revision: serializer.fromJson<int>(json['revision']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'enabled': serializer.toJson<bool>(enabled),
+      'revision': serializer.toJson<int>(revision),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  LearningTimePreference copyWith({
+    String? ownerId,
+    bool? enabled,
+    int? revision,
+    int? updatedAtUtcMs,
+  }) => LearningTimePreference(
+    ownerId: ownerId ?? this.ownerId,
+    enabled: enabled ?? this.enabled,
+    revision: revision ?? this.revision,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  LearningTimePreference copyWithCompanion(
+    LearningTimePreferencesCompanion data,
+  ) {
+    return LearningTimePreference(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimePreference(')
+          ..write('ownerId: $ownerId, ')
+          ..write('enabled: $enabled, ')
+          ..write('revision: $revision, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(ownerId, enabled, revision, updatedAtUtcMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningTimePreference &&
+          other.ownerId == this.ownerId &&
+          other.enabled == this.enabled &&
+          other.revision == this.revision &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class LearningTimePreferencesCompanion
+    extends UpdateCompanion<LearningTimePreference> {
+  final Value<String> ownerId;
+  final Value<bool> enabled;
+  final Value<int> revision;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const LearningTimePreferencesCompanion({
+    this.ownerId = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningTimePreferencesCompanion.insert({
+    required String ownerId,
+    required bool enabled,
+    required int revision,
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       enabled = Value(enabled),
+       revision = Value(revision),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearningTimePreference> custom({
+    Expression<String>? ownerId,
+    Expression<bool>? enabled,
+    Expression<int>? revision,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (enabled != null) 'enabled': enabled,
+      if (revision != null) 'revision': revision,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningTimePreferencesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<bool>? enabled,
+    Value<int>? revision,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningTimePreferencesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      enabled: enabled ?? this.enabled,
+      revision: revision ?? this.revision,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimePreferencesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('enabled: $enabled, ')
+          ..write('revision: $revision, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningTimeScopesTable extends LearningTimeScopes
+    with TableInfo<$LearningTimeScopesTable, LearningTimeScope> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningTimeScopesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _sourceKindMeta = const VerificationMeta(
+    'sourceKind',
+  );
+  @override
+  late final GeneratedColumn<String> sourceKind = GeneratedColumn<String>(
+    'source_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceBindingJsonMeta = const VerificationMeta(
+    'sourceBindingJson',
+  );
+  @override
+  late final GeneratedColumn<String> sourceBindingJson =
+      GeneratedColumn<String>(
+        'source_binding_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _linkedSessionIdMeta = const VerificationMeta(
+    'linkedSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedSessionId = GeneratedColumn<String>(
+    'linked_session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_sessions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sessionLinkBindingJsonMeta =
+      const VerificationMeta('sessionLinkBindingJson');
+  @override
+  late final GeneratedColumn<String> sessionLinkBindingJson =
+      GeneratedColumn<String>(
+        'session_link_binding_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    sourceKind,
+    sourceBindingJson,
+    createdAtUtcMs,
+    linkedSessionId,
+    sessionLinkBindingJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_time_scopes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningTimeScope> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('source_kind')) {
+      context.handle(
+        _sourceKindMeta,
+        sourceKind.isAcceptableOrUnknown(data['source_kind']!, _sourceKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceKindMeta);
+    }
+    if (data.containsKey('source_binding_json')) {
+      context.handle(
+        _sourceBindingJsonMeta,
+        sourceBindingJson.isAcceptableOrUnknown(
+          data['source_binding_json']!,
+          _sourceBindingJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceBindingJsonMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    if (data.containsKey('linked_session_id')) {
+      context.handle(
+        _linkedSessionIdMeta,
+        linkedSessionId.isAcceptableOrUnknown(
+          data['linked_session_id']!,
+          _linkedSessionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('session_link_binding_json')) {
+      context.handle(
+        _sessionLinkBindingJsonMeta,
+        sessionLinkBindingJson.isAcceptableOrUnknown(
+          data['session_link_binding_json']!,
+          _sessionLinkBindingJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LearningTimeScope map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningTimeScope(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      sourceKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_kind'],
+      )!,
+      sourceBindingJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_binding_json'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+      linkedSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}linked_session_id'],
+      ),
+      sessionLinkBindingJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_link_binding_json'],
+      ),
+    );
+  }
+
+  @override
+  $LearningTimeScopesTable createAlias(String alias) {
+    return $LearningTimeScopesTable(attachedDatabase, alias);
+  }
+}
+
+class LearningTimeScope extends DataClass
+    implements Insertable<LearningTimeScope> {
+  final String id;
+  final String ownerId;
+  final String sourceKind;
+  final String sourceBindingJson;
+  final int createdAtUtcMs;
+  final String? linkedSessionId;
+  final String? sessionLinkBindingJson;
+  const LearningTimeScope({
+    required this.id,
+    required this.ownerId,
+    required this.sourceKind,
+    required this.sourceBindingJson,
+    required this.createdAtUtcMs,
+    this.linkedSessionId,
+    this.sessionLinkBindingJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['source_kind'] = Variable<String>(sourceKind);
+    map['source_binding_json'] = Variable<String>(sourceBindingJson);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    if (!nullToAbsent || linkedSessionId != null) {
+      map['linked_session_id'] = Variable<String>(linkedSessionId);
+    }
+    if (!nullToAbsent || sessionLinkBindingJson != null) {
+      map['session_link_binding_json'] = Variable<String>(
+        sessionLinkBindingJson,
+      );
+    }
+    return map;
+  }
+
+  LearningTimeScopesCompanion toCompanion(bool nullToAbsent) {
+    return LearningTimeScopesCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sourceKind: Value(sourceKind),
+      sourceBindingJson: Value(sourceBindingJson),
+      createdAtUtcMs: Value(createdAtUtcMs),
+      linkedSessionId: linkedSessionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedSessionId),
+      sessionLinkBindingJson: sessionLinkBindingJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLinkBindingJson),
+    );
+  }
+
+  factory LearningTimeScope.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningTimeScope(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sourceKind: serializer.fromJson<String>(json['sourceKind']),
+      sourceBindingJson: serializer.fromJson<String>(json['sourceBindingJson']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+      linkedSessionId: serializer.fromJson<String?>(json['linkedSessionId']),
+      sessionLinkBindingJson: serializer.fromJson<String?>(
+        json['sessionLinkBindingJson'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sourceKind': serializer.toJson<String>(sourceKind),
+      'sourceBindingJson': serializer.toJson<String>(sourceBindingJson),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+      'linkedSessionId': serializer.toJson<String?>(linkedSessionId),
+      'sessionLinkBindingJson': serializer.toJson<String?>(
+        sessionLinkBindingJson,
+      ),
+    };
+  }
+
+  LearningTimeScope copyWith({
+    String? id,
+    String? ownerId,
+    String? sourceKind,
+    String? sourceBindingJson,
+    int? createdAtUtcMs,
+    Value<String?> linkedSessionId = const Value.absent(),
+    Value<String?> sessionLinkBindingJson = const Value.absent(),
+  }) => LearningTimeScope(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sourceKind: sourceKind ?? this.sourceKind,
+    sourceBindingJson: sourceBindingJson ?? this.sourceBindingJson,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+    linkedSessionId: linkedSessionId.present
+        ? linkedSessionId.value
+        : this.linkedSessionId,
+    sessionLinkBindingJson: sessionLinkBindingJson.present
+        ? sessionLinkBindingJson.value
+        : this.sessionLinkBindingJson,
+  );
+  LearningTimeScope copyWithCompanion(LearningTimeScopesCompanion data) {
+    return LearningTimeScope(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sourceKind: data.sourceKind.present
+          ? data.sourceKind.value
+          : this.sourceKind,
+      sourceBindingJson: data.sourceBindingJson.present
+          ? data.sourceBindingJson.value
+          : this.sourceBindingJson,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+      linkedSessionId: data.linkedSessionId.present
+          ? data.linkedSessionId.value
+          : this.linkedSessionId,
+      sessionLinkBindingJson: data.sessionLinkBindingJson.present
+          ? data.sessionLinkBindingJson.value
+          : this.sessionLinkBindingJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeScope(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceBindingJson: $sourceBindingJson, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('linkedSessionId: $linkedSessionId, ')
+          ..write('sessionLinkBindingJson: $sessionLinkBindingJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    sourceKind,
+    sourceBindingJson,
+    createdAtUtcMs,
+    linkedSessionId,
+    sessionLinkBindingJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningTimeScope &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sourceKind == this.sourceKind &&
+          other.sourceBindingJson == this.sourceBindingJson &&
+          other.createdAtUtcMs == this.createdAtUtcMs &&
+          other.linkedSessionId == this.linkedSessionId &&
+          other.sessionLinkBindingJson == this.sessionLinkBindingJson);
+}
+
+class LearningTimeScopesCompanion extends UpdateCompanion<LearningTimeScope> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sourceKind;
+  final Value<String> sourceBindingJson;
+  final Value<int> createdAtUtcMs;
+  final Value<String?> linkedSessionId;
+  final Value<String?> sessionLinkBindingJson;
+  final Value<int> rowid;
+  const LearningTimeScopesCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sourceKind = const Value.absent(),
+    this.sourceBindingJson = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.linkedSessionId = const Value.absent(),
+    this.sessionLinkBindingJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningTimeScopesCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sourceKind,
+    required String sourceBindingJson,
+    required int createdAtUtcMs,
+    this.linkedSessionId = const Value.absent(),
+    this.sessionLinkBindingJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sourceKind = Value(sourceKind),
+       sourceBindingJson = Value(sourceBindingJson),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<LearningTimeScope> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sourceKind,
+    Expression<String>? sourceBindingJson,
+    Expression<int>? createdAtUtcMs,
+    Expression<String>? linkedSessionId,
+    Expression<String>? sessionLinkBindingJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sourceKind != null) 'source_kind': sourceKind,
+      if (sourceBindingJson != null) 'source_binding_json': sourceBindingJson,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (linkedSessionId != null) 'linked_session_id': linkedSessionId,
+      if (sessionLinkBindingJson != null)
+        'session_link_binding_json': sessionLinkBindingJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningTimeScopesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sourceKind,
+    Value<String>? sourceBindingJson,
+    Value<int>? createdAtUtcMs,
+    Value<String?>? linkedSessionId,
+    Value<String?>? sessionLinkBindingJson,
+    Value<int>? rowid,
+  }) {
+    return LearningTimeScopesCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sourceKind: sourceKind ?? this.sourceKind,
+      sourceBindingJson: sourceBindingJson ?? this.sourceBindingJson,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      linkedSessionId: linkedSessionId ?? this.linkedSessionId,
+      sessionLinkBindingJson:
+          sessionLinkBindingJson ?? this.sessionLinkBindingJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sourceKind.present) {
+      map['source_kind'] = Variable<String>(sourceKind.value);
+    }
+    if (sourceBindingJson.present) {
+      map['source_binding_json'] = Variable<String>(sourceBindingJson.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (linkedSessionId.present) {
+      map['linked_session_id'] = Variable<String>(linkedSessionId.value);
+    }
+    if (sessionLinkBindingJson.present) {
+      map['session_link_binding_json'] = Variable<String>(
+        sessionLinkBindingJson.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeScopesCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceBindingJson: $sourceBindingJson, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('linkedSessionId: $linkedSessionId, ')
+          ..write('sessionLinkBindingJson: $sessionLinkBindingJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningTimeSegmentsTable extends LearningTimeSegments
+    with TableInfo<$LearningTimeSegmentsTable, LearningTimeSegment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningTimeSegmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scopeIdMeta = const VerificationMeta(
+    'scopeId',
+  );
+  @override
+  late final GeneratedColumn<String> scopeId = GeneratedColumn<String>(
+    'scope_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_time_scopes (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _ordinalMeta = const VerificationMeta(
+    'ordinal',
+  );
+  @override
+  late final GeneratedColumn<int> ordinal = GeneratedColumn<int>(
+    'ordinal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eligibilityContextJsonMeta =
+      const VerificationMeta('eligibilityContextJson');
+  @override
+  late final GeneratedColumn<String> eligibilityContextJson =
+      GeneratedColumn<String>(
+        'eligibility_context_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _startedAtUtcMsMeta = const VerificationMeta(
+    'startedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtUtcMs = GeneratedColumn<int>(
+    'started_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtUtcMsMeta = const VerificationMeta(
+    'endedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> endedAtUtcMs = GeneratedColumn<int>(
+    'ended_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeDurationUsMeta = const VerificationMeta(
+    'activeDurationUs',
+  );
+  @override
+  late final GeneratedColumn<int> activeDurationUs = GeneratedColumn<int>(
+    'active_duration_us',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturePolicyRevisionMeta =
+      const VerificationMeta('capturePolicyRevision');
+  @override
+  late final GeneratedColumn<String> capturePolicyRevision =
+      GeneratedColumn<String>(
+        'capture_policy_revision',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    scopeId,
+    ordinal,
+    eligibilityContextJson,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    activeDurationUs,
+    capturePolicyRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_time_segments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningTimeSegment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('scope_id')) {
+      context.handle(
+        _scopeIdMeta,
+        scopeId.isAcceptableOrUnknown(data['scope_id']!, _scopeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeIdMeta);
+    }
+    if (data.containsKey('ordinal')) {
+      context.handle(
+        _ordinalMeta,
+        ordinal.isAcceptableOrUnknown(data['ordinal']!, _ordinalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ordinalMeta);
+    }
+    if (data.containsKey('eligibility_context_json')) {
+      context.handle(
+        _eligibilityContextJsonMeta,
+        eligibilityContextJson.isAcceptableOrUnknown(
+          data['eligibility_context_json']!,
+          _eligibilityContextJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eligibilityContextJsonMeta);
+    }
+    if (data.containsKey('started_at_utc_ms')) {
+      context.handle(
+        _startedAtUtcMsMeta,
+        startedAtUtcMs.isAcceptableOrUnknown(
+          data['started_at_utc_ms']!,
+          _startedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMsMeta);
+    }
+    if (data.containsKey('ended_at_utc_ms')) {
+      context.handle(
+        _endedAtUtcMsMeta,
+        endedAtUtcMs.isAcceptableOrUnknown(
+          data['ended_at_utc_ms']!,
+          _endedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtUtcMsMeta);
+    }
+    if (data.containsKey('active_duration_us')) {
+      context.handle(
+        _activeDurationUsMeta,
+        activeDurationUs.isAcceptableOrUnknown(
+          data['active_duration_us']!,
+          _activeDurationUsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activeDurationUsMeta);
+    }
+    if (data.containsKey('capture_policy_revision')) {
+      context.handle(
+        _capturePolicyRevisionMeta,
+        capturePolicyRevision.isAcceptableOrUnknown(
+          data['capture_policy_revision']!,
+          _capturePolicyRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_capturePolicyRevisionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {scopeId, ordinal},
+  ];
+  @override
+  LearningTimeSegment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningTimeSegment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      scopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope_id'],
+      )!,
+      ordinal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordinal'],
+      )!,
+      eligibilityContextJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}eligibility_context_json'],
+      )!,
+      startedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_utc_ms'],
+      )!,
+      endedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at_utc_ms'],
+      )!,
+      activeDurationUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}active_duration_us'],
+      )!,
+      capturePolicyRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capture_policy_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningTimeSegmentsTable createAlias(String alias) {
+    return $LearningTimeSegmentsTable(attachedDatabase, alias);
+  }
+}
+
+class LearningTimeSegment extends DataClass
+    implements Insertable<LearningTimeSegment> {
+  final String id;
+  final String scopeId;
+  final int ordinal;
+  final String eligibilityContextJson;
+  final int startedAtUtcMs;
+  final int endedAtUtcMs;
+  final int activeDurationUs;
+  final String capturePolicyRevision;
+  const LearningTimeSegment({
+    required this.id,
+    required this.scopeId,
+    required this.ordinal,
+    required this.eligibilityContextJson,
+    required this.startedAtUtcMs,
+    required this.endedAtUtcMs,
+    required this.activeDurationUs,
+    required this.capturePolicyRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['scope_id'] = Variable<String>(scopeId);
+    map['ordinal'] = Variable<int>(ordinal);
+    map['eligibility_context_json'] = Variable<String>(eligibilityContextJson);
+    map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs);
+    map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs);
+    map['active_duration_us'] = Variable<int>(activeDurationUs);
+    map['capture_policy_revision'] = Variable<String>(capturePolicyRevision);
+    return map;
+  }
+
+  LearningTimeSegmentsCompanion toCompanion(bool nullToAbsent) {
+    return LearningTimeSegmentsCompanion(
+      id: Value(id),
+      scopeId: Value(scopeId),
+      ordinal: Value(ordinal),
+      eligibilityContextJson: Value(eligibilityContextJson),
+      startedAtUtcMs: Value(startedAtUtcMs),
+      endedAtUtcMs: Value(endedAtUtcMs),
+      activeDurationUs: Value(activeDurationUs),
+      capturePolicyRevision: Value(capturePolicyRevision),
+    );
+  }
+
+  factory LearningTimeSegment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningTimeSegment(
+      id: serializer.fromJson<String>(json['id']),
+      scopeId: serializer.fromJson<String>(json['scopeId']),
+      ordinal: serializer.fromJson<int>(json['ordinal']),
+      eligibilityContextJson: serializer.fromJson<String>(
+        json['eligibilityContextJson'],
+      ),
+      startedAtUtcMs: serializer.fromJson<int>(json['startedAtUtcMs']),
+      endedAtUtcMs: serializer.fromJson<int>(json['endedAtUtcMs']),
+      activeDurationUs: serializer.fromJson<int>(json['activeDurationUs']),
+      capturePolicyRevision: serializer.fromJson<String>(
+        json['capturePolicyRevision'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'scopeId': serializer.toJson<String>(scopeId),
+      'ordinal': serializer.toJson<int>(ordinal),
+      'eligibilityContextJson': serializer.toJson<String>(
+        eligibilityContextJson,
+      ),
+      'startedAtUtcMs': serializer.toJson<int>(startedAtUtcMs),
+      'endedAtUtcMs': serializer.toJson<int>(endedAtUtcMs),
+      'activeDurationUs': serializer.toJson<int>(activeDurationUs),
+      'capturePolicyRevision': serializer.toJson<String>(capturePolicyRevision),
+    };
+  }
+
+  LearningTimeSegment copyWith({
+    String? id,
+    String? scopeId,
+    int? ordinal,
+    String? eligibilityContextJson,
+    int? startedAtUtcMs,
+    int? endedAtUtcMs,
+    int? activeDurationUs,
+    String? capturePolicyRevision,
+  }) => LearningTimeSegment(
+    id: id ?? this.id,
+    scopeId: scopeId ?? this.scopeId,
+    ordinal: ordinal ?? this.ordinal,
+    eligibilityContextJson:
+        eligibilityContextJson ?? this.eligibilityContextJson,
+    startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+    endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+    activeDurationUs: activeDurationUs ?? this.activeDurationUs,
+    capturePolicyRevision: capturePolicyRevision ?? this.capturePolicyRevision,
+  );
+  LearningTimeSegment copyWithCompanion(LearningTimeSegmentsCompanion data) {
+    return LearningTimeSegment(
+      id: data.id.present ? data.id.value : this.id,
+      scopeId: data.scopeId.present ? data.scopeId.value : this.scopeId,
+      ordinal: data.ordinal.present ? data.ordinal.value : this.ordinal,
+      eligibilityContextJson: data.eligibilityContextJson.present
+          ? data.eligibilityContextJson.value
+          : this.eligibilityContextJson,
+      startedAtUtcMs: data.startedAtUtcMs.present
+          ? data.startedAtUtcMs.value
+          : this.startedAtUtcMs,
+      endedAtUtcMs: data.endedAtUtcMs.present
+          ? data.endedAtUtcMs.value
+          : this.endedAtUtcMs,
+      activeDurationUs: data.activeDurationUs.present
+          ? data.activeDurationUs.value
+          : this.activeDurationUs,
+      capturePolicyRevision: data.capturePolicyRevision.present
+          ? data.capturePolicyRevision.value
+          : this.capturePolicyRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeSegment(')
+          ..write('id: $id, ')
+          ..write('scopeId: $scopeId, ')
+          ..write('ordinal: $ordinal, ')
+          ..write('eligibilityContextJson: $eligibilityContextJson, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('activeDurationUs: $activeDurationUs, ')
+          ..write('capturePolicyRevision: $capturePolicyRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    scopeId,
+    ordinal,
+    eligibilityContextJson,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    activeDurationUs,
+    capturePolicyRevision,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningTimeSegment &&
+          other.id == this.id &&
+          other.scopeId == this.scopeId &&
+          other.ordinal == this.ordinal &&
+          other.eligibilityContextJson == this.eligibilityContextJson &&
+          other.startedAtUtcMs == this.startedAtUtcMs &&
+          other.endedAtUtcMs == this.endedAtUtcMs &&
+          other.activeDurationUs == this.activeDurationUs &&
+          other.capturePolicyRevision == this.capturePolicyRevision);
+}
+
+class LearningTimeSegmentsCompanion
+    extends UpdateCompanion<LearningTimeSegment> {
+  final Value<String> id;
+  final Value<String> scopeId;
+  final Value<int> ordinal;
+  final Value<String> eligibilityContextJson;
+  final Value<int> startedAtUtcMs;
+  final Value<int> endedAtUtcMs;
+  final Value<int> activeDurationUs;
+  final Value<String> capturePolicyRevision;
+  final Value<int> rowid;
+  const LearningTimeSegmentsCompanion({
+    this.id = const Value.absent(),
+    this.scopeId = const Value.absent(),
+    this.ordinal = const Value.absent(),
+    this.eligibilityContextJson = const Value.absent(),
+    this.startedAtUtcMs = const Value.absent(),
+    this.endedAtUtcMs = const Value.absent(),
+    this.activeDurationUs = const Value.absent(),
+    this.capturePolicyRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningTimeSegmentsCompanion.insert({
+    required String id,
+    required String scopeId,
+    required int ordinal,
+    required String eligibilityContextJson,
+    required int startedAtUtcMs,
+    required int endedAtUtcMs,
+    required int activeDurationUs,
+    required String capturePolicyRevision,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       scopeId = Value(scopeId),
+       ordinal = Value(ordinal),
+       eligibilityContextJson = Value(eligibilityContextJson),
+       startedAtUtcMs = Value(startedAtUtcMs),
+       endedAtUtcMs = Value(endedAtUtcMs),
+       activeDurationUs = Value(activeDurationUs),
+       capturePolicyRevision = Value(capturePolicyRevision);
+  static Insertable<LearningTimeSegment> custom({
+    Expression<String>? id,
+    Expression<String>? scopeId,
+    Expression<int>? ordinal,
+    Expression<String>? eligibilityContextJson,
+    Expression<int>? startedAtUtcMs,
+    Expression<int>? endedAtUtcMs,
+    Expression<int>? activeDurationUs,
+    Expression<String>? capturePolicyRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (scopeId != null) 'scope_id': scopeId,
+      if (ordinal != null) 'ordinal': ordinal,
+      if (eligibilityContextJson != null)
+        'eligibility_context_json': eligibilityContextJson,
+      if (startedAtUtcMs != null) 'started_at_utc_ms': startedAtUtcMs,
+      if (endedAtUtcMs != null) 'ended_at_utc_ms': endedAtUtcMs,
+      if (activeDurationUs != null) 'active_duration_us': activeDurationUs,
+      if (capturePolicyRevision != null)
+        'capture_policy_revision': capturePolicyRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningTimeSegmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? scopeId,
+    Value<int>? ordinal,
+    Value<String>? eligibilityContextJson,
+    Value<int>? startedAtUtcMs,
+    Value<int>? endedAtUtcMs,
+    Value<int>? activeDurationUs,
+    Value<String>? capturePolicyRevision,
+    Value<int>? rowid,
+  }) {
+    return LearningTimeSegmentsCompanion(
+      id: id ?? this.id,
+      scopeId: scopeId ?? this.scopeId,
+      ordinal: ordinal ?? this.ordinal,
+      eligibilityContextJson:
+          eligibilityContextJson ?? this.eligibilityContextJson,
+      startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+      endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+      activeDurationUs: activeDurationUs ?? this.activeDurationUs,
+      capturePolicyRevision:
+          capturePolicyRevision ?? this.capturePolicyRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (scopeId.present) {
+      map['scope_id'] = Variable<String>(scopeId.value);
+    }
+    if (ordinal.present) {
+      map['ordinal'] = Variable<int>(ordinal.value);
+    }
+    if (eligibilityContextJson.present) {
+      map['eligibility_context_json'] = Variable<String>(
+        eligibilityContextJson.value,
+      );
+    }
+    if (startedAtUtcMs.present) {
+      map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs.value);
+    }
+    if (endedAtUtcMs.present) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs.value);
+    }
+    if (activeDurationUs.present) {
+      map['active_duration_us'] = Variable<int>(activeDurationUs.value);
+    }
+    if (capturePolicyRevision.present) {
+      map['capture_policy_revision'] = Variable<String>(
+        capturePolicyRevision.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeSegmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('scopeId: $scopeId, ')
+          ..write('ordinal: $ordinal, ')
+          ..write('eligibilityContextJson: $eligibilityContextJson, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('activeDurationUs: $activeDurationUs, ')
+          ..write('capturePolicyRevision: $capturePolicyRevision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -26359,6 +27765,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MeasurementOpportunitiesTable measurementOpportunities =
       $MeasurementOpportunitiesTable(this);
   late final $AssessmentRunsTable assessmentRuns = $AssessmentRunsTable(this);
+  late final $LearningTimePreferencesTable learningTimePreferences =
+      $LearningTimePreferencesTable(this);
+  late final $LearningTimeScopesTable learningTimeScopes =
+      $LearningTimeScopesTable(this);
+  late final $LearningTimeSegmentsTable learningTimeSegments =
+      $LearningTimeSegmentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -26401,6 +27813,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     associativeMemoryStates,
     measurementOpportunities,
     assessmentRuns,
+    learningTimePreferences,
+    learningTimeScopes,
+    learningTimeSegments,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -26442,6 +27857,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('measurement_opportunities', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('learning_time_scopes', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_time_scopes',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('learning_time_segments', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -27112,6 +28541,52 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearningTimePreferencesTable,
+    List<LearningTimePreference>
+  >
+  _learningTimePreferencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimePreferences,
+        aliasName: 'local_owners__id__learning_time_preferences__owner_id',
+      );
+
+  $$LearningTimePreferencesTableProcessedTableManager
+  get learningTimePreferencesRefs {
+    final manager = $$LearningTimePreferencesTableTableManager(
+      $_db,
+      $_db.learningTimePreferences,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimePreferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LearningTimeScopesTable, List<LearningTimeScope>>
+  _learningTimeScopesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimeScopes,
+        aliasName: 'local_owners__id__learning_time_scopes__owner_id',
+      );
+
+  $$LearningTimeScopesTableProcessedTableManager get learningTimeScopesRefs {
+    final manager = $$LearningTimeScopesTableTableManager(
+      $_db,
+      $_db.learningTimeScopes,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimeScopesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -27934,6 +29409,57 @@ class $$LocalOwnersTableFilterComposer
           }) => $$AssessmentRunsTableFilterComposer(
             $db: $db,
             $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningTimePreferencesRefs(
+    Expression<bool> Function($$LearningTimePreferencesTableFilterComposer f) f,
+  ) {
+    final $$LearningTimePreferencesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimePreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimePreferencesTableFilterComposer(
+                $db: $db,
+                $table: $db.learningTimePreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> learningTimeScopesRefs(
+    Expression<bool> Function($$LearningTimeScopesTableFilterComposer f) f,
+  ) {
+    final $$LearningTimeScopesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningTimeScopes,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeScopesTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeScopes,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -28813,6 +30339,59 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> learningTimePreferencesRefs<T extends Object>(
+    Expression<T> Function($$LearningTimePreferencesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LearningTimePreferencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimePreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimePreferencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimePreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> learningTimeScopesRefs<T extends Object>(
+    Expression<T> Function($$LearningTimeScopesTableAnnotationComposer a) f,
+  ) {
+    final $$LearningTimeScopesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimeScopes,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeScopesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeScopes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -28860,6 +30439,8 @@ class $$LocalOwnersTableTableManager
             bool associativeMemoryStatesRefs,
             bool measurementOpportunitiesRefs,
             bool assessmentRunsRefs,
+            bool learningTimePreferencesRefs,
+            bool learningTimeScopesRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -28950,6 +30531,8 @@ class $$LocalOwnersTableTableManager
                 associativeMemoryStatesRefs = false,
                 measurementOpportunitiesRefs = false,
                 assessmentRunsRefs = false,
+                learningTimePreferencesRefs = false,
+                learningTimeScopesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -28988,6 +30571,8 @@ class $$LocalOwnersTableTableManager
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
                     if (assessmentRunsRefs) db.assessmentRuns,
+                    if (learningTimePreferencesRefs) db.learningTimePreferences,
+                    if (learningTimeScopesRefs) db.learningTimeScopes,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -29643,6 +31228,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningTimePreferencesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningTimePreference
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningTimePreferencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimePreferencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (learningTimeScopesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningTimeScope
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningTimeScopesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimeScopesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -29695,6 +31322,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool associativeMemoryStatesRefs,
         bool measurementOpportunitiesRefs,
         bool assessmentRunsRefs,
+        bool learningTimePreferencesRefs,
+        bool learningTimeScopesRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -37455,6 +39084,31 @@ final class $$LearningSessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$LearningTimeScopesTable, List<LearningTimeScope>>
+  _learningTimeScopesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimeScopes,
+        aliasName:
+            'learning_sessions__id__learning_time_scopes__linked_session_id',
+      );
+
+  $$LearningTimeScopesTableProcessedTableManager get learningTimeScopesRefs {
+    final manager =
+        $$LearningTimeScopesTableTableManager(
+          $_db,
+          $_db.learningTimeScopes,
+        ).filter(
+          (f) => f.linkedSessionId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimeScopesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LearningSessionsTableFilterComposer
@@ -37627,6 +39281,31 @@ class $$LearningSessionsTableFilterComposer
           }) => $$AssessmentRunsTableFilterComposer(
             $db: $db,
             $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningTimeScopesRefs(
+    Expression<bool> Function($$LearningTimeScopesTableFilterComposer f) f,
+  ) {
+    final $$LearningTimeScopesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningTimeScopes,
+      getReferencedColumn: (t) => t.linkedSessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeScopesTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeScopes,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -37910,6 +39589,32 @@ class $$LearningSessionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> learningTimeScopesRefs<T extends Object>(
+    Expression<T> Function($$LearningTimeScopesTableAnnotationComposer a) f,
+  ) {
+    final $$LearningTimeScopesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimeScopes,
+          getReferencedColumn: (t) => t.linkedSessionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeScopesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeScopes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LearningSessionsTableTableManager
@@ -37930,6 +39635,7 @@ class $$LearningSessionsTableTableManager
             bool answerAttemptsRefs,
             bool measurementOpportunitiesRefs,
             bool assessmentRunsRefs,
+            bool learningTimeScopesRefs,
           })
         > {
   $$LearningSessionsTableTableManager(
@@ -38031,6 +39737,7 @@ class $$LearningSessionsTableTableManager
                 answerAttemptsRefs = false,
                 measurementOpportunitiesRefs = false,
                 assessmentRunsRefs = false,
+                learningTimeScopesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -38039,6 +39746,7 @@ class $$LearningSessionsTableTableManager
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
                     if (assessmentRunsRefs) db.assessmentRuns,
+                    if (learningTimeScopesRefs) db.learningTimeScopes,
                   ],
                   addJoins:
                       <
@@ -38139,6 +39847,27 @@ class $$LearningSessionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningTimeScopesRefs)
+                        await $_getPrefetchedData<
+                          LearningSession,
+                          $LearningSessionsTable,
+                          LearningTimeScope
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningSessionsTableReferences
+                              ._learningTimeScopesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimeScopesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.linkedSessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -38164,6 +39893,7 @@ typedef $$LearningSessionsTableProcessedTableManager =
         bool answerAttemptsRefs,
         bool measurementOpportunitiesRefs,
         bool assessmentRunsRefs,
+        bool learningTimeScopesRefs,
       })
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
@@ -50051,6 +51781,1316 @@ typedef $$AssessmentRunsTableProcessedTableManager =
         bool participationPermitId,
       })
     >;
+typedef $$LearningTimePreferencesTableCreateCompanionBuilder =
+    LearningTimePreferencesCompanion Function({
+      required String ownerId,
+      required bool enabled,
+      required int revision,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningTimePreferencesTableUpdateCompanionBuilder =
+    LearningTimePreferencesCompanion Function({
+      Value<String> ownerId,
+      Value<bool> enabled,
+      Value<int> revision,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningTimePreferencesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningTimePreferencesTable,
+          LearningTimePreference
+        > {
+  $$LearningTimePreferencesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_time_preferences__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningTimePreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningTimePreferencesTable> {
+  $$LearningTimePreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimePreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningTimePreferencesTable> {
+  $$LearningTimePreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimePreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningTimePreferencesTable> {
+  $$LearningTimePreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimePreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningTimePreferencesTable,
+          LearningTimePreference,
+          $$LearningTimePreferencesTableFilterComposer,
+          $$LearningTimePreferencesTableOrderingComposer,
+          $$LearningTimePreferencesTableAnnotationComposer,
+          $$LearningTimePreferencesTableCreateCompanionBuilder,
+          $$LearningTimePreferencesTableUpdateCompanionBuilder,
+          (LearningTimePreference, $$LearningTimePreferencesTableReferences),
+          LearningTimePreference,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LearningTimePreferencesTableTableManager(
+    _$AppDatabase db,
+    $LearningTimePreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningTimePreferencesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LearningTimePreferencesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearningTimePreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimePreferencesCompanion(
+                ownerId: ownerId,
+                enabled: enabled,
+                revision: revision,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required bool enabled,
+                required int revision,
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimePreferencesCompanion.insert(
+                ownerId: ownerId,
+                enabled: enabled,
+                revision: revision,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningTimePreferencesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LearningTimePreferencesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearningTimePreferencesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningTimePreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningTimePreferencesTable,
+      LearningTimePreference,
+      $$LearningTimePreferencesTableFilterComposer,
+      $$LearningTimePreferencesTableOrderingComposer,
+      $$LearningTimePreferencesTableAnnotationComposer,
+      $$LearningTimePreferencesTableCreateCompanionBuilder,
+      $$LearningTimePreferencesTableUpdateCompanionBuilder,
+      (LearningTimePreference, $$LearningTimePreferencesTableReferences),
+      LearningTimePreference,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$LearningTimeScopesTableCreateCompanionBuilder =
+    LearningTimeScopesCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sourceKind,
+      required String sourceBindingJson,
+      required int createdAtUtcMs,
+      Value<String?> linkedSessionId,
+      Value<String?> sessionLinkBindingJson,
+      Value<int> rowid,
+    });
+typedef $$LearningTimeScopesTableUpdateCompanionBuilder =
+    LearningTimeScopesCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sourceKind,
+      Value<String> sourceBindingJson,
+      Value<int> createdAtUtcMs,
+      Value<String?> linkedSessionId,
+      Value<String?> sessionLinkBindingJson,
+      Value<int> rowid,
+    });
+
+final class $$LearningTimeScopesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningTimeScopesTable,
+          LearningTimeScope
+        > {
+  $$LearningTimeScopesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_time_scopes__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningSessionsTable _linkedSessionIdTable(_$AppDatabase db) =>
+      db.learningSessions.createAlias(
+        'learning_time_scopes__linked_session_id__learning_sessions__id',
+      );
+
+  $$LearningSessionsTableProcessedTableManager? get linkedSessionId {
+    final $_column = $_itemColumn<String>('linked_session_id');
+    if ($_column == null) return null;
+    final manager = $$LearningSessionsTableTableManager(
+      $_db,
+      $_db.learningSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_linkedSessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearningTimeSegmentsTable,
+    List<LearningTimeSegment>
+  >
+  _learningTimeSegmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimeSegments,
+        aliasName: 'learning_time_scopes__id__learning_time_segments__scope_id',
+      );
+
+  $$LearningTimeSegmentsTableProcessedTableManager
+  get learningTimeSegmentsRefs {
+    final manager = $$LearningTimeSegmentsTableTableManager(
+      $_db,
+      $_db.learningTimeSegments,
+    ).filter((f) => f.scopeId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimeSegmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LearningTimeScopesTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningTimeScopesTable> {
+  $$LearningTimeScopesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceBindingJson => $composableBuilder(
+    column: $table.sourceBindingJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionLinkBindingJson => $composableBuilder(
+    column: $table.sessionLinkBindingJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableFilterComposer get linkedSessionId {
+    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkedSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> learningTimeSegmentsRefs(
+    Expression<bool> Function($$LearningTimeSegmentsTableFilterComposer f) f,
+  ) {
+    final $$LearningTimeSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningTimeSegments,
+      getReferencedColumn: (t) => t.scopeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LearningTimeScopesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningTimeScopesTable> {
+  $$LearningTimeScopesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceBindingJson => $composableBuilder(
+    column: $table.sourceBindingJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionLinkBindingJson => $composableBuilder(
+    column: $table.sessionLinkBindingJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableOrderingComposer get linkedSessionId {
+    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkedSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeScopesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningTimeScopesTable> {
+  $$LearningTimeScopesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceBindingJson => $composableBuilder(
+    column: $table.sourceBindingJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sessionLinkBindingJson => $composableBuilder(
+    column: $table.sessionLinkBindingJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableAnnotationComposer get linkedSessionId {
+    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkedSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> learningTimeSegmentsRefs<T extends Object>(
+    Expression<T> Function($$LearningTimeSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningTimeSegmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimeSegments,
+          getReferencedColumn: (t) => t.scopeId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeSegmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeSegments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$LearningTimeScopesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningTimeScopesTable,
+          LearningTimeScope,
+          $$LearningTimeScopesTableFilterComposer,
+          $$LearningTimeScopesTableOrderingComposer,
+          $$LearningTimeScopesTableAnnotationComposer,
+          $$LearningTimeScopesTableCreateCompanionBuilder,
+          $$LearningTimeScopesTableUpdateCompanionBuilder,
+          (LearningTimeScope, $$LearningTimeScopesTableReferences),
+          LearningTimeScope,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool linkedSessionId,
+            bool learningTimeSegmentsRefs,
+          })
+        > {
+  $$LearningTimeScopesTableTableManager(
+    _$AppDatabase db,
+    $LearningTimeScopesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningTimeScopesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningTimeScopesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningTimeScopesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sourceKind = const Value.absent(),
+                Value<String> sourceBindingJson = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<String?> linkedSessionId = const Value.absent(),
+                Value<String?> sessionLinkBindingJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeScopesCompanion(
+                id: id,
+                ownerId: ownerId,
+                sourceKind: sourceKind,
+                sourceBindingJson: sourceBindingJson,
+                createdAtUtcMs: createdAtUtcMs,
+                linkedSessionId: linkedSessionId,
+                sessionLinkBindingJson: sessionLinkBindingJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sourceKind,
+                required String sourceBindingJson,
+                required int createdAtUtcMs,
+                Value<String?> linkedSessionId = const Value.absent(),
+                Value<String?> sessionLinkBindingJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeScopesCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sourceKind: sourceKind,
+                sourceBindingJson: sourceBindingJson,
+                createdAtUtcMs: createdAtUtcMs,
+                linkedSessionId: linkedSessionId,
+                sessionLinkBindingJson: sessionLinkBindingJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningTimeScopesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                ownerId = false,
+                linkedSessionId = false,
+                learningTimeSegmentsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (learningTimeSegmentsRefs) db.learningTimeSegments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$LearningTimeScopesTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$LearningTimeScopesTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (linkedSessionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.linkedSessionId,
+                                    referencedTable:
+                                        $$LearningTimeScopesTableReferences
+                                            ._linkedSessionIdTable(db),
+                                    referencedColumn:
+                                        $$LearningTimeScopesTableReferences
+                                            ._linkedSessionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (learningTimeSegmentsRefs)
+                        await $_getPrefetchedData<
+                          LearningTimeScope,
+                          $LearningTimeScopesTable,
+                          LearningTimeSegment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningTimeScopesTableReferences
+                              ._learningTimeSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningTimeScopesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimeSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.scopeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LearningTimeScopesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningTimeScopesTable,
+      LearningTimeScope,
+      $$LearningTimeScopesTableFilterComposer,
+      $$LearningTimeScopesTableOrderingComposer,
+      $$LearningTimeScopesTableAnnotationComposer,
+      $$LearningTimeScopesTableCreateCompanionBuilder,
+      $$LearningTimeScopesTableUpdateCompanionBuilder,
+      (LearningTimeScope, $$LearningTimeScopesTableReferences),
+      LearningTimeScope,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool linkedSessionId,
+        bool learningTimeSegmentsRefs,
+      })
+    >;
+typedef $$LearningTimeSegmentsTableCreateCompanionBuilder =
+    LearningTimeSegmentsCompanion Function({
+      required String id,
+      required String scopeId,
+      required int ordinal,
+      required String eligibilityContextJson,
+      required int startedAtUtcMs,
+      required int endedAtUtcMs,
+      required int activeDurationUs,
+      required String capturePolicyRevision,
+      Value<int> rowid,
+    });
+typedef $$LearningTimeSegmentsTableUpdateCompanionBuilder =
+    LearningTimeSegmentsCompanion Function({
+      Value<String> id,
+      Value<String> scopeId,
+      Value<int> ordinal,
+      Value<String> eligibilityContextJson,
+      Value<int> startedAtUtcMs,
+      Value<int> endedAtUtcMs,
+      Value<int> activeDurationUs,
+      Value<String> capturePolicyRevision,
+      Value<int> rowid,
+    });
+
+final class $$LearningTimeSegmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningTimeSegmentsTable,
+          LearningTimeSegment
+        > {
+  $$LearningTimeSegmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LearningTimeScopesTable _scopeIdTable(_$AppDatabase db) =>
+      db.learningTimeScopes.createAlias(
+        'learning_time_segments__scope_id__learning_time_scopes__id',
+      );
+
+  $$LearningTimeScopesTableProcessedTableManager get scopeId {
+    final $_column = $_itemColumn<String>('scope_id')!;
+
+    final manager = $$LearningTimeScopesTableTableManager(
+      $_db,
+      $_db.learningTimeScopes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_scopeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningTimeSegmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordinal => $composableBuilder(
+    column: $table.ordinal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eligibilityContextJson => $composableBuilder(
+    column: $table.eligibilityContextJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get activeDurationUs => $composableBuilder(
+    column: $table.activeDurationUs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get capturePolicyRevision => $composableBuilder(
+    column: $table.capturePolicyRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LearningTimeScopesTableFilterComposer get scopeId {
+    final $$LearningTimeScopesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.scopeId,
+      referencedTable: $db.learningTimeScopes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeScopesTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeScopes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordinal => $composableBuilder(
+    column: $table.ordinal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eligibilityContextJson => $composableBuilder(
+    column: $table.eligibilityContextJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get activeDurationUs => $composableBuilder(
+    column: $table.activeDurationUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get capturePolicyRevision => $composableBuilder(
+    column: $table.capturePolicyRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LearningTimeScopesTableOrderingComposer get scopeId {
+    final $$LearningTimeScopesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.scopeId,
+      referencedTable: $db.learningTimeScopes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeScopesTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningTimeScopes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get ordinal =>
+      $composableBuilder(column: $table.ordinal, builder: (column) => column);
+
+  GeneratedColumn<String> get eligibilityContextJson => $composableBuilder(
+    column: $table.eligibilityContextJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get activeDurationUs => $composableBuilder(
+    column: $table.activeDurationUs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get capturePolicyRevision => $composableBuilder(
+    column: $table.capturePolicyRevision,
+    builder: (column) => column,
+  );
+
+  $$LearningTimeScopesTableAnnotationComposer get scopeId {
+    final $$LearningTimeScopesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.scopeId,
+          referencedTable: $db.learningTimeScopes,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeScopesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeScopes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningTimeSegmentsTable,
+          LearningTimeSegment,
+          $$LearningTimeSegmentsTableFilterComposer,
+          $$LearningTimeSegmentsTableOrderingComposer,
+          $$LearningTimeSegmentsTableAnnotationComposer,
+          $$LearningTimeSegmentsTableCreateCompanionBuilder,
+          $$LearningTimeSegmentsTableUpdateCompanionBuilder,
+          (LearningTimeSegment, $$LearningTimeSegmentsTableReferences),
+          LearningTimeSegment,
+          PrefetchHooks Function({bool scopeId})
+        > {
+  $$LearningTimeSegmentsTableTableManager(
+    _$AppDatabase db,
+    $LearningTimeSegmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningTimeSegmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningTimeSegmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearningTimeSegmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> scopeId = const Value.absent(),
+                Value<int> ordinal = const Value.absent(),
+                Value<String> eligibilityContextJson = const Value.absent(),
+                Value<int> startedAtUtcMs = const Value.absent(),
+                Value<int> endedAtUtcMs = const Value.absent(),
+                Value<int> activeDurationUs = const Value.absent(),
+                Value<String> capturePolicyRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeSegmentsCompanion(
+                id: id,
+                scopeId: scopeId,
+                ordinal: ordinal,
+                eligibilityContextJson: eligibilityContextJson,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                activeDurationUs: activeDurationUs,
+                capturePolicyRevision: capturePolicyRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String scopeId,
+                required int ordinal,
+                required String eligibilityContextJson,
+                required int startedAtUtcMs,
+                required int endedAtUtcMs,
+                required int activeDurationUs,
+                required String capturePolicyRevision,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeSegmentsCompanion.insert(
+                id: id,
+                scopeId: scopeId,
+                ordinal: ordinal,
+                eligibilityContextJson: eligibilityContextJson,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                activeDurationUs: activeDurationUs,
+                capturePolicyRevision: capturePolicyRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningTimeSegmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({scopeId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (scopeId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.scopeId,
+                                referencedTable:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._scopeIdTable(db),
+                                referencedColumn:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._scopeIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningTimeSegmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningTimeSegmentsTable,
+      LearningTimeSegment,
+      $$LearningTimeSegmentsTableFilterComposer,
+      $$LearningTimeSegmentsTableOrderingComposer,
+      $$LearningTimeSegmentsTableAnnotationComposer,
+      $$LearningTimeSegmentsTableCreateCompanionBuilder,
+      $$LearningTimeSegmentsTableUpdateCompanionBuilder,
+      (LearningTimeSegment, $$LearningTimeSegmentsTableReferences),
+      LearningTimeSegment,
+      PrefetchHooks Function({bool scopeId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -50148,4 +53188,13 @@ class $AppDatabaseManager {
       );
   $$AssessmentRunsTableTableManager get assessmentRuns =>
       $$AssessmentRunsTableTableManager(_db, _db.assessmentRuns);
+  $$LearningTimePreferencesTableTableManager get learningTimePreferences =>
+      $$LearningTimePreferencesTableTableManager(
+        _db,
+        _db.learningTimePreferences,
+      );
+  $$LearningTimeScopesTableTableManager get learningTimeScopes =>
+      $$LearningTimeScopesTableTableManager(_db, _db.learningTimeScopes);
+  $$LearningTimeSegmentsTableTableManager get learningTimeSegments =>
+      $$LearningTimeSegmentsTableTableManager(_db, _db.learningTimeSegments);
 }
