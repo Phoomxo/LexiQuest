@@ -37,7 +37,7 @@ void main() {
       final document =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       expect(document['ownerId'], 'source');
-      expect(document['schemaVersion'], 23);
+      expect(document['schemaVersion'], 25);
       final data = document['data'] as Map<String, dynamic>;
       final packs = (data['learning_pack_versions'] as List).cast<Map>();
       expect(packs.length, 1);

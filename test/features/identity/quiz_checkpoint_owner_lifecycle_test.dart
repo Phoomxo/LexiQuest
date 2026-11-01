@@ -72,7 +72,7 @@ void main() {
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       final rows = (document['data'] as Map)['learning_sessions'] as List;
       expect(rows, [stored['a']]);
-      expect(document['schemaVersion'], 24);
+      expect(document['schemaVersion'], 25);
       expect((document['data'] as Map)['learning_profiles'], isEmpty);
       expect((document['data'] as Map)['learning_pack_versions'], isEmpty);
       expect((document['data'] as Map)['lexical_content_snapshots'], isEmpty);

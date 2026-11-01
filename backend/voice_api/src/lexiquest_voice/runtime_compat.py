@@ -7,6 +7,7 @@ misconfigured runtime is reported before GPU work starts.
 from __future__ import annotations
 
 import importlib.metadata
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -88,6 +89,44 @@ def require_supported_runtime(
         raise RuntimeCompatibilityError(result.reason)
 
 
+def require_secure_supported_runtime(
+    *,
+    version_of: Callable[[str], str | None] = _installed_version,
+) -> None:
+    """Reject unsafe metadata before requiring the exact supported GPU pair.
+
+    No currently supported pair meets both gates. A patched version alone does
+    not approve a new Torch/Torchaudio/CUDA combination.
+    """
+    detected = {
+        package: version_of(package)
+        for package in (
+            TORCH_PACKAGE,
+            TORCHAUDIO_PACKAGE,
+            OMNIVOICE_PACKAGE,
+            "setuptools",
+        )
+    }
+    # GHSA-rrmf-rvhw-rf47; GHSA-h35f-9h28-mq5c; GHSA-xmj3-9gf7-h52w.
+    # Torch 2.11 requires setuptools<82; neither pin can be upgraded alone.
+    for package, floor in (
+        (TORCH_PACKAGE, (2, 13, 0)),
+        ("setuptools", (84, 1, 0)),
+    ):
+        value = detected[package]
+        match = re.fullmatch(
+            r"([0-9]+)\.([0-9]+)\.([0-9]+)(?:\+[A-Za-z0-9._-]+)?",
+            value or "",
+        )
+        if match is None or tuple(map(int, match.groups())) < floor:
+            raise RuntimeCompatibilityError(
+                f"GPU Voice release blocked by security policy: {package} must "
+                f"meet {'.'.join(map(str, floor))}; detected {value!r}. "
+                "No patched supported GPU runtime is currently approved."
+            )
+    require_supported_runtime(version_of=lambda package: detected[package])
+
+
 __all__ = [
     "OMNIVOICE_VERSION",
     "RuntimeCompatibility",
@@ -95,5 +134,6 @@ __all__ = [
     "TORCHAUDIO_VERSION",
     "TORCH_VERSION",
     "evaluate_runtime_compatibility",
+    "require_secure_supported_runtime",
     "require_supported_runtime",
 ]

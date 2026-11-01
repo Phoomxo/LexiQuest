@@ -144,7 +144,10 @@ void main() {
             () => tester.widget<FilledButton>(save).onPressed != null,
           );
           await tester.ensureVisible(save);
-          await tester.tap(save);
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(save);
+          await _until(tester, () => save.hitTestable().evaluate().isNotEmpty);
+          await tester.tap(save.hitTestable());
           final feedback = find.byKey(
             ValueKey(dictation ? 'dictation-feedback' : 'cloze-feedback'),
           );

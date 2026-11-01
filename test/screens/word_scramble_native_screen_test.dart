@@ -436,8 +436,7 @@ void main() {
         try {
           await _mount(tester, f, language: language, scale: 2);
           final tile = find.byKey(const ValueKey('scramble-letter-0'));
-          await tester.ensureVisible(tile);
-          await tester.pump();
+          await _reveal(tester, tile);
           expect(tile.hitTestable(), findsOneWidget);
           await tester.tap(tile.hitTestable());
           expect(tester.takeException(), isNull);
@@ -722,17 +721,21 @@ Future<void> _ready(WidgetTester tester, _Fixture f) async {
 
 Future<void> _reveal(WidgetTester tester, Finder target) async {
   if (target.evaluate().isEmpty) {
-    await tester.scrollUntilVisible(
-      target,
-      120,
-      scrollable: find.byWidgetPredicate(
-        (widget) =>
-            widget is Scrollable && widget.axisDirection == AxisDirection.down,
-      ),
-    );
-  } else {
-    await tester.ensureVisible(target);
+    final scrollable = find
+        .descendant(
+          of: find.byType(WordScrambleScreen),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          ),
+        )
+        .first;
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+    await tester.pump();
+    await tester.scrollUntilVisible(target, 120, scrollable: scrollable);
   }
+  await tester.ensureVisible(target);
   await tester.pumpAndSettle();
 }
 

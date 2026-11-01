@@ -46,7 +46,7 @@ void main() {
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       expect(decoded['ownerId'], _owner);
-      expect(decoded['schemaVersion'], 23);
+      expect(decoded['schemaVersion'], 25);
       expect(data['learning_profiles'], isEmpty);
       expect(data['learning_pack_versions'], isEmpty);
       expect(data['lexical_content_snapshots'], isEmpty);

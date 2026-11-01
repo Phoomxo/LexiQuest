@@ -89,7 +89,7 @@ void main() {
         );
         expect(await h.rows('learning_sessions'), isEmpty);
         expect(await h.oldRows(), before);
-        expect(before, hasLength(40));
+        expect(before, hasLength(42));
       },
     );
   }
@@ -759,7 +759,7 @@ final class _Harness {
   Future<Map<String, List<String>>> oldRows() async {
     final result = await base.snapshotAllTables();
     result.removeWhere((table, _) => table.startsWith('learning_time_'));
-    expect(result, hasLength(40));
+    expect(result, hasLength(42));
     return result;
   }
 

@@ -23,6 +23,8 @@ import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 import '../../support/saved_word_owner_fixture.dart';
 import '../../support/word_report_owner_fixture.dart';
+import '../content_reports/content_report_test_support.dart'
+    show syntheticReport;
 
 void main() {
   late AppDatabase database;
@@ -324,6 +326,21 @@ void main() {
                 .getSingle())
             .data;
 
+    final sourceContentReportBefore =
+        (await database
+                .customSelect(
+                  "SELECT * FROM content_reports WHERE owner_id = 'guest-owner'",
+                )
+                .getSingle())
+            .data;
+    final targetReminderBefore =
+        (await database
+                .customSelect(
+                  "SELECT * FROM study_reminder_preferences WHERE owner_id = 'account-owner'",
+                )
+                .getSingle())
+            .data;
+
     final result = await repository.upgrade(
       activeOwnerId: 'guest-owner',
       firebaseUid: 'firebase-user',
@@ -365,6 +382,28 @@ void main() {
       targetTimePreferenceBefore,
     );
     expect(targetTimePreferenceBefore['enabled'], 0);
+    expect(
+      (await database
+              .customSelect(
+                'SELECT * FROM content_reports WHERE id = ?',
+                variables: [
+                  Variable<String>(sourceContentReportBefore['id'] as String),
+                ],
+              )
+              .getSingle())
+          .data,
+      {...sourceContentReportBefore, 'owner_id': 'account-owner'},
+    );
+    expect(
+      (await database
+              .customSelect(
+                "SELECT * FROM study_reminder_preferences WHERE owner_id = 'account-owner'",
+              )
+              .getSingle())
+          .data,
+      targetReminderBefore,
+    );
+    expect(targetReminderBefore['enabled'], 0);
     final signedAfter = await database
         .customSelect(
           'SELECT * FROM research_participation_permits WHERE owner_id = ?',
@@ -966,6 +1005,39 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   );
   await insertOwnerSavedWord(database, 'guest-owner', wordId: 'word-1');
   await insertOwnerWordReport(database, 'guest-owner', wordId: 'word-1');
+  final contentReport = syntheticReport(
+    id: 'content-report:synthetic-owner-upgrade-seed',
+  );
+  await database
+      .into(database.contentReports)
+      .insert(
+        ContentReportsCompanion.insert(
+          id: contentReport.reportId,
+          ownerId: 'guest-owner',
+          reportJson: contentReport.reportJson,
+          reportSha256: contentReport.reportSha256,
+          queuedAtUtcMs: contentReport.queuedAtUtc.millisecondsSinceEpoch,
+        ),
+      );
+  await database.customStatement(
+    'INSERT INTO study_reminder_preferences '
+    '(owner_id,enabled,minute_of_day,timezone_id,revision,updated_at_utc_ms) '
+    'VALUES (?,?,?,?,?,?),(?,?,?,?,?,?)',
+    [
+      'guest-owner',
+      1,
+      19 * 60,
+      'UTC',
+      1,
+      20,
+      'account-owner',
+      0,
+      7 * 60,
+      'UTC',
+      4,
+      10,
+    ],
+  );
   await database.customStatement(
     'INSERT INTO learning_time_preferences '
     '(owner_id,enabled,revision,updated_at_utc_ms) VALUES (?,?,?,?),(?,?,?,?)',

@@ -207,7 +207,7 @@ void main() {
     'real personal time reader preserves all19 stored fields and isolates two owners',
     () async {
       final expected = await _seedPersonalTimeExportPair(database);
-      expect(database.schemaVersion, 23);
+      expect(database.schemaVersion, 25);
       expect(database.allTables, hasLength(45));
       final before = await _personalTimeExportSnapshot(database);
       final data = await DriftExportReader(database).load(

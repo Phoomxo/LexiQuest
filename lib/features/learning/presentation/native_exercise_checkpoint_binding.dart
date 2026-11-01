@@ -19,6 +19,7 @@ final class NativeExerciseCheckpointBinding {
   NativeExerciseDraft? _pendingDraft;
   NativeExerciseState? _answerBase;
   NativeAnswerInput? _pendingInput;
+  bool _ordinaryPrepared = false;
   NativeExerciseState? _finishBase;
   RecordAnswerCommand? answer;
   NativeFinishIntent? finishIntent;
@@ -129,16 +130,17 @@ final class NativeExerciseCheckpointBinding {
     _requireCurrent();
     _answerBase ??=
         state ?? (throw StateError('Native start is not acknowledged'));
-    if (_pendingInput == null &&
-        _answerBase!.checkpoint is AwaitingNativeAnswer) {
+    _pendingInput ??= _input(exercise, draft ?? state!.checkpoint.draft);
+    learning.captureNativeSubmission(_pendingInput!);
+    if (!_ordinaryPrepared && _answerBase!.checkpoint is AwaitingNativeAnswer) {
       await learning.prepareOrdinaryAnswer(
         expectedOwnerId: exercise.ownerId,
         sessionId: exercise.id,
         stillCurrent: () => _current,
       );
       _requireCurrent();
+      _ordinaryPrepared = true;
     }
-    _pendingInput ??= _input(exercise, draft ?? state!.checkpoint.draft);
     final staged = _adopt(
       await learning.stageNativeAnswer(
         state: _answerBase!,
@@ -165,6 +167,7 @@ final class NativeExerciseCheckpointBinding {
     );
     _answerBase = null;
     _pendingInput = null;
+    _ordinaryPrepared = false;
     return saved;
   }
 

@@ -14,6 +14,7 @@ import 'package:vocab_learning_app/screens/pre_post_assessment_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 
 import '../../support/assessment_study_harness.dart';
+import '../../support/motivation_presentation_io.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -144,7 +145,7 @@ void main() {
           'actual canonical Quiz route',
         );
         final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
-        final result = (await tester.runAsync(() async {
+        final result = await motivationPresentationIo(tester, () async {
           final study = f.authorities.study;
           final active = await study.runtime.resumeIndex(study.ownerId);
           f.authorities.advance(const Duration(minutes: 2));
@@ -155,7 +156,7 @@ void main() {
             expectedOwnerId: study.ownerId,
             expectedRevision: completed.checkpointRevision,
           );
-        }))!;
+        }, stage: 'study-host/canonical/finish-and-post');
         final before = (await tester.runAsync(
           () => f.authorities.study.rows('outbox_operations'),
         ))!;

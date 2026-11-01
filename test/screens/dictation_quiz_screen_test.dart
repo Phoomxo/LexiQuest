@@ -570,7 +570,12 @@ void main() {
               .onPressed,
           isNotNull,
         );
-        await tester.tap(find.byKey(const ValueKey('dictation-finish')));
+        final finish = find.byKey(const ValueKey('dictation-finish'));
+        await tester.ensureVisible(finish);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(finish);
+        await _until(tester, () => finish.hitTestable().evaluate().isNotEmpty);
+        await tester.tap(finish.hitTestable());
         await _until(tester, () => f.summary != null);
         expect(tester.takeException(), isNull);
       } finally {
@@ -930,8 +935,12 @@ Future<void> _save(WidgetTester tester, String response) async {
     response,
   );
   await tester.pump();
-  await tester.ensureVisible(find.byKey(const ValueKey('dictation-save')));
-  await tester.tap(find.byKey(const ValueKey('dictation-save')));
+  final save = find.byKey(const ValueKey('dictation-save'));
+  await tester.ensureVisible(save);
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(save);
+  await _until(tester, () => save.hitTestable().evaluate().isNotEmpty);
+  await tester.tap(save.hitTestable());
   await tester.pump();
 }
 

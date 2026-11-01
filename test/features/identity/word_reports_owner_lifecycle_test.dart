@@ -303,7 +303,7 @@ void main() {
   );
 
   test(
-    'reports change only their ownership; every other42 tables match an otherwise identical merge',
+    'reports change only their ownership; every other44 tables match an otherwise identical merge',
     () async {
       final control = await _Fixture.open();
       final reported = await _Fixture.open();
@@ -318,7 +318,7 @@ void main() {
         ..remove('word_reports');
       final actual = await reported.snapshot()
         ..remove('word_reports');
-      expect(actual, hasLength(42));
+      expect(actual, hasLength(44));
       expect(actual, expected);
     },
   );

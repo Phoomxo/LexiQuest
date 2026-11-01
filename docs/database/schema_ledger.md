@@ -793,7 +793,7 @@ acquisition or learning-day credit. Root owns schema and shared lifecycle edits.
 ### v25 — Local content-report queue and opt-in reminder preference
 
 **Reserved:** 2026-11-01. **Branch:** `codex/remaining-system-readiness`.
-**Status:** reserved for implementation; current-source release gates pending.
+**Status:** implemented locally; current-source release gates pending.
 
 Add `content_reports` and `study_reminder_preferences`:45 tables, unchanged
 8/44 feature catalog. Reports pin immutable original payload/digest/time, durable

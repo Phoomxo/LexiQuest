@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/screens/review_center_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/review_center_harness.dart';
+import '../support/motivation_presentation_io.dart';
 
 void main() {
   setUpAll(() async {
@@ -100,7 +101,14 @@ void main() {
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 400));
           expect(find.byType(ReviewCenterScreen), findsNothing);
-          expect(await tester.runAsync(h.snapshotAllTables), before);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              h.snapshotAllTables,
+              stage: 'review-entry/snapshot/after-retained-aba',
+            ),
+            before,
+          );
 
           final target = find
               .byKey(const ValueKey('review-center-entry'))
@@ -133,7 +141,14 @@ void main() {
           expect(hub.wordReports, same(h.wordReports));
           expect(hub.languageCode, 'en');
           expect(find.text('Review Center'), findsOneWidget);
-          expect(await tester.runAsync(h.snapshotAllTables), before);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              h.snapshotAllTables,
+              stage: 'review-entry/snapshot/actual-hub',
+            ),
+            before,
+          );
           await tester.tap(find.byType(BackButton).hitTestable());
           await _until(
             tester,
@@ -144,7 +159,14 @@ void main() {
           retained();
           await tester.pump();
           expect(find.byType(ReviewCenterScreen), findsNothing);
-          expect(await tester.runAsync(h.snapshotAllTables), before);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              h.snapshotAllTables,
+              stage: 'review-entry/snapshot/after-retained-return',
+            ),
+            before,
+          );
           expect(tester.takeException(), isNull);
         } finally {
           await tester.pumpWidget(const SizedBox.shrink());

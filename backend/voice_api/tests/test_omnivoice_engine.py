@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -173,4 +174,50 @@ def test_engine_runs_guard_before_loader_and_fails_closed() -> None:
         engine.load()
 
     assert calls == ["guard"]
+    assert engine.is_ready is False
+
+
+@pytest.mark.parametrize("operation", ["load", "synthesize"])
+def test_default_engine_blocks_vulnerable_supported_runtime_before_model_work(
+    monkeypatch: pytest.MonkeyPatch, operation: str
+) -> None:
+    versions = {
+        "torch": "2.11.0+cu128",
+        "torchaudio": "2.11.0+cu128",
+        "omnivoice": "0.2.1",
+        "setuptools": "81.0.0",
+    }
+    monkeypatch.setattr(
+        "lexiquest_voice.runtime_compat.importlib.metadata.version",
+        versions.__getitem__,
+    )
+    original_import = builtins.__import__
+
+    def checked_import(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name.partition(".")[0] in {
+            "torch", "torchaudio", "omnivoice", "huggingface_hub"
+        }:
+            pytest.fail(f"Security rejection attempted a heavy import: {name}")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", checked_import)
+    calls: list[str] = []
+
+    def loader(settings: Settings) -> FakeModel:
+        calls.append("loader")
+        return FakeModel()
+
+    def writer(buffer: BytesIO, audio: object, sample_rate: int) -> None:
+        calls.append("writer")
+
+    engine = OmniVoiceEngine(
+        settings=Settings(), model_loader=loader, wav_writer=writer
+    )
+    with pytest.raises(RuntimeCompatibilityError, match="security"):
+        if operation == "load":
+            engine.load()
+        else:
+            engine.synthesize(_request())
+
+    assert calls == []
     assert engine.is_ready is False

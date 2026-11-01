@@ -364,3 +364,93 @@ applied by the Dart fixer, with explicit mounted/API corrections under review.
 The result-screen golden was inspected against the actual image: shared M3 Thai
 title spacing changes, with all content/actions visible and no overflow. Only its
 named golden was regenerated through the normal Flutter golden command.
+
+## Full integration run in progress
+
+Source checkpoint `b544a8de7daa414ec780c057551780c1cb8f6087` contains the
+remaining local implementation. Exact manifest `wave26-verification/source-before.json`
+records1331 inputs/1001 Dart files. Analysis now0 (`wave26-analysis-final.log`),
+staged Gitleaks finds no leaks, CLI23/23 and current CPU backends458+64+140 pass.
+Firestore emulator56/56 remains accepted for unchanged rules/backend source.
+This is an integration checkpoint, not full acceptance or deployment permission.
+
+Today Hub's actual six cases pass, including ChooseMode -> History -> the original
+Quiz with all45 tables unchanged, no owner, sticky SQL A-B-A, deletion fence and
+actual Study-linked session exclusion. The shared Progress reader now checks the
+real read-only deletion intent before/after reads and observes owner/runtimeFlags;
+History excludes actual Assessment/measurement relations in sessions/day counts.
+The local read uses a static loading status, avoiding continuous motion while
+waiting for disk. The combined Today/Progress/History/Chooser gate passes151/151.
+
+Actual native cold-restart34 and complete report74 pass. The prior combined
+native/Chooser run was stopped after an identity-checked synthetic isolate stopped
+progressing; no files were removed. Isolated tracing and all34 then completed every
+assertion and cleanup with no pending operation; no speculative future change was
+made. Chooser now distinguishes preparing a native exercise from an actual owned
+exercise/results route. External covers during generation reject; the typed fixture
+waits for enabled Finish and centers it after acknowledgement before the real tap.
+
+First full regression is still running. It exposes remaining old live schema/table
+expectations and a real Motivation archive read whitelist ending at24 although the
+writer records25. Preserve this failed run; fix the affected current schema fixtures
+and archive boundary after its frozen snapshot finishes. Do not weaken historical
+fixture counts, research pins, owner checks or export/deletion assertions.
+
+The explicit five-lockfile OSV run reports six vulnerable package instances
+(five unique packages). Read-only compatibility/exposure triage is in progress;
+no dependency or runtime has been changed during the frozen regression. No final
+production-readiness claim follows from the current source checkpoint.
+
+## Corrections after the first full snapshot
+
+The first full run is explicitly incomplete: observed5438PASS/50FAIL, no terminal
+summary. `first-full-incomplete-result.json` preserves the log/hash and successful
+before/after1331-input verification. Several failures were real10-minute widget
+timeouts followed by reentrant runAsync errors. Root stopped only the verified
+synthetic driver83700 and children80244/85836/85356/83960; no files were removed.
+This is not a passing full regression and does not certify unexecuted cases.
+
+Closed current-schema corrections preserve every original field/owner/purity
+assertion: six export metadata expectations now25; non-report inventory44; current
+non-time inventory42. The owner merge fixture now seeds both new tables, checks
+exact report facts and preserves the target's own disabled reminder preference.
+Historical fixture counts remain unchanged. The schema policy test requires
+migrations24/25 and still rejects an unreserved26.
+
+Two confirmed product defects are corrected:
+
+- The Motivation historical archive allowlist includes25 while rejecting below-
+  supported and unknown/future versions. The existing future-negative fixture uses
+  `database.schemaVersion + 1`; all signature, owner and operation checks stay.
+  The valid archive positive passes; the larger export/identity/archive gate passes
+ 186 with two remaining live non-time cardinality expectations subsequently fixed.
+- Native submission captures immutable input/time before the first async boundary,
+  without minting an ID before ordinary preparation succeeds. Actual stored receipts
+  win and retries retain the original occurrence/latency/ID. Two genuine four-second
+  timestamp RED cases become green with all eight existing stage cases (10/10).
+  Existing UI checks, including the original Dictation timestamp/IME assertion,
+  pass in the corrected66-case UI bracket.
+
+Three former widget timeouts were reproduced with bounded stage probes. Only
+mounted fixture SQL waits blocked: Study manual finish/post, Review Center's
+post-owner-change snapshot, and scratchpad next-session preparation. The existing
+pump-driven IO helper lets pending FakeAsync UI reads finish while real SQLite
+work completes. Identical business assertions pass1/1 in4s,2s,3s respectively;
+temporary traces are being removed before the full current-source gate. No
+production guard or assertion was relaxed to fix these test drivers.
+
+Security correction: both AI/Voice locks change only pyasn1 to0.6.5. Root selectively
+installed that one patched package into both existing CPU environments with no
+dependencies/builds/GPU downloads and verified0.6.5 in each. Fresh installed-runtime
+checks pass AI458 and Voice76. The default GPU engine now checks metadata security
+floors before heavy imports/loading, then retains its original exact compatibility
+guard. Genuine default-engine RED2 precedes the fix; bounded independent review
+accepts the six source/lock files. No available approved paired GPU runtime meets
+both guards, so GPU Voice rollout remains explicitly blocked; native/device TTS
+is unchanged. Npm/tooling and GPU dependency alerts remain under the documented
+release boundary, not silently suppressed.
+
+Next executable step: clean the three test-only traces, run their full bracket and
+the final time/export expectations, freeze all writers, then current-source analysis,
+full regression, allowed policy/audit checks and normal APK build/independent
+artifact attestation. Readiness promotion and final completion remain pending.

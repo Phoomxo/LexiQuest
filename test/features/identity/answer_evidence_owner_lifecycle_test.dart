@@ -42,7 +42,7 @@ void main() {
       final data = document['data'] as Map<String, dynamic>;
       final attempt =
           (data['answer_attempts'] as List).single as Map<String, dynamic>;
-      expect(document['schemaVersion'], 23);
+      expect(document['schemaVersion'], 25);
       expect(data['learning_profiles'], isEmpty);
       expect(data['learning_pack_versions'], isEmpty);
       expect(data['lexical_content_snapshots'], isEmpty);

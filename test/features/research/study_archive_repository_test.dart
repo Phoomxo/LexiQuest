@@ -392,7 +392,7 @@ void main() {
         original['database_schema_version'],
       );
       expect(await _allRows(database), before);
-      for (final schema in [13, 25, 999]) {
+      for (final schema in [13, database.schemaVersion + 1, 999]) {
         await database.customStatement(
           'UPDATE motivation_measurement_runs SET database_schema_version = ? WHERE id = ?',
           [schema, original['id']],

@@ -7,7 +7,7 @@ from typing import Any
 
 from lexiquest_voice.config import Settings
 from lexiquest_voice.models import AudioResult, SpeechRequest
-from lexiquest_voice.runtime_compat import require_supported_runtime
+from lexiquest_voice.runtime_compat import require_secure_supported_runtime
 
 ModelLoader = Callable[[Settings], Any]
 RuntimeGuard = Callable[[], None]
@@ -28,7 +28,7 @@ class OmniVoiceEngine:
         self._settings = settings
         self._model_loader = model_loader or _load_model
         self._wav_writer = wav_writer or _write_wav
-        self._runtime_guard = runtime_guard or require_supported_runtime
+        self._runtime_guard = runtime_guard or require_secure_supported_runtime
         self._model: Any | None = None
         self._load_lock = Lock()
         self._generation_lock = Lock()

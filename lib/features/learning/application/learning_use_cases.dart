@@ -67,6 +67,8 @@ final class LearningUseCases {
   final OrdinaryAnswerPreparation? beforeOrdinaryAnswer;
   final LearningMutationNotifier? onLocalMutation;
   final Expando<bool> _finishedNativeNotifications = Expando<bool>();
+  final Expando<_NativeSubmissionCapture> _nativeSubmissions =
+      Expando<_NativeSubmissionCapture>();
 
   Future<void> prepareOrdinaryAnswer({
     required String expectedOwnerId,
@@ -699,6 +701,26 @@ final class LearningUseCases {
     stillCurrent: stillCurrent,
   );
 
+  /// Samples this submission without creating an answer identity or any facts.
+  void captureNativeSubmission(NativeAnswerInput input) {
+    _captureNativeSubmission(input);
+  }
+
+  _NativeSubmissionCapture _captureNativeSubmission(NativeAnswerInput input) {
+    final draft = NativeExerciseDraft.fromInput(input);
+    final captured = _nativeSubmissions[input];
+    if (captured != null) {
+      if (jsonEncode(captured.draft.toJson()) != jsonEncode(draft.toJson())) {
+        throw StateError('The original native submission changed');
+      }
+      return captured;
+    }
+    return _nativeSubmissions[input] = _NativeSubmissionCapture(
+      draft,
+      _nativeNow,
+    );
+  }
+
   Future<NativeExerciseState> stageNativeAnswer({
     required NativeExerciseState state,
     required NativeAnswerInput input,
@@ -707,18 +729,27 @@ final class LearningUseCases {
     if (!identical(state.exercise, input.exercise)) {
       throw StateError('Native response has a different issued exercise');
     }
+    _requireCurrentNativeExercise(stillCurrent);
+    final captured = _captureNativeSubmission(input);
     final current = await readNativeExerciseState(
       state.exercise,
       stillCurrent: stillCurrent,
     );
-    final submission = NativeExerciseDraft.fromInput(input);
+    _requireCurrentNativeExercise(stillCurrent);
+    final submission = captured.draft;
     final stored = current.checkpoint.answer;
     if (stored != null &&
         jsonEncode(current.checkpoint.draft.toJson()) !=
             jsonEncode(submission.toJson())) {
       throw StateError('Native staged response identity changed');
     }
-    final command = stored ?? prepareNativeAnswer(input);
+    final command =
+        stored ??
+        (captured.command ??= _prepareNativeAnswer(
+          input,
+          captured.requireTime(),
+          submission,
+        ));
     return _nativeExercises.saveNativeCheckpoint(
       state,
       PendingNativeAnswer(command.nativeDraft!, command),
@@ -769,8 +800,19 @@ final class LearningUseCases {
   }
 
   RecordAnswerCommand prepareNativeAnswer(NativeAnswerInput input) {
+    return _prepareNativeAnswer(
+      input,
+      _nativeNow(),
+      NativeExerciseDraft.fromInput(input),
+    );
+  }
+
+  RecordAnswerCommand _prepareNativeAnswer(
+    NativeAnswerInput input,
+    DateTime occurredAt,
+    NativeExerciseDraft draft,
+  ) {
     final exercise = input.exercise;
-    final occurredAt = _nativeNow();
     if (occurredAt.isBefore(exercise.startedAtUtc)) {
       throw StateError('Dictation clock precedes its original start');
     }
@@ -812,12 +854,10 @@ final class LearningUseCases {
       wordId: exercise.word.id,
       promptMode: promptMode,
       isCorrect: isCorrect,
-      responseTimeMs: input.responseTime.inMilliseconds
-          .clamp(0, LearningEvidenceContract.maxResponseTimeMs)
-          .toInt(),
+      responseTimeMs: draft.responseTimeMs,
       attemptNumber: 1,
       occurredAtUtc: occurredAt,
-      nativeDraft: NativeExerciseDraft.fromInput(input),
+      nativeDraft: draft,
       providerProvenance: switch (exercise) {
         DictationSession() => null,
         WordScrambleSession() => null,
@@ -1997,6 +2037,30 @@ final class LearningUseCases {
 
   String? _optionalId(String? value, String field) {
     return value == null ? null : _requiredId(value, field);
+  }
+}
+
+final class _NativeSubmissionCapture {
+  _NativeSubmissionCapture(this.draft, DateTime Function() now) {
+    try {
+      _time = now();
+    } catch (error, stack) {
+      _clockError = error;
+      _clockStack = stack;
+    }
+  }
+
+  final NativeExerciseDraft draft;
+  DateTime? _time;
+  Object? _clockError;
+  StackTrace? _clockStack;
+  RecordAnswerCommand? command;
+
+  DateTime requireTime() {
+    final value = _time;
+    if (value != null) return value;
+    // A durable exact receipt wins even when a new clock sample is unavailable.
+    Error.throwWithStackTrace(_clockError!, _clockStack!);
   }
 }
 

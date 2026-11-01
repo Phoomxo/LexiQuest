@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/widgets/handwriting_scratchpad.dart';
 
 import '../support/cloze_session_harness.dart';
+import '../support/motivation_presentation_io.dart';
 
 const _toggle = ValueKey('scratchpad-toggle');
 const _canvas = ValueKey('scratchpad-canvas');
@@ -290,12 +291,14 @@ void main() {
         await _tap(tester, _finish);
         await _until(tester, () => f.summary != null);
         await tester.pumpAndSettle();
-        f.session = (await tester.runAsync<ClozeSession?>(
+        f.session = (await motivationPresentationIo(
+          tester,
           () => f.learning.prepareCloze(
             categoryId: configuredCategoryId,
             variant: ClozeVariant.typed,
             stillCurrent: () => true,
           ),
+          stage: 'scratchpad/accepted/prepare-next-session',
         ))!;
         await _open(tester, f);
         await _reveal(tester, find.byKey(_toggle));

@@ -86,7 +86,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('historical synthetic note'), findsWidgets);
-      expect(find.textContaining('ยังไม่ได้ส่ง'), findsWidgets);
+      expect(find.textContaining('รายละเอียดที่บันทึกในเครื่อง'), findsWidgets);
+      expect(find.textContaining('ตรวจใบรับเรื่องและสถานะ'), findsWidgets);
       h.changeOwner(null);
       await tester.pumpAndSettle();
       expect(find.text('station', skipOffstage: false), findsNothing);

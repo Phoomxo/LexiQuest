@@ -108,8 +108,22 @@ Future<void> revealPackUi(WidgetTester tester, String key) async {
     }
   }
   expect(finder, findsOneWidget, reason: 'Action $key must remain reachable');
-  await tester.ensureVisible(finder);
-  await untilPackUi(tester, () => finder.hitTestable().evaluate().isNotEmpty);
+  for (var frame = 0; frame < 150; frame++) {
+    await tester.ensureVisible(finder);
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    if (finder.hitTestable().evaluate().isNotEmpty) {
+      return;
+    }
+  }
+  expect(
+    finder.hitTestable(),
+    findsOneWidget,
+    reason:
+        'Action $key must remain reachable after asynchronous content loads',
+  );
 }
 
 Future<void> untilPackUi(WidgetTester tester, bool Function() ready) async {
