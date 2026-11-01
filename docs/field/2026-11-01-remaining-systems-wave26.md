@@ -454,3 +454,46 @@ Next executable step: clean the three test-only traces, run their full bracket a
 the final time/export expectations, freeze all writers, then current-source analysis,
 full regression, allowed policy/audit checks and normal APK build/independent
 artifact attestation. Readiness promotion and final completion remain pending.
+
+## Final source corrections and release boundary
+
+The preceding next-step paragraph is historical. All temporary traces are removed;
+the former-timeout/time/export bracket passes80/80, historical migrations63/63,
+all learning961/961 and current source analysis0. The unchanged Cloze validation
+test exposed a public exception-order regression in the second full run
+(1484PASS/1FAIL); the fix preserves ArgumentError, original capture and ID ordering.
+That run and its unchanged-input receipt remain under `wave26-verification/recheck`.
+
+At `fdf667ce`, the next full run terminates4692PASS/1FAIL with all1333 frozen
+inputs/1002 Dart files unchanged. Its Quiz large-Thai-text golden differs because
+the common lesson title and spacing changed. Root inspected both actual images:
+all content and the result action remain visible without overflow. Only that
+named golden was regenerated with the normal Flutter command. Preserve the failed
+receipt and actual diff under `wave26-verification/final`; it is not a passing run.
+
+The complete98-file screen bracket then terminates1060PASS/3FAIL in9m47s.
+Independent source review identifies exactly three stale test expectations:
+Sentence Scramble now explains acknowledged History drafts and unsaved changes;
+the two SRS tile checks run before scrolling to the lazy tile after the new Today
+and recall panels. Test-only corrections retain the real Leave tap, saved answer,
+active/non-finished session, original SRS deck and retained owner-ABA rejection.
+Review Center now checks the actual immutable receipt and absence of misleading
+blanket not-sent copy. Root reviews the minimal diff; the four complete affected
+files, including Quiz, pass104/104 in22s. No production guard is weakened.
+
+Npm closure at `fdf667ce` uses a scoped google-gax parent override while retaining
+the original API and v1beta1. It removes the glob/minimatch/rimraf chain. Ten
+actual no-network consumer compatibility cases pass; the unchanged Firestore
+emulator plus these cases pass66/66 without skips, and CLI23/23 passes. Fresh
+CPU backend checks are AI458, Voice76 and LM140; no GPU inference or live-service
+test is implied. Current OSV still exits1 for two GPU package findings. The
+default engine refuses that affected stack before model loading; an approved
+patched, compatible paired runtime is a release dependency, not a waived alert.
+
+All repository writers are frozen. Next: current-source analysis, a new preserved
+full-suite receipt under `wave26-verification/final-recheck`, then the normal
+main/debug APK and independent actual-artifact attestation on the same inputs.
+The matrix remains24Connected/14Partial/6Missing until these gates accept.
+Merchant/RTDN/live purchase, trusted Research authority/real enrollment or upload,
+physical Android alarm/share/audio/accessibility UAT and release signing remain
+external. Billing and Research stay default-off; no deployment is authorized.

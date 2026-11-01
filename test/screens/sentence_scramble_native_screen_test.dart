@@ -497,7 +497,7 @@ void main() {
   );
 
   testWidgets(
-    'saved system Back warns about retained answers and no resume then leaves without finishing',
+    'saved system Back explains History continuation and unsaved changes then leaves without finishing',
     (tester) async {
       final f = await SentenceScrambleUiFixture.open(tester);
       try {
@@ -509,12 +509,14 @@ void main() {
         await tester.pumpAndSettle();
         final dialog = find.byType(AlertDialog);
         expect(
-          find.descendant(of: dialog, matching: _textContaining('saved')),
-          findsWidgets,
-        );
-        expect(
-          find.descendant(of: dialog, matching: _textContaining('resume')),
-          findsWidgets,
+          find.descendant(
+            of: dialog,
+            matching: find.text(
+              'Continue acknowledged drafts from History. '
+              'Unsaved changes will not be kept.',
+            ),
+          ),
+          findsOneWidget,
         );
         await sentenceTap(tester, const ValueKey('sentence-back-leave'));
         await tester.pumpAndSettle();
@@ -1008,11 +1010,6 @@ Future<void> _invalidate(
   tester.binding.scheduleForcedFrame();
   await tester.pump();
 }
-
-Finder _textContaining(String value) => find.byWidgetPredicate(
-  (widget) =>
-      widget is Text && (widget.data ?? '').toLowerCase().contains(value),
-);
 
 final class _NativeAdapter implements NativeTtsAdapter {
   final spoken = <String>[];

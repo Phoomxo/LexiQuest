@@ -71,14 +71,18 @@ void main() {
           tester,
           find.descendant(
             of: details,
-            matching: find.text('Saved on this device. Not sent.'),
+            matching: find.text('Receipt: ${report.id}'),
           ),
         );
         expect(
           tester.widget<WordReportDetails>(details).report.sameFacts(report),
           isTrue,
         );
-        expect(find.textContaining('Not sent.'), findsWidgets);
+        expect(
+          tester.widget<WordReportDetails>(details).showLocalOnlyNotice,
+          isFalse,
+        );
+        expect(find.textContaining('Not sent.'), findsNothing);
       }
       h.now = h.now.add(const Duration(minutes: 1));
       await _tap(tester, 'review-center-refresh');

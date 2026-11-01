@@ -188,9 +188,9 @@ void main() {
         expect(_entryEnabled(tester, entry), isFalse);
         owners.add(configuredOwnerId);
         await tester.pumpAndSettle();
-        expect(_entryEnabled(tester, entry), isTrue);
         final action = _action(entry);
         await _reveal(tester, action);
+        expect(_entryEnabled(tester, entry), isTrue);
         final VoidCallback retained;
         if (entry == 'tile') {
           retained = tester
@@ -376,6 +376,9 @@ Future<void> _pumpEntry(
   } else {
     // The supplied owner stream is deliberately silent until its caller emits.
     await tester.pump();
+  }
+  if (entry == 'tile') {
+    await _reveal(tester, _action(entry));
   }
   if (owners == null &&
       ['tile', 'recommendation', 'weakness'].contains(entry)) {
