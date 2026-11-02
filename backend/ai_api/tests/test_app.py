@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from lexiquest_ai.app import RequestBodyLimitMiddleware, create_app
 from lexiquest_ai.config import Settings
 from lexiquest_ai.auth import AuthenticatedUser
+from research_support import Harness as ResearchFixture
 
 from conftest import (
     FailingContentService,
@@ -288,6 +289,64 @@ def test_body_limit_stops_receiving_before_auth_or_json_parsing() -> None:
 def test_health_endpoints(client: TestClient) -> None:
     assert client.get("/health/live").json() == {"status": "live"}
     assert client.get("/health/ready").json() == {"status": "ready"}
+
+
+def test_ready_fails_closed_when_research_is_enabled_without_service(
+    token_verifier: FakeTokenVerifier,
+) -> None:
+    research = ResearchFixture()
+    client = TestClient(create_app(
+        content_service=FakeContentService(),
+        token_verifier=token_verifier,
+        settings=research.settings(),
+    ))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "RESEARCH_AUTHORITY_UNAVAILABLE"
+    assert client.get("/health/live").status_code == 200
+    ordinary = client.post("/v1/content", json={"text": "synthetic", **_CONTENT_BODY},
+                           headers={"Authorization": "Bearer valid-token"})
+    assert ordinary.status_code == 200
+    assert research.documents.writes == 0
+
+
+@pytest.mark.parametrize("research_enabled", [False, True])
+def test_ready_accepts_disabled_or_composed_research_without_collecting_data(
+    token_verifier: FakeTokenVerifier,
+    research_enabled: bool,
+) -> None:
+    research = ResearchFixture()
+    content = FakeContentService()
+    client = TestClient(create_app(
+        content_service=content,
+        token_verifier=token_verifier,
+        settings=research.settings() if research_enabled else Settings(_env_file=None),
+        research_service=research.service if research_enabled else None,
+    ))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+    assert research.documents.writes == 0
+    assert content.calls == []
+
+
+def test_ready_reports_provider_failure_before_missing_research_service(
+    token_verifier: FakeTokenVerifier,
+) -> None:
+    client = TestClient(create_app(
+        content_service=UnavailableContentService(),
+        token_verifier=token_verifier,
+        settings=ResearchFixture().settings(),
+    ))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "PROVIDER_UNAVAILABLE"
 
 
 def test_content_rejects_missing_token(client: TestClient) -> None:

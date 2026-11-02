@@ -27,6 +27,15 @@ function Assert-SmokeContainer {
     }
 }
 
+function Assert-NoContainerMounts {
+    param($Container)
+    $mounts = $Container.PSObject.Properties['Mounts']
+    if ($null -ne $mounts -and $null -ne $mounts.Value -and
+        @($mounts.Value).Count -ne 0) {
+        throw 'Container mounts are refused.'
+    }
+}
+
 if ($SelfTest) {
     Assert-LocalDockerEndpoint 'npipe:////./pipe/dockerDesktopLinuxEngine'
     Assert-LocalDockerEndpoint 'unix:///var/run/docker.sock'
@@ -52,6 +61,23 @@ if ($SelfTest) {
             Assert-SmokeContainer $fixture $invalid[0] $invalid[1] $invalid[2]
         } catch { $rejected = $true }
         if (-not $rejected) { throw 'Foreign container rejection failed.' }
+    }
+    foreach ($empty in @(
+        [pscustomobject]@{},
+        [pscustomobject]@{Mounts = $null},
+        [pscustomobject]@{Mounts = @()}
+    )) {
+        Assert-NoContainerMounts $empty
+    }
+    foreach ($mount in @(
+        [pscustomobject]@{Type = 'bind'; Source = '/synthetic/host'},
+        [pscustomobject]@{Type = 'volume'; Name = 'synthetic'},
+        'malformed'
+    )) {
+        $rejected = $false
+        try { Assert-NoContainerMounts ([pscustomobject]@{Mounts = @($mount)}) }
+        catch { $rejected = $true }
+        if (-not $rejected) { throw 'Container mount rejection failed.' }
     }
     Write-Output 'AI container self-checks passed. Docker was not called.'
     return
@@ -212,11 +238,12 @@ try {
     $containerId = Invoke-SmokeDocker ($createArgs + @([string]$imageInfo.Id))
     $container = @(Invoke-SmokeDocker ($contextArgs + @('container', 'inspect', $containerId)) | ConvertFrom-Json)[0]
     Assert-SmokeContainer $container $containerName $runId $imageInfo.Id
+    Assert-NoContainerMounts $container
     $portBindings = $container.HostConfig.PSObject.Properties['PortBindings']
     if ($container.Config.User -cne '65532:65532' -or
         -not $container.HostConfig.ReadonlyRootfs -or
         $container.HostConfig.NetworkMode -cne 'none' -or
-        $container.HostConfig.Privileged -or @($container.Mounts).Count -ne 0 -or
+        $container.HostConfig.Privileged -or
         ($null -ne $portBindings -and $null -ne $portBindings.Value -and
             @($portBindings.Value.PSObject.Properties).Count -ne 0) -or
         @($container.HostConfig.Tmpfs.PSObject.Properties.Name) -cne '/tmp') {

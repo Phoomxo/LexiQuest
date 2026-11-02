@@ -5,6 +5,11 @@ connected-trial operation and commercial release acceptance remain incomplete.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
 
+Latest local backend closure, engineering30: full AI522PASS and Cloud tools222PASS;
+the new CPU image/source/lock and isolated HTTP smoke are verified below. The
+application, assets and Flutter tests still match accepted `a2c95e12`. No new
+full Flutter run, Android build, provider call or Cloud deployment is claimed.
+
 ## Latest user direction and acceptance gaps
 
 The satisfaction-evaluation artifact must unlock all features without a paid
@@ -37,10 +42,68 @@ continuation rejection. The reader supports the pinned observed snapshot layout;
 unsupported or ambiguous future layouts fail closed and need new fixtures.
 Actual three retained archives pass exact identity checks on both runtimes with
 unchanged hashes. These are old artifacts, not fresh application acceptance.
-Root's actual full AI
-backend suite passes463 tests, including authenticated content with both billing
+The earlier full AI
+backend suite passed463 tests, including authenticated content with both billing
 flags disabled and no billing ledger or Play calls. This synthetic test does not
 prove a configured provider is available.
+
+## Latest local backend closure, engineering30
+
+The owner's completion request continues under the existing ADLC authority.
+Bounded source reviews found no new proven Dart implementation gap, but did find
+backend defects that remained despite the earlier green baseline. Root and two
+disjoint writers fixed them without changing the8/44 catalog, schema25/45,
+application source, dependency lock or Research rollout permission.
+
+- Research enabled with no composed service now reports readiness503 with the
+  existing RESEARCH_AUTHORITY_UNAVAILABLE code. Provider-first/default-off and
+  composed-service positives remain. Ordinary authenticated content still works
+  and creates no Research rows while that authority is unavailable.
+- The provider transport returns raw HTTP statuses instead of dispatching
+  redirect handlers. All redirect targets, including malformed Location values,
+  remain unfollowed; credentials are not forwarded. Success/error bodies are
+  capped at1MiB, incomplete Content-Length framing is rejected, and streams close
+  on success, HTTP errors, size rejection and read failure. Retry-After seconds
+  are retained; local-provider classification uses the actual normalized host.
+  Error chaining and endpoint repr do not expose credentials. Fallback and
+  managed-quota policy are unchanged; HTTP-date Retry-After remains unsupported.
+- Independent source reviews accept both changes after the framed-response and
+  malformed-redirect findings are reproduced and fixed. Root's actual full
+  `ai-api-reviewed-final.log` reports522PASS with two existing dependency
+  FutureWarnings; `cloud-tools.log` reports222PASS. The provider file alone has
+  59 passing cases. Research signatures, consent and upload controls remain real.
+- `root-baseline-regressions.json` compares isolated baseline/current modules
+  with synthetic fixtures and zero sockets: old readiness200/current503 while
+  ordinary content remains200; old redirect forwards a synthetic credential to
+  a second origin/current stops at one request; old read is unbounded/current
+  reads at most1048577bytes; old Retry-After is5/current3600. These are local
+  regressions, not real provider or deployment acceptance.
+- `frontend-full-input-continuity.json` confirms no tracked changes in application,
+  native, asset, Flutter test or pubspec paths against accepted `a2c95e12` and no
+  new application/test code. Existing5535 Flutter/native evidence is reused;
+  no fresh Flutter/device result is claimed. Existing failure images are retained.
+
+Evidence directory:
+`D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\engineering30`.
+
+The replacement local CPU image ID is
+`sha256:d60fa5326c984a5f7f908df5bdc84f6548b0260fd79c63c63aa6e52029650e3d`.
+`image-source-proof.json` matches all23 current runtime source files and all52
+installed package versions to the unchanged locked runtime, Linux/amd64,
+UID/GID65532. This supersedes the old0b67fe4f image for future deployment. It is
+a local Docker image ID (an OCI index digest in this engine), with no verified
+target-registry reference; no image was pushed.
+
+The initial build's network-none dependency step failed because its layer was
+uncached. The recorded recovery uses normal build networking with the same
+locked dependencies and verifies their exact versions afterward. The initial
+smoke wrapper hit Docker's omitted empty Mounts field; its optional-field guard
+now still rejects nonempty/malformed mounts. Self-checks pass on PS5/PS7.
+`image-smoke.json` then verifies the actual image with no network, host mounts,
+host ports or credentials, read-only filesystem, live200/ready503(provider off),
+docs404/content401 and confirmed task-container cleanup. No pytest/GPU packages
+are shipped. The image was built from frozen dirty runtime hashes; the final
+integration receipt binds those same hashes to the committed source afterward.
 
 ## Final local acceptance and handoff
 
@@ -252,10 +315,12 @@ account identifiers and raw evidence out of Git.
 
 ## Remaining rollout dependencies
 
-The user approved private Cloud Stage A only. The Cloud Billing API was enabled;
-the04:41:34UTC read-only reconciliation still reports billing disabled/unlinked.
-The owner will link billing. Costed resources, IAM, secrets, budgets and deployment
-remain on hold; no service was deployed. The proposed alert target is THB500 per
+The user approved private Cloud Stage A only. Its current
+[Cloud checkpoint](2026-11-02-cloud-a.md) records50 enabled APIs, two service-account
+identities, two unbound role definitions and an empty RTDN topic. Google rejects
+Run/Registry/Secret Manager activation and KMS operations because the exact
+project still lacks enabled Billing. No service was deployed or financial
+account selected. The proposed alert target is THB500 per
 month for a THB account or USD15 for USD, with50/80/100 percent actual-spend
 alerts to existing billing admins. These alerts are not a hard cap. No new billing
 account may be linked on the user's behalf without specific authority.

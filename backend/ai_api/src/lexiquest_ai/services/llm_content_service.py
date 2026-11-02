@@ -33,11 +33,13 @@ Design notes:
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+from urllib.parse import urlsplit
 
 from lexiquest_ai.config import Settings
 from lexiquest_ai.models import ContentKind, ContentRequest, ContentResult
@@ -47,6 +49,7 @@ from lexiquest_ai.services.rate_limiter import (
 )
 
 logger = logging.getLogger(__name__)
+_MAX_PROVIDER_RESPONSE_BYTES = 1024 * 1024
 
 # Per-kind system prompts. Kept here (not in config) so prompt changes are
 # code-reviewed and versioned with the service. ``model_version`` in the cache
@@ -124,28 +127,38 @@ class _ProviderEndpoint:
     name: str
     model: str
     base_url: str
-    api_key: str
+    api_key: str = field(repr=False)
 
     def is_local(self) -> bool:
-        """Local providers (Ollama) have no real quota, so their 429s are
-        treated as a hard error rather than retried through the chain."""
-
-        host = self.base_url.lower()
-        return "127.0.0.1" in host or "localhost" in host
+        host = (urlsplit(self.base_url).hostname or "").rstrip(".").casefold()
+        try:
+            return ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            return host == "localhost"
 
 
 def _urllib_client() -> HttpClient:
     """Build the default stdlib HTTP client used in production."""
 
+    import http.client
     import urllib.error
     import urllib.request
 
-    class _StdlibResponse:
-        __slots__ = ("status", "body")
+    class _NoRedirect(urllib.request.HTTPErrorProcessor):
+        def http_response(self, request, response):
+            return response
 
-        def __init__(self, status: int, body: bytes) -> None:
+        https_response = http_response
+
+    opener = urllib.request.build_opener(_NoRedirect())
+
+    class _StdlibResponse:
+        __slots__ = ("status", "body", "headers")
+
+        def __init__(self, status: int, body: bytes, retry_after: str | None) -> None:
             self.status = status
             self.body = body
+            self.headers = {} if retry_after is None else {"Retry-After": retry_after}
 
     class _StdlibClient:
         def request(
@@ -158,19 +171,21 @@ def _urllib_client() -> HttpClient:
         ) -> HttpResponse:
             req = urllib.request.Request(url, data=data, headers=headers)
             try:
-                with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - trusted operator-configured URL
-                    return _StdlibResponse(resp.status, resp.read())
-            except urllib.error.HTTPError as error:
-                body = b""
                 try:
-                    body = error.read() or b""
-                except Exception:  # pragma: no cover - defensive
-                    body = b""
-                return _StdlibResponse(error.code, body)
-            except (urllib.error.URLError, TimeoutError, OSError) as error:
+                    response = opener.open(req, timeout=timeout)
+                except urllib.error.HTTPError as error:
+                    response = error
+                with response:
+                    body = response.read(_MAX_PROVIDER_RESPONSE_BYTES + 1)
+                    if len(body) > _MAX_PROVIDER_RESPONSE_BYTES:
+                        raise ProviderError("LLM provider response exceeds the size limit")
+                    if getattr(response, "length", 0):
+                        raise ProviderUnavailable("LLM provider transport error")
+                    return _StdlibResponse(response.status, body, response.headers.get("Retry-After"))
+            except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError):
                 raise ProviderUnavailable(
                     "LLM provider transport error"
-                ) from error
+                ) from None
 
     return _StdlibClient()  # type: ignore[return-value]
 
@@ -375,9 +390,6 @@ class LlmContentService:
 
         if response.status == 429:
             retry_after = self._parse_retry_after(response) or 5
-            # A local Ollama returning 429 is unusual; treat it as a hard
-            # error (do not silently move traffic to Gemini, which would
-            # quietly burn cloud quota for a local misconfiguration).
             if endpoint.is_local():
                 raise ProviderUnavailable("local provider returned 429")
             raise ProviderRateLimitHit(retry_after)

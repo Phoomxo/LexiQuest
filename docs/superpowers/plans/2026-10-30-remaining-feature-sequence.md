@@ -1,5 +1,31 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Local engineering closure, 2026-11-02
+
+The owner requests completing development and explicitly continues poteto-mode.
+Treat completion as all approved local behavior and acceptance checks, not an
+unsupported percentage or proof of external service/merchant/research authority.
+Baseline `192bef62`; reuse this worktree and the frozen8/44 catalog/schema25/45.
+
+| Card | Write ownership and outcome | Acceptance |
+| --- | --- | --- |
+| LA30 | Read-only feature auditor: current matrix and actual Dart callers/persistence | Done: no proven local Dart must-fix in the bounded review;44 Connected remains local coverage, not production certification. Root verifies tracked application/assets/Flutter test inputs unchanged from accepted a2c95e12; no new application/test code. |
+| LB30 | Read-only backend auditor: current auth/config/health/billing/research/export | Done: confirmed missing Research readiness guard, credential-bearing redirects and unbounded provider reads; LR30/LP30 close these findings. No scanner or live provider called. |
+| LR30 | One writer: backend ai_api app.py + test_app.py only | Done: actual HTTP RED200 instead503, then missing-service503; default-off/composed/provider-first preserved. Root additionally proves ordinary content200 and zero Research writes when authority unavailable. Independent review ACCEPT. |
+| LP30 | Separate writer, then Root integration: services/llm_content_service.py + tests/test_content_services.py only | Done: raw-status urllib processor prevents redirect dispatch/Location parsing;1MiB bounded success/error reads, real Content-Length framing and stream closure; Retry-After, parsed loopback classification and credential-safe error/repr. Independent review ACCEPT after realHTTPResponse and malformedLocation RED7/2 regressions; final59 focused cases pass. |
+| LI30 | Root: shared docs/Git/builds and existing test-ai-api-container.ps1 optional-mount guard | Done locally: fullAI522PASS, Cloudtools222PASS; new CPUimage d60fa532 has exact23 source hashes/52 locked versions and real isolated HTTP smoke. Initial uncached dependency build corrected with normal networking/unchanged lock; Docker optional Mounts omission fixed while retaining mount rejection, PS5/7 self-checks and actual smoke pass. No push/deploy. |
+
+Feature/backend audits are read-only and may overlap the disjoint readiness and
+transport writers. Freeze all writers before full affected verification/image build.
+Research enrollment/uploads and public/paid rollout stay disabled. Current
+external Billing rejection does not prevent this local implementation.
+Evidence root is `D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\engineering30`.
+The new local image supersedes0b67fe4f for future deployment; neither ID has been
+verified in the target registry. Existing Android artifact/5535 Flutter evidence is
+reused only because application/assets/Flutter tests remain unchanged. External
+provider, deployment, Play, physical-device and Research rollout acceptance is
+still separate and unverified by these local checks.
+
 ## Cloud A execution continuation, 2026-11-02
 
 The owner reiterates full development/ADLC authority after the local tooling

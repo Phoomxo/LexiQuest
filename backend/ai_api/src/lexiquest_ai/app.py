@@ -355,6 +355,9 @@ def create_app(
         if settings.content_reports_enabled and content_report_service is None:
             return JSONResponse(status_code=503, content={'detail': {
                 'code': 'REPORTS_UNAVAILABLE', 'message': 'Report transport is unavailable.'}})
+        if settings.research_enabled and research_service is None:
+            return JSONResponse(status_code=503, content={'detail': {
+                'code': 'RESEARCH_AUTHORITY_UNAVAILABLE', 'message': 'Research authority is unavailable.'}})
         deletion_configured = bool(
             settings.account_deletion_enabled
             or settings.account_deletion_server_export_authority
