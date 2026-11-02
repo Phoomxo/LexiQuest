@@ -67,6 +67,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   _PendingPackWrite? _pending;
   ModalRoute<dynamic>? _route;
   Route<dynamic>? _practiceRoute;
+  Route<dynamic>? _scoreRoute;
   Completer<void>? _pickerResumed;
   String _cefr = 'all';
   String? _status;
@@ -89,7 +90,8 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       (_foreground || _picker) &&
       ((_route?.isCurrent ?? true) ||
           _overlay ||
-          _practiceRoute?.isCurrent == true);
+          _practiceRoute?.isCurrent == true ||
+          _scoreRoute?.isCurrent == true);
   bool get _canAct =>
       _visible &&
       (_route?.isCurrent ?? true) &&
@@ -174,6 +176,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _retire();
     } else if (!_overlay &&
         _practiceRoute?.isCurrent != true &&
+        _scoreRoute?.isCurrent != true &&
         _route?.isCurrent == false &&
         !_retired) {
       _covered = true;
@@ -220,6 +223,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   void _cancelWork() {
     _lease++;
     _operation++;
+    _scoreRoute = null;
     _wakePicker();
     _stopVoice();
     if (!mounted) return;
@@ -694,6 +698,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _status = null;
     });
     var launched = false;
+    Route<dynamic>? launchedRoute;
     try {
       final fresh = await _packs!.detail(scope, shown.pack.id);
       if (!_resultCurrent(operation, scope) || !available()) return;
@@ -756,6 +761,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       final messenger = ScaffoldMessenger.maybeOf(context);
       messenger?.clearSnackBars();
       messenger?.removeCurrentSnackBar();
+      final ownerChanges = _packs!.watchActiveOwnerId();
       launched = true;
       await AppNavigator.pushPage<void>(
         context,
@@ -777,7 +783,28 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
               return QuizScreen(
                 preparedLaunch: quizLaunch!,
                 expectedOwnerId: scope.ownerId,
-                ownerChanges: _packs!.watchActiveOwnerId(),
+                ownerChanges: ownerChanges,
+                onScoreRouteChanged: (route, current) {
+                  if (_operationCurrent(operation) &&
+                      route != null &&
+                      identical(route, _scoreRoute) &&
+                      route.isActive &&
+                      !current &&
+                      _practiceRoute?.isCurrent != true) {
+                    scheduleMicrotask(() {
+                      if (_operationCurrent(operation)) {
+                        _covered = true;
+                        _cancelWork();
+                      }
+                    });
+                    return;
+                  }
+                  if (_resultCurrent(operation, scope) &&
+                      identical(dependencies, _dependencies) &&
+                      available()) {
+                    _scoreRoute = route;
+                  }
+                },
                 learning: dependencies!.learning,
                 learningTime: dependencies.learningTime,
                 voice: _voice,
@@ -786,21 +813,27 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             return SrsFlashcardsScreen(
               sourceWordIds: ids,
               expectedOwnerId: scope.ownerId,
-              ownerChanges: _packs!.watchActiveOwnerId(),
+              ownerChanges: ownerChanges,
               learning: dependencies!.learning,
               voice: _voice,
               learningTime: dependencies.learningTime,
             );
           },
         ),
-        onRouteCreated: (route) => _practiceRoute = route,
+        onRouteCreated: (route) {
+          launchedRoute = route;
+          _practiceRoute = route;
+        },
       );
     } catch (error) {
       if (_resultCurrent(operation, scope)) {
         setState(() => _status = _failure(error));
       }
     } finally {
-      _practiceRoute = null;
+      if (identical(_practiceRoute, launchedRoute)) {
+        _scoreRoute = null;
+        _practiceRoute = null;
+      }
       _saved?.syncVisibility();
       if (_operationCurrent(operation)) {
         setState(() => _busy = false);
@@ -914,6 +947,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       if (current == null) {
         throw const PackStorageException(PackStorageFailureCode.staleContent);
       }
+      final reportOwners = _packs!.watchActiveOwnerId();
       _overlay = true;
       await showModalBottomSheet<void>(
         context: context,
@@ -924,7 +958,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
                 expectedOwnerId: scope!.ownerId,
                 target: WordReportTarget.fromWord(current.word),
                 wordReports: _reports,
-                ownerChanges: _packs!.watchActiveOwnerId(),
+                ownerChanges: reportOwners,
               ),
       );
     } catch (error) {

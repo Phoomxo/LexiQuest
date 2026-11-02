@@ -7,9 +7,11 @@ import 'package:http/testing.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/http_learning_pack_source.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/lexical_quiz_setup_dialog.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/word_report.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
+import 'package:vocab_learning_app/widgets/word_report_sheet.dart';
 
 import '../support/motivation_presentation_io.dart';
 import '../support/populated_owner_migration_fixture.dart';
@@ -260,6 +262,157 @@ void main() {
         await _installStarter(tester);
         await _finishDefinition(tester, h, input);
         expect(await tester.runAsync(() => h.count('answer_attempts')), 2);
+        final installed = (await tester.runAsync(h.stored))!;
+        final beforeReturn = await motivationPresentationIo(
+          tester,
+          () => ownerMigrationRows(h.database),
+          stage: 'starter-${input.name}/before-score-return',
+        );
+        tester.view.physicalSize = const Size(820, 620);
+        addTearDown(tester.view.resetPhysicalSize);
+        await tester.pump();
+        final quiz = find.byType(QuizScreen, skipOffstage: false);
+        expect(quiz, findsOneWidget);
+        final practiceRoute = ModalRoute.of(tester.element(quiz))!;
+        expect(practiceRoute.isCurrent, isFalse);
+        practiceRoute.changedExternalState();
+        await tester.pump();
+        final back = find.widgetWithText(OutlinedButton, 'กลับไปเลือกกิจกรรม');
+        await tester.ensureVisible(back);
+        await tester.pump();
+        expect(back.hitTestable(), findsOneWidget);
+        await tester.tap(back.hitTestable());
+        await untilPackUi(
+          tester,
+          () => find.byTooltip('กลับไปยังรายการแพ็ก').evaluate().isNotEmpty,
+        );
+        await idlePackUi(tester);
+        expect(find.text(installed.manifest.title), findsOneWidget);
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(find.byType(ScoreScreen), findsNothing);
+        expect(
+          find.text('การฝึกไม่พร้อมใช้งาน โปรดเปิดแพ็กใหม่'),
+          findsNothing,
+        );
+        await revealPackUi(tester, 'pack-definition-0');
+        expect(
+          tester
+              .widget<OutlinedButton>(
+                find.byKey(const ValueKey('pack-definition-0')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        await revealPackUi(tester, 'pack-practice-0');
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const ValueKey('pack-practice-0')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => ownerMigrationRows(h.database),
+            stage: 'starter-${input.name}/after-score-return',
+          ),
+          beforeReturn,
+        );
+        expect((await tester.runAsync(h.stored))!.id, installed.id);
+      }),
+    );
+  }
+
+  for (final invalidation in ['foreign cover', 'owner ABA']) {
+    testWidgets(
+      'included Score cannot revive its old Quiz after $invalidation',
+      (tester) => _using(tester, (h) async {
+        await tester.pumpWidget(h.app());
+        await _installStarter(tester);
+        await _finishDefinition(tester, h, LexicalQuizInput.definitionChoice);
+        final practiceRoute = ModalRoute.of(
+          tester.element(find.byType(QuizScreen, skipOffstage: false)),
+        )!;
+        final scoreRoute = ModalRoute.of(
+          tester.element(find.byType(ScoreScreen)),
+        )!;
+        Finder exit;
+        if (invalidation == 'foreign cover') {
+          final navigator = tester.state<NavigatorState>(
+            find.byType(Navigator),
+          );
+          final foreign = MaterialPageRoute<void>(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close synthetic Score cover'),
+                ),
+              ),
+            ),
+          );
+          unawaited(navigator.push<void>(foreign));
+          await untilPackUi(
+            tester,
+            () =>
+                find.text('Close synthetic Score cover').evaluate().isNotEmpty,
+          );
+          practiceRoute.changedExternalState();
+          await tester.pump();
+          navigator.removeRoute(scoreRoute);
+          await tester.pump();
+          expect(foreign.isCurrent, isTrue);
+          exit = find.text('Close synthetic Score cover');
+        } else {
+          await motivationPresentationIo(
+            tester,
+            () => h.switchOwner('synthetic-actions-other'),
+            stage: 'starter-score/owner-B',
+          );
+          await untilPackUi(
+            tester,
+            () => find
+                .text('บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม')
+                .evaluate()
+                .isNotEmpty,
+          );
+          await motivationPresentationIo(
+            tester,
+            () => h.switchOwner('synthetic-actions-owner'),
+            stage: 'starter-score/owner-A',
+          );
+          practiceRoute.changedExternalState();
+          await tester.pump();
+          exit = find.text('กลับไปเลือกกิจกรรม');
+        }
+        final beforeReturn = await motivationPresentationIo(
+          tester,
+          () => ownerMigrationRows(h.database),
+          stage: 'starter-score/$invalidation/before-return',
+        );
+        expect(await tester.runAsync(() => h.count('answer_attempts')), 2);
+        expect(await tester.runAsync(() => h.count('learning_sessions')), 1);
+        await tester.ensureVisible(exit);
+        await tester.pump();
+        expect(exit.hitTestable(), findsOneWidget);
+        await tester.tap(exit.hitTestable());
+        await tester.pump();
+        if (invalidation == 'foreign cover') {
+          practiceRoute.changedExternalState();
+          await tester.pump();
+        }
+        expect(find.byType(QuizScreen, skipOffstage: false), findsNothing);
+        expect(find.byType(ScoreScreen, skipOffstage: false), findsNothing);
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => ownerMigrationRows(h.database),
+            stage: 'starter-score/$invalidation/after-return',
+          ),
+          beforeReturn,
+        );
       }),
     );
   }
@@ -280,6 +433,13 @@ void main() {
       );
       expect(screen.sourceWordIds, hasLength(12));
       expect(screen.expectedOwnerId, 'synthetic-actions-owner');
+      final practiceRoute = ModalRoute.of(
+        tester.element(find.byType(SrsFlashcardsScreen)),
+      )!;
+      expect(practiceRoute.isCurrent, isTrue);
+      practiceRoute.changedExternalState();
+      await tester.pump();
+      expect(find.text('กิจกรรมไม่พร้อมใช้งาน'), findsNothing);
       await tapPackUi(tester, 'srs-flip');
       await tester.pump(const Duration(milliseconds: 450));
       await tapPackUi(tester, 'srs-got');
@@ -292,6 +452,98 @@ void main() {
       final answer = (await tester.runAsync(h.canonicalAnswer))!;
       expect(answer.read<String>('prompt_mode'), 'srsRecall');
       expect(answer.read<String>('owner_id'), 'synthetic-actions-owner');
+    }),
+  );
+
+  testWidgets(
+    'catalog word report survives its owned sheet rebuild and saves exactly once',
+    (tester) => _using(tester, (h) async {
+      await tester.runAsync(() => h.seed(syntheticPackUiContent()));
+      await tester.pumpWidget(h.app());
+      await openPackUiDetail(tester);
+      await tapPackUi(tester, 'pack-word-cat');
+      await untilPackUi(
+        tester,
+        () => find.text('A small pet that meows.').evaluate().isNotEmpty,
+      );
+      final beforeReport = await motivationPresentationIo(
+        tester,
+        () => ownerMigrationRows(h.database),
+        stage: 'catalog-report/before-open',
+      );
+      final word = beforeReport['vocabulary_words']!.single;
+      await tapPackUi(tester, 'pack-word-report');
+      await untilPackUi(
+        tester,
+        () => find
+            .byKey(const ValueKey('word-report-reason:incorrectMeaning'))
+            .evaluate()
+            .isNotEmpty,
+      );
+      await tapPackUi(tester, 'word-report-reason:incorrectMeaning');
+      const draft = 'Synthetic catalog report survives rebuild';
+      final comment = find.byKey(const ValueKey('word-report-comment'));
+      await tester.ensureVisible(comment);
+      await tester.enterText(comment, draft);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      final sheetRoute = ModalRoute.of(
+        tester.element(find.byType(WordReportSheet)),
+      )!;
+      expect(sheetRoute.isCurrent, isTrue);
+      sheetRoute.changedExternalState();
+      await tester.pump();
+      expect(
+        find.text('รายงานนี้ไม่พร้อมใช้งาน กรุณากลับแล้วเปิดใหม่'),
+        findsNothing,
+      );
+      expect(tester.widget<TextField>(comment).controller!.text, draft);
+      await tapPackUi(tester, 'word-report-review');
+      await untilPackUi(
+        tester,
+        () => find
+            .byKey(const ValueKey('word-report-confirm'))
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(find.text(draft), findsOneWidget);
+      expect(
+        await motivationPresentationIo(
+          tester,
+          () => ownerMigrationRows(h.database),
+          stage: 'catalog-report/before-confirm',
+        ),
+        beforeReport,
+      );
+      await tapPackUi(tester, 'word-report-confirm');
+      await untilPackUi(
+        tester,
+        () => find
+            .byKey(const ValueKey('word-report-queued'))
+            .evaluate()
+            .isNotEmpty,
+      );
+      final afterReport = await motivationPresentationIo(
+        tester,
+        () => ownerMigrationRows(h.database),
+        stage: 'catalog-report/after-confirm',
+      );
+      final report = StoredWordReport.fromStorage(
+        afterReport['word_reports']!.single,
+      );
+      expect(report.ownerId, 'synthetic-actions-owner');
+      expect(report.target.wordId, word['id']);
+      expect(report.target.categoryId, word['category_id']);
+      expect(report.target.wordRevision, word['local_revision']);
+      expect(report.target.spelling, 'cat');
+      expect(report.target.meaning, 'แมว');
+      expect(report.reason, ReportReason.incorrectMeaning);
+      expect(report.comment, draft);
+      afterReport.remove('word_reports');
+      beforeReport.remove('word_reports');
+      expect(afterReport, beforeReport);
+      expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+      expect(await tester.runAsync(() => h.count('answer_attempts')), 0);
     }),
   );
 

@@ -268,6 +268,7 @@ class _ContentReportButtonState extends State<ContentReportButton>
       lease = ValueNotifier(true);
       _sourceLease = lease;
       if (wordTarget != null) {
+        final sheetOwners = owners();
         await showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
@@ -279,7 +280,7 @@ class _ContentReportButtonState extends State<ContentReportButton>
                     expectedOwnerId: widget.expectedOwnerId,
                     target: wordTarget!,
                     wordReports: dependencies.wordReports,
-                    ownerChanges: owners(),
+                    ownerChanges: sheetOwners,
                     revalidate: () => _revalidate(epoch),
                     languageCode: widget.languageCode,
                   ),

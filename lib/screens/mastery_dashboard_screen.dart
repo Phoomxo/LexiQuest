@@ -448,7 +448,11 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
     }
     if (progress.sampleSize == 0) {
       return _withRecordedTime(
-        const _DashboardMessage('ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ'),
+        const _DashboardMessage(
+          'ยังไม่มีคำตอบที่เข้าเกณฑ์คำนวณความก้าวหน้า\n'
+          'คำนวณจาก 0 คำตอบ\n'
+          'ดูผลรอบฝึกทั้งหมดได้ที่ประวัติการเรียน',
+        ),
       );
     }
     return _DashboardBody(progress, recordedTime: _recordedTime());

@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_time_admission.dart';
 import 'package:vocab_learning_app/features/learning/presentation/native_exercise_checkpoint_binding.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
@@ -21,6 +22,134 @@ import '../support/content_report_ui_io.dart';
 import '../support/motivation_presentation_io.dart';
 
 void main() {
+  testWidgets(
+    'actual owned-word report survives a harmless sheet route update',
+    (tester) async {
+      final h = await motivationPresentationIo(
+        tester,
+        ContentReportCallerHarness.open,
+        stage: 'word-report-route-fixture',
+      );
+      try {
+        final state = await _answered(tester, h, 'dictation');
+        final before = await motivationPresentationIo(
+          tester,
+          h.storage.snapshot,
+          stage: 'word-report-route-before',
+        );
+        expect(
+          identical(
+            h.progress.watchActiveOwnerId(),
+            h.progress.watchActiveOwnerId(),
+          ),
+          isFalse,
+        );
+        await _mount(tester, h, state);
+        final dependencies = tester
+            .widget<AppDependenciesScope>(find.byType(AppDependenciesScope))
+            .dependencies;
+        final button = find.descendant(
+          of: find.byType(ContentReportButton),
+          matching: find.byType(TextButton),
+        );
+        await reportUiReveal(
+          tester,
+          button,
+          'word-report-route-open',
+          scrollable: find.byType(ListView),
+        );
+        await reportUiTap(tester, button, 'word-report-route-open');
+        await reportUiTapKey(tester, 'word-report-reason:spelling');
+        const comment = 'synthetic reviewed spelling issue after route update';
+        await tester.enterText(
+          find.byKey(const ValueKey('word-report-comment')),
+          comment,
+        );
+        await reportUiTapKey(tester, 'word-report-review');
+        final sheet = find.byType(WordReportSheet);
+        final target = tester.widget<WordReportSheet>(sheet).target;
+        final beforeRouteUpdate = await motivationPresentationIo(
+          tester,
+          h.storage.snapshot,
+          stage: 'word-report-route-reviewed',
+        );
+        expect(beforeRouteUpdate['word_reports'], isEmpty);
+        expect(beforeRouteUpdate['content_reports'], isEmpty);
+        final route = ModalRoute.of(tester.element(sheet))!;
+        route.changedExternalState();
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 16));
+
+        expect(
+          tester
+              .widget<AppDependenciesScope>(find.byType(AppDependenciesScope))
+              .dependencies,
+          same(dependencies),
+        );
+        expect(
+          tester.widget<WordReportSheet>(sheet).target.sameTarget(target),
+          isTrue,
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => h.progress.watchActiveOwnerId().first,
+            stage: 'word-report-route-owner',
+          ),
+          configuredOwnerId,
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            h.storage.snapshot,
+            stage: 'word-report-route-no-write',
+          ),
+          beforeRouteUpdate,
+        );
+        expect(find.text(comment), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('word-report-confirm')),
+          findsOneWidget,
+        );
+        expect(
+          find.text('รายงานนี้ไม่พร้อมใช้งาน กรุณากลับแล้วเปิดใหม่'),
+          findsNothing,
+        );
+        await reportUiTapKey(tester, 'word-report-confirm');
+        await reportUiWait(
+          tester,
+          'word-report-route-receipt',
+          () => find
+              .byKey(const ValueKey('word-report-queued'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        final rows = await motivationPresentationIo(
+          tester,
+          () => h.queue.watchOwner(configuredOwnerId).first,
+          stage: 'word-report-route-row',
+        );
+        final report = rows.single;
+        expect(report.ownerId, configuredOwnerId);
+        expect(report.payload.target.snapshotJson, target.snapshotJson);
+        expect(report.payload.comment, comment);
+        expect(
+          report.payload.reportJson,
+          isNot(contains('privatelearnertext')),
+        );
+        final after = await motivationPresentationIo(
+          tester,
+          h.storage.snapshot,
+          stage: 'word-report-route-after',
+        );
+        expect(after['word_reports'], hasLength(1));
+        expect(after['content_reports'], hasLength(1));
+        expect(_withoutReports(after), _withoutReports(before));
+      } finally {
+        await closeMotivationPresentation(tester, h.close);
+      }
+    },
+  );
   for (final mode in [
     'dictation',
     'wordScramble',
