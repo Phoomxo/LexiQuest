@@ -1,0 +1,7 @@
+**
+!pyproject.toml
+!uv.lock
+!src/
+!src/lexiquest_ai/
+!src/lexiquest_ai/**/
+!src/lexiquest_ai/**/*.py
