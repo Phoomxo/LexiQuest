@@ -40,6 +40,14 @@ original settings. New fixed artifact remains to be built and checked. The owner
 reply supplied no actual provider/Play/Research input location. See
 docs/field/2026-11-02-real-service-device-acceptance.md for evidence and limits.
 
+Physical follow-up invalidated21 layout acceptance: fixed actions left the field
+only18physicalpixels high. Production-theme/actual-inset tests now reject that
+sliver, RED0PASS2FAIL; the full-content scrolling correction passes8 vocabulary
+tests. Source1aeeabae/full5572 and21 artifacts remain historical evidence. Final22
+verification is tracked separately. The owner is unavailable for listening;
+stop additional audio/TalkBack activation and microphone work, continue silent UI
+verification and preserve an honest audio acceptance gap. Rotation was restored.
+
 ## Full feature and workflow critique, 2026-11-02
 
 Intent: review all44 catalog features and connected app workflows, then implement

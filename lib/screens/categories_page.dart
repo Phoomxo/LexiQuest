@@ -170,33 +170,46 @@ class _CategoriesPageState extends State<CategoriesPage> {
             child: AlertDialog(
               scrollable: true,
               title: const Text('เพิ่มหมวดหมู่'),
-              content: TextField(
-                key: const ValueKey('category-name-field'),
-                autofocus: true,
-                enabled: !busy,
-                maxLength: maxCategoryNameLength,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: 'ชื่อหมวดหมู่',
-                  errorText: error,
-                ),
-                onChanged: (value) {
-                  name = value;
-                  if (error != null) setDialogState(() => error = null);
-                },
-                onSubmitted: (_) => submit(),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    key: const ValueKey('category-name-field'),
+                    autofocus: true,
+                    enabled: !busy,
+                    maxLength: maxCategoryNameLength,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      labelText: 'ชื่อหมวดหมู่',
+                      errorText: error,
+                    ),
+                    onChanged: (value) {
+                      name = value;
+                      if (error != null) setDialogState(() => error = null);
+                    },
+                    onSubmitted: (_) => submit(),
+                  ),
+                  const SizedBox(height: 16),
+                  OverflowBar(
+                    alignment: MainAxisAlignment.end,
+                    spacing: 8,
+                    overflowSpacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: busy
+                            ? null
+                            : () => Navigator.pop(dialogContext),
+                        child: const Text('ยกเลิก'),
+                      ),
+                      FilledButton(
+                        key: const ValueKey('save-category'),
+                        onPressed: busy ? null : submit,
+                        child: Text(busy ? 'กำลังบันทึก…' : 'บันทึก'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: busy ? null : () => Navigator.pop(dialogContext),
-                  child: const Text('ยกเลิก'),
-                ),
-                FilledButton(
-                  key: const ValueKey('save-category'),
-                  onPressed: busy ? null : submit,
-                  child: Text(busy ? 'กำลังบันทึก…' : 'บันทึก'),
-                ),
-              ],
             ),
           );
         },

@@ -274,9 +274,11 @@ void main() {
         addTearDown(tester.view.resetViewPadding);
         addTearDown(tester.view.resetViewInsets);
         await tester.runAsync(
-          () => (FontLoader('NotoSansThai')
-                ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
-              .load(),
+          () =>
+              (FontLoader('NotoSansThai')..addFont(
+                    rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+                  ))
+                  .load(),
         );
         final repository = _DialogVocabularyRepository();
         final vocabulary = VocabularyUseCases(
@@ -303,10 +305,12 @@ void main() {
         await tester.ensureVisible(editable);
         await tester.pumpAndSettle();
         final viewport = tester.getRect(
-          find.ancestor(
-            of: editable,
-            matching: find.byType(SingleChildScrollView),
-          ).first,
+          find
+              .ancestor(
+                of: editable,
+                matching: find.byType(SingleChildScrollView),
+              )
+              .first,
         );
         final textRect = tester.getRect(editable);
         expect(

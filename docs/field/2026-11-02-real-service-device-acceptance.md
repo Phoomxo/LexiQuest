@@ -67,3 +67,30 @@ Final regression and packaging results will be recorded in
 `D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\acceptance33`.
 Do not infer that offline20 contains these new corrections. Source-level tests,
 artifact evidence and human audible/device acceptance remain separate.
+
+## Physical counterexample and correction, 2026-11-03
+
+Source1aeeabae passed5572 tests with unchanged1350 inputs. Offline21 APK/AAB build,
+signature/native/identity attestation and in-place Vivo installation passed. APK
+SHA256 is b0727d93499c48ba378e695e3148923a8ffae588b46682fd5ab84448f2e3fc95.
+Those facts did not establish layout usability: actual21 with the landscape IME
+still exposed only18 physical pixels of the input. Fixed AlertDialog actions
+reserved almost all vertical space. The earlier hitTestable assertion accepted
+a visible sliver and therefore did not prove a readable field.
+
+The replacement regression uses the production M3 theme/NotoSansThai font,
+2408x1080 pixels at2.75 density, top77/left66/right182 padding and bottom643 IME.
+Both Save and Cancel cases require at least48 logical pixels of visible field,
+the full input text line, and reachable actions above the keyboard. Before the
+second correction both fail with only10.909 logical pixels visible. The fixed
+actions now sit inside the existing scrollable content with the field. Title,
+PopScope, validation, pending-save guards and callbacks remain. The entire
+vocabulary journey suite passes8. Final22 source/artifact/device evidence is
+recorded separately under acceptance33/final22;21 is not relabelled as a UI pass.
+
+The owner is currently unavailable for audible testing. No further speech playback,
+TalkBack activation or microphone capture will be started in this run. The earlier
+TalkBack service probe is explicitly version20 evidence. Device rotation was
+temporarily set to landscape for the21 reproduction and restored to user_rotation0
+and accelerometer_rotation1. The synthetic category contains hello/synthetic/
+interjection; ordinary vocabulary remains separate from Research.
