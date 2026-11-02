@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
@@ -253,49 +255,92 @@ void main() {
     },
   );
 
-  testWidgets('add category stays usable in landscape with the keyboard open', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(844, 390);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetViewInsets);
-    final repository = _DialogVocabularyRepository();
-    final vocabulary = VocabularyUseCases(
-      owners: _DialogOwnerRepository(),
-      vocabulary: repository,
-      generateId: () => 'landscape-category',
-      nowUtc: () => DateTime.utc(2026, 11, 2),
-    );
-    await tester.pumpWidget(
-      MaterialApp(home: CategoriesPage(vocabulary: vocabulary)),
-    );
-    await pumpUntilFound(tester, find.textContaining('ยังไม่มีหมวดหมู่'));
-    await tester.tap(find.byKey(const ValueKey('add-category')));
-    await tester.pumpAndSettle();
+  for (final saveDraft in [true, false]) {
+    testWidgets(
+      'add category ${saveDraft ? 'save' : 'cancel'} stays usable with the '
+      'physical landscape keyboard and production theme',
+      (tester) async {
+        tester.view.physicalSize = const Size(2408, 1080);
+        tester.view.devicePixelRatio = 2.75;
+        tester.view.padding = const FakeViewPadding(
+          top: 77,
+          left: 66,
+          right: 182,
+        );
+        tester.view.viewPadding = tester.view.padding;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewPadding);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.runAsync(
+          () => (FontLoader('NotoSansThai')
+                ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
+              .load(),
+        );
+        final repository = _DialogVocabularyRepository();
+        final vocabulary = VocabularyUseCases(
+          owners: _DialogOwnerRepository(),
+          vocabulary: repository,
+          generateId: () => 'landscape-category',
+          nowUtc: () => DateTime.utc(2026, 11, 2),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: M3Theme.lightTheme,
+            home: CategoriesPage(vocabulary: vocabulary),
+          ),
+        );
+        await pumpUntilFound(tester, find.textContaining('ยังไม่มีหมวดหมู่'));
+        await tester.tap(find.byKey(const ValueKey('add-category')));
+        await tester.pumpAndSettle();
 
-    tester.view.viewInsets = const FakeViewPadding(bottom: 230);
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.byType(EditableText));
-    await tester.pumpAndSettle();
-    expect(find.byType(EditableText).hitTestable(), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const ValueKey('category-name-field')),
-      'QA33-Synthetic',
-    );
-    await tester.pumpAndSettle();
-    final save = find.byKey(const ValueKey('save-category'));
-    expect(save.hitTestable(), findsOneWidget);
-    expect(tester.getBottomRight(save).dy, lessThanOrEqualTo(160));
-    await tester.tap(save);
-    await tester.pumpAndSettle();
+        tester.view.viewInsets = const FakeViewPadding(bottom: 643);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final editable = find.byType(EditableText);
+        final field = find.byKey(const ValueKey('category-name-field'));
+        await tester.ensureVisible(editable);
+        await tester.pumpAndSettle();
+        final viewport = tester.getRect(
+          find.ancestor(
+            of: editable,
+            matching: find.byType(SingleChildScrollView),
+          ).first,
+        );
+        final textRect = tester.getRect(editable);
+        expect(
+          tester.getRect(field).intersect(viewport).height,
+          greaterThanOrEqualTo(48),
+          reason: 'A hit-testable sliver is not a usable input field.',
+        );
+        expect(
+          textRect.intersect(viewport).height,
+          closeTo(textRect.height, 0.01),
+          reason: 'The complete input line must be visible above the keyboard.',
+        );
+        expect(editable.hitTestable(), findsOneWidget);
+        await tester.enterText(field, 'QA33-Synthetic');
+        await tester.pumpAndSettle();
+        final action = saveDraft
+            ? find.byKey(const ValueKey('save-category'))
+            : find.widgetWithText(TextButton, 'ยกเลิก');
+        await tester.ensureVisible(action);
+        await tester.pumpAndSettle();
+        expect(action.hitTestable(), findsOneWidget);
+        expect(
+          tester.getBottomRight(action).dy,
+          lessThanOrEqualTo((1080 - 643) / 2.75),
+        );
+        await tester.tap(action);
+        await tester.pumpAndSettle();
 
-    expect(repository.createCalls, 1);
-    expect(find.byType(AlertDialog), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+        expect(repository.createCalls, saveDraft ? 1 : 0);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('add category validates inside the dialog before persistence', (
     tester,
