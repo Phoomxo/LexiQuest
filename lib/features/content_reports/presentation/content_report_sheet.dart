@@ -9,6 +9,42 @@ import '../../vocabulary/domain/word_report.dart';
 import '../application/content_report_use_cases.dart';
 import '../domain/content_report.dart';
 
+Future<void> showContentReportModal(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  void Function(Route<dynamic>? route, bool current)? onRouteChanged,
+}) async {
+  assert(debugCheckHasMediaQuery(context));
+  assert(debugCheckHasMaterialLocalizations(context));
+  final navigator = Navigator.of(context);
+  final localizations = MaterialLocalizations.of(context);
+  final route = ModalBottomSheetRoute<void>(
+    builder: (sheetContext) {
+      onRouteChanged?.call(
+        ModalRoute.of(sheetContext),
+        ModalRoute.isCurrentOf(sheetContext) == true,
+      );
+      return builder(sheetContext);
+    },
+    capturedThemes: InheritedTheme.capture(
+      from: context,
+      to: navigator.context,
+    ),
+    isScrollControlled: true,
+    barrierLabel: localizations.scrimLabel,
+    barrierOnTapHint: localizations.scrimOnTapHint(
+      localizations.bottomSheetLabel,
+    ),
+    modalBarrierColor: Theme.of(context).bottomSheetTheme.modalBarrierColor,
+  );
+  try {
+    onRouteChanged?.call(route, true);
+    await navigator.push<void>(route);
+  } finally {
+    onRouteChanged?.call(null, false);
+  }
+}
+
 Future<void> showContentReportComposer(
   BuildContext context, {
   required String expectedOwnerId,
@@ -19,10 +55,11 @@ Future<void> showContentReportComposer(
   required Stream<String?> ownerChanges,
   ValueListenable<bool>? sourceLease,
   Future<void> Function()? revalidate,
+  void Function(Route<dynamic>? route, bool current)? onRouteChanged,
   String languageCode = 'th',
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
+}) => showContentReportModal(
+  context,
+  onRouteChanged: onRouteChanged,
   builder: (_) => _ContentReportComposer(
     expectedOwnerId: expectedOwnerId,
     sourceText: sourceText,

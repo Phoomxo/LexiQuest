@@ -59,7 +59,7 @@ final class _ReviewLaunch {
   final int generation;
   final bool quiz;
   Route<dynamic>? route;
-  Route<dynamic>? score;
+  Route<dynamic>? ownedChildRoute;
   bool returnCurrent = true;
   bool contextCurrent = true;
 }
@@ -332,15 +332,13 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         _route?.isCurrent == true) {
       return;
     }
-    // The exact Score route may legitimately cover its own Quiz. A further
-    // cover is handled by its callback, without unmounting new mistake practice.
-    if (launch.quiz && launch.score != null) {
+    if (launch.quiz && launch.ownedChildRoute != null) {
       return;
     }
     launch.returnCurrent = false;
   }
 
-  void _scoreChanged(
+  void _ownedRouteChanged(
     _ReviewLaunch launch,
     Route<dynamic>? route,
     bool current,
@@ -348,7 +346,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     if (!_launchCurrent(launch)) {
       return;
     }
-    launch.score = route;
+    launch.ownedChildRoute = route;
     if (route != null &&
         route.isActive &&
         !current &&
@@ -489,8 +487,8 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
           selectionMode: queue == ReviewQueue.saved
               ? QuizWordSelectionMode.sourcePractice
               : QuizWordSelectionMode.weakness,
-          onScoreRouteChanged: (route, current) =>
-              _scoreChanged(launch, route, current),
+          onOwnedRouteChanged: (route, current) =>
+              _ownedRouteChanged(launch, route, current),
         ),
       ),
     );

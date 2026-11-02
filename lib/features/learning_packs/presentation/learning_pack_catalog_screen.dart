@@ -67,7 +67,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   _PendingPackWrite? _pending;
   ModalRoute<dynamic>? _route;
   Route<dynamic>? _practiceRoute;
-  Route<dynamic>? _scoreRoute;
+  Route<dynamic>? _practiceChildRoute;
   Completer<void>? _pickerResumed;
   String _cefr = 'all';
   String? _status;
@@ -91,7 +91,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       ((_route?.isCurrent ?? true) ||
           _overlay ||
           _practiceRoute?.isCurrent == true ||
-          _scoreRoute?.isCurrent == true);
+          _practiceChildRoute?.isCurrent == true);
   bool get _canAct =>
       _visible &&
       (_route?.isCurrent ?? true) &&
@@ -176,7 +176,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _retire();
     } else if (!_overlay &&
         _practiceRoute?.isCurrent != true &&
-        _scoreRoute?.isCurrent != true &&
+        _practiceChildRoute?.isCurrent != true &&
         _route?.isCurrent == false &&
         !_retired) {
       _covered = true;
@@ -223,7 +223,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   void _cancelWork() {
     _lease++;
     _operation++;
-    _scoreRoute = null;
+    _practiceChildRoute = null;
     _wakePicker();
     _stopVoice();
     if (!mounted) return;
@@ -762,6 +762,29 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       messenger?.clearSnackBars();
       messenger?.removeCurrentSnackBar();
       final ownerChanges = _packs!.watchActiveOwnerId();
+      void childRouteChanged(Route<dynamic>? route, bool current) {
+        if (_operationCurrent(operation) &&
+            route != null &&
+            identical(route, _practiceChildRoute) &&
+            route.isActive &&
+            !current &&
+            _practiceRoute?.isCurrent != true) {
+          scheduleMicrotask(() {
+            if (_operationCurrent(operation)) {
+              _covered = true;
+              _cancelWork();
+            }
+          });
+          return;
+        }
+        if (route != null && !current) return;
+        if (_resultCurrent(operation, scope) &&
+            identical(dependencies, _dependencies) &&
+            available()) {
+          _practiceChildRoute = route;
+        }
+      }
+
       launched = true;
       await AppNavigator.pushPage<void>(
         context,
@@ -784,27 +807,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
                 preparedLaunch: quizLaunch!,
                 expectedOwnerId: scope.ownerId,
                 ownerChanges: ownerChanges,
-                onScoreRouteChanged: (route, current) {
-                  if (_operationCurrent(operation) &&
-                      route != null &&
-                      identical(route, _scoreRoute) &&
-                      route.isActive &&
-                      !current &&
-                      _practiceRoute?.isCurrent != true) {
-                    scheduleMicrotask(() {
-                      if (_operationCurrent(operation)) {
-                        _covered = true;
-                        _cancelWork();
-                      }
-                    });
-                    return;
-                  }
-                  if (_resultCurrent(operation, scope) &&
-                      identical(dependencies, _dependencies) &&
-                      available()) {
-                    _scoreRoute = route;
-                  }
-                },
+                onOwnedRouteChanged: childRouteChanged,
                 learning: dependencies!.learning,
                 learningTime: dependencies.learningTime,
                 voice: _voice,
@@ -831,7 +834,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       }
     } finally {
       if (identical(_practiceRoute, launchedRoute)) {
-        _scoreRoute = null;
+        _practiceChildRoute = null;
         _practiceRoute = null;
       }
       _saved?.syncVisibility();

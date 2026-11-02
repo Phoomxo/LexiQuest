@@ -4,7 +4,10 @@ import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
+import 'package:vocab_learning_app/features/content_reports/presentation/content_report_button.dart';
+import 'package:vocab_learning_app/features/content_reports/presentation/content_report_sheet.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/http_learning_pack_source.dart';
+import 'package:vocab_learning_app/features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/lexical_quiz_setup_dialog.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/word_report.dart';
@@ -15,6 +18,9 @@ import 'package:vocab_learning_app/widgets/word_report_sheet.dart';
 
 import '../support/motivation_presentation_io.dart';
 import '../support/populated_owner_migration_fixture.dart';
+import '../support/configured_quiz_harness.dart';
+import '../support/content_report_caller_harness.dart';
+import '../support/content_report_ui_io.dart';
 import 'learning_pack_test_support.dart';
 
 void main() {
@@ -455,6 +461,298 @@ void main() {
     }),
   );
 
+  for (final ending in ['ordinary return', 'foreign cover', 'owner ABA']) {
+    testWidgets(
+      'catalog Quiz content report preserves its owned modal through $ending',
+      (tester) async {
+        final h = await motivationPresentationIo(
+          tester,
+          ContentReportCallerHarness.open,
+          stage: 'catalog-quiz-report/fixture',
+        );
+        try {
+          await tester.pumpWidget(h.app(const LearningPackCatalogScreen()));
+          await _installStarter(tester);
+          const input = LexicalQuizInput.definitionTyped;
+          final screen = await _openDefinition(
+            tester,
+            input,
+            expectedOwnerId: configuredOwnerId,
+          );
+          final questions = screen.preparedLaunch!.preparedPlan!.questions;
+          final practiceRoute = ModalRoute.of(
+            tester.element(find.byType(QuizScreen)),
+          )!;
+          await _answerDefinition(tester, questions.first, input);
+          FocusManager.instance.primaryFocus?.unfocus();
+          await tester.pump();
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => h.storage.count('answer_attempts'),
+            ),
+            1,
+          );
+          final beforeReport = await motivationPresentationIo(
+            tester,
+            () => ownerMigrationRows(h.storage.database),
+            stage: 'catalog-quiz-report/before-open',
+          );
+          final report = find.descendant(
+            of: find.byType(ContentReportButton),
+            matching: find.byType(TextButton),
+          );
+          await reportUiReveal(
+            tester,
+            report,
+            'catalog-feedback-report',
+            scrollable: find.byType(SingleChildScrollView),
+          );
+          await untilPackUi(
+            tester,
+            () =>
+                report.evaluate().length == 1 &&
+                report.hitTestable().evaluate().length == 1 &&
+                tester.widget<TextButton>(report).onPressed != null,
+          );
+          expect(find.byType(QuizScreen), findsOneWidget);
+          expect(find.text(questions.first.prompt), findsWidgets);
+          await tester.tap(report.hitTestable());
+          await tester.pump();
+          final selection = find.byKey(
+            const ValueKey('content-report-selection'),
+          );
+          await reportUiWait(
+            tester,
+            'catalog-source-selection',
+            () => selection.evaluate().isNotEmpty,
+          );
+          final reportRoute = ModalRoute.of(tester.element(selection))!;
+          expect(reportRoute.isCurrent, isTrue);
+          practiceRoute.changedExternalState();
+          await tester.pump(const Duration(milliseconds: 350));
+          expect(
+            selection,
+            findsOneWidget,
+            reason:
+                'The owned report selector must survive its source route rebuilding.',
+          );
+          expect(tester.widget<TextField>(selection).enabled, isTrue);
+          final selectionReview = find.byKey(
+            const ValueKey('content-report-selection-review'),
+          );
+          expect(selectionReview, findsOneWidget);
+          expect(
+            tester.widget<FilledButton>(selectionReview).onPressed,
+            isNotNull,
+          );
+          await reportUiTapKey(tester, 'content-report-selection-review');
+          final comment = find.byKey(const ValueKey('content-report-comment'));
+          await reportUiWait(
+            tester,
+            'catalog-report-composer',
+            () => comment.evaluate().isNotEmpty,
+          );
+          await reportUiTapKey(tester, 'content-report-reason:spelling');
+          const draft =
+              'Synthetic report draft survives an owned modal rebuild';
+          await tester.ensureVisible(comment);
+          await tester.enterText(comment, draft);
+          FocusManager.instance.primaryFocus?.unfocus();
+          await tester.pump();
+          reportRoute.changedExternalState();
+          practiceRoute.changedExternalState();
+          await tester.pump();
+          expect(tester.widget<TextField>(comment).controller!.text, draft);
+          expect(
+            find.text(
+              'กำลังตรวจเจ้าของ หากเปลี่ยนบัญชีแล้ว ให้ปิดแล้วเปิดรายงานใหม่',
+            ),
+            findsNothing,
+          );
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => ownerMigrationRows(h.storage.database),
+              stage: 'catalog-quiz-report/draft-purity',
+            ),
+            beforeReport,
+          );
+          if (ending != 'ordinary return') {
+            Finder exit;
+            if (ending == 'foreign cover') {
+              final navigator = Navigator.of(tester.element(comment));
+              final foreign = MaterialPageRoute<void>(
+                builder: (context) => Scaffold(
+                  body: Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close synthetic report cover'),
+                    ),
+                  ),
+                ),
+              );
+              unawaited(navigator.push<void>(foreign));
+              await reportUiWait(
+                tester,
+                'catalog-report-foreign-cover',
+                () => foreign.isCurrent,
+              );
+              practiceRoute.changedExternalState();
+              await tester.pump();
+              navigator.removeRoute(reportRoute);
+              await tester.pump();
+              expect(foreign.isCurrent, isTrue);
+              exit = find.text('Close synthetic report cover');
+            } else {
+              for (final owner in [configuredOtherOwnerId, configuredOwnerId]) {
+                await motivationPresentationIo(
+                  tester,
+                  () => h.storage.database.customUpdate(
+                    'UPDATE local_owners SET is_active = (id = ?)',
+                    variables: [Variable<String>(owner)],
+                    updates: {h.storage.database.localOwners},
+                  ),
+                  stage: 'catalog-quiz-report/$owner',
+                );
+                if (owner == configuredOtherOwnerId) {
+                  await reportUiWait(
+                    tester,
+                    'catalog-report-owner-retired',
+                    () => find
+                        .text(
+                          'กำลังตรวจเจ้าของ หากเปลี่ยนบัญชีแล้ว ให้ปิดแล้วเปิดรายงานใหม่',
+                        )
+                        .evaluate()
+                        .isNotEmpty,
+                  );
+                }
+              }
+              practiceRoute.changedExternalState();
+              await tester.pump();
+              exit = find.byType(ContentReportOwnerGuard);
+            }
+            final beforeExit = await motivationPresentationIo(
+              tester,
+              () => ownerMigrationRows(h.storage.database),
+              stage: 'catalog-quiz-report/before-retired-exit',
+            );
+            if (ending == 'foreign cover') {
+              await reportUiTap(tester, exit, 'catalog-report-close-foreign');
+            } else {
+              expect(exit, findsOneWidget);
+              await tester.binding.handlePopRoute();
+              await tester.pump(const Duration(milliseconds: 350));
+            }
+            practiceRoute.changedExternalState();
+            await tester.pump();
+            expect(find.byType(QuizScreen, skipOffstage: false), findsNothing);
+            expect(find.byType(ContentReportSheet), findsNothing);
+            expect(
+              await motivationPresentationIo(
+                tester,
+                () => ownerMigrationRows(h.storage.database),
+                stage: 'catalog-quiz-report/retired-exit-purity',
+              ),
+              beforeExit,
+            );
+            expect(
+              await motivationPresentationIo(
+                tester,
+                () => h.storage.count('content_reports'),
+              ),
+              0,
+            );
+            expect(
+              await motivationPresentationIo(
+                tester,
+                () => h.storage.count('answer_attempts'),
+              ),
+              1,
+            );
+            return;
+          }
+          await tester.binding.handlePopRoute();
+          await tester.pump(const Duration(milliseconds: 350));
+          expect(find.byType(ContentReportSheet), findsNothing);
+          expect(find.byType(QuizScreen), findsOneWidget);
+          expect(find.text(questions.first.prompt), findsWidgets);
+          expect(find.text('ถูกต้อง'), findsOneWidget);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => ownerMigrationRows(h.storage.database),
+              stage: 'catalog-quiz-report/return-purity',
+            ),
+            beforeReport,
+          );
+          await reportUiTap(
+            tester,
+            find.text('คำถามถัดไป'),
+            'catalog-report-next-question',
+          );
+          await _answerDefinition(tester, questions.last, input);
+          await reportUiTap(
+            tester,
+            find.text('ดูผลการเรียน'),
+            'catalog-report-score',
+          );
+          await reportUiWait(
+            tester,
+            'catalog-report-score-visible',
+            () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+          );
+          final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+          expect(score.correctAnswers, 2);
+          expect(score.wrongAnswers, 0);
+          final completed = await motivationPresentationIo(
+            tester,
+            () => h.storage.session(screen.preparedLaunch!.session.id),
+          );
+          expect(completed['state'], 'completed');
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => h.storage.count('answer_attempts'),
+            ),
+            2,
+          );
+          final beforeReturn = await motivationPresentationIo(
+            tester,
+            () => ownerMigrationRows(h.storage.database),
+            stage: 'catalog-quiz-report/before-score-return',
+          );
+          await reportUiTap(
+            tester,
+            find.text('กลับไปเลือกกิจกรรม'),
+            'catalog-report-return-detail',
+          );
+          await idlePackUi(tester);
+          expect(practiceRoute.isActive, isFalse);
+          await motivationPresentationIo(
+            tester,
+            () => practiceRoute.completed,
+            stage: 'catalog-quiz-report/practice-exit-complete',
+          );
+          expect(find.byTooltip('กลับไปยังรายการแพ็ก'), findsOneWidget);
+          expect(find.text('แพ็กเริ่มต้น LexiQuest'), findsOneWidget);
+          expect(find.byType(QuizScreen), findsNothing);
+          expect(find.byType(ScoreScreen), findsNothing);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => ownerMigrationRows(h.storage.database),
+              stage: 'catalog-quiz-report/after-score-return',
+            ),
+            beforeReturn,
+          );
+        } finally {
+          await closeMotivationPresentation(tester, h.close);
+        }
+      },
+    );
+  }
+
   testWidgets(
     'catalog word report survives its owned sheet rebuild and saves exactly once',
     (tester) => _using(tester, (h) async {
@@ -643,11 +941,11 @@ Future<void> _installStarter(WidgetTester tester) async {
   );
 }
 
-Future<void> _finishDefinition(
+Future<QuizScreen> _openDefinition(
   WidgetTester tester,
-  LearningPackUiHarness h,
-  LexicalQuizInput input,
-) async {
+  LexicalQuizInput input, {
+  String expectedOwnerId = 'synthetic-actions-owner',
+}) async {
   await tapPackUi(tester, 'pack-definition-0');
   await untilPackUi(
     tester,
@@ -702,25 +1000,43 @@ Future<void> _finishDefinition(
   final questions = screen.preparedLaunch!.preparedPlan!.questions;
   expect(questions, hasLength(2));
   expect(screen.preparedLaunch!.configuration.lexical!.limit, 2);
-  expect(screen.expectedOwnerId, 'synthetic-actions-owner');
+  expect(screen.expectedOwnerId, expectedOwnerId);
+  return screen;
+}
+
+Future<void> _answerDefinition(
+  WidgetTester tester,
+  QuizQuestion question,
+  LexicalQuizInput input,
+) async {
+  await untilPackUi(
+    tester,
+    () => find.text(question.prompt).evaluate().isNotEmpty,
+  );
+  if (input == LexicalQuizInput.definitionTyped) {
+    final field = find.byKey(const ValueKey('definition-response'));
+    await tester.ensureVisible(field);
+    await tester.enterText(field, question.correctAnswer);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+  } else {
+    final answer = find.widgetWithText(FilledButton, question.correctAnswer);
+    await tester.ensureVisible(answer);
+    await tester.pump();
+    await tester.tap(answer);
+  }
+  await untilPackUi(tester, () => find.text('ถูกต้อง').evaluate().isNotEmpty);
+}
+
+Future<void> _finishDefinition(
+  WidgetTester tester,
+  LearningPackUiHarness h,
+  LexicalQuizInput input,
+) async {
+  final screen = await _openDefinition(tester, input);
+  final questions = screen.preparedLaunch!.preparedPlan!.questions;
   for (var index = 0; index < questions.length; index++) {
     final question = questions[index];
-    await untilPackUi(
-      tester,
-      () => find.text(question.prompt).evaluate().isNotEmpty,
-    );
-    if (input == LexicalQuizInput.definitionTyped) {
-      final field = find.byKey(const ValueKey('definition-response'));
-      await tester.ensureVisible(field);
-      await tester.enterText(field, question.correctAnswer);
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-    } else {
-      final answer = find.widgetWithText(FilledButton, question.correctAnswer);
-      await tester.ensureVisible(answer);
-      await tester.pump();
-      await tester.tap(answer);
-    }
-    await untilPackUi(tester, () => find.text('ถูกต้อง').evaluate().isNotEmpty);
+    await _answerDefinition(tester, question, input);
     expect(await tester.runAsync(() => h.count('answer_attempts')), index + 1);
     final next = find.text(
       index == questions.length - 1 ? 'ดูผลการเรียน' : 'คำถามถัดไป',

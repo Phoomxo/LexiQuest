@@ -35,7 +35,7 @@ class QuizScreen extends StatefulWidget {
     this.expectedOwnerId,
     this.ownerChanges,
     this.onCanonicalFinished,
-    this.onScoreRouteChanged,
+    this.onOwnedRouteChanged,
     this.learningTime,
     this.timeCallerContext = LearningTimeCallerContext.ordinary,
     this.preparedLaunch,
@@ -51,7 +51,7 @@ class QuizScreen extends StatefulWidget {
   final Stream<String?>? ownerChanges;
   final Future<void> Function(ConfiguredQuizFinishResult result)?
   onCanonicalFinished;
-  final void Function(Route<dynamic>? route, bool current)? onScoreRouteChanged;
+  final void Function(Route<dynamic>? route, bool current)? onOwnedRouteChanged;
   final LearningTimeUseCases? learningTime;
   final LearningTimeCallerContext timeCallerContext;
   final ConfiguredQuizLaunch? preparedLaunch;
@@ -959,6 +959,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         onOverlayChanged: (open) {
           _reportOverlay = open;
         },
+        onRouteChanged: widget.onOwnedRouteChanged,
       );
     }
     return ContentReportButton.content(
@@ -974,6 +975,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       onOverlayChanged: (open) {
         _reportOverlay = open;
       },
+      onRouteChanged: widget.onOwnedRouteChanged,
       targetForSelection: (text, excerpt) => ContentReportTarget.packEntry(
         text: text,
         isExcerpt: excerpt,
@@ -1304,7 +1306,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               result.state.plan.configuration.lexical?.settings.reduceMotion ==
               true,
           builder: (scoreContext) {
-            widget.onScoreRouteChanged?.call(
+            widget.onOwnedRouteChanged?.call(
               ModalRoute.of(scoreContext),
               ModalRoute.isCurrentOf(scoreContext) == true,
             );
@@ -1335,7 +1337,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           },
         ),
         onRouteCreated: (route) =>
-            widget.onScoreRouteChanged?.call(route, true),
+            widget.onOwnedRouteChanged?.call(route, true),
       );
       if (mounted &&
           binding == _binding &&
@@ -1344,7 +1346,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         Navigator.of(context).pop();
       }
     } finally {
-      widget.onScoreRouteChanged?.call(null, false);
+      widget.onOwnedRouteChanged?.call(null, false);
       if (mounted && binding == _binding) setState(() => _scoreOpen = false);
     }
   }

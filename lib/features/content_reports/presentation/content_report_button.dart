@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../runtime/app_dependencies.dart';
 import '../../../widgets/word_report_sheet.dart';
@@ -30,6 +31,35 @@ String contentReportEntryText(LearningPackEntry entry) => [
   ],
 ].join('\n');
 
+final class _ReportSourceLease extends ValueNotifier<bool> {
+  _ReportSourceLease() : super(true);
+
+  bool _closed = false;
+  bool _notificationScheduled = false;
+
+  @override
+  void notifyListeners() {
+    if (_closed) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      if (_notificationScheduled) return;
+      _notificationScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _notificationScheduled = false;
+        if (!_closed) super.notifyListeners();
+      });
+      return;
+    }
+    super.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _closed = true;
+    super.dispose();
+  }
+}
+
 class ContentReportButton extends StatefulWidget {
   const ContentReportButton.content({
     super.key,
@@ -43,6 +73,7 @@ class ContentReportButton extends StatefulWidget {
     this.ownerChanges,
     this.beforeOpen,
     this.onOverlayChanged,
+    this.onRouteChanged,
     this.sessionId,
     this.revalidateSource,
     this.compact = false,
@@ -57,6 +88,7 @@ class ContentReportButton extends StatefulWidget {
     this.ownerChanges,
     this.beforeOpen,
     this.onOverlayChanged,
+    this.onRouteChanged,
     this.sessionId,
     this.revalidateSource,
     this.compact = false,
@@ -80,6 +112,7 @@ class ContentReportButton extends StatefulWidget {
   final Stream<String?>? ownerChanges;
   final Future<void> Function()? beforeOpen;
   final void Function(bool)? onOverlayChanged;
+  final void Function(Route<dynamic>? route, bool current)? onRouteChanged;
   final String? sessionId;
   final Future<void> Function(bool Function() stillCurrent)? revalidateSource;
   final bool compact;
@@ -265,13 +298,13 @@ class _ContentReportButtonState extends State<ContentReportButton>
       if (!mounted || !_current(epoch)) return;
       _opening = true;
       widget.onOverlayChanged?.call(true);
-      lease = ValueNotifier(true);
+      lease = _ReportSourceLease();
       _sourceLease = lease;
       if (wordTarget != null) {
         final sheetOwners = owners();
-        await showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
+        await showContentReportModal(
+          context,
+          onRouteChanged: widget.onRouteChanged,
           builder: (_) => ValueListenableBuilder<bool>(
             valueListenable: lease!,
             builder: (_, valid, _) => !valid
@@ -296,6 +329,7 @@ class _ContentReportButtonState extends State<ContentReportButton>
           ownerChanges: owners(),
           sourceLease: lease,
           revalidate: () => _revalidate(epoch),
+          onRouteChanged: widget.onRouteChanged,
           languageCode: widget.languageCode,
         );
       }

@@ -37,7 +37,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
   Stream<String?>? _ownerChanges;
   bool _opening = false;
   bool _foreignCover = false;
-  Route<dynamic>? _scoreRoute;
+  Route<dynamic>? _ownedChildRoute;
   Route<dynamic>? _quizRoute;
 
   bool get _visible =>
@@ -224,8 +224,8 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
         binding.invalidateLaunch();
       }
 
-      void scoreChanged(Route<dynamic>? route, bool current) {
-        _scoreRoute = route;
+      void ownedRouteChanged(Route<dynamic>? route, bool current) {
+        _ownedChildRoute = route;
         if (route != null &&
             route.isActive &&
             !current &&
@@ -236,7 +236,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
 
       _opening = true;
       _foreignCover = false;
-      _scoreRoute = null;
+      _ownedChildRoute = null;
       _quizRoute = null;
       try {
         await AppNavigator.pushPage<void>(
@@ -251,7 +251,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
                     ModalRoute.isCurrentOf(childContext) == true;
                 if (ModalRoute.of(childContext)?.isActive == true &&
                     !childCurrent &&
-                    _scoreRoute?.isCurrent != true &&
+                    _ownedChildRoute?.isCurrent != true &&
                     ModalRoute.of(context)?.isCurrent != true) {
                   foreignCover();
                 }
@@ -271,7 +271,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
                         expectedOwnerId: owner,
                         ownerChanges: owners,
                         learning: learning,
-                        onScoreRouteChanged: scoreChanged,
+                        onOwnedRouteChanged: ownedRouteChanged,
                       );
               },
             ),
@@ -280,7 +280,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
         );
       } finally {
         _opening = false;
-        _scoreRoute = null;
+        _ownedChildRoute = null;
         _quizRoute = null;
         if (current() && _visible) _syncVisibility();
       }

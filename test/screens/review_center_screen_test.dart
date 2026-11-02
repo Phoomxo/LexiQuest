@@ -3,9 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/content_reports/application/content_report_use_cases.dart';
+import 'package:vocab_learning_app/features/content_reports/data/drift_content_report_queue.dart';
+import 'package:vocab_learning_app/features/content_reports/presentation/content_report_button.dart';
 import 'package:vocab_learning_app/features/progress/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_review_center_queries.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/word_report.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/review_center_screen.dart';
@@ -14,11 +21,153 @@ import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/screens/word_reports_screen.dart';
 import 'package:vocab_learning_app/widgets/word_report_sheet.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/content_report_ui_io.dart';
+import '../support/motivation_presentation_io.dart';
 import '../support/review_center_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  for (final foreignCover in [false, true]) {
+    testWidgets(
+      'Review Center owned word report ${foreignCover ? 'burns a foreign covered return' : 'keeps its draft and ordinary return'}',
+      (tester) async {
+        final h = await _fixture(tester);
+        await tester.runAsync(() => h.save(configuredWordIds.first));
+        await tester.pumpWidget(_reviewReportApp(h, _screen(h)));
+        await _ready(tester);
+        await _tap(tester, 'review-center-saved-practice');
+        final answer = find.widgetWithText(FilledButton, 'สถานี');
+        await reportUiWait(
+          tester,
+          'review-report-answer',
+          () => answer.evaluate().isNotEmpty,
+        );
+        await reportUiTap(tester, answer, 'review-report-answer');
+        final practice = ModalRoute.of(
+          tester.element(find.byType(QuizScreen)),
+        )!;
+        final before = await motivationPresentationIo(
+          tester,
+          h.snapshotAllTables,
+        );
+        final report = find.descendant(
+          of: find.byType(ContentReportButton),
+          matching: find.byType(TextButton),
+        );
+        await reportUiReveal(
+          tester,
+          report,
+          'review-report-open',
+          scrollable: find.byType(SingleChildScrollView),
+        );
+        await reportUiTap(tester, report, 'review-report-open');
+        await reportUiWait(
+          tester,
+          'review-report-sheet',
+          () => find.byType(WordReportSheet).evaluate().isNotEmpty,
+        );
+        await reportUiTapKey(tester, 'word-report-reason:spelling');
+        final comment = find.byKey(const ValueKey('word-report-comment'));
+        const draft = 'Synthetic Review Center report draft';
+        await tester.ensureVisible(comment);
+        await tester.enterText(comment, draft);
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+        final sheet = ModalRoute.of(
+          tester.element(find.byType(WordReportSheet)),
+        )!;
+        sheet.changedExternalState();
+        practice.changedExternalState();
+        await tester.pump();
+        expect(tester.widget<TextField>(comment).controller!.text, draft);
+        expect(
+          find.text('รายงานนี้ไม่พร้อมใช้งาน กรุณากลับแล้วเปิดใหม่'),
+          findsNothing,
+        );
+        expect(
+          await motivationPresentationIo(tester, h.snapshotAllTables),
+          before,
+        );
+        if (foreignCover) {
+          final navigator = Navigator.of(tester.element(comment));
+          final foreign = MaterialPageRoute<void>(
+            builder: (_) =>
+                const Scaffold(body: Text('Synthetic Review report cover')),
+          );
+          unawaited(navigator.push<void>(foreign));
+          await reportUiWait(
+            tester,
+            'review-report-covered',
+            () => foreign.isCurrent,
+          );
+          practice.changedExternalState();
+          await tester.pump();
+          navigator.removeRoute(sheet);
+          navigator.removeRoute(practice);
+          await tester.pump();
+          expect(foreign.isCurrent, isTrue);
+          expect(find.text('Synthetic Review report cover'), findsOneWidget);
+          navigator.pop();
+          await _unavailable(tester);
+          expect(find.byType(QuizScreen, skipOffstage: false), findsNothing);
+          expect(
+            await motivationPresentationIo(tester, h.snapshotAllTables),
+            before,
+          );
+          return;
+        }
+        Navigator.of(tester.element(comment)).pop();
+        await reportUiWait(
+          tester,
+          'review-report-dismissed',
+          () => find.byType(WordReportSheet).evaluate().isEmpty,
+        );
+        expect(find.byType(QuizScreen), findsOneWidget);
+        expect(find.text('ถูกต้อง'), findsOneWidget);
+        expect(
+          await motivationPresentationIo(tester, h.snapshotAllTables),
+          before,
+        );
+        await reportUiTap(
+          tester,
+          find.text('ดูผลการเรียน'),
+          'review-report-score',
+        );
+        await reportUiWait(
+          tester,
+          'review-report-score',
+          () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+        );
+        final finished = await motivationPresentationIo(
+          tester,
+          h.snapshotAllTables,
+        );
+        await reportUiTap(
+          tester,
+          find.text('กลับไปเลือกกิจกรรม'),
+          'review-report-return',
+        );
+        await reportUiWait(
+          tester,
+          'review-report-returned',
+          () =>
+              find.byType(QuizScreen, skipOffstage: false).evaluate().isEmpty &&
+              find.byType(ScoreScreen, skipOffstage: false).evaluate().isEmpty,
+        );
+        await _ready(tester);
+        expect(_count(tester, 'saved'), 'Saved: 1');
+        expect(find.text('Review Center unavailable'), findsNothing);
+        expect(
+          await motivationPresentationIo(tester, h.snapshotAllTables),
+          finished,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets(
     'all reasons, unavailable intents and two original report receipts survive read/filter/refresh without writes',
@@ -812,6 +961,48 @@ Future<ReviewCenterHarness> _fixture(
     await tester.runAsync(h.close);
   });
   return h;
+}
+
+Widget _reviewReportApp(ReviewCenterHarness h, Widget screen) {
+  final queue = DriftContentReportQueue(
+    database: h.database,
+    ownerWrites: h.ownerWrites,
+  );
+  return AppDependenciesScope(
+    dependencies: AppDependencies(
+      runtimeStatus: const AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
+        firebase: RuntimeAvailability.unavailable,
+        supabase: RuntimeAvailability.unavailable,
+        backends: RuntimeAvailability.unavailable,
+      ),
+      config: null,
+      guestSessionService: _ReviewReportGuest(),
+      database: h.database,
+      progress: h.progress,
+      learning: h.learning,
+      wordReports: h.wordReports,
+      vocabulary: VocabularyUseCases(
+        owners: h.owners,
+        vocabulary: DriftVocabularyRepository(h.database),
+        generateId: () => 'synthetic-review-vocabulary',
+        nowUtc: () => h.now,
+      ),
+      contentReports: ContentReportUseCases(
+        queue: queue,
+        generateId: () => 'synthetic-review-report',
+        nowUtc: () => h.now,
+        ordinarySessionGuard: queue.requireOrdinarySession,
+      ),
+    ),
+    child: MaterialApp(home: screen),
+  );
+}
+
+final class _ReviewReportGuest implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() =>
+      throw StateError('The report cannot create a guest');
 }
 
 Future<List<StoredWordReport>> _mixed(

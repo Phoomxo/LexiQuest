@@ -283,7 +283,7 @@ void main() {
                     builder: (_) => QuizScreen(
                       categoryId: 'category-1',
                       learning: learning,
-                      onScoreRouteChanged: (route, current) =>
+                      onOwnedRouteChanged: (route, current) =>
                           events.add((route, current)),
                     ),
                   ),
