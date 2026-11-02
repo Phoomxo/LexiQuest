@@ -168,6 +168,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           return PopScope(
             canPop: !busy,
             child: AlertDialog(
+              scrollable: true,
               title: const Text('เพิ่มหมวดหมู่'),
               content: TextField(
                 key: const ValueKey('category-name-field'),

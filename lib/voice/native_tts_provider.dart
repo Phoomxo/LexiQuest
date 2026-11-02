@@ -26,33 +26,31 @@ final class FlutterTtsAdapter implements NativeTtsAdapter {
   final FlutterTts _flutterTts;
 
   @override
-  Future<void> setLanguage(String language) async {
-    await _flutterTts.setLanguage(language);
-  }
+  Future<void> setLanguage(String language) =>
+      _requireAccepted(_flutterTts.setLanguage(language));
 
   @override
-  Future<void> setSpeechRate(double rate) async {
-    await _flutterTts.setSpeechRate(rate);
-  }
+  Future<void> setSpeechRate(double rate) =>
+      _requireAccepted(_flutterTts.setSpeechRate(rate));
 
   @override
-  Future<void> setVolume(double volume) async {
-    await _flutterTts.setVolume(volume);
-  }
+  Future<void> setVolume(double volume) =>
+      _requireAccepted(_flutterTts.setVolume(volume));
 
   @override
-  Future<void> setPitch(double pitch) async {
-    await _flutterTts.setPitch(pitch);
-  }
+  Future<void> setPitch(double pitch) =>
+      _requireAccepted(_flutterTts.setPitch(pitch));
 
   @override
-  Future<void> speak(String text) async {
-    await _flutterTts.speak(text);
-  }
+  Future<void> speak(String text) => _requireAccepted(_flutterTts.speak(text));
 
   @override
-  Future<void> stop() async {
-    await _flutterTts.stop();
+  Future<void> stop() => _requireAccepted(_flutterTts.stop());
+
+  Future<void> _requireAccepted(Future<dynamic> command) async {
+    if (await command == 0) {
+      throw StateError('Native TTS command rejected.');
+    }
   }
 }
 

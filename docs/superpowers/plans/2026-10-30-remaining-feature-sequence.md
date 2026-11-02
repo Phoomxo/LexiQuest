@@ -1,5 +1,45 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Real-service and physical-device acceptance, 2026-11-02
+
+Intent: continue provider/Play, physical TalkBack/audio and Research readiness
+from c4ede833, without Cloud A, Cloud Billing, publication, real charges or real
+Research enrollment. Use the existing worktree and preserve all untracked work.
+
+Designed workflow: Frame, Design, Execute each bounded check, Review evidence,
+Attest and record the next executable step. Prove It Works requires actual
+service/device evidence; absence of trusted input cannot be replaced by fixtures.
+
+- Ground: read current runbooks, composed native voice implementation and exact
+  device metadata. V2041/API33 is connected, official app version18 is installed,
+  TalkBack and Google TTS are installed, accessibility services currently null.
+- Physical checks: use serial9582188822004C6 only. An authorized in-place signed
+  update may preserve data; never clear/uninstall the existing application.
+  Use synthetic text, do not export personal content or record ambient speech.
+  Restore any temporary accessibility settings. Do not claim audible quality
+  from a platform callback or semantic tree alone.
+- Voice review: read adapter/callers and actual installed plugin contracts;
+  reproduce and correct a confirmed failure-status defect if one exists.
+- Provider/Play: locate authorized configuration and test identity. Never use
+  synthetic product IDs as real offers or perform a real charge. Ask for input
+  location without requesting secrets in chat when it is not available.
+- Research: validate approved protocol/consent/issuer artifacts if supplied.
+  Keep real collection/upload off. Engineering checks cannot issue ethics approval.
+
+Write set: this plan and a bounded acceptance report; voice adapter/tests only if
+review confirms a defect. Root serializes Flutter/builds and owns device actions.
+Evidence root is commercial-readiness/acceptance33. Required checks depend on the
+actual change; current offline20 artifact already has full5563/artifact evidence.
+No new feature catalog, schema, production configuration or authority is planned.
+
+Execution found two real defects: plugin0 acknowledgements were ignored by native
+TTS, and physical landscape Add Category overflowed with IME. RED tests committed
+first, then bounded fixes. Voice/caller416PASS and vocabulary7PASS. The physical
+device updated to offline20 without data clear; TalkBack service probe restored
+original settings. New fixed artifact remains to be built and checked. The owner
+reply supplied no actual provider/Play/Research input location. See
+docs/field/2026-11-02-real-service-device-acceptance.md for evidence and limits.
+
 ## Full feature and workflow critique, 2026-11-02
 
 Intent: review all44 catalog features and connected app workflows, then implement

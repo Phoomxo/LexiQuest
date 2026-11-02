@@ -88,38 +88,43 @@ void main() {
     tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
     for (final rejectedMethod in speakMethods) {
-      test('$rejectedMethod rejection cannot report successful speech', () async {
-        final methods = <String>[];
-        messenger.setMockMethodCallHandler(channel, (call) async {
-          methods.add(call.method);
-          return call.method == rejectedMethod ? 0 : 1;
-        });
-        final provider = NativeTtsProvider(FlutterTtsAdapter());
+      test(
+        '$rejectedMethod rejection cannot report successful speech',
+        () async {
+          final methods = <String>[];
+          messenger.setMockMethodCallHandler(channel, (call) async {
+            methods.add(call.method);
+            return call.method == rejectedMethod ? 0 : 1;
+          });
+          final provider = NativeTtsProvider(FlutterTtsAdapter());
 
-        await expectLater(
-          provider.speak(_validRequest(text: _credentialSentinel)),
-          throwsA(
-            isA<VoiceFailure>()
-                .having(
-                  (failure) => failure.category,
-                  'category',
-                  VoiceFailureCategory.synthesis,
-                )
-                .having(
-                  (failure) => failure.toString(),
-                  'safe error',
-                  isNot(contains(_credentialSentinel)),
-                ),
-          ),
-        );
-        expect(
-          methods,
-          speakMethods.take(speakMethods.indexOf(rejectedMethod) + 1).toList(),
-        );
-        if (rejectedMethod != 'speak') {
-          expect(methods, isNot(contains('speak')));
-        }
-      });
+          await expectLater(
+            provider.speak(_validRequest(text: _credentialSentinel)),
+            throwsA(
+              isA<VoiceFailure>()
+                  .having(
+                    (failure) => failure.category,
+                    'category',
+                    VoiceFailureCategory.synthesis,
+                  )
+                  .having(
+                    (failure) => failure.toString(),
+                    'safe error',
+                    isNot(contains(_credentialSentinel)),
+                  ),
+            ),
+          );
+          expect(
+            methods,
+            speakMethods
+                .take(speakMethods.indexOf(rejectedMethod) + 1)
+                .toList(),
+          );
+          if (rejectedMethod != 'speak') {
+            expect(methods, isNot(contains('speak')));
+          }
+        },
+      );
     }
 
     test('stop rejection cannot report successful stop', () async {
@@ -149,27 +154,24 @@ void main() {
     });
 
     for (final speakAcknowledgement in <Object?>[1, null]) {
-      test(
-        '${speakAcknowledgement == null ? 'web-style null' : 'native 1'} '
-        'acknowledges start without changing completion mode',
-        () async {
-          final methods = <String>[];
-          messenger.setMockMethodCallHandler(channel, (call) async {
-            methods.add(call.method);
-            return call.method == 'speak' ? speakAcknowledgement : 1;
-          });
-          final provider = NativeTtsProvider(FlutterTtsAdapter());
+      test('${speakAcknowledgement == null ? 'web-style null' : 'native 1'} '
+          'acknowledges start without changing completion mode', () async {
+        final methods = <String>[];
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          methods.add(call.method);
+          return call.method == 'speak' ? speakAcknowledgement : 1;
+        });
+        final provider = NativeTtsProvider(FlutterTtsAdapter());
 
-          final result = await provider.speak(_validRequest());
+        final result = await provider.speak(_validRequest());
 
-          expect(result.actualEngine, VoiceEngine.nativeTts);
-          expect(result.usedFallback, isFalse);
-          expect(methods, speakMethods);
-          expect(methods, isNot(contains('awaitSpeakCompletion')));
-          await provider.stop();
-          expect(methods, [...speakMethods, 'stop']);
-        },
-      );
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(result.usedFallback, isFalse);
+        expect(methods, speakMethods);
+        expect(methods, isNot(contains('awaitSpeakCompletion')));
+        await provider.stop();
+        expect(methods, [...speakMethods, 'stop']);
+      });
     }
   });
 
