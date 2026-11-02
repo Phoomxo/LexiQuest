@@ -1,5 +1,23 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Private Cloud A resume, 2026-11-02
+
+The owner reports Billing linked and explicitly requests completing only the
+approved private Cloud A. The06:48:06UTC Cloud Billing read for the exact project
+still returns disabled/unlinked after the owner confirms that project. A direct
+no-cache API read at06:59:24UTC independently returns the same state. This
+holds paid provisioning; it does not revoke the existing approval or block
+independent local preparation. Do not select a billing account or enable public
+access as a workaround.
+
+Root owns all live-cloud mutations and shared checkpoints. The private smoke
+CLI writer owns two new tool/test files; the runbook writer owns only
+firebase-field-operations.md. The image/source/lock recheck is complete, the
+private boundary tool passes88 isolated checks, and actual execution stops at
+the Billing gate with zero HTTP probes. Resource/IAM/deploy and synthetic cloud
+export/Play acceptance have not run. See
+`docs/field/2026-11-02-cloud-a.md` for cards, evidence and the next executable step.
+
 ## Trial and native acceptance continuation, 2026-11-02
 
 The user now requires the satisfaction-evaluation artifact to unlock every

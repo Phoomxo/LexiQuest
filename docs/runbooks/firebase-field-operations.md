@@ -126,14 +126,23 @@ deployment evidence. Do not put credentials or key material in this repository.
   descendants are removed. A lost race stops receipt attachment and Auth
   deletion.
 
-The shared export-and-delete inventory is:
+The shared export-and-delete inventory follows `FIREBASE_ACCOUNT_DATA_SOURCES`:
 
 - `field_users/{uid}/**` including descendants;
 - `users/{uid}` and `state/{uid}`;
 - `categories` documents whose `uid` equals the authenticated UID, including
-  their descendant word documents;
-- `purchased_items` documents whose `user_id` equals that UID; and
-- `vocabulary` documents whose `uid` equals that UID.
+  all descendants;
+- `purchased_items` documents whose `user_id` equals that UID;
+- `vocabulary` documents whose `uid` equals that UID;
+- `billing_accounts`, `billing_purchases`, `billing_usage`, and
+  `billing_usage_windows` documents whose `firebaseUid` equals that UID;
+- `research_enrollments`, `research_consents`, and `research_study_archives`
+  documents whose `firebaseUid` equals that UID; and
+- `content_reports` and `content_report_limits` documents whose `firebaseUid`
+  equals that UID.
+
+Only `field_users` and `categories` include descendants. The snapshot reader
+and deleter use the same inventory and validate queried owner fields.
 
 It intentionally excludes `products`, `global_words`, `quiz`, and
 `voice_telemetry_events`. Firebase Auth export is allowlisted to identity and
@@ -160,14 +169,47 @@ are not TTL evidence. Capture lifecycle/retention, terminal-only TTL, the
 active and trusted KMS versions, IAM review, and synthetic create/replay/
 tamper/expiry/lost-race tests in release evidence.
 
-`/health/ready` performs a cached runtime attestation and returns 503 unless the
-private bucket has public-access prevention plus uniform bucket-level access,
-the runtime has exactly the requested GCS create/get permissions, every trusted
-KMS version is enabled HMAC-SHA256 and passes MAC sign/verify, and Firestore and
-Firebase Auth probes exercise get/query and safe absent-target deletes to prove
-the configured identity's access without deleting data. This probe is
-default-off with the deletion authority and does not replace the external IAM,
-lifecycle, TTL, or rollout evidence.
+For the seven-day policy, verify actual bucket metadata records a retention
+period of `604800` seconds. The runtime probe accepts retention periods from
+zero through the configured export retention. A passing probe alone does not
+prove the full recovery period is protected.
+
+Before enabling TTL, record aggregate counts of terminal and nonterminal
+`account_deletion_operations` documents, with `purgeAtUtc` classified as a native
+timestamp, missing, or invalid. Verify that no nonterminal document carries
+`purgeAtUtc`, and record the actual TTL field configuration. Serializer unit
+tests do not prove the existing documents or deployed TTL configuration.
+If a TTL-eligible timestamp belongs to real or unclassified data, leave the
+policy disabled until that deletion scope is separately authorized. Report only
+counts in evidence, without document IDs, UIDs, or account payloads.
+
+For a configured deletion authority, `/health/ready` performs a cached runtime
+attestation after earlier service-readiness checks pass. A failing attestation
+returns 503. The attestation checks:
+
+- Bucket metadata has enforced public-access prevention and uniform
+  bucket-level access. A covering lifecycle Delete rule has an age from zero
+  through the configured export retention. Bucket retention is within that
+  same range, default event-based hold and versioning are disabled, and soft
+  delete retention is zero.
+- GCS `test_iam_permissions` returns both requested permissions,
+  `storage.objects.create` and `storage.objects.get`. This request does not
+  enumerate or reject additional permissions.
+- Every trusted KMS version is enabled HMAC-SHA256 and passes MAC sign/verify.
+- Firestore can get the reserved
+  `account_deletion_operations/__readiness__` document, query a reserved UID in
+  `categories`, and delete the reserved document with `ExistsOption(False)`.
+  That precondition prevents deletion if the document exists.
+- Firebase Auth `get_user` returns user-not-found for a reserved UID. The probe
+  does not call Auth delete or prove Auth delete permission.
+
+Provider readiness runs first. With LLM models off, `/health/ready` returns
+`PROVIDER_UNAVAILABLE` before the deletion attestation. While models remain off,
+run the account-deletion readiness probe directly with the actual cloud
+configuration and reviewed runtime identity. Record that result separately.
+Review effective IAM metadata for Auth delete authority and excess permissions
+across all resources. The probe is default-off with the deletion authority and
+does not replace IAM, lifecycle, retention, TTL, or rollout evidence.
 Every new deletion request must pass the same cached attestation before the
 tombstone is claimed; direct or in-flight traffic cannot bypass a failed health
 probe. Recovery remains available to finish an already committed operation.
