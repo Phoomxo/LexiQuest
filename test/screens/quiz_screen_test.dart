@@ -893,7 +893,10 @@ void main() {
         .map((button) => (button.child as Text).data!)
         .firstWhere((label) => label != 'สถานี');
     await tester.tap(find.widgetWithText(FilledButton, wrongAnswer));
-    await _pumpUntilFound(tester, find.text('ยังไม่ถูก ลองดูคำแปลอีกครั้ง'));
+    await _pumpUntilFound(
+      tester,
+      find.text('ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง'),
+    );
 
     final correctAnswer = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'สถานี'),
@@ -1006,7 +1009,10 @@ void main() {
       expect(quizScreen.learning, same(learning));
       await tester.tap(find.text('ตั๋ว'));
       await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
-      expect(find.text('ยังไม่ถูก ลองดูคำแปลอีกครั้ง'), findsOneWidget);
+      expect(
+        find.text('ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง'),
+        findsOneWidget,
+      );
       expect(find.text('station — สถานี'), findsOneWidget);
       await tester.tap(find.text('คำถามถัดไป'));
       await _pumpUntilFound(tester, find.text('คำถาม 2 จาก 2'));

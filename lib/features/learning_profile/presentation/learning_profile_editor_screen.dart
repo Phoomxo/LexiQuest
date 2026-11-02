@@ -42,6 +42,7 @@ class _LearningProfileEditorScreenState
   var _loading = true;
   var _busy = false;
   var _dirty = false;
+  var _confirmingDiscard = false;
   AppDependencies? _boundDependencies;
   var _dependenciesBound = false;
   var _retired = false;
@@ -166,6 +167,64 @@ class _LearningProfileEditorScreenState
     });
   }
 
+  Future<void> _leaveOrReload({bool reload = false}) async {
+    if (_busy || _confirmingDiscard) return;
+    final owner = _owner;
+    final generation = _generation;
+    if (owner == null) return;
+    _confirmingDiscard = true;
+    try {
+      if (_dirty || _pending != null) {
+        final uncertain = _pending != null;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            scrollable: true,
+            title: Text(
+              uncertain
+                  ? 'ยังยืนยันการบันทึกไม่ได้'
+                  : reload
+                  ? 'โหลดแผนล่าสุดแทนฉบับร่างหรือไม่?'
+                  : 'ออกโดยไม่บันทึกหรือไม่?',
+            ),
+            content: Text(
+              uncertain
+                  ? 'การออกหรือโหลดข้อมูลใหม่ไม่ยกเลิกคำขอที่ส่งไปแล้ว '
+                        'คำขออาจบันทึกสำเร็จแล้ว อยู่หน้านี้เพื่อลองบันทึกเดิมอีกครั้งได้'
+                  : 'การแก้ไขที่ยังไม่ได้บันทึกจะถูกทิ้ง '
+                        'แผนที่บันทึกไว้ก่อนหน้านี้ยังคงอยู่',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('อยู่หน้านี้'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(
+                  reload
+                      ? 'โหลดข้อมูลล่าสุด'
+                      : uncertain
+                      ? 'ออกจากหน้านี้'
+                      : 'ออกโดยไม่บันทึก',
+                ),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+      }
+      if (!mounted || !_current(owner, generation) || _busy) return;
+      if (reload) {
+        await _load(owner, generation);
+      } else {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      _confirmingDiscard = false;
+    }
+  }
+
   Future<void> _save({bool skip = false}) async {
     final snapshot = _snapshot;
     final owner = _owner;
@@ -262,213 +321,221 @@ class _LearningProfileEditorScreenState
     final days = target?.daysFrom(
       LearningCivilDate.fromDateTime(DateTime.now()),
     );
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(
-          context,
-          widget.onboarding ? 'วางแผนการเรียนของคุณ' : 'แผนและเป้าหมายการเรียน',
+    return PopScope(
+      canPop: !_busy && !_dirty && _pending == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_leaveOrReload());
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: M3Theme.appBarToolbarHeight(context),
+          title: M3Theme.appBarTitle(
+            context,
+            widget.onboarding
+                ? 'วางแผนการเรียนของคุณ'
+                : 'แผนและเป้าหมายการเรียน',
+          ),
         ),
-      ),
-      body: AdaptiveContentPane(
-        maxWidth: AdaptiveContentPane.formMaxWidth,
-        child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  semanticsLabel: 'กำลังอ่านแผนการเรียน',
-                ),
-              )
-            : Form(
-                key: _form,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'เลือกตั้งค่าได้ตามต้องการ ข้ามหรือแก้ไขภายหลังได้',
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'การตั้งค่านี้ไม่เปิดการแจ้งเตือนหรือบันทึกเวลาเรียนให้อัตโนมัติ',
-                      ),
-                      if (_snapshot != null) ...[
-                        const SizedBox(height: 20),
-                        TextFormField(
-                          key: const ValueKey('learning-profile-goal'),
-                          controller: _goal,
-                          enabled: !_busy && _pending == null,
-                          maxLength: 120,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'เป้าหมายการเรียน',
-                            hintText: 'เช่น อ่านบทความภาษาอังกฤษ',
-                          ),
-                          onChanged: (_) => _edited(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          key: const ValueKey('learning-profile-date'),
-                          controller: _date,
-                          enabled: !_busy && _pending == null,
-                          keyboardType: TextInputType.datetime,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'วันที่เป้าหมายหรือวันสอบ',
-                            helperText:
-                                'ปี ค.ศ.-เดือน-วัน เช่น 2026-12-31 เว้นว่างเพื่อล้าง',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            try {
-                              LearningCivilDate.parse(value.trim());
-                              return null;
-                            } catch (_) {
-                              return 'ใส่วันที่ที่มีจริงในรูปแบบ YYYY-MM-DD';
-                            }
-                          },
-                          onChanged: (_) => _edited(),
-                        ),
-                        if (days != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              days == 0
-                                  ? 'ถึงวันเป้าหมายวันนี้'
-                                  : days > 0
-                                  ? 'เหลือ $days วันถึงเป้าหมาย'
-                                  : 'ผ่านวันเป้าหมายแล้ว ${-days} วัน',
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          key: const ValueKey('learning-profile-minutes'),
-                          controller: _minutes,
-                          enabled: !_busy && _pending == null,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
-                          decoration: const InputDecoration(
-                            labelText: 'เวลาที่อยากเรียนต่อวัน (นาที)',
-                            helperText: '1 ถึง 180 นาที หรือเว้นว่าง',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            final minutes = int.tryParse(value.trim());
-                            return minutes == null ||
-                                    minutes < 1 ||
-                                    minutes > 180
-                                ? 'ใส่จำนวนเต็มระหว่าง 1 ถึง 180'
-                                : null;
-                          },
-                          onChanged: (_) => _edited(),
-                        ),
-                        const SizedBox(height: 20),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(
-                            'learning-profile-timezone-${_snapshot?.revision}',
-                          ),
-                          initialValue: _timezone ?? '',
-                          isExpanded: true,
-                          itemHeight: null,
-                          menuMaxHeight: 320,
-                          decoration: const InputDecoration(
-                            labelText: 'เขตเวลาสำหรับวันเรียนและภารกิจ',
-                            helperText:
-                                'ใช้กับวันเรียนและรอบภารกิจใหม่ ประวัติเดิมคงเขตเวลาเดิม',
-                            helperMaxLines: 3,
-                          ),
-                          items: [
-                            const DropdownMenuItem(
-                              value: '',
-                              child: Text('UTC (ค่าเริ่มต้น)'),
-                            ),
-                            for (final zone in learningTimezoneIds)
-                              DropdownMenuItem(
-                                value: zone,
-                                child: Text(
-                                  zone,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: _busy || _pending != null
-                              ? null
-                              : (value) {
-                                  _timezone = value == null || value.isEmpty
-                                      ? null
-                                      : value;
-                                  _edited();
-                                },
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'หัวข้อที่สนใจ',
-                          style: Theme.of(context).textTheme.titleMedium,
+        body: AdaptiveContentPane(
+          maxWidth: AdaptiveContentPane.formMaxWidth,
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    semanticsLabel: 'กำลังอ่านแผนการเรียน',
+                  ),
+                )
+              : Form(
+                  key: _form,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'เลือกตั้งค่าได้ตามต้องการ ข้ามหรือแก้ไขภายหลังได้',
                         ),
                         const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final entry in _interestLabels.entries)
-                              FilterChip(
-                                label: Text(entry.value),
-                                selected: _interests.contains(entry.key),
-                                onSelected: _busy || _pending != null
-                                    ? null
-                                    : (selected) {
-                                        if (selected) {
-                                          _interests.add(entry.key);
-                                        } else {
-                                          _interests.remove(entry.key);
-                                        }
-                                        _edited();
-                                      },
-                              ),
-                          ],
+                        const Text(
+                          'การตั้งค่านี้ไม่เปิดการแจ้งเตือนหรือบันทึกเวลาเรียนให้อัตโนมัติ',
                         ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          key: const ValueKey('learning-profile-save'),
-                          onPressed: _busy ? null : _save,
-                          child: Text(
-                            _pending == null
-                                ? 'บันทึกแผนการเรียน'
-                                : 'ลองบันทึกเดิมอีกครั้ง',
+                        if (_snapshot != null) ...[
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            key: const ValueKey('learning-profile-goal'),
+                            controller: _goal,
+                            enabled: !_busy && _pending == null,
+                            maxLength: 120,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'เป้าหมายการเรียน',
+                              hintText: 'เช่น อ่านบทความภาษาอังกฤษ',
+                            ),
+                            onChanged: (_) => _edited(),
                           ),
-                        ),
-                        if (widget.onboarding)
-                          TextButton(
-                            key: const ValueKey('learning-profile-skip'),
-                            onPressed: _busy || _pending != null
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            key: const ValueKey('learning-profile-date'),
+                            controller: _date,
+                            enabled: !_busy && _pending == null,
+                            keyboardType: TextInputType.datetime,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'วันที่เป้าหมายหรือวันสอบ',
+                              helperText:
+                                  'ปี ค.ศ.-เดือน-วัน เช่น 2026-12-31 เว้นว่างเพื่อล้าง',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              try {
+                                LearningCivilDate.parse(value.trim());
+                                return null;
+                              } catch (_) {
+                                return 'ใส่วันที่ที่มีจริงในรูปแบบ YYYY-MM-DD';
+                              }
+                            },
+                            onChanged: (_) => _edited(),
+                          ),
+                          if (days != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days == 0
+                                    ? 'ถึงวันเป้าหมายวันนี้'
+                                    : days > 0
+                                    ? 'เหลือ $days วันถึงเป้าหมาย'
+                                    : 'ผ่านวันเป้าหมายแล้ว ${-days} วัน',
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            key: const ValueKey('learning-profile-minutes'),
+                            controller: _minutes,
+                            enabled: !_busy && _pending == null,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              labelText: 'เวลาที่อยากเรียนต่อวัน (นาที)',
+                              helperText: '1 ถึง 180 นาที หรือเว้นว่าง',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              final minutes = int.tryParse(value.trim());
+                              return minutes == null ||
+                                      minutes < 1 ||
+                                      minutes > 180
+                                  ? 'ใส่จำนวนเต็มระหว่าง 1 ถึง 180'
+                                  : null;
+                            },
+                            onChanged: (_) => _edited(),
+                          ),
+                          const SizedBox(height: 20),
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(
+                              'learning-profile-timezone-${_snapshot?.revision}',
+                            ),
+                            initialValue: _timezone ?? '',
+                            isExpanded: true,
+                            itemHeight: null,
+                            menuMaxHeight: 320,
+                            decoration: const InputDecoration(
+                              labelText: 'เขตเวลาสำหรับวันเรียนและภารกิจ',
+                              helperText:
+                                  'ใช้กับวันเรียนและรอบภารกิจใหม่ ประวัติเดิมคงเขตเวลาเดิม',
+                              helperMaxLines: 3,
+                            ),
+                            items: [
+                              const DropdownMenuItem(
+                                value: '',
+                                child: Text('UTC (ค่าเริ่มต้น)'),
+                              ),
+                              for (final zone in learningTimezoneIds)
+                                DropdownMenuItem(
+                                  value: zone,
+                                  child: Text(
+                                    zone,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                            onChanged: _busy || _pending != null
                                 ? null
-                                : () => _save(skip: true),
-                            child: const Text('ข้ามการตั้งค่า'),
+                                : (value) {
+                                    _timezone = value == null || value.isEmpty
+                                        ? null
+                                        : value;
+                                    _edited();
+                                  },
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'หัวข้อที่สนใจ',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final entry in _interestLabels.entries)
+                                FilterChip(
+                                  label: Text(entry.value),
+                                  selected: _interests.contains(entry.key),
+                                  onSelected: _busy || _pending != null
+                                      ? null
+                                      : (selected) {
+                                          if (selected) {
+                                            _interests.add(entry.key);
+                                          } else {
+                                            _interests.remove(entry.key);
+                                          }
+                                          _edited();
+                                        },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            key: const ValueKey('learning-profile-save'),
+                            onPressed: _busy ? null : _save,
+                            child: Text(
+                              _pending == null
+                                  ? 'บันทึกแผนการเรียน'
+                                  : 'ลองบันทึกเดิมอีกครั้ง',
+                            ),
+                          ),
+                          if (widget.onboarding)
+                            TextButton(
+                              key: const ValueKey('learning-profile-skip'),
+                              onPressed: _busy || _pending != null
+                                  ? null
+                                  : () => _save(skip: true),
+                              child: const Text('ข้ามการตั้งค่า'),
+                            ),
+                        ],
+                        if (_status != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(_status!),
+                            ),
+                          ),
+                        if (_owner != null && !_busy)
+                          OutlinedButton(
+                            onPressed: () {
+                              unawaited(_leaveOrReload(reload: true));
+                            },
+                            child: const Text('โหลดแผนล่าสุด'),
                           ),
                       ],
-                      if (_status != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(_status!),
-                          ),
-                        ),
-                      if (_owner != null && !_busy)
-                        OutlinedButton(
-                          onPressed: () {
-                            unawaited(_load(_owner!, _generation));
-                          },
-                          child: const Text('โหลดแผนล่าสุด'),
-                        ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }

@@ -1,5 +1,35 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Full feature and workflow critique, 2026-11-02
+
+Intent: review all44 catalog features and connected app workflows, then implement
+confirmed in-scope defects. Baseline `0b7d7f53`, existing worktree. Cloud Stage A
+and Cloud Billing remain excluded. No public rollout, payment, real enrollment,
+destructive cleanup or fabricated external acceptance.
+
+Frame → Fan out → Aggregate → Report. Three source reviewers own disjoint reports
+in docs/field: critique-f01-f16, critique-f17-f30 and critique-f31-f44 dated2026-11-02.
+Root owns rendered native review, cross-feature/auth/provider workflows, shared
+plans and integration. Reviewers do not edit source or run shared build/test lanes.
+Native Impeccable Assessment A applies; the web detector is not applicable.
+
+Completion requires44 distinct feature dispositions with source evidence, workflow
+coverage, reproduction and fixes for confirmed defects, independent diff review,
+current-source tests and clear device/external limitations. Code-fix write sets
+will be assigned after findings. Root serializes Flutter tests/builds. Preserve
+existing untracked critiques/failure artifacts. No new schema or learning authority
+is planned. Questions about choosing fixes are skipped because the owner explicitly
+authorized implementing the critique; genuine authority/data/cost changes remain
+outside that authorization.
+
+Source review completed for all44 features and ten connected workflows. Four
+bounded fixes are implemented: BYOK redirect credential protection, stable
+calendar date, profile Back/reload confirmation and neutral Definition feedback.
+Root reproduced failures first; focused suites157/37 and backend522 pass.
+Independent source reviews ACCEPT. Final full regression and offline packaging
+are the integration steps; evidence lives in commercial-readiness/critique32.
+See `docs/field/2026-11-02-full-workflow-critique.md` for the detailed dispositions.
+
 ## Current scope override, 2026-11-02
 
 The owner removes Cloud Stage A and Cloud Billing from the remaining work.

@@ -843,7 +843,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     Text(
                       _quiz!.checkpoint.answer!.isCorrect
                           ? 'ถูกต้อง'
-                          : 'ยังไม่ถูก ลองดูคำแปลอีกครั้ง',
+                          : 'ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),

@@ -15,6 +15,202 @@ import 'package:vocab_learning_app/features/learning_profile/domain/learning_pro
 import 'package:vocab_learning_app/features/learning_profile/presentation/learning_profile_editor_screen.dart';
 
 void main() {
+  testWidgets('clean editor allows Back without confirmation', (tester) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+    expect(repository.changes, isEmpty);
+  });
+
+  testWidgets('dirty Back keeps draft until explicit discard', (tester) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    final goal = find.byKey(const ValueKey('learning-profile-goal'));
+    await tester.enterText(goal, 'Unsaved learning goal');
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('อยู่หน้านี้'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(goal).controller!.text,
+      'Unsaved learning goal',
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ออกโดยไม่บันทึก'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+    expect(repository.changes, isEmpty);
+  });
+
+  testWidgets('dirty reload asks before replacing draft', (tester) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    final goal = find.byKey(const ValueKey('learning-profile-goal'));
+    await tester.enterText(goal, 'Retain until confirmed');
+    await tester.ensureVisible(find.text('โหลดแผนล่าสุด'));
+    await tester.tap(find.text('โหลดแผนล่าสุด'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('อยู่หน้านี้'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(goal).controller!.text,
+      'Retain until confirmed',
+    );
+    await tester.ensureVisible(find.text('โหลดแผนล่าสุด'));
+    await tester.tap(find.text('โหลดแผนล่าสุด'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('โหลดข้อมูลล่าสุด'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextFormField>(goal).controller!.text, isEmpty);
+    expect(repository.changes, isEmpty);
+  });
+
+  testWidgets('busy save stays in editor then clean Back succeeds', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-profile-goal')),
+      'Save in progress',
+    );
+    final pending = Completer<LearningProfile>();
+    repository.saveResult = pending.future;
+    final save = find.byKey(const ValueKey('learning-profile-save'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningProfileEditorScreen), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    pending.complete(_saved(repository.changes.single));
+    await tester.pumpAndSettle();
+    expect(find.text('บันทึกแผนการเรียนแล้ว'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+  });
+
+  testWidgets('uncertain save warns on Back and retains exact retry', (
+    tester,
+  ) async {
+    final repository = _Repository()..failNext = true;
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-profile-goal')),
+      'Original save',
+    );
+    final save = find.byKey(const ValueKey('learning-profile-save'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    final original = repository.changes.single;
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ไม่ยกเลิกคำขอที่ส่งไปแล้ว'), findsOneWidget);
+    await tester.tap(find.text('อยู่หน้านี้'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(repository.changes.length, 2);
+    expect(identical(repository.changes.last, original), isTrue);
+    expect(find.text('บันทึกแผนการเรียนแล้ว'), findsOneWidget);
+  });
+
+  testWidgets('owner change invalidates retained discard confirmation', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-profile-goal')),
+      'Private owner A draft',
+    );
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    repository.owner = 'b';
+    repository.owners.add(null);
+    repository.owners.add('b');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ออกโดยไม่บันทึก'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningProfileEditorScreen), findsOneWidget);
+    expect(find.text('Private owner A draft'), findsNothing);
+    expect(repository.changes, isEmpty);
+  });
+
+  testWidgets('onboarding successful save exits despite dirty guard', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile, onboarding: true);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-profile-goal')),
+      'Onboarding goal',
+    );
+    final save = find.byKey(const ValueKey('learning-profile-save'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+    expect(repository.changes.single.draft.goalText, 'Onboarding goal');
+  });
+
+  testWidgets('discard actions fit320px200percent text', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _Repository();
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile, scale: 2);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-profile-goal')),
+      'แผนที่ยังไม่ได้บันทึก',
+    );
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('อยู่หน้านี้').hitTestable(), findsOneWidget);
+    expect(find.text('ออกโดยไม่บันทึก').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('อยู่หน้านี้'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets(
     'actual editor acknowledges a durable profile and reloads it after reopening SQLite',
     (tester) async {
@@ -213,6 +409,8 @@ void main() {
       await tester.ensureVisible(find.text('โหลดแผนล่าสุด'));
       await tester.tap(find.text('โหลดแผนล่าสุด'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('โหลดข้อมูลล่าสุด'));
+      await tester.pumpAndSettle();
       expect(tester.widget<FilterChip>(study).selected, isTrue);
       expect(tester.widget<FilterChip>(work).selected, isFalse);
       expect(tester.widget<FilterChip>(travel).selected, isFalse);
@@ -363,6 +561,8 @@ void main() {
     repository.readResult = pending.future;
     await tester.ensureVisible(find.text('โหลดแผนล่าสุด'));
     await tester.tap(find.text('โหลดแผนล่าสุด'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('โหลดข้อมูลล่าสุด'));
     await tester.pump();
     pending.completeError(StateError('synthetic read failure'));
     await tester.pumpAndSettle();
@@ -502,6 +702,41 @@ Future<void> _until(WidgetTester tester, Finder finder) async {
     if (finder.evaluate().isNotEmpty) return;
   }
   expect(finder, findsWidgets);
+}
+
+Future<void> _openEditor(
+  WidgetTester tester,
+  LearningProfileUseCases profile, {
+  bool onboarding = false,
+  double scale = 1,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(scale)),
+        child: child!,
+      ),
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => LearningProfileEditorScreen(
+                  profile: profile,
+                  onboarding: onboarding,
+                ),
+              ),
+            ),
+            child: const Text('Open editor'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open editor'));
+  await tester.pumpAndSettle();
 }
 
 LearningProfileUseCases _useCases(_Repository repository) =>

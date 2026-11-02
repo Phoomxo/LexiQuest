@@ -43,6 +43,7 @@ class _LearningCalendarScreenState extends State<LearningCalendarScreen>
   StreamSubscription<void>? _timeChanges;
   LearningCalendarSnapshot? _snapshot;
   late LearningCalendarPeriod _period;
+  late DateTime _selectedDay;
   String? _owner;
   int _generation = 0;
   bool _monthly = false;
@@ -63,7 +64,8 @@ class _LearningCalendarScreenState extends State<LearningCalendarScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _period = LearningCalendarPeriod.weekEnding(_today);
+    _selectedDay = DateUtils.dateOnly(_today);
+    _period = LearningCalendarPeriod.weekEnding(_selectedDay);
   }
 
   @override
@@ -190,28 +192,38 @@ class _LearningCalendarScreenState extends State<LearningCalendarScreen>
     if (_monthly == monthly) return;
     setState(() {
       _monthly = monthly;
-      final selected = _period.dayAt(_period.dayCount - 1);
       _period = monthly
-          ? LearningCalendarPeriod.month(selected.year, selected.month)
-          : LearningCalendarPeriod.weekEnding(selected);
+          ? LearningCalendarPeriod.month(_selectedDay.year, _selectedDay.month)
+          : LearningCalendarPeriod.weekEnding(_selectedDay);
     });
     unawaited(_reload());
   }
 
   void _move(int direction) {
-    final next = _monthly
-        ? DateTime(_period.firstDay.year, _period.firstDay.month + direction)
+    var next = _monthly
+        ? DateTime(_selectedDay.year, _selectedDay.month + direction)
         : DateTime(
-            _period.firstDay.year,
-            _period.firstDay.month,
-            _period.firstDay.day + 6 + direction * 7,
+            _selectedDay.year,
+            _selectedDay.month,
+            _selectedDay.day + direction * 7,
           );
     if (next.year < 1970 || next.year > 9998) return;
-    setState(
-      () => _period = _monthly
+    if (_monthly) {
+      next = DateTime(
+        next.year,
+        next.month,
+        _selectedDay.day.clamp(
+          1,
+          DateUtils.getDaysInMonth(next.year, next.month),
+        ),
+      );
+    }
+    setState(() {
+      _selectedDay = next;
+      _period = _monthly
           ? LearningCalendarPeriod.month(next.year, next.month)
-          : LearningCalendarPeriod.weekEnding(next),
-    );
+          : LearningCalendarPeriod.weekEnding(next);
+    });
     unawaited(_reload());
   }
 
@@ -296,14 +308,15 @@ class _LearningCalendarScreenState extends State<LearningCalendarScreen>
                 ),
                 TextButton(
                   onPressed: () {
-                    setState(
-                      () => _period = _monthly
+                    setState(() {
+                      _selectedDay = DateUtils.dateOnly(_today);
+                      _period = _monthly
                           ? LearningCalendarPeriod.month(
-                              _today.year,
-                              _today.month,
+                              _selectedDay.year,
+                              _selectedDay.month,
                             )
-                          : LearningCalendarPeriod.weekEnding(_today),
-                    );
+                          : LearningCalendarPeriod.weekEnding(_selectedDay);
+                    });
                     unawaited(_reload());
                   },
                   child: const Text('วันนี้'),

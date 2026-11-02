@@ -140,6 +140,10 @@ void main() {
           );
           final content = question.lexical! as DefinitionChoiceContent;
           expect(
+            find.text('ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง'),
+            findsOneWidget,
+          );
+          expect(
             find.text(
               content.authoredOptions
                   .firstWhere((option) => option.pin.entry.spelling == wrong)

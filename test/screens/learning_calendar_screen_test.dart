@@ -59,6 +59,108 @@ void main() {
     },
   );
 
+  testWidgets('calendar preserves its day across views, arrows and Today', (
+    tester,
+  ) async {
+    final owners = StreamController<String?>.broadcast();
+    addTearDown(owners.close);
+    final periods = <LearningCalendarPeriod>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LearningCalendarScreen(
+          now: () => DateTime(2026, 11, 7),
+          ownerChanges: owners.stream,
+          loader:
+              ({
+                required period,
+                required expectedOwnerId,
+                required stillCurrent,
+              }) async {
+                periods.add(period);
+                return _snapshot(expectedOwnerId, period);
+              },
+        ),
+      ),
+    );
+    owners.add('synthetic-owner');
+    await tester.pumpAndSettle();
+    final originalFirstDay = periods.last.firstDay;
+    await tester.tap(find.text('รายเดือน'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('รายสัปดาห์'));
+    await tester.pumpAndSettle();
+    expect(periods.last.firstDay, originalFirstDay);
+    await tester.tap(find.byKey(const ValueKey('calendar-previous')));
+    await tester.pumpAndSettle();
+    expect(periods.last.dayAt(6), DateTime(2026, 10, 31));
+    await tester.tap(find.text('รายเดือน'));
+    await tester.pumpAndSettle();
+    expect(periods.last.firstDay, DateTime(2026, 10, 1));
+    await tester.tap(find.byKey(const ValueKey('calendar-next')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('รายสัปดาห์'));
+    await tester.pumpAndSettle();
+    expect(periods.last.dayAt(6), DateTime(2026, 11, 30));
+    await tester.tap(find.text('รายเดือน'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('วันนี้'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('รายสัปดาห์'));
+    await tester.pumpAndSettle();
+    expect(periods.last.firstDay, originalFirstDay);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  for (final (start, expected) in [
+    (DateTime(2024, 1, 31), DateTime(2024, 2, 29)),
+    (DateTime(2025, 1, 31), DateTime(2025, 2, 28)),
+    (DateTime(2026, 12, 15), DateTime(2027, 1, 15)),
+  ]) {
+    testWidgets('calendar month movement preserves civil day from $start', (
+      tester,
+    ) async {
+      final owners = StreamController<String?>.broadcast();
+      addTearDown(owners.close);
+      final periods = <LearningCalendarPeriod>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LearningCalendarScreen(
+            now: () => start,
+            ownerChanges: owners.stream,
+            loader:
+                ({
+                  required period,
+                  required expectedOwnerId,
+                  required stillCurrent,
+                }) async {
+                  periods.add(period);
+                  return _snapshot(expectedOwnerId, period);
+                },
+          ),
+        ),
+      );
+      owners.add('synthetic-owner');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('รายเดือน'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('calendar-next')));
+      await tester.pumpAndSettle();
+      expect(periods.last.firstDay, DateTime(expected.year, expected.month));
+      await tester.tap(find.text('รายสัปดาห์'));
+      await tester.pumpAndSettle();
+      expect(periods.last.dayAt(6), expected);
+      await tester.tap(find.byKey(const ValueKey('calendar-next')));
+      await tester.pumpAndSettle();
+      expect(
+        periods.last.dayAt(6),
+        DateTime(expected.year, expected.month, expected.day + 7),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
   testWidgets('calendar hides old owner while a delayed read completes', (
     tester,
   ) async {

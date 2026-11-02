@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -8,6 +9,86 @@ import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart'
 
 void main() {
   const key = 'test-key-that-is-long-enough-123456';
+
+  for (final method in ['GET', 'POST']) {
+    for (final status in [301, 302, 303, 307, 308]) {
+      test('$method rejects $status without forwarding credentials', () async {
+        final source = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        final target = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        final client = http.Client();
+        addTearDown(() async {
+          client.close();
+          await source.close(force: true);
+          await target.close(force: true);
+        });
+        var sourceRequests = 0;
+        var targetRequests = 0;
+        var credentialForwarded = false;
+        source.listen((request) async {
+          sourceRequests++;
+          await request.drain<void>();
+          request.response.statusCode = status;
+          request.response.headers.set(
+            HttpHeaders.locationHeader,
+            'http://localhost:${target.port}/redirect-target',
+          );
+          await request.response.close();
+        });
+        target.listen((request) async {
+          targetRequests++;
+          credentialForwarded = request.headers.value('x-goog-api-key') == key;
+          await request.drain<void>();
+          request.response.headers.contentType = ContentType.json;
+          request.response.write(
+            jsonEncode({
+              'name': 'models/gemini-2.5-flash-lite',
+              'candidates': [
+                {
+                  'content': {
+                    'parts': [
+                      {'text': 'Synthetic redirected reply'},
+                    ],
+                  },
+                  'finishReason': 'STOP',
+                },
+              ],
+            }),
+          );
+          await request.response.close();
+        });
+        final gateway = GeminiRestGateway(
+          client: client,
+          baseUri: Uri.parse('http://127.0.0.1:${source.port}/'),
+          requestTimeout: const Duration(seconds: 5),
+        );
+        Object? failure;
+        try {
+          if (method == 'GET') {
+            await gateway.validateKey(key);
+          } else {
+            await gateway.generateTutorReply(
+              key: key,
+              scenario: 'Synthetic cafe',
+              learnerMessage: 'Synthetic learner message',
+            );
+          }
+        } catch (error) {
+          failure = error;
+        }
+        expect(sourceRequests, 1);
+        expect(targetRequests, 0);
+        expect(credentialForwarded, isFalse);
+        expect(
+          failure,
+          isA<GeminiException>().having(
+            (error) => error.code,
+            'code',
+            GeminiFailureCode.providerUnavailable,
+          ),
+        );
+      });
+    }
+  }
 
   test('validates key in header without putting it in URI', () async {
     late http.Request captured;

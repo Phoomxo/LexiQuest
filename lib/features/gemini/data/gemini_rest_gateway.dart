@@ -157,6 +157,7 @@ final class GeminiRestGateway implements GeminiGateway {
     var timedOut = false;
     try {
       final operation = () async {
+        request.followRedirects = false;
         final streamed = await _client.send(request);
         final bytes = BytesBuilder(copy: false);
         await for (final chunk in streamed.stream) {
