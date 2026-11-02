@@ -1,7 +1,8 @@
 """Check only the approved private, synthetic Cloud A service.
 
-The caller supplies an existing IAM ID token through a named process environment
-variable. This tool never mints tokens or changes cloud resources.
+The caller supplies the observed registry manifest image reference and an existing
+IAM ID token through a named process environment variable. This tool never mints
+tokens or changes cloud resources.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ REGION = "us-central1"
 SERVICE = "lexiquest-ai-api"
 RUNTIME_ACCOUNT = f"lexiquest-ai-runtime@{PROJECT}.iam.gserviceaccount.com"
 IMAGE_PREFIX = f"{REGION}-docker.pkg.dev/{PROJECT}/lexiquest-runtime/ai-api@sha256:"
+IMAGE_REFERENCE = re.compile(re.escape(IMAGE_PREFIX) + r"[0-9a-f]{64}")
 MAX_RESPONSE_BYTES = 65536
 SAFE_OFF = {
     "LEXIQUEST_AI_ENVIRONMENT": "production",
@@ -43,6 +45,7 @@ ERROR_CODES = frozenset({
     "INVALID_ARGUMENTS", "OUTPUT_UNAVAILABLE", "GCLOUD_FAILED", "INVALID_METADATA",
     "PROJECT_MISMATCH", "BILLING_NOT_ENABLED", "SERVICE_MISMATCH", "INVALID_ORIGIN",
     "RUNTIME_ACCOUNT_MISMATCH", "IMAGE_NOT_PINNED", "SAFE_OFF_DRIFT", "PUBLIC_SERVICE",
+    "IMAGE_EXPECTATION_REQUIRED", "IMAGE_MISMATCH", "DEPLOYMENT_SHAPE_MISMATCH",
     "SERVICE_NOT_READY", "IAM_TOKEN_UNAVAILABLE", "HTTP_FAILED", "TOKEN_REFLECTION",
     "RESPONSE_TOO_LARGE", "PROBE_CONTRACT_FAILED", "INTERRUPTED", "INTERNAL_ERROR",
 })
@@ -128,11 +131,12 @@ def cloud_json(command, arguments):
         raise SmokeFailure("INVALID_METADATA") from None
 
 
-def validate_service(service):
+def validate_service(service, expected_image):
     try:
         metadata = service["metadata"]
         status = service["status"]
-        runtime = service["spec"]["template"]["spec"]
+        template = service["spec"]["template"]
+        runtime = template["spec"]
         if metadata["name"] != SERVICE or metadata["labels"]["cloud.googleapis.com/location"] != REGION:
             raise SmokeFailure("SERVICE_MISMATCH")
         generation = metadata.get("generation")
@@ -142,6 +146,15 @@ def validate_service(service):
             raise SmokeFailure("SERVICE_NOT_READY")
         if metadata.get("annotations", {}).get("run.googleapis.com/invoker-iam-disabled", "false") != "false":
             raise SmokeFailure("PUBLIC_SERVICE")
+        scaling = metadata.get("annotations", {})
+        revision_scaling = template.get("metadata", {}).get("annotations", {})
+        if (scaling.get("run.googleapis.com/minScale", "0") != "0"
+                or scaling.get("run.googleapis.com/maxScale") != "1"
+                or scaling.get("run.googleapis.com/scalingMode", "automatic") != "automatic"
+                or "run.googleapis.com/manualInstanceCount" in scaling
+                or revision_scaling.get("autoscaling.knative.dev/minScale", "0") != "0"
+                or revision_scaling.get("autoscaling.knative.dev/maxScale", "1") != "1"):
+            raise SmokeFailure("DEPLOYMENT_SHAPE_MISMATCH")
         origin = status["url"]
         if not isinstance(origin, str) or re.fullmatch(r"https://[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])?\.run\.app", origin) is None:
             raise SmokeFailure("INVALID_ORIGIN")
@@ -151,8 +164,33 @@ def validate_service(service):
         if not isinstance(containers, list) or len(containers) != 1:
             raise SmokeFailure("INVALID_METADATA")
         container = containers[0]
-        if re.fullmatch(re.escape(IMAGE_PREFIX) + r"[0-9a-f]{64}", container["image"]) is None:
+        if IMAGE_REFERENCE.fullmatch(container["image"]) is None:
             raise SmokeFailure("IMAGE_NOT_PINNED")
+        if container["image"] != expected_image:
+            raise SmokeFailure("IMAGE_MISMATCH")
+        limits = container["resources"]["limits"]
+        if (set(limits) != {"cpu", "memory"} or limits["cpu"] not in ("1", "1000m")
+                or limits["memory"] != "512Mi"
+                or type(runtime.get("containerConcurrency")) is not int or runtime["containerConcurrency"] != 1
+                or type(runtime.get("timeoutSeconds")) is not int or runtime["timeoutSeconds"] != 60
+                or container.get("command", []) != [] or container.get("args", []) != []):
+            raise SmokeFailure("DEPLOYMENT_SHAPE_MISMATCH")
+        ports = container["ports"]
+        if not isinstance(ports, list) or len(ports) != 1:
+            raise SmokeFailure("DEPLOYMENT_SHAPE_MISMATCH")
+        port = ports[0]
+        if (type(port.get("containerPort", 8080)) is not int or port.get("containerPort", 8080) != 8080
+                or port.get("protocol", "TCP") != "TCP" or port.get("name", "http1") not in ("", "http1")):
+            raise SmokeFailure("DEPLOYMENT_SHAPE_MISMATCH")
+        for name in ("startupProbe", "livenessProbe"):
+            health = container[name]
+            target = health["httpGet"]
+            if (any(action in health for action in ("tcpSocket", "grpc", "exec", "exec_"))
+                    or target.get("path") != "/health/live"
+                    or type(target.get("port")) is not int or target["port"] != 8080
+                    or target.get("host", "") != "" or target.get("scheme", "") != ""
+                    or target.get("httpHeaders", []) != []):
+                raise SmokeFailure("DEPLOYMENT_SHAPE_MISMATCH")
         values = {}
         for entry in container["env"]:
             name = entry["name"]
@@ -234,6 +272,7 @@ def main(argv=None, *, command=run_command, http=http_request, environment=None)
         "schemaVersion": 1, "project": PROJECT, "region": REGION, "service": SERVICE,
         "privateSyntheticOnly": True, "providerAcceptance": False, "livePaidAcceptance": False,
         "researchAcceptance": False, "connectedTrialAcceptance": False,
+        "deploymentShapeVerified": False,
         "result": "not-ready", "httpProbesAttempted": 0, "checks": [],
     }
     output = None
@@ -242,6 +281,7 @@ def main(argv=None, *, command=run_command, http=http_request, environment=None)
         parser = Parser(description=__doc__)
         parser.add_argument("--output-directory", required=True, type=Path)
         parser.add_argument("--iam-token-environment-variable", required=True)
+        parser.add_argument("--expected-image-reference", help="Actual registry image reference with its @sha256 manifest digest.")
         args = parser.parse_args(argv)
         if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,127}", args.iam_token_environment_variable) is None:
             raise SmokeFailure("INVALID_ARGUMENTS")
@@ -255,10 +295,23 @@ def main(argv=None, *, command=run_command, http=http_request, environment=None)
             raise SmokeFailure("PROJECT_MISMATCH")
         if billing.get("billingEnabled") is not True:
             raise SmokeFailure("BILLING_NOT_ENABLED")
+        if args.expected_image_reference is None:
+            raise SmokeFailure("IMAGE_EXPECTATION_REQUIRED")
+        if IMAGE_REFERENCE.fullmatch(args.expected_image_reference) is None:
+            raise SmokeFailure("IMAGE_NOT_PINNED")
         service = cloud_json(command, ["run", "services", "describe", SERVICE, f"--region={REGION}"])
-        origin = validate_service(service)
+        origin = validate_service(service, args.expected_image_reference)
         policy = cloud_json(command, ["run", "services", "get-iam-policy", SERVICE, f"--region={REGION}"])
         validate_private_policy(policy)
+        receipt.update(
+            expectedImageReference=args.expected_image_reference,
+            observedImageReference=service["spec"]["template"]["spec"]["containers"][0]["image"],
+            deploymentShapeVerified=True,
+            deploymentShape={"cpu": "1", "memory": "512Mi", "serviceMinInstances": 0, "serviceMaxInstances": 1,
+                             "containerConcurrency": 1, "requestTimeoutSeconds": 60, "containerPort": 8080,
+                             "startupProbePath": "/health/live", "livenessProbePath": "/health/live",
+                             "imageCommandUnmodified": True},
+        )
         probe(PROBES[0], origin, None, http, receipt)
         token = (os.environ if environment is None else environment).get(args.iam_token_environment_variable)
         if (not isinstance(token, str) or not 16 <= len(token) <= 16384

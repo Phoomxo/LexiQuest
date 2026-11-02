@@ -1,5 +1,33 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Cloud A execution continuation, 2026-11-02
+
+The owner reiterates full development/ADLC authority after the local tooling
+checkpoint. Continue the already approved private Cloud A instead of treating
+Billing as a stop for every independent task. Baseline is `ca2e585d` in the same
+worktree. Financial-account linkage, public traffic, real payment/research data,
+real-user deletion and costed resource deployment remain outside this step.
+
+| Card | Scope and writer | Acceptance |
+| --- | --- | --- |
+| AI29 | Root: necessary API activation, approved identities/role definitions and collision-checked empty topic/key-ring metadata; no bindings or data traffic | Available steps done: five APIs enabled;2 exact-name accounts with0 user keys/0 own-policy or explicit project-role bindings;2 export bucket/MAC role definitions without grants; approved empty RTDN topic created/read back with0 own bindings/0 subscriptions/0 published messages by this run. Run/Registry/Secret Manager activation rejects with UREQ_PROJECT_BILLING_NOT_FOUND; KMS key-ring GET rejects HTTP400 Billing disabled, so no key-ring write. Inventory50 enabled APIs. No compute/storage/crypto-key/version/secret creation. |
+| AP29 | Read-only IAM worker: derive minimum runtime permission sets from actual backend API calls; Root verifies platform catalog | Done with correction before writes: candidate useToMacSign/useToMacVerify names do not exist; actual IAM signerVerifier role and official MacSign/MacVerify require useToSign/useToVerify. Created custom MAC definition uses get/sign/verify only; future binding must be exact approved CryptoKey. Source design never substitutes for platform verification. |
+| AC29 | Read-only design worker, then disjoint writer: existing private CLI/test pair only; Root shared docs/integration | Done locally: require expected actual registry image reference after Billing gate, exact digest/CPU1/512Mi/min0/max1/concurrency1/timeout60/port8080/live probes and image CMD. RED7 then writer135PASS; independent source review ACCEPT; root combined135private+87export=222PASS. Actual updated CLI stops at Billing with0HTTP and deploymentShapeVerifiedfalse. |
+
+Root owns shared plans/trail/cloud operations and serializes any later code/test
+integration. Design workers remain read-only. The subsequent CLI writer owns
+only the existing private CLI/test pair and isolated pytest; it freezes before
+Root integration. No worker runs cloud commands, Flutter, builds or commits.
+The latest read still reports Billingfalse and no visible open accounts; do not
+guess a financial account or create a funded resource to work around it. The
+actual service-activation rejection is in continuation29/enable-remaining-approved-apis.log;
+final read-back at10:17:59UTC is final-live-state-and-gate.json. Application/backend
+runtime source, image and schema are unchanged. No full Flutter/build rerun is required for
+these operations-tool/documentation changes; current focused integration passes.
+The later topic read-back and KMS diagnostic are verified-rtdn-topic.json and
+export-keyring-collision-diagnostic.json at10:23:21UTC and10:22:39UTC respectively.
+No push subscription is created without the actual private service endpoint.
+
 ## Autonomous engineering continuation, 2026-11-02
 
 The latest user requests completing the remaining engineering through the SE

@@ -60,10 +60,19 @@ class Cloud:
         self.billing = {"projectId": PROJECT, "billingEnabled": True}
         self.service = {
             "metadata": {"name": "lexiquest-ai-api", "generation": 1,
-                         "labels": {"cloud.googleapis.com/location": "us-central1"}},
-            "spec": {"template": {"spec": {
+                         "labels": {"cloud.googleapis.com/location": "us-central1"},
+                         "annotations": {"run.googleapis.com/minScale": "0", "run.googleapis.com/maxScale": "1",
+                                         "run.googleapis.com/scalingMode": "automatic"}},
+            "spec": {"template": {"metadata": {"annotations": {
+                "autoscaling.knative.dev/minScale": "0", "autoscaling.knative.dev/maxScale": "1",
+            }}, "spec": {
                 "serviceAccountName": f"lexiquest-ai-runtime@{PROJECT}.iam.gserviceaccount.com",
-                "containers": [{"image": IMAGE, "env": [{"name": k, "value": v} for k, v in SAFE_OFF.items()]}],
+                "containerConcurrency": 1, "timeoutSeconds": 60,
+                "containers": [{"image": IMAGE, "env": [{"name": k, "value": v} for k, v in SAFE_OFF.items()],
+                                "resources": {"limits": {"cpu": "1", "memory": "512Mi"}},
+                                "ports": [{"containerPort": 8080, "protocol": "TCP", "name": "http1"}],
+                                "startupProbe": {"httpGet": {"path": "/health/live", "port": 8080}},
+                                "livenessProbe": {"httpGet": {"path": "/health/live", "port": 8080}}}],
             }}},
             "status": {"url": ORIGIN, "observedGeneration": 1, "latestReadyRevisionName": "lexiquest-ai-api-00001-syn",
                        "latestCreatedRevisionName": "lexiquest-ai-api-00001-syn",
@@ -94,12 +103,15 @@ class Transport:
         return self.responses[len(self.calls) - 1]
 
 
-def invoke(smoke, tmp_path, *, cloud=None, http=None, environment=None):
+def invoke(smoke, tmp_path, *, cloud=None, http=None, environment=None, expected_image=IMAGE):
     cloud = cloud if cloud is not None else Cloud()
     http = http if http is not None else Transport()
     environment = environment if environment is not None else Environment()
     output = tmp_path / "unique-receipt"
-    exit_code = smoke.main(["--output-directory", str(output), "--iam-token-environment-variable", TOKEN_NAME],
+    arguments = ["--output-directory", str(output), "--iam-token-environment-variable", TOKEN_NAME]
+    if expected_image is not None:
+        arguments.extend(["--expected-image-reference", expected_image])
+    exit_code = smoke.main(arguments,
                            command=cloud, http=http, environment=environment)
     receipt = json.loads((output / "receipt.json").read_text())
     return exit_code, receipt, cloud, http, environment
@@ -110,6 +122,13 @@ def test_fixed_private_probes_use_only_iam_header_and_sanitized_receipt(smoke, t
     assert code == 0
     assert receipt["result"] == "passed"
     assert receipt["privateSyntheticOnly"] is True
+    assert receipt["deploymentShapeVerified"] is True
+    assert receipt["expectedImageReference"] == receipt["observedImageReference"] == IMAGE
+    assert receipt["deploymentShape"] == {
+        "cpu": "1", "memory": "512Mi", "serviceMinInstances": 0, "serviceMaxInstances": 1,
+        "containerConcurrency": 1, "requestTimeoutSeconds": 60, "containerPort": 8080,
+        "startupProbePath": "/health/live", "livenessProbePath": "/health/live", "imageCommandUnmodified": True,
+    }
     assert all(receipt[key] is False for key in ("providerAcceptance", "livePaidAcceptance", "researchAcceptance", "connectedTrialAcceptance"))
     assert [check["status"] for check in receipt["checks"]] == [403, 200, 503, 404, 401]
     assert [check["code"] for check in receipt["checks"]] == [None, None, "PROVIDER_UNAVAILABLE", None, "UNAUTHENTICATED"]
@@ -148,6 +167,101 @@ def test_effectively_public_service_stops_without_reading_iam_token(smoke, tmp_p
     code, receipt, _, _, environment = invoke(smoke, tmp_path, http=http)
     assert code == 1 and receipt["failureCode"] == "PROBE_CONTRACT_FAILED"
     assert len(http.calls) == 1 and not environment.reads
+
+
+@pytest.mark.parametrize("path,value", [
+    (("metadata", "annotations", "run.googleapis.com/maxScale"), "2"),
+    (("metadata", "annotations", "run.googleapis.com/maxScale"), None),
+    (("metadata", "annotations", "run.googleapis.com/maxScale"), 1),
+    (("metadata", "annotations", "run.googleapis.com/minScale"), "1"),
+    (("metadata", "annotations", "run.googleapis.com/scalingMode"), "manual"),
+    (("metadata", "annotations", "run.googleapis.com/scalingMode"), "session"),
+    (("metadata", "annotations", "run.googleapis.com/manualInstanceCount"), "0"),
+    (("spec", "template", "metadata", "annotations", "autoscaling.knative.dev/minScale"), "1"),
+    (("spec", "template", "metadata", "annotations", "autoscaling.knative.dev/maxScale"), "2"),
+    (("spec", "template", "spec", "containerConcurrency"), 80),
+    (("spec", "template", "spec", "containerConcurrency"), True),
+    (("spec", "template", "spec", "containerConcurrency"), None),
+    (("spec", "template", "spec", "timeoutSeconds"), 300),
+    (("spec", "template", "spec", "timeoutSeconds"), "60"),
+    (("spec", "template", "spec", "timeoutSeconds"), 60.0),
+    (("spec", "template", "spec", "containers", 0, "resources", "limits", "cpu"), "2"),
+    (("spec", "template", "spec", "containers", 0, "resources", "limits", "cpu"), 1),
+    (("spec", "template", "spec", "containers", 0, "resources", "limits", "memory"), "1Gi"),
+    (("spec", "template", "spec", "containers", 0, "resources", "limits"), {"cpu": "1", "memory": "512Mi", "nvidia.com/gpu": "1"}),
+    (("spec", "template", "spec", "containers", 0, "resources"), None),
+    (("spec", "template", "spec", "containers", 0, "ports"), []),
+    (("spec", "template", "spec", "containers", 0, "ports"), [{"containerPort": 8080}, {"containerPort": 9090}]),
+    (("spec", "template", "spec", "containers", 0, "ports", 0, "containerPort"), 9090),
+    (("spec", "template", "spec", "containers", 0, "ports", 0, "containerPort"), "8080"),
+    (("spec", "template", "spec", "containers", 0, "ports", 0, "containerPort"), True),
+    (("spec", "template", "spec", "containers", 0, "ports", 0, "protocol"), "UDP"),
+    (("spec", "template", "spec", "containers", 0, "ports", 0, "name"), "h2c"),
+    (("spec", "template", "spec", "containers", 0, "startupProbe", "httpGet", "path"), "/health/ready"),
+    (("spec", "template", "spec", "containers", 0, "startupProbe"), None),
+    (("spec", "template", "spec", "containers", 0, "startupProbe", "httpGet", "port"), 8080.0),
+    (("spec", "template", "spec", "containers", 0, "startupProbe", "tcpSocket"), {"port": 8080}),
+    (("spec", "template", "spec", "containers", 0, "livenessProbe", "httpGet", "path"), "/health/ready"),
+    (("spec", "template", "spec", "containers", 0, "livenessProbe", "httpGet", "port"), 9090),
+    (("spec", "template", "spec", "containers", 0, "livenessProbe", "httpGet", "host"), "synthetic.invalid"),
+    (("spec", "template", "spec", "containers", 0, "livenessProbe", "httpGet", "httpHeaders"), [{"name": "Authorization", "value": "synthetic"}]),
+    (("spec", "template", "spec", "containers", 0, "command"), ["uvicorn", "--workers", "4"]),
+    (("spec", "template", "spec", "containers", 0, "args"), ["--workers", "4"]),
+    (("spec", "template", "spec", "containers", 0, "args"), None),
+])
+def test_unapproved_deployment_shape_fails_before_token_or_http(smoke, tmp_path, path, value):
+    cloud = Cloud()
+    target = cloud.service
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    code, receipt, _, http, environment = invoke(smoke, tmp_path, cloud=cloud)
+    assert code == 1 and receipt["result"] == "not-ready"
+    assert not http.calls and not environment.reads
+    assert receipt["deploymentShapeVerified"] is False
+    assert "deploymentShape" not in receipt and "expectedImageReference" not in receipt
+
+
+def test_documented_wire_defaults_preserve_the_approved_shape(smoke, tmp_path):
+    cloud = Cloud()
+    annotations = cloud.service["metadata"]["annotations"]
+    del annotations["run.googleapis.com/minScale"]
+    del annotations["run.googleapis.com/scalingMode"]
+    template = cloud.service["spec"]["template"]
+    del template["metadata"]
+    container = template["spec"]["containers"][0]
+    container["resources"]["limits"]["cpu"] = "1000m"
+    container["ports"] = [{}]
+    container["command"] = []
+    container["args"] = []
+    assert invoke(smoke, tmp_path, cloud=cloud)[0] == 0
+
+
+@pytest.mark.parametrize("expected_image", [None, "", "sha256:" + "a" * 64, IMAGE + "\n",
+    IMAGE.split("@")[0] + ":latest", IMAGE.replace(PROJECT, "other-project")])
+def test_expected_registry_manifest_is_required_before_service_or_token_access(smoke, tmp_path, expected_image):
+    code, receipt, cloud, http, environment = invoke(smoke, tmp_path, expected_image=expected_image)
+    assert code == 1
+    assert receipt["failureCode"] == ("IMAGE_EXPECTATION_REQUIRED" if expected_image is None else "IMAGE_NOT_PINNED")
+    assert len(cloud.calls) == 1 and not http.calls and not environment.reads
+    assert receipt["deploymentShapeVerified"] is False
+
+
+def test_billing_gate_needs_no_fabricated_registry_digest(smoke, tmp_path):
+    cloud = Cloud()
+    cloud.billing["billingEnabled"] = False
+    code, receipt, cloud, http, environment = invoke(smoke, tmp_path, cloud=cloud, expected_image=None)
+    assert code == 1 and receipt["failureCode"] == "BILLING_NOT_ENABLED"
+    assert len(cloud.calls) == 1 and not http.calls and not environment.reads
+
+
+def test_another_digest_in_the_approved_repository_is_rejected_before_token_or_http(smoke, tmp_path):
+    cloud = Cloud()
+    cloud.service["spec"]["template"]["spec"]["containers"][0]["image"] = IMAGE[:-64] + "b" * 64
+    code, receipt, _, http, environment = invoke(smoke, tmp_path, cloud=cloud)
+    assert code == 1 and receipt["failureCode"] == "IMAGE_MISMATCH"
+    assert not http.calls and not environment.reads
+    assert receipt["deploymentShapeVerified"] is False
 
 
 @pytest.mark.parametrize("billing", [False, None, 1, "true", "false"])
