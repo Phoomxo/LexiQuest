@@ -396,6 +396,82 @@ function Get-LexiQuestApkCertificateSha256 {
     return ConvertTo-NormalizedSha256 $match.Groups[1].Value
 }
 
+function Get-LexiQuestArchiveBuildIdentity {
+    param([Parameter(Mandatory)][string]$ArchivePath)
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    $identities = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $seenAbis = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    try {
+        foreach ($entry in $archive.Entries) {
+            $match = [regex]::Match($entry.FullName.Replace([char]92, [char]47), '^(?:base/)?lib/([^/]+)/libapp\.so$')
+            if (-not $match.Success) { continue }
+            $abi = $match.Groups[1].Value
+            if ($abi -cnotin @('arm64-v8a', 'armeabi-v7a', 'x86_64') -or -not $seenAbis.Add($abi)) { throw 'Application provenance has an unsupported or duplicate ABI.' }
+            $stream = $entry.Open()
+            $memory = [IO.MemoryStream]::new()
+            try { $stream.CopyTo($memory); $bytes = $memory.ToArray() }
+            finally { $memory.Dispose(); $stream.Dispose() }
+            $elfClass = if ($abi -eq 'armeabi-v7a') { 1 } else { 2 }
+            $machine = switch ($abi) { 'armeabi-v7a' { 40 } 'arm64-v8a' { 183 } 'x86_64' { 62 } }
+            if ($bytes.Length -lt 64 -or $bytes[0] -ne 127 -or $bytes[1] -ne 69 -or $bytes[2] -ne 76 -or $bytes[3] -ne 70 -or $bytes[4] -ne $elfClass -or $bytes[5] -ne 1 -or [BitConverter]::ToUInt16($bytes, 18) -ne $machine) { throw 'Application provenance has an unsupported ELF layout.' }
+            $text = [Text.Encoding]::ASCII.GetString($bytes)
+            $format = 'ace654289f5abc240509fc941453ebc5'
+            $formatAt = $text.IndexOf($format, [StringComparison]::Ordinal)
+            $knownSnapshot = $false
+            while ($formatAt -ge 0) {
+                if ($formatAt -ge 20 -and $bytes[$formatAt - 20] -eq 245 -and $bytes[$formatAt - 19] -eq 245 -and $bytes[$formatAt - 18] -eq 220 -and $bytes[$formatAt - 17] -eq 220 -and [BitConverter]::ToUInt64($bytes, $formatAt - 8) -eq 3) { $knownSnapshot = $true; break }
+                $formatAt = $text.IndexOf($format, $formatAt + 1, [StringComparison]::Ordinal)
+            }
+            if (-not $knownSnapshot) { throw 'Application provenance uses an unsupported Dart snapshot version or layout.' }
+            $abiIdentities = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+            foreach ($candidate in [regex]::Matches($text, '(?<![a-f0-9])[a-f0-9]{40}')) {
+                $at = $candidate.Index
+                $length = -1
+                if ($elfClass -eq 1) {
+                    $objectAt = $at - 12
+                    if ($objectAt -ge 0 -and $objectAt % 8 -eq 0) {
+                        $tags = [BitConverter]::ToUInt32($bytes, $objectAt)
+                        $taggedLength = [BitConverter]::ToUInt32($bytes, $at - 4)
+                        if (($tags -shr 12) -eq 94 -and ($taggedLength -band 1) -eq 0) {
+                            $declaredLength = [long]$taggedLength / 2
+                            $sizeUnits = [long][Math]::Ceiling((12 + $declaredLength) / 8.0)
+                            $expectedSizeTag = if ($sizeUnits -gt 15) { 0 } else { $sizeUnits }
+                            if ((($tags -shr 8) -band 15) -eq $expectedSizeTag) { $length = $declaredLength }
+                        }
+                    }
+                } elseif ($at -gt 0 -and $bytes[$at - 1] -ge 128) {
+                    $last = $bytes[$at - 1] -band 127
+                    if (($last -band 1) -eq 0 -and $last -ge 80) { $length = $last / 2 }
+                    elseif ($at -gt 1 -and $bytes[$at - 2] -lt 128) {
+                        $taggedLength = $bytes[$at - 2] -bor ($last -shl 7)
+                        if ($taggedLength -ge 128 -and ($taggedLength -band 1) -eq 0) { $length = $taggedLength / 2 }
+                    }
+                }
+                $looksConfigured = $at + 40 -lt $bytes.Length -and $bytes[$at + 40] -eq 45
+                if ($length -lt 40 -or $length -gt 105 -or $at + $length -gt $bytes.Length) {
+                    if ($looksConfigured) { throw 'Application build identity has unsupported or truncated string framing.' }
+                    continue
+                }
+                $value = $text.Substring($at, [int]$length)
+                if ($value -cmatch '^[a-f0-9]{64}$') { continue }
+                if ($value -cnotmatch '^[a-f0-9]{40}(?:-[A-Za-z0-9._:-]{1,64})?$') {
+                    if ($looksConfigured) { throw 'Application build identity has a malformed framed value.' }
+                    continue
+                }
+                if ($elfClass -eq 2 -and $at + $length -lt $bytes.Length -and [char]$bytes[$at + $length] -cmatch '[A-Za-z0-9._:-]') { throw 'Application build identity continues beyond its supported local string frame.' }
+                $null = $abiIdentities.Add($value)
+            }
+            if ($abiIdentities.Count -ne 1) { throw 'Application ABI must contain one unambiguous framed build identity.' }
+            foreach ($identity in $abiIdentities) { $null = $identities.Add($identity) }
+        }
+        if ($seenAbis.Count -eq 0) { return $null }
+        if ($identities.Count -ne 1) { throw 'Application build identities disagree across native ABIs.' }
+        foreach ($identity in $identities) { return $identity }
+    } finally { $archive.Dispose() }
+}
+
 function Test-LexiQuestArchiveContainsAsciiToken {
     param(
         [Parameter(Mandatory)][string]$ArchivePath,
@@ -490,13 +566,21 @@ function Get-LexiQuestMeasuredApkMetadata {
     if ($null -eq $provenanceArchive) {
         throw 'Signed APK set does not embed the expected build, model, and version provenance.'
     }
+    $actualBuildId = $null
+    foreach ($path in $provenanceArchives) {
+        $identity = Get-LexiQuestArchiveBuildIdentity -ArchivePath $path
+        if ($null -eq $identity) { continue }
+        if ($identity -cne $ExpectedBuildId -or ($null -ne $actualBuildId -and $actualBuildId -cne $identity)) { throw 'Signed APK set build identity does not exactly match the expected build ID.' }
+        $actualBuildId = $identity
+    }
+    if ($null -eq $actualBuildId) { throw 'Signed APK set has no measured application build identity.' }
     return [pscustomobject]@{
         archiveSha256 = (Get-FileHash -LiteralPath $ApkPath `
             -Algorithm SHA256).Hash
         packageName = ([string]$packageName).Trim()
         versionName = ([string]$versionName).Trim()
         versionCode = [int]([string]$versionCode).Trim()
-        embeddedBuildId = $ExpectedBuildId
+        embeddedBuildId = $actualBuildId
         embeddedModelSha256 = $model
         signingCertificateSha256 = Get-LexiQuestApkCertificateSha256 `
             -ApkPath $ApkPath
@@ -621,6 +705,8 @@ function Get-LexiQuestMeasuredAabMetadata {
     ) {
         throw 'AAB manifest package/version metadata is incomplete.'
     }
+    $buildId = Get-LexiQuestArchiveBuildIdentity -ArchivePath $AabPath
+    if ($null -eq $buildId) { throw 'AAB has no measured application build identity.' }
     return [pscustomobject]@{
         archiveSha256 = (Get-FileHash -LiteralPath $AabPath `
             -Algorithm SHA256).Hash
@@ -628,6 +714,7 @@ function Get-LexiQuestMeasuredAabMetadata {
         packageName = $applicationId
         versionName = $versionName
         versionCode = [int]$versionCode
+        embeddedBuildId = $buildId
     }
 }
 
@@ -656,6 +743,7 @@ function Test-LexiQuestAndroidArtifactIdentity {
             )
         }
     }
+    if ($MeasuredAab.embeddedBuildId -cne $MeasuredApk.embeddedBuildId -or $MeasuredAab.embeddedBuildId -cne $Expected.buildId) { $errors.Add('measured AAB build ID does not match the APK and manifest.') }
     return $errors.ToArray()
 }
 
@@ -939,7 +1027,7 @@ function Test-LexiQuestReleasePackage {
         }
     }
     $expectedFiles = @($apkPath, $aabPath, 'release-manifest.json')
-    if ($profile -eq 'publicProduction') { $expectedFiles += 'release-configuration.json' }
+    if ($profile -eq 'publicProduction' -or $null -ne $Manifest.PSObject.Properties['configuration']) { $expectedFiles += 'release-configuration.json' }
     $expectedFiles += $expectedDocumentPaths
     $packageRoot = [System.IO.Path]::GetFullPath($PackagePath)
     $actualFiles = @(

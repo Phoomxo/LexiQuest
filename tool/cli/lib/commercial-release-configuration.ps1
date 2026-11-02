@@ -34,11 +34,14 @@ function ConvertTo-LexiQuestPublicOrigin {
 }
 
 function Read-LexiQuestReleaseConfiguration {
-    param([Parameter(Mandatory)][string]$Path)
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [ValidateSet('fieldTrial', 'publicProduction')][string]$ReleaseProfile = 'publicProduction'
+    )
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or (Get-Item -LiteralPath $Path).Length -gt 65536) {
         throw 'A bounded public release configuration file is required.'
     }
-    try { $raw = Get-Content -LiteralPath $Path -Raw -Encoding utf8 | ConvertFrom-Json -ErrorAction Stop }
+    try { $raw = ConvertFrom-LexiQuestCommercialJson (Get-Content -LiteralPath $Path -Raw -Encoding utf8) }
     catch { throw 'Release configuration must be valid JSON.' }
     Assert-LexiQuestCommercialKeys $raw @('schemaVersion', 'packageName', 'version', 'minimumPreviousVersionCode', 'aiApiUrl', 'voiceMode', 'voiceApiUrl', 'cloudSyncEnabled', 'contentReportsEnabled', 'accountDeletionRecoveryRetentionHours', 'billing') 'Release configuration'
     if (($raw.schemaVersion -isnot [int] -and $raw.schemaVersion -isnot [long]) -or $raw.schemaVersion -ne 1 -or $raw.packageName -cne 'com.lexiquest.app') {
@@ -59,6 +62,9 @@ function Read-LexiQuestReleaseConfiguration {
     foreach ($name in @('cloudSyncEnabled', 'contentReportsEnabled')) {
         if ($raw.$name -isnot [bool]) { throw "$name must be a JSON boolean." }
     }
+    if ($ReleaseProfile -eq 'fieldTrial' -and (-not $raw.cloudSyncEnabled -or -not $raw.contentReportsEnabled)) {
+        throw 'Connected field trial requires cloud sync and content reports to be enabled.'
+    }
     $deletionRetention = $raw.accountDeletionRecoveryRetentionHours
     if (($deletionRetention -isnot [int] -and $deletionRetention -isnot [long]) -or $deletionRetention -lt 1 -or $deletionRetention -gt 720) {
         throw 'Account deletion recovery retention must be an integer from 1 to 720 hours.'
@@ -71,16 +77,18 @@ function Read-LexiQuestReleaseConfiguration {
     } elseif ($null -ne $raw.voiceApiUrl) {
         throw 'Native voice configuration must not contain a remote Voice API origin.'
     }
-    Assert-LexiQuestCommercialKeys $raw.billing @('enabled', 'policyRevision', 'products') 'Billing configuration'
-    if ($raw.billing.enabled -isnot [bool] -or -not $raw.billing.enabled) {
-        throw 'Public managed-AI membership must be explicitly enabled.'
-    }
-    Assert-LexiQuestCommercialCode $raw.billing.policyRevision 'Billing policy revision'
-    if ($raw.billing.products -isnot [array] -or $raw.billing.products.Count -lt 1 -or $raw.billing.products.Count -gt 32) {
-        throw 'Billing configuration must contain 1..32 store product/base-plan mappings.'
-    }
-    $products = [System.Collections.Generic.SortedDictionary[string, object]]::new([StringComparer]::Ordinal)
-    foreach ($product in $raw.billing.products) {
+    $billing = [ordered]@{ enabled = $false }
+    if ($ReleaseProfile -eq 'publicProduction') {
+        Assert-LexiQuestCommercialKeys $raw.billing @('enabled', 'policyRevision', 'products') 'Billing configuration'
+        if ($raw.billing.enabled -isnot [bool] -or -not $raw.billing.enabled) {
+            throw 'Public managed-AI membership must be explicitly enabled.'
+        }
+        Assert-LexiQuestCommercialCode $raw.billing.policyRevision 'Billing policy revision'
+        if ($raw.billing.products -isnot [array] -or $raw.billing.products.Count -lt 1 -or $raw.billing.products.Count -gt 32) {
+            throw 'Billing configuration must contain 1..32 store product/base-plan mappings.'
+        }
+        $products = [System.Collections.Generic.SortedDictionary[string, object]]::new([StringComparer]::Ordinal)
+        foreach ($product in $raw.billing.products) {
             Assert-LexiQuestCommercialKeys $product @('productId', 'basePlanId', 'entitlements', 'dailyManagedUnits') 'Billing product'
             Assert-LexiQuestCommercialCode $product.productId 'Product ID'
             Assert-LexiQuestCommercialCode $product.basePlanId 'Base-plan ID'
@@ -94,6 +102,13 @@ function Read-LexiQuestReleaseConfiguration {
                 throw 'Managed-AI product quota must be an integer from 1 to 1000000.'
             }
             $products.Add($key, [ordered]@{ productId = $product.productId; basePlanId = $product.basePlanId; entitlements = @('managedContent'); dailyManagedUnits = $units })
+        }
+        $billing = [ordered]@{ enabled = $true; policyRevision = $raw.billing.policyRevision; products = @($products.Values) }
+    } else {
+        Assert-LexiQuestCommercialKeys $raw.billing @('enabled') 'Trial billing configuration'
+        if ($raw.billing.enabled -isnot [bool] -or $raw.billing.enabled) {
+            throw 'Field trial membership purchase must be explicitly disabled.'
+        }
     }
     $value = [pscustomobject][ordered]@{
         schemaVersion = 1
@@ -106,13 +121,13 @@ function Read-LexiQuestReleaseConfiguration {
         cloudSyncEnabled = $raw.cloudSyncEnabled
         contentReportsEnabled = $raw.contentReportsEnabled
         accountDeletionRecoveryRetentionHours = $deletionRetention
-        billing = [ordered]@{ enabled = $true; policyRevision = $raw.billing.policyRevision; products = @($products.Values) }
+        billing = $billing
     }
     $json = $value | ConvertTo-Json -Depth 8 -Compress
     $algorithm = [Security.Cryptography.SHA256]::Create()
     try { $sha = [BitConverter]::ToString($algorithm.ComputeHash([Text.Encoding]::UTF8.GetBytes($json))).Replace('-', '').ToLowerInvariant() }
     finally { $algorithm.Dispose() }
-    return [pscustomobject]@{ Value = $value; Json = $json; Sha256 = $sha }
+    return [pscustomobject]@{ Value = $value; Json = $json; Sha256 = $sha; ReleaseProfile = $ReleaseProfile }
 }
 
 function Get-LexiQuestReleaseBuildId {
@@ -127,7 +142,7 @@ function Get-LexiQuestReleaseDartDefines {
     $buildId = Get-LexiQuestReleaseBuildId $SourceCommit $Configuration.Sha256
     $defines = @(
         "--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=$($value.cloudSyncEnabled.ToString().ToLowerInvariant())"
-        '--dart-define=LEXIQUEST_BILLING_ENABLED=true'
+        "--dart-define=LEXIQUEST_BILLING_ENABLED=$($value.billing.enabled.ToString().ToLowerInvariant())"
         "--dart-define=LEXIQUEST_CONTENT_REPORTS_ENABLED=$($value.contentReportsEnabled.ToString().ToLowerInvariant())"
         '--dart-define=LEXIQUEST_ACCOUNT_DELETION_ENABLED=true'
         '--dart-define=LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED=true'
@@ -142,15 +157,20 @@ function Get-LexiQuestReleaseDartDefines {
 
 function Test-LexiQuestReleaseConfigurationBinding {
     param([string]$PackagePath, [object]$Manifest)
-    if ([string]$Manifest.releaseProfile -ne 'publicProduction') { return @() }
     try {
-        if (-not $Manifest.PSObject.Properties['configuration']) { throw 'Commercial package configuration binding is required.' }
+        $profile = [string]$Manifest.releaseProfile
+        if ($profile -notin @('fieldTrial', 'publicProduction')) { throw 'Release configuration profile is unsupported.' }
+        if (-not $Manifest.PSObject.Properties['configuration']) {
+            if ($profile -eq 'publicProduction') { throw 'Commercial package configuration binding is required.' }
+            if ($Manifest.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or $Manifest.artifact.buildId -cne $Manifest.sourceCommit) { throw 'Legacy field-trial artifact must use its exact source commit as build ID.' }
+            return @()
+        }
         Assert-LexiQuestCommercialKeys $Manifest.configuration @('path', 'sha256') 'Packaged configuration binding'
         if ($Manifest.configuration.path -cne 'release-configuration.json' -or $Manifest.configuration.sha256 -cnotmatch '^[a-f0-9]{64}$') {
             throw 'Commercial package configuration path or SHA-256 is invalid.'
         }
         $path = Get-LexiQuestContainedPath -Path $Manifest.configuration.path -RootPath $PackagePath
-        $configuration = Read-LexiQuestReleaseConfiguration -Path $path
+        $configuration = Read-LexiQuestReleaseConfiguration -Path $path -ReleaseProfile $profile
         $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actual -cne $Manifest.configuration.sha256 -or $configuration.Sha256 -cne $Manifest.configuration.sha256) {
             throw 'Packaged release configuration SHA-256 does not match its canonical manifest binding.'
@@ -248,6 +268,7 @@ function Test-LexiQuestCommercialAcceptance {
     param([object]$Configuration, [object]$Manifest, [object]$Controls, [string]$EvidenceRootPath)
     $errors = [System.Collections.Generic.List[string]]::new()
     try {
+        if ($Configuration.ReleaseProfile -cne 'publicProduction' -or $Manifest.releaseProfile -cne 'publicProduction') { throw 'Commercial acceptance requires the publicProduction release profile.' }
         if (-not $Controls.PSObject.Properties['commercialAcceptance']) { throw 'Commercial membership acceptance evidence is required.' }
         $acceptance = $Controls.commercialAcceptance
         Assert-LexiQuestCommercialKeys $acceptance @('configurationSha256', 'policyRevision', 'products', 'artifact', 'journeys', 'backendPolicyEvidenceRef') 'Commercial acceptance'

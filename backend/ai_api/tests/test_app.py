@@ -30,13 +30,32 @@ _CONTENT_BODY = {
 }
 
 
-def test_billing_is_explicitly_disabled_without_affecting_free_content(client):
+def test_billing_is_explicitly_disabled_without_affecting_free_content():
+    from test_billing import service_fixture
+    service, play, documents, _ = service_fixture()
+    content = FakeContentService()
+    client = TestClient(create_app(
+        content_service=content,
+        token_verifier=FakeTokenVerifier(),
+        settings=Settings(billing_enabled=False, billing_managed_content_required=False),
+        billing_service=service,
+    ))
+    body = {'text': 'synthetic', **_CONTENT_BODY}
+    unauthenticated = client.post('/v1/content', json=body)
+    assert unauthenticated.status_code == 401
+    assert unauthenticated.json()['detail']['code'] == 'UNAUTHENTICATED'
+    assert content.calls == []
+    assert documents.values == {}
     response = client.get('/v1/billing/catalog', headers={'Authorization': 'Bearer valid-token'})
     assert response.status_code == 503
     assert response.json()['detail']['code'] == 'BILLING_DISABLED'
-    free = client.post('/v1/content', json={'text': 'synthetic', **_CONTENT_BODY},
+    free = client.post('/v1/content', json=body,
         headers={'Authorization': 'Bearer valid-token'})
     assert free.status_code == 200
+    assert len(content.calls) == 1
+    assert documents.values == {}
+    assert play.verifications == []
+    assert play.acknowledgements == []
 
 
 def billing_client(*, anonymous=False, compose_service=True, notification_verifier=None, managed_required=True):

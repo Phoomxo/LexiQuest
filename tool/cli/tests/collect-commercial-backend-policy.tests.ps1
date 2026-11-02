@@ -59,6 +59,13 @@ function Invoke-Collector([string]$Directory) {
     return [pscustomobject]@{ Success = $success; Text = ($result | Out-String) }
 }
 try {
+    $trialConfiguration = $configuration | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+    $trialConfiguration.billing = [pscustomobject]@{ enabled = $false }
+    [IO.File]::WriteAllText($configurationPath, ($trialConfiguration | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+    $trialOutput = Join-Path $taskTemp 'trial-rejected'
+    $trialResult = Invoke-Collector $trialOutput
+    Assert-True (-not $trialResult.Success -and $trialResult.Text.Contains('configuration validation') -and $requestState.Count -eq 0 -and -not (Test-Path -LiteralPath $trialOutput) -and -not (Test-Path -LiteralPath ($trialOutput + '.pending'))) 'trial input is refused at public configuration preflight before authentication, HTTP or output staging'
+    [IO.File]::WriteAllText($configurationPath, ($configuration | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
     $separateObjects = ConvertFrom-LexiQuestCommercialJson '{"groups":[{"id":"one"},{"id":"two"}]}'
     Assert-True ($separateObjects.groups.Count -eq 2 -and $separateObjects.groups[1].id -ceq 'two') 'member names may repeat in different objects within arrays'
     [Environment]::SetEnvironmentVariable($tokenVariable, $requestState.Token, 'Process')

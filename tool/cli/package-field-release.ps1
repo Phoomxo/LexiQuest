@@ -19,11 +19,11 @@ if ($Version -notmatch '^\d+\.\d+\.\d+\+\d+$') {
 $commercialConfiguration = $null
 if ($ReleaseProfile -eq 'publicProduction') {
     if ([string]::IsNullOrWhiteSpace($ConfigurationPath)) { throw 'Public production requires an explicit public ConfigurationPath.' }
+}
+if (-not [string]::IsNullOrWhiteSpace($ConfigurationPath)) {
     $resolvedConfiguration = if ([System.IO.Path]::IsPathRooted($ConfigurationPath)) { $ConfigurationPath } else { Join-Path $repoRoot $ConfigurationPath }
-    $commercialConfiguration = Read-LexiQuestReleaseConfiguration -Path $resolvedConfiguration
-    if ($Version -cne $commercialConfiguration.Value.version) { throw 'Version does not match the public release configuration.' }
-} elseif (-not [string]::IsNullOrWhiteSpace($ConfigurationPath)) {
-    throw 'Commercial ConfigurationPath is only accepted for publicProduction.'
+    $commercialConfiguration = Read-LexiQuestReleaseConfiguration -Path $resolvedConfiguration -ReleaseProfile $ReleaseProfile
+    if ($Version -cne $commercialConfiguration.Value.version) { throw 'Version does not match the release configuration.' }
 }
 
 function Find-ApkSigner {

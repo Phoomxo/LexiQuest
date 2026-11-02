@@ -199,6 +199,58 @@ foreach ($requiredFunction in @(
         "release gate exposes behavioral helper $requiredFunction"
 }
 
+function New-TestProvenanceArchive {
+    param([string]$Path, [string]$Kind, [string]$BuildId, [string]$Fault = '')
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Add-Type -AssemblyName System.IO.Compression
+    $archive = [IO.Compression.ZipFile]::Open($Path, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($abi in @('arm64-v8a', 'armeabi-v7a', 'x86_64')) {
+            if ($Fault -in @('longFrame', 'longCompositeFrame') -and $abi -ne 'x86_64') { continue }
+            $prefix = if ($Kind -eq 'aab') { 'base/' } else { '' }
+            $entry = $archive.CreateEntry($prefix + 'lib/' + $abi + '/libapp.so')
+            $stream = $entry.Open()
+            $payload = [IO.MemoryStream]::new()
+            try {
+                $elf = [byte[]]::new(64)
+                $elf[0] = 127; $elf[1] = 69; $elf[2] = 76; $elf[3] = 70
+                $elf[4] = if ($abi -eq 'armeabi-v7a') { 1 } else { 2 }
+                $elf[5] = 1
+                $elf[18] = switch ($abi) { 'armeabi-v7a' { 40 } 'arm64-v8a' { 183 } 'x86_64' { 62 } }
+                $payload.Write($elf, 0, $elf.Length)
+                $snapshot = [byte[]](245, 245, 220, 220) + [BitConverter]::GetBytes([uint64]100) + [BitConverter]::GetBytes([uint64]3) + [Text.Encoding]::ASCII.GetBytes('ace654289f5abc240509fc941453ebc5')
+                if ($Fault -eq 'snapshot') { $snapshot[20] = 48 }
+                $payload.Write($snapshot, 0, $snapshot.Length)
+                while ($payload.Length % 8 -ne 0) { $payload.WriteByte(0) }
+                $identity = if ($Fault -eq 'abi' -and $abi -eq 'x86_64') { ('d' * 40) + '-' + ('e' * 64) } else { $BuildId }
+                if ($Fault -eq 'longFrame') { $identity += 'x' * (5120 - $identity.Length) }
+                if ($Fault -eq 'longCompositeFrame') { $identity += 'x' * (13440 - $identity.Length) }
+                $strings = @($identity, 'view', 'goIdle', ('c' * 64), '1.0.0+19')
+                if ($Fault -eq 'ambiguous') { $strings += ('d' * 40) + '-' + ('e' * 64) }
+                foreach ($value in $strings) {
+                    $textBytes = [Text.Encoding]::ASCII.GetBytes($value)
+                    if ($abi -eq 'armeabi-v7a') {
+                        $sizeUnits = [int][Math]::Ceiling((12 + $textBytes.Length) / 8.0)
+                        $sizeTag = if ($sizeUnits -gt 15) { 0 } else { $sizeUnits }
+                        $header = [BitConverter]::GetBytes([uint32]((94 -shl 12) -bor ($sizeTag -shl 8) -bor 0x72)) + [BitConverter]::GetBytes([uint32]0) + [BitConverter]::GetBytes([uint32]($textBytes.Length * 2))
+                        $payload.Write($header, 0, $header.Length)
+                    } else {
+                        $taggedLength = $textBytes.Length * 2
+                        while ($taggedLength -ge 128) { $payload.WriteByte($taggedLength -band 127); $taggedLength = $taggedLength -shr 7 }
+                        $payload.WriteByte($taggedLength -bor 128)
+                    }
+                    $writeLength = if ($Fault -eq 'truncated' -and $value -ceq $identity) { $textBytes.Length - 1 } else { $textBytes.Length }
+                    $payload.Write($textBytes, 0, $writeLength)
+                    if ($Fault -eq 'truncated' -and $value -ceq $identity) { break }
+                    if ($abi -eq 'armeabi-v7a') { while ($payload.Length % 8 -ne 0) { $payload.WriteByte(0) } }
+                }
+                $bytes = $payload.ToArray()
+                $stream.Write($bytes, 0, $bytes.Length)
+            } finally { $payload.Dispose(); $stream.Dispose() }
+        }
+    } finally { $archive.Dispose() }
+}
+
 $nativeWarningRoot = Join-Path ([IO.Path]::GetTempPath()) (
     'lexiquest-aab-warning-' + [guid]::NewGuid().ToString('N')
 )
@@ -216,7 +268,7 @@ echo ^<manifest xmlns:android="http://schemas.android.com/apk/res/android" packa
 exit /b 0
 '@ | Set-Content -LiteralPath $script:fakeBundletoolJava -Encoding ascii
     $fakeAab = Join-Path $nativeWarningRoot 'synthetic.aab'
-    [IO.File]::WriteAllBytes($fakeAab, [byte[]](1, 2, 3, 4))
+    New-TestProvenanceArchive $fakeAab 'aab' ('a' * 40)
     function Find-LexiQuestBundletoolClasspath {
         return [pscustomobject]@{
             java = $script:fakeBundletoolJava
@@ -238,6 +290,70 @@ finally {
         -ErrorAction SilentlyContinue
     Remove-Variable -Name fakeBundletoolJava -Scope Script `
         -ErrorAction SilentlyContinue
+}
+
+$identityRootBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+$identityRoot = Join-Path $identityRootBase ('lexiquest-provenance-' + [guid]::NewGuid().ToString('N'))
+$originalSdkFinder = (Get-Command Find-LexiQuestAndroidSdkTool).ScriptBlock
+$originalCertificateReader = (Get-Command Get-LexiQuestApkCertificateSha256).ScriptBlock
+$originalIdentityBundletoolFinder = (Get-Command Find-LexiQuestBundletoolClasspath).ScriptBlock
+try {
+    $null = New-Item -ItemType Directory -Path $identityRoot
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Add-Type -AssemblyName System.IO.Compression
+    $identitySource = 'a' * 40
+    $identityComposite = $identitySource + '-' + ('b' * 64)
+    foreach ($kind in @('apk', 'aab')) {
+        $archivePath = Join-Path $identityRoot ('composite-only.' + $kind)
+        New-TestProvenanceArchive $archivePath $kind $identityComposite
+    }
+    $script:identityAnalyzer = Join-Path $identityRoot 'fake-apkanalyzer.cmd'
+    @'
+@echo off
+if "%2"=="application-id" echo com.lexiquest.app
+if "%2"=="version-name" echo 1.0.0
+if "%2"=="version-code" echo 19
+exit /b 0
+'@ | Set-Content -LiteralPath $script:identityAnalyzer -Encoding ascii
+    $script:identityJava = Join-Path $identityRoot 'fake-bundletool.cmd'
+    @'
+@echo off
+echo ^<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.lexiquest.app" android:versionName="1.0.0" android:versionCode="19"^>^<application /^>^</manifest^>
+exit /b 0
+'@ | Set-Content -LiteralPath $script:identityJava -Encoding ascii
+    function Find-LexiQuestAndroidSdkTool { return $script:identityAnalyzer }
+    function Get-LexiQuestApkCertificateSha256 { return ('B' * 64) }
+    function Find-LexiQuestBundletoolClasspath { return [pscustomobject]@{ java = $script:identityJava; classpath = 'unused' } }
+    $identityApk = Join-Path $identityRoot 'composite-only.apk'
+    $identityAab = Join-Path $identityRoot 'composite-only.aab'
+    $actualIdentity = Get-LexiQuestMeasuredApkMetadata -ApkPath $identityApk -ExpectedBuildId $identityComposite -ExpectedModelSha256 ('C' * 64) -ExpectedVersion '1.0.0+19'
+    Assert-True ($actualIdentity.embeddedBuildId -ceq $identityComposite) 'synthetic signed-metadata boundary measures the full configured APK identity'
+    $bareSourceRejected = $false
+    try { $null = Get-LexiQuestMeasuredApkMetadata -ApkPath $identityApk -ExpectedBuildId $identitySource -ExpectedModelSha256 ('C' * 64) -ExpectedVersion '1.0.0+19' } catch { $bareSourceRejected = $true }
+    Assert-True $bareSourceRejected 'a composite-only APK cannot be measured as a bare source-only legacy build'
+    $actualAabIdentity = Get-LexiQuestMeasuredAabMetadata -AabPath $identityAab
+    $aabBuildProperty = $actualAabIdentity.PSObject.Properties['embeddedBuildId']
+    Assert-True ($null -ne $aabBuildProperty -and $aabBuildProperty.Value -ceq $identityComposite) 'AAB metadata reports the actual complete embedded build identity'
+    $legacyIdentityErrors = @(Test-LexiQuestAndroidArtifactIdentity -MeasuredApk $actualIdentity -MeasuredAab $actualAabIdentity -Expected ([pscustomobject]@{ packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 19; buildId = $identitySource }))
+    Assert-True (($legacyIdentityErrors -join "`n") -match '(?i)build.?ID') 'composite-only AAB and APK cannot satisfy a stripped legacy manifest identity'
+    $legacyArchive = Join-Path $identityRoot 'source-only.apk'
+    New-TestProvenanceArchive $legacyArchive 'apk' $identitySource
+    Assert-True ((Get-LexiQuestArchiveBuildIdentity $legacyArchive) -ceq $identitySource) 'a framed source-only legacy identity measures exactly its forty characters'
+    foreach ($fault in @('truncated', 'ambiguous', 'abi', 'snapshot', 'longFrame', 'longCompositeFrame')) {
+        $faultArchive = Join-Path $identityRoot ($fault + '.aab')
+        New-TestProvenanceArchive $faultArchive 'aab' $identityComposite $fault
+        $faultRejected = $false
+        try { $null = Get-LexiQuestArchiveBuildIdentity $faultArchive } catch { $faultRejected = $true }
+        Assert-True $faultRejected "actual identity extraction rejects $fault provenance"
+    }
+} finally {
+    Set-Item Function:Find-LexiQuestAndroidSdkTool -Value $originalSdkFinder
+    Set-Item Function:Get-LexiQuestApkCertificateSha256 -Value $originalCertificateReader
+    Set-Item Function:Find-LexiQuestBundletoolClasspath -Value $originalIdentityBundletoolFinder
+    $resolvedIdentityRoot = [IO.Path]::GetFullPath($identityRoot)
+    if (-not $resolvedIdentityRoot.StartsWith($identityRootBase.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Synthetic provenance cleanup must stay inside its temporary root.' }
+    Remove-Item -LiteralPath $resolvedIdentityRoot -Recurse -Force
+    Remove-Variable -Name identityAnalyzer,identityJava -Scope Script -ErrorAction SilentlyContinue
 }
 
 $packagerCommand = Get-Command (
@@ -470,12 +586,14 @@ try {
                 packageName = 'com.lexiquest.app'
                 versionName = '1.0.0'
                 versionCode = 27
+                embeddedBuildId = '1' * 40
             }) `
             -MeasuredAab ([pscustomobject]@{
                 applicationId = 'com.lexiquest.other'
                 packageName = 'com.lexiquest.other'
                 versionName = '1.0.0'
                 versionCode = 27
+                embeddedBuildId = '1' * 40
             }) `
             -Expected $expectedArtifact)
         Assert-True (
@@ -486,12 +604,14 @@ try {
                 packageName = 'com.lexiquest.app'
                 versionName = '1.0.0'
                 versionCode = 27
+                embeddedBuildId = '1' * 40
             }) `
             -MeasuredAab ([pscustomobject]@{
                 applicationId = 'com.lexiquest.app'
                 packageName = 'com.lexiquest.app'
                 versionName = '9.9.9'
                 versionCode = 99
+                embeddedBuildId = '1' * 40
             }) `
             -Expected $expectedArtifact)
         Assert-True (
@@ -1200,9 +1320,11 @@ try {
     $packageManifest = [pscustomobject]@{
         schemaVersion = 3
         releaseProfile = 'fieldTrial'
+        sourceCommit = ('1' * 40)
         artifact = [pscustomobject]@{
             apkPath = 'lexiquest-1.0.0+1.apk'
             aabPath = 'lexiquest-1.0.0+1.aab'
+            buildId = ('1' * 40)
         }
         participantDocuments = @(
             Get-LexiQuestParticipantDocumentNames `
@@ -1269,14 +1391,13 @@ try {
     [System.IO.File]::WriteAllText($publicInput, ($publicValue | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))
     $publicConfiguration = Read-LexiQuestReleaseConfiguration -Path $publicInput
     [System.IO.File]::WriteAllText((Join-Path $packageRoot 'release-configuration.json'), $publicConfiguration.Json, [System.Text.UTF8Encoding]::new($false))
-    $packageManifest | Add-Member -NotePropertyName sourceCommit -NotePropertyValue ('1' * 40)
     $packageManifest | Add-Member -NotePropertyName configuration -NotePropertyValue ([pscustomobject]@{ path = 'release-configuration.json'; sha256 = $publicConfiguration.Sha256 })
-    $packageManifest.artifact | Add-Member -NotePropertyMembers @{ packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 19; buildId = (Get-LexiQuestReleaseBuildId -SourceCommit ('1' * 40) -ConfigurationSha256 $publicConfiguration.Sha256) }
+    $packageManifest.artifact.buildId = Get-LexiQuestReleaseBuildId -SourceCommit ('1' * 40) -ConfigurationSha256 $publicConfiguration.Sha256
+    $packageManifest.artifact | Add-Member -NotePropertyMembers @{ packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 19 }
     $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
     Assert-True ($packageErrors.Count -eq 0) `
         'a public package excludes the research protocol and binds commercial configuration'
     $packageManifest.releaseProfile = 'fieldTrial'
-    Remove-Item -LiteralPath (Join-Path $packageRoot 'release-configuration.json')
     Set-Content -LiteralPath (
         Join-Path $packageDocs 'research-protocol-v1.md'
     ) -Value 'verified participant fixture' -Encoding utf8
@@ -1293,6 +1414,34 @@ try {
                 }
             }
     )
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True ($packageErrors.Count -gt 0) 'paid configuration cannot be relabeled as a connected trial'
+    $trialValue = $publicValue | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+    $trialValue.billing = [pscustomobject]@{ enabled = $false }
+    [System.IO.File]::WriteAllText($publicInput, ($trialValue | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))
+    $trialConfiguration = Read-LexiQuestReleaseConfiguration -Path $publicInput -ReleaseProfile fieldTrial
+    $trialConfigPath = Join-Path $packageRoot 'release-configuration.json'
+    [System.IO.File]::WriteAllText($trialConfigPath, $trialConfiguration.Json, [System.Text.UTF8Encoding]::new($false))
+    $packageManifest.configuration.sha256 = $trialConfiguration.Sha256
+    $packageManifest.artifact.buildId = Get-LexiQuestReleaseBuildId -SourceCommit ('1' * 40) -ConfigurationSha256 $trialConfiguration.Sha256
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True ($packageErrors.Count -eq 0) 'connected trial allows its canonical bound configuration and retains required research documents'
+    $packageManifest.artifact.buildId = '1' * 40
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True (($packageErrors -join "`n") -match 'build ID does not bind source and configuration') 'configured trial cannot reuse a source-only build identity'
+    $packageManifest.artifact.buildId = Get-LexiQuestReleaseBuildId -SourceCommit ('1' * 40) -ConfigurationSha256 $trialConfiguration.Sha256
+    [System.IO.File]::AppendAllText($trialConfigPath, ' ')
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True (($packageErrors -join "`n") -match 'SHA-256') 'configured trial rejects changed configuration bytes'
+    Remove-Item -LiteralPath $trialConfigPath
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True ($packageErrors.Count -gt 0) 'configured trial cannot omit its canonical configuration file'
+    $packageManifest.PSObject.Properties.Remove('configuration')
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True (($packageErrors -join "`n") -match 'Legacy field-trial artifact must use its exact source commit') 'stripping trial configuration metadata cannot disguise a composite build identity'
+    $packageManifest.artifact.buildId = $packageManifest.sourceCommit
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
+    Assert-True ($packageErrors.Count -eq 0) 'legacy no-config trial remains valid only with its exact source commit build ID'
     Set-Content -LiteralPath (Join-Path $packageDocs 'internal-checkpoint.md') `
         -Value 'must not ship' -Encoding utf8
     $packageErrors = @(Test-LexiQuestReleasePackage `

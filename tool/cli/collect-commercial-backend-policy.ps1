@@ -67,7 +67,7 @@ $token = $null
 $headers = $null
 $response = $null
 try {
-    $configuration = Read-LexiQuestReleaseConfiguration $ConfigurationPath
+    $configuration = Read-LexiQuestReleaseConfiguration -Path $ConfigurationPath -ReleaseProfile publicProduction
     $phase = 'output preflight'
     $output = [IO.Path]::GetFullPath($OutputDirectory).TrimEnd('\', '/')
     if ([string]::IsNullOrWhiteSpace($output) -or (Test-Path -LiteralPath $output)) { throw 'Output directory must be new.' }

@@ -288,7 +288,7 @@ if ($evidenceErrors.Count -gt 0) {
     throw $message
 }
 if ([string]$releaseManifest.releaseProfile -eq 'publicProduction') {
-    $configuration = Read-LexiQuestReleaseConfiguration -Path (Join-Path $resolvedPackage 'release-configuration.json')
+    $configuration = Read-LexiQuestReleaseConfiguration -Path (Join-Path $resolvedPackage 'release-configuration.json') -ReleaseProfile publicProduction
     $controls = Read-LexiQuestEvidenceRecord -Reference $evidence.records.controls -EvidenceRootPath $resolvedEvidenceRoot
     $commercialErrors = @(Test-LexiQuestCommercialAcceptance -Configuration $configuration -Manifest $releaseManifest -Controls $controls -EvidenceRootPath $resolvedEvidenceRoot)
     if ($commercialErrors.Count -gt 0) { throw ("Commercial membership evidence is incomplete:`n - " + ($commercialErrors -join "`n - ")) }

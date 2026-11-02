@@ -43,13 +43,13 @@ $taskTempBase = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $taskTemp = Join-Path $taskTempBase ('lexiquest-commercial-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $taskTemp | Out-Null
 $configurationPath = Join-Path $taskTemp 'configuration.json'
-function Read-Fixture([object]$Value) {
+function Read-Fixture([object]$Value, [string]$ReleaseProfile = 'publicProduction') {
     [System.IO.File]::WriteAllText($configurationPath, ($Value | ConvertTo-Json -Depth 10), [System.Text.UTF8Encoding]::new($false))
-    return Read-LexiQuestReleaseConfiguration -Path $configurationPath
+    return Read-LexiQuestReleaseConfiguration -Path $configurationPath -ReleaseProfile $ReleaseProfile
 }
-function Expect-Rejected([object]$Value, [string]$Message) {
+function Expect-Rejected([object]$Value, [string]$Message, [string]$ReleaseProfile = 'publicProduction') {
     $rejected = $false
-    try { $null = Read-Fixture $Value } catch { $rejected = $true }
+    try { $null = Read-Fixture $Value $ReleaseProfile } catch { $rejected = $true }
     Assert-True $rejected $Message
 }
 try {
@@ -57,6 +57,89 @@ try {
     $missingRetention.Remove('accountDeletionRecoveryRetentionHours')
     Expect-Rejected $missingRetention 'public configuration requires an explicit account deletion recovery retention'
     $configuration = Read-Fixture (New-Configuration)
+    $publicCanonical = '{"schemaVersion":1,"packageName":"com.lexiquest.app","version":"1.0.0+19","minimumPreviousVersionCode":18,"aiApiUrl":"https://api.lexiquest.app/","voiceMode":"native","voiceApiUrl":null,"cloudSyncEnabled":true,"contentReportsEnabled":true,"accountDeletionRecoveryRetentionHours":168,"billing":{"enabled":true,"policyRevision":"managed-ai-v1","products":[{"productId":"lexiquest_ai_monthly","basePlanId":"monthly","entitlements":["managedContent"],"dailyManagedUnits":10}]}}'
+    Assert-True ($configuration.Json -ceq $publicCanonical -and $configuration.Sha256 -ceq 'd772bc32f8a49b7bd7a758aa11c4df2628881db4209f646f76e14b2007ceabdc') 'profile support preserves existing public canonical bytes and SHA-256'
+    $trialValue = New-Configuration
+    $trialValue.billing = [ordered]@{ enabled = $false }
+    [IO.File]::WriteAllText($configurationPath, ($trialValue | ConvertTo-Json -Depth 10), [Text.UTF8Encoding]::new($false))
+    $trial = $null
+    try { $trial = Read-LexiQuestReleaseConfiguration -Path $configurationPath -ReleaseProfile fieldTrial } catch { }
+    Assert-True ($null -ne $trial) 'connected field trial accepts explicit billing-disabled configuration without products or policy'
+    if ($null -eq $trial) { throw 'The connected trial parser must pass before dependent fixtures.' }
+    Assert-True ($trial.ReleaseProfile -ceq 'fieldTrial' -and $configuration.ReleaseProfile -ceq 'publicProduction' -and @($trial.Value.billing.Keys).Count -eq 1 -and -not $trial.Value.billing.enabled) 'expected profile is parsed metadata and trial canonical billing has only enabled false'
+    $trialDefines = @(Get-LexiQuestReleaseDartDefines -Configuration $trial -SourceCommit ('a' * 40))
+    foreach ($define in @(
+        '--dart-define=LEXIQUEST_BILLING_ENABLED=false',
+        '--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true',
+        '--dart-define=LEXIQUEST_CONTENT_REPORTS_ENABLED=true',
+        '--dart-define=LEXIQUEST_AI_API_URL=https://api.lexiquest.app/',
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_ENABLED=true',
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED=true',
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_RECOVERY_RETENTION_HOURS=168',
+        ('--dart-define=LEXIQUEST_BUILD_ID=' + ('a' * 40) + '-' + $trial.Sha256)
+    )) { Assert-True (@($trialDefines | Where-Object { $_ -ceq $define }).Count -eq 1) 'trial emits each exact connected nonbilling capability and bound build identity once' }
+    Assert-True (@($trialDefines | Where-Object { $_ -match 'APP_CHECK_DEBUG|RESEARCH|VOICE_API_URL|PRODUCT|ENTITLEMENT' }).Count -eq 0) 'native trial adds no debug, research, fake voice endpoint or synthetic entitlement'
+    Expect-Rejected $trialValue 'paid parser rejects trial billing configuration'
+    Expect-Rejected (New-Configuration) 'trial parser rejects paid billing configuration' 'fieldTrial'
+    foreach ($enabled in @($true, 'false', $null, 0)) {
+        $badTrial = New-Configuration
+        $badTrial.billing = [ordered]@{ enabled = $enabled }
+        Expect-Rejected $badTrial 'trial billing must be the exact JSON boolean false' 'fieldTrial'
+    }
+    foreach ($extra in @('policyRevision', 'products', 'price', 'secret')) {
+        $badTrial = New-Configuration
+        $badTrial.billing = [ordered]@{ enabled = $false }
+        $badTrial.billing[$extra] = 'synthetic-forbidden-extra'
+        Expect-Rejected $badTrial 'trial configuration cannot carry paid policy, products, price or secret fields' 'fieldTrial'
+    }
+    foreach ($capability in @('cloudSyncEnabled', 'contentReportsEnabled')) {
+        $badTrial = New-Configuration
+        $badTrial.billing = [ordered]@{ enabled = $false }
+        $badTrial[$capability] = $false
+        Expect-Rejected $badTrial 'connected trial requires cloud sync and content reports' 'fieldTrial'
+    }
+    foreach ($invalidCommon in @('origin', 'retention', 'version', 'secret', 'nativeVoice')) {
+        $badTrial = New-Configuration
+        $badTrial.billing = [ordered]@{ enabled = $false }
+        switch ($invalidCommon) {
+            origin { $badTrial.aiApiUrl = 'http://trial.lexiquest.app/' }
+            retention { $badTrial.accountDeletionRecoveryRetentionHours = 1.5 }
+            version { $badTrial.version = '1.0.0+18' }
+            secret { $badTrial['secret'] = 'synthetic-forbidden-value' }
+            nativeVoice { $badTrial.voiceApiUrl = 'https://voice.lexiquest.app/' }
+        }
+        Expect-Rejected $badTrial 'trial retains common origin, retention, version, secret and native-voice boundaries' 'fieldTrial'
+    }
+    $duplicateTrialJson = $trial.Json.Replace('"billing":', '"billing":{"enabled":true},"billing":')
+    [IO.File]::WriteAllText($configurationPath, $duplicateTrialJson, [Text.UTF8Encoding]::new($false))
+    $duplicateTrialRejected = $false
+    try { $null = Read-LexiQuestReleaseConfiguration -Path $configurationPath -ReleaseProfile fieldTrial } catch { $duplicateTrialRejected = $true }
+    Assert-True $duplicateTrialRejected 'trial billing cannot be selected by duplicate JSON members'
+    foreach ($change in @('origin', 'retention')) {
+        $changedTrial = New-Configuration
+        $changedTrial.billing = [ordered]@{ enabled = $false }
+        if ($change -eq 'origin') { $changedTrial.aiApiUrl = 'https://trial.lexiquest.app/' } else { $changedTrial.accountDeletionRecoveryRetentionHours = 169 }
+        $changedTrial = Read-Fixture $changedTrial 'fieldTrial'
+        Assert-True ($changedTrial.Sha256 -cne $trial.Sha256 -and (Get-LexiQuestReleaseBuildId ('a' * 40) $changedTrial.Sha256) -cne (Get-LexiQuestReleaseBuildId ('a' * 40) $trial.Sha256)) 'trial origin or retention changes source/config artifact identity'
+    }
+    $trialCanonicalPath = Join-Path $taskTemp 'release-configuration.json'
+    [IO.File]::WriteAllText($trialCanonicalPath, $trial.Json, [Text.UTF8Encoding]::new($false))
+    $trialManifest = [pscustomobject]@{ releaseProfile = 'fieldTrial'; sourceCommit = ('a' * 40); artifact = [pscustomobject]@{ packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 19; buildId = Get-LexiQuestReleaseBuildId ('a' * 40) $trial.Sha256 }; configuration = [pscustomobject]@{ path = 'release-configuration.json'; sha256 = $trial.Sha256 } }
+    Assert-True (@(Test-LexiQuestReleaseConfigurationBinding $taskTemp $trialManifest).Count -eq 0) 'configured trial binds canonical config, source, version and package'
+    $trialManifest.releaseProfile = 'publicProduction'
+    Assert-True (@(Test-LexiQuestReleaseConfigurationBinding $taskTemp $trialManifest).Count -gt 0) 'configured trial cannot be relabeled as a paid release'
+    $trialManifest.releaseProfile = 'fieldTrial'
+    Assert-True (@(Test-LexiQuestCommercialAcceptance $trial $trialManifest ([pscustomobject]@{}) $taskTemp).Count -gt 0) 'trial is rejected at commercial acceptance profile preflight without purchase evidence'
+    $strippedTrial = [pscustomobject]@{ releaseProfile = 'fieldTrial'; sourceCommit = ('a' * 40); artifact = [pscustomobject]@{ buildId = (('a' * 40) + '-' + ('b' * 64)) } }
+    Assert-True (@(Test-LexiQuestReleaseConfigurationBinding -PackagePath $taskTemp -Manifest $strippedTrial).Count -gt 0) 'a configured trial cannot strip configuration to impersonate a source-only legacy trial'
+    $strippedTrial.artifact.buildId = $strippedTrial.sourceCommit
+    [IO.File]::Delete($trialCanonicalPath)
+    Assert-True (@(Test-LexiQuestReleaseConfigurationBinding -PackagePath $taskTemp -Manifest $strippedTrial).Count -eq 0) 'genuine no-config trial preserves exact source-only legacy build identity'
+    $duplicateJson = $publicCanonical.Replace('"billing":', '"billing":{"enabled":false},"billing":')
+    [IO.File]::WriteAllText($configurationPath, $duplicateJson, [Text.UTF8Encoding]::new($false))
+    $duplicateRejected = $false
+    try { $null = Read-LexiQuestReleaseConfiguration -Path $configurationPath } catch { $duplicateRejected = $true }
+    Assert-True $duplicateRejected 'duplicate configuration members cannot select an ambiguous billing profile'
     Assert-True ($configuration.Value.aiApiUrl -eq 'https://api.lexiquest.app/') 'HTTPS origin is canonicalized'
     Assert-True ($configuration.Sha256 -match '^[a-f0-9]{64}$') 'canonical configuration has a full SHA-256'
     $same = Read-Fixture ($configuration.Json | ConvertFrom-Json)
@@ -225,11 +308,15 @@ try {
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.EnvironmentVariables['PATH'] = $fakeBin + ';' + $env:PATH
-    foreach ($invalidCapability in @('origin', 'deletionRetention')) {
+    foreach ($invalidCapability in @('origin', 'deletionRetention', 'trialPaid', 'trialCapability')) {
         $bad = New-Configuration
+        $profile = 'publicProduction'
         $expectedError = 'AI API must be a public HTTPS origin'
         if ($invalidCapability -eq 'origin') { $bad.aiApiUrl = 'http://api.lexiquest.app' }
-        else { $bad.accountDeletionRecoveryRetentionHours = 0; $expectedError = 'Account deletion recovery retention must be an integer from 1 to 720 hours' }
+        elseif ($invalidCapability -eq 'deletionRetention') { $bad.accountDeletionRecoveryRetentionHours = 0; $expectedError = 'Account deletion recovery retention must be an integer from 1 to 720 hours' }
+        elseif ($invalidCapability -eq 'trialPaid') { $profile = 'fieldTrial'; $expectedError = 'Trial billing configuration contains missing or unsupported fields' }
+        else { $profile = 'fieldTrial'; $bad.billing = [ordered]@{ enabled = $false }; $bad.cloudSyncEnabled = $false; $expectedError = 'Connected field trial requires cloud sync and content reports' }
+        $start.Arguments = '-NoProfile -NonInteractive -File "' + $packager + '" -ReleaseProfile ' + $profile + ' -Version 1.0.0+19 -ConfigurationPath "' + $configurationPath + '" -OutputPath "' + (Join-Path $taskTemp 'output') + '"'
         [System.IO.File]::WriteAllText($configurationPath, ($bad | ConvertTo-Json -Depth 8))
         $process = [System.Diagnostics.Process]::Start($start)
         try {
