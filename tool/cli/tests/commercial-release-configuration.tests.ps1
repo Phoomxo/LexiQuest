@@ -26,6 +26,7 @@ function New-Configuration {
         voiceApiUrl = $null
         cloudSyncEnabled = $true
         contentReportsEnabled = $true
+        accountDeletionRecoveryRetentionHours = 168
         billing = [ordered]@{
             enabled = $true
             policyRevision = 'managed-ai-v1'
@@ -52,11 +53,15 @@ function Expect-Rejected([object]$Value, [string]$Message) {
     Assert-True $rejected $Message
 }
 try {
+    $missingRetention = New-Configuration
+    $missingRetention.Remove('accountDeletionRecoveryRetentionHours')
+    Expect-Rejected $missingRetention 'public configuration requires an explicit account deletion recovery retention'
     $configuration = Read-Fixture (New-Configuration)
     Assert-True ($configuration.Value.aiApiUrl -eq 'https://api.lexiquest.app/') 'HTTPS origin is canonicalized'
     Assert-True ($configuration.Sha256 -match '^[a-f0-9]{64}$') 'canonical configuration has a full SHA-256'
     $same = Read-Fixture ($configuration.Json | ConvertFrom-Json)
     Assert-True ($same.Sha256 -eq $configuration.Sha256) 'canonical roundtrip retains identity'
+    Assert-True ($same.Value.accountDeletionRecoveryRetentionHours -eq 168) 'canonical configuration retains the explicit seven-day deletion recovery policy'
     $idn = New-Configuration
     $idn.aiApiUrl = 'https://b' + [char]0x00fc + 'cher.lexiquest.app/'
     Assert-True ((Read-Fixture $idn).Value.aiApiUrl -eq 'https://xn--bcher-kva.lexiquest.app/') 'IDN origins use deterministic ASCII bytes'
@@ -79,12 +84,43 @@ try {
     Assert-True ($defines -contains "--dart-define=LEXIQUEST_BUILD_ID=$buildId") 'artifact receives the bound build identity'
     Assert-True ($defines -contains '--dart-define=LEXIQUEST_AI_API_URL=https://api.lexiquest.app/') 'artifact receives managed AI origin'
     Assert-True ($defines -contains '--dart-define=LEXIQUEST_BILLING_ENABLED=true') 'managed membership is composed explicitly'
+    foreach ($deletionDefine in @(
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_ENABLED=true',
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED=true',
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_RECOVERY_RETENTION_HOURS=168'
+    )) {
+        Assert-True (@($defines | Where-Object { $_ -ceq $deletionDefine }).Count -eq 1) 'public builds compose each required account deletion capability exactly once'
+    }
     Assert-True (@($defines | Where-Object { $_ -like '*VOICE_API_URL*' }).Count -eq 0) 'native voice never receives a fake remote endpoint'
     Assert-True (@($defines | Where-Object { $_ -match 'APP_CHECK_DEBUG|RESEARCH' }).Count -eq 0) 'commercial configuration cannot activate debug App Check or Research'
     $changed = New-Configuration
     $changed.billing.products[0].dailyManagedUnits = 11
     $changed = Read-Fixture $changed
     Assert-True ($changed.Sha256 -ne $configuration.Sha256) 'quota change changes release identity'
+    $retentionChanged = New-Configuration
+    $retentionChanged.accountDeletionRecoveryRetentionHours = 169
+    $retentionChanged = Read-Fixture $retentionChanged
+    Assert-True ($retentionChanged.Sha256 -cne $configuration.Sha256) 'retention-only change changes canonical release configuration identity'
+    Assert-True ((Get-LexiQuestReleaseBuildId -SourceCommit $sourceCommit -ConfigurationSha256 $retentionChanged.Sha256) -cne $buildId) 'retention-only change changes the source-bound artifact build identity'
+    foreach ($hours in @(1, 720)) {
+        $boundary = New-Configuration
+        $boundary.accountDeletionRecoveryRetentionHours = $hours
+        $boundary = Read-Fixture $boundary
+        Assert-True ($boundary.Value.accountDeletionRecoveryRetentionHours -eq $hours -and @(Get-LexiQuestReleaseDartDefines -Configuration $boundary -SourceCommit $sourceCommit) -contains "--dart-define=LEXIQUEST_ACCOUNT_DELETION_RECOVERY_RETENTION_HOURS=$hours") 'valid deletion retention boundaries compose the exact integer hours'
+    }
+    foreach ($invalidHours in @($null, $false, $true, '168', 168.5, 0, -1, 721)) {
+        $bad = New-Configuration
+        $bad.accountDeletionRecoveryRetentionHours = $invalidHours
+        Expect-Rejected $bad 'deletion retention rejects missing values, booleans, strings, fractional numbers and out-of-range hours'
+    }
+    $decimalRetentionJson = ((New-Configuration) | ConvertTo-Json -Depth 8) -replace '("accountDeletionRecoveryRetentionHours"\s*:\s*)168\b', '${1}168.0'
+    [System.IO.File]::WriteAllText($configurationPath, $decimalRetentionJson, [System.Text.UTF8Encoding]::new($false))
+    $decimalRejected = $false
+    try { $null = Read-LexiQuestReleaseConfiguration $configurationPath } catch { $decimalRejected = $true }
+    Assert-True $decimalRejected 'deletion retention rejects JSON decimal notation even when its numeric value is a whole number'
+    $bad = New-Configuration
+    $bad['accountDeletion'] = [ordered]@{ enabled = $false }
+    Expect-Rejected $bad 'public deletion requirements cannot be replaced by unsupported optional capability knobs'
     $remote = New-Configuration
     $remote.voiceMode = 'remote'
     $remote.voiceApiUrl = 'https://voice.lexiquest.app/'
@@ -181,9 +217,6 @@ try {
     [System.IO.File]::WriteAllText((Join-Path $fakeBin 'flutter.cmd'), "@echo off`r`necho called>`"$marker`"`r`nexit /b 99`r`n")
     $runner = (Get-Process -Id $PID).Path
     $packager = Join-Path $repoRoot 'tool/cli/package-field-release.ps1'
-    $bad = New-Configuration
-    $bad.aiApiUrl = 'http://api.lexiquest.app'
-    [System.IO.File]::WriteAllText($configurationPath, ($bad | ConvertTo-Json -Depth 8))
     $start = [System.Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $runner
     $start.Arguments = '-NoProfile -NonInteractive -File "' + $packager + '" -ReleaseProfile publicProduction -Version 1.0.0+19 -ConfigurationPath "' + $configurationPath + '" -OutputPath "' + (Join-Path $taskTemp 'output') + '"'
@@ -192,13 +225,20 @@ try {
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.EnvironmentVariables['PATH'] = $fakeBin + ';' + $env:PATH
-    $process = [System.Diagnostics.Process]::Start($start)
-    try {
-        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        Assert-True ($process.ExitCode -ne 0 -and $output -match 'AI API must be a public HTTPS origin') 'actual packager rejects invalid public configuration at preflight'
-        Assert-True (-not (Test-Path -LiteralPath $marker)) 'rejected configuration never invokes Flutter'
-    } finally { $process.Dispose() }
+    foreach ($invalidCapability in @('origin', 'deletionRetention')) {
+        $bad = New-Configuration
+        $expectedError = 'AI API must be a public HTTPS origin'
+        if ($invalidCapability -eq 'origin') { $bad.aiApiUrl = 'http://api.lexiquest.app' }
+        else { $bad.accountDeletionRecoveryRetentionHours = 0; $expectedError = 'Account deletion recovery retention must be an integer from 1 to 720 hours' }
+        [System.IO.File]::WriteAllText($configurationPath, ($bad | ConvertTo-Json -Depth 8))
+        $process = [System.Diagnostics.Process]::Start($start)
+        try {
+            $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
+            $process.WaitForExit()
+            Assert-True ($process.ExitCode -ne 0 -and $output -match $expectedError) 'actual packager rejects invalid public capability configuration at preflight'
+            Assert-True (-not (Test-Path -LiteralPath $marker)) 'rejected configuration never invokes Flutter'
+        } finally { $process.Dispose() }
+    }
 }
 finally {
     $resolved = [System.IO.Path]::GetFullPath($taskTemp)

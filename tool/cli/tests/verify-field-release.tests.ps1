@@ -1263,6 +1263,7 @@ try {
         schemaVersion = 1; packageName = 'com.lexiquest.app'; version = '1.0.0+19'; minimumPreviousVersionCode = 18
         aiApiUrl = 'https://api.lexiquest.app/'; voiceMode = 'native'; voiceApiUrl = $null
         cloudSyncEnabled = $true; contentReportsEnabled = $true
+        accountDeletionRecoveryRetentionHours = 168
         billing = [ordered]@{ enabled = $true; policyRevision = 'managed-ai-v1'; products = @([ordered]@{ productId = 'lexiquest_ai_monthly'; basePlanId = 'monthly'; entitlements = @('managedContent'); dailyManagedUnits = 10 }) }
     }
     [System.IO.File]::WriteAllText($publicInput, ($publicValue | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))

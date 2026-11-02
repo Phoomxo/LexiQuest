@@ -40,7 +40,7 @@ function Read-LexiQuestReleaseConfiguration {
     }
     try { $raw = Get-Content -LiteralPath $Path -Raw -Encoding utf8 | ConvertFrom-Json -ErrorAction Stop }
     catch { throw 'Release configuration must be valid JSON.' }
-    Assert-LexiQuestCommercialKeys $raw @('schemaVersion', 'packageName', 'version', 'minimumPreviousVersionCode', 'aiApiUrl', 'voiceMode', 'voiceApiUrl', 'cloudSyncEnabled', 'contentReportsEnabled', 'billing') 'Release configuration'
+    Assert-LexiQuestCommercialKeys $raw @('schemaVersion', 'packageName', 'version', 'minimumPreviousVersionCode', 'aiApiUrl', 'voiceMode', 'voiceApiUrl', 'cloudSyncEnabled', 'contentReportsEnabled', 'accountDeletionRecoveryRetentionHours', 'billing') 'Release configuration'
     if (($raw.schemaVersion -isnot [int] -and $raw.schemaVersion -isnot [long]) -or $raw.schemaVersion -ne 1 -or $raw.packageName -cne 'com.lexiquest.app') {
         throw 'Release configuration schema or Android package is unsupported.'
     }
@@ -58,6 +58,10 @@ function Read-LexiQuestReleaseConfiguration {
     }
     foreach ($name in @('cloudSyncEnabled', 'contentReportsEnabled')) {
         if ($raw.$name -isnot [bool]) { throw "$name must be a JSON boolean." }
+    }
+    $deletionRetention = $raw.accountDeletionRecoveryRetentionHours
+    if (($deletionRetention -isnot [int] -and $deletionRetention -isnot [long]) -or $deletionRetention -lt 1 -or $deletionRetention -gt 720) {
+        throw 'Account deletion recovery retention must be an integer from 1 to 720 hours.'
     }
     $aiOrigin = ConvertTo-LexiQuestPublicOrigin $raw.aiApiUrl 'AI API'
     if ($raw.voiceMode -cnotin @('native', 'remote')) { throw 'voiceMode must be native or remote.' }
@@ -101,6 +105,7 @@ function Read-LexiQuestReleaseConfiguration {
         voiceApiUrl = $voiceOrigin
         cloudSyncEnabled = $raw.cloudSyncEnabled
         contentReportsEnabled = $raw.contentReportsEnabled
+        accountDeletionRecoveryRetentionHours = $deletionRetention
         billing = [ordered]@{ enabled = $true; policyRevision = $raw.billing.policyRevision; products = @($products.Values) }
     }
     $json = $value | ConvertTo-Json -Depth 8 -Compress
@@ -124,6 +129,9 @@ function Get-LexiQuestReleaseDartDefines {
         "--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=$($value.cloudSyncEnabled.ToString().ToLowerInvariant())"
         '--dart-define=LEXIQUEST_BILLING_ENABLED=true'
         "--dart-define=LEXIQUEST_CONTENT_REPORTS_ENABLED=$($value.contentReportsEnabled.ToString().ToLowerInvariant())"
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_ENABLED=true'
+        '--dart-define=LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED=true'
+        "--dart-define=LEXIQUEST_ACCOUNT_DELETION_RECOVERY_RETENTION_HOURS=$($value.accountDeletionRecoveryRetentionHours)"
         "--dart-define=LEXIQUEST_AI_API_URL=$($value.aiApiUrl)"
         "--dart-define=LEXIQUEST_VERSION=$($value.version)"
         "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
