@@ -48,6 +48,17 @@ analysis, full regression, backend/policy/CLI gates and a normal exact-source
 artifact checkpoint. Intentional scope limits such as manual scratchpad and
 bounded Today discovery remain truthful product behavior, not an OCR expansion.
 
+Review continuation: the first frozen integration `8faaad67` passes5523 Flutter
+tests and both normal offline release19 builds. It is intermediate evidence.
+The final unit must also derive all three existing account-deletion defines from
+one required public recovery-window value and warn before account deletion that
+Google Play renewal continues and membership cannot be restored to a new owner.
+Use the existing168-hour operating policy in fixtures, preserve cancellation and
+owner guards, and rerun final regression/build after both bounded fixes. No new
+backend authority or migration is needed. The public deletion page/runbook must
+describe the same behavior; production/provider/merchant/device authority remains
+external.
+
 ## Active completion run, 2026-11-01
 
 The latest user instruction authorizes implementation of every audited remaining

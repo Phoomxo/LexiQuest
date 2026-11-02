@@ -1,6 +1,7 @@
 # Commercial readiness, 2026-11-02
 
-Status: integration verification in progress; production rollout not authorized.
+Status: final integration verification pending after paid-account deletion review;
+production rollout not authorized.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
 
@@ -37,9 +38,12 @@ Evidence root:
 | Voice health with rejected GPU runtime | real RED then full CPU82PASS | Accepted; `de7e3a2f` |
 | Membership catalog/UI | combined billing/starter78PASS; full AI backend463PASS | Accepted; `cc251a7b` |
 | Starter pack and actual learning routes | broader pack/bootstrap331PASS, including small-screen/large-text tests | Accepted; `d3da6792` |
-| Analysis | `analysis-corrected.log`,0 issues after one braces lint correction | Passed on current Dart source |
+| Analysis | `analysis-after-deletion-review.log`,0 issues | Passed on current Dart source |
 | Backend evidence collector | root duplicate-key regression60PASS on PS5.1 and PS7 | Independent review accepted |
-| Release configuration | root `release-config-root-duplicates.log`,55PASS | Independent review accepted |
+| Release configuration | root `deletion-config-root-ps7.log` and `deletion-config-root-ps5.log`,76PASS each | Independent review accepted; `2bf2c25c` |
+| Release/policy contracts | root `deletion-field-root.log`,219PASS; static CLI22scripts all0; public deletion pages10PASS | Passed; synthetic fixtures only |
+| Cloud policy/auth isolation | `firestore-current.log`,66PASS; `firebase-auth-current.log`,3PASS | Demo emulators only |
+| Membership warning before deletion | real RED then4PASS; combined subsystem182PASS | Independent review accepted; `07c43401` |
 | CPU AI image | actual build and `ai-container/smoke-optional-json.json` | Independent review accepted; provider/production acceptance false |
 
 The CPU image is
@@ -55,6 +59,16 @@ The catalog remains8 domains/44 capabilities and schema25/45 tables. No new
 migration or parallel entitlement/learning/reward authority was introduced.
 Final full regression, exact-source Android artifact and isolated-emulator
 evidence are still pending in this checkpoint.
+
+The first frozen integration at `8faaad67` passed5523 Flutter tests with all1345
+inputs unchanged. Both normal release APK/AAB builds also passed with matching
+retained bytes and restored Gradle environment. These are intermediate evidence,
+not final acceptance: subsequent review found missing public deletion defines
+and a missing warning about recurring Play membership before account deletion.
+The warning is now covered by an observed RED then4PASS, with the combined
+account-deletion/billing/bootstrap subsystem182PASS. A fresh final snapshot,
+regression and build will follow these fixes. No intermediate artifact has been
+installed or published.
 
 ## Configure and accept a real managed service
 
@@ -78,12 +92,22 @@ production provider acceptance result.
 
 The public release JSON uses schemaVersion1 with exactly these fields:
 `packageName`, `version`, `minimumPreviousVersionCode`, `aiApiUrl`, `voiceMode`,
-`voiceApiUrl`, `cloudSyncEnabled`, `contentReportsEnabled`, and `billing`.
+`voiceApiUrl`, `cloudSyncEnabled`, `contentReportsEnabled`,
+`accountDeletionRecoveryRetentionHours`, and `billing`.
 Use `voiceMode=native`, `voiceApiUrl=null`; billing contains `enabled=true`,
 `policyRevision` and the product array above. Version must exceed the actual
 previous Play version. The locally retained baseline is18; it does not establish
 the current Play Console version. The validator rejects placeholders, private
 origins and unknown/secret fields.
+
+Public production requires a positive integer recovery window of1..720 hours;
+the existing seven-day operating policy corresponds to168 hours. The shared
+define map enables both existing account-deletion controls and supplies this
+window to APK/AAB. Configure the real server recovery/export retention to match
+the approved policy; a compile flag does not prove KMS/IAM/lifecycle authority.
+Before deleting an account, the UI and public deletion page warn that deletion
+does not cancel Google Play renewal and a new account cannot restore the old
+account's membership. The owner/restore guards remain unchanged.
 
 Build both artifacts with one reviewed configuration:
 
@@ -106,6 +130,10 @@ files atomically. Keep their relative references under this output root.
 A complete interrupted `.pending` directory is revalidated and published without
 another HTTP request or token. Partial/foreign staging is preserved and refused;
 inspect it and choose a fresh output path rather than overwriting it.
+Backend observations expire after24 hours, including complete pending captures,
+so collect near the final gate. References are relative to `OutputDirectory`;
+use that as the release evidence root or explicitly rebase references when
+moving the records.
 
 Public release acceptance additionally needs hash-bound actual Play license-test
 or production journey records for localized offers, pending/verified purchase,
@@ -117,6 +145,7 @@ account identifiers and raw evidence out of Git.
 ## Remaining rollout dependencies
 
 The configured Cloud project was inspected read-only; Cloud Run API is disabled.
+The existing Firestore database reports `nam5`; no region or live data was changed.
 No API was enabled and no service was deployed. A production HTTPS origin,
 merchant/product activation, provider acceptance and the latest actual Play
 version have not been established. The isolated offline Android emulator is a
