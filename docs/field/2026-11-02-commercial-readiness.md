@@ -1,7 +1,7 @@
 # Commercial readiness, 2026-11-02
 
-Status: native UI corrections and unlocked trial-profile verification in progress;
-connected-trial and commercial release acceptance remain incomplete.
+Status: local engineering and bounded offline artifact acceptance complete;
+connected-trial operation and commercial release acceptance remain incomplete.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
 
@@ -24,8 +24,9 @@ Review Center) use it; the old two-callback API is removed. Source retirement
 changes the lease value/epoch immediately and defers only UI notification during
 tree finalization, with queued delivery canceled after disposal. Root's15-file
 focused suite passes148 tests; analysis reports0 issues. Independent connected
-source review accepts the patch. Fresh actual UI acceptance, full regression and
-normal universal artifacts are still pending. Earlier receipts are historical.
+source review accepts the patch. The frozen integration at a2c95e12 now passes
+5,535 Flutter tests with zero failures and all1,345 inputs unchanged. Actual
+offline emulator and normal universal artifact checks are complete below.
 
 The trial-profile CLI unit is accepted after independent review. Public schema1
 canonical bytes remain unchanged (golden SHA256 d772bc32f8a49b7bd7a758aa11c4df2628881db4209f646f76e14b2007ceabdc).
@@ -40,6 +41,54 @@ Root's actual full AI
 backend suite passes463 tests, including authenticated content with both billing
 flags disabled and no billing ledger or Play calls. This synthetic test does not
 prove a configured provider is available.
+
+## Final local acceptance and handoff
+
+Frozen source: `a2c95e12d01cf54c83a51bbba0195e262d029ed9`;
+1,345 inputs/1,005 Dart files. Full-suite log SHA256:
+`e901e3155efa8ba167458ed51ea5fc92a5bde108f250bae424f99645f6bacad7`.
+The full receipt is `integration-a2c95e12/full-flutter-result.json`; both normal
+release build steps exit0, source is unchanged and the Gradle environment restored.
+
+Actual x64 QA verified the report selector, draft after keyboard dismissal,
+explicit local confirmation, return to Quiz, second answer, Score2/0 and pack
+return. SRS revealed, recorded and acknowledged all12 cards, finished and returned
+the pack. History before/after cold restart retained the completed12/12 SRS,
+completed2/2 Quiz, older unfinished rounds and18 total answers. The18 includes
+earlier synthetic QA, not only the latest two rounds. Independent image/XML
+review accepts these bounded flows. It does not establish layout with the IME
+onscreen, physical-device/TalkBack behavior, research efficacy or live services.
+
+Both final normal artifacts are version `1.0.0+19`, target `lib/main.dart`,
+build ID `a2c95e12d01cf54c83a51bbba0195e262d029ed9-offline19`:
+
+| File under the evidence root | Bytes | SHA256 |
+| --- | ---: | --- |
+| `integration-a2c95e12/lexiquest-commercial27-offline19.apk` | 123238191 | `5619c569f50393e0a86f98b8bc145080759d6917f96e87706c3b3c3d3d3d0642` |
+| `integration-a2c95e12/lexiquest-commercial27-offline19.aab` | 109033339 | `0576e78b7c2b0d7e0e47e8900d1c86219c12e8c66aa62d2967ee9b653213063f` |
+
+Independent disposition is `ACCEPT_BOUNDED_OFFLINE_RELEASE_ARTIFACTS`, receipt
+`artifact-review/a2c95e12-prepared/actual/artifact-attestation.json`, SHA256
+`662d2ae89e7e259db695940d86b809b550c46c2ca4d15e5a06c2aee1a1f915bf`.
+Actual full build IDs, all3 ABIs, native pins, ZIP CRC, minSdk26/targetSdk36,
+disabled debugging/backup/cleartext and the trusted signing certificate pass.
+The AAB passes JarFile signature verification and signed-payload coverage.
+JDK25 cannot verify it through JarInputStream because its manifest is last;
+local/central order, CRC and sizes agree. Raw warnings and the limitation are
+preserved in the independent review. No reorder, re-sign or store acceptance is
+inferred; AAB sharing-resource contents were not separately decoded.
+
+The final universal APK was installed with `-r` only into the owned synthetic
+emulator. Its installed hash equals the retained APK; `s05-universal-history-retained`
+again shows the same18 answers and completed rounds. No data was cleared.
+The emulator was then shut down cleanly; its data/evidence remain. All task-owned
+verification/build/reviewer processes have finished.
+
+These files deliberately disable cloud sync, billing, remote report sending,
+Google sign-in and account deletion. They are offline engineering candidates,
+not the fully connected satisfaction trial. Research remains default-off.
+Firebase initialization may still attempt network access; the tested emulator
+had airplane mode and no active default network. No real upload or purchase ran.
 
 ## First release policy
 
@@ -77,7 +126,7 @@ Evidence root:
 | Voice health with rejected GPU runtime | real RED then full CPU82PASS | Accepted; `de7e3a2f` |
 | Membership catalog/UI | combined billing/starter78PASS; full AI backend463PASS | Accepted; `cc251a7b` |
 | Starter pack and actual learning routes | broader pack/bootstrap331PASS, including small-screen/large-text tests | Accepted; `d3da6792` |
-| Analysis | `analysis-after-deletion-review.log`,0 issues | Passed on current Dart source |
+| Analysis | `analysis-after-deletion-review.log`,0 issues | Passed on that earlier snapshot; current analysis0 is recorded above |
 | Backend evidence collector | root duplicate-key regression60PASS on PS5.1 and PS7 | Independent review accepted |
 | Release configuration | root `deletion-config-root-ps7.log` and `deletion-config-root-ps5.log`,76PASS each | Independent review accepted; `2bf2c25c` |
 | Release/policy contracts | root `deletion-field-root.log`,219PASS; static CLI22scripts all0; public deletion pages10PASS | Passed; synthetic fixtures only |
@@ -96,8 +145,8 @@ their logs are preserved. See the backend README for build and smoke commands.
 
 The catalog remains8 domains/44 capabilities and schema25/45 tables. No new
 migration or parallel entitlement/learning/reward authority was introduced.
-Final full regression, exact-source Android artifact and isolated-emulator
-evidence are still pending in this checkpoint.
+Final full regression, exact-source Android artifacts and bounded isolated-emulator
+evidence are recorded above; connected-service release dependencies remain.
 
 The first frozen integration at `8faaad67` passed5523 Flutter tests with all1345
 inputs unchanged. Both normal release APK/AAB builds also passed with matching
@@ -105,9 +154,29 @@ retained bytes and restored Gradle environment. These are intermediate evidence,
 not final acceptance: subsequent review found missing public deletion defines
 and a missing warning about recurring Play membership before account deletion.
 The warning is now covered by an observed RED then4PASS, with the combined
-account-deletion/billing/bootstrap subsystem182PASS. A fresh final snapshot,
-regression and build will follow these fixes. No intermediate artifact has been
-installed or published.
+account-deletion/billing/bootstrap subsystem182PASS. The later a2c95e12 integration
+supersedes these intermediate receipts. The8faaad67 artifacts were not installed
+or published.
+
+## Configure the unlocked connected trial
+
+Use the existing release JSON with real service origins, cloudSyncEnabled=true,
+contentReportsEnabled=true and the closed billing object `{"enabled":false}`.
+Native voice still uses voiceMode=native and voiceApiUrl=null. Preserve the
+approved recovery window and real version/upgrade checks. Package with:
+
+```powershell
+./tool/cli/package-field-release.ps1 -Version <approved-version> -ReleaseProfile fieldTrial -ConfigurationPath <approved-trial-json>
+```
+
+The matching trial backend must set both LEXIQUEST_AI_BILLING_ENABLED=false and
+LEXIQUEST_AI_BILLING_MANAGED_CONTENT_REQUIRED=false. Authentication, rate limits,
+text limits, owner and consent checks still apply. Test actual content generation,
+sync and report transport against the authorized service before distribution.
+The commercial policy collector intentionally accepts publicProduction only;
+do not substitute fake purchase/catalog evidence for trial acceptance.
+Real enrollment and research upload still need their genuine authority and rollout
+permission. Private Cloud Stage A does not authorize public trial traffic.
 
 ## Configure and accept a real managed service
 
@@ -184,7 +253,7 @@ account identifiers and raw evidence out of Git.
 ## Remaining rollout dependencies
 
 The user approved private Cloud Stage A only. The Cloud Billing API was enabled;
-the03:59:36UTC read-only reconciliation still reports billing disabled/unlinked.
+the04:41:34UTC read-only reconciliation still reports billing disabled/unlinked.
 The owner will link billing. Costed resources, IAM, secrets, budgets and deployment
 remain on hold; no service was deployed. The proposed alert target is THB500 per
 month for a THB account or USD15 for USD, with50/80/100 percent actual-spend
