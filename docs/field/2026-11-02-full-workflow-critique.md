@@ -113,3 +113,49 @@ Full final-source regression, packaging and rendered acceptance are recorded in
 the completion receipt under
 `D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\critique32`.
 Do not treat focused results or this document as proof those later checks passed.
+
+## Final integration and rendered checks
+
+Source commit `100989e79b17e6706d5c6468bf52525072c96a4b` passed the complete
+Flutter suite: 5563 passed, zero failed, with all1350 input files unchanged before
+and after. Static analysis reports no issues. AI backend passes522; Voice CPU
+passes82 with one real integration case deselected. No live provider was called.
+
+Normal `lib/main.dart` release APK and AAB version `1.0.0+20` both build successfully.
+Independent artifact review accepts signatures, full embedded build identity,
+three native ABIs, pinned libraries, manifest metadata and source/test bindings.
+APK SHA256 is `d3220b4959534618183a2277360b23100aa257869f80206be532808b407189a0`;
+AAB is `b09e56d3f3e43d93bae0442aedbca70bd6133d8c764000db4196c4652b6773f6`.
+Build logs retain Kotlin/SDK-version warnings. AAB signature evidence uses JarFile
+and signed-payload coverage; JarInputStream verification is not attested. Disabled
+service flags are bound to the reviewed build command and receipt, not decoded
+independently from optimized AOT booleans. No package was published.
+
+Root installed that exact APK as an update on read-only synthetic AVD
+`LexiQuest_Commercial_27`, serial `emulator-5580`, Android API35, font scale1.0,
+airplane mode with no active default network. No data clear or physical-device
+action occurred. App Back and Android Back both display draft confirmation;
+Stay retains `QA32-draft`, while explicit discard returns to the original empty
+profile on reopening. Calendar week27Oct–2Nov → November → week27Oct–2Nov keeps
+its anchor; Previous and Today work. The prior18 synthetic answers remain visible.
+Screenshots/XML and assertions are retained in `native-ui-result.json`.
+
+The first launch encountered an Android System UI not-responding dialog; Wait
+recovered it and the app checks then passed. This is retained as an environment
+limitation, not silently counted as a clean launch. One intermediate capture named
+profile-reopened20 still shows Calendar because navigation actions were issued
+too quickly; the separately captured profile-reopened-confirmed20 proves the
+actual reopening. The task-owned emulator was stopped after verification.
+
+Visual follow-up confirms readable dialog actions and calendar hierarchy. Some
+progress/quest copy remains English within the Thai interface; localization
+consistency is a polish observation, not a newly demonstrated persistence or
+workflow failure. Recall Ladder density still needs a focused usability study.
+The27/40 pre-fix judgment is not retroactively increased by test results.
+
+All four confirmed findings are closed for this bounded engineering iteration.
+All44 features have a review disposition; this is not certification that every
+screen/device/provider works in production. Physical TalkBack/stylus/audio/native
+destinations, live provider and Play acceptance, and Research authority remain
+separate. Cloud A and Cloud Billing stay excluded. The completion receipt and
+independent artifact review are in the critique32 evidence directory above.

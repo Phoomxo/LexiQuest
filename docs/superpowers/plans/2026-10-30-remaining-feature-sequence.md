@@ -30,6 +30,16 @@ Independent source reviews ACCEPT. Final full regression and offline packaging
 are the integration steps; evidence lives in commercial-readiness/critique32.
 See `docs/field/2026-11-02-full-workflow-critique.md` for the detailed dispositions.
 
+Integration complete on source `100989e7`: full Flutter5563PASS/0FAIL, unchanged
+1350-file snapshot; analysis clean, AI522PASS, VoiceCPU82PASS/1deselected.
+Offline20 APK/AAB build and independent actual-artifact review ACCEPT. Exact APK
+updated the synthetic offline read-only emulator without clearing data; profile
+stay/discard and calendar anchor/Today checks PASS, with prior18 answers retained.
+The emulator was stopped. Four confirmed critique defects are closed; source,
+packaging and bounded rendered checks are complete. Physical/provider/Play/
+Research acceptance remains unclaimed; Cloud A/Billing remain excluded. See
+commercial-readiness/critique32/completion.json for evidence and remaining limits.
+
 ## Current scope override, 2026-11-02
 
 The owner removes Cloud Stage A and Cloud Billing from the remaining work.
