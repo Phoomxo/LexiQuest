@@ -1,5 +1,37 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Autonomous engineering continuation, 2026-11-02
+
+The latest user requests completing the remaining engineering through the SE
+process and authorizes normal in-scope recovery. Reuse the approved Cloud A
+boundary and ADLC; public traffic, real payments, research enrollment/uploads,
+real-user deletion and automatic financial-account linkage remain excluded.
+Starting HEAD is `7a1738e0` in the existing cycle12-release worktree.
+
+Throughput checkpoint: Root owns cloud operations, shared documentation and
+integration. Two workers have disjoint local tool/test pairs; neither runs cloud
+commands, Flutter or builds. Freeze their files before independent review and
+current-source integration checks. Reuse the production export factories and
+installed dependencies instead of changing the verified runtime image.
+
+| Card | Outcome and write set | State and acceptance |
+| --- | --- | --- |
+| AB28 | Repair `configure-firebase-budget.cjs` and add its isolated Node tests | Done locally: root82PASS; no PATCH, wrong-project/currency collision rejected, check-only default, current notificationsRule, exact read-back and uncertain-create journal. Independent review ACCEPT after stale-success/pending-intent checks were moved before the missing-budget return. No live budget created. |
+| AE28 | Add `test-cloud-a-export.py` and isolated Python tests | Done locally: root87export+88privatePASS; runtime impersonation/resources, immutable UUID/source/lock manifest and per-attempt receipts; production factories with synthetic snapshot and injected fault/clock cases. Independent review ACCEPT after endpoint/emulator/universe/logging guards and receipt history fixes. Actual CLI stops at Billing before credentials/output; live acceptance remains unrun. |
+| AR28 | Root evidence, plan/checkpoint/trail and integration | Done locally: root237field-releasePASS, current tool hashes and actual CLI receipts;23 backend source hashes and uv.lock still match the prior image proof. Shared checkpoint records exact evidence and missing live acceptance; application/backend runtime unchanged. |
+
+Direct no-cache Billing read at09:17:31UTC (16:17:31Bangkok) still returns explicit
+false and no linked account. A read-only Firestore aggregation at the same
+checkpoint observes zero `account_deletion_operations` collection-group rows;
+no document payload or ID is read/recorded and no TTL policy is changed. Recheck
+impact immediately before any future policy write; this observation does not
+prove future data remains empty. See the Cloud A checkpoint for exact receipts.
+Final actual CLI runs at09:28:25UTC still reject export with BILLING_NOT_ENABLED;
+the independent Firebase CLI budget observer also reports no billing account.
+No positive cloud/resource/IAM/provider/paid readiness is inferred from local
+tests. Full Flutter/backend regression and artifact rebuild are not repeated for
+these operations-tool/documentation changes; the accepted runtime is unchanged.
+
 ## Private Cloud A resume, 2026-11-02
 
 The owner reports Billing linked and explicitly requests completing only the
