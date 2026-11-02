@@ -124,7 +124,7 @@ void main() {
           voiceApiUrl: testCase.input,
           isDebug: testCase.isDebug,
         );
-        final uri = config.voiceApiBaseUri;
+        final uri = config.voiceApiBaseUri!;
 
         expect(uri.toString(), testCase.expected);
         expect(uri.path, '/');
@@ -145,7 +145,7 @@ void main() {
       isDebug: false,
     );
 
-    expect(config.voiceApiBaseUri.port, 8443);
+    expect(config.voiceApiBaseUri!.port, 8443);
   });
 
   group('release rejects every debug-accepted HTTP origin', () {
@@ -245,6 +245,17 @@ void main() {
   });
 
   group('AI API URL', () {
+    test('supports managed AI without configuring remote voice', () {
+      final config = AppConfig.fromValues(
+        voiceApiUrl: '',
+        aiApiUrl: 'https://ai.example.com',
+        isDebug: false,
+      );
+
+      expect(config.aiApiBaseUri, Uri.parse('https://ai.example.com/'));
+      expect(config.voiceApiBaseUri, isNull);
+    });
+
     test(
       'defaults to the voice URL when omitted (single-host convenience)',
       () {

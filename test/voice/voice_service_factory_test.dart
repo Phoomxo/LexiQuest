@@ -59,6 +59,39 @@ http.Response _wavResponse() => http.Response.bytes(
 
 void main() {
   test(
+    'managed AI configuration keeps voice native without HTTP or auth',
+    () async {
+      final client = _RecordingHttpClient((_) async => _wavResponse());
+      final tokenReader = _RecordingTokenReader(_idToken);
+      final native = _RecordingNativeTtsAdapter();
+      final player = _RecordingAudioPlayerAdapter();
+      final service = VoiceServiceFactory.create(
+        config: AppConfig.fromValues(
+          voiceApiUrl: '',
+          aiApiUrl: 'https://ai.example.com',
+          isDebug: false,
+        ),
+        client: client,
+        firebaseTokenReader: tokenReader,
+        nativeTtsAdapter: native,
+        audioPlayerAdapter: player,
+      );
+      try {
+        final result = await service.speak(_request());
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(native.speakCalls, <String>['Hello world.']);
+        expect(client.sendCount, 0);
+        expect(tokenReader.forceRefreshFlags, isEmpty);
+        expect(player.playBytesCalls, isEmpty);
+      } finally {
+        await service.dispose();
+      }
+      expect(client.closeCount, 1);
+      expect(player.disposeCount, 1);
+    },
+  );
+
+  test(
     'factory wires authenticated OmniVoice playback and telemetry',
     () async {
       final config = _config();
@@ -85,7 +118,7 @@ void main() {
       expect(client.requests, hasLength(1));
       final request = client.requests.single;
       expect(request.method, 'POST');
-      expect(request.url, config.voiceApiBaseUri.resolve('/v1/speech'));
+      expect(request.url, config.voiceApiBaseUri!.resolve('/v1/speech'));
       expect(request.headers['authorization'], 'Bearer $_idToken');
       expect(request.headers['content-type'], 'application/json');
       expect(tokenReader.forceRefreshFlags, <bool>[false]);

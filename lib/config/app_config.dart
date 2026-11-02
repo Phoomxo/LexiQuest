@@ -2,16 +2,14 @@ import 'package:flutter/foundation.dart';
 
 const _invalidVoiceApiUrl = 'Voice API URL is not configured.';
 
-/// Immutable application configuration containing only a sanitized voice API
-/// and AI API origin. No credential or API key is shipped in the Flutter
-/// application.
+/// Sanitized API origins. A null voice origin keeps speech on native TTS.
 final class AppConfig {
   const AppConfig._({
     required this.voiceApiBaseUri,
     required this.aiApiBaseUri,
   });
 
-  final Uri voiceApiBaseUri;
+  final Uri? voiceApiBaseUri;
   final Uri aiApiBaseUri;
 
   factory AppConfig.fromValues({
@@ -23,11 +21,9 @@ final class AppConfig {
     // deployment (both services behind one origin) needs only one URL.
     final resolvedAiUrl = aiApiUrl ?? voiceApiUrl;
     return AppConfig._(
-      voiceApiBaseUri: _parse(
-        voiceApiUrl,
-        isDebug: isDebug,
-        label: 'Voice API',
-      ),
+      voiceApiBaseUri: voiceApiUrl.isEmpty && resolvedAiUrl.isNotEmpty
+          ? null
+          : _parse(voiceApiUrl, isDebug: isDebug, label: 'Voice API'),
       aiApiBaseUri: _parse(resolvedAiUrl, isDebug: isDebug, label: 'AI API'),
     );
   }

@@ -80,6 +80,40 @@ Future<Map<String, List<String>>> _allBootstrapRows(
 };
 
 void main() {
+  test('AI-only bootstrap composes billing without remote voice', () async {
+    final fixture = BillingFixture();
+    addTearDown(fixture.dispose);
+    final config = AppConfig.fromValues(
+      voiceApiUrl: '',
+      aiApiUrl: 'https://ai.example.com',
+      isDebug: false,
+    );
+    var calls = 0;
+    final dependencies = await AppBootstrap(
+      createDatabase: _testDatabase,
+      initializeFirebase: () async {},
+      initializeSupabase: () async {},
+      loadConfig: () => config,
+      guestSessionService: _StubGuestSessionService(),
+      billingEnabled: true,
+      billingFactory: (_, baseUri) async {
+        calls++;
+        expect(baseUri, Uri.parse('https://ai.example.com/'));
+        return BillingComposition(
+          useCases: fixture.billing,
+          dispose: fixture.dispose,
+        );
+      },
+    ).initialize();
+    addTearDown(dependencies.dispose);
+
+    expect(dependencies.config, same(config));
+    expect(dependencies.config!.voiceApiBaseUri, isNull);
+    expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+    expect(dependencies.billing, same(fixture.billing));
+    expect(calls, 1);
+  });
+
   test(
     'enabled billing composition reaches the application and disposes once',
     () async {

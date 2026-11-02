@@ -40,22 +40,23 @@ final class VoiceServiceFactory {
       nativeTtsAdapter ?? FlutterTtsAdapter(),
     );
     final resolvedConfig = config ?? _environmentConfigOrNull();
-    final resolvedClient = resolvedConfig == null
+    final remoteVoiceUri = resolvedConfig?.voiceApiBaseUri;
+    final resolvedClient = remoteVoiceUri == null
         ? client
         : client ?? http.Client();
     final audioPlayer = audioPlayerAdapter == null
-        ? resolvedConfig == null
+        ? remoteVoiceUri == null
               ? const _NoopVoiceAudioPlayer()
               : PluginVoiceAudioPlayer(AudioplayersAdapter())
         : PluginVoiceAudioPlayer(audioPlayerAdapter);
-    final omniVoiceProvider = resolvedConfig == null
+    final omniVoiceProvider = remoteVoiceUri == null
         ? const _UnavailableOmniVoiceSynthesizer()
         : OmniVoiceProvider(
             client: resolvedClient!,
             authTokenProvider: FirebaseVoiceAuthTokenProvider(
               firebaseTokenReader ?? FirebaseAuthTokenReader(),
             ),
-            baseUri: resolvedConfig.voiceApiBaseUri,
+            baseUri: remoteVoiceUri,
             timeout: timeout,
           );
     final hybrid = HybridVoiceService(
