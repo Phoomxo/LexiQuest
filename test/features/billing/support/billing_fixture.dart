@@ -119,6 +119,7 @@ class SyntheticBillingRepository implements BillingRepository {
           productId: syntheticOffer.productId,
           basePlanId: syntheticOffer.basePlanId,
           entitlements: {'managedContent'},
+          dailyManagedUnits: 10,
         ),
       ],
     );

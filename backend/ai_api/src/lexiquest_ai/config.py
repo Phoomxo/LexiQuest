@@ -227,7 +227,12 @@ class Settings(BaseSettings):
         if self.billing_managed_content_required and not self.billing_enabled:
             raise ValueError('Managed content billing requires billing to be enabled')
         if self.billing_enabled:
-            self.billing_policy()
+            policy = self.billing_policy()
+            if self.billing_managed_content_required and any(
+                product.entitlements != frozenset({'managedContent'}) or product.daily_managed_units <= 0
+                for product in policy.products
+            ):
+                raise ValueError('Managed content billing requires positive managed-only product quotas')
             if not 32 <= len(self.billing_account_binding_key.get_secret_value().encode()) <= 256:
                 raise ValueError('Billing requires an account binding key of 32 to 256 bytes')
             if self.environment.lower() == 'production' and not self.billing_rtdn_audience:

@@ -68,6 +68,7 @@ class _Repository implements BillingRepository {
         productId: _offer.productId,
         basePlanId: _offer.basePlanId,
         entitlements: {'managedContent'},
+        dailyManagedUnits: 10,
       ),
     ],
   );

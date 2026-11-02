@@ -50,6 +50,19 @@ def test_billing_policy_uses_explicit_product_limits_and_secret_repr():
         Settings(billing_managed_content_required=True)
 
 
+@pytest.mark.parametrize('entitlements, units', [
+    (['managedContent'], 0), (['offlinePremium'], 10),
+    (['managedContent', 'aiTutorUnlimited'], 10),
+])
+def test_managed_content_gate_rejects_zero_quota_or_unimplemented_product_claims(entitlements, units):
+    configuration = billing_config()
+    products = json.loads(configuration['billing_products_json'])
+    products[0].update(entitlements=entitlements, dailyManagedUnits=units)
+    configuration['billing_products_json'] = json.dumps(products)
+    with pytest.raises(ValidationError, match='positive managed-only'):
+        Settings(**configuration, billing_managed_content_required=True)
+
+
 def test_billing_verification_budget_is_trusted_bounded_configuration(monkeypatch):
     assert Settings(**billing_config()).billing_policy().verification_requests_per_minute == 20
     monkeypatch.setenv('LEXIQUEST_AI_BILLING_VERIFICATION_REQUESTS_PER_MINUTE', '7')

@@ -172,6 +172,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               liveRegion: true,
               child: Text(_message(), key: const ValueKey('billing-status')),
             ),
+            const SizedBox(height: 12),
+            const Text('ฝึกออฟไลน์พื้นฐานได้โดยไม่ต้องสมัครสมาชิก'),
             if (_view.busy) ...[
               const SizedBox(height: 16),
               const LinearProgressIndicator(
@@ -221,6 +223,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       Text(
                         '${offer.localizedPrice} ต่อ ${_period(offer.billingPeriod)}',
                       ),
+                      for (final product
+                          in _view.catalog?.products ??
+                              const <BillingProduct>[])
+                        if (product.productId == offer.productId &&
+                            product.basePlanId == offer.basePlanId) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'สร้างเนื้อหา AI ได้ ${product.dailyManagedUnits} หน่วยต่อวัน',
+                          ),
+                          const Text('โควตาเริ่มรอบใหม่เวลา 00:00 UTC'),
+                          const Text(
+                            'หน่วยนับจากคำขอใหม่ที่บริการรับดำเนินการ รวมคำขอที่กำลังยืนยันผล',
+                          ),
+                        ],
                       const SizedBox(height: 8),
                       const Text(
                         'ต่ออายุอัตโนมัติ จัดการหรือยกเลิกได้ใน Google Play การยกเลิกจะมีผลตามรอบชำระเงิน',
@@ -287,6 +303,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             const SizedBox(height: 8),
             const Text(
               'ราคาที่ชำระจะแสดงและยืนยันใน Google Play สิทธิ์จะเปิดหลังเซิร์ฟเวอร์ตรวจสอบสำเร็จเท่านั้น',
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'แพ็กเกจนี้สำหรับสร้างเนื้อหา AI ผ่านบริการ LexiQuest การใช้ Gemini ด้วยคีย์ของคุณแยกจากแพ็กเกจนี้',
             ),
           ],
         ),

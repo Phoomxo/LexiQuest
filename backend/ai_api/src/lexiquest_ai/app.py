@@ -228,10 +228,12 @@ def create_app(
         user = token_verifier.verify(extract_bearer_token(authorization))
         service = require_billing()
         registered_user(user)
-        return {'schemaVersion': 1, 'packageName': service.policy.package_name,
+        return {'schemaVersion': 2, 'packageName': service.policy.package_name,
             'policyRevision': service.policy.revision, 'accountIdentifier': service.account_identifier(user.uid),
+            'managedContentRequired': settings.billing_managed_content_required,
             'products': [{'productId': product.product_id, 'basePlanId': product.base_plan_id,
-                'entitlements': sorted(product.entitlements)} for product in service.policy.products]}
+                'entitlements': sorted(product.entitlements), 'dailyManagedUnits': product.daily_managed_units}
+                for product in service.policy.products]}
 
     @app.post('/v1/billing/play/verify')
     def billing_verify(request: PlayVerifyRequest, authorization: str | None = Header(default=None)):

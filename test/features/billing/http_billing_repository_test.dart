@@ -10,6 +10,53 @@ import 'package:vocab_learning_app/features/billing/domain/billing_contracts.dar
 import 'support/billing_fixture.dart';
 
 void main() {
+  test('catalog v2 admits server managed quota before purchase', () async {
+    final value = _catalog();
+    value['schemaVersion'] = 2;
+    ((value['products'] as List).single as Map)['dailyManagedUnits'] = 10;
+    final client = MockClient((_) async => _json(value));
+    addTearDown(client.close);
+    final result = await _repository(
+      client,
+    ).loadCatalog(syntheticAccount, stillCurrent: () => true);
+    expect(result.products.single.entitlements, {'managedContent'});
+    expect(result.products.single.dailyManagedUnits, 10);
+  });
+
+  for (final units in [null, 0, -1, 1.5, '10', true, 1000001]) {
+    test(
+      'catalog rejects malformed or unusable managed quota $units',
+      () async {
+        final value = _catalog();
+        ((value['products'] as List).single as Map)['dailyManagedUnits'] =
+            units;
+        final client = MockClient((_) async => _json(value));
+        addTearDown(client.close);
+        await expectLater(
+          _repository(
+            client,
+          ).loadCatalog(syntheticAccount, stillCurrent: () => true),
+          throwsA(_failure(BillingFailureCode.invalidResponse)),
+        );
+      },
+    );
+  }
+
+  test('catalog cannot advertise an unimplemented premium benefit', () async {
+    final value = _catalog();
+    ((value['products'] as List).single as Map)['entitlements'] = [
+      'offlinePremium',
+    ];
+    final client = MockClient((_) async => _json(value));
+    addTearDown(client.close);
+    await expectLater(
+      _repository(
+        client,
+      ).loadCatalog(syntheticAccount, stillCurrent: () => true),
+      throwsA(_failure(BillingFailureCode.invalidResponse)),
+    );
+  });
+
   test(
     'catalog binds authenticated account and exact product/base-plan allowlist',
     () async {
@@ -113,7 +160,11 @@ void main() {
   );
 
   for (final change in <Map<String, Object?>>[
-    {'schemaVersion': 2},
+    {'schemaVersion': 1},
+    {'schemaVersion': 3},
+    {'schemaVersion': 2.0},
+    {'managedContentRequired': false},
+    {'managedContentRequired': 'true'},
     {'packageName': 'other.package'},
     {'accountIdentifier': 'raw-user-id'},
     {'ownerId': 'not-allowed'},
@@ -124,6 +175,7 @@ void main() {
           'productId': 'synthetic.monthly',
           'basePlanId': 'monthly',
           'entitlements': ['managedContent', 'managedContent'],
+          'dailyManagedUnits': 10,
         },
       ],
     },
@@ -306,15 +358,17 @@ http.Response _json(Map<String, Object?> value, {int status = 200}) =>
       headers: {'content-type': 'application/json'},
     );
 Map<String, Object?> _catalog() => {
-  'schemaVersion': 1,
+  'schemaVersion': 2,
   'packageName': 'com.lexiquest.app',
   'policyRevision': 'synthetic-v1',
   'accountIdentifier': 'a' * 64,
+  'managedContentRequired': true,
   'products': [
-    {
+    <String, Object?>{
       'productId': 'synthetic.monthly',
       'basePlanId': 'monthly',
       'entitlements': ['managedContent'],
+      'dailyManagedUnits': 10,
     },
   ],
 };

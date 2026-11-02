@@ -40,9 +40,14 @@ final class HttpBillingRepository implements BillingRepository {
         'packageName',
         'policyRevision',
         'accountIdentifier',
+        'managedContentRequired',
         'products',
       });
-      if (data['schemaVersion'] != 1) _invalid();
+      if (data['schemaVersion'] is! int ||
+          data['schemaVersion'] != 2 ||
+          data['managedContentRequired'] != true) {
+        _invalid();
+      }
       final packageName = _code(data['packageName']);
       if (packageName != 'com.lexiquest.app') _invalid();
       final accountIdentifier = _text(data['accountIdentifier'], 64);
@@ -53,19 +58,27 @@ final class HttpBillingRepository implements BillingRepository {
       final products = <BillingProduct>[];
       for (final value in raw) {
         final row = _map(value);
-        _keys(row, {'productId', 'basePlanId', 'entitlements'});
+        _keys(row, {
+          'productId',
+          'basePlanId',
+          'entitlements',
+          'dailyManagedUnits',
+        });
         final productId = _code(row['productId']);
         final basePlanId = _code(row['basePlanId']);
         if (!seen.add('$productId/$basePlanId')) _invalid();
         final entries = _list(row['entitlements'], 32).map(_code).toList();
-        if (entries.isEmpty || entries.toSet().length != entries.length) {
+        if (entries.length != 1 || entries.single != 'managedContent') {
           _invalid();
         }
+        final units = row['dailyManagedUnits'];
+        if (units is! int || units < 1 || units > 1000000) _invalid();
         products.add(
           BillingProduct(
             productId: productId,
             basePlanId: basePlanId,
             entitlements: entries.toSet(),
+            dailyManagedUnits: units,
           ),
         );
       }

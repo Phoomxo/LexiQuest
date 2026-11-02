@@ -43,10 +43,12 @@ final class BillingProduct {
     required this.productId,
     required this.basePlanId,
     required Set<String> entitlements,
+    required this.dailyManagedUnits,
   }) : entitlements = Set.unmodifiable(entitlements);
   final String productId;
   final String basePlanId;
   final Set<String> entitlements;
+  final int dailyManagedUnits;
 }
 
 final class BillingCatalog {

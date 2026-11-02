@@ -39,12 +39,12 @@ def test_billing_is_explicitly_disabled_without_affecting_free_content(client):
     assert free.status_code == 200
 
 
-def billing_client(*, anonymous=False, compose_service=True, notification_verifier=None):
+def billing_client(*, anonymous=False, compose_service=True, notification_verifier=None, managed_required=True):
     from test_billing import service_fixture
     service, play, documents, clock = service_fixture()
     verifier = FakeTokenVerifier()
     verifier.verify = lambda token: AuthenticatedUser('synthetic-a', is_anonymous=anonymous)
-    settings = Settings(billing_enabled=True, billing_managed_content_required=True,
+    settings = Settings(billing_enabled=True, billing_managed_content_required=managed_required,
         billing_policy_revision=service.policy.revision,
         billing_account_binding_key='synthetic-only-account-key-00000000',
         billing_products_json=json.dumps([{'productId': product.product_id,
@@ -55,6 +55,25 @@ def billing_client(*, anonymous=False, compose_service=True, notification_verifi
         settings=settings, billing_service=service if compose_service else None,
         billing_notification_verifier=notification_verifier))
     return client, service, play, documents, content
+
+
+def test_billing_catalog_v2_exposes_managed_quota_before_purchase():
+    client, _, _, _, _ = billing_client()
+    response = client.get('/v1/billing/catalog', headers={'Authorization': 'Bearer valid-token'})
+    assert response.status_code == 200
+    assert response.json()['schemaVersion'] == 2
+    assert response.json()['managedContentRequired'] is True
+    assert response.json()['products'] == [{
+        'productId': 'synthetic-premium', 'basePlanId': 'synthetic-monthly',
+        'entitlements': ['managedContent'], 'dailyManagedUnits': 2,
+    }]
+
+
+def test_billing_catalog_does_not_claim_enforcement_when_provider_gate_is_disabled():
+    client, _, _, _, _ = billing_client(managed_required=False)
+    response = client.get('/v1/billing/catalog', headers={'Authorization': 'Bearer valid-token'})
+    assert response.status_code == 200
+    assert response.json()['managedContentRequired'] is False
 
 
 def test_billing_verification_budget_stops_before_refresh_and_play_even_with_reused_request_ids():

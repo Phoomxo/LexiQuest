@@ -15,6 +15,32 @@ void main() {
     expect(find.text('สมัครผ่าน Google Play'), findsNothing);
   });
 
+  testWidgets('managed AI quota and free offline scope precede purchase', (
+    tester,
+  ) async {
+    final f = BillingFixture();
+    try {
+      await tester.pumpWidget(
+        MaterialApp(home: SubscriptionScreen(billing: f.billing)),
+      );
+      await pumpBillingUntil(
+        tester,
+        () => f.billing.view.phase == BillingPhase.ready,
+      );
+      expect(find.text('สร้างเนื้อหา AI ได้ 10 หน่วยต่อวัน'), findsOneWidget);
+      expect(find.text('โควตาเริ่มรอบใหม่เวลา 00:00 UTC'), findsOneWidget);
+      expect(
+        find.text('ฝึกออฟไลน์พื้นฐานได้โดยไม่ต้องสมัครสมาชิก'),
+        findsOneWidget,
+      );
+      expect(f.store.launches, 0);
+      expect(f.repository.commands, isEmpty);
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      await disposeBillingFixture(tester, f);
+    }
+  });
+
   testWidgets(
     'localized price and renewal terms precede the real purchase command',
     (tester) async {
@@ -29,18 +55,27 @@ void main() {
         );
         expect(find.text('฿99.00 ต่อ 1 เดือน'), findsOneWidget);
         expect(find.textContaining('ต่ออายุอัตโนมัติ'), findsOneWidget);
-        await tester.ensureVisible(
-          find.byKey(const ValueKey('billing-buy-synthetic-offer')),
+        final buy = find.byKey(const ValueKey('billing-buy-synthetic-offer'));
+        await tester.scrollUntilVisible(
+          buy,
+          200,
+          scrollable: find.byType(Scrollable),
         );
-        await tester.tap(
-          find.byKey(const ValueKey('billing-buy-synthetic-offer')),
-        );
+        await tester.pump();
+        expect(buy.hitTestable(), findsOneWidget);
+        await tester.tap(buy.hitTestable());
         await pumpBillingUntil(
           tester,
           () => f.billing.view.phase == BillingPhase.pending,
         );
         expect(f.store.launches, 1);
         expect(f.repository.commands, isEmpty);
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('billing-status')),
+          -200,
+          scrollable: find.byType(Scrollable),
+        );
+        await tester.pump();
         expect(find.textContaining('การซื้อรอดำเนินการ'), findsOneWidget);
         f.repository.verification = Completer<BillingSnapshot>();
         f.store.events.add([syntheticPurchase()]);

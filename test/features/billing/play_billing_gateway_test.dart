@@ -119,6 +119,7 @@ BillingCatalog _catalog() => BillingCatalog(
       productId: 'synthetic.subscription',
       basePlanId: 'monthly',
       entitlements: {'managedContent'},
+      dailyManagedUnits: 10,
     ),
   ],
 );
