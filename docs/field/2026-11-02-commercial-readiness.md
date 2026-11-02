@@ -12,7 +12,15 @@ Continue local verification and Android packaging independently. No account or
 resource was deleted. Provider hosting/acceptance remains unresolved; no
 replacement service or commercial readiness is implied by this scope reduction.
 
-Latest local application correction, local31: offline model cancellation and
+Latest acceptance: acceptance33/final22, source `4a77d81a`, version `1.0.0+22`.
+Full Flutter5573PASS/0FAIL, analysis clean, APK/AAB build and independent bounded
+artifact attestation ACCEPT. The release includes the local31 correction and the
+later native TTS rejection and landscape category-dialog corrections. See
+[real-service/device acceptance](2026-11-02-real-service-device-acceptance.md)
+for physical-device results and outstanding external acceptance. Cloud A/Billing
+remain excluded; this is not commercial or Research rollout approval.
+
+Historical local application correction, local31: offline model cancellation and
 complete-partial retries are fixed. Manager16PASS and affected integration94PASS;
 static analysis reports no issues; independent review ACCEPT. See the active
 completion plan and local31 evidence.

@@ -2,6 +2,20 @@
 
 ## Real-service and physical-device acceptance, 2026-11-02
 
+Final22 checkpoint, 2026-11-03: implementation `4a77d81a`; full5573PASS/0FAIL,
+analysis clean, normal APK/AAB and independent bounded artifact acceptance PASS.
+Version1.0.0+22 installed in place on Vivo V2041 with matching APK hash. Actual
+landscape keyboard/swipe/Save/Cancel acceptance PASS; original synthetic word
+retained and rotation/accessibility settings restored. No audio/TalkBack activation
+or recording after the owner's deferral. See the acceptance report for hashes,
+receipts and the superseded21 layout counterexample. Engineering corrections and
+silent checks are Done; provider/Play, human audio/full TalkBack and genuine
+Research authority remain external acceptance dependencies. Current browser Play
+account shows developer signup, not an accessible app/test track. Cloud A/Billing
+remain excluded. No publication, real charge or enrollment is authorized here.
+
+The execution notes below preserve the original plan and intermediate evidence.
+
 Intent: continue provider/Play, physical TalkBack/audio and Research readiness
 from c4ede833, without Cloud A, Cloud Billing, publication, real charges or real
 Research enrollment. Use the existing worktree and preserve all untracked work.

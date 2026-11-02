@@ -53,8 +53,8 @@ was not acted on. Treat captures as local evidence, not publication assets.
    directory, so that command is not a passing suite.
 2. Add Category clipped its input/actions with a landscape keyboard on V2041.
    The844x390/IME230 regression reproduces a16pixel RenderFlex overflow.
-   A single scrollable:true on that AlertDialog fixes it without changing save,
-   owner or validation behavior. Existing vocabulary journey suite passes7.
+   The first scrollable:true correction passed7 vocabulary journey tests but
+   failed the later physical check below. It is superseded by final22.
 
 The RED tests were committed before runtime corrections. Root owns serial Flutter
 verification and physical actions. Model the Domain kept the existing plugin
@@ -94,3 +94,61 @@ TalkBack service probe is explicitly version20 evidence. Device rotation was
 temporarily set to landscape for the21 reproduction and restored to user_rotation0
 and accelerometer_rotation1. The synthetic category contains hello/synthetic/
 interjection; ordinary vocabulary remains separate from Research.
+
+## Final22 integration and silent-device acceptance
+
+Frozen implementation source: `4a77d81ad88310ebb5762313eaa2ec2f918a1cf7`.
+Version `1.0.0+22`; build ID is that full source hash followed by `-offline22`.
+Full Flutter5573PASS/0FAIL, with1350 inputs/1005 Dart files unchanged; analysis
+reports no issues. Full log SHA256:
+`6558430b2ee842d907a3b0ffe8be0992446367decd229c0e3e162074362d3958`.
+Independent code review accepts the shared TTS boundary and the final category
+dialog correction. No schema, dependency or frozen Research contract changed.
+
+Both normal release builds completed. Independent bounded artifact attestation
+accepts exact embedded identity, signatures and native pins across3 ABIs.
+APK123238191 bytes, SHA256:
+`3042856b6bbf8ea653da49461f4fe847b471c34233469ef87d00f0b0ef44f4f0`.
+AAB109044575 bytes, SHA256:
+`eb8f18ee1068cf98cc86fd893f997a81596fb66cccf94a44d6941d743a19da92`.
+AAB JarFile and signed central payload coverage pass; manifest-last ordering
+means JarInputStream is explicitly not attested. Original warnings are retained.
+Offline feature switches are recorded in the build receipt; they are not inferred
+from native metadata. No artifact was published.
+
+The Vivo update completed once, preserved application data, and its installed APK
+hash matches the retained artifact. Silent device acceptance then passed:
+
+- Guest entry and the retained QA33-Synthetic/hello/synthetic/interjection data.
+- Landscape keyboard input is readable. Actual swipes inside the dialog reveal
+  both48dp-high actions above the still-open keyboard; no keyboard dismissal was
+  used to obtain a passing result.
+- Cancel with QA33-Cancelled22 creates no visible category. Save creates exactly
+  one visible QA33-Keyboard22 category. These are bounded UI observations, backed
+  by the regression's repository-write assertions, not a device database export.
+- Rotation restored to accelerometer1/user0. Accessibility remains services=null,
+  enabled0. No additional audio playback, TalkBack activation or microphone capture.
+
+Evidence root:
+`D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\acceptance33\final22`.
+Receipts: full-flutter-result.json, offline-release-build-result.json,
+artifact-review/actual/artifact-attestation.json, install-receipt.json and
+native-ui-result.json. Captures remain local because an unrelated overlay appears
+on the device. The two synthetic categories are retained, not silently cleaned up.
+
+## Remaining external acceptance and next executable steps
+
+The authenticated Play Console opened its developer-account creation page at
+`https://play.google.com/console/signup`, not an app/test-track console. This is
+limited to the current signed-in browser account. No account creation, payment,
+upload or account switch occurred; personal email is omitted from the receipt.
+Provider configuration, approved Play track/tester/products and Research
+protocol/consent/trusted issuer have not been supplied or found in the bounded
+discovery. Do not fabricate them or describe fixture checks as real acceptance.
+
+When genuine inputs become available, run the existing provider/Play acceptance
+against their approved test environment, then bind its results to the artifact.
+When the owner is available, resume human listening and full TalkBack navigation;
+obtain microphone readiness before any recording. Research remains default-off
+until its authority and rollout conditions are met. Cloud A and Cloud Billing
+remain excluded. No public traffic, real charges or real enrollment was enabled.
