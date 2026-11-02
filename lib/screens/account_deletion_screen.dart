@@ -128,6 +128,12 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
                       textAlign: TextAlign.center,
                     ),
                     if (!_completed) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'การลบบัญชีไม่ยกเลิกสมาชิก Google Play '
+                        'หากมีสมาชิกที่ต่ออายุ กรุณายกเลิกใน Google Play ก่อนลบบัญชี '
+                        'บัญชีใหม่ไม่สามารถกู้คืนสิทธิ์สมาชิกเดิมได้',
+                      ),
                       const SizedBox(height: 24),
                       TextField(
                         key: const ValueKey<String>(

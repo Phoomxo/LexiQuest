@@ -14,6 +14,47 @@ import '../support/fake_owner_write_coordinator.dart';
 void main() {
   final now = DateTime.utc(2026, 10, 24, 12);
 
+  testWidgets('warns about recurring membership before account confirmation', (
+    tester,
+  ) async {
+    final harness = _Harness(now);
+    await tester.pumpWidget(
+      MaterialApp(home: AccountDeletionScreen(useCases: harness.useCases)),
+    );
+
+    final warning = find.textContaining('ไม่ยกเลิกสมาชิก Google Play');
+    expect(warning, findsOneWidget);
+    expect(
+      find.textContaining('บัญชีใหม่ไม่สามารถกู้คืนสิทธิ์สมาชิกเดิมได้'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('ยกเลิกใน Google Play ก่อนลบบัญชี'),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(warning).dy,
+      lessThan(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('delete-account-confirmation')),
+            )
+            .dy,
+      ),
+    );
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('delete-account-submit')),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(harness.exporter.calls, 0);
+    expect(harness.cloud.calls, 0);
+    expect(harness.local.calls, 0);
+  });
+
   testWidgets('requires exact Thai confirmation before deleting', (
     tester,
   ) async {
@@ -119,6 +160,10 @@ void main() {
       ),
     );
 
+    final warning = find.textContaining('ไม่ยกเลิกสมาชิก Google Play');
+    await tester.ensureVisible(warning);
+    await tester.pump();
+    expect(warning.hitTestable(), findsOneWidget);
     final submit = find.byType(FilledButton).first;
     await tester.ensureVisible(submit);
     await tester.pump();
