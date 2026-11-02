@@ -4,7 +4,8 @@ param(
     [string]$OutputPath = 'build/field-release',
     [string]$Version = '1.0.0+1',
     [ValidateSet('fieldTrial', 'publicProduction')]
-    [string]$ReleaseProfile = 'fieldTrial'
+    [string]$ReleaseProfile = 'fieldTrial',
+    [string]$ConfigurationPath = ''
 )
 
 Set-StrictMode -Version 3.0
@@ -14,6 +15,15 @@ $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 if ($Version -notmatch '^\d+\.\d+\.\d+\+\d+$') {
     throw 'Version must use semantic version plus Android build number.'
+}
+$commercialConfiguration = $null
+if ($ReleaseProfile -eq 'publicProduction') {
+    if ([string]::IsNullOrWhiteSpace($ConfigurationPath)) { throw 'Public production requires an explicit public ConfigurationPath.' }
+    $resolvedConfiguration = if ([System.IO.Path]::IsPathRooted($ConfigurationPath)) { $ConfigurationPath } else { Join-Path $repoRoot $ConfigurationPath }
+    $commercialConfiguration = Read-LexiQuestReleaseConfiguration -Path $resolvedConfiguration
+    if ($Version -cne $commercialConfiguration.Value.version) { throw 'Version does not match the public release configuration.' }
+} elseif (-not [string]::IsNullOrWhiteSpace($ConfigurationPath)) {
+    throw 'Commercial ConfigurationPath is only accepted for publicProduction.'
 }
 
 function Find-ApkSigner {
@@ -101,10 +111,11 @@ try {
             tool/cli/package-field-release.ps1 `
             tool/cli/collect-android-field-evidence.ps1 `
             tool/cli/lib/field-release-evidence.ps1 `
+            tool/cli/lib/commercial-release-configuration.ps1 `
             tool/cli/new-field-release-evidence.ps1 `
             tool/cli/verify-apk-model-runtime.ps1 `
             tool/cli/verify-field-release.ps1 `
-            tool/cli/config/release-signing-trust.json
+            tool/cli/config/release-signing-trust.json backend/ai_api
     )
     if ($relevantChanges.Count -gt 0) {
         throw (
@@ -116,22 +127,27 @@ try {
     $sourceCommit = (& git rev-parse HEAD).Trim()
     $sourceTree = (& git rev-parse 'HEAD^{tree}').Trim()
     $buildId = $sourceCommit
+    $dartDefines = @(
+        '--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true'
+        "--dart-define=LEXIQUEST_VERSION=$Version"
+        "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
+    )
+    if ($null -ne $commercialConfiguration) {
+        $buildId = Get-LexiQuestReleaseBuildId -SourceCommit $sourceCommit -ConfigurationSha256 $commercialConfiguration.Sha256
+        $dartDefines = @(Get-LexiQuestReleaseDartDefines -Configuration $commercialConfiguration -SourceCommit $sourceCommit)
+    }
     $modelSha256 = Get-LexiQuestPinnedModelSha256 -RepoRoot $repoRoot
     & flutter build apk --release --no-pub `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
-        --dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true `
-        "--dart-define=LEXIQUEST_VERSION=$Version" `
-        "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
+        @dartDefines
     if ([int]$LASTEXITCODE -ne 0) {
         throw 'Flutter release APK build failed.'
     }
     & flutter build appbundle --release --no-pub `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
-        --dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true `
-        "--dart-define=LEXIQUEST_VERSION=$Version" `
-        "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
+        @dartDefines
     if ([int]$LASTEXITCODE -ne 0) {
         throw 'Flutter release AAB build failed.'
     }
@@ -306,6 +322,10 @@ try {
             modelSha256 = $modelSha256
         }
         participantDocuments = $participantDocumentManifest
+    }
+    if ($null -ne $commercialConfiguration) {
+        [System.IO.File]::WriteAllText((Join-Path $resolvedOutput 'release-configuration.json'), $commercialConfiguration.Json, [System.Text.UTF8Encoding]::new($false))
+        $manifest['configuration'] = [ordered]@{ path = 'release-configuration.json'; sha256 = $commercialConfiguration.Sha256 }
     }
     [System.IO.File]::WriteAllText(
         (Join-Path $resolvedOutput 'release-manifest.json'),

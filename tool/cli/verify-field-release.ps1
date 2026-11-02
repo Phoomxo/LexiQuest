@@ -110,10 +110,11 @@ $relevantChanges = @(
         tool/cli/package-field-release.ps1 `
         tool/cli/collect-android-field-evidence.ps1 `
         tool/cli/lib/field-release-evidence.ps1 `
+        tool/cli/lib/commercial-release-configuration.ps1 `
         tool/cli/new-field-release-evidence.ps1 `
         tool/cli/verify-apk-model-runtime.ps1 `
         tool/cli/verify-field-release.ps1 `
-        tool/cli/config/release-signing-trust.json
+        tool/cli/config/release-signing-trust.json backend/ai_api
 )
 $sourceErrors = @(
     Test-LexiQuestReleaseSource `
@@ -236,7 +237,7 @@ $expectedVersion = '{0}+{1}' -f
     $releaseManifest.artifact.versionCode
 $measuredApk = Get-LexiQuestMeasuredApkMetadata `
     -ApkPath $apkPath `
-    -ExpectedBuildId ([string]$releaseManifest.sourceCommit) `
+    -ExpectedBuildId ([string]$releaseManifest.artifact.buildId) `
     -ExpectedModelSha256 $expectedModelSha256 `
     -ExpectedVersion $expectedVersion
 $measuredAab = Get-LexiQuestMeasuredAabMetadata -AabPath $aabPath
@@ -263,6 +264,7 @@ if ($identityErrors.Count -gt 0) {
 }
 foreach ($token in @(
     [string]$releaseManifest.sourceCommit,
+    [string]$releaseManifest.artifact.buildId,
     $expectedModelSha256.ToLowerInvariant(),
     $expectedVersion
 )) {
@@ -284,6 +286,12 @@ if ($evidenceErrors.Count -gt 0) {
     $message = "Field release evidence is incomplete:`n - " +
         ($evidenceErrors -join "`n - ")
     throw $message
+}
+if ([string]$releaseManifest.releaseProfile -eq 'publicProduction') {
+    $configuration = Read-LexiQuestReleaseConfiguration -Path (Join-Path $resolvedPackage 'release-configuration.json')
+    $controls = Read-LexiQuestEvidenceRecord -Reference $evidence.records.controls -EvidenceRootPath $resolvedEvidenceRoot
+    $commercialErrors = @(Test-LexiQuestCommercialAcceptance -Configuration $configuration -Manifest $releaseManifest -Controls $controls -EvidenceRootPath $resolvedEvidenceRoot)
+    if ($commercialErrors.Count -gt 0) { throw ("Commercial membership evidence is incomplete:`n - " + ($commercialErrors -join "`n - ")) }
 }
 
 & powershell -NoProfile -ExecutionPolicy Bypass -File `

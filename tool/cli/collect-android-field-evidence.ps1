@@ -299,6 +299,8 @@ if (-not (Test-Path -LiteralPath $releaseManifestFile -PathType Leaf)) {
 $releaseManifest =
     Get-Content -LiteralPath $releaseManifestFile -Raw -Encoding utf8 |
         ConvertFrom-Json
+$configurationErrors = @(Test-LexiQuestReleaseConfigurationBinding -PackagePath (Split-Path -Parent $releaseManifestFile) -Manifest $releaseManifest)
+if ($configurationErrors.Count -gt 0) { throw ("Release configuration failed pre-install verification:`n - " + ($configurationErrors -join "`n - ")) }
 $apkPathValue = [string]$releaseManifest.artifact.apkPath
 $apkPath = if ([System.IO.Path]::IsPathRooted($apkPathValue)) {
     [System.IO.Path]::GetFullPath($apkPathValue)
@@ -325,7 +327,7 @@ $expectedVersion = '{0}+{1}' -f
     $releaseManifest.artifact.versionCode
 $measuredApk = Get-LexiQuestMeasuredApkMetadata `
     -ApkPath $apkPath `
-    -ExpectedBuildId ([string]$releaseManifest.sourceCommit) `
+    -ExpectedBuildId ([string]$releaseManifest.artifact.buildId) `
     -ExpectedModelSha256 $modelSha256 `
     -ExpectedVersion $expectedVersion
 $metadataErrors = @(Test-LexiQuestArtifactMetadata `
@@ -457,7 +459,7 @@ try {
     }
     $installedApk = Get-LexiQuestMeasuredApkMetadata `
         -ApkPath $temporaryBaseApk `
-        -ExpectedBuildId ([string]$releaseManifest.sourceCommit) `
+        -ExpectedBuildId ([string]$releaseManifest.artifact.buildId) `
         -ExpectedModelSha256 $modelSha256 `
         -ExpectedVersion $expectedVersion `
         -ProvenanceArchivePaths $temporaryInstalledApks.ToArray()

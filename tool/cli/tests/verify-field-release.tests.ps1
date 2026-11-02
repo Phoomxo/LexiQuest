@@ -1256,9 +1256,26 @@ try {
     $packageErrors = @(Test-LexiQuestReleasePackage `
         -PackagePath $packageRoot `
         -Manifest $packageManifest)
+    Assert-True (($packageErrors -join "`n") -match 'configuration binding is required') `
+        'a public package cannot rely on a production label without configuration'
+    $publicInput = Join-Path $tempRoot 'public-configuration-input.json'
+    $publicValue = [ordered]@{
+        schemaVersion = 1; packageName = 'com.lexiquest.app'; version = '1.0.0+19'; minimumPreviousVersionCode = 18
+        aiApiUrl = 'https://api.lexiquest.app/'; voiceMode = 'native'; voiceApiUrl = $null
+        cloudSyncEnabled = $true; contentReportsEnabled = $true
+        billing = [ordered]@{ enabled = $true; policyRevision = 'managed-ai-v1'; products = @([ordered]@{ productId = 'lexiquest_ai_monthly'; basePlanId = 'monthly'; entitlements = @('managedContent'); dailyManagedUnits = 10 }) }
+    }
+    [System.IO.File]::WriteAllText($publicInput, ($publicValue | ConvertTo-Json -Depth 8), [System.Text.UTF8Encoding]::new($false))
+    $publicConfiguration = Read-LexiQuestReleaseConfiguration -Path $publicInput
+    [System.IO.File]::WriteAllText((Join-Path $packageRoot 'release-configuration.json'), $publicConfiguration.Json, [System.Text.UTF8Encoding]::new($false))
+    $packageManifest | Add-Member -NotePropertyName sourceCommit -NotePropertyValue ('1' * 40)
+    $packageManifest | Add-Member -NotePropertyName configuration -NotePropertyValue ([pscustomobject]@{ path = 'release-configuration.json'; sha256 = $publicConfiguration.Sha256 })
+    $packageManifest.artifact | Add-Member -NotePropertyMembers @{ packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 19; buildId = (Get-LexiQuestReleaseBuildId -SourceCommit ('1' * 40) -ConfigurationSha256 $publicConfiguration.Sha256) }
+    $packageErrors = @(Test-LexiQuestReleasePackage -PackagePath $packageRoot -Manifest $packageManifest)
     Assert-True ($packageErrors.Count -eq 0) `
-        'a public package excludes the research protocol'
+        'a public package excludes the research protocol and binds commercial configuration'
     $packageManifest.releaseProfile = 'fieldTrial'
+    Remove-Item -LiteralPath (Join-Path $packageRoot 'release-configuration.json')
     Set-Content -LiteralPath (
         Join-Path $packageDocs 'research-protocol-v1.md'
     ) -Value 'verified participant fixture' -Encoding utf8

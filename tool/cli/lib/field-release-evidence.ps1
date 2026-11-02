@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 3.0
+. (Join-Path $PSScriptRoot 'commercial-release-configuration.ps1')
 
 function Get-LexiQuestRequiredFieldJourneys {
     return @(
@@ -884,6 +885,9 @@ function Test-LexiQuestReleasePackage {
         $errors.Add('releaseProfile must be fieldTrial or publicProduction.')
         return $errors.ToArray()
     }
+    foreach ($configurationError in @(Test-LexiQuestReleaseConfigurationBinding -PackagePath $PackagePath -Manifest $Manifest)) {
+        $errors.Add([string]$configurationError)
+    }
     $apkPath = [string]$Manifest.artifact.apkPath
     $aabPath = [string]$Manifest.artifact.aabPath
     foreach ($artifactPath in @($apkPath, $aabPath)) {
@@ -935,6 +939,7 @@ function Test-LexiQuestReleasePackage {
         }
     }
     $expectedFiles = @($apkPath, $aabPath, 'release-manifest.json')
+    if ($profile -eq 'publicProduction') { $expectedFiles += 'release-configuration.json' }
     $expectedFiles += $expectedDocumentPaths
     $packageRoot = [System.IO.Path]::GetFullPath($PackagePath)
     $actualFiles = @(
