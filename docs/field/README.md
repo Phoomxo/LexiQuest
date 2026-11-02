@@ -1,5 +1,9 @@
 # LexiQuest field release runbook
 
+สำหรับ managed-AI membership ให้ใช้ [commercial readiness checkpoint](2026-11-02-commercial-readiness.md)
+ประกอบด้วย โดย `publicProduction` ต้องรับ `-ConfigurationPath` ที่ผ่าน validation
+และหลักฐาน backend/Play ที่ผูกกับ artifact รุ่นเดียวกัน
+
 Gate นี้ผูก source, signed APK/AAB, เอกสาร และหลักฐานจริงเป็น release candidate
 เดียวกัน ห้ามคัดลอกผลจาก artifact รุ่นอื่นหรือเปลี่ยน `pending` เป็น `pass`
 โดยไม่ได้ทดสอบจริง

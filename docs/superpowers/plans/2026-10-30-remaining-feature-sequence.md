@@ -1,5 +1,53 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Commercial readiness continuation, 2026-11-02
+
+The latest user authorizes implementing the remaining readiness work and chooses
+a quota-based managed-AI subscription, with ordinary offline learning remaining
+free. The user delegates product defaults to the implementation. Real merchant
+identifiers, service availability and signing/device acceptance remain facts to
+verify, not values that a draft policy can manufacture.
+
+Baseline is `8ec037c09851d8986b89babd70cf5954dfc3daa6` in the existing
+cycle12-release worktree, branch `codex/remaining-system-readiness`. Its app/test
+inputs match accepted source e803d552. The 2026-11-02 read-only audit verifies
+all1333 inputs/1002 Dart files, the retained debug APK and historical5493/0 log;
+fresh analysis0 and bootstrap/config185/185 pass. Original-checkout changes and
+pre-existing critiques/failure artifacts remain outside the write set.
+
+Throughput checkpoint:
+
+- **Blocking first steps.** Confirm baseline, actual catalog/billing/config/voice
+  boundaries and two design alternatives per changed subsystem before writes.
+- **Independent workstreams.** Commercial release tooling and billing, included
+  starter content, and Voice backend availability have disjoint writers.
+- **Shared mutable state.** Root owns bootstrap/config integration, pubspec,
+  shared documentation and the single Flutter/pub/codegen/build lane. Agents do
+  not run those commands. Freeze relevant writers before checks.
+- **Smallest safe decomposition.** Reuse existing release packager, pack codec,
+  canonical install writer and billing authority. No parallel entitlement,
+  reward or research authority, fake HTTPS catalog, or speculative migration.
+
+| Card | User outcome | Write ownership and boundaries | Acceptance |
+| --- | --- | --- | --- |
+| B27 | Understand the managed-AI membership and its quota before purchase | Commercial writer: existing billing domain/catalog/client/UI and focused tests; Root integrates shared bootstrap | Server-authoritative quota/benefit display, exact store offer, registered owner, restore/revocation/uncertain ACK remain enforced; offline learning stays available |
+| C27 | Open an included original starter pack without configuring a download server | Content writer: learning-pack factory/catalog entry and focused tests; original AI-assisted/editorial-pending provenance | Real codec/hash/version pins; explicit preview/install through existing writer; pure catalog reads, owner/export/delete/rehome protection and actual Definition/SRS flow |
+| V27 | Operate truthful Voice health endpoints while unsafe GPU work stays blocked | Voice writer: backend/voice_api startup/app/CPU tests and local documentation | Security/compatibility rejection performs no heavy retry; ready/speech return unavailable; auth/limits stay intact; actual GPU acceptance remains separate |
+| R27 | Build one consistent commercial candidate from explicit non-secret configuration | Commercial tooling writer: existing release packager, shared CLI validation and tests; Root owns AppConfig/Voice factory integration | APK/AAB use the same validated defines and config hash; no placeholders/secrets; source/config/signature/version binding; native-only voice can coexist with managed AI |
+| D27 | Review actual Android behavior and a concrete release handoff | Root: isolated emulator/device evidence, current artifact checks, plan/checkpoint/decision trail | Automated and available isolated Android checks, migration and artifact review; no old-device evidence relabeled as current; no real-data mutation or deployment |
+
+Existing configured/deployed services, store products, prices and credentials are
+discovered without exposing secrets. Product policy defaults are reviewable and
+remain inactive until actual store/server configuration and acceptance exist.
+Research stays optional/default-off pending genuine authority and enrollment/upload
+permission. Do not weaken GPU guards or invent content validation, efficacy,
+merchant activation, physical-device results or rollout approval.
+
+Verification proceeds from focused behavior checks to subsystem checks, then
+analysis, full regression, backend/policy/CLI gates and a normal exact-source
+artifact checkpoint. Intentional scope limits such as manual scratchpad and
+bounded Today discovery remain truthful product behavior, not an OCR expansion.
+
 ## Active completion run, 2026-11-01
 
 The latest user instruction authorizes implementation of every audited remaining
