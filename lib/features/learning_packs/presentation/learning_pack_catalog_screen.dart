@@ -26,6 +26,7 @@ import '../../learning/domain/learning_models.dart';
 import '../../learning/presentation/lexical_quiz_setup_dialog.dart';
 import '../application/learning_pack_use_cases.dart';
 import 'rich_lexical_card.dart';
+import '../data/bundled_starter_pack.dart';
 import '../data/http_learning_pack_source.dart';
 import '../domain/learning_pack.dart';
 import '../domain/learning_pack_download.dart';
@@ -361,6 +362,33 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     }
     if (_resultCurrent(operation, scope) && _pending != null) {
       await _applyPending();
+    }
+  }
+
+  Future<void> _openStarter() async {
+    if (!_canAct) return;
+    final operation = ++_operation;
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    PackOwnerScope? scope;
+    try {
+      scope = await _capture();
+      if (scope == null || !_resultCurrent(operation, scope)) return;
+      setState(() {
+        _scope = scope;
+        _view = _Preview(
+          bundledStarterPack,
+          PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
+        );
+      });
+    } catch (error) {
+      if (_resultCurrent(operation, scope)) {
+        setState(() => _status = _failure(error));
+      }
+    } finally {
+      if (_operationCurrent(operation)) setState(() => _busy = false);
     }
   }
 
@@ -725,6 +753,9 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       }
       if (!mounted) return;
       _stopVoice();
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.clearSnackBars();
+      messenger?.removeCurrentSnackBar();
       launched = true;
       await AppNavigator.pushPage<void>(
         context,
@@ -1098,14 +1129,30 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         icon: const Icon(Icons.file_open_outlined),
         label: const Text('นำเข้าไฟล์แพ็ก'),
       ),
+      if (matches(bundledStarterPack.manifest)) ...[
+        const SizedBox(height: 20),
+        Text(
+          'แพ็กเริ่มต้นที่มีในแอป',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Card(
+          child: ListTile(
+            key: const ValueKey('pack-open-starter'),
+            title: Text(bundledStarterPack.manifest.title),
+            subtitle: Text(
+              '${bundledStarterPack.manifest.cefrLevel} · เวอร์ชัน ${bundledStarterPack.manifest.version} · ${bundledStarterPack.manifest.entryCount} คำ\nเปิดตัวอย่างและเลือกติดตั้งได้โดยไม่ใช้อินเทอร์เน็ต',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _action(_openStarter),
+          ),
+        ),
+      ],
       const SizedBox(height: 20),
       Text('แพ็กในเครื่อง', style: Theme.of(context).textTheme.titleMedium),
       if (local.isEmpty)
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
-          child: Text(
-            'ยังไม่มีแพ็กที่ตรงกับการค้นหา นำเข้าไฟล์แพ็กเพื่อเริ่มต้น',
-          ),
+          child: Text('ยังไม่มีแพ็กในเครื่องที่ตรงกับการค้นหา'),
         ),
       for (final row in local)
         Card(
@@ -1290,7 +1337,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     const Padding(
       padding: EdgeInsets.symmetric(vertical: 12),
       child: Text(
-        'เนื้อหาที่นำเข้ายังไม่ผ่านการทบทวนคุณภาพ การตรวจไฟล์ยืนยันความครบถ้วนของไฟล์เท่านั้น',
+        'เนื้อหาของแพ็กนี้ยังไม่ผ่านการทบทวนคุณภาพ การตรวจไฟล์ยืนยันความครบถ้วนของไฟล์เท่านั้น',
       ),
     ),
   ];
