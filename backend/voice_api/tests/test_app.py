@@ -117,6 +117,41 @@ def test_ready_returns_503_when_engine_is_unavailable(
     }
 
 
+@pytest.mark.parametrize(
+    ("authorized", "text", "expected_status", "expected_code"),
+    [
+        (True, "Cat", 503, "MODEL_UNAVAILABLE"),
+        (False, "Cat", 401, "UNAUTHENTICATED"),
+        (True, "x" * 11, 422, "TEXT_TOO_LONG"),
+    ],
+)
+def test_unready_speech_preserves_auth_and_length_without_synthesis(
+    token_verifier: FakeTokenVerifier,
+    authorized: bool,
+    text: str,
+    expected_status: int,
+    expected_code: str,
+) -> None:
+    calls = []
+
+    class UnreadyEngine(UnavailableSpeechEngine):
+        def synthesize(self, request):
+            calls.append(request)
+            return FakeSpeechEngine().synthesize(request)
+
+    app = create_app(
+        engine=UnreadyEngine(), token_verifier=token_verifier,
+        settings=Settings(max_text_length=10),
+    )
+    response = TestClient(app).post(
+        "/v1/speech", json={"text": text, **_SPEECH_BODY},
+        headers={"Authorization": "Bearer valid-token"} if authorized else {},
+    )
+    assert response.status_code == expected_status
+    assert response.json()["detail"]["code"] == expected_code
+    assert calls == []
+
+
 def test_speech_enforces_configured_text_length(
     token_verifier: FakeTokenVerifier,
 ) -> None:

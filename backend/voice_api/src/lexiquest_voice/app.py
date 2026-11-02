@@ -130,6 +130,8 @@ def create_app(
         token_verifier.verify(token)
         if len(request.text) > settings.max_text_length:
             raise text_too_long(settings.max_text_length)
+        if not engine.is_ready:
+            raise model_unavailable()
         request_id = str(uuid4())
         try:
             audio = engine.synthesize(request)

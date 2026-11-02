@@ -25,8 +25,10 @@ def test_real_firebase_omnivoice_e2e() -> None:
         )
 
     settings = Settings()
+    engine = OmniVoiceEngine(settings=settings)
+    engine.load()
     app = create_app(
-        engine=OmniVoiceEngine(settings=settings),
+        engine=engine,
         token_verifier=FirebaseTokenVerifier(),
         settings=settings,
     )

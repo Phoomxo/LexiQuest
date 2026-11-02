@@ -11,12 +11,21 @@ to date is:
 
 - **`OmniVoiceEngine` CUDA synthesis on the former Torch 2.8 stack**,
   exercised directly against the engine on an NVIDIA GeForce RTX 3050 and
-  producing a 24 kHz WAV with the locked research preset. The remediated Torch
-  2.11 stack still requires a fresh physical-GPU check.
+  producing a 24 kHz WAV with the locked research preset. This is historical
+  evidence. The currently approved Torch 2.11.0+cu128 stack fails the security
+  gate and cannot serve synthesis.
 - **The FastAPI HTTP contract, exercised by fake-injected tests** that supply a
   `FakeTokenVerifier` and a `FakeSpeechEngine`.
 - **Thai/English golden-set evaluation dataset & harness**, provided under `research/golden_texts.json` and `research/run_golden_set.py`.
 - **Opt-in end-to-end integration test**, provided under `tests/integration/test_firebase_omnivoice_e2e.py`.
+
+The metadata-only security gate requires Torch at least 2.13.0 and setuptools
+at least 84.1.0 before the existing exact compatibility check. No
+project-approved runtime currently satisfies both checks. Upstream candidates
+exist, but changing package pins alone does not approve a new CUDA, driver and
+OmniVoice combination. The [TorchAudio installation guide](https://docs.pytorch.org/audio/stable/installation.html)
+and [PyTorch 2.13 release notes](https://pytorch.org/blog/pytorch-2-13-release-blog/)
+describe the upstream ABI and CUDA changes to assess before a new GPU acceptance.
 
 ## Running Backend Tests & Research Evaluation
 
@@ -39,16 +48,22 @@ require a GPU.
 
 `lexiquest_voice.main` assembles the production ASGI application: it builds a
 `Settings`, a `FirebaseTokenVerifier`, and an `OmniVoiceEngine`, loads the
-engine, and exports the FastAPI app. Importing it initializes Firebase and
-loads the pinned model, so a load failure would prevent the process from
-serving traffic. This assembly is implemented but has not yet been run
-end-to-end (see Status).
+engine, and exports the FastAPI app. A runtime-policy rejection leaves the
+engine unready while HTTP liveness remains available. Readiness and authenticated
+speech requests return `MODEL_UNAVAILABLE` with status503. Requests do not retry
+the model load. Authentication and configured text limits are checked before
+speech readiness. Unexpected startup failures still stop assembly.
+
+CPU assembly tests use the real engine and metadata guard with synthetic
+versions and heavy-import traps. They do not establish GPU synthesis, Firebase
+service availability or physical-device audio acceptance.
 
 ## Requirements
 
 - Python 3.11
 - `uv`
-- NVIDIA GPU and a driver compatible with the CUDA 12.8 PyTorch build
+- An accepted NVIDIA GPU, CUDA, driver and patched runtime combination before
+  enabling synthesis
 - Firebase service-account credentials or another supported Application
   Default Credentials source
 
@@ -63,13 +78,16 @@ Torch/Torchaudio 2.11.0+cu128 pair.
 From the repository root:
 
 ```powershell
-uv sync --project backend/voice_api --all-groups
+uv sync --project backend/voice_api --group dev
 Copy-Item backend/voice_api/.env.example backend/voice_api/.env
 $env:GOOGLE_APPLICATION_CREDENTIALS='C:\absolute\path\service-account.json'
 ```
 
-`--all-groups` installs the runtime dependencies plus the `dev` test group and the
-`gpu` group, which pins the CUDA 12.8 PyTorch wheels and OmniVoice.
+This installs the CPU-safe service and test dependencies. The retained `gpu`
+group describes the former approved CUDA 12.8 package set; its security rejection
+must remain enabled. Do not deploy that group as a working synthesis runtime.
+Approve a patched candidate only after actual model load, generated WAV,
+driver/device and application acceptance checks. CPU tests cannot supply them.
 
 Do not commit `.env`, service-account JSON, model weights, or generated audio.
 
@@ -82,8 +100,11 @@ uv run --project backend/voice_api uvicorn lexiquest_voice.main:app --host 127.0
 ## API
 
 - `GET /health/live` reports that the HTTP process is live.
-- `GET /health/ready` returns `200` only after the speech engine is loaded.
-- `POST /v1/speech` verifies a Firebase ID token and returns WAV audio.
+- `GET /health/ready` returns `200` only after the speech engine is loaded, or
+  `503 MODEL_UNAVAILABLE` while runtime policy blocks loading.
+- `POST /v1/speech` verifies a Firebase ID token and configured length first,
+  then returns WAV audio when ready or `503 MODEL_UNAVAILABLE` without retrying
+  an unavailable model.
 
 Example request:
 
