@@ -1,5 +1,27 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Trial and native acceptance continuation, 2026-11-02
+
+The user now requires the satisfaction-evaluation artifact to unlock every
+feature without buying a membership. Keep that field-trial configuration
+separate from public production: trial billing is explicitly disabled, while
+authentication, owner isolation, rate limits and research authority remain real.
+Do not substitute a new research instrument, consent, issuer or enrollment
+permission for missing external authority. Connected services must actually be
+available before calling the trial operational.
+
+| Card | Outcome and write set | Current state and acceptance |
+| --- | --- | --- |
+| T27 | Shared release-profile validation/packaging and policy evidence; existing eight CLI files and backend test only | Accepted unit at66330c2f: public schema1 canonical bytes unchanged; trial has closed billing=false shape. Exact measured build identity rejects stripped configuration and long framed-prefix counterexamples. Root PS5/7 each118/61/237PASS; backend463PASS; actual3oldarchives match both runtimes. No fake purchase evidence or new billing authority. |
+| N27 | Actual starter Quiz/SRS/report journeys; catalog, Quiz, report button/sheet and their focused tests | Running at734d7537: one owned-child callback covers Catalog/Clinic/ReviewCenter; synchronous retirement with safe notification. Focused15files148PASS, analysis0, independent source review accepted. Fresh x64 UI acceptance precedes full regression and normal universal artifacts. |
+| A27 | Approved Cloud Stage A only, private service and synthetic checks | Waiting for owner billing linkage: Billing API enabled; one read-only reconciliation at03:59:36UTC still reports billing disabled/unlinked. No costed resources, IAM, secrets or deployment created. No Stage B/public traffic, real purchase or enrollment authorization. |
+
+Root retains the single Flutter/build lane. The CLI writer and native UI writer
+have disjoint files; freeze both before broad checks. After actual UI acceptance,
+run current-source full regression and normal APK/AAB builds with independent
+actual-artifact review. Historical green suites and offline QA artifacts do not
+establish connected-trial or commercial readiness.
+
 ## Commercial readiness continuation, 2026-11-02
 
 The latest user authorizes implementing the remaining readiness work and chooses

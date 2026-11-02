@@ -1,9 +1,45 @@
 # Commercial readiness, 2026-11-02
 
-Status: final integration verification pending after paid-account deletion review;
-production rollout not authorized.
+Status: native UI corrections and unlocked trial-profile verification in progress;
+connected-trial and commercial release acceptance remain incomplete.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
+
+## Latest user direction and acceptance gaps
+
+The satisfaction-evaluation artifact must unlock all features without a paid
+membership. The separate field-trial profile uses billing=false; public
+production keeps managed-AI quota enforcement. Authentication, owner isolation,
+rate limits, and research consent/signature/authority checks are preserved.
+Research remains optional/default-off until genuine authority and rollout
+permission exist. No satisfaction instrument or efficacy evidence is invented.
+
+Current application source is734d7537; trial tooling is66330c2f. A normal signed release ated4f9c7 passed5524
+Flutter tests and structural APK/AAB review, but actual isolated Android testing
+then exposed owned-route lifecycle defects. The9284f5c fix passes71 focused
+tests and analysis0; its actual x64-only QA build fixes SRS reveal/rating.
+The subsequent Quiz report-modal defect is corrected by one exact owned-route
+callback shared by Score and reports. All three guarded hosts (Catalog, Clinic,
+Review Center) use it; the old two-callback API is removed. Source retirement
+changes the lease value/epoch immediately and defers only UI notification during
+tree finalization, with queued delivery canceled after disposal. Root's15-file
+focused suite passes148 tests; analysis reports0 issues. Independent connected
+source review accepts the patch. Fresh actual UI acceptance, full regression and
+normal universal artifacts are still pending. Earlier receipts are historical.
+
+The trial-profile CLI unit is accepted after independent review. Public schema1
+canonical bytes remain unchanged (golden SHA256 d772bc32f8a49b7bd7a758aa11c4df2628881db4209f646f76e14b2007ceabdc).
+Root's PS5.1/PS7 configuration118, collector61 and final field237 checks pass
+per runtime. Actual APK/AAB build IDs are read and compared in full. Canonical
+long-string counterexamples first failed235/2, then passed after conservative
+continuation rejection. The reader supports the pinned observed snapshot layout;
+unsupported or ambiguous future layouts fail closed and need new fixtures.
+Actual three retained archives pass exact identity checks on both runtimes with
+unchanged hashes. These are old artifacts, not fresh application acceptance.
+Root's actual full AI
+backend suite passes463 tests, including authenticated content with both billing
+flags disabled and no billing ledger or Play calls. This synthetic test does not
+prove a configured provider is available.
 
 ## First release policy
 
@@ -28,6 +64,9 @@ distributed across three option positions. Provenance remains AI-assisted,
 editorial-pending, with A1 as the declared target rather than a certification.
 
 ## Current engineering evidence
+
+The table records accepted subsystem evidence before the native UI follow-up;
+it is not current full-system acceptance. See the live gaps above.
 
 Evidence root:
 `D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness`.
@@ -144,9 +183,15 @@ account identifiers and raw evidence out of Git.
 
 ## Remaining rollout dependencies
 
-The configured Cloud project was inspected read-only; Cloud Run API is disabled.
+The user approved private Cloud Stage A only. The Cloud Billing API was enabled;
+the03:59:36UTC read-only reconciliation still reports billing disabled/unlinked.
+The owner will link billing. Costed resources, IAM, secrets, budgets and deployment
+remain on hold; no service was deployed. The proposed alert target is THB500 per
+month for a THB account or USD15 for USD, with50/80/100 percent actual-spend
+alerts to existing billing admins. These alerts are not a hard cap. No new billing
+account may be linked on the user's behalf without specific authority.
 The existing Firestore database reports `nam5`; no region or live data was changed.
-No API was enabled and no service was deployed. A production HTTPS origin,
+A production HTTPS origin,
 merchant/product activation, provider acceptance and the latest actual Play
 version have not been established. The isolated offline Android emulator is a
 synthetic test surface, not physical-device/TalkBack/store UAT.
@@ -162,3 +207,8 @@ Pre-existing dirty files in the Documents checkout, untracked critiques and test
 failure artifacts are preserved. Three previously denied cache cleanups remain
 untouched. Do not delete signed artifacts or failed-run evidence as a substitute
 for a verified duplicate cleanup.
+
+Automatic approval also rejected Chrome selection because its current URL could
+not be determined, and rejected deletion of two verified intermediate duplicate
+APK/AAB files with `blocked by policy` before process creation. Both files remain;
+no alternate deletion mechanism or freed-space claim follows.
