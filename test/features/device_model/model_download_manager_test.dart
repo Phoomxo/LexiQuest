@@ -308,6 +308,129 @@ void main() {
     },
   );
 
+  for (final recovered in [false, true]) {
+    for (final dispose in [false, true]) {
+      test(
+        '${dispose ? 'dispose' : 'cancel'} during verification does not activate '
+        '${recovered ? 'a recovered file' : 'a new download'}',
+        () async {
+          final bytes = utf8.encode('verification-in-flight');
+          final manifest = _manifestFor(bytes);
+          final finalFile = File(
+            '${directory.path}${Platform.pathSeparator}'
+            '${manifest.fileStem}.tflite',
+          );
+          if (recovered) await finalFile.writeAsBytes(bytes, flush: true);
+          final cancellation = ModelCancellation();
+          final verifier = _DelayedVerifier();
+          final manager = ModelDownloadManager(
+            repository: repository,
+            source: _MemoryRangeSource(bytes),
+            verifier: verifier,
+            modelDirectory: () async => directory,
+            nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+          );
+          final operation = manager.downloadAndActivate(
+            manifest,
+            cancellation: cancellation,
+          );
+          final assertion = expectLater(
+            operation,
+            throwsA(
+              isA<ModelLifecycleException>().having(
+                (error) => error.code,
+                'code',
+                ModelFailureCode.cancelled,
+              ),
+            ),
+          );
+          await verifier.started.future;
+          final disposal = dispose ? manager.dispose() : null;
+          if (!dispose) cancellation.cancel();
+          verifier.release.complete();
+          await assertion;
+          if (disposal != null) await disposal;
+
+          expect(repository.activations, 0);
+          expect(await finalFile.exists(), recovered);
+          final retainedFile = recovered
+              ? finalFile
+              : File('${finalFile.path}.partial');
+          expect(await retainedFile.readAsBytes(), bytes);
+          if (!recovered) {
+            expect(repository.record!.state, ModelDownloadState.cancelled);
+            expect(repository.record!.retryCount, 0);
+          }
+          final retrySource = _MemoryRangeSource(bytes);
+          final retry = ModelDownloadManager(
+            repository: repository,
+            source: retrySource,
+            verifier: _RecordingVerifier(),
+            modelDirectory: () async => directory,
+            nowUtc: () => DateTime.utc(2026, 7, 30, 9),
+          );
+          final result = await retry.downloadAndActivate(manifest);
+          expect(result.state, ModelDownloadState.active);
+          expect(repository.activations, 1);
+          expect(retrySource.requestedStarts, isEmpty);
+          expect(await File(result.localPath!).readAsBytes(), bytes);
+        },
+      );
+    }
+  }
+
+  for (final corrupted in [false, true]) {
+    test(
+      '${corrupted ? 'rejects corrupt' : 'activates valid'} complete partial '
+      'without a range request',
+      () async {
+        final bytes = utf8.encode('complete-partial');
+        final manifest = _manifestFor(bytes);
+        final partial = File(
+          '${directory.path}${Platform.pathSeparator}'
+          '${manifest.fileStem}.tflite.partial',
+        );
+        final retainedBytes = List<int>.of(bytes);
+        if (corrupted) retainedBytes[0] ^= 1;
+        await partial.writeAsBytes(retainedBytes, flush: true);
+        final source = _MemoryRangeSource(bytes);
+        final manager = ModelDownloadManager(
+          repository: repository,
+          source: source,
+          verifier: _RecordingVerifier(),
+          modelDirectory: () async => directory,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+        );
+        final operation = manager.downloadAndActivate(manifest);
+        if (corrupted) {
+          await expectLater(
+            operation,
+            throwsA(
+              isA<ModelLifecycleException>().having(
+                (error) => error.code,
+                'code',
+                ModelFailureCode.checksumMismatch,
+              ),
+            ),
+          );
+          expect(repository.activations, 0);
+          expect(await partial.exists(), isFalse);
+          expect(source.requestedStarts, isEmpty);
+          final result = await manager.downloadAndActivate(manifest);
+          expect(source.requestedStarts, [0]);
+          expect(result.state, ModelDownloadState.active);
+          expect(await File(result.localPath!).readAsBytes(), bytes);
+        } else {
+          final result = await operation;
+          expect(result.state, ModelDownloadState.active);
+          expect(source.requestedStarts, isEmpty);
+          expect(await File(result.localPath!).readAsBytes(), bytes);
+        }
+        expect(repository.activations, 1);
+      },
+    );
+  }
+
   test('dispose cancels and waits for an active download', () async {
     final bytes = utf8.encode('stalled-download');
     final manifest = _manifestFor(bytes);
@@ -420,7 +543,11 @@ final class _MemoryRangeSource implements ModelByteSource {
       },
     );
     return ModelByteResponse(
-      statusCode: ignoreRange || start == 0 ? 200 : 206,
+      statusCode: ignoreRange || start == 0
+          ? 200
+          : start >= bytes.length
+          ? 416
+          : 206,
       bytes: controller.stream,
       contentRangeStart: ignoreRange || start == 0
           ? null
@@ -461,5 +588,16 @@ final class _RecordingVerifier implements ModelFileVerifier {
   @override
   Future<void> verify(String path, ModelManifest manifest) async {
     paths.add(path);
+  }
+}
+
+final class _DelayedVerifier implements ModelFileVerifier {
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<void> verify(String path, ModelManifest manifest) async {
+    started.complete();
+    await release.future;
   }
 }

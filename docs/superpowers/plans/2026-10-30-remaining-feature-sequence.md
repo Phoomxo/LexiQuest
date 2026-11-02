@@ -1,5 +1,32 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Local continuation while payment is paused, 2026-11-02
+
+Baseline `a627d1e7`, same worktree and branch. The owner requests independent
+local development while Cloud Billing prepayment remains pending. No payment,
+cloud mutation, provider call or deployment belongs to this continuation.
+
+- Review Voice locally. Done: bounded source review found no new proven defect;
+  real model/audio/device acceptance remains unrun.
+- Cancellation reproduction: four failing cases returned active records after
+  cancel/dispose during verification. The manager now checks cancellation before
+  promotion/activation and preserves the actual retained file path.
+- Independent review caught a second defect: retrying a complete partial requested
+  a range at EOF. A realistic416 fixture reproduced four failures. Complete
+  partials now skip transport and still require checksum/interpreter verification.
+  Corrupt retained files fail verification; the next attempt downloads afresh.
+- Verification: final manager16PASS, affected device-model/database/bootstrap94PASS.
+  Full static analysis reports no issues. Independent final review ACCEPT; no new
+  comment findings. Root owns evidence and integration. Writer changed only the
+  manager and its existing tests. This bounded local correction is complete.
+
+Evidence is stored in
+`D:\LexiQuest-Storage\maintenance\2026-11-02\commercial-readiness\local31`.
+Cancellation does not undo an activation transaction that has already started.
+
+No new feature, migration, model download or Research contract was introduced.
+Previous Android artifacts attest their original source, not any later Dart edit.
+
 ## Local engineering closure, 2026-11-02
 
 The owner requests completing development and explicitly continues poteto-mode.

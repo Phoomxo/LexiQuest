@@ -168,7 +168,11 @@ final class ModelDownloadManager {
     );
     var existing = await repository.find(manifest.recordId);
     if (await finalFile.exists()) {
-      if (await _isValidModelFile(finalFile, manifest)) {
+      final valid = await _isValidModelFile(finalFile, manifest);
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
+      if (valid) {
         final recovered = (existing ?? _newRecord(manifest, finalFile.path))
             .copyWith(
               state: ModelDownloadState.ready,
@@ -218,46 +222,50 @@ final class ModelDownloadManager {
       if (cancellation.isCancelled || _disposed) {
         throw const ModelLifecycleException(ModelFailureCode.cancelled);
       }
-      final response = await source.open(
-        manifest.sourceUri,
-        start: downloaded,
-        cancellation: cancellation,
-      );
-      final isResume =
-          downloaded > 0 &&
-          response.statusCode == 206 &&
-          response.contentRangeStart == downloaded;
-      final isRestart = response.statusCode == 200;
-      if (!isResume && !isRestart) {
-        throw const ModelLifecycleException(ModelFailureCode.invalidResponse);
-      }
-      if (isRestart) {
-        downloaded = 0;
-      }
-      final sink = partial.openWrite(
-        mode: isResume ? FileMode.append : FileMode.write,
-      );
-      try {
-        await for (final chunk in response.bytes) {
-          sink.add(chunk);
-          downloaded += chunk.length;
-          if (downloaded > manifest.expectedBytes) {
-            throw const ModelLifecycleException(ModelFailureCode.sizeMismatch);
-          }
-          record = record.copyWith(
-            downloadedBytes: downloaded,
-            updatedAtUtc: nowUtc(),
-          );
-          await repository.save(record);
-          if (cancellation.isCancelled || _disposed) {
-            throw const ModelLifecycleException(ModelFailureCode.cancelled);
-          }
+      if (downloaded < manifest.expectedBytes) {
+        final response = await source.open(
+          manifest.sourceUri,
+          start: downloaded,
+          cancellation: cancellation,
+        );
+        final isResume =
+            downloaded > 0 &&
+            response.statusCode == 206 &&
+            response.contentRangeStart == downloaded;
+        final isRestart = response.statusCode == 200;
+        if (!isResume && !isRestart) {
+          throw const ModelLifecycleException(ModelFailureCode.invalidResponse);
         }
-        await sink.flush();
-      } on FileSystemException {
-        throw const ModelLifecycleException(ModelFailureCode.writeFailed);
-      } finally {
-        await sink.close();
+        if (isRestart) {
+          downloaded = 0;
+        }
+        final sink = partial.openWrite(
+          mode: isResume ? FileMode.append : FileMode.write,
+        );
+        try {
+          await for (final chunk in response.bytes) {
+            sink.add(chunk);
+            downloaded += chunk.length;
+            if (downloaded > manifest.expectedBytes) {
+              throw const ModelLifecycleException(
+                ModelFailureCode.sizeMismatch,
+              );
+            }
+            record = record.copyWith(
+              downloadedBytes: downloaded,
+              updatedAtUtc: nowUtc(),
+            );
+            await repository.save(record);
+            if (cancellation.isCancelled || _disposed) {
+              throw const ModelLifecycleException(ModelFailureCode.cancelled);
+            }
+          }
+          await sink.flush();
+        } on FileSystemException {
+          throw const ModelLifecycleException(ModelFailureCode.writeFailed);
+        } finally {
+          await sink.close();
+        }
       }
 
       if (downloaded != manifest.expectedBytes) {
@@ -284,8 +292,14 @@ final class ModelDownloadManager {
           ModelFailureCode.interpreterRejected,
         );
       }
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
       if (await finalFile.exists()) {
         await finalFile.delete();
+      }
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
       }
       await partial.rename(finalFile.path);
       record = record.copyWith(
@@ -295,6 +309,9 @@ final class ModelDownloadManager {
         localPath: finalFile.path,
         clearFailure: true,
       );
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
       await repository.activate(record);
       return record.copyWith(state: ModelDownloadState.active);
     } on ModelLifecycleException catch (error) {
@@ -308,7 +325,7 @@ final class ModelDownloadManager {
             ? record.retryCount
             : record.retryCount + 1,
         updatedAtUtc: nowUtc(),
-        localPath: partial.path,
+        localPath: record.localPath,
         failureCode: error.code,
       );
       await repository.save(record);

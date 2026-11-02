@@ -5,9 +5,17 @@ connected-trial operation and commercial release acceptance remain incomplete.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
 
-Latest local backend closure, engineering30: full AI522PASS and Cloud tools222PASS;
+Latest local application correction, local31: offline model cancellation and
+complete-partial retries are fixed. Manager16PASS and affected integration94PASS;
+static analysis reports no issues; independent review ACCEPT. See the active
+completion plan and local31 evidence.
+The earlier Android artifacts do not contain this Dart correction. No new APK/AAB
+or full Flutter acceptance is claimed for it. Billing prepayment is paused at the
+owner's request; no payment, cloud mutation or provider request occurred here.
+
+Previous local backend closure, engineering30: full AI522PASS and Cloud tools222PASS;
 the new CPU image/source/lock and isolated HTTP smoke are verified below. The
-application, assets and Flutter tests still match accepted `a2c95e12`. No new
+application, assets and Flutter tests at that checkpoint matched `a2c95e12`. No new
 full Flutter run, Android build, provider call or Cloud deployment is claimed.
 
 ## Latest user direction and acceptance gaps
