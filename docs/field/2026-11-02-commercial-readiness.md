@@ -5,6 +5,13 @@ connected-trial operation and commercial release acceptance remain incomplete.
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`; starting source `8ec037c0`.
 
+Current scope override: the owner has removed Cloud Stage A and Cloud Billing
+from remaining work. Earlier Cloud approvals and dependency lists below are
+historical and must not trigger provisioning, linkage, prepayment or deployment.
+Continue local verification and Android packaging independently. No account or
+resource was deleted. Provider hosting/acceptance remains unresolved; no
+replacement service or commercial readiness is implied by this scope reduction.
+
 Latest local application correction, local31: offline model cancellation and
 complete-partial retries are fixed. Manager16PASS and affected integration94PASS;
 static analysis reports no issues; independent review ACCEPT. See the active

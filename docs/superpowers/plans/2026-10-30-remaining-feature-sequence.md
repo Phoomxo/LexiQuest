@@ -1,5 +1,20 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Current scope override, 2026-11-02
+
+The owner removes Cloud Stage A and Cloud Billing from the remaining work.
+Do not resume provisioning, Billing enrollment/linkage/prepayment or deployment
+under the earlier approval. These workstreams are excluded, not completed and
+not prerequisites for continuing local application work. Older Cloud cards below
+are historical evidence only. Existing accounts, resources, code and receipts
+remain intact; resource deletion was not requested.
+
+Next local work is full regression verification, a new Android artifact containing
+the local31 correction, and offline acceptance. Actual provider connectivity,
+device acceptance, Play subscription acceptance and optional Research authority
+remain separate unresolved items. Removing Cloud scope does not establish an
+alternative hosting service or authorize public traffic or real charges.
+
 ## Local continuation while payment is paused, 2026-11-02
 
 Baseline `a627d1e7`, same worktree and branch. The owner requests independent
