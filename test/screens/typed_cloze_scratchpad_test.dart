@@ -209,6 +209,84 @@ void main() {
     },
   );
 
+  for (final lateKeyboard in [false, true]) {
+    testWidgets('Typed Cloze Save handles ${lateKeyboard ? 'late' : 'settled'} '
+        'keyboard metrics with an already built button', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.viewInsets = FakeViewPadding.zero;
+      addTearDown(tester.view.resetViewInsets);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final f = await _Fixture.open(tester);
+      try {
+        await _mount(tester, f);
+        await _expand(tester);
+        await _stroke(tester);
+        await _type(tester, f.session.word.spelling);
+        await tester.pumpAndSettle();
+        final scrollable = find
+            .descendant(
+              of: find.byType(FillInTheBlanksScreen),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is Scrollable &&
+                    widget.axisDirection == AxisDirection.down,
+              ),
+            )
+            .first;
+        final position = tester.state<ScrollableState>(scrollable).position;
+        for (
+          var step = 0;
+          step < 12 && find.byKey(_save).evaluate().isEmpty;
+          step++
+        ) {
+          position.jumpTo(
+            (position.pixels + 60).clamp(
+              position.minScrollExtent,
+              position.maxScrollExtent,
+            ),
+          );
+          await tester.pump();
+        }
+        expect(find.byKey(_save), findsOneWidget);
+        expect(
+          tester.widget<FilledButton>(find.byKey(_save)).onPressed,
+          isNotNull,
+        );
+        expect(
+          tester
+              .widget<EditableText>(
+                find.byType(EditableText, skipOffstage: false),
+              )
+              .focusNode
+              .hasFocus,
+          isTrue,
+        );
+        expect(f.repository.answers, isEmpty);
+        void showKeyboardMetrics() {
+          tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        }
+
+        if (lateKeyboard) {
+          tester.binding.addPostFrameCallback((_) => showKeyboardMetrics());
+        } else {
+          showKeyboardMetrics();
+          await tester.pumpAndSettle();
+        }
+
+        await _tap(tester, _save);
+        await _saved(tester, f);
+        await _assertCanonical(tester, f);
+      } finally {
+        tester.view.resetViewInsets();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        await f.close(tester);
+      }
+    });
+  }
+
   testWidgets(
     'ink survives lost typed Save and Finish ACKs without another command or wire fact',
     (tester) async {
@@ -728,11 +806,11 @@ Future<void> _reveal(WidgetTester tester, Finder target) async {
     target.hitTestable(),
     findsOneWidget,
     reason:
-        'target=${tester.getRect(target)} '
+        'target=${target.evaluate().isEmpty ? 'not built' : tester.getRect(target)} '
         'viewport=${tester.getRect(scrollable)} '
         'offset=${tester.state<ScrollableState>(scrollable).position.pixels} '
         'scrolling=${tester.state<ScrollableState>(scrollable).position.isScrollingNotifier.value} '
-        'viewInsets=${tester.view.viewInsets}',
+        'viewInsets=${tester.view.viewInsets.bottom}',
   );
 }
 
