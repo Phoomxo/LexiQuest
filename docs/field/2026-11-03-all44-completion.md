@@ -14,20 +14,20 @@ public rollout, real payments/provider and real research enrollment are excluded
   labeled host, synthetic Android, production UI and external evidence.
 - Phase B: Design the workflow. Done. Reuse current tests and task AVDs. Do not
   replace missing native observations with passing mocks or invent approvals.
-- Phase C: Run the loop. Running, cards below.
-- Phase D: Keep the audit trail. Running. Record decisions and failed hypotheses
-  alongside checks here and in the existing local repair-decisions.tsv.
-- Phase E: Verify and hand back. Pending independent review, integrated checks,
-  current-source artifact and reconciled44-row acceptance.
+- Phase C: Run the loop. Complete within the internal scope below.
+- Phase D: Keep the audit trail. Complete. Failed hypotheses and corrected runs
+  remain here and in the existing local repair-decisions.tsv.
+- Phase E: Verify and hand back. Complete. Independent reviews, Host5620,
+  Native45, signed30 artifact/UI/delivery checks and the44-row ledger are recorded.
 
 | Card | Owner/write set | Acceptance | State |
 |---|---|---|---|
-| Reminder composition | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, Home-return form restoration, cancel and delivery | OPEN: race fix has74 focused and5620 full host passes; signed30 UI pending |
+| Reminder composition | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, Home-return form restoration, cancel and delivery | PASS: signed30 three grant/Home rounds, actual notification, return and final cancellation |
 | Scratchpad | scratchpad agent: typed_cloze_scratchpad test and demonstrated affected UI only | late-inset regression; Save hit-test and frozen ink ACK preserved | Host and Android repeats pass; old cause unconfirmed |
 | Catalog gaps | map agent: read-only source/tests/44 ledger | exact existing coverage and missing workflows | Done |
 | Native modes | root: new integration entry | five exercise kinds through durable restart/history on synthetic Android | PASS |
 | Ladder/streak/rewards/accessibility | disjoint test files | real route dispatch, multi-day canonical facts, earned coin purchase/equip, scoped semantics/layout | PASS bounded checks |
-| Integration | root: docs/runner/artifacts | focused then full host, analysis, native checks and review | Host5620/native45 and signed29 packaging pass; signed30 acceptance pending |
+| Integration | root: docs/runner/artifacts | focused then full host, analysis, native checks and review | PASS: Host5620/native45, signed30 artifact/workflow and containment; all44 internally accepted within ledger boundaries |
 
 Throughput checkpoint: initial investigation used three disjoint slices. Root
 serializes every Flutter test/build/generator and controls emulator5554. Current
@@ -49,6 +49,9 @@ Existing untracked critique and failure artifacts remain untouched.
 ## Execution evidence
 
 Artifact root: `D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/`.
+Entries below preserve the execution sequence, including earlier pending or
+OPEN decisions that later receipts supersede. The task board and final bounded
+disposition state the current outcome.
 
 - First native permission grant succeeds without a second Save, schedules
   revision2, disables revision3 and passes SQLite quick_check. Real Android
@@ -225,3 +228,67 @@ Artifact root: `D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/`.
   passes5620/5620 in14:55. `complete30-full-result.json` records exits0/0,
   1031 inputs, no changed hashes and completion2026-11-03T10:44:53.8944723Z.
   f27 stays OPEN pending signed30 UI, cancellation/delivery and artifact checks.
+- Signed offlineTrial30 is built from
+  `dd436704f54748c095bfbe9f261202205c11adfe`. Packaging, runtime, signature and
+  provenance checks pass with independent artifact review. The manifest is
+  `completion-package/lexiquest-1.0.0+30/release-manifest.json`.
+  APK SHA256: `76CF19560D2F2CE82FB1B3CC5155855CF51922AB26A06E5DBCCA4251B6BBFDED`.
+  AAB SHA256: `4D488C80DF82581B30B3CBCD30B9FA18B6F7A7D453A73D31F4F10012B2C8ECB5`.
+  Artifact review identifies one generated registrant difference among1031
+  captured inputs, from test hash
+  `FF1F2C90343AFC99684625883ADF67DD3327F0A7F91F518C35FB16EE98A444E1`
+  to release hash
+  `780B14A81692848DC5ADC98D8B9694665A5641049555715781CEC6C82F0621AD`
+  in `android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java`.
+  This is the release regeneration delta; do not claim all1031 hashes remain
+  identical between the test and packaged source states.
+- Signed30 exploratory artifacts003-008 interrupted the first grant by pressing
+  Home while Save was still running. Keep them, but exclude them from the ACK
+  round count. Settled007 restores the form and008 records off/reset.
+- Three subsequent actual first-grant/Home-return rounds pass. Round1 has
+  baseline012, permission013, settled ACK015, Home017 and off018. Round2 has
+  baseline020, permission021, ACK022, Home023 and off024. Round3 has baseline026,
+  permission027, ACK028 and Home029. Each accepted Home return retains the
+  enabled switch,08:50 and Africa/Abidjan; no Back/reopen recovery is needed.
+  All filenames start `complete30-` and retain their descriptive suffixes.
+- Round3 remains enabled for actual delivery. `complete30-035-delivery-ack.xml`
+  accepts11:04 UTC,18:04 device-local time, and the full
+  `complete30-alarm-before-delivery.txt` shows the matching live RTC alarm.
+  The app is on Home at036. Delivery was pending at that point; schedule ACK and an alarm
+  record do not close f27 or establish receipt of a notification.
+- Final delivery is now observed. `complete30-delivery-notification2.txt` has
+  active notification2701 for `com.lexiquest.app` with the generic body
+  `พร้อมทบทวนคำศัพท์สักนิดไหม`;037 shows it in Android's notification shade.
+  Its timestamp1793703918275 is11:05:18.275 UTC,78.275 seconds after the requested
+  11:04 UTC. The Android alarm reported a77.752-second window; this is observed
+  inexact delivery, not an exact-time or OEM battery guarantee.
+- Notification return038 retains11:04/Africa/Abidjan and the enabled form.
+  Final off039 gets cancellation ACK. Full alarm and notification dumps after
+  in-app off contain zero active app alarms and zero active notification records
+  (`complete30-alarm-after-off.txt`, `complete30-notification-after-off.txt`).
+  `complete30-ui-rounds-result.json` asserts all three first-grant/Home rounds PASS.
+- Final calendar041 retains20 answers,18 correct, seven sessions and15 recorded
+  interaction seconds. Stopped database evidence `complete30-database.json`
+  reports quick_check=ok, no foreign-key violations, WAL/schema25,20 answers,
+  reminder off at minute664/Africa/Abidjan/revision25 and cache still absent.
+  `complete30-final-package-state.txt` confirms version30 and notification
+  permission denied. Root verified ADB returned to shell UID2000 and stopped
+  only the All44 AVD at11:07:55 UTC. Physical Vivo and original AVD were untouched.
+
+## Final bounded disposition
+
+`complete30-attestation.json` combines the measured artifact hashes, Host5620,
+generated registrant delta, three UI rounds, delivery and database/containment
+receipts. Independent final review accepts these bounded claims with no must-fix.
+
+All44 capabilities are reviewed and internally accepted within the evidence
+boundaries in `2026-11-03-all44-internal-verification.md`. Feature f27's observed
+contention, lifecycle and form-initialization failures are corrected and its
+signed30 workflow passes through actual notification and cancellation.
+The deliverable is signed offlineTrial30 from `dd436704f54748c095bfbe9f261202205c11adfe`.
+This is not44 exhaustive physical-device UATs, production rollout approval or
+research efficacy certification. The original Scratchpad intermittent cause
+remains unconfirmed despite repeated passing checks; browser UI, OEM/reboot
+behavior and external-provider/physical accessibility limits remain as recorded.
+No Cloud/Billing, public traffic, real payment or real Research enrollment/upload
+was activated. Only final documentation changed after the verified release source.

@@ -8,19 +8,15 @@ Catalog rollout metadata remains unverified; this report does not change it.
 Internal completion requires a reviewed implementation, passing required checks
 on the current source, and an explicit evidence boundary for each capability.
 This ledger covers 44 existing capabilities, not 44 exhaustive device UATs.
-The captured source for signed29 passes 5,619 host cases with clean analysis and
-unchanged inputs. It includes the reminder and narrow-screen test changes;
-the earlier5,614 receipt remains historical. Native serialization and real
-permission fixtures now pass, as does the expanded45-case Android matrix at
-320dp. Signed29 packaging/provenance pass, and first grants pass twice in the
-signed app. Feature f27 remains OPEN after the second Home return leaves its
-time/zone form fields blank despite saved-enabled status. That form race now has
-a deterministic regression and reviewed correction with74 passing focused tests.
-Source30 full verification now passes5,620 cases with clean analysis; signed30
-acceptance remains pending. Isolated
-fixtures do not substitute for the signed28 failure
-that established native SQLite writer contention. The earlier 5,598 host pass
-belongs to source `998171bc` and remains historical evidence.
+All44 capabilities are reviewed and internally accepted within the row-specific
+boundaries below. Host5620 and clean analysis attest the corrected source;
+Native45 covers the expanded synthetic Android workflows at320dp. Signed30
+artifact checks, three actual first-grant/Home-return rounds, notification
+delivery, return and final cancellation pass. Feature f27 is closed for this
+bounded internal workflow. Earlier signed28 contention and signed29 form-race
+failures remain recorded, not replaced by isolated-fixture claims. This is not
+44 exhaustive physical-device UATs or authority to publish, charge or enroll
+participants. Host5619, Host5614 and source998171bc's5,598 pass remain historical.
 
 ## Evidence key
 
@@ -128,7 +124,48 @@ Test paths in the table are relative to the repository's `test/` directory.
   form-race correction. `complete30-analysis.log` reports no issues.
   `complete30-full-result.json` records exits0/0,1,031 inputs, `changedInputs: []`
   and completion2026-11-03T10:44:53.8944723Z. This is the current source receipt
-  from `verify-source30.ps1`; it does not yet attest a signed30 artifact or UI.
+  from `verify-source30.ps1`. Signed artifact and UI evidence are recorded below.
+- **Signed30** is offlineTrial30 from `dd436704f54748c095bfbe9f261202205c11adfe`,
+  tree `6661ecd703170178d30eb172900b8f6ff5b3548b`. Packaging/runtime/signature/
+  provenance checks pass with independent artifact review. Manifest:
+  `completion-package/lexiquest-1.0.0+30/release-manifest.json`.
+  APK SHA256: `76CF19560D2F2CE82FB1B3CC5155855CF51922AB26A06E5DBCCA4251B6BBFDED`.
+  AAB SHA256: `4D488C80DF82581B30B3CBCD30B9FA18B6F7A7D453A73D31F4F10012B2C8ECB5`.
+  `complete30-apk-runtime.log` records release model integrity PASS. Artifact
+  review identifies only the generated Android plugin registrant changing among
+  1031 captured inputs: test hash
+  `FF1F2C90343AFC99684625883ADF67DD3327F0A7F91F518C35FB16EE98A444E1`,
+  release hash `780B14A81692848DC5ADC98D8B9694665A5641049555715781CEC6C82F0621AD`.
+  Preserve that regeneration delta rather than claiming identical packaged/test
+  input hashes.
+- **Signed30 reminder UI** has three actual first-grant ACK/Home-return rounds:
+  `complete30-012` baseline,013 permission,015 settled ACK,017 Home,018 off;
+  020 baseline,021 permission,022 ACK,023 Home,024 off;
+  026 baseline,027 permission,028 ACK,029 Home. The XML files retain descriptive
+  suffixes. Each Home return keeps switchON and08:50/Africa/Abidjan in the form.
+  Exploratory003-008 pressed Home while Save was running and are excluded from
+  these three ACK rounds; settled007 restored the form and008 reset it off.
+  Round3 is enabled for delivery. `complete30-035-delivery-ack.xml` and the full
+  `complete30-alarm-before-delivery.txt` establish accepted11:04 UTC scheduling,
+  18:04 device-local time, with the app on Home at036. Actual delivery was pending
+  at that point; the following receipt closes it. A scheduled alarm alone is not
+  notification receipt.
+- **Signed30 delivery/containment** closes the pending observation.
+  `complete30-delivery-notification2.txt` contains active app notification2701
+  with the generic reminder body, and `complete30-037-delivered-shade.xml` shows
+  the actual notification. Timestamp1793703918275 is11:05:18.275 UTC,78.275 seconds
+  after requested11:04 UTC. The recorded Android alarm window is77.752 seconds;
+  this supports inexact delivery, not an exact-time or OEM battery guarantee.
+  Return038 preserves11:04/Africa/Abidjan; off039 obtains cancellation ACK.
+  Full post-off alarm/notification dumps show zero active app alarms and zero
+  active notification records before final containment. The three completed
+  grant/Home rounds are asserted PASS in `complete30-ui-rounds-result.json`.
+  Calendar041 retains20 answers,18 correct, seven sessions and15 interaction
+  seconds. `complete30-database.json` has quick_check=ok, no FK violations,
+  WAL/schema25,20 answers, reminder off/minute664/zoneAfrica/Abidjan/revision25,
+  and cache still absent. Final package state confirms version30 and denied
+  notification permission. Root verified shell UID2000 after unroot and stopped
+  only All44 at11:07:55 UTC. Physical Vivo and the original AVD were untouched.
 - **Focused9** is `complete-boundary-focused.log`,9/9 PASS for corrected date
   boundaries, canonical journeys and the two formerly missed History taps.
   The earlier failing logs remain available.
@@ -169,7 +206,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f24 | Automatic learning-time capture | `screens/native_learning_time_test.dart` | Host baseline and Observed26 with locale issue; root Thai locale corrected27. Opt-in capture remains separate from waiting time. |
 | f25 | Learning calendar/weekly analytics | `screens/learning_calendar_screen_test.dart` | Observed27 Thai UI and retained20 answers/18 correct/seven sessions. |
 | f26 | Goal/test countdown | `screens/learning_profile_editor_screen_test.dart` | Observed26 invalid-duration rejection, valid goal/countdown and exit guards. |
-| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | OPEN. Native contention/route repairs have gate32/2, Permission final1 and resume62 evidence. Signed29 first grants pass twice but exposes a form race on Home return. Hydration74 and Host5620 verify the fix and preserve unsaved edits. Signed30 checks pending; delivery29 not run. Reboot/OEM battery behavior remains separate. |
+| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | INTERNALLY ACCEPTED. Native gate32/2, Permission final1, resume62, Hydration74 and Host5620 support the fixes. Signed30 passes three first-grant/Home rounds, actual notification, return and final cancellation with retained data. Reboot/OEM battery behavior remains outside this bounded acceptance. |
 | f28 | Learning assessment/progress comparison | `screens/pre_post_assessment_screen_test.dart` | Earlier synthetic Android pass; real authority, enrollment and research efficacy remain unapproved. |
 | f29 | Evidence-based quest | `features/motivation/quest_screen_test.dart` | Observed26; canonical eligible facts only. |
 | f30 | Gentle streak | `features/motivation/streak_learning_integration_test.dart` | Native45 canonical two-day Today UI and gap reset; controlled fixture clock, not elapsed real days. |
@@ -188,7 +225,12 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f43 | Learning history | `screens/learning_history_screen_test.dart` | Observed26 and the34 mode/resume cases within Native45 preserve original session/owner. |
 | f44 | Offline content manager | `screens/learning_pack_boundary_screen_test.dart` | Observed27 delete/restart retains learning data and does not restore removed cache. |
 
-## Pending final checks and exclusions
+## Final disposition and exclusions
+
+`complete30-attestation.json` consolidates the measured artifact/source identity,
+host, UI, delivery and database/containment receipts. Independent final review
+accepts this bounded disposition with no must-fix. Only documentation changed
+after release source `dd436704f54748c095bfbe9f261202205c11adfe`.
 
 Host5620 and its clean analysis attest the corrected source before signed30; Scratchpad
 repeat remains complete for its captured inputs. Diagnostic28 identifies native
@@ -197,20 +239,21 @@ The adapter repair requires `ownerWrites`, rejects an ambient transaction and
 holds `database.exclusively` around native IPC. It does not extend timeouts or add
 retries. Reminder gate32/2 and Permission final1 now pass; Native45 also passes
 on the corrected320dp emulator setup. Review accepted the serialization repair.
-Signed29 artifact provenance and two first-grant/cancel rounds pass. Feature f27
-remains OPEN after its second Home return displays blank time/zone while the
-saved-enabled summary persists. Reopening restores the stored values. Hydration74
-now confirms a refresh overtaking initial form initialization and verifies the
-reviewed correction without overwriting subsequent unsaved edits. Source30 full
-verification passes5620 cases. Upcoming signed30 must repeat grant/Home-return/cancel
-and actual delivery checks.
+Signed29's second Home return exposed blank time/zone despite saved-enabled
+status. Hydration74 confirms a refresh overtaking initial form initialization
+and verifies the correction without overwriting subsequent unsaved edits.
+Source30 full verification passes5620 cases. Signed30 passes three actual
+first-grant/Home-return rounds, actual notification delivery, notification return
+and final cancellation. Feature f27 is internally accepted within these checks;
+the original failed artifacts remain evidence of the corrected problems.
 
-The captured full host run passes. Signed29 packaging is attested, but its full
-reminder workflow is not accepted and actual delivery29 was not run. Subsequent
-fixes need new verification and signed30 artifact/workflow attestation.
-Isolated fixtures cannot substitute for the failing signed
-workflow. Scratchpad repeats establish the tested behavior, not the unobserved
-cause of its original intermittent failure.
+The captured full host run and signed30 packaging/provenance/workflow pass.
+All44 entries are internally accepted with their stated evidence limits. This
+does not mean44 exhaustive device UATs. Signed29 remains an unaccepted historical
+workflow and delivery29 was not run. Scratchpad repeats establish tested behavior,
+not the unobserved cause of its original intermittent failure. JavaScript boundary
+arithmetic verification is not browser UI acceptance. OEM/reboot reminder
+behavior and whole-app physical accessibility remain outside the checked scope.
 
 The shared SRS overflow has a reproduced failure and corrected arithmetic with
 focused checks and Host5620 coverage. Other added tests close workflow gaps
