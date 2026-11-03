@@ -131,6 +131,7 @@ final class OmniVoiceProvider implements OmniVoiceSynthesizer {
 
   Future<http.Response> _post(String token, Map<String, Object> body) async {
     final request = http.Request('POST', _speechUri)
+      ..followRedirects = false
       ..headers['authorization'] = 'Bearer $token'
       ..headers['content-type'] = 'application/json'
       ..body = jsonEncode(body);

@@ -59,6 +59,31 @@ http.Response _wavResponse() => http.Response.bytes(
 
 void main() {
   test(
+    'explicit absent configuration keeps voice native without HTTP or auth',
+    () async {
+      final client = _RecordingHttpClient((_) async => _wavResponse());
+      final tokenReader = _RecordingTokenReader(_idToken);
+      final native = _RecordingNativeTtsAdapter();
+      final service = VoiceServiceFactory.create(
+        useEnvironmentConfig: false,
+        client: client,
+        firebaseTokenReader: tokenReader,
+        nativeTtsAdapter: native,
+      );
+      try {
+        final result = await service.speak(_request());
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(native.speakCalls, ['Hello world.']);
+        expect(client.sendCount, 0);
+        expect(tokenReader.forceRefreshFlags, isEmpty);
+      } finally {
+        await service.dispose();
+      }
+      expect(client.closeCount, 1);
+    },
+  );
+
+  test(
     'managed AI configuration keeps voice native without HTTP or auth',
     () async {
       final client = _RecordingHttpClient((_) async => _wavResponse());

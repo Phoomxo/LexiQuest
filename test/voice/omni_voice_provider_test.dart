@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -283,6 +284,65 @@ Future<VoiceFailure> _captureFailure(Future<void> Function() action) async {
 }
 
 void main() {
+  for (final status in [301, 302, 303, 307, 308]) {
+    test('rejects $status without forwarding voice credentials', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final client = http.Client();
+      addTearDown(() async {
+        client.close();
+        await server.close(force: true);
+      });
+      var speechRequests = 0;
+      var redirectedRequests = 0;
+      String? forwardedAuthorization;
+      server.listen((request) async {
+        await request.drain<void>();
+        if (request.uri.path == '/v1/speech') {
+          speechRequests++;
+          request.response.statusCode = status;
+          request.response.headers.set(
+            HttpHeaders.locationHeader,
+            '/redirect-target',
+          );
+        } else {
+          redirectedRequests++;
+          forwardedAuthorization = request.headers.value(
+            HttpHeaders.authorizationHeader,
+          );
+          final response = _wavResponse();
+          response.headers.forEach(request.response.headers.set);
+          request.response.add(response.bodyBytes);
+        }
+        await request.response.close();
+      });
+      final tokens = _RecordingTokenProvider();
+      final provider = OmniVoiceProvider(
+        client: client,
+        authTokenProvider: tokens,
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}/'),
+        timeout: const Duration(seconds: 5),
+      );
+      Object? failure;
+      try {
+        await provider.synthesize(_validRequest());
+      } catch (error) {
+        failure = error;
+      }
+      expect(speechRequests, 1);
+      expect(redirectedRequests, 0);
+      expect(forwardedAuthorization, isNull);
+      expect(tokens.forceRefreshFlags, [false]);
+      expect(
+        failure,
+        isA<VoiceFailure>().having(
+          (error) => error.category,
+          'category',
+          VoiceFailureCategory.unknown,
+        ),
+      );
+    });
+  }
+
   test('POSTs exactly to baseUri.resolve("/v1/speech")', () async {
     final server = _SpeechServer(<http.Response>[_wavResponse()]);
     final tokenProvider = _RecordingTokenProvider(token: 'id-token');

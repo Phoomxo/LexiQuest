@@ -6,6 +6,9 @@ import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/voice/native_tts_provider.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_service_factory.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
@@ -46,6 +49,28 @@ class _StubGuestSessionService implements GuestSessionService {
   }
 }
 
+final class _BootstrapNativeTts implements NativeTtsAdapter {
+  final spoken = <String>[];
+  var stopCount = 0;
+  bool failStop = false;
+
+  @override
+  Future<void> setLanguage(String language) async {}
+  @override
+  Future<void> setSpeechRate(double rate) async {}
+  @override
+  Future<void> setVolume(double volume) async {}
+  @override
+  Future<void> setPitch(double pitch) async {}
+  @override
+  Future<void> speak(String text) async => spoken.add(text);
+  @override
+  Future<void> stop() async {
+    stopCount++;
+    if (failStop) throw StateError('synthetic native cleanup failure');
+  }
+}
+
 final class _SuccessfulGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
@@ -80,6 +105,83 @@ Future<Map<String, List<String>>> _allBootstrapRows(
 };
 
 void main() {
+  test('production bootstrap supplies the shared voice factory', () {
+    expect(AppBootstrap.production().voiceServiceFactory, isNotNull);
+  });
+
+  test(
+    'offline bootstrap exposes native speech and owns its disposal',
+    () async {
+      final native = _BootstrapNativeTts();
+      var creations = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async => throw StateError('synthetic offline'),
+        initializeSupabase: () async {},
+        loadConfig: () =>
+            throw const AppConfigException('synthetic absent config'),
+        guestSessionService: _StubGuestSessionService(),
+        voiceServiceFactory: (config) {
+          expect(config, isNull);
+          creations++;
+          return VoiceServiceFactory.create(
+            config: config,
+            useEnvironmentConfig: false,
+            nativeTtsAdapter: native,
+          );
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(creations, 1);
+      expect(dependencies.voice, isNotNull);
+      final result = await dependencies.voice!.speak(
+        VoiceRequest.create(
+          text: 'hello',
+          language: 'en',
+          voiceId: 'teacher_female',
+          speed: 1,
+          contentId: 'synthetic-bootstrap-word',
+          contentType: 'word',
+          mode: VoiceMode.practice,
+        ),
+      );
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(native.spoken, ['hello']);
+      final stopsBeforeDispose = native.stopCount;
+      await dependencies.dispose();
+      await dependencies.dispose();
+      expect(native.stopCount, stopsBeforeDispose + 1);
+    },
+  );
+
+  for (final failStop in [false, true]) {
+    test(
+      'bootstrap failure disposes voice with cleanup failure=$failStop',
+      () async {
+        final native = _BootstrapNativeTts()..failStop = failStop;
+        final original = StateError('synthetic later bootstrap failure');
+        final config = _validConfig();
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: () => config,
+          guestSessionService: _StubGuestSessionService(),
+          voiceServiceFactory: (actualConfig) {
+            expect(actualConfig, same(config));
+            return VoiceServiceFactory.create(
+              useEnvironmentConfig: false,
+              nativeTtsAdapter: native,
+            );
+          },
+          geminiSettingsStoreFactory: () => throw original,
+        );
+        await expectLater(bootstrap.initialize(), throwsA(same(original)));
+        expect(native.stopCount, 1);
+      },
+    );
+  }
+
   test('AI-only bootstrap composes billing without remote voice', () async {
     final fixture = BillingFixture();
     addTearDown(fixture.dispose);

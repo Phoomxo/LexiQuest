@@ -26,6 +26,7 @@ final class VoiceServiceFactory {
   /// including injected instances supplied for tests or host integration.
   static ManagedVoiceService create({
     AppConfig? config,
+    bool useEnvironmentConfig = true,
     http.Client? client,
     FirebaseTokenReader? firebaseTokenReader,
     NativeTtsAdapter? nativeTtsAdapter,
@@ -39,7 +40,8 @@ final class VoiceServiceFactory {
     final nativeProvider = NativeTtsProvider(
       nativeTtsAdapter ?? FlutterTtsAdapter(),
     );
-    final resolvedConfig = config ?? _environmentConfigOrNull();
+    final resolvedConfig =
+        config ?? (useEnvironmentConfig ? _environmentConfigOrNull() : null);
     final remoteVoiceUri = resolvedConfig?.voiceApiBaseUri;
     final resolvedClient = remoteVoiceUri == null
         ? client

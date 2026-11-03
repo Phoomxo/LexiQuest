@@ -16,6 +16,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../ai/ai_service_factory.dart';
+import '../features/voice/application/voice_use_cases.dart';
+import '../voice/voice_service_factory.dart';
 import 'configured_research_transport_factory.dart';
 import 'firebase_research_identity.dart';
 import 'content_report_composition.dart';
@@ -341,6 +343,7 @@ final class AppBootstrap {
     required this.guestSessionService,
     required this.createDatabase,
     this.contentServiceFactory,
+    this.voiceServiceFactory,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
     this.accountGatewayFactory,
@@ -402,6 +405,10 @@ final class AppBootstrap {
       createDatabase: AppDatabase.production,
       contentServiceFactory: (config) =>
           AiServiceFactory.create(config: config),
+      voiceServiceFactory: (config) => VoiceServiceFactory.create(
+        config: config,
+        useEnvironmentConfig: false,
+      ),
       bindGuestOwnership: true,
       syncGatewayFactory: () => FirestoreSyncGateway(
         firestore: FirebaseFirestore.instance,
@@ -462,6 +469,7 @@ final class AppBootstrap {
   final bool contentReportsEnabled;
   final ContentReportRuntimeFactory? contentReportFactory;
   final ContentServiceFactory? contentServiceFactory;
+  final ManagedVoiceService Function(AppConfig? config)? voiceServiceFactory;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
@@ -756,8 +764,10 @@ final class AppBootstrap {
     ContentReportComposition? contentReportComposition;
     MotivationRuntime? motivation;
     StudyReminderRuntime? studyReminders;
+    ManagedVoiceService? voiceService;
     final learningTimeClock = Stopwatch();
     try {
+      voiceService = voiceServiceFactory?.call(config);
       var contentReports = ContentReportUseCases(
         queue: reportQueue,
         ordinarySessionGuard: reportQueue.requireOrdinarySession,
@@ -1120,6 +1130,7 @@ final class AppBootstrap {
         objectScanner: objectScanner,
         devicePermissions: const PluginDevicePermissionAccess(),
         speechPractice: speechPractice,
+        voice: voiceService == null ? null : VoiceUseCases(voiceService),
         disposeResources: () async {
           try {
             await motivation?.dispose();
@@ -1135,19 +1146,23 @@ final class AppBootstrap {
           } finally {
             learningTimeClock.stop();
             try {
-              await billingComposition?.dispose();
+              await voiceService?.dispose();
             } finally {
-              await accountDeletionComposition?.dispose();
-              await geminiAuthSubscription?.cancel();
-              await geminiOwnerUpdatesSubscription.cancel();
-              await geminiOwnerSubscription.cancel();
-              await geminiTutor.dispose();
-              geminiHttpClient.close();
-              await objectScanner.dispose();
-              await speechPractice.dispose();
-              await deviceModels.dispose();
-              modelByteSource.close();
-              await database.close();
+              try {
+                await billingComposition?.dispose();
+              } finally {
+                await accountDeletionComposition?.dispose();
+                await geminiAuthSubscription?.cancel();
+                await geminiOwnerUpdatesSubscription.cancel();
+                await geminiOwnerSubscription.cancel();
+                await geminiTutor.dispose();
+                geminiHttpClient.close();
+                await objectScanner.dispose();
+                await speechPractice.dispose();
+                await deviceModels.dispose();
+                modelByteSource.close();
+                await database.close();
+              }
             }
           }
         },
@@ -1167,6 +1182,11 @@ final class AppBootstrap {
         await contentService?.dispose();
       } on Object {
         // Preserve the original bootstrap failure after best-effort cleanup.
+      }
+      try {
+        await voiceService?.dispose();
+      } on Object {
+        // Keep the initialization error when voice cleanup also fails.
       }
       rethrow;
     }
