@@ -19,6 +19,10 @@ void main() {
         try {
           await _mount(tester, f);
           expect(find.text(f.session.content.sentence), findsNothing);
+          await _reveal(
+            tester,
+            find.byKey(const ValueKey('cloze-meaning-cue')),
+          );
           expect(
             tester
                 .widget<Text>(find.byKey(const ValueKey('cloze-meaning-cue')))
@@ -623,7 +627,9 @@ Future<void> _answer(
     final option = correct
         ? exercise.word
         : exercise.choices.firstWhere((word) => word.id != exercise.word.id);
-    await tester.tap(find.byKey(ValueKey('cloze-option-${option.id}')));
+    final target = find.byKey(ValueKey('cloze-option-${option.id}'));
+    await _reveal(tester, target);
+    await tester.tap(target);
   }
   await tester.pump();
   await _reveal(tester, find.byKey(const ValueKey('cloze-save')));

@@ -815,6 +815,13 @@ Future<void> _reveal(WidgetTester tester, Finder target) async {
 }
 
 Future<void> _tap(WidgetTester tester, Key key) async {
+  if (key == _save) {
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 16),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 5),
+    );
+  }
   final target = find.byKey(key);
   await _reveal(tester, target);
   await tester.tap(target.hitTestable());
