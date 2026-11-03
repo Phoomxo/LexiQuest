@@ -90,6 +90,16 @@ try {
     }
     Assert-True (@(Get-LexiQuestParticipantDocumentNames -ReleaseProfile offlineTrial).Count -eq 0) 'offline packaging makes no participant protocol claims'
     Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -eq 0) 'offline package shape accepts its exact source/config binding without participant documents'
+    $manifest = [ordered]@{}
+    foreach ($property in $offlineManifest.PSObject.Properties) { $manifest[$property.Name] = $property.Value }
+    $manifest.configuration = [ordered]@{ path = 'release-configuration.json'; sha256 = $offline.Sha256 }
+    $resolvedOutput = $offlinePackage
+    [IO.File]::WriteAllText((Join-Path $resolvedOutput 'release-manifest.json'), ($manifest | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+    $packagerAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'tool/cli/package-field-release.ps1'), [ref]$null, [ref]$null)
+    $packageValidation = @($packagerAst.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Test-LexiQuestReleasePackage' }, $true))
+    Assert-True ($packageValidation.Count -eq 1) 'actual packager has one final package validation boundary'
+    $actualPackageErrors = @(& ([scriptblock]::Create($packageValidation[0].Extent.Text)))
+    Assert-True ($actualPackageErrors.Count -eq 0) 'actual packager final validation accepts its serialized nested ordered configuration'
     $offlineManifest.releaseProfile = 'fieldTrial'
     Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -gt 0) 'offline package cannot be relabeled as a connected trial'
     $offlineManifest.releaseProfile = 'offlineTrial'

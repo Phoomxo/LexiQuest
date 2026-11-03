@@ -339,7 +339,7 @@ try {
     $packageErrors = @(
         Test-LexiQuestReleasePackage `
             -PackagePath $resolvedOutput `
-            -Manifest ([pscustomobject]$manifest)
+            -Manifest (ConvertFrom-LexiQuestCommercialJson (Get-Content -LiteralPath (Join-Path $resolvedOutput 'release-manifest.json') -Raw -Encoding utf8))
     )
     if ($packageErrors.Count -gt 0) {
         throw (
