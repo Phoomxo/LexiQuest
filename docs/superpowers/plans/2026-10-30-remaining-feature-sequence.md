@@ -2,6 +2,16 @@
 
 ## Critique follow-up, 2026-11-03
 
+Scope extended by the owner during verification: account for every existing
+f01-f44 capability. The exact frozen IDs and representative executable tests
+are listed in [all44 acceptance](../../field/2026-11-03-all44-acceptance.md).
+Run the complete Flutter suite on the frozen version24 source while the root
+performs silent device checks. Existing connected implementation is not a new
+feature backlog; resolve actual defects and preserve external/human boundaries.
+Device24 exposed a remaining competing filled action on the hub. Finish the
+frozen regression before the small presentation correction; attest its delta
+separately rather than relabelling the original full receipt.
+
 Intent: implement all five findings in the version23 critique archived at
 `.impeccable/critique/2026-11-03T01-23-48Z__lib-screens-score-screen-dart.md`.
 Baseline95c91d91, existing cycle12-release worktree and branch. No Cloud A/Billing,

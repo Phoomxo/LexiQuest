@@ -45,4 +45,21 @@ Integration across shared score routes, hub/motivation, Matching and content
 reports passes246 tests. Static analysis reports no issues. Full5575 evidence
 belongs to the prior version23 source and is not claimed for this change. This
 pass uses focused and affected-subsystem regression; unrelated backend/policy
-suites were not rerun. Package and device outcomes are recorded after execution.
+suites were not rerun at that point.
+
+The owner then requested completion across all44 capabilities. Full regression
+on `1e6e8960` passes5581 with zero failures and unchanged1350 inputs. The signed
+version24 package passed native/model integrity and installed with matching hash,
+preserving all data. Physical checks confirm Thai score text, folded explanation,
+Back to original History, retained4/4 and1/1 sessions, report details and absent
+offline send controls. See install24-result.json and device24-result.json.
+
+Device24 also revealed two competing filled actions. The final small hub fix
+demotes the generic button when a recall entry is composed, keeping the existing
+callback and the primary fallback when no recall entry is available. The new
+visible-primary assertion fails before the fix and passes afterward; the hub,
+resume, layout and motivation suite passes60. Only choose_mode_screen.dart and
+recall_ladder_entry_flow_test.dart differ in Flutter inputs from the full run.
+Final artifact/device evidence follows; version24 is not labelled final visual
+acceptance for the hub. No independent artifact verdict is claimed because that
+reviewer's model quota was exhausted; root retains measured package evidence.

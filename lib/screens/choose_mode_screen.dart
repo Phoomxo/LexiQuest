@@ -569,6 +569,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               final hasDue = canReview && progress.dueReviewCount > 0;
               final hasWeakness = canWeakness && progress.weaknesses.isNotEmpty;
               final hasRecommendation = hasDue || hasWeakness || canQuiz;
+              final practiceButton =
+                  canQuiz &&
+                      _nativeDependencies?.recallLadder != null &&
+                      _nativeOwnerId != null &&
+                      _nativeOwnerSource != null
+                  ? OutlinedButton.icon
+                  : FilledButton.icon;
               final queueSummary = <String>[
                 if (canReview && progress.dueReviewCount > 0)
                   'ถึงกำหนด ${progress.dueReviewCount} คำ',
@@ -581,7 +588,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   if (queueSummary.isNotEmpty) Text(queueSummary.join(' • ')),
                   if (queueSummary.isNotEmpty) const SizedBox(height: 12),
                   if (hasRecommendation)
-                    FilledButton.icon(
+                    practiceButton(
                       onPressed: hasDue
                           ? _dueReviewAction()
                           : _readAction(

@@ -37,6 +37,11 @@ void main() {
 
         final suggested = find.byKey(const ValueKey('recall-ladder-suggested'));
         expect(suggested.hitTestable(), findsOneWidget);
+        expect(find.byType(FilledButton).hitTestable(), findsOneWidget);
+        expect(
+          find.widgetWithText(OutlinedButton, 'เริ่มฝึกคำศัพท์'),
+          findsOneWidget,
+        );
         expect(
           find.byKey(const ValueKey('recall-ladder-dictation')),
           findsNothing,
