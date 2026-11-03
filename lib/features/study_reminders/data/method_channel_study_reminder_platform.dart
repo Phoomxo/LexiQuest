@@ -9,6 +9,8 @@ final class MethodChannelStudyReminderPlatform
     implements StudyReminderPlatform {
   const MethodChannelStudyReminderPlatform({this.isAndroid});
   static const _channel = MethodChannel('com.lexiquest.app/study_reminder');
+  // The private Android process may need a cold start before opening SQLite.
+  static const _requestTimeout = Duration(seconds: 15);
   final bool? isAndroid;
   bool get _supportedPlatform => isAndroid ?? Platform.isAndroid;
 
@@ -20,7 +22,7 @@ final class MethodChannelStudyReminderPlatform
     try {
       final value = await _channel
           .invokeMapMethod<String, Object?>('inspect')
-          .timeout(const Duration(seconds: 5));
+          .timeout(_requestTimeout);
       if (value?['supported'] != true ||
           value?['notificationsAllowed'] is! bool) {
         return const StudyReminderPlatformStatus.unsupported();
@@ -119,7 +121,7 @@ final class MethodChannelStudyReminderPlatform
     try {
       final value = await _channel
           .invokeMapMethod<String, Object?>(method, args)
-          .timeout(const Duration(seconds: 5));
+          .timeout(_requestTimeout);
       if (value == null) {
         throw const StudyReminderException(
           StudyReminderFailureCode.platformUnavailable,

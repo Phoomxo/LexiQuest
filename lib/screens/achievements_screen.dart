@@ -20,11 +20,13 @@ class AchievementsScreen extends StatefulWidget {
     this.ownerChanges,
     this.saveImage,
     this.shareImage,
+    this.onExternalOperation,
   });
   final AchievementProgressLoader? loader;
   final Stream<String?>? ownerChanges;
   final AchievementImageSaver? saveImage;
   final AchievementImageSharer? shareImage;
+  final ValueChanged<bool>? onExternalOperation;
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
 }
@@ -182,7 +184,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             revalidate: revalidate,
             scopeChanges: binding,
             onExternalOperation: (value) {
-              if (mounted) _external = value;
+              if (mounted) {
+                _external = value;
+                widget.onExternalOperation?.call(value);
+              }
             },
             saveImage: widget.saveImage,
             shareImage: widget.shareImage,
@@ -192,6 +197,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     } finally {
       _ownsComposer = false;
       _external = false;
+      widget.onExternalOperation?.call(false);
       if (mounted && identical(binding, _binding)) {
         binding.syncVisibility(ownedCover: false);
       }

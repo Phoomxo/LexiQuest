@@ -20,6 +20,7 @@
         android:usesCleartextTraffic="false">
         <receiver
             android:name=".StudyReminderReceiver"
+            android:process=":study_reminders"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -27,6 +28,11 @@
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
+        <provider
+            android:name=".StudyReminderProvider"
+            android:authorities="${applicationId}.studyreminders"
+            android:process=":study_reminders"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

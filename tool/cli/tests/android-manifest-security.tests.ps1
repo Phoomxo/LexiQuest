@@ -5,6 +5,12 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $manifestPath = Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml'
 $source = Get-Content -LiteralPath $manifestPath -Raw
+[xml]$manifest = $source
+$androidNamespace = 'http://schemas.android.com/apk/res/android'
+$reminderProvider = @($manifest.manifest.application.provider) |
+    Where-Object { $_.GetAttribute('name', $androidNamespace) -eq '.StudyReminderProvider' }
+$reminderReceiver = @($manifest.manifest.application.receiver) |
+    Where-Object { $_.GetAttribute('name', $androidNamespace) -eq '.StudyReminderReceiver' }
 $assetLinksPath = Join-Path $repoRoot `
     'hosting\public\.well-known\assetlinks.json'
 $firebasePath = Join-Path $repoRoot 'firebase.json'
@@ -12,6 +18,12 @@ $hostedVerifierPath = Join-Path $repoRoot `
     'tool\cli\verify-hosted-asset-links.ps1'
 
 $checks = [ordered]@{
+    'Reminder database broker and receiver share a private separate process' =
+        ($null -ne $reminderProvider -and $null -ne $reminderReceiver -and
+        $reminderProvider.GetAttribute('exported', $androidNamespace) -eq 'false' -and
+        $reminderReceiver.GetAttribute('exported', $androidNamespace) -eq 'false' -and
+        $reminderProvider.GetAttribute('process', $androidNamespace) -eq ':study_reminders' -and
+        $reminderReceiver.GetAttribute('process', $androidNamespace) -eq ':study_reminders')
     'Release manifest explicitly blocks cleartext traffic' =
         $source -match 'android:usesCleartextTraffic="false"'
     'Application backup is disabled' =

@@ -8,11 +8,17 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
+import android.content.ContentProvider
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.net.Uri
+import android.os.Binder
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import io.flutter.plugin.common.BinaryMessenger
@@ -41,24 +47,20 @@ class StudyReminderBridge(activity: Activity, messenger: BinaryMessenger) {
                 result.notImplemented()
             } else executor.execute {
                 try {
-                    val value = synchronized(StudyReminderDelivery.lock) {
-                        when (call.method) {
-                            "inspect" -> mapOf("supported" to true,
-                                "notificationsAllowed" to StudyReminderDelivery.allowed(context))
-                            "bindScope" -> StudyReminderDelivery.bind(context,
-                                arguments["databasePath"] as? String,
-                                arguments["ownerId"] as? String)
-                            "retire" -> StudyReminderDelivery.retire(context,
-                                arguments["scopeToken"] as? String)
-                            else -> StudyReminderDelivery.request(context, call.method,
-                                arguments["scopeToken"] as? String,
-                                when (val revision = arguments["revision"]) {
-                                    is Int -> revision.toLong()
-                                    is Long -> revision
-                                    else -> null
-                                })
+                    val request = Bundle().apply {
+                        for (key in listOf("databasePath", "ownerId", "scopeToken"))
+                            putString(key, arguments[key] as? String)
+                        when (val revision = arguments["revision"]) {
+                            is Int -> putLong("revision", revision.toLong())
+                            is Long -> putLong("revision", revision)
                         }
                     }
+                    val response = context.contentResolver.call(
+                        Uri.parse("content://${context.packageName}.studyreminders"),
+                        call.method, null, request) ?: throw ReminderRejected("UNAVAILABLE")
+                    response.getString("error")?.let { throw ReminderRejected(it) }
+                    @Suppress("DEPRECATION")
+                    val value = response.keySet().associateWith { response.get(it) }
                     main.post { if (!disposed) result.success(value) }
                 } catch (failure: ReminderRejected) {
                     main.post { if (!disposed) result.error(failure.code,
@@ -77,6 +79,53 @@ class StudyReminderBridge(activity: Activity, messenger: BinaryMessenger) {
         executor.shutdown()
         // Activity destruction must not switch off a reminder the user enabled.
     }
+}
+
+// Android SQLite must not share process-local file locks with Dart's SQLite library.
+class StudyReminderProvider : ContentProvider() {
+    override fun onCreate() = true
+
+    override fun call(method: String, arg: String?, extras: Bundle?): Bundle {
+        check(Binder.getCallingUid() == android.os.Process.myUid())
+        val app = requireNotNull(context)
+        return try {
+            val value = synchronized(StudyReminderDelivery.lock) {
+                when (method) {
+                    "inspect" -> mapOf("supported" to true,
+                        "notificationsAllowed" to StudyReminderDelivery.allowed(app))
+                    "bindScope" -> StudyReminderDelivery.bind(app,
+                        extras?.getString("databasePath"), extras?.getString("ownerId"))
+                    "retire" -> StudyReminderDelivery.retire(app, extras?.getString("scopeToken"))
+                    "schedule", "cancel" -> StudyReminderDelivery.request(app, method,
+                        extras?.getString("scopeToken"),
+                        if (extras?.containsKey("revision") == true) extras.getLong("revision") else null)
+                    else -> throw ReminderRejected("UNAVAILABLE")
+                }
+            }
+            Bundle().apply {
+                for ((key, item) in value) when (item) {
+                    is Boolean -> putBoolean(key, item)
+                    is String -> putString(key, item)
+                    is Long -> putLong(key, item)
+                    else -> throw ReminderRejected("UNAVAILABLE")
+                }
+            }
+        } catch (failure: ReminderRejected) {
+            Bundle().apply { putString("error", failure.code) }
+        } catch (_: Exception) {
+            Bundle().apply { putString("error", "UNAVAILABLE") }
+        }
+    }
+
+    override fun query(uri: Uri, projection: Array<out String>?, selection: String?,
+        selectionArgs: Array<out String>?, sortOrder: String?): Cursor? =
+        throw UnsupportedOperationException()
+    override fun getType(uri: Uri): String? = throw UnsupportedOperationException()
+    override fun insert(uri: Uri, values: ContentValues?): Uri? = throw UnsupportedOperationException()
+    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int =
+        throw UnsupportedOperationException()
+    override fun update(uri: Uri, values: ContentValues?, selection: String?,
+        selectionArgs: Array<out String>?): Int = throw UnsupportedOperationException()
 }
 
 class StudyReminderReceiver : BroadcastReceiver() {
@@ -134,7 +183,8 @@ private object StudyReminderDelivery {
     /** The reserved SQLite transaction fences owner/preference/deletion writes until this read/action ends. */
     private fun <T> read(context: Context, path: String?, action: (SQLiteDatabase, Setting?) -> T): T {
         val file = privateDatabase(context, path)
-        return SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { database ->
+        return SQLiteDatabase.openDatabase(file.path, null,
+            SQLiteDatabase.OPEN_READWRITE or SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING).use { database ->
             database.rawQuery("PRAGMA busy_timeout=2000", null).use { it.moveToFirst() }
             database.beginTransactionNonExclusive()
             try {

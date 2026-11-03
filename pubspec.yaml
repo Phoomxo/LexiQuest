@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   characters: 1.4.1
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
@@ -47,6 +49,8 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.5

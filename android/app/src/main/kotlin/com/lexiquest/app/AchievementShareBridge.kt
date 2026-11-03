@@ -15,9 +15,13 @@ class AchievementShareBridge(
     private val activity: Activity,
     messenger: BinaryMessenger,
 ) {
+    companion object {
+        private const val shareRequest = 4173
+    }
     private val channel = MethodChannel(messenger, "com.lexiquest.app/achievement_share")
     private val directory = File(activity.cacheDir, "achievement-cards")
     private var prepared: Pair<String, File>? = null
+    private var pendingResult: MethodChannel.Result? = null
 
     init {
         channel.setMethodCallHandler { call, result ->
@@ -62,7 +66,7 @@ class AchievementShareBridge(
                 }
                 "launchAchievementShare" -> {
                     val selected = prepared
-                    if (selected == null || call.argument<String>("token") != selected.first ||
+                    if (pendingResult != null || selected == null || call.argument<String>("token") != selected.first ||
                         activity.isFinishing || activity.isDestroyed || !activity.hasWindowFocus()) {
                         result.error("UNAVAILABLE", "The image request is no longer current.", null)
                     } else {
@@ -76,17 +80,20 @@ class AchievementShareBridge(
                                 clipData = ClipData.newRawUri("LexiQuest achievement", uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            activity.startActivity(Intent.createChooser(intent, "แชร์การ์ดความสำเร็จ").apply {
+                            pendingResult = result
+                            activity.startActivityForResult(Intent.createChooser(intent, "แชร์การ์ดความสำเร็จ").apply {
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            })
+                            }, shareRequest)
                             // Retain shared files for receivers; the next preparation bounds this cache.
                             prepared = null
-                            result.success(null)
                         } catch (_: ActivityNotFoundException) {
+                            pendingResult = null
                             result.error("UNAVAILABLE", "No image sharing app is available.", null)
                         } catch (_: IllegalArgumentException) {
+                            pendingResult = null
                             result.error("UNAVAILABLE", "The image provider is unavailable.", null)
                         } catch (_: SecurityException) {
+                            pendingResult = null
                             result.error("UNAVAILABLE", "Image sharing access denied.", null)
                         }
                     }
@@ -103,8 +110,18 @@ class AchievementShareBridge(
         }
     }
 
+    fun onActivityResult(requestCode: Int): Boolean {
+        if (requestCode != shareRequest) return false
+        val result = pendingResult
+        pendingResult = null
+        result?.success(null)
+        return true
+    }
+
     fun dispose() {
         channel.setMethodCallHandler(null)
+        pendingResult?.error("UNAVAILABLE", "The sharing activity was closed.", null)
+        pendingResult = null
         prepared?.second?.delete()
         prepared = null
     }

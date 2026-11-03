@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'config/app_appearance_preferences.dart';
 import 'config/m3_theme.dart';
 import 'features/account/domain/account_contracts.dart';
@@ -153,6 +154,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   system.reduceMotion;
               return MaterialApp(
                 navigatorKey: _navigatorKey,
+                locale: const Locale('th'),
+                supportedLocales: const [Locale('th')],
+                localizationsDelegates: GlobalMaterialLocalizations.delegates,
                 debugShowCheckedModeBanner: false,
                 title: 'LexiQuest - AI Vocab Learning',
                 builder: (context, child) {

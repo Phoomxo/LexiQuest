@@ -295,6 +295,7 @@ class _AchievementShareComposerState extends State<AchievementShareComposer>
           );
         }
       }
+      await _revalidate();
       if (_current) {
         setState(
           () => _status = share
@@ -306,7 +307,7 @@ class _AchievementShareComposerState extends State<AchievementShareComposer>
       if (mounted) {
         setState(
           () => _status = error.code == ExportFailureCode.cancelled
-              ? 'ยกเลิกแล้ว ไม่มีการส่งภาพจากคำขอนี้'
+              ? 'คำขอนี้สิ้นสุดแล้ว กลับไปเลือกความสำเร็จอีกครั้ง'
               : 'ยังบันทึกหรือแชร์ภาพไม่ได้ ลองใหม่หรือบันทึกภาพแทนได้',
         );
       }

@@ -51,10 +51,10 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
   ProgressHostBinding? _binding;
   ModalRoute<dynamic>? _route;
   Object? _childToken;
+  Object? _externalChildToken;
   ProgressHostBinding? _childBinding;
   String? _childOwner;
   int? _childGeneration;
-  bool _childCovered = false;
   bool _bound = false;
   bool _paneVisible = false;
   bool _foreground = false;
@@ -74,8 +74,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
     final owner = _childOwner;
     final generation = _childGeneration;
     return _childToken != null &&
-        !_childCovered &&
-        _foreground &&
+        (_foreground || identical(_externalChildToken, _childToken)) &&
         _paneVisible &&
         binding != null &&
         identical(binding, _binding) &&
@@ -116,7 +115,6 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
     _timeSubscription = time?.changes.listen((_) {
       if (identical(time, _learningTime)) _changed();
     });
-    _childCovered = true;
     final old = _binding;
     old?.removeListener(_changed);
     old?.dispose();
@@ -160,23 +158,10 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
-    if (!_foreground) {
-      _childCovered = true;
+    if (!_foreground && !_ownsCover) {
       _binding?.invalidateLaunch();
     }
     _binding?.syncVisibility(ownedCover: _ownsCover);
-  }
-
-  void _coveredChild(Object token, ProgressHostBinding binding) {
-    if (!mounted ||
-        !identical(_childToken, token) ||
-        !identical(binding, _binding) ||
-        _childCovered ||
-        _route?.isCurrent == true) {
-      return;
-    }
-    _childCovered = true;
-    binding.invalidateLaunch();
   }
 
   VoidCallback? _action(
@@ -185,6 +170,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
       String owner,
       Stream<String?> owners,
       bool Function() current,
+      ValueChanged<bool> externalOperation,
     )
     destination, {
     FieldFeature? feature,
@@ -221,7 +207,6 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
       _childBinding = binding;
       _childOwner = owner;
       _childGeneration = generation;
-      _childCovered = false;
       try {
         await AppNavigator.pushPage<void>(
           context,
@@ -232,22 +217,25 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                   !identical(binding, _binding) ||
                   !identical(dependencies, _dependencies) ||
                   !binding.isLaunchCurrent(generation, owner) ||
-                  !_foreground ||
+                  (!_foreground && !identical(_externalChildToken, token)) ||
                   !_paneVisible) {
                 return const Scaffold(
                   body: _DashboardMessage('กิจกรรมไม่พร้อมใช้งาน'),
                 );
               }
-              return _MasteryChildVisibility(
-                onCovered: () => _coveredChild(token, binding),
-                child: destination(owner, owners, current),
-              );
+              return destination(owner, owners, current, (value) {
+                if (!mounted || !identical(_childToken, token)) return;
+                if (value && !current()) return;
+                _externalChildToken = value ? token : null;
+                binding.syncVisibility(ownedCover: _ownsCover);
+              });
             },
           ),
         );
       } finally {
         if (mounted && identical(_childToken, token)) {
           _childToken = null;
+          _externalChildToken = null;
           _childBinding = null;
           _childOwner = null;
           _childGeneration = null;
@@ -285,7 +273,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
               tooltip: 'ปฏิทินและสรุปรายสัปดาห์',
               onPressed: _action(
                 'progress/calendar',
-                (owner, owners, current) => LearningCalendarScreen(
+                (owner, owners, current, _) => LearningCalendarScreen(
                   ownerChanges: owners,
                   loader:
                       ({
@@ -330,7 +318,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                     key: const ValueKey('review-center-entry'),
                     onPressed: _action(
                       'learning/review-center',
-                      (owner, owners, _) => ReviewCenterScreen(
+                      (owner, owners, _, _) => ReviewCenterScreen(
                         expectedOwnerId: owner,
                         ownerChanges: owners,
                         reviewCenter: _dependencies?.reviewCenter,
@@ -350,7 +338,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                   OutlinedButton.icon(
                     onPressed: _action(
                       'progress/history',
-                      (owner, owners, current) => LearningHistoryScreen(
+                      (owner, owners, current, _) => LearningHistoryScreen(
                         ownerChanges: owners,
                         loader: ({before}) {
                           final progress = _dependencies?.progress;
@@ -372,7 +360,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                     OutlinedButton.icon(
                       onPressed: _action(
                         'progress/weakness',
-                        (_, owners, _) => WeaknessClinicScreen(
+                        (_, owners, _, _) => WeaknessClinicScreen(
                           loader: widget.loader,
                           learning: _dependencies?.learning,
                           ownerChanges: owners,
@@ -387,7 +375,11 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                     OutlinedButton.icon(
                       onPressed: _action(
                         'progress/achievements',
-                        (_, _, _) => AchievementsScreen(loader: widget.loader),
+                        (_, owners, _, externalOperation) => AchievementsScreen(
+                          loader: widget.loader,
+                          ownerChanges: owners,
+                          onExternalOperation: externalOperation,
+                        ),
                         feature: FieldFeature.achievements,
                       ),
                       icon: const Icon(Icons.emoji_events_outlined),
@@ -397,7 +389,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                     OutlinedButton.icon(
                       onPressed: _action(
                         'progress/theme-store',
-                        (_, _, _) => const ShopPage(),
+                        (_, _, _, _) => const ShopPage(),
                         feature: FieldFeature.shop,
                       ),
                       icon: const Icon(Icons.palette_outlined),
@@ -483,31 +475,6 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
       children: [recordedTime, const SizedBox(height: 20), body],
     );
   }
-}
-
-class _MasteryChildVisibility extends StatefulWidget {
-  const _MasteryChildVisibility({required this.onCovered, required this.child});
-
-  final VoidCallback onCovered;
-  final Widget child;
-
-  @override
-  State<_MasteryChildVisibility> createState() =>
-      _MasteryChildVisibilityState();
-}
-
-class _MasteryChildVisibilityState extends State<_MasteryChildVisibility> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final current = ModalRoute.isCurrentOf(context);
-    if (current == false && ModalRoute.of(context)?.isActive == true) {
-      widget.onCovered();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
 
 class _DashboardBody extends StatelessWidget {

@@ -688,7 +688,16 @@ Future<void> _reveal(WidgetTester tester, Finder target) async {
   expect(target, findsOneWidget);
   await Scrollable.ensureVisible(tester.element(target), alignment: .35);
   await tester.pump();
-  expect(target.hitTestable(), findsOneWidget);
+  expect(
+    target.hitTestable(),
+    findsOneWidget,
+    reason:
+        'target=${tester.getRect(target)} '
+        'viewport=${tester.getRect(scrollable)} '
+        'offset=${tester.state<ScrollableState>(scrollable).position.pixels} '
+        'scrolling=${tester.state<ScrollableState>(scrollable).position.isScrollingNotifier.value} '
+        'viewInsets=${tester.view.viewInsets}',
+  );
 }
 
 Future<void> _tap(WidgetTester tester, Key key) async {

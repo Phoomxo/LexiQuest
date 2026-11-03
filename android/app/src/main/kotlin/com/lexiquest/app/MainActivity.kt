@@ -182,6 +182,7 @@ class MainActivity : FlutterActivity() {
 
     @Deprecated("Deprecated in Android, retained for the document provider flow.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (achievementShareBridge?.onActivityResult(requestCode) == true) return
         if (requestCode != createExportDocumentRequest) {
             super.onActivityResult(requestCode, resultCode, data)
             return
