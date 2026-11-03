@@ -1,5 +1,13 @@
 # Version23 critique follow-up
 
+Disposition: all five findings corrected and verified within the bounded offline
+scope. Final application source `dc740a8e`, signed version1.0.0+25 installed on
+Vivo V2041 without clearing data. Final hub render confirms one filled primary
+action; the generic practice action is outlined. Thai results and original
+history remain intact. Artifact/install/device receipts are under critique35.
+APK SHA256: `5cbc1d43c59c682aa1a7b813d6d0780f4afae7624ff5fbe979a0e380349b716f`.
+AAB SHA256: `bdeb4f07035231dee28f118187a967c24e6f96549cebeacff2cdbddc54d4375f`.
+
 Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
 Branch: `codex/remaining-system-readiness`. Baseline: `95c91d91`.
 Scope: all five findings in the archived 2026-11-03 score/hub/report critique.
@@ -60,6 +68,6 @@ callback and the primary fallback when no recall entry is available. The new
 visible-primary assertion fails before the fix and passes afterward; the hub,
 resume, layout and motivation suite passes60. Only choose_mode_screen.dart and
 recall_ladder_entry_flow_test.dart differ in Flutter inputs from the full run.
-Final artifact/device evidence follows; version24 is not labelled final visual
-acceptance for the hub. No independent artifact verdict is claimed because that
+Final version25 artifact/device evidence is recorded in the disposition above;
+version24 is not final visual acceptance for the hub. No independent artifact verdict is claimed because that
 reviewer's model quota was exhausted; root retains measured package evidence.

@@ -2,6 +2,19 @@
 
 ## Critique follow-up, 2026-11-03
 
+Final disposition: all five critique issues complete. Source1e6e full5581PASS,
+zero failures and1350 unchanged inputs; final dc740a8e has only one app-file and
+one test-file presentation delta, checked by60 hub tests and clean analysis.
+Signed offlineTrial25 APK/AAB pass packaging/native identity checks. Installed
+hash matches; actual hub now has one filled recommendation, score is Thai and
+original4/4 plus1/1 history remains. Root review and physical acceptance pass;
+the independent artifact worker hit its quota, so no independent artifact verdict
+is claimed. No task-owned build/test/install processes remain. All44 coverage and
+external/human boundaries are recorded in the acceptance ledger below. No new
+local implementation defect remains from this scoped critique. Next external
+acceptance requires genuine provider configuration or owner availability for
+audio/accessibility/device tasks; do not reopen excluded Cloud/payment work.
+
 Scope extended by the owner during verification: account for every existing
 f01-f44 capability. The exact frozen IDs and representative executable tests
 are listed in [all44 acceptance](../../field/2026-11-03-all44-acceptance.md).

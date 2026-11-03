@@ -1,5 +1,13 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
+Latest verification,2026-11-03: [all44 acceptance ledger](2026-11-03-all44-acceptance.md)
+maps every frozen ID to existing executable coverage. Parent source1e6e passes
+full5581; final dc740a8e has a separately verified60-test presentation delta.
+Signed offlineTrial25 is installed with retained data and bounded physical checks.
+The44 Connected classification still means local engineering, not all-provider,
+all-device or Research rollout readiness. Historical receipts below remain bound
+to their own source snapshots.
+
 Current accepted local attestation, 2026-11-01: Wave26 at schema25/45.
 The final source/build identifiers, full regression, analysis, CLI/policy,
 offline-backend, normal main/debug APK and exact-input/independent acceptance

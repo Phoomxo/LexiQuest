@@ -1,5 +1,11 @@
 # Acceptance ledger for the 44 catalog capabilities
 
+Final bounded disposition: all44 existing capabilities have local implementation
+and executable acceptance coverage. The five critique findings are corrected.
+Final app source is `dc740a8eef2f336ee6eac20fa6bf3ab20656c65e`, signed offlineTrial
+version1.0.0+25. It is installed on Vivo V2041 with matching APK hash and retained
+data. This does not certify all44 physical/provider workflows or Research use.
+
 Scope requested after the version23 critique follow-up: complete and verify the
 existing44 capabilities, without duplicating their authorities or adding an
 unapproved feature. Source under test: `1e6e896081f9e5f63342f227ec11c936811be3a9`.
@@ -79,10 +85,16 @@ button when the existing recall entry is composed. Existing callbacks and the
 fallback primary button remain intact. A new assertion reproduces two visible
 filled buttons before the fix; the updated six-file hub regression passes60.
 This two-Dart-file delta is separately verified, not relabelled as a fresh full
-run. Final package/install evidence is recorded after those operations finish.
+run. The final60-case regression and analysis pass. APK/AAB packaging, measured
+signing/native/model checks and root package validation pass. Final device
+inspection shows one filled recommendation and an outlined generic practice
+action, Thai score text and the original Matching4/4 and Definition1/1 history.
+Receipts: final-lineage.json, artifact25-root.json, install25-result.json and
+device25-result.json. Report details were physically checked on24; their source
+is unchanged in the final delta.
 
-Signed offlineTrial24 build passed APK/AAB identity and native/model integrity
-checks. Device update is reconciled separately before physical acceptance.
+Signed offlineTrial24 is retained as intermediate evidence. Final25 is the
+deliverable in `critique35/final-package/lexiquest-1.0.0+25`.
 The independent artifact worker stopped because its model quota was exhausted;
 no independent artifact verdict is claimed for this run. Root verifies retained
 artifact identity and device installation directly.

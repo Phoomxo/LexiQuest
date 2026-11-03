@@ -12,7 +12,15 @@ Continue local verification and Android packaging independently. No account or
 resource was deleted. Provider hosting/acceptance remains unresolved; no
 replacement service or commercial readiness is implied by this scope reduction.
 
-Latest bounded offline acceptance: nonpaid-trial34/final-package, source
+Latest bounded offline acceptance: critique35/final-package, source `dc740a8e`,
+version `1.0.0+25`, installed with matching hash and retained data. Full5581PASS
+belongs to parent1e6e; the final two-file hub/test delta has60PASS and clean
+analysis. All five critique findings are closed. See
+[all44 acceptance and boundaries](2026-11-03-all44-acceptance.md) and
+[critique follow-up](2026-11-03-critique-follow-up.md). Real payments and
+Cloud A/Billing remain excluded; provider/device/Research authority is separate.
+
+Previous bounded offline acceptance: nonpaid-trial34/final-package, source
 `be5e7668`, version `1.0.0+23`, installed in place with matching hash. Full
 Flutter5575PASS on app-identical parent1bb6; final CLI150PASS and field237PASS.
 Independent artifact review ACCEPT; device update/resume and report UI verified.
