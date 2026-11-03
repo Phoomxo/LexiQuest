@@ -22,17 +22,18 @@ public rollout, real payments/provider and real research enrollment are excluded
 
 | Card | Owner/write set | Acceptance | State |
 |---|---|---|---|
-| Permission handoff | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, cancel, owner guards | OPEN: signed27 first grant fails; isolated fixture passes |
+| Reminder composition | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, Home-return form restoration, cancel and delivery | OPEN: race fix has74 focused and5620 full host passes; signed30 UI pending |
 | Scratchpad | scratchpad agent: typed_cloze_scratchpad test and demonstrated affected UI only | late-inset regression; Save hit-test and frozen ink ACK preserved | Host and Android repeats pass; old cause unconfirmed |
 | Catalog gaps | map agent: read-only source/tests/44 ledger | exact existing coverage and missing workflows | Done |
 | Native modes | root: new integration entry | five exercise kinds through durable restart/history on synthetic Android | PASS |
 | Ladder/streak/rewards/accessibility | disjoint test files | real route dispatch, multi-day canonical facts, earned coin purchase/equip, scoped semantics/layout | PASS bounded checks |
-| Integration | root: docs/runner/artifacts | focused then full host, analysis, native checks and review | Running |
+| Integration | root: docs/runner/artifacts | focused then full host, analysis, native checks and review | Host5620/native45 and signed29 packaging pass; signed30 acceptance pending |
 
-Throughput checkpoint: three disjoint investigation slices run concurrently.
-Root serializes every Flutter test/build/generator and controls emulator5554.
-Scratchpad agent has the first focused host-test slot. Reminder agent must wait
-for root to run native tests. No physical Vivo or original API35 AVD changes.
+Throughput checkpoint: initial investigation used three disjoint slices. Root
+serializes every Flutter test/build/generator and controls emulator5554. Current
+work has integrated the reminder form-restoration regression/fix and frozen its
+source for serial final verification. Documentation is tracked separately.
+No physical Vivo or original API35 changes.
 Existing untracked critique and failure artifacts remain untouched.
 
 ## Decisions
@@ -186,3 +187,41 @@ Artifact root: `D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/`.
   and no changed hashes. Independent gate/route and native-test reviews accept
   the implementation. Commit this verified source before packaging29; actual
   signed first-grant, Home return and delivery remain the final acceptance.
+- Source `b573113578dd6f5c49241d41cfd4a4836d7bcf5b` packages signed offlineTrial29.
+  Packaging, model runtime integrity and provenance checks pass, with independent
+  artifact review. Manifest: `completion-package/lexiquest-1.0.0+29/release-manifest.json`.
+  APK SHA256 is `81DB36A132C56FE22A8E53D3AA895557BA7DECF5B7970981F7A96EDCD3E200E2`.
+  These checks establish the artifact identity, not acceptance of every workflow.
+- The first signed29 snapshot used an invalid viewport and is not UI acceptance.
+  Corrected display1080x1920 at density480 gives360x640dp for the following checks.
+  Round1 starts off/denied at `complete29-008-off-denied.xml`; actual permission
+  dialog009, first-Save ACK010, Home return011 and cancellation ACK012 pass.
+- After cold restart013, round2 starts off/denied015. Actual permission016 and
+  first-Save ACK017 pass without retry. Home return018 and settled019 then show
+  saved-enabled status but blank time/zone selectors. Back/reopen020 restores
+  stored08:50/Africa/Abidjan; cancellation ACK021 succeeds. The redacted
+  `complete29-round2-log.txt` contains no reminder errors. This is a new observed
+  form-restoration defect; its cause is not yet established by these UI artifacts.
+- Keep f27 OPEN. A deterministic race regression and minimal fix are assigned;
+  signed29 is not accepted. Actual delivery29 was not run. The repaired source
+  requires new focused evidence and upcoming signed30 first-grant, repeated
+  Home-return, cancellation/delivery and artifact checks. Host5619 remains a
+  receipt for its captured source and does not attest subsequent edits.
+- The form-restoration race is now reproduced deterministically in
+  `complete30-hydration-red.log`. Holding the first platform inspection lets
+  `reconcileForeground` emit a watch refresh that overtakes initial loading.
+  The saved summary appears, but the enabled/time/zone draft remains uninitialized.
+  The regression fails with expectedtrue/actualfalse before the correction.
+- After the existing current-read/owner guard, `_load` now computes
+  `initializeDraft = resetDraft || _view == null` before assigning the accepted
+  view. The first accepted load therefore initializes the form even when it is
+  a refresh; later refreshes preserve unsaved user edits. The regression checks
+  an unsaved OFF draft while durable storage remains ON at revision1.
+  `complete30-reminder-green.log` passes74/74, including this race and the
+  existing reminder/ChooseMode checks. Independent gpt-6-astra review accepts
+  the minimal change.
+- Source30 final verification passes through `verify-source30.ps1`.
+  `complete30-analysis.log` reports no issues; `complete30-full-tests.log`
+  passes5620/5620 in14:55. `complete30-full-result.json` records exits0/0,
+  1031 inputs, no changed hashes and completion2026-11-03T10:44:53.8944723Z.
+  f27 stays OPEN pending signed30 UI, cancellation/delivery and artifact checks.

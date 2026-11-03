@@ -8,12 +8,17 @@ Catalog rollout metadata remains unverified; this report does not change it.
 Internal completion requires a reviewed implementation, passing required checks
 on the current source, and an explicit evidence boundary for each capability.
 This ledger covers 44 existing capabilities, not 44 exhaustive device UATs.
-The current full host suite passes 5,619 cases with clean analysis and unchanged
-captured source inputs. It includes the reminder and narrow-screen test changes;
+The captured source for signed29 passes 5,619 host cases with clean analysis and
+unchanged inputs. It includes the reminder and narrow-screen test changes;
 the earlier5,614 receipt remains historical. Native serialization and real
 permission fixtures now pass, as does the expanded45-case Android matrix at
-320dp. Feature f27 remains OPEN pending signed29 composition checks and artifact
-attestation. The isolated fixtures do not substitute for the signed28 failure
+320dp. Signed29 packaging/provenance pass, and first grants pass twice in the
+signed app. Feature f27 remains OPEN after the second Home return leaves its
+time/zone form fields blank despite saved-enabled status. That form race now has
+a deterministic regression and reviewed correction with74 passing focused tests.
+Source30 full verification now passes5,620 cases with clean analysis; signed30
+acceptance remains pending. Isolated
+fixtures do not substitute for the signed28 failure
 that established native SQLite writer contention. The earlier 5,598 host pass
 belongs to source `998171bc` and remains historical evidence.
 
@@ -84,13 +89,46 @@ Test paths in the table are relative to the repository's `test/` directory.
   `complete-reminder-resume-red.log` reproduced two actual ChooseMode failures.
   A separate owner epoch preserves identity rejection across background changes.
   A fresh settings State and lease on resume replace lifecycle-invalidated state.
-  These host tests cover the route repair; signed29 verification remains pending.
+  These host tests cover the route repair; signed29 exposes a further form-state
+  restoration defect below.
 - **Host5619** is `complete-final-full-tests.log`,5,619/5,619 PASS in15:42.
   `complete-final-full-result.json` records `analysisExit: 0`, `testExit: 0`,
   1,031 inputs, `changedInputs: []` and completion at2026-11-03T10:09:51.1720570Z.
   The coordinator froze code/test inputs in `complete-final-source-before.json`
   before this clean analysis and regression. Host5619 replaces Host5614 as the
-  current-source host receipt; it does not attest the pending signed29 artifact.
+  host receipt for source later packaged as signed29. It does not attest edits
+  made after the signed29 form-restoration finding.
+- **Signed29** is offlineTrial29 from `b573113578dd6f5c49241d41cfd4a4836d7bcf5b`.
+  Packaging/model-runtime/provenance checks pass, with independent artifact review.
+  The manifest is `completion-package/lexiquest-1.0.0+29/release-manifest.json`;
+  APK SHA256 is `81DB36A132C56FE22A8E53D3AA895557BA7DECF5B7970981F7A96EDCD3E200E2`.
+  `complete29-apk-runtime.log` records APK release model integrity PASS.
+  The initial invalid-viewport snapshot is excluded. Display correction to
+  1080x1920 at density480 establishes360x640dp for the retained UI observations.
+  Round1 artifacts008-012 show off/denied, actual permission, first-Save ACK,
+  successful Home return and cancellation ACK. After cold restart013, artifacts
+  015-017 show a second first-Save ACK after actual permission, without retry.
+  However, `complete29-018-home-return2.xml` and019 settled show saved-enabled
+  state with blank time/zone selectors. `complete29-020-reopened.xml` restores
+  stored08:50/Africa/Abidjan after Back/reopen;021 cancels successfully.
+  `complete29-round2-log.txt` contains no reminder errors. The observed form
+  restoration failure remains open; these artifacts alone do not prove its cause.
+  Actual notification delivery29 was not run. Signed29 is not accepted as the
+  completed f27 workflow despite successful first grants and artifact identity.
+- **Hydration74** is `complete30-reminder-green.log`,74/74 PASS after the
+  deterministic failure in `complete30-hydration-red.log`. The test holds initial
+  inspection while actual runtime foreground reconciliation emits a refresh;
+  that newer read overtakes initial loading and previously left the form draft
+  uninitialized. `_load` now initializes the draft on its first accepted view,
+  after the current-read/owner guard, even when that read is a refresh. Later
+  refreshes preserve unsaved edits. The test keeps an unsaved OFF draft while
+  stored state stays ON at revision1. Independent gpt-6-astra review accepts
+  the correction. This focused host pass does not attest signed30 UI.
+- **Host5620** is `complete30-full-tests.log`,5,620/5,620 PASS in14:55 after the
+  form-race correction. `complete30-analysis.log` reports no issues.
+  `complete30-full-result.json` records exits0/0,1,031 inputs, `changedInputs: []`
+  and completion2026-11-03T10:44:53.8944723Z. This is the current source receipt
+  from `verify-source30.ps1`; it does not yet attest a signed30 artifact or UI.
 - **Focused9** is `complete-boundary-focused.log`,9/9 PASS for corrected date
   boundaries, canonical journeys and the two formerly missed History taps.
   The earlier failing logs remain available.
@@ -111,7 +149,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f04 | Content version and quality control | `features/learning_packs/rich_lexical_codec_test.dart` | Observed26; validation does not certify editorial quality. |
 | f05 | Unified lesson shell | `widgets/lesson_scaffold_test.dart` | Observed26; Accessibility6 for shared shell. |
 | f06 | Flashcard mode | `screens/srs_review_callers_test.dart` | Observed26; prior bounded physical speech/reveal confirmation is separate. |
-| f07 | Meaning quiz | `screens/configured_quiz_recovery_screen_test.dart` | Observed26; shared SRS overflow correction is covered by current Host5619. |
+| f07 | Meaning quiz | `screens/configured_quiz_recovery_screen_test.dart` | Observed26; shared SRS overflow correction is covered by current Host5620. |
 | f08 | Definition quiz | `screens/definition_quiz_screen_test.dart` | Observed26; authored-content boundary remains. |
 | f09 | Cloze test | `screens/fill_in_the_blanks_screen_test.dart` | Earlier synthetic Android pass plus Native45 typed/choice resume; no live generation claim. |
 | f10 | Matching mode | `screens/matching_entry_history_flow_test.dart` | Observed26; Native45 actual matching entry, recognition is not recall mastery. |
@@ -131,7 +169,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f24 | Automatic learning-time capture | `screens/native_learning_time_test.dart` | Host baseline and Observed26 with locale issue; root Thai locale corrected27. Opt-in capture remains separate from waiting time. |
 | f25 | Learning calendar/weekly analytics | `screens/learning_calendar_screen_test.dart` | Observed27 Thai UI and retained20 answers/18 correct/seven sessions. |
 | f26 | Goal/test countdown | `screens/learning_profile_editor_screen_test.dart` | Observed26 invalid-duration rejection, valid goal/countdown and exit guards. |
-| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | OPEN. Diagnostic28 proves native SQLite writer contention. Serialization repair now has Reminder gate32/2 and Permission final1 evidence; Reminder resume62 covers background-route repair. Signed29 actual composition and final manifest remain pending. Earlier retry ACK and delivery pass; reboot/OEM battery behavior remains separate. |
+| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | OPEN. Native contention/route repairs have gate32/2, Permission final1 and resume62 evidence. Signed29 first grants pass twice but exposes a form race on Home return. Hydration74 and Host5620 verify the fix and preserve unsaved edits. Signed30 checks pending; delivery29 not run. Reboot/OEM battery behavior remains separate. |
 | f28 | Learning assessment/progress comparison | `screens/pre_post_assessment_screen_test.dart` | Earlier synthetic Android pass; real authority, enrollment and research efficacy remain unapproved. |
 | f29 | Evidence-based quest | `features/motivation/quest_screen_test.dart` | Observed26; canonical eligible facts only. |
 | f30 | Gentle streak | `features/motivation/streak_learning_integration_test.dart` | Native45 canonical two-day Today UI and gap reset; controlled fixture clock, not elapsed real days. |
@@ -152,25 +190,30 @@ Test paths in the table are relative to the repository's `test/` directory.
 
 ## Pending final checks and exclusions
 
-Host5619 and its clean analysis attest the current frozen source; Scratchpad
+Host5620 and its clean analysis attest the corrected source before signed30; Scratchpad
 repeat remains complete for its captured inputs. Diagnostic28 identifies native
 writer contention in the first-grant path.
 The adapter repair requires `ownerWrites`, rejects an ambient transaction and
 holds `database.exclusively` around native IPC. It does not extend timeouts or add
 retries. Reminder gate32/2 and Permission final1 now pass; Native45 also passes
 on the corrected320dp emulator setup. Review accepted the serialization repair.
-Feature f27 remains OPEN pending signed29 repetition of first grant, background
-return and reminder delivery, plus the final artifact manifest. The separate
-background-route repair has Reminder resume62 host evidence; signed composition
-is still required.
+Signed29 artifact provenance and two first-grant/cancel rounds pass. Feature f27
+remains OPEN after its second Home return displays blank time/zone while the
+saved-enabled summary persists. Reopening restores the stored values. Hydration74
+now confirms a refresh overtaking initial form initialization and verifies the
+reviewed correction without overwriting subsequent unsaved edits. Source30 full
+verification passes5620 cases. Upcoming signed30 must repeat grant/Home-return/cancel
+and actual delivery checks.
 
-The current full host run passes. Final signed artifact attestation remains pending.
+The captured full host run passes. Signed29 packaging is attested, but its full
+reminder workflow is not accepted and actual delivery29 was not run. Subsequent
+fixes need new verification and signed30 artifact/workflow attestation.
 Isolated fixtures cannot substitute for the failing signed
 workflow. Scratchpad repeats establish the tested behavior, not the unobserved
 cause of its original intermittent failure.
 
 The shared SRS overflow has a reproduced failure and corrected arithmetic with
-focused checks and Host5619 coverage. Other added tests close workflow gaps
+focused checks and Host5620 coverage. Other added tests close workflow gaps
 without adding another learning, reward or research authority. Ordinary nonparticipant journeys must
 leave research rows/events/outbox/uploads empty; the new canonical journeys
 explicitly check zero research rows.

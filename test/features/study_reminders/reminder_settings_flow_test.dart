@@ -124,6 +124,85 @@ void main() {
   );
 
   testWidgets(
+    'refresh overtaking initial load initializes saved draft and preserves later edits',
+    (tester) async {
+      final f = await _open(tester);
+      final firstInspection = Completer<void>();
+      try {
+        await motivationPresentationIo(
+          tester,
+          () => f.runtime.repository.writeForOwner(
+            ownerId: configuredOwnerId,
+            baseRevision: 0,
+            choice: const StudyReminderChoice(
+              enabled: true,
+              minuteOfDay: 1140,
+              timezoneId: 'Asia/Bangkok',
+            ),
+            updatedAtUtc: f.h.now,
+            stillCurrent: () => true,
+          ),
+        );
+        f.platform.nextInspection = firstInspection;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: StudyReminderSettingsScreen(
+              runtime: f.runtime,
+              ownerId: configuredOwnerId,
+            ),
+          ),
+        );
+        await _wait(tester, () => f.platform.nextInspection == null);
+        await motivationPresentationIo(tester, f.runtime.reconcileForeground);
+        await _wait(
+          tester,
+          () => find.text('ค่าที่บันทึก: เปิดการเตือน').evaluate().isNotEmpty,
+        );
+        final enabled = find.byKey(const Key('reminder-enabled'));
+        final time = find.byKey(const Key('reminder-time'));
+        expect(tester.widget<SwitchListTile>(enabled).value, isTrue);
+        expect(find.text('Asia/Bangkok'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: time,
+            matching: find.text(
+              const TimeOfDay(hour: 19, minute: 0).format(tester.element(time)),
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('เลือกเวลา'), findsNothing);
+        expect(find.text('เลือกเขตเวลา'), findsNothing);
+
+        firstInspection.complete();
+        await tester.pump();
+        await tester.tap(enabled);
+        await tester.pump();
+        expect(tester.widget<SwitchListTile>(enabled).value, isFalse);
+        final inspections = f.platform.inspections;
+        await motivationPresentationIo(tester, f.runtime.reconcileForeground);
+        await _wait(tester, () => f.platform.inspections >= inspections + 2);
+        await tester.pump();
+        expect(tester.widget<SwitchListTile>(enabled).value, isFalse);
+        expect(find.text('Asia/Bangkok'), findsOneWidget);
+        final saved = await motivationPresentationIo(
+          tester,
+          () => f.runtime.repository.readForOwner(
+            ownerId: configuredOwnerId,
+            stillCurrent: () => true,
+          ),
+        );
+        expect(saved.enabled, isTrue);
+        expect(saved.revision, 1);
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (!firstInspection.isCompleted) firstInspection.complete();
+        await closeMotivationPresentation(tester, f.close);
+      }
+    },
+  );
+
+  testWidgets(
     'actual timezone popup selection keeps settings usable through explicit save',
     (tester) async {
       final f = await _open(tester);
@@ -795,16 +874,24 @@ final class _Fixture {
 
 final class _Platform implements StudyReminderPlatform {
   int permissionRequests = 0;
+  int inspections = 0;
   int? alarmRevision;
   bool allowed = true;
+  Completer<void>? nextInspection;
   Completer<bool>? permissionGate;
   final requestStarted = Completer<void>();
   @override
-  Future<StudyReminderPlatformStatus> inspect() async =>
-      StudyReminderPlatformStatus(
-        supported: true,
-        notificationsAllowed: allowed,
-      );
+  Future<StudyReminderPlatformStatus> inspect() async {
+    inspections++;
+    final pending = nextInspection;
+    nextInspection = null;
+    await pending?.future;
+    return StudyReminderPlatformStatus(
+      supported: true,
+      notificationsAllowed: allowed,
+    );
+  }
+
   @override
   Future<StudyReminderPlatformStatus> requestPermission() async {
     permissionRequests++;

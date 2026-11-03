@@ -132,10 +132,11 @@ class _StudyReminderSettingsScreenState
         stillCurrent: current,
       );
       if (!current()) return;
+      final initializeDraft = resetDraft || _view == null;
       setState(() {
         _view = view;
         _loading = false;
-        if (resetDraft) {
+        if (initializeDraft) {
           _enabled = view.setting.enabled;
           _minute = view.setting.minuteOfDay;
           _zone = view.setting.timezoneId;
