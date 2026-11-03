@@ -74,6 +74,29 @@ the device. Offline configuration keeps remote services disabled. No actual
 provider or Research service was invoked. Human native audio confirmation is
 pending; do not infer audible quality from an enabled control.
 
+## Audible retest
+
+The owner reports no audible sound on version26. This supersedes the pending
+human result; audio acceptance has not passed. Read-only device inspection shows
+Google TTS selected, media unmuted at 4/15 and routed to Bluetooth A2DP. The owner
+expects the phone speaker. With that preference, Bluetooth is temporarily disabled
+for diagnosis, speaker routing is confirmed and media volume set to 4/15 before
+replaying `book`. The owner still reports no sound, so Bluetooth routing alone
+does not explain the failure.
+
+Android's own default-language sample is audible, but its US English sample is
+not. Google TTS lists the US English voice data as installed. Selecting Voice I
+in its US English voice selector produces an audible English sample, confirmed
+by the owner. The temporary locale override is restored to the system language
+(`tts_default_locale=com.google.android.tts:`). The application is reopened on
+the same version26 `book` card for another human listening/replay check.
+
+The plugin acknowledgement is not a completion event. Code review identifies
+late engine errors as a separate visibility limitation, but does not establish
+one here. Android's audio history shows TTS playback tracks starting and ending.
+Changing completion semantics would require shared callback ownership and
+cancellation tests; no speculative callback or audio-focus patch is applied.
+
 Physical captures are retained under
 `D:\LexiQuest-Storage\maintenance\2026-11-03\critique35\audio36-*`.
 The `audio36-played` filename records an editor navigation, not audio playback.
