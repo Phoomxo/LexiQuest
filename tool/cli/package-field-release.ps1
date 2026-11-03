@@ -141,19 +141,24 @@ try {
         $dartDefines = @(Get-LexiQuestReleaseDartDefines -Configuration $commercialConfiguration -SourceCommit $sourceCommit)
     }
     $modelSha256 = Get-LexiQuestPinnedModelSha256 -RepoRoot $repoRoot
-    & flutter build apk --release --no-pub `
+    $lockedDependencies = (Get-FileHash -LiteralPath 'pubspec.lock' -Algorithm SHA256).Hash
+    # Flutter regenerates release plugin registrations only when pub is enabled.
+    & flutter build apk --release `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
         @dartDefines
     if ([int]$LASTEXITCODE -ne 0) {
         throw 'Flutter release APK build failed.'
     }
-    & flutter build appbundle --release --no-pub `
+    & flutter build appbundle --release `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
         @dartDefines
     if ([int]$LASTEXITCODE -ne 0) {
         throw 'Flutter release AAB build failed.'
+    }
+    if ((Get-FileHash -LiteralPath 'pubspec.lock' -Algorithm SHA256).Hash -cne $lockedDependencies) {
+        throw 'Dependency lock changed during the build; review and commit it before packaging.'
     }
 
     $sourceApk = Join-Path $repoRoot `

@@ -97,3 +97,9 @@ No physical Vivo actions. Use the existing task AVDs with synthetic data.
   neutral cancellation wording and owner-ABA assertion. No new scoped comments
   require removal. Internal offlineTrial27 packaging is the next step, not a
   public release approval.
+- Internal release build exposed a pipeline defect: `--no-pub` retained the
+  debug `integration_test` plugin registration while release Gradle excluded
+  that dev dependency. Installed Flutter 3.44.7 source confirms platform tooling
+  regeneration returns early when pub is disabled. Let both release builds run
+  Flutter's normal regeneration, then require the dependency-lock hash to remain
+  unchanged before packaging. Preserve `repair-package.log` as the failed build.
