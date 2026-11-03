@@ -1,5 +1,11 @@
 # Voice and device acceptance follow-up
 
+Latest bounded verdict: the owner confirms audible `book` and successful replay
+on signed version26 after choosing Google US English Voice I, restarting only
+LexiQuest and setting speaker media volume to 7/15. Earlier silent results remain
+below as history. These combined interventions do not isolate one sole cause.
+No further runtime code was changed for this device diagnosis.
+
 Baseline: `6118e3ae`, application `dc740a8e`, installed offlineTrial 25.
 Worktree: cycle12-release/LexiQuest; branch: codex/remaining-system-readiness.
 Cloud A, Billing, payments, public rollout and real Research enrollment remain
@@ -96,6 +102,22 @@ late engine errors as a separate visibility limitation, but does not establish
 one here. Android's audio history shows TTS playback tracks starting and ending.
 Changing completion semantics would require shared callback ownership and
 cancellation tests; no speculative callback or audio-focus patch is applied.
+
+The first app retest after voice selection remains silent according to the owner.
+Root then leaves the card, force-stops only `com.lexiquest.app`, cold-starts the
+same installed26 and re-enters the retained local owner. Media volume is raised
+from 4/15 to 7/15. The owner explicitly confirms hearing `book` and replaying it.
+`audio38-confirmed.xml` shows the original card with enabled Listen and Stop.
+The system-language setting is restored; TalkBack remains disabled as before.
+Bluetooth remains off for the requested phone-speaker playback and volume is 7/15.
+No app data was cleared, no microphone recording or live provider call occurred.
+
+This closes this bounded native listening/replay check, not all-device audio,
+Bluetooth playback, all44 workflows or late TTS-error handling. The existing
+start-acknowledgement contract remains unchanged. Future silent-speech diagnosis
+should distinguish routing, volume, engine voice selection and stale engine state
+before changing code; the successful combined intervention is not proof of a
+single defect. No Flutter suite is rerun for these documentation-only changes.
 
 Physical captures are retained under
 `D:\LexiQuest-Storage\maintenance\2026-11-03\critique35\audio36-*`.

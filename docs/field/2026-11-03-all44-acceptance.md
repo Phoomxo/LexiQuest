@@ -8,6 +8,10 @@ evidence below as historical; do not interpret it as working flashcard audio.
 The owner confirms the bounded version25 TalkBack read/reveal workflow. Native
 speech acceptance is recorded separately for version26.
 
+The subsequent version26 check now has owner confirmation of audible `book` and
+successful replay on Vivo's speaker at 7/15 after selecting Google US English
+Voice I and restarting the app. This remains a bounded native-audio check.
+
 Final bounded disposition: all44 existing capabilities have local implementation
 and executable acceptance coverage. The five critique findings are corrected.
 Final app source is `dc740a8eef2f336ee6eac20fa6bf3ab20656c65e`, signed offlineTrial
