@@ -28,6 +28,28 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
   String? _error;
   bool _invalidated = false;
   String _text(String th, String en) => widget.languageCode == 'en' ? en : th;
+
+  String _queuedAtLabel(DateTime queuedAtUtc) {
+    final local = queuedAtUtc.toLocal();
+    final date =
+        '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+    final time =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return _text(
+      'บันทึกวันที่ $date เวลา $time · เวลาบนอุปกรณ์',
+      'Saved $date at $time · device time',
+    );
+  }
+
+  String _sourceLabel(ContentReportTarget target) => switch (target.kind) {
+    'ownedWord' => _text('คำศัพท์ของคุณ', 'Your vocabulary'),
+    'packEntry' => _text('คำศัพท์ในแพ็กการเรียน', 'Learning pack entry'),
+    'aiOutput' => _text('เนื้อหาแบบฝึกจาก AI', 'AI exercise content'),
+    'tutorReply' => _text('คำตอบจากผู้ช่วย AI', 'AI tutor reply'),
+    'readingDocument' => _text('เอกสารฝึกอ่าน', 'Reading document'),
+    _ => _text('เนื้อหาที่รายงาน', 'Reported content'),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -197,7 +219,9 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
   ) => ExpansionTile(
     key: ValueKey('content-report-row-${row.payload.reportId}'),
     title: Text(wordReportReasonLabel(row.payload.reason, widget.languageCode)),
-    subtitle: Text(row.payload.queuedAtUtc.toIso8601String()),
+    subtitle: Text(
+      '${_sourceLabel(row.payload.target)}\n${_queuedAtLabel(row.payload.queuedAtUtc)}',
+    ),
     childrenPadding: const EdgeInsets.only(bottom: 16),
     expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -210,8 +234,25 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
       if (row.payload.comment != null) SelectableText(row.payload.comment!),
       ContentReportStatus(record: row, languageCode: widget.languageCode),
       ExpansionTile(
-        title: Text(_text('ข้อมูลต้นทางที่แนบ', 'Attached source facts')),
-        children: [SelectableText(row.payload.target.snapshotJson)],
+        key: ValueKey('content-report-source-${row.payload.reportId}'),
+        title: Text(
+          _text(
+            'รายละเอียดต้นทางสำหรับตรวจสอบ',
+            'Source details for verification',
+          ),
+        ),
+        subtitle: Text(
+          _text(
+            'ดูข้อมูลอ้างอิงที่แนบกับรายงาน',
+            'View the attached reference data',
+          ),
+        ),
+        children: [
+          SelectableText(
+            '${_text('เวลาที่บันทึก', 'Saved at')} (UTC) ${row.payload.queuedAtUtc.toIso8601String()}',
+          ),
+          SelectableText(row.payload.target.snapshotJson),
+        ],
       ),
       if (_busyId == row.payload.reportId) const LinearProgressIndicator(),
       if (row.acknowledgement == null)

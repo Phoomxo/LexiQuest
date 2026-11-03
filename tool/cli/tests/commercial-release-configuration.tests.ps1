@@ -53,6 +53,55 @@ function Expect-Rejected([object]$Value, [string]$Message, [string]$ReleaseProfi
     Assert-True $rejected $Message
 }
 try {
+    $offline = New-LexiQuestOfflineTrialConfiguration -Version '1.0.0+23'
+    $offlineRoundTrip = Read-Fixture $offline.Value 'offlineTrial'
+    Assert-True ($offlineRoundTrip.Json -ceq $offline.Json -and $offlineRoundTrip.Sha256 -ceq $offline.Sha256) 'offline trial configuration has stable canonical identity without service inputs'
+    $offlineDefines = @(Get-LexiQuestReleaseDartDefines -Configuration $offline -SourceCommit ('a' * 40))
+    foreach ($name in @('CLOUD_SYNC_ENABLED', 'BILLING_ENABLED', 'CONTENT_REPORTS_ENABLED', 'GOOGLE_SIGN_IN_ENABLED', 'ACCOUNT_DELETION_ENABLED', 'ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED', 'APP_CHECK_DEBUG')) {
+        Assert-True (@($offlineDefines | Where-Object { $_ -ceq "--dart-define=LEXIQUEST_$name=false" }).Count -eq 1) "offline trial explicitly disables $name"
+    }
+    Assert-True ($offlineDefines -contains '--dart-define=LEXIQUEST_AI_API_URL=' -and $offlineDefines -contains '--dart-define=LEXIQUEST_VOICE_API_URL=') 'offline trial has no remote content or voice origin'
+    Assert-True ($offlineDefines -contains ('--dart-define=LEXIQUEST_BUILD_ID=' + ('a' * 40) + '-' + $offline.Sha256)) 'offline build identity binds source and fixed configuration'
+    Assert-True (@($offlineDefines | Where-Object { $_ -match '=true$|RESEARCH|SECRET|PRODUCT|ENTITLEMENT' }).Count -eq 0) 'offline trial grants no online or Research capability'
+    foreach ($extra in @('aiApiUrl', 'cloudSyncEnabled', 'billing', 'secret')) {
+        $badOffline = $offline.Json | ConvertFrom-Json
+        $badOffline | Add-Member -NotePropertyName $extra -NotePropertyValue 'forbidden'
+        Expect-Rejected $badOffline 'offline configuration rejects service, paid or secret fields' 'offlineTrial'
+    }
+    foreach ($version in @('1.0.0+18', '1.0.0+0', '1.0.0+2147483648', '1.0.0+23 --dart-define=unsafe')) {
+        $rejected = $false
+        try { $null = New-LexiQuestOfflineTrialConfiguration -Version $version } catch { $rejected = $true }
+        Assert-True $rejected 'offline version advances beyond retained baseline and stays a valid Android version code'
+    }
+    Expect-Rejected $offline.Value 'offline configuration cannot be relabeled connected' 'fieldTrial'
+    Expect-Rejected $offline.Value 'offline configuration cannot be relabeled commercial'
+    $offlinePackage = Join-Path $taskTemp 'offline-package'
+    New-Item -ItemType Directory -Path $offlinePackage | Out-Null
+    foreach ($name in @('candidate.apk', 'candidate.aab', 'release-manifest.json')) {
+        [IO.File]::WriteAllText((Join-Path $offlinePackage $name), 'synthetic package-shape fixture, not an Android artifact')
+    }
+    $offlineConfigPath = Join-Path $offlinePackage 'release-configuration.json'
+    [IO.File]::WriteAllText($offlineConfigPath, $offline.Json, [Text.UTF8Encoding]::new($false))
+    $offlineManifest = [pscustomobject]@{
+        schemaVersion = 3; releaseProfile = 'offlineTrial'; sourceCommit = ('a' * 40)
+        artifact = [pscustomobject]@{ apkPath = 'candidate.apk'; aabPath = 'candidate.aab'; packageName = 'com.lexiquest.app'; versionName = '1.0.0'; versionCode = 23; buildId = Get-LexiQuestReleaseBuildId ('a' * 40) $offline.Sha256 }
+        configuration = [pscustomobject]@{ path = 'release-configuration.json'; sha256 = $offline.Sha256 }
+        participantDocuments = @()
+    }
+    Assert-True (@(Get-LexiQuestParticipantDocumentNames -ReleaseProfile offlineTrial).Count -eq 0) 'offline packaging makes no participant protocol claims'
+    Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -eq 0) 'offline package shape accepts its exact source/config binding without participant documents'
+    $offlineManifest.releaseProfile = 'fieldTrial'
+    Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -gt 0) 'offline package cannot be relabeled as a connected trial'
+    $offlineManifest.releaseProfile = 'offlineTrial'
+    [IO.File]::AppendAllText($offlineConfigPath, ' ')
+    Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -gt 0) 'offline package rejects noncanonical or tampered configuration bytes'
+    [IO.File]::WriteAllText($offlineConfigPath, $offline.Json, [Text.UTF8Encoding]::new($false))
+    $offlineManifest.PSObject.Properties.Remove('configuration')
+    Assert-True (@(Test-LexiQuestReleasePackage -PackagePath $offlinePackage -Manifest $offlineManifest).Count -gt 0) 'offline package cannot strip its configuration binding'
+    $offlineEvidenceErrors = @(Test-LexiQuestResolvedFieldReleaseEvidence -Evidence ([pscustomobject]@{ schemaVersion = 3; releaseProfile = 'offlineTrial' }) -ActualApkSha256 ('a' * 64) -ActualCertificateSha256 ('b' * 64) -ExpectedCertificateSha256 ('b' * 64) -ParticipantPackagePath $offlinePackage)
+    Assert-True ($offlineEvidenceErrors.Count -eq 1 -and $offlineEvidenceErrors[0] -match 'does not establish connected field or Research acceptance') 'offline packaging is explicitly not connected field or Research acceptance'
+    $offlineReferencedErrors = @(Test-LexiQuestReferencedFieldReleaseEvidence -Evidence ([pscustomobject]@{ schemaVersion = 3; releaseProfile = 'offlineTrial' }) -ActualApkSha256 ('a' * 64) -ActualCertificateSha256 ('b' * 64) -ExpectedCertificateSha256 ('b' * 64) -ParticipantPackagePath $offlinePackage -EvidenceRootPath $taskTemp)
+    Assert-True ($offlineReferencedErrors.Count -eq 1 -and $offlineReferencedErrors[0] -match 'does not establish connected field or Research acceptance') 'referenced field verifier rejects offline acceptance before reading participant records'
     $missingRetention = New-Configuration
     $missingRetention.Remove('accountDeletionRecoveryRetentionHours')
     Expect-Rejected $missingRetention 'public configuration requires an explicit account deletion recovery retention'
@@ -308,13 +357,14 @@ try {
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
     $start.EnvironmentVariables['PATH'] = $fakeBin + ';' + $env:PATH
-    foreach ($invalidCapability in @('origin', 'deletionRetention', 'trialPaid', 'trialCapability')) {
+    foreach ($invalidCapability in @('origin', 'deletionRetention', 'trialPaid', 'trialCapability', 'offlineConfiguration')) {
         $bad = New-Configuration
         $profile = 'publicProduction'
         $expectedError = 'AI API must be a public HTTPS origin'
         if ($invalidCapability -eq 'origin') { $bad.aiApiUrl = 'http://api.lexiquest.app' }
         elseif ($invalidCapability -eq 'deletionRetention') { $bad.accountDeletionRecoveryRetentionHours = 0; $expectedError = 'Account deletion recovery retention must be an integer from 1 to 720 hours' }
         elseif ($invalidCapability -eq 'trialPaid') { $profile = 'fieldTrial'; $expectedError = 'Trial billing configuration contains missing or unsupported fields' }
+        elseif ($invalidCapability -eq 'offlineConfiguration') { $profile = 'offlineTrial'; $expectedError = 'Offline trial does not accept a ConfigurationPath' }
         else { $profile = 'fieldTrial'; $bad.billing = [ordered]@{ enabled = $false }; $bad.cloudSyncEnabled = $false; $expectedError = 'Connected field trial requires cloud sync and content reports' }
         $start.Arguments = '-NoProfile -NonInteractive -File "' + $packager + '" -ReleaseProfile ' + $profile + ' -Version 1.0.0+19 -ConfigurationPath "' + $configurationPath + '" -OutputPath "' + (Join-Path $taskTemp 'output') + '"'
         [System.IO.File]::WriteAllText($configurationPath, ($bad | ConvertTo-Json -Depth 8))

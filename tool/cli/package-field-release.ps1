@@ -3,7 +3,7 @@
 param(
     [string]$OutputPath = 'build/field-release',
     [string]$Version = '1.0.0+1',
-    [ValidateSet('fieldTrial', 'publicProduction')]
+    [ValidateSet('offlineTrial', 'fieldTrial', 'publicProduction')]
     [string]$ReleaseProfile = 'fieldTrial',
     [string]$ConfigurationPath = ''
 )
@@ -17,6 +17,10 @@ if ($Version -notmatch '^\d+\.\d+\.\d+\+\d+$') {
     throw 'Version must use semantic version plus Android build number.'
 }
 $commercialConfiguration = $null
+if ($ReleaseProfile -eq 'offlineTrial') {
+    if (-not [string]::IsNullOrWhiteSpace($ConfigurationPath)) { throw 'Offline trial does not accept a ConfigurationPath or online service configuration.' }
+    $commercialConfiguration = New-LexiQuestOfflineTrialConfiguration -Version $Version
+}
 if ($ReleaseProfile -eq 'publicProduction') {
     if ([string]::IsNullOrWhiteSpace($ConfigurationPath)) { throw 'Public production requires an explicit public ConfigurationPath.' }
 }

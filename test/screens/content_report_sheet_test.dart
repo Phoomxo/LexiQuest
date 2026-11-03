@@ -256,6 +256,59 @@ void main() {
     },
   );
 
+  for (final language in ['th', 'en']) {
+    testWidgets(
+      'inbox shows local time and keeps source evidence behind details in $language',
+      (tester) async {
+        final original = syntheticReport();
+        final queuedAt = DateTime(2026, 11, 3, 9, 5).toUtc();
+        final payload = ContentReportPayload.create(
+          reportId: original.reportId,
+          target: original.target,
+          reason: original.reason,
+          comment: original.comment,
+          queuedAtUtc: queuedAt,
+        );
+        await reports.save(expectedOwnerId: 'owner', payload: payload);
+        final savedJson = queue.rows.values.single.payload.reportJson;
+        await mount(
+          tester,
+          ContentReportInbox(
+            expectedOwnerId: 'owner',
+            reports: reports,
+            ownerChanges: owners.stream,
+            languageCode: language,
+          ),
+        );
+        expect(
+          find.text(
+            language == 'th'
+                ? 'คำตอบจากผู้ช่วย AI\nบันทึกวันที่ 03/11/2026 เวลา 09:05 · เวลาบนอุปกรณ์'
+                : 'AI tutor reply\nSaved 03/11/2026 at 09:05 · device time',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text(payload.target.snapshotJson), findsNothing);
+        await tapKey(tester, 'content-report-row-${payload.reportId}');
+        expect(find.text('Selected synthetic reply'), findsOneWidget);
+        expect(find.text(payload.target.snapshotJson), findsNothing);
+        await tapKey(tester, 'content-report-source-${payload.reportId}');
+        expect(find.text(payload.target.snapshotJson), findsOneWidget);
+        expect(
+          find.text(
+            '${language == 'th' ? 'เวลาที่บันทึก' : 'Saved at'} (UTC) ${queuedAt.toIso8601String()}',
+          ),
+          findsOneWidget,
+        );
+        expect(queue.rows.values.single.payload.reportJson, savedJson);
+        expect(transport.submissions, 0);
+        expect(transport.reads, 0);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
   testWidgets('compact 200 percent sheet remains scrollable without overflow', (
     tester,
   ) async {

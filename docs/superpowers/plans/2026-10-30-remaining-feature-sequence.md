@@ -1,5 +1,35 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Non-paid trial completion, 2026-11-03
+
+Baseline40f7dc25. Intent: complete feasible remaining implementation and silent
+acceptance from the latest review. Real payments, Cloud A/Billing, publication,
+real Research enrollment and uploads remain excluded. Owner deferred listening;
+do not activate TalkBack/audio/microphone. Preserve existing data and untracked work.
+
+Workflow: Frame, Design, Execute bounded units, Review, Attest, Integrate, Learn.
+Definition of done: actual offline packaging has explicit disabled online flags;
+the existing starter content and supported local workflows have source-bound
+checks; confirmed defects are corrected and reviewed; external authority and
+human-dependent acceptance are explicitly unverified rather than fabricated.
+
+Correction to preceding status review: the empty remote download catalog does
+not mean no starter content. bundled_starter_pack.dart already supplies12 words
+through the actual catalog UI. Reuse it and verify its flow; do not duplicate it.
+
+| Card | Owner/write set | Acceptance |
+| --- | --- | --- |
+| OP34 | offline_profile34: package-field-release.ps1, commercial-release-configuration.ps1 and matching tests | Explicit offlineTrial, no endpoint/config requirement or online defaults; preserve connected/public gates; focused PS tests. |
+| UX34 | report_readability34: content_report_inbox.dart and related tests | Local readable timestamp/source presentation; unchanged snapshot, owner, receipt and retry authority; root serial Flutter checks. |
+| DV34 | Root: local evidence only, physical device actions | Silent starter install/practice/history, export/native workflow checks where available; no user data deletion, external sharing, audio or recording. |
+| IN34 | Root: shared plan/report, Git and serial Flutter/build | Review all diffs, focused tests then analysis/full/build when source changes; separate current artifact checks from older22 device evidence. |
+
+Throughput checkpoint: two disjoint writers; root owns device and shared files.
+No concurrent Flutter/build writers. Provider credentials/approved endpoints and
+Research issuer/protocol/consent are still absent. Reuse existing guarded local
+tests; do not provision substitutes or invent approved content/efficacy. External
+acceptance proceeds only when genuine inputs exist. Native GPU voice stays guarded.
+
 ## Real-service and physical-device acceptance, 2026-11-02
 
 Final22 checkpoint, 2026-11-03: implementation `4a77d81a`; full5573PASS/0FAIL,

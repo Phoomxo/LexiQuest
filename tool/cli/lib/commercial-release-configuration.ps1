@@ -33,16 +33,37 @@ function ConvertTo-LexiQuestPublicOrigin {
     return 'https://' + $hostName + $port + '/'
 }
 
+function New-LexiQuestOfflineTrialConfiguration {
+    param([Parameter(Mandatory)][string]$Version)
+    $versionCode = 0L
+    if ($Version -cnotmatch '^\d+\.\d+\.\d+\+([1-9]\d*)$' -or -not [long]::TryParse($Matches[1], [ref]$versionCode) -or $versionCode -le 18 -or $versionCode -gt 2147483647) {
+        throw 'Offline trial version must advance beyond retained baseline 18 with a valid Android version code.'
+    }
+    $value = [pscustomobject][ordered]@{ schemaVersion = 1; packageName = 'com.lexiquest.app'; version = $Version }
+    $json = $value | ConvertTo-Json -Compress
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try { $sha = [BitConverter]::ToString($algorithm.ComputeHash([Text.Encoding]::UTF8.GetBytes($json))).Replace('-', '').ToLowerInvariant() }
+    finally { $algorithm.Dispose() }
+    return [pscustomobject]@{ Value = $value; Json = $json; Sha256 = $sha; ReleaseProfile = 'offlineTrial' }
+}
+
 function Read-LexiQuestReleaseConfiguration {
     param(
         [Parameter(Mandatory)][string]$Path,
-        [ValidateSet('fieldTrial', 'publicProduction')][string]$ReleaseProfile = 'publicProduction'
+        [ValidateSet('offlineTrial', 'fieldTrial', 'publicProduction')][string]$ReleaseProfile = 'publicProduction'
     )
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or (Get-Item -LiteralPath $Path).Length -gt 65536) {
         throw 'A bounded public release configuration file is required.'
     }
     try { $raw = ConvertFrom-LexiQuestCommercialJson (Get-Content -LiteralPath $Path -Raw -Encoding utf8) }
     catch { throw 'Release configuration must be valid JSON.' }
+    if ($ReleaseProfile -eq 'offlineTrial') {
+        Assert-LexiQuestCommercialKeys $raw @('schemaVersion', 'packageName', 'version') 'Offline trial configuration'
+        if (($raw.schemaVersion -isnot [int] -and $raw.schemaVersion -isnot [long]) -or $raw.schemaVersion -ne 1 -or $raw.packageName -cne 'com.lexiquest.app' -or $raw.version -isnot [string]) {
+            throw 'Offline trial schema, package or version is unsupported.'
+        }
+        return New-LexiQuestOfflineTrialConfiguration -Version $raw.version
+    }
     Assert-LexiQuestCommercialKeys $raw @('schemaVersion', 'packageName', 'version', 'minimumPreviousVersionCode', 'aiApiUrl', 'voiceMode', 'voiceApiUrl', 'cloudSyncEnabled', 'contentReportsEnabled', 'accountDeletionRecoveryRetentionHours', 'billing') 'Release configuration'
     if (($raw.schemaVersion -isnot [int] -and $raw.schemaVersion -isnot [long]) -or $raw.schemaVersion -ne 1 -or $raw.packageName -cne 'com.lexiquest.app') {
         throw 'Release configuration schema or Android package is unsupported.'
@@ -140,6 +161,21 @@ function Get-LexiQuestReleaseDartDefines {
     param([Parameter(Mandatory)][object]$Configuration, [Parameter(Mandatory)][string]$SourceCommit)
     $value = $Configuration.Value
     $buildId = Get-LexiQuestReleaseBuildId $SourceCommit $Configuration.Sha256
+    if ($Configuration.ReleaseProfile -eq 'offlineTrial') {
+        return @(
+            '--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=false'
+            '--dart-define=LEXIQUEST_BILLING_ENABLED=false'
+            '--dart-define=LEXIQUEST_CONTENT_REPORTS_ENABLED=false'
+            '--dart-define=LEXIQUEST_GOOGLE_SIGN_IN_ENABLED=false'
+            '--dart-define=LEXIQUEST_ACCOUNT_DELETION_ENABLED=false'
+            '--dart-define=LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED=false'
+            '--dart-define=LEXIQUEST_APP_CHECK_DEBUG=false'
+            '--dart-define=LEXIQUEST_AI_API_URL='
+            '--dart-define=LEXIQUEST_VOICE_API_URL='
+            "--dart-define=LEXIQUEST_VERSION=$($value.version)"
+            "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
+        )
+    }
     $defines = @(
         "--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=$($value.cloudSyncEnabled.ToString().ToLowerInvariant())"
         "--dart-define=LEXIQUEST_BILLING_ENABLED=$($value.billing.enabled.ToString().ToLowerInvariant())"
@@ -159,8 +195,9 @@ function Test-LexiQuestReleaseConfigurationBinding {
     param([string]$PackagePath, [object]$Manifest)
     try {
         $profile = [string]$Manifest.releaseProfile
-        if ($profile -notin @('fieldTrial', 'publicProduction')) { throw 'Release configuration profile is unsupported.' }
+        if ($profile -notin @('offlineTrial', 'fieldTrial', 'publicProduction')) { throw 'Release configuration profile is unsupported.' }
         if (-not $Manifest.PSObject.Properties['configuration']) {
+            if ($profile -eq 'offlineTrial') { throw 'Offline trial configuration binding is required.' }
             if ($profile -eq 'publicProduction') { throw 'Commercial package configuration binding is required.' }
             if ($Manifest.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or $Manifest.artifact.buildId -cne $Manifest.sourceCommit) { throw 'Legacy field-trial artifact must use its exact source commit as build ID.' }
             return @()

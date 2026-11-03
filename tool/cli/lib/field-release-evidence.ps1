@@ -840,10 +840,11 @@ function Test-LexiQuestAabEntryCoverage {
 function Get-LexiQuestParticipantDocumentNames {
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('fieldTrial', 'publicProduction')]
+        [ValidateSet('offlineTrial', 'fieldTrial', 'publicProduction')]
         [string]$ReleaseProfile
     )
 
+    if ($ReleaseProfile -eq 'offlineTrial') { return @() }
     $documents = @(
         'install-and-update.md',
         'privacy-and-consent-v1.md',
@@ -969,8 +970,8 @@ function Test-LexiQuestReleasePackage {
         $errors.Add('release package schemaVersion must be 3.')
     }
     $profile = [string]$Manifest.releaseProfile
-    if ($profile -notin @('fieldTrial', 'publicProduction')) {
-        $errors.Add('releaseProfile must be fieldTrial or publicProduction.')
+    if ($profile -notin @('offlineTrial', 'fieldTrial', 'publicProduction')) {
+        $errors.Add('releaseProfile must be offlineTrial, fieldTrial or publicProduction.')
         return $errors.ToArray()
     }
     foreach ($configurationError in @(Test-LexiQuestReleaseConfigurationBinding -PackagePath $PackagePath -Manifest $Manifest)) {
@@ -1084,6 +1085,10 @@ function Test-LexiQuestResolvedFieldReleaseEvidence {
         $errors.Add('schemaVersion must be 3.')
     }
     $releaseProfile = [string]$Evidence.releaseProfile
+    if ($releaseProfile -eq 'offlineTrial') {
+        $errors.Add('Offline trial packaging does not establish connected field or Research acceptance.')
+        return $errors.ToArray()
+    }
     if ($releaseProfile -notin @('fieldTrial', 'publicProduction')) {
         $errors.Add('releaseProfile must be fieldTrial or publicProduction.')
     }
@@ -1685,6 +1690,9 @@ function Test-LexiQuestReferencedFieldReleaseEvidence {
     $errors = [System.Collections.Generic.List[string]]::new()
     if ([int]$Evidence.schemaVersion -ne 3) {
         return @('schemaVersion must be 3.')
+    }
+    if ([string]$Evidence.releaseProfile -eq 'offlineTrial') {
+        return @('Offline trial packaging does not establish connected field or Research acceptance.')
     }
     try {
         $controls = Read-LexiQuestEvidenceRecord `
