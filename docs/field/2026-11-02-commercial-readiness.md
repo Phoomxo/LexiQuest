@@ -12,7 +12,15 @@ Continue local verification and Android packaging independently. No account or
 resource was deleted. Provider hosting/acceptance remains unresolved; no
 replacement service or commercial readiness is implied by this scope reduction.
 
-Latest acceptance: acceptance33/final22, source `4a77d81a`, version `1.0.0+22`.
+Latest bounded offline acceptance: nonpaid-trial34/final-package, source
+`be5e7668`, version `1.0.0+23`, installed in place with matching hash. Full
+Flutter5575PASS on app-identical parent1bb6; final CLI150PASS and field237PASS.
+Independent artifact review ACCEPT; device update/resume and report UI verified.
+See [non-paid trial completion](2026-11-03-nonpaid-trial-completion.md) for exact
+lineage, evidence and remaining human/service acceptance. Real payments and
+Cloud A/Billing remain excluded. This is not full-service or Research readiness.
+
+Previous acceptance: acceptance33/final22, source `4a77d81a`, version `1.0.0+22`.
 Full Flutter5573PASS/0FAIL, analysis clean, APK/AAB build and independent bounded
 artifact attestation ACCEPT. The release includes the local31 correction and the
 later native TTS rejection and landscape category-dialog corrections. See

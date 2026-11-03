@@ -2,6 +2,19 @@
 
 ## Non-paid trial completion, 2026-11-03
 
+Disposition: OP34, UX34, DV34 and IN34 complete within the bounded offline scope.
+Implementation1bb6 and packaging-boundary correctionbe5e are reviewed ACCEPT.
+Full Flutter5575PASS/0FAIL, clean analysis, final configuration150PASS and
+field-release237PASS. The two CLI-only changes after full Flutter are explicitly
+attested; all1005 Dart inputs are unchanged. Final signed version23 package and
+installed APK hashes match. Vivo update preserved the original Matching2/4
+round, which completed4/4; report display retains the original UTC/snapshot.
+Starter/Definition/History/CSV and denied-notification checks have separate22
+receipts. No task-owned build/test/install process remains. Next executable work
+requires genuine provider inputs or owner availability for physical acceptance;
+do not fabricate them or resume excluded Cloud/payment work. Exact evidence and
+remaining checks: [completion report](../../field/2026-11-03-nonpaid-trial-completion.md).
+
 Baseline40f7dc25. Intent: complete feasible remaining implementation and silent
 acceptance from the latest review. Real payments, Cloud A/Billing, publication,
 real Research enrollment and uploads remain excluded. Owner deferred listening;
