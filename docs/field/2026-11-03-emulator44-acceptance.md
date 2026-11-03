@@ -255,3 +255,13 @@ branch `codex/remaining-system-readiness`. Task changes are this report,
 assertion detail in `test/screens/typed_cloze_scratchpad_test.dart`. Existing
 untracked critique/failure artifacts are preserved. No Flutter/test process or
 task emulator remains running at handoff. Changes are local and uncommitted.
+
+## Scratchpad follow-up
+
+The later [root-cause investigation](2026-11-03-scratchpad-root-cause.md) reproduces
+the Save hit-test failure through delayed keyboard metrics and caret scrolling.
+The test helper now settles frames before Save, preserving the actual hit-test,
+pointer tap and canonical database assertions. Host51 and 22 Android scenarios
+repeated three times pass. This supersedes the Scratchpad investigation action
+above; the original uninstrumented event's exact timing cannot be reconstructed.
+No production Scratchpad code or signed30 artifact changed.

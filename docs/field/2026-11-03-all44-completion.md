@@ -23,7 +23,7 @@ public rollout, real payments/provider and real research enrollment are excluded
 | Card | Owner/write set | Acceptance | State |
 |---|---|---|---|
 | Reminder composition | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, Home-return form restoration, cancel and delivery | PASS: signed30 three grant/Home rounds, actual notification, return and final cancellation |
-| Scratchpad | scratchpad agent: typed_cloze_scratchpad test and demonstrated affected UI only | late-inset regression; Save hit-test and frozen ink ACK preserved | Host and Android repeats pass; old cause unconfirmed |
+| Scratchpad | scratchpad agent: typed_cloze_scratchpad test and demonstrated affected UI only | late-inset regression; Save hit-test and frozen ink ACK preserved | Follow-up reproduces and fixes test-helper keyboard/caret race; Host51 and Android22 x3 pass. See [evidence](2026-11-03-scratchpad-root-cause.md). |
 | Catalog gaps | map agent: read-only source/tests/44 ledger | exact existing coverage and missing workflows | Done |
 | Native modes | root: new integration entry | five exercise kinds through durable restart/history on synthetic Android | PASS |
 | Ladder/streak/rewards/accessibility | disjoint test files | real route dispatch, multi-day canonical facts, earned coin purchase/equip, scoped semantics/layout | PASS bounded checks |
@@ -287,8 +287,11 @@ contention, lifecycle and form-initialization failures are corrected and its
 signed30 workflow passes through actual notification and cancellation.
 The deliverable is signed offlineTrial30 from `dd436704f54748c095bfbe9f261202205c11adfe`.
 This is not44 exhaustive physical-device UATs, production rollout approval or
-research efficacy certification. The original Scratchpad intermittent cause
-remains unconfirmed despite repeated passing checks; browser UI, OEM/reboot
+research efficacy certification. The later [Scratchpad follow-up](2026-11-03-scratchpad-root-cause.md)
+reproduces and fixes a matching test-helper keyboard/caret race. Its 66 Android
+executions pass; the historical log does not establish that event's exact timing.
+Browser UI, OEM/reboot
 behavior and external-provider/physical accessibility limits remain as recorded.
 No Cloud/Billing, public traffic, real payment or real Research enrollment/upload
-was activated. Only final documentation changed after the verified release source.
+was activated. Follow-up changes affect tests and documentation only; the signed30
+application source and artifact are unchanged.

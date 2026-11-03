@@ -191,7 +191,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f09 | Cloze test | `screens/fill_in_the_blanks_screen_test.dart` | Earlier synthetic Android pass plus Native45 typed/choice resume; no live generation claim. |
 | f10 | Matching mode | `screens/matching_entry_history_flow_test.dart` | Observed26; Native45 actual matching entry, recognition is not recall mastery. |
 | f11 | Typed recall/writing | `screens/learning_pack_definition_flow_test.dart` | Observed26; Native45 actual catalog entry, drafts are not accepted evidence. |
-| f12 | Handwriting scratchpad | `screens/typed_cloze_scratchpad_test.dart` | Late-inset host test and Scratchpad repeat pass. Original intermittent Save hit-test cause remains unconfirmed. No OCR or physical stylus certification. |
+| f12 | Handwriting scratchpad | `screens/typed_cloze_scratchpad_test.dart` | [Follow-up](2026-11-03-scratchpad-root-cause.md) reproduces and fixes the test helper's keyboard/caret race. Host51 and Android22 scenarios x3 pass. The old log cannot establish its exact timing. No OCR or physical stylus certification. |
 | f13 | Native modes integration | `screens/native_durable_resume_screen_test.dart` | Native45 covers dictation, word scramble, sentence scramble and both Cloze kinds through restart/history. Actual provider/audio excluded. |
 | f14 | Flashcard-first recommendation | `screens/recall_ladder_entry_flow_test.dart` | Observed26 and Native45 selected-word route; reads do not create answer/research facts. |
 | f15 | Active-recall ladder | `widgets/recall_ladder_panel_test.dart` | Native45 actual seven-stage entries/availability and return. Cloze/dictation stage tests reach category entry; separate mode tests cover exercise resume. |
@@ -250,8 +250,10 @@ the original failed artifacts remain evidence of the corrected problems.
 The captured full host run and signed30 packaging/provenance/workflow pass.
 All44 entries are internally accepted with their stated evidence limits. This
 does not mean44 exhaustive device UATs. Signed29 remains an unaccepted historical
-workflow and delivery29 was not run. Scratchpad repeats establish tested behavior,
-not the unobserved cause of its original intermittent failure. JavaScript boundary
+workflow and delivery29 was not run. The later [Scratchpad investigation](2026-11-03-scratchpad-root-cause.md)
+reproduces and fixes a matching keyboard/caret race in the test helper, with
+66 passing Android executions. The historical event's exact timing remains
+unobserved. JavaScript boundary
 arithmetic verification is not browser UI acceptance. OEM/reboot reminder
 behavior and whole-app physical accessibility remain outside the checked scope.
 
