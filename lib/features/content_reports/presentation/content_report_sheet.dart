@@ -504,7 +504,8 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
           record: _record!,
           languageCode: widget.languageCode,
         ),
-        if (_record!.acknowledgement == null)
+        if (widget.reports.transport.enabled &&
+            _record!.acknowledgement == null)
           FilledButton(
             key: const ValueKey('content-report-send'),
             onPressed: !current || _busy || !widget.reports.transport.enabled
@@ -543,9 +544,11 @@ class ContentReportStatus extends StatelessWidget {
     super.key,
     required this.record,
     this.languageCode = 'th',
+    this.showReportId = true,
   });
   final ContentReportRecord record;
   final String languageCode;
+  final bool showReportId;
   @override
   Widget build(BuildContext context) {
     final en = languageCode == 'en';
@@ -565,7 +568,7 @@ class ContentReportStatus extends StatelessWidget {
           ContentReportDelivery.received =>
             en ? 'Received by the server.' : 'เซิร์ฟเวอร์รับเรื่องแล้ว',
         }),
-        SelectableText(record.payload.reportId),
+        if (showReportId) SelectableText(record.payload.reportId),
         if (ack != null) ...[
           SelectableText(ack.receipt.receiptId),
           Text(ack.receipt.receivedAtUtc.toIso8601String()),

@@ -203,6 +203,27 @@ class _TodayResumePanelState extends State<TodayResumePanel>
     }
     final history = _history;
     final count = history?.entries.where(_canResume).length;
+    if (count == 0 && !_failed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text(
+              'ไม่มีกิจกรรมที่เล่นต่อได้ในประวัติล่าสุด',
+              key: ValueKey('today-resume-count'),
+            ),
+            TextButton.icon(
+              key: const ValueKey('today-resume-open-history'),
+              onPressed: _visible && !_opening ? _openHistory : null,
+              icon: const Icon(Icons.history),
+              label: const Text('ดูประวัติ'),
+            ),
+          ],
+        ),
+      );
+    }
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

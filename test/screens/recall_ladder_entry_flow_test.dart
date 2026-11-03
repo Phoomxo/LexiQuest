@@ -36,6 +36,11 @@ void main() {
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
 
         final suggested = find.byKey(const ValueKey('recall-ladder-suggested'));
+        expect(suggested.hitTestable(), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('recall-ladder-dictation')),
+          findsNothing,
+        );
         await tester.ensureVisible(suggested);
         await tester.pump(const Duration(milliseconds: 16));
         await tester.tap(suggested.hitTestable());

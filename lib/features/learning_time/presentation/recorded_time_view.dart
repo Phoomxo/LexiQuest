@@ -13,11 +13,15 @@ class RecordedTimeView extends StatefulWidget {
     required this.expectedOwnerId,
     required this.target,
     this.showExplanation = true,
+    this.collapseExplanation = false,
+    this.languageCode,
   });
   final LearningTimeUseCases? time;
   final String expectedOwnerId;
   final TimeReadTarget target;
   final bool showExplanation;
+  final bool collapseExplanation;
+  final String? languageCode;
   @override
   State<RecordedTimeView> createState() => _RecordedTimeViewState();
 }
@@ -233,7 +237,9 @@ class _RecordedTimeViewState extends State<RecordedTimeView> {
       readGeneration: readGeneration,
       targetKey: targetKey,
     );
-    final thai = Localizations.localeOf(context).languageCode == 'th';
+    final thai =
+        (widget.languageCode ?? Localizations.localeOf(context).languageCode) ==
+        'th';
     final theme = Theme.of(context);
     final value = _value;
     final status = !binding.current
@@ -324,16 +330,25 @@ class _RecordedTimeViewState extends State<RecordedTimeView> {
         ],
         if (widget.showExplanation) ...[
           const SizedBox(height: 8),
-          Text(
-            thai
-                ? 'เก็บเฉพาะช่วงการโต้ตอบที่ยืนยันและบันทึกสำเร็จในเครื่อง ไม่รวมเวลารอ การอ่านเงียบเป็นเวลานานอาจนับได้น้อยกว่าจริง'
-                : 'Includes locally saved, confirmed interaction windows. Waiting is excluded; long reading without input may be undercounted.',
-            style: theme.textTheme.bodySmall,
-          ),
+          if (widget.collapseExplanation)
+            ExpansionTile(
+              title: Text(thai ? 'วิธีนับเวลา' : 'How time is counted'),
+              tilePadding: EdgeInsets.zero,
+              children: [_explanation(thai, theme)],
+            )
+          else
+            _explanation(thai, theme),
         ],
       ],
     );
   }
+
+  Widget _explanation(bool thai, ThemeData theme) => Text(
+    thai
+        ? 'เก็บเฉพาะช่วงการโต้ตอบที่ยืนยันและบันทึกสำเร็จในเครื่อง ไม่รวมเวลารอ การอ่านเงียบเป็นเวลานานอาจนับได้น้อยกว่าจริง'
+        : 'Includes locally saved, confirmed interaction windows. Waiting is excluded; long reading without input may be undercounted.',
+    style: theme.textTheme.bodySmall,
+  );
 }
 
 String formatRecordedLearningTime(int activeDurationUs, {required bool thai}) {

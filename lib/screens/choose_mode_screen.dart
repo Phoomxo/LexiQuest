@@ -534,9 +534,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
-          _motivationEntry(),
-          _todayResumeEntry(),
           _recallEntry(),
+          _todayResumeEntry(),
           _studyEntry(),
           Builder(
             builder: (context) {
@@ -634,6 +633,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             onTap: _reviewCenterAction(),
           ),
           const SizedBox(height: 24),
+          _motivationEntry(),
           Text('เลือกกิจกรรม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           if (canQuiz) ...[

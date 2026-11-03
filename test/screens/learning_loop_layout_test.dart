@@ -107,10 +107,7 @@ void main() {
       find.widgetWithText(FilledButton, 'ฝึกคำที่ผิด (1)'),
       findsOneWidget,
     );
-    expect(
-      find.widgetWithText(OutlinedButton, 'กลับไปเลือกกิจกรรม'),
-      findsOneWidget,
-    );
+    expect(find.widgetWithText(OutlinedButton, 'ย้อนกลับ'), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
       matchesGoldenFile('goldens/score_large_text.png'),

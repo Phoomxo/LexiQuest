@@ -47,6 +47,12 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
+          expect(find.byType(FilledButton), findsOneWidget);
+          expect(find.byType(OutlinedButton), findsNothing);
+          final details = find.byKey(const ValueKey('recall-ladder-details'));
+          await tester.ensureVisible(details);
+          await tester.tap(details);
+          await tester.pumpAndSettle();
           expect(
             find.text('เป็นคำแนะนำกิจกรรม ไม่ใช่ระดับความชำนาญ'),
             findsOneWidget,
@@ -133,6 +139,8 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('recall-ladder-details')));
+        await tester.pumpAndSettle();
         expect(
           tester
               .widget<OutlinedButton>(
@@ -161,6 +169,13 @@ void main() {
         retained();
         await tester.pumpAndSettle();
         expect(launches, 0);
+        if (find
+            .text('ยังไม่พบหลักฐานที่ใช้ได้ในรายการล่าสุด')
+            .evaluate()
+            .isEmpty) {
+          await tester.tap(find.byKey(const ValueKey('recall-ladder-details')));
+          await tester.pumpAndSettle();
+        }
         expect(
           find.text('ยังไม่พบหลักฐานที่ใช้ได้ในรายการล่าสุด'),
           findsOneWidget,

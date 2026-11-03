@@ -292,7 +292,20 @@ void main() {
         await tapKey(tester, 'content-report-row-${payload.reportId}');
         expect(find.text('Selected synthetic reply'), findsOneWidget);
         expect(find.text(payload.target.snapshotJson), findsNothing);
+        expect(find.text(payload.reportId), findsNothing);
         await tapKey(tester, 'content-report-source-${payload.reportId}');
+        expect(find.text(payload.reportId), findsOneWidget);
+        expect(
+          tester
+              .widget<SelectableText>(
+                find.ancestor(
+                  of: find.text(payload.reportId),
+                  matching: find.byType(SelectableText),
+                ),
+              )
+              .data,
+          payload.reportId,
+        );
         expect(find.text(payload.target.snapshotJson), findsOneWidget);
         expect(
           find.text(
@@ -308,6 +321,103 @@ void main() {
       },
     );
   }
+
+  testWidgets('offline inbox keeps local status without remote controls', (
+    tester,
+  ) async {
+    transport.enabled = false;
+    final payload = syntheticReport();
+    await reports.save(expectedOwnerId: 'owner', payload: payload);
+    await mount(
+      tester,
+      ContentReportInbox(
+        expectedOwnerId: 'owner',
+        reports: reports,
+        ownerChanges: owners.stream,
+        languageCode: 'en',
+      ),
+    );
+    await tapKey(tester, 'content-report-row-${payload.reportId}');
+    expect(find.text('Sending is unavailable.'), findsOneWidget);
+    expect(find.text('Saved locally. No server receipt.'), findsOneWidget);
+    expect(
+      find.byKey(ValueKey('content-report-send-${payload.reportId}')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(ValueKey('content-report-refresh-${payload.reportId}')),
+      findsNothing,
+    );
+    expect(transport.submissions, 0);
+    expect(transport.reads, 0);
+    expect(queue.rows.values.single.payload.reportJson, payload.reportJson);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'connected inbox sends only explicitly and refresh preserves report',
+    (tester) async {
+      final payload = syntheticReport();
+      await reports.save(expectedOwnerId: 'owner', payload: payload);
+      await mount(
+        tester,
+        ContentReportInbox(
+          expectedOwnerId: 'owner',
+          reports: reports,
+          ownerChanges: owners.stream,
+          languageCode: 'en',
+        ),
+      );
+      await tapKey(tester, 'content-report-row-${payload.reportId}');
+      expect(transport.submissions, 0);
+      expect(transport.reads, 0);
+      await tapKey(tester, 'content-report-send-${payload.reportId}');
+      expect(transport.submissions, 1);
+      expect(find.text('Received by the server.'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('content-report-send-${payload.reportId}')),
+        findsNothing,
+      );
+      final readsAfterSend = transport.reads;
+      await tapKey(tester, 'content-report-refresh-${payload.reportId}');
+      expect(transport.submissions, 1);
+      expect(transport.reads, readsAfterSend + 1);
+      expect(queue.rows.values.single.payload.reportJson, payload.reportJson);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('offline sheet saves and retains report ID without send action', (
+    tester,
+  ) async {
+    transport.enabled = false;
+    await mount(
+      tester,
+      ContentReportSheet(
+        expectedOwnerId: 'owner',
+        target: syntheticReport().target,
+        reports: reports,
+        ownerChanges: owners.stream,
+        languageCode: 'en',
+      ),
+    );
+    await tapKey(tester, 'content-report-reason:spelling');
+    await tapKey(tester, 'content-report-review');
+    await tapKey(tester, 'content-report-save');
+    expect(queue.rows.length, 1);
+    expect(
+      find.text(queue.rows.values.single.payload.reportId),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('content-report-send')), findsNothing);
+    expect(
+      find.text('Sending is unavailable. Your report remains on this device.'),
+      findsOneWidget,
+    );
+    expect(transport.submissions, 0);
+    expect(transport.reads, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('compact 200 percent sheet remains scrollable without overflow', (
     tester,

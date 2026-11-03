@@ -209,7 +209,7 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
             Semantics(
               header: true,
               child: Text(
-                'ลำดับการฝึกจากคำตอบที่บันทึก',
+                'ฝึกต่อวันนี้',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -230,19 +230,6 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
               const Text('ยังไม่มีคำศัพท์ที่พร้อมใช้ในบัญชีนี้'),
             if (snapshot != null && word != null) ...[
               Text('คำอ้างอิง: ${word.spelling}'),
-              Text(
-                snapshot.observations.isEmpty
-                    ? 'ยังไม่พบหลักฐานที่ใช้ได้ในรายการล่าสุด'
-                    : 'อ่านคำตอบล่าสุดของคำนี้ไม่เกิน 200 รายการ',
-              ),
-              const Text('เป็นคำแนะนำกิจกรรม ไม่ใช่ระดับความชำนาญ'),
-              if (snapshot.latest case final latest?)
-                Text(
-                  '${recallLadderStageLabel(latest.stage)}ล่าสุด: '
-                  '${latest.isCorrect ? 'ตอบถูก' : 'ตอบผิด'}'
-                  '${latest.assisted ? ' · มีตัวช่วย' : ''}'
-                  '${latest.evidenceClass.name == 'pronunciation' ? ' · หลักฐานการออกเสียง' : ''}',
-                ),
               const SizedBox(height: 12),
               FilledButton.icon(
                 key: const ValueKey('recall-ladder-suggested'),
@@ -256,25 +243,49 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('เลือกกิจกรรมต่อ จากนั้นเลือกคำหรือหมวดในกิจกรรมนั้น'),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              ExpansionTile(
+                key: const ValueKey('recall-ladder-details'),
+                tilePadding: EdgeInsets.zero,
+                title: const Text('เหตุผลและกิจกรรมอื่น'),
+                expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final stage in RecallLadderStage.values)
-                    OutlinedButton(
-                      key: ValueKey('recall-ladder-${stage.name}'),
-                      onPressed: _canPractice(stage, word)
-                          ? () => unawaited(_practice(stage))
-                          : null,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(64, 64),
-                      ),
-                      child: Text(
-                        '${recallLadderStageLabel(stage)}'
-                        '${snapshot.observedCount(stage) == 0 ? '' : ' · พบคำตอบ ${snapshot.observedCount(stage)}'}',
-                      ),
+                  Text(
+                    snapshot.observations.isEmpty
+                        ? 'ยังไม่พบหลักฐานที่ใช้ได้ในรายการล่าสุด'
+                        : 'อ่านคำตอบล่าสุดของคำนี้ไม่เกิน 200 รายการ',
+                  ),
+                  const Text('เป็นคำแนะนำกิจกรรม ไม่ใช่ระดับความชำนาญ'),
+                  if (snapshot.latest case final latest?)
+                    Text(
+                      '${recallLadderStageLabel(latest.stage)}ล่าสุด: '
+                      '${latest.isCorrect ? 'ตอบถูก' : 'ตอบผิด'}'
+                      '${latest.assisted ? ' · มีตัวช่วย' : ''}'
+                      '${latest.evidenceClass.name == 'pronunciation' ? ' · หลักฐานการออกเสียง' : ''}',
                     ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'เลือกกิจกรรมต่อ จากนั้นเลือกคำหรือหมวดในกิจกรรมนั้น',
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final stage in RecallLadderStage.values)
+                        OutlinedButton(
+                          key: ValueKey('recall-ladder-${stage.name}'),
+                          onPressed: _canPractice(stage, word)
+                              ? () => unawaited(_practice(stage))
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(64, 64),
+                          ),
+                          child: Text(
+                            '${recallLadderStageLabel(stage)}'
+                            '${snapshot.observedCount(stage) == 0 ? '' : ' · พบคำตอบ ${snapshot.observedCount(stage)}'}',
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],

@@ -247,6 +247,7 @@ class _NativeExerciseResumeScreenState extends State<NativeExerciseResumeScreen>
     final summary = state.completedSummary;
     if (summary != null) {
       return ScoreScreen(
+        languageCode: widget.languageCode,
         correctAnswers: summary.correctCount,
         wrongAnswers: summary.wrongCount,
         score: summary.score,

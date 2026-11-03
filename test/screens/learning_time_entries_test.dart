@@ -136,6 +136,75 @@ void main() {
     );
   }
 
+  for (final language in ['th', 'en']) {
+    testWidgets(
+      'score keeps $language copy consistent and folds time details',
+      (tester) async {
+        final h = await _Harness.open(tester);
+        final thai = language == 'th';
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ScoreScreen(
+              correctAnswers: 1,
+              wrongAnswers: 0,
+              languageCode: language,
+              learningTime: h.time,
+              resultOwnerId: 'owner-a',
+              resultSessionId: 'actual-canonical-session',
+            ),
+          ),
+        );
+        await _flush(tester);
+        expect(find.text(thai ? 'ผลการเรียน' : 'Results'), findsOneWidget);
+        expect(find.text(thai ? 'ตอบถูก' : 'Correct'), findsOneWidget);
+        expect(find.text(thai ? '2 วินาที' : '2 seconds'), findsOneWidget);
+        expect(
+          find.widgetWithText(OutlinedButton, thai ? 'ย้อนกลับ' : 'Back'),
+          findsOneWidget,
+        );
+        final explanation = find.textContaining(
+          thai ? 'เก็บเฉพาะช่วงการโต้ตอบ' : 'Includes locally saved',
+        );
+        expect(explanation, findsNothing);
+        await tester.tap(
+          find.text(thai ? 'วิธีนับเวลา' : 'How time is counted'),
+        );
+        await tester.pumpAndSettle();
+        expect(explanation, findsOneWidget);
+        expect(h.repo.admissions, 0);
+        expect(h.repo.preferenceWrites, 0);
+        await h.close(tester);
+      },
+    );
+  }
+
+  testWidgets('score back returns to its actual history route', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      const ScoreScreen(correctAnswers: 4, wrongAnswers: 0),
+                ),
+              ),
+              child: const Text('ประวัติการเรียน'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('ประวัติการเรียน'));
+    await tester.pumpAndSettle();
+    expect(find.text('กลับไปเลือกกิจกรรม'), findsNothing);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'ย้อนกลับ'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ScoreScreen), findsNothing);
+    expect(find.text('ประวัติการเรียน'), findsOneWidget);
+  });
+
   testWidgets('score reads only the actual acknowledged session identity', (
     tester,
   ) async {
@@ -152,7 +221,7 @@ void main() {
       ),
     );
     await _flush(tester);
-    expect(find.text('2 seconds'), findsOneWidget);
+    expect(find.text('2 วินาที'), findsOneWidget);
     expect(h.repo.readTargets, isNotEmpty);
     expect(
       h.repo.readTargets.every(
@@ -201,11 +270,11 @@ void main() {
       ),
     );
     await _flush(tester);
-    expect(find.text('2 seconds'), findsOneWidget);
+    expect(find.text('2 วินาที'), findsOneWidget);
     h.owners.add('owner-b');
     await _flush(tester);
-    expect(find.text('2 seconds'), findsNothing);
-    expect(find.text('Recorded time is unavailable'), findsOneWidget);
+    expect(find.text('2 วินาที'), findsNothing);
+    expect(find.text('อ่านเวลาที่บันทึกไม่ได้ในขณะนี้'), findsOneWidget);
     await h.close(tester);
   });
 }

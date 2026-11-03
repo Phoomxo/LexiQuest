@@ -1,5 +1,31 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Critique follow-up, 2026-11-03
+
+Intent: implement all five findings in the version23 critique archived at
+`.impeccable/critique/2026-11-03T01-23-48Z__lib-screens-score-screen-dart.md`.
+Baseline95c91d91, existing cycle12-release worktree and branch. No Cloud A/Billing,
+payments, publication, participant enrollment, audio or recording is included.
+
+The data shapes remain existing learning history, recall recommendation, session
+result and queued report. Change presentation and language only; do not introduce
+new progress, reward, routing or persistence authorities. Prefer a neutral Back
+label over new destination state where the existing route already owns navigation.
+Preserve connected report controls when transport is available.
+
+Throughput checkpoint: three disjoint implementation writers. Hub35 owns hub,
+ladder and resume UI/tests; score35 owns results, time display and affected score
+callers/tests; report35 owns report presentation/tests. Root owns shared docs,
+integration, serialized Flutter checks, artifact and silent device verification.
+No worker runs Flutter/build. Review all diffs before integration checks.
+
+Acceptance: recommended action precedes secondary panels; zero-resume state does
+not promise resume; score language is consistent and the return label truthful;
+report identity stays copyable in details and offline unavailable actions recede.
+Focused widget/navigation/owner/transport checks, analysis and integration
+regression must pass on stable inputs. Inspect rendered results and retain exact
+evidence. Existing version23 device receipts do not certify changed UI.
+
 ## Non-paid trial completion, 2026-11-03
 
 Disposition: OP34, UX34, DV34 and IN34 complete within the bounded offline scope.

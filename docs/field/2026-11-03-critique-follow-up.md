@@ -1,0 +1,48 @@
+# Version23 critique follow-up
+
+Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`.
+Branch: `codex/remaining-system-readiness`. Baseline: `95c91d91`.
+Scope: all five findings in the archived 2026-11-03 score/hub/report critique.
+Cloud A/Billing, payments, public release, Research enrollment and recording
+remain excluded. This change does not certify external services or audible UX.
+
+## Changes
+
+1. The existing recall recommendation appears before resume and companion
+   content. Its word and suggested action stay visible; evidence explanations
+   and seven manual alternatives expand under one labelled control.
+2. Zero resumable rounds use a compact status and View history link. Positive,
+   loading, failed and retired-owner paths retain their existing guards.
+3. ScoreScreen owns one language value, including its RecordedTimeView. Existing
+   Thai callers keep Thai; bilingual Matching/native resume forward their value.
+   The time explanation expands on demand only on the score page.
+4. The score action says Back, matching its existing callback or route pop.
+   It does not claim that every caller returns to the activity picker.
+5. Inbox keeps the report ID selectable inside source details. Offline send and
+   receipt controls are absent while the existing offline status remains visible.
+   Connected explicit send/refresh and other shared status consumers stay intact.
+
+No database migration, progress/reward counter, report identity or transport
+authority changed. Reusing the existing data shapes follows Model the Domain.
+Neutral Back wording avoids adding destination state to existing navigation.
+Prove It Works requires current tests and renders, not the older version23 images.
+
+## Review and evidence
+
+Independent source review accepted the implementation with one visual check:
+inspect the hub for competing primary actions. No new comments or suppressions
+were introduced. Root preserved unrelated untracked critique/failure files.
+
+Evidence directory:
+`D:\LexiQuest-Storage\maintenance\2026-11-03\critique35`.
+
+The first focused run passed64 and failed2 because a new assertion cast the
+EditableText found inside SelectableText to its parent type. The finder now
+selects the SelectableText ancestor. No production guard or assertion was removed.
+The corrected focused suite passes66 tests. Score's changed Back label has an
+updated and visually inspected large-Thai-text golden; its focused check passes.
+Integration across shared score routes, hub/motivation, Matching and content
+reports passes246 tests. Static analysis reports no issues. Full5575 evidence
+belongs to the prior version23 source and is not claimed for this change. This
+pass uses focused and affected-subsystem regression; unrelated backend/policy
+suites were not rerun. Package and device outcomes are recorded after execution.

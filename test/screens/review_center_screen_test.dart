@@ -147,7 +147,7 @@ void main() {
         );
         await reportUiTap(
           tester,
-          find.text('กลับไปเลือกกิจกรรม'),
+          find.text('ย้อนกลับ'),
           'review-report-return',
         );
         await reportUiWait(
@@ -381,7 +381,7 @@ void main() {
       await _tapIn(
         tester,
         ScoreScreen,
-        find.widgetWithText(OutlinedButton, 'กลับไปเลือกกิจกรรม'),
+        find.widgetWithText(OutlinedButton, 'ย้อนกลับ'),
       );
       await _until(tester, () => find.byType(QuizScreen).evaluate().isEmpty);
       await _ready(tester);

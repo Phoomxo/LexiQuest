@@ -363,6 +363,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     final summary = state?.completedSummary;
     if (summary != null && !_retired) {
       return ScoreScreen(
+        languageCode: widget.languageCode,
         correctAnswers: summary.correctCount,
         wrongAnswers: summary.wrongCount,
         score: summary.score,

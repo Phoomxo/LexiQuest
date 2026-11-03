@@ -75,7 +75,7 @@ void main() {
           expect(find.text(correct ? '100%' : '0%'), findsOneWidget);
           await _assertOneRecreationalAnswer(tester, h, screen);
 
-          await tester.tap(find.text('กลับไปเลือกกิจกรรม'));
+          await tester.tap(find.text('ย้อนกลับ'));
           await tester.pumpAndSettle();
           expect(find.byType(ChooseModeScreen), findsOneWidget);
           expect(find.byType(ScoreScreen), findsNothing);

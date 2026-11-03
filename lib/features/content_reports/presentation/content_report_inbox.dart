@@ -232,7 +232,11 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
       ),
       SelectableText(row.payload.target.text),
       if (row.payload.comment != null) SelectableText(row.payload.comment!),
-      ContentReportStatus(record: row, languageCode: widget.languageCode),
+      ContentReportStatus(
+        record: row,
+        languageCode: widget.languageCode,
+        showReportId: false,
+      ),
       ExpansionTile(
         key: ValueKey('content-report-source-${row.payload.reportId}'),
         title: Text(
@@ -248,6 +252,7 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
           ),
         ),
         children: [
+          SelectableText(row.payload.reportId),
           SelectableText(
             '${_text('เวลาที่บันทึก', 'Saved at')} (UTC) ${row.payload.queuedAtUtc.toIso8601String()}',
           ),
@@ -255,7 +260,7 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
         ],
       ),
       if (_busyId == row.payload.reportId) const LinearProgressIndicator(),
-      if (row.acknowledgement == null)
+      if (widget.reports.transport.enabled && row.acknowledgement == null)
         FilledButton(
           key: ValueKey('content-report-send-${row.payload.reportId}'),
           onPressed:
@@ -264,16 +269,17 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
               : () => _operate(context, row, send: true),
           child: Text(_text('ส่งเนื้อหาที่ตรวจแล้ว', 'Send reviewed content')),
         ),
-      OutlinedButton(
-        key: ValueKey('content-report-refresh-${row.payload.reportId}'),
-        onPressed:
-            !current || _busyId != null || !widget.reports.transport.enabled
-            ? null
-            : () => _operate(context, row, send: false),
-        child: Text(
-          _text('ตรวจใบรับเรื่องและสถานะ', 'Check receipt and review status'),
+      if (widget.reports.transport.enabled)
+        OutlinedButton(
+          key: ValueKey('content-report-refresh-${row.payload.reportId}'),
+          onPressed:
+              !current || _busyId != null || !widget.reports.transport.enabled
+              ? null
+              : () => _operate(context, row, send: false),
+          child: Text(
+            _text('ตรวจใบรับเรื่องและสถานะ', 'Check receipt and review status'),
+          ),
         ),
-      ),
     ],
   );
 }

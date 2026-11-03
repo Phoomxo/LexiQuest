@@ -19,6 +19,7 @@ class ScoreScreen extends StatelessWidget {
     this.learningTime,
     this.resultOwnerId,
     this.resultSessionId,
+    this.languageCode = 'th',
   });
 
   final int correctAnswers;
@@ -30,6 +31,7 @@ class ScoreScreen extends StatelessWidget {
   final LearningTimeUseCases? learningTime;
   final String? resultOwnerId;
   final String? resultSessionId;
+  final String languageCode;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -37,11 +39,12 @@ class ScoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thai = languageCode == 'th';
     final total = correctAnswers + wrongAnswers;
     final resolvedScore =
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return LessonScaffold(
-      title: 'ผลการเรียน',
+      title: thai ? 'ผลการเรียน' : 'Results',
       leading: onBack == null ? null : BackButton(onPressed: onBack),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
@@ -57,17 +60,17 @@ class ScoreScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 _ResultRow(
-                  label: 'ตอบถูก',
+                  label: thai ? 'ตอบถูก' : 'Correct',
                   value: correctAnswers,
                   icon: Icons.check_circle_outline,
                 ),
                 _ResultRow(
-                  label: 'ตอบผิด',
+                  label: thai ? 'ตอบผิด' : 'Incorrect',
                   value: wrongAnswers,
                   icon: Icons.cancel_outlined,
                 ),
                 _ResultRow(
-                  label: 'คำตอบที่ใช้คำนวณ',
+                  label: thai ? 'คำตอบที่ใช้คำนวณ' : 'Answers counted',
                   value: total,
                   icon: Icons.dataset_outlined,
                 ),
@@ -84,12 +87,14 @@ class ScoreScreen extends StatelessWidget {
                     time: learningTime,
                     expectedOwnerId: resultOwnerId!,
                     target: SessionTimeRead(resultSessionId!),
+                    languageCode: languageCode,
+                    collapseExplanation: true,
                   ),
                   const SizedBox(height: 24),
                 ],
                 if (mistakes.isNotEmpty) ...[
                   Text(
-                    'คำที่ควรฝึกต่อ',
+                    thai ? 'คำที่ควรฝึกต่อ' : 'Words to practise',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
@@ -103,14 +108,18 @@ class ScoreScreen extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: onPracticeMistakes,
                       icon: const Icon(Icons.refresh),
-                      label: Text('ฝึกคำที่ผิด (${mistakes.length})'),
+                      label: Text(
+                        thai
+                            ? 'ฝึกคำที่ผิด (${mistakes.length})'
+                            : 'Practise mistakes (${mistakes.length})',
+                      ),
                     ),
                   const SizedBox(height: 12),
                 ],
                 OutlinedButton.icon(
                   onPressed: onBack ?? () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('กลับไปเลือกกิจกรรม'),
+                  label: Text(thai ? 'ย้อนกลับ' : 'Back'),
                 ),
               ],
             ),

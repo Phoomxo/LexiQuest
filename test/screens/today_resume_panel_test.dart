@@ -230,6 +230,7 @@ void main() {
           tester,
           () => _rows(study.database),
         );
+        var historyOpens = 0;
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -237,16 +238,22 @@ void main() {
                 progress: progress,
                 ownerId: 'owner-a',
                 ownerChanges: owners,
-                onOpenHistory: () async {},
+                onOpenHistory: () async => historyOpens++,
               ),
             ),
           ),
         );
         await _ready(tester);
         expect(
-          find.text('พบกิจกรรมที่เล่นต่อได้ 0 รอบในประวัติ 50 รายการล่าสุด'),
+          find.text('ไม่มีกิจกรรมที่เล่นต่อได้ในประวัติล่าสุด'),
           findsOneWidget,
         );
+        expect(find.text('เปิดประวัติและเลือกเล่นต่อ'), findsNothing);
+        expect(find.text('ดูประวัติ'), findsOneWidget);
+        expect(find.byType(Card), findsNothing);
+        await tester.tap(find.text('ดูประวัติ'));
+        await _flush(tester, 4);
+        expect(historyOpens, 1);
         expect(
           await motivationPresentationIo(tester, () => _rows(study.database)),
           before,
@@ -264,7 +271,7 @@ Future<void> _ready(WidgetTester tester) => _until(
   () =>
       find.byKey(const ValueKey('today-resume-count')).evaluate().isNotEmpty &&
       tester
-              .widget<OutlinedButton>(
+              .widget<ButtonStyleButton>(
                 find.byKey(const ValueKey('today-resume-open-history')),
               )
               .onPressed !=

@@ -283,7 +283,7 @@ void main() {
         expect(practiceRoute.isCurrent, isFalse);
         practiceRoute.changedExternalState();
         await tester.pump();
-        final back = find.widgetWithText(OutlinedButton, 'กลับไปเลือกกิจกรรม');
+        final back = find.widgetWithText(OutlinedButton, 'ย้อนกลับ');
         await tester.ensureVisible(back);
         await tester.pump();
         expect(back.hitTestable(), findsOneWidget);
@@ -724,7 +724,7 @@ void main() {
           );
           await reportUiTap(
             tester,
-            find.text('กลับไปเลือกกิจกรรม'),
+            find.text('ย้อนกลับ'),
             'catalog-report-return-detail',
           );
           await idlePackUi(tester);

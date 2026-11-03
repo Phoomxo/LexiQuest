@@ -167,7 +167,7 @@ void main() {
           );
           await reportUiTap(
             tester,
-            find.text('กลับไปเลือกกิจกรรม'),
+            find.text('ย้อนกลับ'),
             'clinic-report-return',
           );
           await reportUiWait(
