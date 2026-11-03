@@ -21,6 +21,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
@@ -63,9 +64,11 @@ class StudyReminderBridge(activity: Activity, messenger: BinaryMessenger) {
                     val value = response.keySet().associateWith { response.get(it) }
                     main.post { if (!disposed) result.success(value) }
                 } catch (failure: ReminderRejected) {
+                    Log.w("LexiQuestReminder", "bridge ${call.method} rejected ${failure.code}")
                     main.post { if (!disposed) result.error(failure.code,
                         "The reminder request is no longer available.", null) }
-                } catch (_: Exception) {
+                } catch (failure: Exception) {
+                    Log.w("LexiQuestReminder", "bridge ${call.method} failed ${failure.javaClass.simpleName}")
                     main.post { if (!disposed) result.error("UNAVAILABLE",
                         "Cannot confirm the reminder request.", null) }
                 }
@@ -111,8 +114,10 @@ class StudyReminderProvider : ContentProvider() {
                 }
             }
         } catch (failure: ReminderRejected) {
+            Log.w("LexiQuestReminder", "provider $method rejected ${failure.code}")
             Bundle().apply { putString("error", failure.code) }
-        } catch (_: Exception) {
+        } catch (failure: Exception) {
+            Log.w("LexiQuestReminder", "provider $method failed ${failure.javaClass.simpleName}")
             Bundle().apply { putString("error", "UNAVAILABLE") }
         }
     }

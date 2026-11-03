@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -128,15 +129,25 @@ final class MethodChannelStudyReminderPlatform
         );
       }
       return value;
-    } on StudyReminderException {
+    } on StudyReminderException catch (error) {
+      debugPrint(
+        'LexiQuestReminder platform $method rejected ${error.code.name}',
+      );
       rethrow;
     } on PlatformException catch (error) {
-      throw StudyReminderException(switch (error.code) {
+      final failure = switch (error.code) {
         'OWNER_CHANGED' => StudyReminderFailureCode.ownerChanged,
         'PERMISSION_DENIED' => StudyReminderFailureCode.permissionDenied,
         _ => StudyReminderFailureCode.platformUnavailable,
-      });
-    } on Object {
+      };
+      debugPrint(
+        'LexiQuestReminder platform $method PlatformException ${failure.name}',
+      );
+      throw StudyReminderException(failure);
+    } on Object catch (error) {
+      debugPrint(
+        'LexiQuestReminder platform $method failed ${error.runtimeType}',
+      );
       throw const StudyReminderException(
         StudyReminderFailureCode.platformUnavailable,
       );

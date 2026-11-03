@@ -60,4 +60,51 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test('repeated correct answers keep a representable monotonic due date', () {
+    SrsSnapshot? state;
+    for (var index = 0; index < 100; index++) {
+      final next = policy.review(previous: state, isCorrect: true, nowUtc: now);
+      expect(next.repetitions, index + 1);
+      expect(next.dueAtUtc!.isBefore(now), isFalse);
+      if (state != null) {
+        expect(next.dueAtUtc!.isBefore(state.dueAtUtc!), isFalse);
+      }
+      state = next;
+    }
+    final reset = policy.review(previous: state, isCorrect: false, nowUtc: now);
+    expect(reset.intervalDays, 1);
+    expect(reset.dueAtUtc, now.add(const Duration(days: 1)));
+  });
+
+  for (final clock in [
+    DateTime.utc(-200000),
+    DateTime.utc(-200000, 1, 1, 0, 0, 0, 1),
+    DateTime.utc(-200000, 1, 1, 0, 0, 0, 0, 1),
+    DateTime.utc(275760, 9, 12, 0, 0, 0, 0, 1),
+    DateTime.fromMillisecondsSinceEpoch(8640000000000000, isUtc: true),
+  ]) {
+    test('large prior interval saturates safely at $clock', () {
+      const previous = SrsSnapshot(
+        intervalDays: 9007199254740991,
+        repetitions: 100,
+        lapses: 0,
+        stability: 1,
+        difficulty: 0.1,
+        lastReviewAtUtc: null,
+        dueAtUtc: null,
+        algorithmVersion: 1,
+      );
+      final next = policy.review(
+        previous: previous,
+        isCorrect: true,
+        nowUtc: clock,
+      );
+      expect(next.dueAtUtc!.isBefore(clock), isFalse);
+      expect(next.intervalDays, greaterThanOrEqualTo(0));
+      expect(next.dueAtUtc!.microsecond, clock.microsecond);
+      expect(next.stability.isFinite, isTrue);
+      expect(next.algorithmVersion, 1);
+    });
+  }
 }

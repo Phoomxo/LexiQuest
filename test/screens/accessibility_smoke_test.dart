@@ -13,33 +13,46 @@ void main() {
       testWidgets(
         '${screen.runtimeType} supports 200% text in ${brightness.name} mode',
         (tester) async {
-          tester.view.physicalSize = const Size(360, 800);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.resetPhysicalSize);
-          addTearDown(tester.view.resetDevicePixelRatio);
+          final semantics = tester.ensureSemantics();
+          try {
+            tester.view.physicalSize = const Size(360, 800);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
 
-          await tester.pumpWidget(
-            MaterialApp(
-              theme: M3Theme.lightTheme,
-              darkTheme: M3Theme.darkTheme,
-              themeMode: brightness == Brightness.dark
-                  ? ThemeMode.dark
-                  : ThemeMode.light,
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: const TextScaler.linear(2)),
-                child: child!,
+            await tester.pumpWidget(
+              MaterialApp(
+                theme: M3Theme.lightTheme,
+                darkTheme: M3Theme.darkTheme,
+                themeMode: brightness == Brightness.dark
+                    ? ThemeMode.dark
+                    : ThemeMode.light,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: const TextScaler.linear(2)),
+                  child: child!,
+                ),
+                home: screen,
               ),
-              home: screen,
-            ),
-          );
-          await tester.pump();
+            );
+            await tester.pump();
 
-          expect(tester.takeException(), isNull);
-          expect(find.byType(Scrollable), findsWidgets);
-          final context = tester.element(find.byType(Scaffold));
-          expect(Theme.of(context).brightness, brightness);
+            expect(tester.takeException(), isNull);
+            expect(find.byType(Scrollable), findsWidgets);
+            final context = tester.element(find.byType(Scaffold));
+            expect(Theme.of(context).brightness, brightness);
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            await expectLater(
+              tester,
+              meetsGuideline(androidTapTargetGuideline),
+            );
+          } finally {
+            semantics.dispose();
+          }
         },
       );
     }

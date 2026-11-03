@@ -32,11 +32,24 @@ final class BinarySm2SrsPolicy implements SrsPolicy {
     final prior = previous;
     final priorDifficulty = prior?.difficulty ?? 0.3;
     final repetitions = isCorrect ? (prior?.repetitions ?? 0) + 1 : 0;
-    final interval = isCorrect
+    // Saturate representability without changing the versioned learning policy.
+    final milliseconds = nowUtc.millisecondsSinceEpoch;
+    final dayRemainder = milliseconds % Duration.millisecondsPerDay;
+    final epochDay =
+        (milliseconds - dayRemainder) ~/ Duration.millisecondsPerDay;
+    final remainingDays =
+        100000000 -
+        epochDay -
+        (dayRemainder != 0 || nowUtc.microsecond != 0 ? 1 : 0);
+    final requestedInterval = isCorrect
         ? repetitions <= _earlyIntervals.length
               ? _earlyIntervals[repetitions - 1]
-              : math.max(1, (prior?.intervalDays ?? 14) * 2)
+              : math.max(
+                  1,
+                  math.min(prior?.intervalDays ?? 14, remainingDays) * 2,
+                )
         : 1;
+    final interval = math.min(requestedInterval, remainingDays);
     final difficulty = isCorrect
         ? math.max(0.1, priorDifficulty - 0.03)
         : math.min(1.0, priorDifficulty + 0.12);
@@ -47,7 +60,16 @@ final class BinarySm2SrsPolicy implements SrsPolicy {
       stability: interval.toDouble(),
       difficulty: difficulty,
       lastReviewAtUtc: nowUtc,
-      dueAtUtc: nowUtc.add(Duration(days: interval)),
+      dueAtUtc: DateTime.utc(
+        nowUtc.year,
+        nowUtc.month,
+        nowUtc.day + interval,
+        nowUtc.hour,
+        nowUtc.minute,
+        nowUtc.second,
+        nowUtc.millisecond,
+        nowUtc.microsecond,
+      ),
       algorithmVersion: version,
     );
   }

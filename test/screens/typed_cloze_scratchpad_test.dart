@@ -111,6 +111,42 @@ void main() {
   );
 
   testWidgets(
+    'Typed Cloze Save stays reachable when keyboard metrics arrive after typing',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 640);
+      addTearDown(tester.view.resetViewInsets);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final f = await _Fixture.open(tester);
+      try {
+        await _mount(tester, f);
+        await _expand(tester);
+        await _stroke(tester);
+        await _type(tester, f.session.word.spelling);
+        tester.binding.addPostFrameCallback((_) {
+          tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        });
+        await _reveal(tester, find.byKey(_save));
+        await tester.pump();
+        expect(find.byKey(_save).hitTestable(), findsOneWidget);
+        await tester.tap(find.byKey(_save).hitTestable());
+        await tester.pump();
+        await _saved(tester, f);
+        await _assertCanonical(tester, f);
+        await _tap(tester, _finish);
+        await _until(tester, () => f.summary != null);
+        expect(f.summary!.correctCount, 1);
+      } finally {
+        tester.view.resetViewInsets();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        await f.close(tester);
+      }
+    },
+  );
+
+  testWidgets(
     'Typed Cloze freezes ink at Save and compares it only after the real typed ACK',
     (tester) async {
       final f = await _Fixture.open(tester);

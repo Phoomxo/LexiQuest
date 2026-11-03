@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../../../data/local/app_database.dart';
 import '../../identity/data/drift_owner_write_coordinator.dart';
 import '../data/drift_study_reminder_repository.dart';
@@ -262,20 +264,24 @@ final class StudyReminderRuntime {
     if (_scopeToken != null && _scopeOwner == lease.ownerId) {
       return _scopeToken!;
     }
+    debugPrint('LexiQuestReminder scope nativeDatabasePath');
     final path = await repository.nativeDatabasePath(
       ownerId: lease.ownerId,
       stillCurrent: () => lease.isCurrent,
     );
     _require(lease);
     if (path == null) {
+      debugPrint('LexiQuestReminder scope nativeDatabasePath unavailable');
       throw const StudyReminderException(
         StudyReminderFailureCode.platformUnavailable,
       );
     }
+    debugPrint('LexiQuestReminder scope bindScope');
     final token = await platform.bindScope(
       databasePath: path,
       ownerId: lease.ownerId,
     );
+    debugPrint('LexiQuestReminder scope bound');
     if (!lease.isCurrent) {
       await platform.retire(scopeToken: token);
       _require(lease);
@@ -319,11 +325,14 @@ final class StudyReminderRuntime {
       stillCurrent: () => intent.lease.isCurrent,
     );
     _require(intent.lease);
+    var stage = 'scope';
     try {
       final token = await _scope(intent.lease);
+      stage = saved.enabled ? 'schedule' : 'cancel';
       final ack = saved.enabled
           ? await platform.schedule(scopeToken: token, revision: saved.revision)
           : await platform.cancel(scopeToken: token, revision: saved.revision);
+      stage = 'ack';
       _require(intent.lease);
       if (ack.revision != saved.revision) {
         throw const StudyReminderException(
@@ -339,11 +348,15 @@ final class StudyReminderRuntime {
         requestAck: ack,
       );
     } on StudyReminderException catch (error) {
+      debugPrint(
+        'LexiQuestReminder apply $stage rejected ${error.code.name}',
+      );
       if (error.code == StudyReminderFailureCode.ownerChanged) rethrow;
       throw const StudyReminderException(
         StudyReminderFailureCode.requestUnconfirmed,
       );
-    } on Object {
+    } on Object catch (error) {
+      debugPrint('LexiQuestReminder apply $stage failed ${error.runtimeType}');
       throw const StudyReminderException(
         StudyReminderFailureCode.requestUnconfirmed,
       );

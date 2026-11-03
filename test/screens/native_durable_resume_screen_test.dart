@@ -339,7 +339,12 @@ void main() {
                 () => find.text(action).evaluate().isNotEmpty,
               );
               await tester.ensureVisible(find.text(action));
-              await tester.tap(find.text(action));
+              await _until(
+                tester,
+                () => find.text(action).hitTestable().evaluate().isNotEmpty,
+              );
+              expect(find.text(action).hitTestable(), findsOneWidget);
+              await tester.tap(find.text(action).hitTestable());
               await tester.pump();
             }
             await _until(

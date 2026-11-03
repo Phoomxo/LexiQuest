@@ -1,0 +1,135 @@
+# Internal all44 completion run
+
+Worktree `C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest`, branch
+`codex/remaining-system-readiness`, baseline `a56e80d2`.
+The user authorizes completing the existing44 catalog capabilities. Preserve
+the8 domains, schema and learning/reward/research authorities. Cloud/Billing,
+public rollout, real payments/provider and real research enrollment are excluded.
+
+## Workflow and task board
+
+- Read poteto-mode Principles. Done.
+- Phase A: Frame. Done. Completion means no unresolved demonstrated internal
+  defect and executable acceptance for each catalog capability, with separately
+  labeled host, synthetic Android, production UI and external evidence.
+- Phase B: Design the workflow. Done. Reuse current tests and task AVDs. Do not
+  replace missing native observations with passing mocks or invent approvals.
+- Phase C: Run the loop. Running, cards below.
+- Phase D: Keep the audit trail. Running. Record decisions and failed hypotheses
+  alongside checks here and in the existing local repair-decisions.tsv.
+- Phase E: Verify and hand back. Pending independent review, integrated checks,
+  current-source artifact and reconciled44-row acceptance.
+
+| Card | Owner/write set | Acceptance | State |
+|---|---|---|---|
+| Permission handoff | reminder agent: reminder Dart/native/tests, dedicated permission integration | real grant, committed revision, native schedule ACK, cancel, owner guards | OPEN: signed27 first grant fails; isolated fixture passes |
+| Scratchpad | scratchpad agent: typed_cloze_scratchpad test and demonstrated affected UI only | late-inset regression; Save hit-test and frozen ink ACK preserved | Host and Android repeats pass; old cause unconfirmed |
+| Catalog gaps | map agent: read-only source/tests/44 ledger | exact existing coverage and missing workflows | Done |
+| Native modes | root: new integration entry | five exercise kinds through durable restart/history on synthetic Android | PASS |
+| Ladder/streak/rewards/accessibility | disjoint test files | real route dispatch, multi-day canonical facts, earned coin purchase/equip, scoped semantics/layout | PASS bounded checks |
+| Integration | root: docs/runner/artifacts | focused then full host, analysis, native checks and review | Running |
+
+Throughput checkpoint: three disjoint investigation slices run concurrently.
+Root serializes every Flutter test/build/generator and controls emulator5554.
+Scratchpad agent has the first focused host-test slot. Reminder agent must wait
+for root to run native tests. No physical Vivo or original API35 AVD changes.
+Existing untracked critique and failure artifacts remain untouched.
+
+## Decisions
+
+- Apply Fix Root Causes: capture a redacted native stage/error class before
+  changing reminder retries/timeouts. Existing generic failure does not prove
+  the earlier cold-start timeout hypothesis.
+- Apply Model the Domain: retain owner, revision, committed setting and ACK
+  identity; do not add a second scheduling or reward authority.
+- Apply Prove It Works: reuse accepted fixtures on Android, then inspect the
+  signed internal app separately. Host test counts are not44 end-to-end UATs.
+
+## Execution evidence
+
+Artifact root: `D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/`.
+
+- First native permission grant succeeds without a second Save, schedules
+  revision2, disables revision3 and passes SQLite quick_check. Real Android
+  permission dialog was allowed on the synthetic AVD. Log
+  `complete-reminder-permission-red.log` ends1/1 PASS despite its provisional
+  filename. No native error was logged. This does not establish the cause of
+  the earlier intermittent failure. Redacted native stage/class diagnostics
+  are retained instead of an unjustified timeout/retry change.
+- Late keyboard-inset scratchpad regression passes on host without changing
+  production or the helper. Both `scratchpad-inset-red*.log` are PASS, not RED
+  evidence. Native repetition remains necessary; no proven fix is claimed.
+- New route tests initially imported a Dart part directly, then expected an
+  offscreen lazy hub item after returning. Corrected the import and restored
+  the scroll position through the UI. A pumpAndSettle trial blocked on pending
+  SQL; existing bounded IO-aware wait replaces it. Final9/9 in
+  `complete-ladder-green2.log`, all seven stage entries plus existing guards.
+- Added labeled/Android-size tap guidelines to login/register and the common
+  lesson shell. Corrected semantics-handle cleanup in the test. Six checks pass
+  in `complete-journeys-host2.log`; its other failures remain recorded.
+- Canonical earning revealed a real shared SRS defect: repeated correct answers
+  doubled the interval until Duration/DateTime overflowed, eventually aborting
+  the answer transaction. `complete-earned-host.log` and `complete-srs-red.log`
+  reproduce the failure and earlier backwards due date.
+- Retain policy v1 and its same-day sequence. Saturate only date representability,
+  bounding before multiplication and avoiding oversized Duration arithmetic.
+  Eight policy tests and two canonical earning/streak journeys pass in
+  `complete-srs-earned-green.log`. They include100 correct answers, UTC extrema,
+  microseconds, two-day/gap UI,80 earned coins, purchase/equip and file reopen.
+  Canonical XP rows are expected alongside coin provenance; no seeded credits.
+- Current native expanded runner includes durable resume/history across five
+  exercise kinds, the seven stage routes and earned reward/streak journeys.
+  First `complete-extended-native.log` ends42 pass/3 fail. Two failures occur
+  because History is tapped before hit-testing/layout is ready; the third is a
+  guarded expect inside asynchronous fixture IO while a frame pumps. Preserve
+  this evidence. Await hit-testability before the one tap and move provenance
+  assertions outside the IO callback, without suppressing failures.
+- Independent SRS review identified double-precision loss on the web for ancient
+  negative UTC dates. Epoch-day quotient/remainder avoids subtracting timestamps
+  across the full date range. Added negative-year fractional ms/us cases and
+  retained version1 behavior. Review accepts the correction. Exact canonical
+  answer IDs now match all80 coin-credit and XP source IDs after reopening.
+- Nine focused corrected boundary/journey cases pass in
+  `complete-boundary-focused.log`. Expanded native rerun is
+  `complete-extended-native-final.log`; wait for its final receipt.
+- Independent reminder review accepts real first-Save ACK and cancellation,
+  authority boundaries and redacted diagnostics. No new scoped comment needs
+  removal. It does not establish the earlier transient failure's root cause.
+- Expanded Android rerun passes45/45 in `complete-extended-native-final.log`.
+  Scratchpad original sequence plus late-inset case repeats three times with
+ 12/12 passes in `complete-scratchpad-native-repeat.log`. Four distinct scenarios
+  were repeated; no production Scratchpad behavior changed to obtain a pass.
+- Browser verification initially stalls because Flutter's Windows-generated
+  test HTML consumes directory backslashes in its selector. CDP and SDK source
+  confirm the wrong selector, not an app arithmetic failure. Stop only the
+  identified test runner/process tree and use `test/srs_browser_entry.dart` to
+  invoke the identical nested suite from a flat path. Preserve the stalled log.
+  The helper deliberately lacks `_test.dart` so the full host suite does not
+  execute the same tests twice. Browser rerun is pending.
+- The flat-path browser retry exposes a second SDK Windows URL-mapping defect:
+  CanvasKit requests return404 despite the assets existing in the SDK cache.
+  Do not modify the global SDK. Remove the temporary browser entry and use
+  `tool/cli/verify_srs_boundary.dart`, compiled from the actual production policy
+  with `dart compile js -O2` and executed with Node. The final log
+  `complete-srs-js-final.log` verifies400 reviews across four boundary clocks.
+  This is JavaScript arithmetic execution, not Flutter browser UI acceptance.
+- First analysis reports only new test/probe style issues; fix cleanup braces,
+  file naming and package imports. The CLI retains stdout with a scoped
+  avoid_print style suppression. `complete-analysis-final.log` and
+  `complete-full-tests.log` are the final checks. Input hashes now also include
+  changed Kotlin and native/build configuration in
+  `complete-source-verified-before.json`; do not substitute the earlier
+  Dart-only snapshot as whole-artifact identity.
+- Full host suite passes5614 cases in18:06. The result file records exit0,
+  1030 inputs and no changed hashes. This precedes the Dart diagnostic patch.
+- Signed27 reproduces first-permission requestUnconfirmed at
+  `complete-316-delivery-state.xml`. Explicit retry succeeds at317. Production
+  uses a background database isolate and concurrent resume jobs; the isolated
+  permission fixture does not exercise that composition. Keep f27 open.
+- After changing the accepted reminder to08:50 UTC, Android actually posts
+  notification2701. `complete-delivery-notification.txt` and
+  `complete-322-delivered.xml` show the generic body. Returning from Home then
+  shows reminder unavailable at323/324. No root cause is inferred from this.
+- Add temporary redacted Dart stage/error-type diagnostics alongside native
+  diagnostics for signed28. Focused reminder tests pass27/27. No retry, timeout,
+  owner guard, exception mapping or scheduling behavior changes in this patch.

@@ -2,15 +2,25 @@ import 'package:drift/drift.dart' show TableUpdate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_recall_ladder_reader.dart';
+import 'package:vocab_learning_app/features/learning/domain/recall_ladder.dart';
 import 'package:vocab_learning_app/features/learning/presentation/recall_ladder_panel.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_pack_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/matching_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/select_category_for_quiz.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -22,6 +32,119 @@ void main() {
     () => TestWidgetsFlutterBinding.ensureInitialized()
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed),
   );
+
+  for (final stage in RecallLadderStage.values) {
+    testWidgets(
+      'actual recall ${stage.name} entry preserves its scope and returns to the hub',
+      (tester) async {
+        final f = await motivationPresentationIo(tester, _Fixture.open);
+        final semantics = tester.ensureSemantics();
+        try {
+          await tester.pumpWidget(f.app());
+          await _ready(tester, 'journey');
+          final details = find.byKey(const ValueKey('recall-ladder-details'));
+          await tester.ensureVisible(details);
+          await tester.tap(details);
+          await tester.pumpAndSettle();
+          final button = find.byKey(ValueKey('recall-ladder-${stage.name}'));
+          await tester.ensureVisible(button);
+          await tester.pumpAndSettle();
+          expect(button.hitTestable(), findsOneWidget);
+          expect(
+            tester.getSemantics(button).label,
+            contains(recallLadderStageLabel(stage)),
+          );
+          if (stage == RecallLadderStage.speaking) {
+            expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+            expect(
+              await motivationPresentationIo(
+                tester,
+                () => f.h.count('learning_sessions'),
+              ),
+              0,
+            );
+            return;
+          }
+          expect(tester.widget<OutlinedButton>(button).onPressed, isNotNull);
+          await tester.tap(button.hitTestable());
+          if (stage == RecallLadderStage.cloze) {
+            final variant = find.byKey(const ValueKey('cloze-variant-typed'));
+            await _until(tester, () => variant.evaluate().isNotEmpty);
+            await tester.tap(variant);
+          }
+          final page = switch (stage) {
+            RecallLadderStage.exposure => find.byType(SrsFlashcardsScreen),
+            RecallLadderStage.recognition => find.byType(QuizScreen),
+            RecallLadderStage.matching => find.byType(MatchingQuizScreen),
+            RecallLadderStage.typedRecall => find.byType(
+              LearningPackCatalogScreen,
+            ),
+            RecallLadderStage.cloze ||
+            RecallLadderStage.dictation => find.byType(SelectCategoryForQuiz),
+            RecallLadderStage.speaking => throw StateError(
+              'Unavailable speaking cannot navigate',
+            ),
+          };
+          await _until(tester, () => page.evaluate().isNotEmpty);
+          if (stage == RecallLadderStage.exposure) {
+            await _until(
+              tester,
+              () => find.byKey(const Key('srs-card')).evaluate().isNotEmpty,
+            );
+            final screen = tester.widget<SrsFlashcardsScreen>(page);
+            expect(screen.sourceWordIds, [configuredWordIds.last]);
+            expect(screen.expectedOwnerId, configuredOwnerId);
+          } else if (stage == RecallLadderStage.recognition) {
+            final screen = tester.widget<QuizScreen>(page);
+            expect(screen.wordIds, [configuredWordIds.last]);
+            expect(screen.expectedOwnerId, configuredOwnerId);
+          } else if (stage == RecallLadderStage.matching) {
+            await _until(
+              tester,
+              () => find
+                  .byKey(const ValueKey('matching-word-0'))
+                  .evaluate()
+                  .isNotEmpty,
+            );
+            expect(
+              tester.widget<MatchingQuizScreen>(page).expectedOwnerId,
+              configuredOwnerId,
+            );
+          }
+          Navigator.of(tester.element(page)).pop();
+          await _until(tester, () => page.evaluate().isEmpty);
+          await tester.scrollUntilVisible(
+            find.text('วันนี้อยากฝึกอะไร'),
+            -300,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ChooseModeScreen),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await _ready(tester, 'journey');
+          expect(page, findsNothing);
+          expect(find.byType(ChooseModeScreen), findsOneWidget);
+          expect(
+            await motivationPresentationIo(
+              tester,
+              () => f.h.count('answer_attempts'),
+            ),
+            0,
+          );
+          expect(
+            (await motivationPresentationIo(tester, f.h.researchCounts)).values,
+            everyElement(0),
+          );
+          expect(tester.takeException(), isNull);
+        } finally {
+          semantics.dispose();
+          await closeMotivationPresentation(tester, f.close);
+        }
+      },
+    );
+  }
 
   testWidgets(
     'actual ChooseMode recommendation is a pure read and opens the current word in SRS',
@@ -78,7 +201,7 @@ void main() {
         );
         expect(tester.takeException(), isNull);
       } finally {
-        await closeMotivationPresentation(tester, f.h.close);
+        await closeMotivationPresentation(tester, f.close);
       }
     },
   );
@@ -125,7 +248,7 @@ void main() {
         );
         expect(tester.takeException(), isNull);
       } finally {
-        await closeMotivationPresentation(tester, f.h.close);
+        await closeMotivationPresentation(tester, f.close);
       }
     },
   );
@@ -197,6 +320,29 @@ final class _Fixture {
         guestSessionService: _NoGuest(),
         database: h.database,
         localOwners: h.owners,
+        vocabulary: VocabularyUseCases(
+          owners: h.owners,
+          vocabulary: DriftVocabularyRepository(h.database),
+          generateId: () => 'synthetic-recall-vocabulary-${++ids}',
+          nowUtc: () => h.now,
+        ),
+        matching: MatchingUseCases(
+          repository: DriftMatchingRepository(repository),
+          generateId: () => 'synthetic-recall-matching-${++ids}',
+          nowUtc: () => h.now,
+          buildInfo: const AppBuildInfo(
+            version: 'synthetic',
+            buildId: 'synthetic-recall-entry',
+          ),
+        ),
+        learningPacks: LearningPackUseCases(
+          repository: DriftLearningPackRepository(
+            database: h.database,
+            ownerWrites: h.ownerWrites,
+          ),
+          generateId: () => 'synthetic-recall-pack-${++ids}',
+          nowUtc: () => h.now,
+        ),
         learning: LearningUseCases(
           owners: h.owners,
           repository: repository,
@@ -223,6 +369,11 @@ final class _Fixture {
   Future<void> switchOwner(String ownerId) async {
     await h.switchOwner(ownerId);
     h.database.notifyUpdates({TableUpdate.onTable(h.database.localOwners)});
+  }
+
+  Future<void> close() async {
+    await dependencies.learningPacks!.dispose();
+    await h.close();
   }
 
   Widget app() => AppDependenciesScope(
