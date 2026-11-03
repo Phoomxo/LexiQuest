@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/presentation/today_resume_panel.dart';
+import 'package:vocab_learning_app/features/progress/presentation/resume_learning_history_entry.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -43,10 +44,7 @@ void main() {
         final before = await motivationPresentationIo(tester, f.h.snapshot);
         await tester.pumpWidget(f.app(scale: 2));
         await _ready(tester);
-        expect(
-          find.text('พบกิจกรรมที่เล่นต่อได้ 1 รอบในประวัติ 50 รายการล่าสุด'),
-          findsOneWidget,
-        );
+        expect(find.text('ฝึกคำศัพท์ · เริ่มล่าสุด'), findsOneWidget);
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
         final button = find.byKey(const ValueKey('today-resume-open-history'));
         await tester.ensureVisible(button);
@@ -64,7 +62,7 @@ void main() {
   );
 
   testWidgets(
-    'actual ChooseMode Today entry opens History and resumes its original canonical quiz',
+    'actual ChooseMode Today entry directly resumes its original canonical quiz',
     (tester) async {
       final f = await motivationPresentationIo(tester, _Fixture.open);
       try {
@@ -73,15 +71,10 @@ void main() {
         await _ready(tester);
         expect(find.byType(TodayResumePanel), findsOneWidget);
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
-        final button = find.byKey(const ValueKey('today-resume-open-history'));
+        final button = find.byKey(const ValueKey('today-resume-start'));
         await tester.ensureVisible(button);
         await tester.pump(const Duration(milliseconds: 16));
-        expect(button.hitTestable(), findsOneWidget);
         await tester.tap(button.hitTestable());
-        await _historyReady(tester);
-        expect(find.byType(LearningHistoryScreen), findsOneWidget);
-        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
-        await tester.tap(find.text('เล่นต่อ').hitTestable());
         await _until(
           tester,
           () =>
@@ -123,7 +116,7 @@ void main() {
     }
   });
 
-  testWidgets('actual owner A-B-A retires a retained Today history action', (
+  testWidgets('actual owner A-B-A retires a retained Today resume action', (
     tester,
   ) async {
     final f = await motivationPresentationIo(tester, _Fixture.open);
@@ -131,8 +124,8 @@ void main() {
       await tester.pumpWidget(f.app());
       await _ready(tester);
       final retained = tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('today-resume-open-history')),
+          .widget<ButtonStyleButton>(
+            find.byKey(const ValueKey('today-resume-start')),
           )
           .onPressed!;
       await motivationPresentationIo(
@@ -154,12 +147,153 @@ void main() {
       retained();
       await _flush(tester, 8);
       expect(find.byType(LearningHistoryScreen), findsNothing);
+      expect(find.byType(QuizScreen), findsNothing);
       expect(await motivationPresentationIo(tester, f.h.snapshot), before);
       expect(tester.takeException(), isNull);
     } finally {
       await closeMotivationPresentation(tester, f.h.close);
     }
   });
+
+  testWidgets(
+    'refresh retires a retained action when a newer session appears',
+    (tester) async {
+      final f = await motivationPresentationIo(tester, _Fixture.open);
+      try {
+        await tester.pumpWidget(f.app());
+        await _ready(tester);
+        final retained = tester
+            .widget<ButtonStyleButton>(
+              find.byKey(const ValueKey('today-resume-start')),
+            )
+            .onPressed!;
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        final newer = (await tester.runAsync(() async {
+          f.h.now = f.h.now.add(const Duration(seconds: 1));
+          final learning = f.dependencies.learning!;
+          return learning.startConfiguredQuiz(
+            await learning.prepareConfiguredQuiz(
+              configuration: QuizConfiguration.sourcePractice(
+                wordIds: [configuredWordIds.first],
+                limit: 1,
+              ),
+              expectedOwnerId: configuredOwnerId,
+            ),
+          );
+        }))!;
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _ready(tester);
+        final history = await motivationPresentationIo(
+          tester,
+          () => f.progress.loadHistoryForOwner(
+            expectedOwnerId: configuredOwnerId,
+            stillCurrent: () => true,
+          ),
+        );
+        expect(history.entries.first.sessionId, newer.sessionId);
+        final before = await motivationPresentationIo(tester, f.h.snapshot);
+        retained();
+        await _flush(tester, 12);
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(find.byType(LearningHistoryScreen), findsNothing);
+        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        await tester.tap(find.byKey(const ValueKey('today-resume-start')));
+        await _until(
+          tester,
+          () => find.byType(QuizScreen).evaluate().isNotEmpty,
+        );
+        expect(
+          tester.widget<QuizScreen>(find.byType(QuizScreen)).resumeSessionId,
+          newer.sessionId,
+        );
+        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await closeMotivationPresentation(tester, f.h.close);
+      }
+    },
+  );
+
+  for (final change in ['state', 'checkpoint_json']) {
+    testWidgets('fresh read rejects a stale $change without substitution', (
+      tester,
+    ) async {
+      final f = await motivationPresentationIo(tester, _Fixture.open);
+      try {
+        await tester.pumpWidget(f.app());
+        await _ready(tester);
+        await motivationPresentationIo(
+          tester,
+          () => f.h.database.customStatement(
+            change == 'state'
+                ? "UPDATE learning_sessions SET state = 'completed' WHERE id = ?"
+                : 'UPDATE learning_sessions SET checkpoint_json = NULL WHERE id = ?',
+            [f.activeSessionId],
+          ),
+        );
+        await tester.tap(find.byKey(const ValueKey('today-resume-start')));
+        await _until(
+          tester,
+          () => find
+              .byKey(const ValueKey('today-resume-error'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(find.byType(LearningHistoryScreen), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await closeMotivationPresentation(tester, f.h.close);
+      }
+    });
+  }
+
+  testWidgets(
+    'retained resume action cannot launch while backgrounded or covered',
+    (tester) async {
+      final f = await motivationPresentationIo(tester, _Fixture.open);
+      try {
+        await tester.pumpWidget(f.app());
+        await _ready(tester);
+        final retained = tester
+            .widget<ButtonStyleButton>(
+              find.byKey(const ValueKey('today-resume-start')),
+            )
+            .onPressed!;
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        retained();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        expect(find.byType(QuizScreen), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _ready(tester);
+        f.navigator.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('covered')),
+          ),
+        );
+        await _flush(tester, 4);
+        retained();
+        await _flush(tester, 4);
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(find.text('covered'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await closeMotivationPresentation(tester, f.h.close);
+      }
+    },
+  );
 
   testWidgets('actual deletion fence denies the summary and History action', (
     tester,
@@ -198,12 +332,17 @@ void main() {
   testWidgets(
     'actual active Study quiz does not enter the ordinary resume count',
     (tester) async {
-      final study = await motivationPresentationIo(tester, () async {
+      final study = (await tester.runAsync(() async {
         final fixture = await OpportunityFixture.open();
-        await fixture.ready();
-        await fixture.accept();
-        return fixture;
-      });
+        try {
+          await fixture.ready();
+          await fixture.accept();
+          return fixture;
+        } catch (_) {
+          await fixture.database.close();
+          rethrow;
+        }
+      }))!;
       try {
         final session = await motivationPresentationIo(
           tester,
@@ -239,6 +378,7 @@ void main() {
                 ownerId: 'owner-a',
                 ownerChanges: owners,
                 onOpenHistory: () async => historyOpens++,
+                onResume: (_, _, _) async {},
               ),
             ),
           ),
@@ -436,6 +576,15 @@ final class _Fixture {
                 progress: progress,
                 ownerId: ownerId,
                 ownerChanges: owners,
+                onResume: (entry, ownerId, stillCurrent) =>
+                    resumeLearningHistoryEntry(
+                      navigator.currentContext!,
+                      entry: entry,
+                      expectedOwnerId: ownerId,
+                      dependencies: dependencies,
+                      ownerChanges: owners,
+                      stillCurrent: stillCurrent,
+                    ),
                 onOpenHistory: () async {
                   await navigator.currentState!.push<void>(
                     MaterialPageRoute(

@@ -13,11 +13,14 @@ import 'package:vocab_learning_app/features/learning/domain/learning_repository.
 import 'package:vocab_learning_app/features/learning/presentation/native_exercise_resume_screen.dart';
 import 'package:vocab_learning_app/features/learning/presentation/lesson_scaffold.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_learning_history_queries.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
@@ -28,6 +31,8 @@ import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import '../support/configured_quiz_harness.dart';
+import '../support/motivation_presentation_io.dart'
+    show motivationPresentationIo;
 import '../support/sentence_scramble_native_harness.dart'
     show SyntheticSentenceScrambleProvider;
 
@@ -42,6 +47,8 @@ void main() {
     for (final path in [
       'direct',
       'through History',
+      'through Today',
+      'answered Today',
       'pending History',
       'answered History',
       'closing History',
@@ -54,9 +61,10 @@ void main() {
       ],
     ]) {
       final throughHistory = path.contains('History');
+      final throughToday = path.contains('Today');
       final completed = path == 'completed History';
       final pending = path == 'pending History';
-      final answered = path == 'answered History';
+      final answered = path == 'answered History' || path == 'answered Today';
       final closing = path == 'closing History';
       final submitted = pending || answered || closing || completed;
       final ownerBefore = path == 'owner before read';
@@ -275,6 +283,11 @@ void main() {
                   guestSessionService: _Guest(),
                   learning: learning,
                   voice: VoiceUseCases(voice),
+                  progress: ProgressUseCases(
+                    owners: storage.owners,
+                    queries: DriftProgressQueries(storage.database),
+                    nowUtc: () => storage.now,
+                  ),
                 ),
                 child: MaterialApp(
                   home: throughHistory
@@ -290,6 +303,8 @@ void main() {
                                 before: before,
                               ),
                         )
+                      : throughToday
+                      ? const ChooseModeScreen()
                       : ownerNegative
                       ? NativeExerciseResumeScreen(
                           sessionId: state.exercise.id,
@@ -347,11 +362,21 @@ void main() {
               await tester.tap(find.text(action).hitTestable());
               await tester.pump();
             }
+            if (throughToday) {
+              final action = find.byKey(const ValueKey('today-resume-start'));
+              await _until(tester, () => action.evaluate().isNotEmpty);
+              await tester.ensureVisible(action);
+              await tester.pump();
+              await tester.tap(action.hitTestable());
+              await tester.pump();
+            }
             await _until(
               tester,
               () =>
                   repository!.completedResumes >=
-                      (throughHistory && !completed ? 2 : 1) ||
+                      ((throughHistory || throughToday) && !completed
+                          ? 2
+                          : 1) ||
                   repository!.completedStarts > 0,
             );
             await tester.pump(const Duration(milliseconds: 16));
@@ -446,7 +471,11 @@ void main() {
                 find.byKey(const ValueKey('native-draft-status')),
               );
               expect(
-                find.text('Draft saved. Answer not recorded.'),
+                find.text(
+                  throughToday
+                      ? 'ฉบับร่างบันทึกแล้ว ยังไม่เป็นคำตอบที่ส่ง'
+                      : 'Draft saved. Answer not recorded.',
+                ),
                 findsOneWidget,
               );
             }
@@ -456,12 +485,15 @@ void main() {
               final response = find.byKey(const ValueKey('scramble-response'));
               await _scrollTo(tester, mode, response);
               await tester.enterText(response, submittedText);
+              FocusManager.instance.primaryFocus?.unfocus();
+              await tester.pumpAndSettle();
               final save = find.byKey(const ValueKey('scramble-save'));
               await _scrollTo(tester, mode, save);
               final originalIdCount = nextId;
               await tester.tap(save);
               final retry = find.byKey(const ValueKey('scramble-retry'));
               await _until(tester, () => hookCalls == 1);
+              await tester.pumpAndSettle();
               await _scrollTo(tester, mode, retry);
               expect(hookCalls, 1);
               expect(
@@ -711,6 +743,18 @@ void main() {
               expect(repository!.starts, 0);
               expect(blockedProvider.requests, 0);
               expect(voice.spoken, 0);
+              if (throughToday) {
+                final back = find.widgetWithText(FilledButton, 'กลับหน้าเรียน');
+                await tester.ensureVisible(back);
+                await tester.tap(back);
+                await _until(
+                  tester,
+                  () =>
+                      find.byType(ChooseModeScreen).evaluate().isNotEmpty &&
+                      find.byType(ScoreScreen).evaluate().isEmpty,
+                );
+                expect(find.byType(ScoreScreen), findsNothing);
+              }
             }
             expect(tester.takeException(), isNull);
           } finally {
@@ -727,18 +771,17 @@ void main() {
             }
             if (repository != null) await tester.runAsync(repository!.settle);
             await tester.runAsync(owners.close);
-            await tester.runAsync(() async {
+            await motivationPresentationIo(tester, () async {
               if (opened) await storage.close();
               final resolved = await directory.resolveSymbolicLinks();
               final temp = await Directory.systemTemp.resolveSymbolicLinks();
-              expect(
-                resolved,
-                startsWith(
-                  '$temp${Platform.pathSeparator}lexiquest-native-ui-resume-',
-                ),
-              );
+              if (!resolved.startsWith(
+                '$temp${Platform.pathSeparator}lexiquest-native-ui-resume-',
+              )) {
+                throw StateError('Refusing cleanup outside the resume fixture');
+              }
               await directory.delete(recursive: true);
-            });
+            }, stage: 'native-resume/close-database');
           }
         },
       );

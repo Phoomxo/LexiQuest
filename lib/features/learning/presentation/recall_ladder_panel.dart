@@ -15,6 +15,7 @@ class RecallLadderPanel extends StatefulWidget {
     this.wordId,
     this.onPractice,
     this.canPractice,
+    this.onOpenStarter,
   });
   final RecallLadderReader reader;
   final String ownerId;
@@ -23,6 +24,7 @@ class RecallLadderPanel extends StatefulWidget {
   final Future<void> Function(RecallLadderStage stage, QuizWord word)?
   onPractice;
   final bool Function(RecallLadderStage stage, QuizWord word)? canPractice;
+  final VoidCallback? onOpenStarter;
 
   @override
   State<RecallLadderPanel> createState() => _RecallLadderPanelState();
@@ -226,8 +228,24 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
               const LinearProgressIndicator(
                 semanticsLabel: 'กำลังอ่านคำแนะนำการฝึก',
               ),
-            if (snapshot != null && word == null)
+            if (snapshot != null && word == null) ...[
               const Text('ยังไม่มีคำศัพท์ที่พร้อมใช้ในบัญชีนี้'),
+              if (widget.onOpenStarter != null) ...[
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  key: const ValueKey('recall-ladder-starter'),
+                  onPressed: _visible
+                      ? () {
+                          if (_visible && identical(snapshot, _snapshot)) {
+                            widget.onOpenStarter?.call();
+                          }
+                        }
+                      : null,
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('เริ่มด้วยชุดคำศัพท์'),
+                ),
+              ],
+            ],
             if (snapshot != null && word != null) ...[
               Text('คำอ้างอิง: ${word.spelling}'),
               const SizedBox(height: 12),
@@ -242,6 +260,8 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
                   'แนะนำ: ${recallLadderStageLabel(snapshot.suggestedStage)}',
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(recallLadderStageHelp(snapshot.suggestedStage)),
               const SizedBox(height: 8),
               ExpansionTile(
                 key: const ValueKey('recall-ladder-details'),
@@ -263,9 +283,6 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
                       '${latest.evidenceClass.name == 'pronunciation' ? ' · หลักฐานการออกเสียง' : ''}',
                     ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'เลือกกิจกรรมต่อ จากนั้นเลือกคำหรือหมวดในกิจกรรมนั้น',
-                  ),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -280,7 +297,7 @@ class _RecallLadderPanelState extends State<RecallLadderPanel>
                             minimumSize: const Size(64, 64),
                           ),
                           child: Text(
-                            '${recallLadderStageLabel(stage)}'
+                            '${recallLadderStageLabel(stage)}\n${recallLadderStageHelp(stage)}'
                             '${snapshot.observedCount(stage) == 0 ? '' : ' · พบคำตอบ ${snapshot.observedCount(stage)}'}',
                           ),
                         ),
@@ -304,6 +321,19 @@ String recallLadderStageLabel(RecallLadderStage stage) => switch (stage) {
   RecallLadderStage.typedRecall => 'พิมพ์จากความจำ',
   RecallLadderStage.dictation => 'ฟังแล้วพิมพ์',
   RecallLadderStage.speaking => 'ฝึกออกเสียง',
+};
+
+String recallLadderStageHelp(RecallLadderStage stage) => switch (stage) {
+  RecallLadderStage.exposure ||
+  RecallLadderStage.recognition => 'ฝึกคำอ้างอิงนี้โดยตรง',
+  RecallLadderStage.matching =>
+    'จับคู่จากคำที่ระบบเลือกอย่างน้อย 2 คู่ คำอ้างอิงอาจไม่อยู่ในชุด',
+  RecallLadderStage.cloze ||
+  RecallLadderStage.dictation => 'เลือกหมวดเพื่อฝึก คำอ้างอิงอาจไม่อยู่ในชุด',
+  RecallLadderStage.typedRecall =>
+    'เปิดรายการแพ็กเพื่อเลือกกิจกรรม คำอ้างอิงอาจไม่อยู่ในแพ็ก',
+  RecallLadderStage.speaking =>
+    'เลือกคำต้นทางเพื่อฝึกออกเสียง คำอ้างอิงอาจไม่อยู่ในชุด',
 };
 
 bool _sameWord(QuizWord? a, QuizWord b) =>

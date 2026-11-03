@@ -480,6 +480,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         epoch: epoch,
         quiz: true,
         builder: (launch) => QuizScreen(
+          resultBackLabel: _text('กลับศูนย์ทบทวน', 'Back to review center'),
           expectedOwnerId: owner,
           ownerChanges: owners,
           learning: learning,

@@ -14,6 +14,67 @@ import 'package:vocab_learning_app/features/learning_packs/presentation/learning
 
 void main() {
   testWidgets(
+    'starter preview is not reopened after owner changes away and back',
+    (tester) async {
+      final h = (await tester.runAsync(_Harness.open))!;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LearningPackCatalogScreen(
+              packs: h.packs,
+              openStarterPreview: true,
+            ),
+          ),
+        );
+        await _untilCondition(tester, () {
+          final confirm = find.byKey(const ValueKey('pack-confirm-install'));
+          return confirm.evaluate().isNotEmpty &&
+              tester.widget<FilledButton>(confirm).onPressed != null;
+        });
+        final retained = tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('pack-confirm-install')),
+            )
+            .onPressed!;
+        await tester.runAsync(
+          () => h.database.customUpdate(
+            'UPDATE local_owners SET is_active = 0',
+            updates: {h.database.localOwners},
+          ),
+        );
+        await _untilCondition(
+          tester,
+          () => find
+              .byKey(const ValueKey('pack-confirm-install'))
+              .evaluate()
+              .isEmpty,
+        );
+        await tester.runAsync(
+          () => h.database.customUpdate(
+            'UPDATE local_owners SET is_active = 1',
+            updates: {h.database.localOwners},
+          ),
+        );
+        await _readyToImport(tester);
+        retained();
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('pack-confirm-install')),
+          findsNothing,
+        );
+        expect(
+          await tester.runAsync(() => h.count('learning_pack_versions')),
+          0,
+        );
+        expect(await tester.runAsync(() => h.count('vocabulary_words')), 0);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.runAsync(h.close);
+      }
+    },
+  );
+
+  testWidgets(
     'actual import previews bytes before explicit canonical installation',
     (tester) async {
       final h = (await tester.runAsync(_Harness.open))!;
@@ -34,11 +95,12 @@ void main() {
         await _readyToImport(tester);
         expect(
           tester
-              .widget<FilledButton>(find.byKey(const ValueKey('pack-import')))
+              .widget<OutlinedButton>(find.byKey(const ValueKey('pack-import')))
               .onPressed,
           isNotNull,
           reason: 'The initial owner read must settle before importing',
         );
+        await tester.ensureVisible(find.byKey(const ValueKey('pack-import')));
         await tester.tap(find.byKey(const ValueKey('pack-import')));
         await _untilCondition(tester, () => pickerCalls == 1);
         await _until(
@@ -102,6 +164,7 @@ void main() {
         ),
       );
       await _readyToImport(tester);
+      await tester.ensureVisible(find.byKey(const ValueKey('pack-import')));
       await tester.tap(find.byKey(const ValueKey('pack-import')));
       await _untilCondition(tester, () => pickerCalls == 1);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -144,7 +207,7 @@ void main() {
 Future<void> _readyToImport(WidgetTester tester) => _untilCondition(tester, () {
   final finder = find.byKey(const ValueKey('pack-import'));
   return finder.evaluate().isNotEmpty &&
-      tester.widget<FilledButton>(finder).onPressed != null;
+      tester.widget<OutlinedButton>(finder).onPressed != null;
 });
 
 Future<void> _until(WidgetTester tester, Finder finder) async {

@@ -18,6 +18,42 @@ const _word = QuizWord(
 );
 
 void main() {
+  testWidgets('empty starter action retires on owner change', (tester) async {
+    final owners = StreamController<String?>.broadcast(sync: true);
+    final reader = _Reader()
+      ..snapshot = RecallLadderSnapshot(
+        ownerId: 'synthetic-owner',
+        word: null,
+        observations: [],
+      );
+    var launches = 0;
+    try {
+      await tester.pumpWidget(
+        _app(
+          RecallLadderPanel(
+            reader: reader,
+            ownerId: 'synthetic-owner',
+            ownerChanges: owners.stream,
+            onOpenStarter: () => launches++,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final retained = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('recall-ladder-starter')),
+          )
+          .onPressed!;
+      owners.add('other-owner');
+      owners.add('synthetic-owner');
+      await tester.pump();
+      retained();
+      expect(launches, 0);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await owners.close();
+    }
+  });
   for (final dark in [false, true]) {
     testWidgets(
       'recall suggestion fits 320px 200 percent ${dark ? 'dark' : 'light'} and preserves manual keyboard choice',
@@ -58,6 +94,21 @@ void main() {
             findsOneWidget,
           );
           expect(find.text('แนะนำ: จับคู่คำศัพท์'), findsOneWidget);
+          for (final stage in RecallLadderStage.values) {
+            final button = find.byKey(ValueKey('recall-ladder-${stage.name}'));
+            expect(
+              tester
+                  .widget<Text>(
+                    find.descendant(of: button, matching: find.byType(Text)),
+                  )
+                  .data,
+              contains(recallLadderStageHelp(stage)),
+            );
+          }
+          expect(
+            find.text(recallLadderStageHelp(RecallLadderStage.matching)),
+            findsOneWidget,
+          );
           expect(reader.reads, 1);
           final target = find.byKey(const ValueKey('recall-ladder-dictation'));
           await tester.ensureVisible(target);

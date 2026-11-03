@@ -23,6 +23,7 @@ class MatchingQuizScreen extends StatefulWidget {
     this.learning,
     this.learningTime,
     this.languageCode = 'th',
+    this.resultBackLabel,
   }) : assert((preparedPlan == null) != (resumeSessionId == null));
   final MatchingUseCases matching;
   final String expectedOwnerId;
@@ -32,6 +33,7 @@ class MatchingQuizScreen extends StatefulWidget {
   final LearningUseCases? learning;
   final LearningTimeUseCases? learningTime;
   final String languageCode;
+  final String? resultBackLabel;
 
   @override
   State<MatchingQuizScreen> createState() => _MatchingQuizScreenState();
@@ -107,7 +109,8 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     final route = ModalRoute.of(context);
     if (_configured) {
-      if (!identical(_dependencies, dependencies) || !identical(_route, route)) {
+      if (!identical(_dependencies, dependencies) ||
+          !identical(_route, route)) {
         _retire();
       }
       return;
@@ -363,6 +366,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     final summary = state?.completedSummary;
     if (summary != null && !_retired) {
       return ScoreScreen(
+        backLabel: widget.resultBackLabel,
         languageCode: widget.languageCode,
         correctAnswers: summary.correctCount,
         wrongAnswers: summary.wrongCount,

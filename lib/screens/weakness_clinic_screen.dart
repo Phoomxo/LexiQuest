@@ -266,6 +266,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
                         voice: dependencies?.voice,
                       )
                     : QuizScreen(
+                        resultBackLabel: 'กลับจุดอ่อน',
                         wordIds: ids,
                         selectionMode: QuizWordSelectionMode.weakness,
                         expectedOwnerId: owner,

@@ -41,11 +41,13 @@ class LearningPackCatalogScreen extends StatefulWidget {
     this.downloads,
     this.pickFile,
     this.voice,
+    this.openStarterPreview = false,
   });
   final LearningPackUseCases? packs;
   final HttpLearningPackSource? downloads;
   final LearningPackFilePicker? pickFile;
   final VoiceUseCases? voice;
+  final bool openStarterPreview;
 
   @override
   State<LearningPackCatalogScreen> createState() => _LearningPackCatalogState();
@@ -83,6 +85,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   bool _ownsPlayback = false;
   bool _foreground = true;
   bool _covered = false;
+  bool _openStarterPending = false;
 
   bool get _visible =>
       mounted &&
@@ -139,6 +142,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   @override
   void initState() {
     super.initState();
+    _openStarterPending = widget.openStarterPreview;
     _foreground =
         WidgetsBinding.instance.lifecycleState == null ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
@@ -200,6 +204,8 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
 
   void _ownerChanged(String? owner) {
     if (!mounted || _retired) return;
+    final openStarter = _openStarterPending;
+    _openStarterPending = false;
     _cancelWork();
     final previous = _saved;
     _saved = null;
@@ -213,7 +219,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         visible: () => _visible && _practiceRoute == null,
       )..addListener(_savedChanged);
     }
-    if (owner != null) unawaited(_reload());
+    if (owner != null) unawaited(_reload(openStarter: openStarter));
   }
 
   void _savedChanged() {
@@ -261,7 +267,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     return packs.captureOwner(stillCurrent: () => _current(lease));
   }
 
-  Future<void> _reload() async {
+  Future<void> _reload({bool openStarter = false}) async {
     if (!_visible || _packs == null || _busy || _picker) return;
     final operation = ++_operation;
     setState(() => _busy = true);
@@ -281,7 +287,12 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         _scope = scope;
         _rows = rows;
         _pending = null;
-        _view = const _Catalog();
+        _view = openStarter && scope != null
+            ? _Preview(
+                bundledStarterPack,
+                PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
+              )
+            : const _Catalog();
         _status = scope == null ? 'ไม่พบผู้เรียนที่พร้อมใช้งาน' : null;
       });
     } catch (error) {
@@ -804,6 +815,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             }
             if (definition) {
               return QuizScreen(
+                resultBackLabel: 'กลับแพ็กคำศัพท์',
                 preparedLaunch: quizLaunch!,
                 expectedOwnerId: scope.ownerId,
                 ownerChanges: ownerChanges,
@@ -1133,6 +1145,25 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         .where((row) => matches(row.manifest))
         .toList();
     return [
+      if (matches(bundledStarterPack.manifest)) ...[
+        Text(
+          'แพ็กเริ่มต้นที่มีในแอป',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Card(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          child: ListTile(
+            key: const ValueKey('pack-open-starter'),
+            title: Text(bundledStarterPack.manifest.title),
+            subtitle: Text(
+              '${bundledStarterPack.manifest.cefrLevel} · เวอร์ชัน ${bundledStarterPack.manifest.version} · ${bundledStarterPack.manifest.entryCount} คำ\nเปิดตัวอย่างและเลือกติดตั้งได้โดยไม่ใช้อินเทอร์เน็ต',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _action(_openStarter),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       TextField(
         key: const ValueKey('pack-search'),
         controller: _search,
@@ -1160,30 +1191,12 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         },
       ),
       const SizedBox(height: 16),
-      FilledButton.icon(
+      OutlinedButton.icon(
         key: const ValueKey('pack-import'),
         onPressed: _action(_importFile),
         icon: const Icon(Icons.file_open_outlined),
         label: const Text('นำเข้าไฟล์แพ็ก'),
       ),
-      if (matches(bundledStarterPack.manifest)) ...[
-        const SizedBox(height: 20),
-        Text(
-          'แพ็กเริ่มต้นที่มีในแอป',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        Card(
-          child: ListTile(
-            key: const ValueKey('pack-open-starter'),
-            title: Text(bundledStarterPack.manifest.title),
-            subtitle: Text(
-              '${bundledStarterPack.manifest.cefrLevel} · เวอร์ชัน ${bundledStarterPack.manifest.version} · ${bundledStarterPack.manifest.entryCount} คำ\nเปิดตัวอย่างและเลือกติดตั้งได้โดยไม่ใช้อินเทอร์เน็ต',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _action(_openStarter),
-          ),
-        ),
-      ],
       const SizedBox(height: 20),
       Text('แพ็กในเครื่อง', style: Theme.of(context).textTheme.titleMedium),
       if (local.isEmpty)

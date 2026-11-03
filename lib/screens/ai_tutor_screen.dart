@@ -747,6 +747,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       AppPage<void>(
         name: 'learning/source-tutor-target',
         builder: (_) => QuizScreen(
+          resultBackLabel: 'กลับ AI Tutor',
           learning: learning,
           wordIds: [target.wordId!],
           selectionMode: QuizWordSelectionMode.sourcePractice,

@@ -409,6 +409,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         AppPage<void>(
           name: 'learning/source-quiz',
           builder: (_) => QuizScreen(
+            resultBackLabel: 'กลับชุดคำต้นทาง',
             wordIds: preview.matchedWords
                 .take(_maxPracticeWords)
                 .map((word) => word.id)
@@ -629,6 +630,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                 );
               }
               return ScoreScreen(
+                backLabel: 'กลับชุดคำต้นทาง',
                 correctAnswers: summary.correctCount,
                 wrongAnswers: summary.wrongCount,
                 score: summary.score,
@@ -667,6 +669,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                             AppPage<void>(
                               name: repairRouteName,
                               builder: (_) => QuizScreen(
+                                resultBackLabel: 'กลับชุดคำต้นทาง',
                                 wordIds: mistakeIds,
                                 learning: captured.learning,
                               ),
@@ -879,6 +882,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                   );
                 }
                 return ScoreScreen(
+                  backLabel: 'กลับชุดคำต้นทาง',
                   correctAnswers: summary.correctCount,
                   wrongAnswers: summary.wrongCount,
                   score: summary.score,
@@ -921,6 +925,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                                           resultOpen &&
                                           repairing
                                       ? QuizScreen(
+                                          resultBackLabel: 'กลับชุดคำต้นทาง',
                                           wordIds: [word.id],
                                           learning: learning,
                                         )

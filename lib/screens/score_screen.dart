@@ -16,6 +16,7 @@ class ScoreScreen extends StatelessWidget {
     this.mistakes = const [],
     this.onPracticeMistakes,
     this.onBack,
+    this.backLabel,
     this.learningTime,
     this.resultOwnerId,
     this.resultSessionId,
@@ -28,6 +29,7 @@ class ScoreScreen extends StatelessWidget {
   final List<QuizWord> mistakes;
   final VoidCallback? onPracticeMistakes;
   final VoidCallback? onBack;
+  final String? backLabel;
   final LearningTimeUseCases? learningTime;
   final String? resultOwnerId;
   final String? resultSessionId;
@@ -41,6 +43,7 @@ class ScoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final thai = languageCode == 'th';
     final total = correctAnswers + wrongAnswers;
+    final canRepair = mistakes.isNotEmpty && onPracticeMistakes != null;
     final resolvedScore =
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return LessonScaffold(
@@ -58,6 +61,9 @@ class ScoreScreen extends StatelessWidget {
                   '$resolvedScore%',
                   style: Theme.of(context).textTheme.displayMedium,
                 ),
+                if (total > 0 && wrongAnswers == 0)
+                  Text(thai ? 'ตอบถูกทุกข้อ' : 'All answers correct'),
+                if (total == 0) Text(thai ? 'ยังไม่มีคำตอบ' : 'No answers yet'),
                 const SizedBox(height: 20),
                 _ResultRow(
                   label: thai ? 'ตอบถูก' : 'Correct',
@@ -116,11 +122,18 @@ class ScoreScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: 12),
                 ],
-                OutlinedButton.icon(
-                  onPressed: onBack ?? () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
-                  label: Text(thai ? 'ย้อนกลับ' : 'Back'),
-                ),
+                if (canRepair)
+                  OutlinedButton.icon(
+                    onPressed: onBack ?? () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: Text(backLabel ?? (thai ? 'เสร็จแล้ว' : 'Done')),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: onBack ?? () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.check),
+                    label: Text(backLabel ?? (thai ? 'เสร็จแล้ว' : 'Done')),
+                  ),
               ],
             ),
           ),

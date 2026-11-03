@@ -349,7 +349,7 @@ void main() {
             h.app(brightness: brightness, largeText: true),
           );
           await packUiReady(tester);
-          await tester.tap(find.byKey(const ValueKey('pack-search')));
+          await tapPackUi(tester, 'pack-search');
           await tester.enterText(
             find.byKey(const ValueKey('pack-search')),
             'nothing',

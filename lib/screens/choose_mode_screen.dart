@@ -16,6 +16,7 @@ import '../features/motivation/presentation/quest_screen.dart';
 import '../features/motivation/presentation/today_motivation_panel.dart';
 import '../features/motivation/presentation/contextual_companion_panel.dart';
 import '../features/progress/presentation/progress_host_binding.dart';
+import '../features/progress/presentation/resume_learning_history_entry.dart';
 import '../features/progress/presentation/today_resume_panel.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/presentation/study_host.dart';
@@ -154,6 +155,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         !_choosingNativeOverlay &&
         !_nativeChildActive &&
         !_openingSrs &&
+        !_openingProgressChild &&
         !_openingMatching &&
         !_openingLadder &&
         !_openingReminder &&
@@ -610,6 +612,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                                         ownerChanges: _nativeOwnerSource,
                                       )
                                     : QuizScreen(
+                                        resultBackLabel: 'กลับหน้าเรียน',
                                         learning: _learning,
                                         expectedOwnerId: _progress?.ownerId,
                                         ownerChanges: _nativeOwnerSource,
@@ -660,6 +663,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 () => _push(
                   context,
                   QuizScreen(
+                    resultBackLabel: 'กลับหน้าเรียน',
                     learning: _learning,
                     expectedOwnerId: _progress?.ownerId,
                     ownerChanges: _nativeOwnerSource,
@@ -968,6 +972,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             valueListenable: _nativeChanges,
             builder: (_, _, _) => current()
                 ? MatchingQuizScreen(
+                    resultBackLabel: 'กลับหน้าเรียน',
                     matching: matching,
                     expectedOwnerId: ownerId,
                     ownerChanges: screenOwners,
@@ -1330,6 +1335,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             );
           }
           return ScoreScreen(
+            backLabel: 'กลับหน้าเรียน',
             learningTime: switch (mode) {
               _NativeMode.dictation ||
               _NativeMode.cloze => dependencies.learningTime,
@@ -1360,7 +1366,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     if (categoryId != null && context.mounted) {
       await _push(
         context,
-        QuizScreen(categoryId: categoryId, learning: _learning),
+        QuizScreen(
+          categoryId: categoryId,
+          learning: _learning,
+          resultBackLabel: 'กลับหน้าเรียน',
+        ),
       );
     }
   }
@@ -1434,11 +1444,37 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         return const SizedBox.shrink();
       }
       final generation = _nativeGeneration;
+      final ownerGeneration = _nativeOwnerGeneration;
       return TodayResumePanel(
         key: ValueKey(('today-resume', owner, generation)),
         progress: progress,
         ownerId: owner,
         ownerChanges: owners,
+        onResume: (entry, expectedOwnerId, stillCurrent) async {
+          if (_openingProgressChild || expectedOwnerId != owner) return;
+          bool current() =>
+              mounted &&
+              ownerGeneration == _nativeOwnerGeneration &&
+              owner == _nativeOwnerId &&
+              identical(dependencies, _nativeDependencies) &&
+              stillCurrent();
+          if (!current()) return;
+          _openingProgressChild = true;
+          try {
+            await resumeLearningHistoryEntry(
+              context,
+              entry: entry,
+              expectedOwnerId: owner,
+              dependencies: dependencies,
+              ownerChanges: owners,
+              stillCurrent: current,
+              resultBackLabel: 'กลับหน้าเรียน',
+            );
+          } finally {
+            _openingProgressChild = false;
+            if (mounted) _syncProgress();
+          }
+        },
         onOpenHistory: () async {
           if (!mounted ||
               !context.mounted ||
@@ -1485,6 +1521,36 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           reader: reader,
           ownerId: owner,
           ownerChanges: owners,
+          onOpenStarter: dependencies.learningPacks == null
+              ? null
+              : () {
+                  final learning = _learning;
+                  if (_openingLadder ||
+                      learning == null ||
+                      !_nativeRouteVisible ||
+                      !_canOpenNative(
+                        generation,
+                        owner,
+                        learning,
+                        dependencies,
+                      )) {
+                    return;
+                  }
+                  _openingLadder = true;
+                  unawaited(
+                    _push(
+                      context,
+                      LearningPackCatalogScreen(
+                        packs: dependencies.learningPacks,
+                        downloads: dependencies.learningPackDownloads,
+                        openStarterPreview: true,
+                      ),
+                    ).whenComplete(() {
+                      _openingLadder = false;
+                      if (mounted) _syncProgress();
+                    }),
+                  );
+                },
           canPractice: (stage, word) => switch (stage) {
             RecallLadderStage.exposure =>
               _learning != null && _features.isVisible(FieldFeature.srs),
@@ -1532,6 +1598,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   await _push(
                     context,
                     QuizScreen(
+                      resultBackLabel: 'กลับหน้าเรียน',
                       wordIds: [word.id],
                       learning: learning,
                       expectedOwnerId: owner,
@@ -1686,6 +1753,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 )
               : practice
               ? QuizScreen(
+                  resultBackLabel: 'กลับหน้าเรียน',
                   learning: _learning,
                   expectedOwnerId: ownerId,
                   ownerChanges: _nativeOwnerSource,

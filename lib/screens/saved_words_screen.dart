@@ -667,6 +667,7 @@ class _SavedWordsScreenState extends State<SavedWordsScreen>
               );
             }
             return QuizScreen(
+              resultBackLabel: 'กลับคำที่บันทึก',
               wordIds: captured,
               selectionMode: QuizWordSelectionMode.sourcePractice,
               expectedOwnerId: owner,

@@ -344,6 +344,75 @@ void main() {
   );
 
   testWidgets(
+    'coalesced owner A-B-A retires Score and its retained mistake action',
+    (tester) async {
+      final owners = StreamController<String?>.broadcast(sync: true);
+      final owner = (await tester.runAsync(
+        () => database.select(database.localOwners).getSingle(),
+      ))!;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: QuizScreen(
+              categoryId: 'category-1',
+              learning: learning,
+              expectedOwnerId: owner.id,
+              ownerChanges: owners.stream,
+            ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('station'));
+        owners.add(owner.id);
+        await tester.tap(find.text('เฉลยคำตอบ'));
+        await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+        await tester.tap(find.text('ดูผลการเรียน'));
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        await tester.pumpAndSettle();
+        final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+        expect(score.wrongAnswers, 1);
+        final retained = score.onPracticeMistakes!;
+        final sessionsBefore = (await tester.runAsync(
+          () => database.select(database.learningSessions).get(),
+        ))!;
+        final answersBefore = (await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ))!;
+
+        // Both owner events and the old action arrive before the next frame.
+        owners.add('synthetic-different-owner');
+        owners.add(owner.id);
+        retained();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ScoreScreen), findsNothing);
+        expect(
+          find.text('บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'),
+          findsOneWidget,
+        );
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(find.byType(QuizScreen, skipOffstage: false), findsOneWidget);
+        expect(
+          await tester.runAsync(
+            () => database.select(database.learningSessions).get(),
+          ),
+          sessionsBefore,
+        );
+        expect(
+          await tester.runAsync(
+            () => database.select(database.answerAttempts).get(),
+          ),
+          answersBefore,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await owners.close();
+      }
+    },
+  );
+
+  testWidgets(
     'return from removed mistake practice cannot pop a foreign route',
     (tester) async {
       final owners = _actualProgressOwners(database, learning, ioZone);
@@ -927,14 +996,30 @@ void main() {
   testWidgets('missing category shows honest empty state', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: QuizScreen(categoryId: 'missing', learning: learning),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      QuizScreen(categoryId: 'missing', learning: learning),
+                ),
+              ),
+              child: const Text('เลือกกิจกรรม'),
+            ),
+          ),
+        ),
       ),
     );
-    final emptyState = find.textContaining('ยังไม่มีคำศัพท์สำหรับแบบทดสอบ');
+    await tester.tap(find.text('เลือกกิจกรรม'));
+    final emptyState = find.text('ไม่พบคำศัพท์สำหรับแบบทดสอบนี้');
     await _pumpUntilFound(tester, emptyState);
 
     expect(emptyState, findsOneWidget);
     expect(await database.select(database.learningSessions).get(), isEmpty);
+    await tester.tap(find.text('กลับไปเลือกกิจกรรม'));
+    await tester.pumpAndSettle();
+    expect(find.text('เลือกกิจกรรม'), findsOneWidget);
   });
 
   testWidgets('load failure is announced as a live region', (tester) async {
@@ -1044,13 +1129,17 @@ void main() {
       await tester.tap(find.text('ดูผลการเรียน'));
       await _pumpUntilFound(tester, find.text('100%'));
       await tester.pumpAndSettle();
-      await tester.pageBack();
+      await tester.tap(find.text('กลับหน้าเรียน'));
       await _pumpUntilFound(tester, find.text('วันนี้อยากฝึกอะไร'));
       await _pumpUntilFound(tester, find.text('คำที่ควรฝึก 1 คำ'));
       expect(hubLoads, 2);
       expect(
         await database.select(database.answerAttempts).get(),
         hasLength(3),
+      );
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(2),
       );
     },
   );

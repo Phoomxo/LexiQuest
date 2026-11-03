@@ -159,7 +159,7 @@ void main() {
         expect(find.text(thai ? 'ตอบถูก' : 'Correct'), findsOneWidget);
         expect(find.text(thai ? '2 วินาที' : '2 seconds'), findsOneWidget);
         expect(
-          find.widgetWithText(OutlinedButton, thai ? 'ย้อนกลับ' : 'Back'),
+          find.widgetWithText(FilledButton, thai ? 'เสร็จแล้ว' : 'Done'),
           findsOneWidget,
         );
         final explanation = find.textContaining(
@@ -199,7 +199,7 @@ void main() {
     await tester.tap(find.text('ประวัติการเรียน'));
     await tester.pumpAndSettle();
     expect(find.text('กลับไปเลือกกิจกรรม'), findsNothing);
-    await tester.tap(find.widgetWithText(OutlinedButton, 'ย้อนกลับ'));
+    await tester.tap(find.widgetWithText(FilledButton, 'เสร็จแล้ว'));
     await tester.pumpAndSettle();
     expect(find.byType(ScoreScreen), findsNothing);
     expect(find.text('ประวัติการเรียน'), findsOneWidget);

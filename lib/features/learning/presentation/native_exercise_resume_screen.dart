@@ -27,6 +27,7 @@ class NativeExerciseResumeScreen extends StatefulWidget {
     this.voice,
     this.learningTime,
     this.languageCode = 'th',
+    this.resultBackLabel,
   });
 
   final String sessionId;
@@ -37,6 +38,7 @@ class NativeExerciseResumeScreen extends StatefulWidget {
   final VoiceUseCases? voice;
   final LearningTimeUseCases? learningTime;
   final String languageCode;
+  final String? resultBackLabel;
 
   @override
   State<NativeExerciseResumeScreen> createState() =>
@@ -247,6 +249,7 @@ class _NativeExerciseResumeScreenState extends State<NativeExerciseResumeScreen>
     final summary = state.completedSummary;
     if (summary != null) {
       return ScoreScreen(
+        backLabel: widget.resultBackLabel,
         languageCode: widget.languageCode,
         correctAnswers: summary.correctCount,
         wrongAnswers: summary.wrongCount,

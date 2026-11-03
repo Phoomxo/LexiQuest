@@ -167,7 +167,7 @@ void main() {
           );
           await reportUiTap(
             tester,
-            find.text('ย้อนกลับ'),
+            find.text('กลับจุดอ่อน'),
             'clinic-report-return',
           );
           await reportUiWait(

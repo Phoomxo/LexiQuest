@@ -40,6 +40,7 @@ class QuizScreen extends StatefulWidget {
     this.timeCallerContext = LearningTimeCallerContext.ordinary,
     this.preparedLaunch,
     this.voice,
+    this.resultBackLabel,
   });
 
   final String? categoryId;
@@ -56,6 +57,7 @@ class QuizScreen extends StatefulWidget {
   final LearningTimeCallerContext timeCallerContext;
   final ConfiguredQuizLaunch? preparedLaunch;
   final VoiceUseCases? voice;
+  final String? resultBackLabel;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -628,10 +630,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   );
                 }
                 if (snapshot.data == null) {
-                  return const _QuizMessage(
+                  return _QuizMessage(
                     icon: Icons.library_add_outlined,
-                    message:
-                        'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
+                    message: 'ไม่พบคำศัพท์สำหรับแบบทดสอบนี้',
+                    actionLabel: 'กลับไปเลือกกิจกรรม',
+                    onAction: () => Navigator.maybePop(context),
                   );
                 }
                 final quiz = _quiz;
@@ -1297,6 +1300,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       return;
     }
     final mistakes = result.state.mistakeWords;
+    bool scoreCurrent() =>
+        mounted &&
+        binding == _binding &&
+        identical(_finished, result) &&
+        _ownerToken.value == result.state.ownerId;
     try {
       await AppNavigator.pushPage<void>(
         context,
@@ -1312,8 +1320,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             );
             return ValueListenableBuilder<String?>(
               valueListenable: _ownerToken,
-              builder: (context, owner, _) => owner == result.state.ownerId
+              builder: (context, owner, _) => scoreCurrent()
                   ? ScoreScreen(
+                      backLabel: widget.resultBackLabel,
                       learningTime: _time,
                       resultOwnerId: result.state.ownerId,
                       resultSessionId: result.summary.id,
@@ -1323,7 +1332,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                       mistakes: mistakes,
                       onPracticeMistakes: mistakes.isEmpty
                           ? null
-                          : () => _practiceMistakes(scoreContext, mistakes),
+                          : () {
+                              if (scoreCurrent()) {
+                                _practiceMistakes(scoreContext, mistakes);
+                              }
+                            },
                     )
                   : Scaffold(
                       body: _QuizMessage(
@@ -1364,6 +1377,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         AppPage<void>(
           name: 'learning/mistake-practice',
           builder: (_) => QuizScreen(
+            resultBackLabel: widget.resultBackLabel,
             wordIds: mistakes.map((word) => word.id).toSet().toList(),
             learning: _learning,
             expectedOwnerId: _boundOwnerId,

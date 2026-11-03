@@ -33,6 +33,76 @@ void main() {
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed),
   );
 
+  testWidgets(
+    'empty library opens starter preview and installs only on confirmation',
+    (tester) async {
+      final f = await motivationPresentationIo(tester, _Fixture.open);
+      try {
+        await motivationPresentationIo(
+          tester,
+          () => f.h.database.customStatement(
+            'DELETE FROM vocabulary_words WHERE owner_id = ?',
+            [configuredOwnerId],
+          ),
+        );
+        final before = await motivationPresentationIo(tester, f.h.snapshot);
+        await tester.pumpWidget(f.app());
+        final starter = find.byKey(const ValueKey('recall-ladder-starter'));
+        await _until(tester, () => starter.evaluate().isNotEmpty);
+        await tester.ensureVisible(starter);
+        await tester.tap(starter);
+        final confirm = find.byKey(const ValueKey('pack-confirm-install'));
+        await _until(
+          tester,
+          () =>
+              confirm.evaluate().isNotEmpty &&
+              tester.widget<FilledButton>(confirm).onPressed != null,
+        );
+        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        Navigator.of(tester.element(confirm)).pop();
+        await _until(tester, () => starter.evaluate().isNotEmpty);
+        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        await tester.ensureVisible(starter);
+        await tester.tap(starter);
+        await _until(
+          tester,
+          () =>
+              confirm.evaluate().isNotEmpty &&
+              tester.widget<FilledButton>(confirm).onPressed != null,
+        );
+        await tester.ensureVisible(confirm);
+        await tester.tap(confirm);
+        await _until(
+          tester,
+          () => find.text('ติดตั้งแพ็กบทเรียนแล้ว').evaluate().isNotEmpty,
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => f.h.count('learning_pack_versions'),
+          ),
+          1,
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => f.h.count('vocabulary_words'),
+          ),
+          greaterThan(1),
+        );
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => f.h.count('learning_sessions'),
+          ),
+          0,
+        );
+      } finally {
+        await closeMotivationPresentation(tester, f.close);
+      }
+    },
+  );
+
   for (final stage in RecallLadderStage.values) {
     testWidgets(
       'actual recall ${stage.name} entry preserves its scope and returns to the hub',

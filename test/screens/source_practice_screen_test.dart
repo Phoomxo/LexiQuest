@@ -644,7 +644,7 @@ void main() {
         expect(acknowledgedSnapshot, isNotNull);
         expect(snapshot, acknowledgedSnapshot);
         expect(repository.finishCalls, 1);
-        await tester.tap(find.text('ย้อนกลับ'));
+        await tester.tap(find.text('กลับชุดคำต้นทาง'));
         await tester.pumpAndSettle();
         expect(find.byType(SourcePracticeScreen), findsOneWidget);
         expect(await tester.runAsync(() => _voiceSnapshot(database)), snapshot);
@@ -811,7 +811,7 @@ void main() {
           final completedSnapshot = await tester.runAsync(
             () => _voiceSnapshot(database),
           );
-          await tester.tap(find.text('ย้อนกลับ'));
+          await tester.tap(find.text('กลับชุดคำต้นทาง'));
           await tester.pumpAndSettle();
           expect(
             await tester.runAsync(() => _voiceSnapshot(database)),
@@ -890,7 +890,7 @@ void main() {
     score.onPracticeMistakes!();
     await delayed.waitUntilDelayed;
     await _switchOwner(database, ownerId);
-    await tester.tap(find.text('ย้อนกลับ'));
+    await tester.tap(find.text('กลับชุดคำต้นทาง'));
     await tester.pumpAndSettle();
     delayed.release();
     await _pumpAsyncWork(tester);
@@ -1201,7 +1201,7 @@ void main() {
             greaterThanOrEqualTo(48),
           );
           expect(find.bySemanticsLabel(RegExp('ฝึกคำที่ผิด')), findsWidgets);
-          final back = find.text('ย้อนกลับ');
+          final back = find.text('กลับชุดคำต้นทาง');
           await tester.ensureVisible(back);
           await tester.pumpAndSettle();
           expect(back.hitTestable(), findsOneWidget);

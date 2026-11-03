@@ -3,15 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
-import '../features/learning/domain/learning_models.dart';
-import '../features/learning/presentation/native_exercise_resume_screen.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/domain/learning_history_models.dart';
-import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
-import 'quiz_screen.dart';
-import 'matching_quiz_screen.dart';
+import '../features/progress/presentation/resume_learning_history_entry.dart';
 
 typedef LearningHistoryLoader =
     Future<LearningHistorySnapshot> Function({LearningHistoryCursor? before});
@@ -198,11 +194,6 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
     }
     final generation = _generation;
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final learning = dependencies?.learning;
-    if (entry.hasAcceptedNative && learning == null) {
-      setState(() => _resumeFailed = true);
-      return;
-    }
     bool current() =>
         mounted &&
         generation == _generation &&
@@ -213,76 +204,29 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
       _resuming = true;
       _resumeFailed = false;
     });
+    var failed = false;
     try {
-      if (entry.hasAcceptedMatching) {
-        final matching = dependencies?.matching;
-        final owners =
-            widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
-        if (matching == null || owners == null || !current()) {
-          throw StateError('Matching history is unavailable');
-        }
-        await AppNavigator.pushPage<void>(
-          context,
-          AppPage<void>(
-            name: 'learning/resume-matching',
-            builder: (_) => MatchingQuizScreen(
-              matching: matching,
-              expectedOwnerId: ownerId,
-              ownerChanges: owners,
-              resumeSessionId: entry.sessionId,
-              learning: learning,
-              learningTime: dependencies?.learningTime,
-              languageCode: widget.languageCode,
-            ),
-          ),
-        );
-        return;
-      }
-      if (entry.hasAcceptedNative) {
-        Future<LearningSessionSummary?> openNative() =>
-            AppNavigator.pushPage<LearningSessionSummary>(
-              context,
-              AppPage<LearningSessionSummary>(
-                name: 'learning/resume-native',
-                builder: (_) => NativeExerciseResumeScreen(
-                  sessionId: entry.sessionId,
-                  expectedOwnerId: ownerId,
-                  learning: learning!,
-                  stillCurrent: current,
-                  languageCode: widget.languageCode,
-                  ownerChanges: widget.ownerChanges,
-                  voice: dependencies?.voice,
-                  learningTime: dependencies?.learningTime,
-                ),
-              ),
-            );
-        final summary = await openNative();
-        if (current() &&
-            summary?.id == entry.sessionId &&
-            summary?.state == 'completed') {
-          // Read the committed result again under a new route/owner lease.
-          await openNative();
-        }
-        return;
-      }
-      await AppNavigator.pushPage<void>(
+      await resumeLearningHistoryEntry(
         context,
-        AppPage<void>(
-          name: 'learning/resume-quiz',
-          builder: (_) => QuizScreen(
-            resumeSessionId: entry.sessionId,
-            expectedOwnerId: ownerId,
-            learning: learning,
-            ownerChanges: widget.ownerChanges,
-          ),
-        ),
+        entry: entry,
+        expectedOwnerId: ownerId,
+        dependencies: dependencies,
+        ownerChanges: widget.ownerChanges,
+        stillCurrent: current,
+        languageCode: widget.languageCode,
+        resultBackLabel: widget.languageCode == 'th'
+            ? 'กลับประวัติการเรียน'
+            : 'Back to learning history',
       );
     } catch (_) {
-      if (current()) setState(() => _resumeFailed = true);
+      if (current()) {
+        failed = true;
+        setState(() => _resumeFailed = true);
+      }
     } finally {
       if (mounted) {
         setState(() => _resuming = false);
-        if (generation == _generation) await _reload();
+        if (!failed && generation == _generation) await _reload();
       }
     }
   }
@@ -373,20 +317,7 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
         for (final entry in history.entries) ...[
           _HistoryRound(
             entry,
-            onResume:
-                (entry.hasAcceptedMatching &&
-                        entry.activityType == 'matching' &&
-                        const {'active', 'completed'}.contains(entry.state)) ||
-                    (entry.hasAcceptedNative &&
-                        const {'active', 'completed'}.contains(entry.state) &&
-                        _nativeActivities.contains(entry.activityType)) ||
-                    (entry.hasAcceptedQuiz &&
-                        entry.state == 'active' &&
-                        const {
-                          'quiz',
-                          'weaknessPractice',
-                          'sourcePractice',
-                        }.contains(entry.activityType))
+            onResume: canOpenLearningHistoryEntry(entry)
                 ? _resuming
                       ? null
                       : () => unawaited(_resume(entry, history.ownerId))
@@ -429,7 +360,10 @@ class _HistoryRound extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_mode(entry.activityType), style: textTheme.titleMedium),
+          Text(
+            learningHistoryActivityName(entry.activityType),
+            style: textTheme.titleMedium,
+          ),
           Text(_state(entry.state), style: textTheme.labelLarge),
           const SizedBox(height: 4),
           Text(
@@ -461,7 +395,7 @@ class _HistoryRound extends StatelessWidget {
               style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
             ),
           ],
-          if (_nativeActivities.contains(entry.activityType) &&
+          if (nativeHistoryActivities.contains(entry.activityType) &&
               (!entry.hasAcceptedNative || entry.state == 'abandoned')) ...[
             const SizedBox(height: 8),
             const Text(
@@ -473,13 +407,6 @@ class _HistoryRound extends StatelessWidget {
     );
   }
 }
-
-const _nativeActivities = {
-  'dictation',
-  'wordScramble',
-  'sentenceScramble',
-  'cloze',
-};
 
 class _HistoryMessage extends StatelessWidget {
   const _HistoryMessage({required this.message, this.onRetry});
@@ -509,23 +436,6 @@ String _date(DateTime value) =>
 
 String _time(DateTime value) =>
     '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
-
-String _mode(String value) => switch (value) {
-  'quiz' || 'meaningChoice' => 'แบบทดสอบ',
-  'flashcard' || 'flashcards' => 'แฟลชการ์ด',
-  'srsReview' => 'ทบทวนคำศัพท์',
-  'listening' => 'ฝึกฟัง',
-  'dictation' => 'เขียนตามเสียง',
-  'cloze' => 'เติมคำในบริบท',
-  'wordScramble' => 'เกมเรียงตัวอักษร',
-  'sentenceScramble' => 'เกมเรียงประโยค',
-  'matching' => 'เกมจับคู่คำศัพท์',
-  'pronunciation' || 'pronunciationTranscript' => 'ฝึกออกเสียง',
-  'shadowing' => 'ฝึกพูดตาม',
-  'ghostSpelling' => 'ฝึกสะกดคำ',
-  'associativeRecall' => 'ฝึกจำคำศัพท์',
-  _ => 'ฝึกคำศัพท์',
-};
 
 String _state(String value) => switch (value) {
   'completed' => 'จบแล้ว',

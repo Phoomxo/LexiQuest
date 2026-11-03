@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -82,7 +81,9 @@ void main() {
           tester,
           f.h.snapshot,
         );
-        await tester.pumpWidget(f.app(const LearningHistoryScreen()));
+        await tester.pumpWidget(
+          f.app(const LearningHistoryScreen(languageCode: 'en')),
+        );
         await _wait(tester, () => find.text('ดูผล').evaluate().isNotEmpty);
         await tester.ensureVisible(find.text('ดูผล'));
         await tester.tap(find.text('ดูผล'));
@@ -91,6 +92,15 @@ void main() {
           () => find.byType(ScoreScreen).evaluate().isNotEmpty,
         );
         expect(tester.widget<ScoreScreen>(find.byType(ScoreScreen)).score, 100);
+        final returnToHistory = find.widgetWithText(
+          FilledButton,
+          'Back to learning history',
+        );
+        await tester.ensureVisible(returnToHistory);
+        await tester.tap(returnToHistory);
+        await tester.pumpAndSettle();
+        expect(find.byType(LearningHistoryScreen), findsOneWidget);
+        expect(find.byType(ScoreScreen), findsNothing);
         expect(
           await motivationPresentationIo(tester, f.h.snapshot),
           beforeHistory,
@@ -117,59 +127,74 @@ void main() {
     },
   );
 
-  testWidgets(
-    'History resumes the exact acknowledged Matching selection without a second session',
-    (tester) async {
-      final f = (await tester.runAsync(_Fixture.open))!;
-      try {
-        final sessionId = await motivationPresentationIo(tester, () async {
-          final plan = (await f.matching.prepare(
-            expectedOwnerId: configuredOwnerId,
-            categoryId: configuredCategoryId,
-            stillCurrent: () => true,
-          ))!;
-          final state = await f.matching.start(plan, stillCurrent: () => true);
-          await f.matching.saveSelection(
-            state,
-            wordIndex: 2,
-            meaningIndex: 1,
-            stillCurrent: () => true,
+  for (final throughToday in [false, true]) {
+    testWidgets(
+      '${throughToday ? 'Today' : 'History'} resumes the exact acknowledged Matching selection without a second session',
+      (tester) async {
+        final f = (await tester.runAsync(_Fixture.open))!;
+        try {
+          final sessionId = await motivationPresentationIo(tester, () async {
+            final plan = (await f.matching.prepare(
+              expectedOwnerId: configuredOwnerId,
+              categoryId: configuredCategoryId,
+              stillCurrent: () => true,
+            ))!;
+            final state = await f.matching.start(
+              plan,
+              stillCurrent: () => true,
+            );
+            await f.matching.saveSelection(
+              state,
+              wordIndex: 2,
+              meaningIndex: 1,
+              stillCurrent: () => true,
+            );
+            return plan.session.id;
+          });
+          final before = await motivationPresentationIo(tester, f.h.snapshot);
+          await tester.pumpWidget(
+            f.app(
+              throughToday
+                  ? const ChooseModeScreen()
+                  : const LearningHistoryScreen(),
+            ),
           );
-          return plan.session.id;
-        });
-        final before = await motivationPresentationIo(tester, f.h.snapshot);
-        await tester.pumpWidget(f.app(const LearningHistoryScreen()));
-        await _wait(tester, () => find.text('เล่นต่อ').evaluate().isNotEmpty);
-        await tester.ensureVisible(find.text('เล่นต่อ'));
-        await tester.tap(find.text('เล่นต่อ'));
-        await _wait(
-          tester,
-          () => find
-              .byKey(const ValueKey('matching-check'))
-              .evaluate()
-              .isNotEmpty,
-        );
-        expect(find.byType(MatchingQuizScreen), findsOneWidget);
-        expect(
-          tester
-              .widget<MatchingQuizScreen>(find.byType(MatchingQuizScreen))
-              .resumeSessionId,
-          sessionId,
-        );
-        expect(
-          tester
-              .widget<FilledButton>(
-                find.byKey(const ValueKey('matching-check')),
-              )
-              .onPressed,
-          isNotNull,
-        );
-        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
-      } finally {
-        await closeMotivationPresentation(tester, f.h.close);
-      }
-    },
-  );
+          final resume = throughToday
+              ? find.byKey(const ValueKey('today-resume-start'))
+              : find.text('เล่นต่อ');
+          await _wait(tester, () => resume.evaluate().isNotEmpty);
+          await tester.ensureVisible(resume);
+          await tester.pump();
+          await tester.tap(resume.hitTestable());
+          await _wait(
+            tester,
+            () => find
+                .byKey(const ValueKey('matching-check'))
+                .evaluate()
+                .isNotEmpty,
+          );
+          expect(find.byType(MatchingQuizScreen), findsOneWidget);
+          expect(
+            tester
+                .widget<MatchingQuizScreen>(find.byType(MatchingQuizScreen))
+                .resumeSessionId,
+            sessionId,
+          );
+          expect(
+            tester
+                .widget<FilledButton>(
+                  find.byKey(const ValueKey('matching-check')),
+                )
+                .onPressed,
+            isNotNull,
+          );
+          expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        } finally {
+          await closeMotivationPresentation(tester, f.h.close);
+        }
+      },
+    );
+  }
 }
 
 Matcher valuesEveryElement(Object expected) => predicate<Map<String, int>>(

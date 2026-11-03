@@ -30,11 +30,17 @@ import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import 'package:vocab_learning_app/features/learning_packs/data/http_learning_pack_source.dart';
 
-Future<void> packUiReady(WidgetTester tester) => untilPackUi(tester, () {
+Future<void> packUiReady(WidgetTester tester) async {
+  await idlePackUi(tester);
   final button = find.byKey(const ValueKey('pack-import'));
-  return button.evaluate().isNotEmpty &&
-      tester.widget<FilledButton>(button).onPressed != null;
-});
+  if (button.evaluate().isEmpty) await revealPackUi(tester, 'pack-import');
+  await untilPackUi(
+    tester,
+    () =>
+        button.evaluate().isNotEmpty &&
+        tester.widget<ButtonStyleButton>(button).onPressed != null,
+  );
+}
 
 Future<void> closePackUi(WidgetTester tester, LearningPackUiHarness h) async {
   var closed = false;

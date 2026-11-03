@@ -283,7 +283,7 @@ void main() {
         expect(practiceRoute.isCurrent, isFalse);
         practiceRoute.changedExternalState();
         await tester.pump();
-        final back = find.widgetWithText(OutlinedButton, 'ย้อนกลับ');
+        final back = find.widgetWithText(FilledButton, 'กลับแพ็กคำศัพท์');
         await tester.ensureVisible(back);
         await tester.pump();
         expect(back.hitTestable(), findsOneWidget);
@@ -724,7 +724,7 @@ void main() {
           );
           await reportUiTap(
             tester,
-            find.text('ย้อนกลับ'),
+            find.text('กลับแพ็กคำศัพท์'),
             'catalog-report-return-detail',
           );
           await idlePackUi(tester);
@@ -1015,8 +1015,30 @@ Future<void> _answerDefinition(
   );
   if (input == LexicalQuizInput.definitionTyped) {
     final field = find.byKey(const ValueKey('definition-response'));
+    await untilPackUi(
+      tester,
+      () => tester.widget<TextField>(field).enabled == true,
+    );
     await tester.ensureVisible(field);
+    await tester.pumpAndSettle();
+    expect(field.hitTestable(), findsOneWidget);
+    await tester.tap(field.hitTestable());
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(of: field, matching: find.byType(EditableText)),
+          )
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
     await tester.enterText(field, question.correctAnswer);
+    expect(
+      tester.widget<TextField>(field).controller!.text,
+      question.correctAnswer,
+    );
+    await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
   } else {
     final answer = find.widgetWithText(FilledButton, question.correctAnswer);
@@ -1041,9 +1063,11 @@ Future<void> _finishDefinition(
     final next = find.text(
       index == questions.length - 1 ? 'ดูผลการเรียน' : 'คำถามถัดไป',
     );
+    await tester.pumpAndSettle();
     await tester.ensureVisible(next);
-    await tester.pump();
-    await tester.tap(next);
+    await tester.pumpAndSettle();
+    expect(next.hitTestable(), findsOneWidget);
+    await tester.tap(next.hitTestable());
   }
   await untilPackUi(
     tester,

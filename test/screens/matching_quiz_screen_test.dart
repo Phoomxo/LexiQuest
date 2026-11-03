@@ -44,6 +44,12 @@ void main() {
         await tap('matching-continue');
       }
       expect(find.text('67%'), findsOneWidget);
+      expect(find.text('ตอบถูกทุกข้อ'), findsNothing);
+      await tester.ensureVisible(find.text('กลับหน้าเรียน'));
+      expect(
+        find.widgetWithText(FilledButton, 'กลับหน้าเรียน'),
+        findsOneWidget,
+      );
       expect(h.repository.commits, 3);
       expect(h.repository.finishes, 1);
       expect(tester.takeException(), isNull);
@@ -160,6 +166,7 @@ final class _Harness {
       child: child!,
     ),
     home: MatchingQuizScreen(
+      resultBackLabel: 'กลับหน้าเรียน',
       matching: matching,
       expectedOwnerId: 'synthetic-matching-screen-owner',
       ownerChanges: owners.stream,

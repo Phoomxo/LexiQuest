@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../application/progress_use_cases.dart';
 import '../domain/learning_history_models.dart';
+import 'resume_learning_history_entry.dart';
 
 class TodayResumePanel extends StatefulWidget {
   const TodayResumePanel({
@@ -13,12 +14,19 @@ class TodayResumePanel extends StatefulWidget {
     required this.ownerId,
     required this.ownerChanges,
     required this.onOpenHistory,
+    required this.onResume,
   });
 
   final ProgressUseCases progress;
   final String? ownerId;
   final Stream<String?> ownerChanges;
   final Future<void> Function() onOpenHistory;
+  final Future<void> Function(
+    LearningHistoryEntry entry,
+    String ownerId,
+    bool Function() stillCurrent,
+  )
+  onResume;
 
   @override
   State<TodayResumePanel> createState() => _TodayResumePanelState();
@@ -156,6 +164,49 @@ class _TodayResumePanelState extends State<TodayResumePanel>
     }
   }
 
+  Future<void> _resume(
+    LearningHistoryEntry displayed,
+    LearningHistorySnapshot history,
+    int read,
+  ) async {
+    final dependencies = _dependencies;
+    bool launchCurrent() =>
+        _visible && read == _read && identical(history, _history);
+    if (!launchCurrent() || _opening) return;
+    bool activityCurrent() =>
+        mounted &&
+        !_retired &&
+        _ownerObserved &&
+        widget.ownerId == history.ownerId &&
+        identical(dependencies, AppDependenciesScope.maybeOf(context));
+    var failed = false;
+    setState(() => _opening = true);
+    try {
+      final fresh = await widget.progress.loadHistoryForOwner(
+        expectedOwnerId: history.ownerId,
+        stillCurrent: launchCurrent,
+      );
+      if (!launchCurrent() || fresh.ownerId != history.ownerId) return;
+      final matches = fresh.entries.where(
+        (entry) =>
+            entry.sessionId == displayed.sessionId &&
+            entry.activityType == displayed.activityType &&
+            entry.state == 'active' &&
+            canOpenLearningHistoryEntry(entry),
+      );
+      if (matches.isEmpty) throw StateError('Session is unavailable');
+      await widget.onResume(matches.first, history.ownerId, activityCurrent);
+    } on Object {
+      if (launchCurrent()) {
+        failed = true;
+        setState(() => _failed = true);
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+      if (_visible && !failed) unawaited(_reload());
+    }
+  }
+
   Future<void> _openHistory() async {
     final history = _history;
     if (!_visible || _opening || history == null) {
@@ -202,8 +253,12 @@ class _TodayResumePanelState extends State<TodayResumePanel>
       return const SizedBox.shrink();
     }
     final history = _history;
-    final count = history?.entries.where(_canResume).length;
-    if (count == 0 && !_failed) {
+    final read = _read;
+    final eligible = history?.entries.where(
+      (entry) => entry.state == 'active' && canOpenLearningHistoryEntry(entry),
+    );
+    final entry = eligible == null || eligible.isEmpty ? null : eligible.first;
+    if (history != null && entry == null && !_failed) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Wrap(
@@ -248,22 +303,28 @@ class _TodayResumePanelState extends State<TodayResumePanel>
                 icon: const Icon(Icons.refresh),
                 label: const Text('อ่านใหม่'),
               ),
-            ] else if (count == null)
+            ] else if (history == null)
               const Text('กำลังอ่านประวัติกิจกรรมล่าสุด')
             else ...[
               Text(
-                'พบกิจกรรมที่เล่นต่อได้ $count รอบในประวัติ 50 รายการล่าสุด',
+                '${learningHistoryActivityName(entry!.activityType)} · เริ่มล่าสุด',
                 key: const ValueKey('today-resume-count'),
               ),
+              Text('ตอบแล้ว ${entry.answerCount} คำตอบ'),
               const SizedBox(height: 8),
               OutlinedButton.icon(
+                key: const ValueKey('today-resume-start'),
+                onPressed: _visible && !_opening
+                    ? () => _resume(entry, history, read)
+                    : null,
+                icon: const Icon(Icons.play_arrow),
+                label: Text(_opening ? 'กำลังเปิด' : 'เล่นต่อ'),
+              ),
+              TextButton.icon(
                 key: const ValueKey('today-resume-open-history'),
                 onPressed: _visible && !_opening ? _openHistory : null,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(64, 64),
-                ),
                 icon: const Icon(Icons.history),
-                label: const Text('เปิดประวัติและเลือกเล่นต่อ'),
+                label: const Text('ดูประวัติ'),
               ),
             ],
           ],
@@ -272,20 +333,3 @@ class _TodayResumePanelState extends State<TodayResumePanel>
     );
   }
 }
-
-bool _canResume(LearningHistoryEntry entry) =>
-    entry.state == 'active' &&
-    ((entry.hasAcceptedMatching && entry.activityType == 'matching') ||
-        (entry.hasAcceptedNative &&
-            const {
-              'dictation',
-              'cloze',
-              'wordScramble',
-              'sentenceScramble',
-            }.contains(entry.activityType)) ||
-        (entry.hasAcceptedQuiz &&
-            const {
-              'quiz',
-              'weaknessPractice',
-              'sourcePractice',
-            }.contains(entry.activityType)));
