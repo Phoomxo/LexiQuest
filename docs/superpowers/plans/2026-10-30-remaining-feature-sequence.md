@@ -1,5 +1,19 @@
 # งานต่อจาก Dictation และ Cloze
 
+## Voice and physical acceptance, 2026-11-03
+
+See [voice/device follow-up](../../field/2026-11-03-voice-device-follow-up.md).
+Source `00d6c8ea` fixes the actual disabled flashcard Listen control by composing
+shared native voice in production bootstrap, and rejects OmniVoice redirects.
+Focused 291 tests, 114 caller tests, one configured-environment regression and
+analysis pass; independent code review accepts. Signed offlineTrial26 APK/AAB
+builds pass and installed APK hash matches. Physical Listen control is enabled.
+The owner confirms version25 TalkBack card navigation and translation readout;
+native26 listening confirmation is recorded in the linked follow-up.
+The owner explicitly chooses native voice/internal testing because no real
+provider configuration exists. Research authority, Cloud A/Billing, real payments
+and public rollout are not inferred from this work.
+
 ## Critique follow-up, 2026-11-03
 
 Final disposition: all five critique issues complete. Source1e6e full5581PASS,

@@ -1,5 +1,13 @@
 # Acceptance ledger for the 44 catalog capabilities
 
+Follow-up: [voice/device acceptance](2026-11-03-voice-device-follow-up.md)
+found that version25's production bootstrap did not supply shared voice to the
+flashcard screen. Existing feature tests did not establish that production wiring.
+Source `00d6c8ea` corrects this and rejects OmniVoice redirects. Retain the version25
+evidence below as historical; do not interpret it as working flashcard audio.
+The owner confirms the bounded version25 TalkBack read/reveal workflow. Native
+speech acceptance is recorded separately for version26.
+
 Final bounded disposition: all44 existing capabilities have local implementation
 and executable acceptance coverage. The five critique findings are corrected.
 Final app source is `dc740a8eef2f336ee6eac20fa6bf3ab20656c65e`, signed offlineTrial

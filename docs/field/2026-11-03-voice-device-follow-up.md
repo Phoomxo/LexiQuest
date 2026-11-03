@@ -46,7 +46,33 @@ a new full 5,581-test run.
 
 Provider environment-name discovery found no matching configuration variables in
 this process. This is bounded evidence, not a claim that no approved service
-exists elsewhere. Real provider acceptance remains pending an actual endpoint.
+exists elsewhere. The owner subsequently confirmed that no provider configuration
+is available and directed native voice and internal testing only. Real provider
+acceptance is therefore outside the current executable scope.
+
+## Version26 package
+
+Source: `00d6c8ea8be9f54acaad15a4ed8ce818bec5461a`.
+Signed offlineTrial APK/AAB packaging and native/model integrity pass. Root
+recomputed both artifact hashes against the generated manifest. APK SHA256:
+`a53ca3c00b4ad0f413dffe8a9b4b446a138fb5cd4534a2efd5e5caa6af28a3d4`.
+AAB SHA256:
+`0134721c7dc9e98868fe39fbc0382c47786e09243b2d24bd1e3e4cd2f56fad2a`.
+The package is under `critique35/voice36-package/lexiquest-1.0.0+26`.
+Installation and audible acceptance are separate from this package result.
+
+The in-place installation succeeds and the installed SHA256 matches the package.
+Version26 starts and retains the previous local owner and resumable activity.
+The actual `book` card exposes enabled Listen and Stop controls; version25
+exposed them disabled. See `install26-result.json`, `voice36-device26.json` and
+`audio36-v26-card.xml`. No microphone capture was started.
+
+Independent artifact review accepts hashes, signing, package/version, embedded
+build identity and model pin across all three ABIs, plus native runtime checks
+for both archives. The pin does not establish the hash of a model downloaded on
+the device. Offline configuration keeps remote services disabled. No actual
+provider or Research service was invoked. Human native audio confirmation is
+pending; do not infer audible quality from an enabled control.
 
 Physical captures are retained under
 `D:\LexiQuest-Storage\maintenance\2026-11-03\critique35\audio36-*`.
