@@ -52,7 +52,9 @@ No physical Vivo actions. Use the existing task AVDs with synthetic data.
   private `:study_reminders` process, including the receiver, and preserves WAL
   when opening the database. Native GREEN passed after increasing the bounded
   method-channel wait from 5 to 15 seconds for the private process cold start.
-  `repair-native-green.log` retains the first startup timeout;
+  The first failure is a generic StudyReminderException; a cold-start timeout
+  is suspected, not established by that log's underlying native diagnostics.
+  `repair-native-green.log` retains the first startup failure;
   `repair-native-green2.log` records the passing current-revision/write/reopen
   check. The final test also requires the exact stale-revision rejection code,
   WAL mode and SQLite quick_check, and closes its fixture despite retire failure.
@@ -103,3 +105,68 @@ No physical Vivo actions. Use the existing task AVDs with synthetic data.
   regeneration returns early when pub is disabled. Let both release builds run
   Flutter's normal regeneration, then require the dependency-lock hash to remain
   unchanged before packaging. Preserve `repair-package.log` as the failed build.
+
+## Final verification and handoff
+
+Implementation commits: `fbc7e2392888fcd6cc9d41d7ee7257806d855c21` and
+`998171bc2e8be949557e108697e98712e7fd7bab`. Final full host regression:
+**5,598/5,598 passed**, `repair-full-tests-final.log`; native integrated runner:
+**5/5 passed**, `repair-integrated-native.log`. Analysis found no issues.
+Packaging checks passed (signing 63, release configuration 150); these are
+separate suites, not additional distinct feature counts.
+
+Signed internal `offlineTrial` 1.0.0+27 APK/AAB built successfully from commit
+`998171bc2e8be949557e108697e98712e7fd7bab`, source tree
+`9ca5654e3987e3e30616dc21ef8de4b8a92ac0ca`. Evidence and manifest:
+`D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/repair-package/lexiquest-1.0.0+27/`.
+APK SHA256: `95F85DF7D933B8E478AD641340D323C6A8215BA9C315A81D47CB883F946187A4`.
+Installed over the preserved synthetic All44 app without clearing its data.
+No public release, real purchase, participant enrollment or image send occurred.
+
+Release27 emulator observations (all evidence below under the artifact root):
+
+- Review -> Saved -> Back -> Dashboard -> Calendar works; counts remain 20
+  answers, 18 correct, seven sessions (`repair-237` through `repair-240`).
+- Achievement preview opens the real Android chooser and returns with working
+  buttons; back reaches Dashboard (`repair-242` through `repair-247`). No image
+  was sent. Owner-change rejection is covered separately by host tests.
+- Thai Dashboard, Review, Saved, Calendar and Focus Timer are visible on the
+  English device (`repair-236` through `repair-240`, `repair-249-focus`). This
+  does not assert every data-driven string is translated.
+- Reminder enable after first granting notification permission initially showed
+  request-unconfirmed (`repair-221`); explicit retry succeeded (`repair-222`).
+  Changing 23:55 to 23:56 replaced the scheduled alarm by exactly 60 seconds;
+  disabling removed the live alarm before force-stop (full final dump:
+  `repair-final-alarms.txt`; `repair-alarm-off-live.txt` is only an excerpt).
+  First-permission handoff remains unresolved, not a first-attempt success claim.
+- Cache delete preserved imported learning content. After a cold restart,
+  reminder remains off (`repair-250-reminder-reopened`), and pack detail still
+  has no cached file (`repair-252-cache-reopened`).
+- Read-only stopped database copy after restart: WAL, schema25, quick_check=ok,
+  no foreign-key violations, 20 answers, reminder `(0,1436,Africa/Abidjan,5)`,
+  cache `(unpinned,no bytes,revision4)`. See `after-restart-database.json`.
+  No database repair/reset was used. Final alarm dump has only cancellation
+  history for the app, no live reminder (`repair-final-alarms.txt`).
+
+Containment: restored notification permission to the prior denied state, stopped
+the trial app and returned ADB to non-root. Physical Vivo and the original API35
+AVD were not changed. Synthetic data and evidence remain available.
+
+Remaining acceptance: investigate first-permission request-unconfirmed; scratchpad
+intermittent hit-test cause is still unconfirmed despite the passing original
+sequence. The baseline report's partial generated-mode, full-ladder, multi-day,
+earned-coin purchase and whole-app accessibility coverage is not superseded by
+this focused repair run. Real provider, physical audio/TalkBack certification,
+Research authority, Cloud/Billing and real payment are outside this run.
+Next executable work is a focused cold permission-grant reminder reproduction
+with native stage diagnostics, followed by the remaining partial workflow cards.
+Engineering fixes and internal artifact verification do not certify all44
+features end-to-end or authorize production rollout.
+
+Cross-model trail review (gpt-6-astra): verified the final test counts, artifact
+and database evidence. Corrected an evidence filename and distinguished a
+suspected cold-start timeout from the logged generic exception. The full alarm
+dump establishes no active app alarm; the earlier excerpt alone does not.
+The original session transcript was unavailable to this reviewer, so the review
+is limited to artifacts, source and supplied execution context. Remaining flags
+are the two unresolved intermittent behaviors and incomplete whole44 acceptance.
