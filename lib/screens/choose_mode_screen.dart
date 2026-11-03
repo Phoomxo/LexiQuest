@@ -83,6 +83,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   StreamSubscription<String?>? _nativeOwners;
   String? _nativeOwnerId;
   int _nativeGeneration = 0;
+  int _nativeOwnerGeneration = 0;
   int _nativeOwnerBinding = 0;
   final _nativeChanges = ValueNotifier<int>(0);
   bool _nativeNoticeScheduled = false;
@@ -124,6 +125,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         _invalidateNative();
       }
       _progress?.invalidateLaunch();
+    } else if (_openingReminder &&
+        _nativeDependencies?.studyReminders?.isRequestingPermission != true) {
+      _invalidateNative();
     }
     _syncProgress();
   }
@@ -192,6 +196,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       return;
     }
     _nativeBound = true;
+    _nativeOwnerGeneration++;
     _invalidateNative();
     _nativeOwnerId = null;
     _nativeDependencies = dependencies;
@@ -208,6 +213,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           return;
         }
         if (_nativeOwnerId != ownerId) {
+          _nativeOwnerGeneration++;
           _invalidateNative();
           _nativeOwnerId = ownerId;
         }
@@ -216,6 +222,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         if (mounted &&
             identical(_nativeDependencies, dependencies) &&
             binding == _nativeOwnerBinding) {
+          _nativeOwnerGeneration++;
           _invalidateNative();
           _nativeOwnerId = null;
         }
@@ -224,6 +231,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         if (mounted &&
             identical(_nativeDependencies, dependencies) &&
             binding == _nativeOwnerBinding) {
+          _nativeOwnerGeneration++;
           _invalidateNative();
           _nativeOwnerId = null;
         }
@@ -1369,10 +1377,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         ModalRoute.of(context)?.isCurrent != true) {
       return;
     }
-    final generation = _nativeGeneration;
+    final ownerGeneration = _nativeOwnerGeneration;
     bool current() =>
         mounted &&
-        generation == _nativeGeneration &&
+        ownerGeneration == _nativeOwnerGeneration &&
         owner == _nativeOwnerId &&
         identical(dependencies, _nativeDependencies) &&
         identical(runtime, dependencies.studyReminders) &&
@@ -1391,9 +1399,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           builder: (_) => ValueListenableBuilder<int>(
             valueListenable: _nativeChanges,
             builder: (_, _, _) => current()
-                ? StudyReminderSettingsScreen(runtime: runtime, ownerId: owner)
-                : const Scaffold(
-                    body: Center(child: Text('การเตือนไม่พร้อมใช้งาน')),
+                ? StudyReminderSettingsScreen(
+                    key: ValueKey((
+                      'study-reminder-settings',
+                      _nativeGeneration,
+                    )),
+                    runtime: runtime,
+                    ownerId: owner,
+                  )
+                : Scaffold(
+                    appBar: AppBar(title: const Text('การเตือนเรียน')),
+                    body: const Center(child: Text('การเตือนไม่พร้อมใช้งาน')),
                   ),
           ),
         ),

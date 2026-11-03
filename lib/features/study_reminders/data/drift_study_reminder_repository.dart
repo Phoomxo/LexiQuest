@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../../data/local/app_database.dart' as db;
 import '../../identity/data/drift_owner_write_coordinator.dart';
@@ -100,7 +99,6 @@ final class DriftStudyReminderRepository {
     required String ownerId,
     required bool Function() stillCurrent,
   }) => _guard(ownerId, stillCurrent, (_) async {
-    debugPrint('LexiQuestReminder repository nativeDatabasePath query');
     final rows = await database.customSelect('PRAGMA database_list').get();
     final main = rows
         .where((row) => row.read<String>('name') == 'main')
@@ -150,20 +148,15 @@ final class DriftStudyReminderRepository {
         current,
         operation,
       );
-    } on StudyReminderException catch (error) {
-      debugPrint('LexiQuestReminder repository rejected ${error.code.name}');
+    } on StudyReminderException {
       rethrow;
     } on MotivationException catch (error) {
-      debugPrint(
-        'LexiQuestReminder repository MotivationException ${error.code.name}',
-      );
       throw StudyReminderException(
         error.code == MotivationFailureCode.ownerChanged
             ? StudyReminderFailureCode.ownerChanged
             : StudyReminderFailureCode.unavailable,
       );
-    } on Object catch (error) {
-      debugPrint('LexiQuestReminder repository failed ${error.runtimeType}');
+    } on Object {
       throw const StudyReminderException(StudyReminderFailureCode.unavailable);
     }
   }

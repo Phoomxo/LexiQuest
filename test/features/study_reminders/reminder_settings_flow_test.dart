@@ -386,6 +386,190 @@ void main() {
   );
 
   testWidgets(
+    'actual ChooseMode reminder resumes with a fresh saved form and rejects the old save',
+    (tester) async {
+      final f = await _open(tester);
+      Future<void>? closing;
+      Future<void> close() =>
+          closing ??= closeMotivationPresentation(tester, f.close);
+      try {
+        await motivationPresentationIo(tester, () async {
+          await f.runtime.repository.writeForOwner(
+            ownerId: configuredOwnerId,
+            baseRevision: 0,
+            choice: const StudyReminderChoice(
+              enabled: true,
+              minuteOfDay: 1140,
+              timezoneId: 'Asia/Bangkok',
+            ),
+            updatedAtUtc: f.h.now,
+            stillCurrent: () => true,
+          );
+          await f.runtime.reconcileForeground();
+        });
+        await _mountChooseMode(tester, f);
+        await _openChooseModeReminder(tester);
+        final enabled = find.byKey(const Key('reminder-enabled'));
+        expect(tester.widget<SwitchListTile>(enabled).value, isTrue);
+        await tester.tap(enabled);
+        await tester.pump();
+        expect(tester.widget<SwitchListTile>(enabled).value, isFalse);
+        await _show(tester, find.byKey(const Key('reminder-save')));
+        final staleSave = tester
+            .widget<FilledButton>(find.byKey(const Key('reminder-save')))
+            .onPressed!;
+
+        // No intermediate frame: Android can suspend rendering while away.
+        f.runtime.setForeground(false);
+        for (final state in [
+          AppLifecycleState.inactive,
+          AppLifecycleState.hidden,
+          AppLifecycleState.paused,
+        ]) {
+          tester.binding.handleAppLifecycleStateChanged(state);
+        }
+        f.runtime.setForeground(true);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _wait(
+          tester,
+          () => find
+              .byKey(const Key('reminder-saved-state'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        await _show(tester, enabled, delta: -300);
+        expect(tester.widget<SwitchListTile>(enabled).value, isTrue);
+        expect(tester.widget<SwitchListTile>(enabled).onChanged, isNotNull);
+        expect(find.text('การเตือนไม่พร้อมใช้งาน'), findsNothing);
+        expect(f.platform.alarmRevision, 1);
+        final beforeStale = await motivationPresentationIo(
+          tester,
+          f.h.storage.snapshot,
+        );
+        staleSave();
+        await tester.pump();
+        expect(
+          await motivationPresentationIo(tester, f.h.storage.snapshot),
+          beforeStale,
+        );
+        expect(f.platform.alarmRevision, 1);
+
+        await tester.tap(enabled);
+        await _show(tester, find.byKey(const Key('reminder-save')));
+        await tester.tap(find.byKey(const Key('reminder-save')));
+        await _wait(
+          tester,
+          () => find
+              .text('บันทึกการปิดแล้ว ระบบรับคำขอยกเลิกการเตือนแล้ว')
+              .evaluate()
+              .isNotEmpty,
+        );
+        final saved = await motivationPresentationIo(
+          tester,
+          () => f.runtime.repository.readForOwner(
+            ownerId: configuredOwnerId,
+            stillCurrent: () => true,
+          ),
+        );
+        expect(saved.enabled, isFalse);
+        expect(saved.revision, 2);
+        expect(f.platform.alarmRevision, isNull);
+        expect(f.platform.permissionRequests, 0);
+        expect(tester.takeException(), isNull);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await close();
+      }
+    },
+  );
+
+  testWidgets(
+    'actual ChooseMode reminder rejects background owner ABA and permits Back then a fresh route',
+    (tester) async {
+      final f = await _open(tester);
+      Future<void>? closing;
+      Future<void> close() =>
+          closing ??= closeMotivationPresentation(tester, f.close);
+      try {
+        await motivationPresentationIo(
+          tester,
+          () => f.runtime.repository.writeForOwner(
+            ownerId: configuredOwnerId,
+            baseRevision: 0,
+            choice: const StudyReminderChoice(
+              enabled: false,
+              minuteOfDay: 1140,
+              timezoneId: 'Asia/Bangkok',
+            ),
+            updatedAtUtc: f.h.now,
+            stillCurrent: () => true,
+          ),
+        );
+        await _mountChooseMode(tester, f);
+        await _openChooseModeReminder(tester);
+        await tester.tap(find.byKey(const Key('reminder-enabled')));
+        await _show(tester, find.byKey(const Key('reminder-save')));
+        final staleSave = tester
+            .widget<FilledButton>(find.byKey(const Key('reminder-save')))
+            .onPressed!;
+        f.runtime.setForeground(false);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await motivationPresentationIo(
+          tester,
+          () => f.switchOwner(configuredOtherOwnerId),
+        );
+        await motivationPresentationIo(
+          tester,
+          () => f.switchOwner(configuredOwnerId),
+        );
+        f.runtime.setForeground(true);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _wait(
+          tester,
+          () => find.text('การเตือนไม่พร้อมใช้งาน').evaluate().isNotEmpty,
+        );
+        expect(find.byType(StudyReminderSettingsScreen), findsNothing);
+        final beforeStale = await motivationPresentationIo(
+          tester,
+          f.h.storage.snapshot,
+        );
+        staleSave();
+        await tester.pump();
+        expect(
+          await motivationPresentationIo(tester, f.h.storage.snapshot),
+          beforeStale,
+        );
+        expect(f.platform.alarmRevision, isNull);
+        expect(f.platform.permissionRequests, 0);
+        expect(find.byType(BackButton), findsOneWidget);
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+        await _openChooseModeReminder(tester);
+        final enabled = find.byKey(const Key('reminder-enabled'));
+        expect(tester.widget<SwitchListTile>(enabled).value, isFalse);
+        expect(tester.widget<SwitchListTile>(enabled).onChanged, isNotNull);
+        expect(find.text('การเตือนไม่พร้อมใช้งาน'), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await close();
+      }
+    },
+  );
+
+  testWidgets(
     'actual owner ABA clears the draft and retained save cannot write',
     (tester) async {
       final f = await _open(tester);
@@ -435,6 +619,61 @@ Future<_Fixture> _open(WidgetTester tester) async =>
       'reminder/open',
       () => tester.runAsync(_Fixture.open),
     ))!;
+
+Future<void> _mountChooseMode(WidgetTester tester, _Fixture f) async {
+  final progress = ProgressUseCases(
+    owners: f.h.storage.owners,
+    queries: DriftProgressQueries(f.h.database),
+    nowUtc: () => f.h.now,
+  );
+  await motivationPresentationDeadline(
+    tester,
+    'reminder-resume-entry/mount',
+    () => tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _NoGuest(),
+          database: f.h.database,
+          localOwners: f.h.storage.owners,
+          progress: progress,
+          studyReminders: f.runtime,
+        ),
+        child: MaterialApp(
+          theme: M3Theme.lightTheme,
+          home: const ChooseModeScreen(),
+        ),
+      ),
+    ),
+  );
+}
+
+Future<void> _openChooseModeReminder(WidgetTester tester) async {
+  final entry = find.byKey(const ValueKey('study-reminder-entry'));
+  await _show(tester, entry);
+  await _wait(
+    tester,
+    () =>
+        tester
+            .widget<ListTile>(
+              find.descendant(of: entry, matching: find.byType(ListTile)),
+            )
+            .onTap !=
+        null,
+  );
+  await tester.tap(entry);
+  await _wait(
+    tester,
+    () => find.byKey(const Key('reminder-saved-state')).evaluate().isNotEmpty,
+  );
+  await tester.pumpAndSettle();
+}
 
 Future<void> _mount(
   WidgetTester tester,

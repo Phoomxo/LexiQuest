@@ -8,11 +8,14 @@ Catalog rollout metadata remains unverified; this report does not change it.
 Internal completion requires a reviewed implementation, passing required checks
 on the current source, and an explicit evidence boundary for each capability.
 This ledger covers 44 existing capabilities, not 44 exhaustive device UATs.
-The full host suite now passes5,614 cases on its captured source inputs, with
-clean analysis. Final artifact attestation remains pending. Feature f27 is
-OPEN because the signed app reproduces the first-permission failure despite
-the isolated Permission1 fixture passing. The earlier5,598 host pass belongs
-to source `998171bc` and remains historical evidence.
+The current full host suite passes 5,619 cases with clean analysis and unchanged
+captured source inputs. It includes the reminder and narrow-screen test changes;
+the earlier5,614 receipt remains historical. Native serialization and real
+permission fixtures now pass, as does the expanded45-case Android matrix at
+320dp. Feature f27 remains OPEN pending signed29 composition checks and artifact
+attestation. The isolated fixtures do not substitute for the signed28 failure
+that established native SQLite writer contention. The earlier 5,598 host pass
+belongs to source `998171bc` and remains historical evidence.
 
 ## Evidence key
 
@@ -33,20 +36,61 @@ Test paths in the table are relative to the repository's `test/` directory.
   partial coverage remain historical evidence.
 - **Observed27** means a specific corrected signed-app workflow in remediation27,
   including navigation/share, Thai locale and database/cache restart durability.
-- **Native45** is `complete-extended-native-final.log`,45/45 PASS. It covers34
+- **Native45** is `complete-extended-native-gate-final3.log`,45/45 PASS at320dp
+  and density160, after the reminder serialization/route changes. It covers34
   durable-resume/history cases across five exercise kinds, nine recall-route
   cases and two canonical streak/reward journeys on synthetic Android data.
   Generated content and voice dependencies in these fixtures are synthetic.
+  The earlier `complete-extended-native-final.log` also passes45/45 on its
+  captured source and wider viewport. Neither run is45 independent features.
+  The new320dp sequence preserves both failed runs: `complete-extended-native-gate-final.log`
+  finishes43/45 with two sentence-draft scroll failures; replacing center drags
+  with bounded gutter drags fixes those. `complete-extended-native-gate-final2.log`
+  finishes43/45 after exposing two later retry-button misses when the error text
+  wraps taller. Re-revealing Save before the second tap fixes those. Final3
+  retains all draft ACK, serialization, revision and answer-count assertions.
 - **Permission1** is `complete-reminder-permission-red.log`,1/1 PASS despite its
   provisional filename. Real Android permission grant, first Save ACK revision2,
   disable ACK revision3 and SQLite quick_check passed without a second Save.
   This isolated fixture does not close the signed-app failure described below.
+- **Reminder gate32/2** means `complete-reminder-gate-host.log`,32/32 PASS, and
+  `complete-reminder-gate-native.log`,2/2 PASS. The native cases cover contention
+  serialization and current WAL revision/write durability. Expected stale-owner
+  rejection in the boundary test is not a failed check. Counts overlap existing
+  suites and are not additional distinct capabilities.
+- **Permission final1** is `complete-reminder-permission-final2.log`,1/1 PASS
+  with the actual Android Allow action after density reset to160 and a320dp
+  viewport. The first `complete-reminder-permission-final.log` fails before
+  permission handling with the emulator effectively107dp wide; it remains
+  evidence of that invalid test setup. A minimum320dp fixture precondition now
+  rejects that setup. This passing fixture still does not attest signed29.
 - **Reminder27 follow-up** reproduces request-unconfirmed after permission grant
   in the signed app (`complete-316-delivery-state.xml`). Explicit retry obtains
   ACK (`complete-317-reminder-retry.xml`). A later updated alarm posts actual
   notification2701 at08:50 UTC with the generic reminder body, shown in
   `complete-delivery-notification.txt` and `complete-322-delivered.xml` while the
   app is on Home. Delivery after recovery does not establish first-Save success.
+- **Diagnostic28** first obtains ACK in `complete-338-diagnostic28-settled.xml`,
+  then repeats request-unconfirmed in `complete-347-repeat-failure.xml`.
+  `complete-diagnostic28-native-repeat.txt` records `bindScope` at 16:14:20.343
+  and `SQLiteDatabaseLockedException` at 16:14:22.557, followed by
+  `UNAVAILABLE` and `platformUnavailable`. This establishes the native writer
+  lock failure while Drift and the provider share the database.
+  The coordinator records source `487f6faf` and diagnostic APK SHA-256
+  `06F5FDED86FD7BC8A3E57D3E2255824E50CF9780934EEF5A3C0D77C8AFF7B75B`.
+  `complete-diagnostic28-build.log` records successful packaging and model
+  runtime integrity. This diagnostic package is not the final accepted artifact.
+- **Reminder resume62** is `complete-reminder-resume-green.log`, 62/62 PASS after
+  `complete-reminder-resume-red.log` reproduced two actual ChooseMode failures.
+  A separate owner epoch preserves identity rejection across background changes.
+  A fresh settings State and lease on resume replace lifecycle-invalidated state.
+  These host tests cover the route repair; signed29 verification remains pending.
+- **Host5619** is `complete-final-full-tests.log`,5,619/5,619 PASS in15:42.
+  `complete-final-full-result.json` records `analysisExit: 0`, `testExit: 0`,
+  1,031 inputs, `changedInputs: []` and completion at2026-11-03T10:09:51.1720570Z.
+  The coordinator froze code/test inputs in `complete-final-source-before.json`
+  before this clean analysis and regression. Host5619 replaces Host5614 as the
+  current-source host receipt; it does not attest the pending signed29 artifact.
 - **Focused9** is `complete-boundary-focused.log`,9/9 PASS for corrected date
   boundaries, canonical journeys and the two formerly missed History taps.
   The earlier failing logs remain available.
@@ -67,7 +111,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f04 | Content version and quality control | `features/learning_packs/rich_lexical_codec_test.dart` | Observed26; validation does not certify editorial quality. |
 | f05 | Unified lesson shell | `widgets/lesson_scaffold_test.dart` | Observed26; Accessibility6 for shared shell. |
 | f06 | Flashcard mode | `screens/srs_review_callers_test.dart` | Observed26; prior bounded physical speech/reveal confirmation is separate. |
-| f07 | Meaning quiz | `screens/configured_quiz_recovery_screen_test.dart` | Observed26; shared SRS overflow corrected, current full regression pending. |
+| f07 | Meaning quiz | `screens/configured_quiz_recovery_screen_test.dart` | Observed26; shared SRS overflow correction is covered by current Host5619. |
 | f08 | Definition quiz | `screens/definition_quiz_screen_test.dart` | Observed26; authored-content boundary remains. |
 | f09 | Cloze test | `screens/fill_in_the_blanks_screen_test.dart` | Earlier synthetic Android pass plus Native45 typed/choice resume; no live generation claim. |
 | f10 | Matching mode | `screens/matching_entry_history_flow_test.dart` | Observed26; Native45 actual matching entry, recognition is not recall mastery. |
@@ -87,7 +131,7 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f24 | Automatic learning-time capture | `screens/native_learning_time_test.dart` | Host baseline and Observed26 with locale issue; root Thai locale corrected27. Opt-in capture remains separate from waiting time. |
 | f25 | Learning calendar/weekly analytics | `screens/learning_calendar_screen_test.dart` | Observed27 Thai UI and retained20 answers/18 correct/seven sessions. |
 | f26 | Goal/test countdown | `screens/learning_profile_editor_screen_test.dart` | Observed26 invalid-duration rejection, valid goal/countdown and exit guards. |
-| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | OPEN. Permission1 passes in isolation, but Reminder27 follow-up reproduces first-permission request-unconfirmed. Retry ACK and actual notification delivery pass. Root cause/fix remains pending; reboot/OEM battery behavior is a separate boundary. |
+| f27 | Opt-in study reminder | `features/study_reminders/reminder_settings_flow_test.dart` | OPEN. Diagnostic28 proves native SQLite writer contention. Serialization repair now has Reminder gate32/2 and Permission final1 evidence; Reminder resume62 covers background-route repair. Signed29 actual composition and final manifest remain pending. Earlier retry ACK and delivery pass; reboot/OEM battery behavior remains separate. |
 | f28 | Learning assessment/progress comparison | `screens/pre_post_assessment_screen_test.dart` | Earlier synthetic Android pass; real authority, enrollment and research efficacy remain unapproved. |
 | f29 | Evidence-based quest | `features/motivation/quest_screen_test.dart` | Observed26; canonical eligible facts only. |
 | f30 | Gentle streak | `features/motivation/streak_learning_integration_test.dart` | Native45 canonical two-day Today UI and gap reset; controlled fixture clock, not elapsed real days. |
@@ -103,22 +147,31 @@ Test paths in the table are relative to the repository's `test/` directory.
 | f40 | Local-first operation | `screens/offline_vocabulary_journey_test.dart` | Observed27 WAL, quick_check, owner data and cold-restart durability; Native45 exercise/reward reopen. No cross-device service activation. |
 | f41 | Feature flag/controlled rollout | `runtime/field_feature_registry_test.dart` | Observed26; unsupported services fail closed. No rollout authorized by this ledger. |
 | f42 | Today hub | `screens/today_resume_panel_test.dart` | Observed26 plus Native45 actual streak display; retained bounded resume policy. |
-| f43 | Learning history | `screens/learning_history_screen_test.dart` | Observed26 and Native4534 mode/resume cases preserve original session/owner. |
+| f43 | Learning history | `screens/learning_history_screen_test.dart` | Observed26 and the34 mode/resume cases within Native45 preserve original session/owner. |
 | f44 | Offline content manager | `screens/learning_pack_boundary_screen_test.dart` | Observed27 delete/restart retains learning data and does not restore removed cache. |
 
 ## Pending final checks and exclusions
 
-Host5614, clean analysis and Scratchpad repeat are complete. Feature f27 remains
-OPEN until the actual signed-app first-permission failure is diagnosed, fixed
-and retested. Root is preparing diagnostic version28. Its results and subsequent
-changes require their own verification; the isolated fixture cannot substitute
-for this failing workflow. Attest the final signed artifact and record its source
-identity before claiming the run is complete. Scratchpad repeats establish the
-tested behavior, not the unobserved cause of its original intermittent failure.
+Host5619 and its clean analysis attest the current frozen source; Scratchpad
+repeat remains complete for its captured inputs. Diagnostic28 identifies native
+writer contention in the first-grant path.
+The adapter repair requires `ownerWrites`, rejects an ambient transaction and
+holds `database.exclusively` around native IPC. It does not extend timeouts or add
+retries. Reminder gate32/2 and Permission final1 now pass; Native45 also passes
+on the corrected320dp emulator setup. Review accepted the serialization repair.
+Feature f27 remains OPEN pending signed29 repetition of first grant, background
+return and reminder delivery, plus the final artifact manifest. The separate
+background-route repair has Reminder resume62 host evidence; signed composition
+is still required.
+
+The current full host run passes. Final signed artifact attestation remains pending.
+Isolated fixtures cannot substitute for the failing signed
+workflow. Scratchpad repeats establish the tested behavior, not the unobserved
+cause of its original intermittent failure.
 
 The shared SRS overflow has a reproduced failure and corrected arithmetic with
-focused checks. Other added tests close workflow gaps without adding another
-learning, reward or research authority. Ordinary nonparticipant journeys must
+focused checks and Host5619 coverage. Other added tests close workflow gaps
+without adding another learning, reward or research authority. Ordinary nonparticipant journeys must
 leave research rows/events/outbox/uploads empty; the new canonical journeys
 explicitly check zero research rows.
 

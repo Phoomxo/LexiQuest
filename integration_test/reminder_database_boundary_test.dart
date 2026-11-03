@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/study_reminders/data/method_channel_study_reminder_platform.dart';
 import 'package:vocab_learning_app/features/study_reminders/domain/study_reminder.dart';
 
@@ -29,7 +30,13 @@ void main() {
         ),
       );
       var database = open();
-      const platform = MethodChannelStudyReminderPlatform(isAndroid: true);
+      var platform = MethodChannelStudyReminderPlatform(
+        ownerWrites: DriftOwnerWriteCoordinator(
+          database,
+          nowUtc: () => DateTime.now().toUtc(),
+        ),
+        isAndroid: true,
+      );
       String? token;
       Object? testFailure;
       try {
@@ -78,6 +85,13 @@ void main() {
         );
         await database.close();
         database = open();
+        platform = MethodChannelStudyReminderPlatform(
+          ownerWrites: DriftOwnerWriteCoordinator(
+            database,
+            nowUtc: () => DateTime.now().toUtc(),
+          ),
+          isAndroid: true,
+        );
         expect(
           (await database
                   .customSelect(

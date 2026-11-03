@@ -133,3 +133,56 @@ Artifact root: `D:/LexiQuest-Storage/maintenance/2026-11-03/emulator44/`.
 - Add temporary redacted Dart stage/error-type diagnostics alongside native
   diagnostics for signed28. Focused reminder tests pass27/27. No retry, timeout,
   owner guard, exception mapping or scheduling behavior changes in this patch.
+- Commit487f6faf packages signed diagnostic28. APK SHA256 is
+  `06F5FDED86FD7BC8A3E57D3E2255824E50CF9780934EEF5A3C0D77C8AFF7B75B`.
+  APK/AAB runtime integrity passes. This is an investigation artifact, not the
+  final corrected release.
+- First grant338 succeeds; repeat347 reproduces the failure. The redacted log
+  `complete-diagnostic28-native-repeat.txt` captures native provider bindScope
+  failing with SQLiteDatabaseLockedException after about2.2 seconds. Dart path
+  lookup completed before that native call. Keep the failed receipt.
+- Native IPC now waits behind Drift's executor-only exclusive gate, using the
+  same owner coordinator as the runtime. Reject an ambient SQLite transaction
+  before taking the gate. Permission/inspect stay outside; native owner,
+  revision, deletion checks and timeout are unchanged. Independent diff review
+  accepts this arrangement; native contention verification remains pending.
+- The Home/resume failure has a separate proven route cause: lifecycle changed
+  the captured native generation permanently. Separate owner identity epochs
+  from lifecycle epochs, reconstruct the settings state on same-owner resume,
+  and provide Back for a genuinely invalidated owner route. Two actual route
+  regressions fail before this fix;62 reminder/ChooseMode cases pass afterwards
+  in `complete-reminder-resume-green.log`, including the owned permission path.
+- Remove temporary success-stage Dart instrumentation after identifying the
+  lock failure. Retain redacted native/platform error diagnostics. Add host
+  two-way writer ordering/ambient rejection and a private background-SQLite
+  native contention test. These checks must pass before another package.
+- Host reminder suite passes32/32 in `complete-reminder-gate-host.log`. Native
+  background contention and WAL reopen pass2/2 in `complete-reminder-gate-native.log`.
+  The first holds a real writer for3 seconds, then verifies first bind/cancel,
+  rejects a changed revision/owner and checks database integrity.
+- `complete-reminder-permission-final.log` fails before permission at the initial
+  visible-settings wait. The synthetic AVD had physical320x640 with density480
+  override, only about107dp wide. Restore its physical density160 and add an
+  explicit minimum320dp precondition to the fixture. The rerun
+  `complete-reminder-permission-final2.log` passes1/1 after a real Allow tap
+  captured in `complete-permission-final-dialog3.xml`. No second Save is used.
+- Expanded native rerun at320dp ends43 pass/2 sentence-scroll failures in
+  `complete-extended-native-gate-final.log`. Center-origin test drags cross the
+  draggable tile board; change the helper to the existing Scratchpad gutter
+  gesture, retaining40 attempts and target hit-testing. Focused host2 pass.
+- `complete-extended-native-gate-final2.log` reaches the formerly missing draft
+  status and direct sentence case passes. It instead exposes two later retry
+  taps after longer failure text moves Save outside the viewport. Re-reveal the
+  existing Save before its second tap. No app code or persistence assertion is
+  changed. Focused host2 pass in `complete-draft-retry-host.log`; the full native
+  rerun is `complete-extended-native-gate-final3.log`.
+- Final expanded Android rerun passes45/45 at the same320dp display, including
+  both draft retry cases and the direct sentence case. The synthetic AVD is
+  stopped after cleanup. Freeze all implementation/test/native inputs for
+  `verify-final-source.ps1`, which records hashes before/after analysis and the
+  full host suite. Final receipts use the `complete-final-*` prefix.
+- Final analysis reports no issues. Full host regression passes5619/5619 in15:42.
+  `complete-final-full-result.json` records analysisExit0, testExit0,1031 inputs
+  and no changed hashes. Independent gate/route and native-test reviews accept
+  the implementation. Commit this verified source before packaging29; actual
+  signed first-grant, Home return and delivery remain the final acceptance.

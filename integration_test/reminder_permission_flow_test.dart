@@ -19,7 +19,12 @@ void main() {
   testWidgets(
     'first native permission grant saves and schedules without retry',
     (tester) async {
-      const platform = MethodChannelStudyReminderPlatform(isAndroid: true);
+      expect(
+        tester.view.physicalSize.width / tester.view.devicePixelRatio,
+        greaterThanOrEqualTo(320),
+        reason: 'The synthetic Android display must provide at least 320dp.',
+      );
+      MethodChannelStudyReminderPlatform? platform;
       const owner = 'synthetic-permission-owner';
       final owners = StreamController<String?>.broadcast(sync: true);
       Directory? directory;
@@ -48,14 +53,20 @@ void main() {
             "INSERT INTO local_owners (id, created_at_utc_ms, is_active) "
             "VALUES ('$owner', 1, 1)",
           );
+          final ownerWrites = DriftOwnerWriteCoordinator(
+            db,
+            nowUtc: () => DateTime.now().toUtc(),
+          );
+          final nativePlatform = MethodChannelStudyReminderPlatform(
+            ownerWrites: ownerWrites,
+            isAndroid: true,
+          );
+          platform = nativePlatform;
           final activeRuntime = StudyReminderRuntime(
             database: db,
-            ownerWrites: DriftOwnerWriteCoordinator(
-              db,
-              nowUtc: () => DateTime.now().toUtc(),
-            ),
+            ownerWrites: ownerWrites,
             ownerChanges: owners.stream,
-            platform: platform,
+            platform: nativePlatform,
             nowUtc: () => DateTime.now().toUtc(),
           );
           runtime = activeRuntime;
@@ -73,7 +84,7 @@ void main() {
             updatedAtUtc: DateTime.now().toUtc(),
             stillCurrent: () => true,
           );
-          final status = await platform.inspect();
+          final status = await nativePlatform.inspect();
           expect(status.supported, isTrue);
           expect(
             status.notificationsAllowed,
@@ -167,7 +178,7 @@ void main() {
               await database!.customStatement(
                 'UPDATE study_reminder_preferences SET enabled=0',
               );
-              await platform.retire();
+              await platform?.retire();
             }
           } finally {
             try {

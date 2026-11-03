@@ -547,6 +547,7 @@ void main() {
                 ))!,
                 0,
               );
+              await _scrollTo(tester, mode, save);
               await tester.tap(save);
               await _until(
                 tester,
@@ -768,16 +769,27 @@ Future<void> _scrollTo(WidgetTester tester, String mode, Finder target) async {
   final scrollable = find
       .descendant(of: lesson, matching: find.byType(Scrollable))
       .first;
+  final position = tester.state<ScrollableState>(scrollable).position;
   if (target.evaluate().isEmpty) {
-    final position = tester.state<ScrollableState>(scrollable).position;
     position.jumpTo(position.minScrollExtent);
     await tester.pump();
   }
-  await tester.scrollUntilVisible(
+  for (var attempt = 0; attempt < 40 && target.evaluate().isEmpty; attempt++) {
+    final bounds = tester.getRect(scrollable);
+    await tester.dragFrom(
+      Offset(bounds.left + 8, bounds.center.dy),
+      const Offset(0, -180),
+    );
+    position.jumpTo(position.pixels);
+    await tester.pump();
+  }
+  expect(
     target,
-    180,
-    scrollable: scrollable,
-    maxScrolls: 40,
+    findsOneWidget,
+    reason:
+        'mode=$mode target=$target offset=${position.pixels} '
+        'maxScrollExtent=${position.maxScrollExtent} '
+        'viewport=${tester.getRect(scrollable)}',
   );
   await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
   await tester.pump();

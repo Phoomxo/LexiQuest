@@ -857,7 +857,7 @@ final class AppBootstrap {
         database: database,
         ownerWrites: ownerWrites,
         ownerChanges: progress.watchActiveOwnerId(),
-        platform: const MethodChannelStudyReminderPlatform(),
+        platform: MethodChannelStudyReminderPlatform(ownerWrites: ownerWrites),
         nowUtc: () => DateTime.now().toUtc(),
       );
       learningTimeClock.start();

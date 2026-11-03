@@ -4,14 +4,19 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../identity/data/drift_owner_write_coordinator.dart';
 import '../domain/study_reminder.dart';
 
 final class MethodChannelStudyReminderPlatform
     implements StudyReminderPlatform {
-  const MethodChannelStudyReminderPlatform({this.isAndroid});
+  const MethodChannelStudyReminderPlatform({
+    required this.ownerWrites,
+    this.isAndroid,
+  });
   static const _channel = MethodChannel('com.lexiquest.app/study_reminder');
   // The private Android process may need a cold start before opening SQLite.
   static const _requestTimeout = Duration(seconds: 15);
+  final DriftOwnerWriteCoordinator ownerWrites;
   final bool? isAndroid;
   bool get _supportedPlatform => isAndroid ?? Platform.isAndroid;
 
@@ -120,9 +125,17 @@ final class MethodChannelStudyReminderPlatform
       );
     }
     try {
-      final value = await _channel
-          .invokeMapMethod<String, Object?>(method, args)
-          .timeout(_requestTimeout);
+      if (await ownerWrites.hasAmbientTransaction()) {
+        throw const StudyReminderException(
+          StudyReminderFailureCode.platformUnavailable,
+        );
+      }
+      // Pause Drift writers without holding SQLite's writer across native IPC.
+      final value = await ownerWrites.database.exclusively(
+        () => _channel
+            .invokeMapMethod<String, Object?>(method, args)
+            .timeout(_requestTimeout),
+      );
       if (value == null) {
         throw const StudyReminderException(
           StudyReminderFailureCode.platformUnavailable,
