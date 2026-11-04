@@ -16,11 +16,11 @@ existing executable evidence targets; listing a test does not claim it ran today
 | f06 | Rate flashcards through canonical SRS lifecycle | srs_review_callers; srs_review_safety | Native voice has separate acceptance |
 | f07 | Meaning recognition with pinned forward/reverse direction | configured_quiz_recovery_screen; accepted_quiz_plan; offline_trial_learning | Reverse selection and persistence pass on Android |
 | f08 | Authored definition choice with durable accepted plan | definition_quiz_screen; bundled_starter_pack_flow | Requires suitable authored content |
-| f09 | Choice and typed Cloze from installed examples | authored_native_starter; fill_in_the_blanks_screen | Authored lifecycle and stale-source rejection pass on Android |
+| f09 | Choice and typed Cloze from installed examples | authored_native_starter; authored_native_entry; fill_in_the_blanks_screen | APK32 exposed Home handoff invalidation; corrected actual-route tests pass; APK33 proof pending |
 | f10 | Matching, scoring, retry and History resume | matching_entry_history_flow | Recognition is not independent recall |
 | f11 | Typed authored definition and typed Cloze | learning_pack_definition_flow; typed_cloze_scratchpad | Canonical answer is typed text |
 | f12 | Optional ink, undo/clear, frozen comparison after answer ACK | typed_cloze_scratchpad; emulator_scratchpad_repeat | No handwriting recognition or physical stylus claim |
-| f13 | Native modes use one answer/history lifecycle | native_durable_resume_screen; native_learning_time; authored_native_starter | Authored sentence lifecycle passes on Android; real provider unavailable |
+| f13 | Native modes use one answer/history lifecycle | native_durable_resume_screen; native_learning_time; authored_native_starter; authored_native_entry | Sentence Home handoff corrected; real provider unavailable |
 | f14 | Flashcard-first suggestion opens the matching destination | recall_ladder_entry_flow | Recommendation does not assert measured efficacy |
 | f15 | Recall ladder opens supported modes and explains unavailable routes | recall_ladder_entry_flow; recall_ladder_panel | Installed examples now supply offline Cloze preparation |
 | f16 | Configure real count/direction/hints/time/input within accepted plan | lexical_quiz_setup_dialog; lexical_configured_quiz | New direction/hints; CEFR is selected pack metadata |
@@ -36,7 +36,7 @@ existing executable evidence targets; listing a test does not claim it ran today
 | f26 | Store goal and civil target date/countdown | learning_profile_editor_screen | User-selected target, not prediction |
 | f27 | Explicit reminder permission/save/ACK/reschedule/cancel | reminder_settings_flow; reminder_permission_flow; reminder_database_boundary | Native alarm proof, not every OEM battery policy |
 | f28 | Score-free assessment and linked comparison under authority | pre_post_assessment_screen; study assessment/runtime tests | Synthetic authority only; real enrollment/upload default-off |
-| f29 | Quest progress from canonical learning evidence | quest_screen; quest_learning_integration; app_bootstrap_motivation | APK31 exposed a missing adapter; correction passes immediate Quiz/SRS, replay and owner checks; APK32 proof pending |
+| f29 | Quest progress from canonical learning evidence | quest_screen; quest_learning_integration; app_bootstrap_motivation | APK32 immediately counts ten canonical UI answers as weekly10/daily5 and one50XP receipt; Research0 |
 | f30 | Gentle streak from dated canonical activity | earned_cosmetic_streak_flow; streak_learning_integration | Multi-day tests use synthetic clocks |
 | f31 | Stored achievement and milestone evidence | achievements_screen; canonical motivation readers | Empty account has no fabricated badges |
 | f32 | Earn coins, buy/equip cosmetic and restore after reopen | earned_cosmetic_streak_flow | Fixture earns via 80 canonical answers, not 80 UI taps |

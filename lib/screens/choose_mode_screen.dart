@@ -1132,27 +1132,27 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         return;
       }
       _nativeRouteVisible = true;
+      bool currentLaunch() =>
+          _openingNative &&
+          _nativeContextCurrent(generation, ownerId, learning, dependencies) &&
+          (_nativeChildActive || ModalRoute.of(context)?.isCurrent == true);
       final AcceptedNativeExercise? session = switch (mode) {
         _NativeMode.cloze => await learning.prepareCloze(
           categoryId: categoryId,
           variant: variant!,
-          stillCurrent: () =>
-              _canOpenNative(generation, ownerId, learning, dependencies),
+          stillCurrent: currentLaunch,
         ),
         _NativeMode.wordScramble => await learning.prepareWordScramble(
           categoryId: categoryId,
-          stillCurrent: () =>
-              _canOpenNative(generation, ownerId, learning, dependencies),
+          stillCurrent: currentLaunch,
         ),
         _NativeMode.sentenceScramble => await learning.prepareSentenceScramble(
           categoryId: categoryId,
-          stillCurrent: () =>
-              _canOpenNative(generation, ownerId, learning, dependencies),
+          stillCurrent: currentLaunch,
         ),
         _NativeMode.dictation => await learning.prepareDictation(
           categoryId: categoryId,
-          stillCurrent: () =>
-              _canOpenNative(generation, ownerId, learning, dependencies),
+          stillCurrent: currentLaunch,
         ),
       };
       if (!_canOpenNative(generation, ownerId, learning, dependencies)) {

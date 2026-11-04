@@ -9,6 +9,7 @@ import '../test/features/learning/session_policy_use_cases_test.dart' as policy;
 import '../test/screens/content_report_actual_native_test.dart' as reports;
 import '../test/screens/quiz_screen_test.dart' as quiz;
 import '../test/runtime/app_bootstrap_motivation_test.dart' as bootstrap;
+import '../test/screens/authored_native_entry_test.dart' as native_entry;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -43,4 +44,5 @@ void main() {
     );
   });
   group('Real bootstrap motivation', bootstrap.main);
+  group('Authored Home entry', native_entry.main);
 }
