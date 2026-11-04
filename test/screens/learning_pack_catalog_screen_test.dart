@@ -12,6 +12,8 @@ import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_p
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 
+import 'learning_pack_test_support.dart' show idlePackUi, revealPackUi;
+
 void main() {
   testWidgets(
     'starter preview is not reopened after owner changes away and back',
@@ -26,6 +28,8 @@ void main() {
             ),
           ),
         );
+        await idlePackUi(tester);
+        await revealPackUi(tester, 'pack-confirm-install');
         await _untilCondition(tester, () {
           final confirm = find.byKey(const ValueKey('pack-confirm-install'));
           return confirm.evaluate().isNotEmpty &&

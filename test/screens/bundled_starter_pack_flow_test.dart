@@ -54,6 +54,9 @@ void main() {
           before,
         );
         await tapPackUi(tester, 'pack-open-starter');
+        await idlePackUi(tester);
+        expect(find.textContaining('AI-assisted'), findsWidgets);
+        await revealPackUi(tester, 'pack-confirm-install');
         await untilPackUi(
           tester,
           () => find
@@ -66,7 +69,6 @@ void main() {
           await tester.runAsync(() => ownerMigrationRows(h.database)),
           before,
         );
-        expect(find.textContaining('AI-assisted'), findsWidgets);
         await tapPackUi(tester, 'pack-confirm-install');
         await untilPackUi(
           tester,
@@ -189,7 +191,7 @@ void main() {
       );
       final cached = (await tester.runAsync(h.stored))!;
       expect(cached.source.kind, 'configuredCatalog');
-      expect(cached.source.catalogId, 'lexiquest.starter.en-th.1');
+      expect(cached.source.catalogId, 'lexiquest.starter.en-th.1.0.1');
       expect(cached.isInstalled, isFalse);
       await tapPackUi(tester, 'pack-install-cached');
       await idlePackUi(tester);
@@ -919,6 +921,8 @@ Future<void> _using(
 Future<void> _openPreview(WidgetTester tester) async {
   await packUiReady(tester);
   await tapPackUi(tester, 'pack-open-starter');
+  await idlePackUi(tester);
+  await revealPackUi(tester, 'pack-confirm-install');
   await untilPackUi(
     tester,
     () => find

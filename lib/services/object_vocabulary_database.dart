@@ -1,10 +1,3 @@
-/// On-device vocabulary database mapping ML Kit image labels to CEFR vocabulary.
-///
-/// Contains 120+ entries organized by category, each with English word,
-/// Thai translation, CEFR level, IPA phonetic, example sentence, and category.
-/// All data is built-in (no network required) for standalone APK deployment.
-library;
-
 class ScannedVocabulary {
   final String mlLabel;
   final String englishWord;
@@ -28,18 +21,11 @@ class ScannedVocabulary {
 class ObjectVocabularyDatabase {
   const ObjectVocabularyDatabase();
 
-  /// Look up vocabulary by ML Kit label (case-insensitive).
+  /// Look up vocabulary by complete label (case-insensitive).
   ScannedVocabulary? lookupByMlLabel(String label) {
     final key = label.toLowerCase().trim();
     for (final entry in _entries) {
       if (entry.mlLabel.toLowerCase() == key) return entry;
-    }
-    // Partial match fallback: check if the label contains an entry keyword.
-    for (final entry in _entries) {
-      if (key.contains(entry.mlLabel.toLowerCase()) ||
-          entry.mlLabel.toLowerCase().contains(key)) {
-        return entry;
-      }
     }
     return null;
   }
@@ -67,10 +53,6 @@ class ObjectVocabularyDatabase {
 
   /// All entries.
   List<ScannedVocabulary> get allEntries => List.unmodifiable(_entries);
-
-  // ─────────────────────────────────────────────────────────────────
-  //  Built-in vocabulary database (120+ entries, 10 categories)
-  // ─────────────────────────────────────────────────────────────────
 
   static const List<ScannedVocabulary> _entries = [
     // ── Food & Drinks (อาหารและเครื่องดื่ม) ──
@@ -720,7 +702,7 @@ class ObjectVocabularyDatabase {
       thaiTranslation: 'เครื่องเย็บกระดาษ',
       cefrLevel: 'B1',
       phonetic: '/ˈsteɪ.plər/',
-      exampleSentence: 'Please staple these pages together.',
+      exampleSentence: 'Use a stapler to join these pages.',
       category: 'Office Supplies',
     ),
     ScannedVocabulary(

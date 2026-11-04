@@ -121,7 +121,13 @@ Future<void> _mount(
         child: MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'B1',
-            targetWords: const ['unselected learner target'],
+            targetWords: const [
+              (
+                spelling: 'unselected learner target',
+                id: null,
+                contentRevision: null,
+              ),
+            ],
             passageText: 'The synthetic cat rests.',
             documentId: supplied ? 'synthetic-document' : null,
             documentRevision: 3,

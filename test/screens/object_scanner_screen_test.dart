@@ -42,14 +42,40 @@ void main() {
 
     expect(find.text('apple'), findsOneWidget);
     expect(find.textContaining('91.0%'), findsOneWidget);
+    expect(find.text('ระดับ CEFR โดยประมาณ: A1'), findsOneWidget);
     expect(find.text('ผลจากโมเดลสแกนวัตถุในอุปกรณ์'), findsOneWidget);
     expect(find.textContaining('model-v1'), findsNothing);
+    expect(scanner.acceptCalls, 0);
 
     await tester.tap(find.text('เพิ่มเข้าคลัง'));
     await tester.pumpAndSettle();
 
     expect(scanner.acceptCalls, 1);
     expect(find.text('บันทึกแล้ว'), findsOneWidget);
+  });
+
+  testWidgets('describes an unmatched prediction without an add action', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()..unmatched = true;
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('object-scanner-capture-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('โมเดลคาดเดาวัตถุได้ แต่ยังไม่มีคำศัพท์ที่ตรงกันในคลัง'), findsOneWidget);
+    expect(find.textContaining('91.0%'), findsOneWidget);
+    expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+    expect(scanner.acceptCalls, 0);
   });
 
   testWidgets('shows honest permanent camera permission failure', (
@@ -175,7 +201,7 @@ void main() {
     await tester.pumpAndSettle();
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump();
+    await tester.idle();
     expect(scanner.pauseCalls, 1);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -333,6 +359,7 @@ void main() {
 final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? initializeFailure;
   CameraPracticeException? captureFailure;
+  bool unmatched = false;
   int acceptCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
@@ -416,6 +443,18 @@ final class _FakeScanner implements ObjectScannerController {
   }) async {
     final failure = captureFailure;
     if (failure != null) throw failure;
+    if (unmatched) {
+      return ObjectScanResult(
+        classifications: const [
+          ModelClassification(index: 1, label: 'coffee cup', confidence: 0.91),
+        ],
+        vocabulary: null,
+        matchedClassification: null,
+        modelId: 'model',
+        modelVersion: 'model-v1',
+        capturedAtUtc: DateTime.utc(2026, 7, 30),
+      );
+    }
     return ObjectScanResult(
       classifications: const [
         ModelClassification(index: 1, label: 'Apple', confidence: 0.91),

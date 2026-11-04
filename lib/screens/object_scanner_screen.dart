@@ -494,6 +494,8 @@ final class _ResultCard extends StatelessWidget {
                 vocabulary.thaiTranslation,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
+            if (vocabulary != null)
+              Text('ระดับ CEFR โดยประมาณ: ${vocabulary.cefrLevel}'),
             const SizedBox(height: 8),
             Text('ความมั่นใจจากโมเดล: $confidence%'),
             Text(
@@ -503,7 +505,7 @@ final class _ResultCard extends StatelessWidget {
             if (vocabulary == null) ...[
               const SizedBox(height: 8),
               const Text(
-                'พบวัตถุจริง แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์',
+                'โมเดลคาดเดาวัตถุได้ แต่ยังไม่มีคำศัพท์ที่ตรงกันในคลัง',
               ),
             ],
             const SizedBox(height: 12),

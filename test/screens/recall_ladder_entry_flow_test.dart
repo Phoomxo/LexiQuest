@@ -26,6 +26,7 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/configured_quiz_harness.dart';
 import '../support/motivation_presentation_io.dart';
+import 'learning_pack_test_support.dart' show idlePackUi, revealPackUi;
 
 void main() {
   setUp(
@@ -52,6 +53,8 @@ void main() {
         await tester.ensureVisible(starter);
         await tester.tap(starter);
         final confirm = find.byKey(const ValueKey('pack-confirm-install'));
+        await idlePackUi(tester);
+        await revealPackUi(tester, 'pack-confirm-install');
         await _until(
           tester,
           () =>
@@ -64,6 +67,8 @@ void main() {
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
         await tester.ensureVisible(starter);
         await tester.tap(starter);
+        await idlePackUi(tester);
+        await revealPackUi(tester, 'pack-confirm-install');
         await _until(
           tester,
           () =>

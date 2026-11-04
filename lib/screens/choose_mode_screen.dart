@@ -5,6 +5,7 @@ import '../ai/ai_models.dart';
 import '../features/billing/presentation/subscription_screen.dart';
 import '../features/learning_profile/presentation/learning_profile_editor_screen.dart';
 import '../features/learning_packs/presentation/learning_pack_catalog_screen.dart';
+import '../features/learning_packs/domain/learning_pack_repository.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
@@ -25,7 +26,7 @@ import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../runtime/motivation_runtime.dart';
 import '../runtime/registries/feature.dart';
-import '../services/ai_reading_content_adapter.dart';
+import '../services/offline_reading_material.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
@@ -98,6 +99,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   bool _openingMatching = false;
   bool _openingLadder = false;
   bool _openingReminder = false;
+  bool _openingReading = false;
 
   @override
   void initState() {
@@ -722,7 +724,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           if (canReading)
             _LearningTile(
               icon: Icons.menu_book_outlined,
-              title: 'อ่านเรื่องสั้นและจำคำศัพท์',
+              title: 'อ่านและทบทวนคำศัพท์',
               subtitle: 'อ่าน ทบทวนจากความจำ และแต่งประโยคด้วยคำเป้าหมาย',
               onTap: () => _openReading(context),
             ),
@@ -1863,52 +1865,112 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   Future<void> _openReading(BuildContext context) async {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final learning = _learning;
-    if (learning == null) {
+    final ownerId = _nativeOwnerId;
+    final owners = _nativeOwnerSource;
+    if (learning == null || ownerId == null || owners == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ยังเปิดกิจกรรมอ่านไม่ได้ในขณะนี้')),
       );
       return;
     }
-    final words = await learning.prepareReading();
-    if (!context.mounted) return;
-    if (words.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('เพิ่มคำศัพท์อย่างน้อย 1 คำก่อนเริ่มอ่าน'),
+    if (_openingReading) return;
+    final generation = _nativeGeneration;
+    bool current() =>
+        mounted &&
+        generation == _nativeGeneration &&
+        ownerId == _nativeOwnerId &&
+        identical(learning, _learning) &&
+        identical(dependencies, _nativeDependencies) &&
+        _features.isVisible(FieldFeature.reading) &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        Visibility.of(context) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (!current()) return;
+    _openingReading = true;
+    try {
+      final owner = await learning.owners.getOrCreateActiveOwner();
+      if (!current() || owner.id != ownerId) return;
+      final packs = dependencies?.learningPacks;
+      final scope = await packs?.captureOwner(stillCurrent: current);
+      if (!current() ||
+          (packs != null && (scope == null || scope.ownerId != ownerId))) {
+        return;
+      }
+      final words = await learning.prepareReading();
+      if (!context.mounted ||
+          !current() ||
+          (scope != null && !scope.isCurrent)) {
+        return;
+      }
+      if (words.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เพิ่มคำศัพท์อย่างน้อย 1 คำก่อนเริ่มอ่าน'),
+          ),
+        );
+        return;
+      }
+      final items = <({QuizWord word, CurrentLexicalContent? lexical})>[];
+      for (final word in words) {
+        final lexical = scope == null || word.contentRevision == null
+            ? null
+            : await packs!.currentLexical(scope: scope, wordId: word.id);
+        if (!current() || (scope != null && !scope.isCurrent)) return;
+        final actual = lexical?.word;
+        if (actual != null &&
+            (actual.ownerId != ownerId ||
+                actual.id != word.id ||
+                actual.categoryId != word.categoryId ||
+                actual.spelling != word.spelling ||
+                actual.meaning != word.meaning ||
+                actual.partOfSpeech != word.partOfSpeech ||
+                word.contentRevision !=
+                    'local-vocabulary-v1:${actual.localRevision}')) {
+          return;
+        }
+        items.add((word: word, lexical: lexical));
+      }
+      final passage = ReadingMaterial(items);
+      if (!context.mounted ||
+          !current() ||
+          (scope != null && !scope.isCurrent)) {
+        return;
+      }
+      final screenOwners =
+          packs?.watchActiveOwnerId() ??
+          dependencies?.progress?.watchActiveOwnerId();
+      if (screenOwners == null) return;
+      await _push(
+        context,
+        AssociativeReadingSessionScreen(
+          cefrLevel: '',
+          targetWords: words
+              .map(
+                (word) => (
+                  spelling: word.spelling,
+                  id: word.id,
+                  contentRevision: word.contentRevision,
+                ),
+              )
+              .toList(growable: false),
+          passageText: passage.passageText,
+          supportedText: passage.supportedText,
+          documentId: passage.contentId,
+          learning: learning,
+          associativeLearning: dependencies?.associativeLearning,
+          ownerId: ownerId,
+          ownerChanges: screenOwners,
         ),
       );
-      return;
+    } on Object {
+      if (context.mounted && current()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ยังเปิดกิจกรรมอ่านไม่ได้ในขณะนี้')),
+        );
+      }
+    } finally {
+      _openingReading = false;
     }
-    final targetWords = words
-        .map((word) => word.spelling)
-        .toList(growable: false);
-    final passage = await AiReadingContentAdapter().generatePassage(
-      cefrLevel: 'B1',
-      targetWords: targetWords,
-      forceOffline: true,
-    );
-    if (!context.mounted) return;
-    final owner = await learning.owners.getOrCreateActiveOwner();
-    if (!context.mounted) return;
-    await _push(
-      context,
-      AssociativeReadingSessionScreen(
-        cefrLevel: passage.cefrLevel,
-        targetWords: passage.targetWords,
-        passageText: passage.passageText,
-        documentId:
-            '${passage.contentId}:${DateTime.now().microsecondsSinceEpoch}',
-        learning: learning,
-        associativeLearning: dependencies?.associativeLearning,
-        targetWordIds: {for (final word in words) word.spelling: word.id},
-        targetWordContentRevisions: {
-          for (final word in words)
-            if (word.contentRevision != null)
-              word.spelling: word.contentRevision!,
-        },
-        ownerId: owner.id,
-      ),
-    );
   }
 
   Future<void> _push(BuildContext context, Widget screen) async {

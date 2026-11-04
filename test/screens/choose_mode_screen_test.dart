@@ -657,7 +657,10 @@ void main() {
             tester,
             () => tester.widget<FilledButton>(finish).onPressed != null,
           );
-          await Scrollable.ensureVisible(tester.element(finish), alignment: 0.5);
+          await Scrollable.ensureVisible(
+            tester.element(finish),
+            alignment: 0.5,
+          );
           await tester.pumpAndSettle();
           expect(finish.hitTestable(), findsOneWidget);
           await tester.tap(finish);
@@ -1431,7 +1434,7 @@ void main() {
     expect(find.text('ทบทวนคำศัพท์ที่ถึงกำหนด'), findsNothing);
     expect(find.text('ภาพรวมการเรียน'), findsNothing);
     expect(find.text('ฝึกจุดอ่อน'), findsNothing);
-    expect(find.text('อ่านเรื่องสั้นและจำคำศัพท์'), findsOneWidget);
+    expect(find.text('อ่านและทบทวนคำศัพท์'), findsOneWidget);
   });
 
   testWidgets('nested progress keeps the feature registry closed', (

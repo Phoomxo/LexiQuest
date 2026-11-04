@@ -27,10 +27,20 @@ void main() {
       expect(result, isNull);
     });
 
-    test('lookupByMlLabel supports partial match fallback', () {
-      final result = db.lookupByMlLabel('coffee cup');
-      expect(result, isNotNull);
-      // Should match either 'Coffee' or 'Cup'
+    test('matches complete normalized labels without guessing from substrings', () {
+      expect(db.lookupByMlLabel('  wAtEr BoTtLe  ')?.englishWord, 'water bottle');
+      expect(db.lookupByMlLabel('Dog')?.englishWord, 'dog');
+      expect(db.lookupByMlLabel('Cup')?.englishWord, 'cup');
+      for (final label in ['', '   ', 'hotdog', 'water', 'coffee cup']) {
+        expect(db.lookupByMlLabel(label), isNull, reason: label);
+      }
+    });
+
+    test('stapler example uses the vocabulary noun', () {
+      expect(
+        db.lookupByMlLabel('Stapler')?.exampleSentence,
+        'Use a stapler to join these pages.',
+      );
     });
 
     test('getByCategory returns entries in specific category', () {

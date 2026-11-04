@@ -372,17 +372,21 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
           name: 'learning/source-reading',
           builder: (_) => AssociativeReadingSessionScreen(
             cefrLevel: 'Source',
-            targetWords: words.map((word) => word.spelling).toList(),
+            targetWords: words
+                .map(
+                  (word) => (
+                    spelling: word.spelling,
+                    id: word.id,
+                    contentRevision:
+                        'local-vocabulary-v1:${word.localRevision}',
+                  ),
+                )
+                .toList(),
             passageText: preview.passageText,
             documentId: preview.documentId,
             documentRevision: preview.documentRevision,
             learning: resultContext.learning,
             associativeLearning: widget.associativeLearning,
-            targetWordIds: {for (final word in words) word.spelling: word.id},
-            targetWordContentRevisions: {
-              for (final word in words)
-                word.spelling: 'local-vocabulary-v1:${word.localRevision}',
-            },
             ownerId: resultContext.ownerId,
           ),
         ),

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show listEquals, mapEquals;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../features/content_reports/domain/content_report.dart';
@@ -29,29 +29,35 @@ import '../runtime/app_dependencies.dart';
 ///                          saved via [AssociativeLearningPort]
 ///   5 Context Transfer   — write a new sentence using a target word
 ///   6 Finish             — summarise and complete
+typedef ReadingTarget = ({
+  String spelling,
+  String? id,
+  String? contentRevision,
+});
+
 class AssociativeReadingSessionScreen extends StatefulWidget {
   const AssociativeReadingSessionScreen({
     super.key,
     required this.cefrLevel,
     required this.targetWords,
     required this.passageText,
+    this.supportedText,
     this.documentId,
     this.documentRevision = 1,
     this.learning,
     this.associativeLearning,
-    this.targetWordIds,
-    this.targetWordContentRevisions,
     this.sessionId,
     this.ownerId,
+    this.ownerChanges,
     this.learningTime,
     this.timeCallerContext = LearningTimeCallerContext.ordinary,
   });
 
   final String cefrLevel;
 
-  /// Display names of the target vocabulary words (e.g. 'banana').
-  final List<String> targetWords;
+  final List<ReadingTarget> targetWords;
   final String passageText;
+  final String? supportedText;
   final String? documentId;
   final int documentRevision;
   final LearningUseCases? learning;
@@ -60,16 +66,12 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Falls back to [InMemoryAssociativeLearningAdapter] when null.
   final AssociativeLearningPort? associativeLearning;
 
-  /// Map from word display name → Drift vocabulary word ID.
-  /// Required for Stage 3 SRS recording; Stage 3 is skipped when null.
-  final Map<String, String>? targetWordIds;
-  final Map<String, String>? targetWordContentRevisions;
-
   /// Learning session ID for recording answers in Stage 3.
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
   /// navigating to this screen.
   final String? sessionId;
   final String? ownerId;
+  final Stream<String?>? ownerChanges;
   final LearningTimeUseCases? learningTime;
   final LearningTimeCallerContext timeCallerContext;
 
@@ -104,6 +106,8 @@ class _AssociativeReadingSessionScreenState
   LearningTimeUseCases? _time;
   LearningTimeBinding? _timeBinding;
   ReadingLearningTimeSourcePin? _timePin;
+  StreamSubscription<String?>? _ownerSubscription;
+  bool _ownerRetired = false;
   PreparedSourceBoundVocabularyStart? _timeStart;
   bool _timeSourceRetired = false;
 
@@ -132,6 +136,13 @@ class _AssociativeReadingSessionScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _ownerSubscription = widget.ownerChanges?.listen(
+      (owner) {
+        if (owner != widget.ownerId) _retireOwner();
+      },
+      onError: (Object _) => _retireOwner(),
+      onDone: _retireOwner,
+    );
     _recallControllers = List.generate(
       widget.targetWords.length,
       (_) => TextEditingController(),
@@ -152,19 +163,20 @@ class _AssociativeReadingSessionScreenState
   @override
   void didUpdateWidget(AssociativeReadingSessionScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.ownerId != widget.ownerId ||
+        !identical(oldWidget.ownerChanges, widget.ownerChanges)) {
+      _retireOwner();
+    }
     if (oldWidget.passageText != widget.passageText ||
+        oldWidget.supportedText != widget.supportedText ||
+        !identical(oldWidget.ownerChanges, widget.ownerChanges) ||
         oldWidget.documentId != widget.documentId ||
         oldWidget.documentRevision != widget.documentRevision ||
         oldWidget.cefrLevel != widget.cefrLevel ||
         oldWidget.ownerId != widget.ownerId ||
         oldWidget.timeCallerContext != widget.timeCallerContext ||
         !identical(oldWidget.learning, widget.learning) ||
-        !listEquals(oldWidget.targetWords, widget.targetWords) ||
-        !mapEquals(oldWidget.targetWordIds, widget.targetWordIds) ||
-        !mapEquals(
-          oldWidget.targetWordContentRevisions,
-          widget.targetWordContentRevisions,
-        )) {
+        !listEquals(oldWidget.targetWords, widget.targetWords)) {
       _timeSourceRetired = true;
       _timeBinding?.retireDependencies();
       _timeBinding?.dispose();
@@ -198,7 +210,9 @@ class _AssociativeReadingSessionScreenState
           if (!mounted) return;
           setState(() {
             final savedStage = (progress?.lastPosition ?? 1).clamp(1, 6);
-            _restartedRound = savedStage >= 4 && widget.targetWordIds != null;
+            _restartedRound =
+                savedStage >= 4 &&
+                widget.targetWords.any((word) => word.id != null);
             _currentStage = _restartedRound ? 1 : savedStage;
             _completed = !_restartedRound && (progress?.isCompleted ?? false);
             if (_restartedRound) _sessionId = null;
@@ -236,15 +250,11 @@ class _AssociativeReadingSessionScreenState
           (ModalRoute.of(context)?.isCurrent ?? true) &&
           TickerMode.valuesOf(context).enabled,
     );
-    final ids = widget.targetWordIds;
-    final revisions = widget.targetWordContentRevisions;
     if (widget.targetWords.isEmpty ||
-        ids == null ||
-        revisions == null ||
         widget.targetWords.any(
           (word) =>
-              ids[word]?.isNotEmpty != true ||
-              revisions[word]?.isNotEmpty != true,
+              word.id?.isNotEmpty != true ||
+              word.contentRevision?.isNotEmpty != true,
         )) {
       return;
     }
@@ -259,7 +269,7 @@ class _AssociativeReadingSessionScreenState
                   widget.cefrLevel,
                   widget.passageText,
                   for (final word in widget.targetWords)
-                    [word, ids[word], revisions[word]],
+                    [word.spelling, word.id, word.contentRevision],
                 ]),
               ),
             )
@@ -269,7 +279,7 @@ class _AssociativeReadingSessionScreenState
               utf8.encode(
                 jsonEncode([
                   for (final word in widget.targetWords)
-                    [ids[word], revisions[word]],
+                    [word.id, word.contentRevision],
                 ]),
               ),
             )
@@ -348,6 +358,7 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void dispose() {
+    unawaited(_ownerSubscription?.cancel());
     _timeBinding?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     for (final c in _recallControllers) {
@@ -443,8 +454,11 @@ class _AssociativeReadingSessionScreenState
 
   Future<bool> _submitRecallAnswers() async {
     final learning = _learning;
-    final wordIds = widget.targetWordIds;
-    if (learning == null || wordIds == null) return true;
+    final wordIds = [
+      for (final word in widget.targetWords)
+        if (word.id != null) word.id!,
+    ];
+    if (learning == null || wordIds.isEmpty) return true;
     final owner = await _ownerForWrite(showFailure: true);
     if (owner == null) return false;
 
@@ -460,13 +474,13 @@ class _AssociativeReadingSessionScreenState
           final start = _timeStart ??= await learning
               .prepareSourceBoundReadingStart(
                 expectedOwnerId: owner,
-                wordIds: [
-                  for (final word in widget.targetWords) wordIds[word]!,
-                ],
+                wordIds: wordIds,
                 source: pin,
                 callerContext: widget.timeCallerContext,
                 stillCurrent: () =>
-                    mounted && (ModalRoute.of(context)?.isCurrent ?? true),
+                    mounted &&
+                    !_ownerRetired &&
+                    (ModalRoute.of(context)?.isCurrent ?? true),
                 limit: wordIds.length,
               );
           if (start == null) return true;
@@ -478,7 +492,7 @@ class _AssociativeReadingSessionScreenState
           unawaited(_linkReadingTime(start));
         } else {
           session = await learning.startReadingForWords(
-            wordIds: wordIds.values,
+            wordIds: wordIds,
             limit: wordIds.length,
           );
         }
@@ -498,13 +512,13 @@ class _AssociativeReadingSessionScreenState
     final results = <bool?>[];
     for (var i = 0; i < widget.targetWords.length; i++) {
       final word = widget.targetWords[i];
-      final wordId = wordIds[word];
+      final wordId = word.id;
       if (wordId == null) {
         results.add(null);
         continue;
       }
       final typed = _recallControllers[i].text.trim().toLowerCase();
-      final expected = word.trim().toLowerCase();
+      final expected = word.spelling.trim().toLowerCase();
       final isCorrect = _frozenRecallResults[i] ??= typed == expected;
       results.add(isCorrect);
       try {
@@ -521,7 +535,7 @@ class _AssociativeReadingSessionScreenState
           evidenceContext: _recallEvidence[i] ??=
               captureCurrentActivityEvidence(
                 promptMode: 'associativeRecall',
-                contentRevision: widget.targetWordContentRevisions?[word],
+                contentRevision: word.contentRevision,
               ),
         );
       } catch (_) {
@@ -557,12 +571,10 @@ class _AssociativeReadingSessionScreenState
   }
 
   List<String> get _mistakeWordIds {
-    final wordIds = widget.targetWordIds;
-    if (wordIds == null) return const [];
     final mistakes = <String>{};
     for (var i = 0; i < widget.targetWords.length; i++) {
       if (_frozenRecallResults[i] != false) continue;
-      final id = wordIds[widget.targetWords[i]];
+      final id = widget.targetWords[i].id;
       if (id != null) mistakes.add(id);
     }
     return mistakes.toList(growable: false);
@@ -598,7 +610,7 @@ class _AssociativeReadingSessionScreenState
       if (cue.isEmpty) continue;
       try {
         final word = widget.targetWords[i];
-        final wordIdentity = widget.targetWordIds?[word] ?? i;
+        final wordIdentity = word.id ?? i;
         final createdAtUtc = _associationCreatedTimes[i] ??= DateTime.now()
             .toUtc();
         await associativeLearning.saveAssociation(
@@ -607,7 +619,7 @@ class _AssociativeReadingSessionScreenState
                 'assoc:$ownerId:$_documentId:${widget.documentRevision}:'
                 '$wordIdentity',
             ownerId: ownerId,
-            wordKey: word,
+            wordKey: word.spelling,
             type: 'keyword',
             content: cue,
             createdAtUtc: createdAtUtc,
@@ -686,14 +698,33 @@ class _AssociativeReadingSessionScreenState
     );
   }
 
+  void _retireOwner() {
+    if (!mounted || _ownerRetired) return;
+    _timeSourceRetired = true;
+    _timeBinding?.retireDependencies();
+    setState(() => _ownerRetired = true);
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    if (_ownerRetired) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(
+          child: Text('บัญชีผู้เรียนเปลี่ยนแล้ว กรุณาเปิดกิจกรรมใหม่'),
+        ),
+      );
+    }
     _timeBinding?.syncVisibility();
     return Scaffold(
       appBar: AppBar(
-        title: Text('อ่านแบบเชื่อมโยง (${widget.cefrLevel})'),
+        title: Text(
+          widget.cefrLevel.isEmpty
+              ? 'อ่านแบบเชื่อมโยง'
+              : 'อ่านแบบเชื่อมโยง (${widget.cefrLevel})',
+        ),
         actions: [
           if (widget.timeCallerContext == LearningTimeCallerContext.ordinary &&
               (widget.ownerId ?? _time?.ownerId) != null &&
@@ -833,18 +864,30 @@ class _AssociativeReadingSessionScreenState
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(widget.passageText),
+                child: Text(widget.supportedText ?? widget.passageText),
               ),
             ),
             const SizedBox(height: 12),
-            Text('คำศัพท์เป้าหมาย: ${widget.targetWords.join(', ')}'),
+            Text(
+              'คำศัพท์เป้าหมาย: ${widget.targetWords.map((word) => word.spelling).join(', ')}',
+            ),
           ],
         );
 
       // ── Stage 2: Cue Fading ────────────────────────────────────────────────
       case 2:
-        return const Text(
-          'อ่านเรื่องอีกครั้งโดยไม่ดูคำแปลหรือข้อความที่เน้นไว้',
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('อ่านเนื้อหาอีกครั้งโดยไม่ดูคำแปลหรือข้อความที่เน้นไว้'),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(widget.passageText),
+              ),
+            ),
+          ],
         );
 
       // ── Stage 3: Active Recall ─────────────────────────────────────────────
@@ -853,7 +896,7 @@ class _AssociativeReadingSessionScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'พิมพ์คำศัพท์เป้าหมายแต่ละคำจากความจำ',
+              'พิมพ์คำศัพท์เป้าหมายจากความจำตามลำดับที่แสดงในขั้นแรก',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 12),
@@ -915,7 +958,7 @@ class _AssociativeReadingSessionScreenState
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          widget.targetWords[i],
+                          widget.targetWords[i].spelling,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],

@@ -39,11 +39,16 @@ void main() {
           MaterialApp(
             home: AssociativeReadingSessionScreen(
               cefrLevel: 'Source',
-              targetWords: const ['station'],
+              targetWords: const [
+                (
+                  spelling: 'station',
+                  id: 'synthetic-word',
+                  contentRevision: null,
+                ),
+              ],
               passageText: 'station',
               documentId: 'synthetic-progress',
               learning: learning,
-              targetWordIds: const {'station': 'synthetic-word'},
               ownerId: owner.id,
             ),
           ),
@@ -112,11 +117,12 @@ void main() {
       Widget screen() => MaterialApp(
         home: AssociativeReadingSessionScreen(
           cefrLevel: 'Source',
-          targetWords: const ['station'],
+          targetWords: const [
+            (spelling: 'station', id: 'synthetic-word', contentRevision: null),
+          ],
           passageText: 'We are now at the station.',
           documentId: 'local-source:synthetic-audit-reopen',
           learning: learning,
-          targetWordIds: const {'station': 'synthetic-word'},
           ownerId: owner.id,
         ),
       );

@@ -1,12 +1,12 @@
 import '../domain/learning_pack.dart';
 
-const bundledStarterCatalogId = 'lexiquest.starter.en-th.1';
+const bundledStarterCatalogId = 'lexiquest.starter.en-th.1.0.1';
 
 final LearningPack bundledStarterPack = const LearningPackCodec().decode(
   const LearningPackCodec().encode(
     metadata: LearningPackMetadata(
       packId: 'lexiquest.starter.en-th',
-      version: '1.0.0',
+      version: '1.0.1',
       title: 'แพ็กเริ่มต้น LexiQuest',
       objectives: const [
         'รู้จักคำใกล้ตัว 12 คำจากนิยามและตัวอย่าง',
@@ -20,7 +20,10 @@ final LearningPack bundledStarterPack = const LearningPackCodec().decode(
         source: 'Original AI-assisted English and Thai starter text',
         license: 'Proprietary. Subject to the LexiQuest LICENSE.',
         attribution:
-            'Original AI-assisted text prepared for LexiQuest. Editorial review pending. '
+            'Original AI-assisted text prepared for LexiQuest. '
+            'AI-assisted review of language and exercises completed on 2026-11-04. '
+            'Independent human editorial review pending. '
+            'Pronunciations use a British English model. '
             'A1 is an author-declared target, not a certified level. '
             'Copyright 2024-2026 Petch1910 / LexiQuest Team. All rights reserved.',
       ),
@@ -266,8 +269,8 @@ final LearningPack bundledStarterPack = const LearningPackCodec().decode(
         definition: "To move a door so that people cannot go through it.",
         examples: const [
           LearningPackExample(
-            text: "Close the window, please.",
-            translation: "กรุณาปิดหน้าต่าง",
+            text: "Close the door, please.",
+            translation: "กรุณาปิดประตู",
           ),
         ],
         memoryCue: "นึกภาพประตูที่ปิดทางเดิน",

@@ -23,7 +23,10 @@ void main() {
         const MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'B2',
-            targetWords: ['ephemeral', 'resilient'],
+            targetWords: [
+              (spelling: 'ephemeral', id: null, contentRevision: null),
+              (spelling: 'resilient', id: null, contentRevision: null),
+            ],
             passageText:
                 'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
           ),
@@ -45,11 +48,14 @@ void main() {
       await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
       await tester.pumpAndSettle();
       expect(find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'), findsOneWidget);
+      expect(find.textContaining('ephemeral moments'), findsOneWidget);
+      expect(find.textContaining('คำศัพท์เป้าหมาย:'), findsNothing);
 
       // Stage 2 -> Stage 3
       await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
       await tester.pumpAndSettle();
       expect(find.text('ขั้นที่ 3: ทดสอบจากความจำ'), findsOneWidget);
+      expect(find.textContaining('ตามลำดับ'), findsOneWidget);
 
       // Stage 3 -> Stage 4
       await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
@@ -75,7 +81,10 @@ void main() {
         const MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'B1',
-            targetWords: ['ephemeral', 'resilient'],
+            targetWords: [
+              (spelling: 'ephemeral', id: null, contentRevision: null),
+              (spelling: 'resilient', id: null, contentRevision: null),
+            ],
             passageText: 'Test passage.',
           ),
         ),
@@ -105,7 +114,9 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'A2',
-            targetWords: const ['banana'],
+            targetWords: const [
+              (spelling: 'banana', id: null, contentRevision: null),
+            ],
             passageText: 'The banana is yellow.',
             associativeLearning: adapter,
             ownerId: 'owner-reading',
@@ -148,7 +159,9 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'A2',
-            targetWords: const ['banana'],
+            targetWords: const [
+              (spelling: 'banana', id: null, contentRevision: null),
+            ],
             passageText: 'The banana is yellow.',
             associativeLearning: adapter,
             ownerId: 'owner-reading',
@@ -196,14 +209,16 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'Source',
-            targetWords: const ['station'],
+            targetWords: const [
+              (
+                spelling: 'station',
+                id: 'word-1',
+                contentRevision: 'local-vocabulary-v1:1',
+              ),
+            ],
             passageText: 'The station is ready for every learner today.',
             documentId: 'local-source:evidence-capture',
             learning: setup.learning,
-            targetWordIds: const {'station': 'word-1'},
-            targetWordContentRevisions: const {
-              'station': 'local-vocabulary-v1:1',
-            },
             ownerId: setup.ownerId,
           ),
         ),
@@ -226,6 +241,77 @@ void main() {
       expect(context['assignmentId'], isNull);
     });
 
+    testWidgets('duplicate spellings retain both word identities in recall', (
+      tester,
+    ) async {
+      final setup = await _ownerScopedLearning();
+      addTearDown(setup.database.close);
+      await setup.database
+          .into(setup.database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-2',
+              ownerId: setup.ownerId,
+              name: 'Travel 2',
+              normalizedName: 'travel 2',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await setup.database
+          .into(setup.database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'word-2',
+              ownerId: setup.ownerId,
+              categoryId: 'category-2',
+              spelling: 'station',
+              normalizedSpelling: 'station',
+              meaning: 'สถานี',
+              normalizedMeaning: 'สถานี',
+              partOfSpeech: 'noun',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AssociativeReadingSessionScreen(
+            cefrLevel: '',
+            targetWords: const [
+              (
+                spelling: 'station',
+                id: 'word-1',
+                contentRevision: 'local-vocabulary-v1:1',
+              ),
+              (
+                spelling: 'station',
+                id: 'word-2',
+                contentRevision: 'local-vocabulary-v1:1',
+              ),
+            ],
+            passageText: 'station',
+            learning: setup.learning,
+            ownerId: setup.ownerId,
+          ),
+        ),
+      );
+      await _pumpUntilText(tester, 'ขั้นที่ 1: อ่านพร้อมตัวช่วย');
+      for (var stage = 0; stage < 2; stage++) {
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await tester.pumpAndSettle();
+      }
+      await tester.enterText(find.byType(TextField).at(0), 'station');
+      await tester.enterText(find.byType(TextField).at(1), 'station');
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await _pumpUntilText(tester, 'ขั้นที่ 4: สร้างตัวช่วยจำ');
+      final answers = await setup.database
+          .select(setup.database.answerAttempts)
+          .get();
+      expect(answers.map((answer) => answer.wordId), ['word-1', 'word-2']);
+      expect(answers.map((answer) => answer.isCorrect), [true, true]);
+    });
+
     testWidgets('edited document keeps associations for each stable word', (
       tester,
     ) async {
@@ -242,12 +328,13 @@ void main() {
             home: AssociativeReadingSessionScreen(
               key: ValueKey(revision),
               cefrLevel: 'Source',
-              targetWords: [word],
+              targetWords: [
+                (spelling: word, id: wordId, contentRevision: null),
+              ],
               passageText: 'The $word is ready for every learner today.',
               documentId: 'local-source:same-document',
               documentRevision: revision,
               associativeLearning: adapter,
-              targetWordIds: {word: wordId},
               ownerId: 'owner-reading',
             ),
           ),
@@ -292,11 +379,12 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'Source',
-            targetWords: const ['station'],
+            targetWords: const [
+              (spelling: 'station', id: 'word-1', contentRevision: null),
+            ],
             passageText: 'The station is open for every learner today.',
             documentId: 'local-source:test-progress',
             learning: setup.learning,
-            targetWordIds: const {'station': 'word-1'},
             ownerId: setup.ownerId,
           ),
         ),
@@ -334,12 +422,13 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'Source',
-            targetWords: const ['station'],
+            targetWords: const [
+              (spelling: 'station', id: 'word-1', contentRevision: null),
+            ],
             passageText: 'The station is open for every learner today.',
             documentId: 'local-source:test-association',
             learning: setup.learning,
             associativeLearning: adapter,
-            targetWordIds: const {'station': 'word-1'},
             ownerId: setup.ownerId,
           ),
         ),
@@ -387,12 +476,17 @@ void main() {
                     MaterialPageRoute<LearningSessionResult>(
                       builder: (_) => AssociativeReadingSessionScreen(
                         cefrLevel: 'Source',
-                        targetWords: const ['station'],
+                        targetWords: const [
+                          (
+                            spelling: 'station',
+                            id: 'word-1',
+                            contentRevision: null,
+                          ),
+                        ],
                         passageText:
                             'The station is open for every learner today.',
                         documentId: 'local-source:result',
                         learning: setup.learning,
-                        targetWordIds: const {'station': 'word-1'},
                         ownerId: setup.ownerId,
                       ),
                     ),

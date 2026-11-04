@@ -1,0 +1,13 @@
+id	decision	reason	evidence	status
+C01	Audit reachable finite corpora and classify variable/legacy sources	Linguistic claims must name their corpus	2026-11-04-content-inventory.md; starter12; scanner127	accepted
+C02	Retain starter1.0.0 bytes; publish corrected1.0.1	Installed content and accepted quiz plans must remain immutable	bundled-starter-1.0.0.lexipack SHA256 46203bc4328b66195a989df2471cd16b77e6c4c2f2833b35195956f07961251b	accepted
+C03	Correct close example and declare British IPA plus AI-review limits	Example must agree with authored definition; AI review is not independent certification	2026-11-04-starter-content-review.md; starter-red-runtime.log	accepted
+C04	Use exact normalized classifier labels	Substring fallback mapped unsupported objects to unrelated words	scanner-red.log; scanner-green.log 28PASS	accepted
+C05	Replace fabricated reading template with installed examples or explicit missing-example list	Reuse owned lexical content and remove false AI/level claims	reading-red.log; reading-starter-green.log; reading-home-green.log	accepted
+C06	Use ordered Reading targets carrying spelling,ID,revision	Different installed versions can contain identical spelling with distinct identities	independent P2 review; reading-identity-regression.log 62PASS	accepted
+C07	Keep immutable reading snapshot; validate revisions at canonical boundary	Current lexical read is transactional and pinned; no new table watcher required	independent source review and source-bound duplicate-ID regression	accepted
+C08	Scroll preview tests to actual action	Expanded provenance moves install action below initial lazy viewport	packs-regression.log 134PASS15FAIL; packs-regression-scroll.log 150PASS	accepted
+C09	Limit device work to task-owned emulators	Preserve physical Vivo and exclude real enrollment/provider/Cloud/Billing	Synthetic33 database copied before new tests; user scope	accepted
+C10	Name the activity reading/review instead of promising a short story	Installed examples and explicit word lists are the actual material	reading-copy-focused.log 43PASS; partial full-host run intentionally stopped before final copy edits	accepted
+C11	Flush microtasks without requesting a frame while the scanner test is paused	Android live test binding disables frames in paused state; pump awaited before resume deadlocks	local Flutter scheduler/live binding review; native-scanner-lifecycle.log 1PASS	accepted
+C12	Focus and settle real input before injecting Tutor edit	Native input callback must actually run before asserting stop/time behavior	native-tutor-input-focus.log 1PASS; unchanged stopACK and9,000,000us assertions	accepted

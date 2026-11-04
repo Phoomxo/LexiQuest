@@ -154,12 +154,13 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       MaterialApp(
         home: AssociativeReadingSessionScreen(
           cefrLevel: 'B1',
-          targetWords: [word.spelling],
+          targetWords: [
+            (spelling: word.spelling, id: word.id, contentRevision: null),
+          ],
           passageText: 'The station is near the city center.',
           documentId: 'reading-test',
           learning: learning,
           associativeLearning: associations,
-          targetWordIds: {word.spelling: word.id},
           ownerId: owner.id,
         ),
       ),
@@ -258,11 +259,18 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'B1',
-            targetWords: words.map((word) => word.spelling).toList(),
+            targetWords: words
+                .map(
+                  (word) => (
+                    spelling: word.spelling,
+                    id: word.id,
+                    contentRevision: null,
+                  ),
+                )
+                .toList(),
             passageText: 'The station sells a ticket for the train.',
             documentId: 'reading-retry-test',
             learning: failingLearning,
-            targetWordIds: {for (final word in words) word.spelling: word.id},
             ownerId: setup.owner.id,
           ),
         ),

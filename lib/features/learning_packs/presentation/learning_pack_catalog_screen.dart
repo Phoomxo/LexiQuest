@@ -1390,7 +1390,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     const Padding(
       padding: EdgeInsets.symmetric(vertical: 12),
       child: Text(
-        'เนื้อหาของแพ็กนี้ยังไม่ผ่านการทบทวนคุณภาพ การตรวจไฟล์ยืนยันความครบถ้วนของไฟล์เท่านั้น',
+        'เนื้อหาของแพ็กนี้ยังไม่ได้รับการรับรองจากผู้เชี่ยวชาญ การตรวจไฟล์ยืนยันความครบถ้วนของไฟล์เท่านั้น',
       ),
     ),
   ];
@@ -1513,7 +1513,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         'จาก ${content.pack.manifest.title} · เวอร์ชัน ${content.pack.manifest.version}',
       ),
       Text('ผู้จัดทำ: ${content.pack.manifest.provenance.author}'),
-      const Text('เนื้อหายังไม่ผ่านการทบทวนคุณภาพ'),
+      const Text('เนื้อหายังไม่ได้รับการรับรองจากผู้เชี่ยวชาญ'),
     ];
   }
 }

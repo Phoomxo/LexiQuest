@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_time_admission.dart';
 import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
@@ -45,12 +46,14 @@ void main() {
             ),
             home: AssociativeReadingSessionScreen(
               cefrLevel: 'A1',
-              targetWords: [word.spelling],
+              targetWords: [
+                (
+                  spelling: word.spelling,
+                  id: word.id,
+                  contentRevision: word.contentRevision,
+                ),
+              ],
               passageText: 'Synthetic narrow reading.',
-              targetWordIds: {word.spelling: word.id},
-              targetWordContentRevisions: {
-                word.spelling: word.contentRevision!,
-              },
               ownerId: configuredOwnerId,
               learning: h.base.learning,
               learningTime: h.time,
@@ -83,12 +86,14 @@ void main() {
           MaterialApp(
             home: AssociativeReadingSessionScreen(
               cefrLevel: 'A1',
-              targetWords: [word.spelling],
+              targetWords: [
+                (
+                  spelling: word.spelling,
+                  id: word.id,
+                  contentRevision: word.contentRevision,
+                ),
+              ],
               passageText: 'Synthetic immutable reading passage.',
-              targetWordIds: {word.spelling: word.id},
-              targetWordContentRevisions: {
-                word.spelling: word.contentRevision!,
-              },
               ownerId: configuredOwnerId,
               learning: h.base.learning,
               learningTime: h.time,
@@ -157,9 +162,18 @@ void main() {
     tutor.replyGate.complete();
     await _settle(tester);
     expect(voice.speaks, 1);
+    expect(tester.widget<TextField>(input).enabled, isTrue);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    await tester.ensureVisible(input);
+    await tester.tap(input);
+    await tester.pumpAndSettle();
     h.micros += 20000000;
     await tester.enterText(input, 'User resumes after playback');
     await _settle(tester);
+    expect(
+      tester.widget<TextField>(input).controller!.text,
+      'User resumes after playback',
+    );
     expect(voice.stops, greaterThan(0));
     h.micros += 3000000;
     await tester.enterText(input, 'Next actual edit');
@@ -281,6 +295,79 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets(
+    'source-bound reading records duplicate spellings by distinct IDs',
+    (tester) async {
+      final h = await _TimeHarness.open(tester);
+      addTearDown(() => tester.runAsync(h.close));
+      await tester.runAsync(() async {
+        await h.base.database
+            .into(h.base.database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: 'duplicate-category',
+                ownerId: configuredOwnerId,
+                name: 'Duplicate',
+                normalizedName: 'duplicate',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        await h.base.addWord(
+          id: 'duplicate-station',
+          spelling: 'station',
+          meaning: 'สถานี',
+          categoryId: 'duplicate-category',
+        );
+      });
+      final all = (await tester.runAsync(
+        () => h.base.learningRepository.listQuizWords(
+          ownerId: configuredOwnerId,
+          limit: 20,
+        ),
+      ))!;
+      final words = [
+        all.singleWhere((word) => word.id == configuredWordIds.first),
+        all.singleWhere((word) => word.id == 'duplicate-station'),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AssociativeReadingSessionScreen(
+            cefrLevel: '',
+            targetWords: [
+              for (final word in words)
+                (
+                  spelling: word.spelling,
+                  id: word.id,
+                  contentRevision: word.contentRevision,
+                ),
+            ],
+            passageText: 'station',
+            ownerId: configuredOwnerId,
+            learning: h.base.learning,
+            learningTime: h.time,
+          ),
+        ),
+      );
+      await _settle(tester);
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _settle(tester);
+      }
+      await tester.enterText(find.byType(TextField).at(0), 'station');
+      await tester.enterText(find.byType(TextField).at(1), 'station');
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await _settle(tester);
+      expect(find.text('ขั้นที่ 4: สร้างตัวช่วยจำ'), findsOneWidget);
+      final answers = (await tester.runAsync(() => h.rows('answer_attempts')))!;
+      expect(answers.map((row) => row['word_id']).toSet(), {
+        configuredWordIds.first,
+        'duplicate-station',
+      });
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets('retired optional time does not block canonical Reading recall', (
     tester,
   ) async {
@@ -297,10 +384,14 @@ void main() {
       MaterialApp(
         home: AssociativeReadingSessionScreen(
           cefrLevel: 'A1',
-          targetWords: [word.spelling],
+          targetWords: [
+            (
+              spelling: word.spelling,
+              id: word.id,
+              contentRevision: word.contentRevision,
+            ),
+          ],
           passageText: 'Synthetic isolated reading.',
-          targetWordIds: {word.spelling: word.id},
-          targetWordContentRevisions: {word.spelling: word.contentRevision!},
           ownerId: configuredOwnerId,
           learning: h.base.learning,
           learningTime: h.time,
