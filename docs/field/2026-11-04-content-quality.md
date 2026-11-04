@@ -1,6 +1,6 @@
 # Content quality completion
 
-Status: content and keyboard corrections pass current host/native checks; signed candidate35 acceptance pending.
+Status: complete for the internal offline trial; signed APK35 and final receipts accepted.
 Worktree: `C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest`.
 Branch: `codex/remaining-system-readiness`.
 Baseline: `a5e46226247ef09e7faa8cc12248fe483d7034db`.
@@ -30,9 +30,9 @@ is not implied; use only task-owned emulators.
 - [x] Read the Principles section of the poteto-mode skill.
 - [x] Phase A: Frame.
 - [x] Phase B: Design the workflow.
-- [ ] Phase C: Run the loop.
-- [ ] Phase D: Keep the audit trail.
-- [ ] Phase E: Verify and hand back.
+- [x] Phase C: Run the loop.
+- [x] Phase D: Keep the audit trail.
+- [x] Phase E: Verify and hand back.
 
 1. Inventory concrete sources and callers before choosing edits. Quantify each
    finite corpus; distinguish training material, fixtures and shipped content.
@@ -57,8 +57,8 @@ is not implied; use only task-owned emulators.
 | C1 source inventory | Root aggregates read-only slices | Every owned shipped source mapped to callers and size | Complete, bounded90-file ledger |
 | C2 finite content review | Root integrates read-only language reviews | Every item and exercise option has a disposition | Complete for reachable finite corpora |
 | C3 source/boundary corrections | Assign disjoint writes after C1/C2 | Reproduction, focused checks, historical pins preserved | Complete, independently reviewed |
-| C4 integration and artifact | Root | Reviewed consistent source, emulator and APK evidence | Running |
-| C5 attestation | Root | Honest scope, immutable receipts and remaining dependencies | Ready |
+| C4 integration and artifact | Root | Reviewed consistent source, emulator and APK evidence | Complete on APK35 |
+| C5 attestation | Root | Honest scope, immutable receipts and remaining dependencies | Complete; independent review ACCEPT |
 
 The original four untracked critique files and16 failure images are preserved.
 No source writes outside this active worktree are authorized by this plan.
@@ -214,3 +214,63 @@ exercise the actual Android keyboard. No failing test was skipped or weakened.
 All logs, emulator captures and package receipts for this task are under
 `D:/LexiQuest-Storage/maintenance/2026-11-04/content-quality`.
 The decisions TSV records the accepted choices and their evidence.
+
+## Final trial35 attestation
+
+The delivered source is `fbcf6ee35d2f344896d5a1f80e7aa744c1716bdd`, tree
+`cea136f0b0f3e3e832beb7cd892dc6c43be5f54e`. `committed-source35-match.json`
+confirms all1092 tested inputs match that committed working-tree snapshot.
+Later receipt-only commits do not change the packaged application source.
+
+The existing offlineTrial pipeline built and verified the signed APK and AAB.
+The package is `package/lexiquest-1.0.0+35` under the evidence root.
+APK SHA256: `894d83c124b3bd9691f23dd966dd1b1f950a5db40cd7670f7a35177eaf130353`.
+AAB SHA256: `be7c284de5130721e860a6f6e11a95fed1cf375f7134840793f4c641997a9137`.
+The owner-approved signing certificate and pinned model pass the existing gates.
+Fresh and upgraded installations both report versionCode35 and the exact APK
+hash above. The fresh package is not debuggable. Candidate34 remains a rejected
+delivery candidate because of the recorded keyboard defect; use35 for trials.
+
+| Check | Result and evidence |
+|---|---|
+| Host regression and analysis | 5695 passed, no analysis issues,1092 unchanged input hashes; `full-host-delivery35-result.json` |
+| Android integration | 51 passed on current production code; `native35-receipt.json` |
+| Actual fresh APK | Local entry, explicit starter1.0.1 install and all6 Reading stages completed; `fresh35-001` through `fresh35-030` captures |
+| Actual keyboard | Stages3/4/5 each accept text after one tap, retain focus and keep text when the keyboard closes; `fresh35-ui-verified.json` checks actions and UI XML, with PNGs inspected directly |
+| Corrected examples | Fresh Reading displays `Close the door, please.` and `I read a book.` from installed content; stage2 removes the Thai support while retaining both examples |
+| Completed learning | Two correct answers, one completed recall session, completed Reading at position6, two saved associations,12 words/snapshots and intact starter1.0.1 bytes; `fresh35-reading-verified.json` |
+| Restart | Same learning facts after normal app restart and local entry, exact equality across29 canonical tables; `fresh35-restarted-verified.json`, `fresh35-restart-preserved.json` |
+| Upgrade34 to35 | All29 canonical tables unchanged:24 words/snapshots,20 answers,7 sessions and both pack versions/bytes/revisions; `upgrade35/upgrade35-verified.json` and the companion upgrade35 report |
+| Data boundaries | Fresh and upgraded snapshots have zero Research rows/events and disabled reminders. Only ordinary outbox operations remain |
+| Checker rejection | Fresh database checker rejects4 in-memory missing-answer/progress/association/Research mutations; upgrade checker rejects6 mutations. Original SQLite/WAL/SHM evidence is read through temporary copies |
+
+The prior trial33 report remains the broader44-feature emulator baseline.
+This task retests affected content paths on current Android code and runs the
+complete host suite; it does not relabel earlier44-feature device executions as
+new executions on APK35. The8/44 catalog, schema25 and frozen evidence contracts
+are unchanged. No known in-scope runtime defect remains from this content audit.
+
+The reviewed finite reachable corpora are all12 starter entries with36 choices
+and24 distractor explanations, plus all127 scanner entries. Reading now derives
+its material from installed examples or an explicit missing-example word list.
+Inactive legacy helper defects remain documented in the additional-content
+ledger and must be fixed before those helpers are activated. Variable provider
+and user-imported content cannot be linguistically certified by structural checks.
+
+This acceptance is for internal offline trials. It is not independent human
+editorial/CEFR certification, real provider or Play verification, whole-app
+physical-device voice/TalkBack or OEM notification validation, or authority to
+enroll real Research participants. Real enrollment/upload remain default-off.
+Cloud A/Billing, public rollout and real charging remain outside scope.
+
+Final independent read-only review: ACCEPT. The reviewer checked the actual
+artifact/input hashes and test logs, reran the fresh/restart database, upgrade
+and UI evidence checkers, and inspected representative screenshots. The reports
+match the evidence and preserve the earlier trial lineage without overstating it.
+`final35-receipts.json` pins the principal receipt hashes. All16 original failure
+images retain their baseline hashes and the four original critique files remain
+untracked. Only the two final attestation reports changed after packaging.
+No task test/build or emulator process remains running; both AVDs are preserved
+and absent from ADB. `final35-workspace-state.json` and
+`final35-emulators-stopped.json` record those checks. Next step: install APK35
+for internal feedback using the corrected starter1.0.1 content.
