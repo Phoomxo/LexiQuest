@@ -169,6 +169,11 @@ void main() {
           find.byKey(const ValueKey('word-report-comment')),
           comment,
         );
+        await motivationPresentationDeadline(
+          tester,
+          'report-comment-layout',
+          () => tester.pumpAndSettle(),
+        );
         await reportUiTapKey(tester, 'word-report-review');
         final sheet = find.byType(WordReportSheet);
         final target = tester.widget<WordReportSheet>(sheet).target;

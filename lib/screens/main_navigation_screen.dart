@@ -110,7 +110,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       if (status.firebase != RuntimeAvailability.ready) 'ระบบบัญชี',
       if (status.supabase != RuntimeAvailability.ready) 'ระบบข้อมูลออนไลน์',
       if (status.backends != RuntimeAvailability.ready)
-        'ผู้ช่วย AI และระบบเสียง',
+        'ผู้ช่วย AI และเสียงออนไลน์',
     ];
     return '${unavailable.join(' · ')} ยังไม่พร้อม — การเรียนในเครื่องยังใช้ได้';
   }

@@ -24,7 +24,7 @@ import 'package:vocab_learning_app/screens/associative_reading_session_screen.da
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 
-void main() {
+void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
   setUpAll(() async {
     await (FontLoader('NotoSansThai')
           ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
@@ -281,12 +281,22 @@ void main() {
         find.text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง'),
       );
       expect(find.text('ขั้นที่ 3: ทดสอบจากความจำ'), findsOneWidget);
+      await tester.pumpAndSettle();
+      final errorNotice = find.byType(SnackBar).hitTestable();
+      expect(errorNotice, findsOneWidget);
+      await tester.drag(errorNotice, const Offset(0, 200));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
       await tester.enterText(
         find.byType(TextField).at(0),
         'edited after commit',
       );
 
-      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      final retry = find.text('เสร็จแล้ว ไปขั้นถัดไป');
+      await tester.ensureVisible(retry);
+      await tester.pumpAndSettle();
+      expect(retry.hitTestable(), findsOneWidget);
+      await tester.tap(retry.hitTestable());
       await _pumpUntilFound(tester, find.text('ขั้นที่ 4: สร้างตัวช่วยจำ'));
       final evidence = await tester.runAsync(() async {
         final attempts = await database.select(database.answerAttempts).get();
@@ -1032,10 +1042,12 @@ void main() {
   testWidgets('quiz feedback and next action fit large Thai text', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(360, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    if (captureNativeFeedback == null) {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(useMaterial3: true, fontFamily: 'NotoSansThai'),
@@ -1053,10 +1065,14 @@ void main() {
     await _pumpUntilFound(tester, find.text('ถูกต้อง'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await expectLater(
-      find.byType(Scaffold),
-      matchesGoldenFile('goldens/quiz_feedback_large_text.png'),
-    );
+    if (captureNativeFeedback == null) {
+      await expectLater(
+        find.byType(Scaffold),
+        matchesGoldenFile('goldens/quiz_feedback_large_text.png'),
+      );
+    } else {
+      await captureNativeFeedback(tester);
+    }
     await tester.scrollUntilVisible(find.text('ดูผลการเรียน'), 150);
     expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
   });

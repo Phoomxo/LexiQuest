@@ -40,6 +40,7 @@ import '../features/account_deletion/data/snapshot_full_account_exporter.dart';
 import '../features/account_deletion/domain/account_deletion_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
+import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/application/controlled_study_archive_use_cases.dart';
 import '../features/learning_profile/application/learning_profile_use_cases.dart';
@@ -808,12 +809,17 @@ final class AppBootstrap {
         lifecycleObserver: studyObserver,
         lexicalContent: packRepository,
       );
+      const buildInfo = AppBuildInfo.fromEnvironment();
       learning = LearningUseCases(
         owners: localOwners,
         repository: learningRepository,
         generateId: idGenerator.v4,
         nowUtc: () => DateTime.now().toUtc(),
-        buildInfo: const AppBuildInfo.fromEnvironment(),
+        buildInfo: buildInfo,
+        eventAdapter: EventV1ToV2Adapter(
+          appVersion: buildInfo.version,
+          buildId: buildInfo.buildId,
+        ),
         onLocalMutation: notifyLocalMutation,
         contentProvider: contentService,
         beforeOrdinaryAnswer:

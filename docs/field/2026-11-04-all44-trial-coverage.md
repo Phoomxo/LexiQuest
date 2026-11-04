@@ -36,7 +36,7 @@ existing executable evidence targets; listing a test does not claim it ran today
 | f26 | Store goal and civil target date/countdown | learning_profile_editor_screen | User-selected target, not prediction |
 | f27 | Explicit reminder permission/save/ACK/reschedule/cancel | reminder_settings_flow; reminder_permission_flow; reminder_database_boundary | Native alarm proof, not every OEM battery policy |
 | f28 | Score-free assessment and linked comparison under authority | pre_post_assessment_screen; study assessment/runtime tests | Synthetic authority only; real enrollment/upload default-off |
-| f29 | Quest progress from canonical learning evidence | quest_screen; quest_learning_integration | No parallel reward/learning authority |
+| f29 | Quest progress from canonical learning evidence | quest_screen; quest_learning_integration; app_bootstrap_motivation | APK31 exposed a missing adapter; correction passes immediate Quiz/SRS, replay and owner checks; APK32 proof pending |
 | f30 | Gentle streak from dated canonical activity | earned_cosmetic_streak_flow; streak_learning_integration | Multi-day tests use synthetic clocks |
 | f31 | Stored achievement and milestone evidence | achievements_screen; canonical motivation readers | Empty account has no fabricated badges |
 | f32 | Earn coins, buy/equip cosmetic and restore after reopen | earned_cosmetic_streak_flow | Fixture earns via 80 canonical answers, not 80 UI taps |
@@ -48,7 +48,7 @@ existing executable evidence targets; listing a test does not claim it ran today
 | f38 | Labelled controls, large text and reachable primary actions | lesson_scaffold; profile/pack/quest/quiz semantics/layout | Emulator coverage cannot certify whole-app physical TalkBack |
 | f39 | Apply theme/reduced motion only after save ACK | appearance_settings_screen; reduced_motion_consumers | Verify actual APK persistence |
 | f40 | Local learning and durable restart without network | offline_vocabulary_journey; native durable/reopen tests | Remote provider intentionally absent |
-| f41 | Runtime flags and fail-closed Research/provider composition | field_feature_registry; app_bootstrap; research_transport_bootstrap | Hidden V2 placeholders are not ordinary route blockers |
+| f41 | Runtime flags and fail-closed Research/provider composition | field_feature_registry; app_bootstrap; app_bootstrap_motivation; research_transport_bootstrap | Hidden V2 placeholders are not ordinary route blockers |
 | f42 | Today suggestions, activity and direct session resume | today_resume_panel; choose_mode_motivation | Stale rendered epochs cannot reopen sessions |
 | f43 | Canonical history, summary and resumable drafts | learning_history_screen; native_learning_history | Completed historical summaries survive supported content removal |
 | f44 | Inspect/pin/remove cached pack bytes without deleting learning | learning_pack_actions_screen; learning_pack_boundary_screen | Verify cache removal across APK restart |

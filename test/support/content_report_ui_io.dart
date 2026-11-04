@@ -102,7 +102,6 @@ Future<void> reportUiTap(
     'hit-testable-$stage',
     () => finder.hitTestable().evaluate().length == 1,
   );
-  await tester.pump();
   await tester.tap(finder.hitTestable());
   await tester.pump(const Duration(milliseconds: 350));
 }
