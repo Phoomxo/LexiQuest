@@ -94,6 +94,7 @@ class _AssociativeReadingSessionScreenState
 
   LearningUseCases? _learning;
   AssociativeLearningPort? _associativeLearning;
+  final _stageKey = GlobalKey();
 
   int _currentStage = 1;
   bool _loading = true;
@@ -778,6 +779,7 @@ class _AssociativeReadingSessionScreenState
                     constraints.maxHeight < 440 ||
                     MediaQuery.textScalerOf(context).scale(16) > 24;
                 final stage = Column(
+                  key: _stageKey,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_timeBinding != null)

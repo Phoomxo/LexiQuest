@@ -80,7 +80,7 @@ F means finite learning content. U means an unreferenced legacy teaching source 
 | `lib/runtime/app_bootstrap.dart` | V: tutor dependency composition and owner scope | 62 | `e37b0ac38fd64932c81de3bf13066ea900898cb093afbd261d4ded04ce7d2531` |
 | `lib/runtime/app_dependencies.dart` | I: dependency declarations | 3 | `d1bcb90147fa56a1661e1c20b3300c4ad262b8dad8946848758fff79a2ee1473` |
 | `lib/screens/ai_tutor_screen.dart` | V: tutor scenarios and provider output UI | 40 | `c78e1c5ecd9cbaf525c353d29ef4df8177daf04b17f90cfebdd064f2be17f401` |
-| `lib/screens/associative_reading_session_screen.dart` | V: reading inputs and evidence mode | 2 | `0e2254047ceb1c2ea9598926e8775ee404c948c8012ef674143c6ff76cba042a` |
+| `lib/screens/associative_reading_session_screen.dart` | V: reading inputs and evidence mode | 2 | `127e029792bfc1310d5092b31949f8587258e2606411104120752ec0eefff300` |
 | `lib/screens/cefr_selection_screen.dart` | U: CEFR service examples on unreferenced map route | 2 | `743dbac388cc4da83bcc432c3ea63c16bc5b12200c908caf418121cb49af6b07` |
 | `lib/screens/choose_mode_screen.dart` | I: activity navigation and answer count | 1 | `5170b5b0afc3ebd5671fd510c5e7253c8aa9ed4802b5c3e84b2474cbeeb44b35` |
 | `lib/screens/gemini_settings_screen.dart` | V: provider settings, consent and errors | 50 | `d98344a66c495b4969609518d87dac8966e91d2a052939dbc1dc7e3887f9d3e9` |

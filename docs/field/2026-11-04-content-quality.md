@@ -1,6 +1,6 @@
 # Content quality completion
 
-Status: content corrections, full-host and Android acceptance complete; signed artifact checks pending.
+Status: content and keyboard corrections pass current host/native checks; signed candidate35 acceptance pending.
 Worktree: `C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest`.
 Branch: `codex/remaining-system-readiness`.
 Baseline: `a5e46226247ef09e7faa8cc12248fe483d7034db`.
@@ -179,6 +179,37 @@ Android acceptance passes51 cases on the same application code. The only later
 test edit adjusts scrolling in the separate Recall entry test, which is not
 imported by this Android runner. No application code changed after that run.
 Build and real signed-APK fresh/upgrade acceptance remain required for delivery.
+
+## Signed candidate34 found a keyboard defect
+
+Candidate34 built from `50bc9847329436d10b10b17464740399f66297d3`.
+Its upgrade preserved all29 canonical tables,20 answers and7 sessions. Explicit
+starter1.0.1 installation retained the old pack and produced24 distinct words and
+lexical snapshots; the new close card displayed the corrected door example.
+The separate upgrade report records these accepted checks.
+
+Fresh signed-APK testing then found first-tap focus loss in Reading stages3/4.
+Opening the Android keyboard crosses the440px layout threshold and reparents
+the stage subtree. Without a persistent key Flutter recreated the text fields.
+Candidate34 is therefore retained as evidence, not the final trial delivery.
+Its reproduction database contains2 answers and1 completed recall session, while
+Reading progress remains unfinished at stage4, with no Research rows or events.
+Screenshots and SQLite/WAL/SHM were preserved before replacing
+only the task-owned Synthetic emulator installation.
+
+`reading-keyboard-focus-red.log` reproduces both failures. A State-owned GlobalKey
+on the existing stage Column preserves its input state across the layout change.
+The expanded regression passes3 cases, covering stages3/4/5, keyboard show/hide,
+focus, text, selection, composing and continued input without refocusing.
+Independent review accepts the two-line production fix. Candidate35 requires
+fresh native/host acceptance and signed-APK fresh/upgrade checks before delivery.
+
+The current-source rerun passes51 Android cases in `native-content-quality35.log`
+and5695 host tests in `full-host-delivery35.log`. Analysis reports no issues.
+`full-host-delivery35-result.json` records1092 inputs with no changes during
+verification; `native35-receipt.json` pins the Android log and Reading source hash.
+The new3 keyboard regressions run on the host; normal signed-APK checks must still
+exercise the actual Android keyboard. No failing test was skipped or weakened.
 
 All logs, emulator captures and package receipts for this task are under
 `D:/LexiQuest-Storage/maintenance/2026-11-04/content-quality`.
