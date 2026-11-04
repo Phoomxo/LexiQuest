@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 
 import 'accepted_quiz_plan.dart';
 import 'cloze_content.dart';
+import 'native_sentence_source.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 import 'native_exercise_checkpoint.dart';
@@ -31,20 +32,32 @@ final class QuizWord {
 }
 
 final class QuizQuestion {
-  const QuizQuestion({required this.word, required this.options})
-    : lexical = null;
+  const QuizQuestion({
+    required this.word,
+    required this.options,
+    this.direction = MeaningQuizDirection.forward,
+  }) : lexical = null;
 
   QuizQuestion.lexical(LexicalQuestionContent content)
     : word = content.target.word,
       options = List.unmodifiable(content.optionLabels),
+      direction = MeaningQuizDirection.forward,
       lexical = content;
 
   final QuizWord word;
   final List<String> options;
+  final MeaningQuizDirection direction;
   final LexicalQuestionContent? lexical;
 
-  String get correctAnswer => lexical == null ? word.meaning : word.spelling;
-  String get prompt => lexical?.target.entry.definition ?? word.spelling;
+  String get correctAnswer =>
+      lexical != null || direction == MeaningQuizDirection.reverse
+      ? word.spelling
+      : word.meaning;
+  String get prompt =>
+      lexical?.target.entry.definition ??
+      (direction == MeaningQuizDirection.reverse
+          ? word.meaning
+          : word.spelling);
   String get promptMode => lexical?.input.name ?? 'meaningChoice';
   String get skillId =>
       lexical == null ? 'meaning-recall' : 'definition-recall';
@@ -405,7 +418,8 @@ final class SentenceScrambleSession extends AcceptedNativeExercise {
               r'local-vocabulary-v1:[1-9][0-9]*',
             ).stringMatch(word.contentRevision!) !=
             word.contentRevision ||
-        content.targetSpelling != word.spelling) {
+        content.targetSpelling != word.spelling ||
+        !_nativeSourceMatches(content.source, session, word)) {
       throw ArgumentError(
         'Sentence Scramble requires its original session, owned anchor and admitted sentence',
       );
@@ -421,13 +435,15 @@ final class SentenceScrambleSession extends AcceptedNativeExercise {
     required this.session,
     required this.word,
     required this.content,
-  }) : providerProvenance =
-           'sentence-scramble-model-v1:${sha256.convert(utf8.encode(content.modelVersion))}',
+  }) : providerProvenance = _nativeProvenance(
+         content.source,
+         'sentence-scramble-model-v1',
+       ),
        evidenceContentRevision =
            'sentence-scramble-v1:${sha256.convert(utf8.encode(jsonEncode([
              'sentence-scramble-v1',
              [word.id, word.categoryId, word.spelling, word.meaning, word.partOfSpeech, word.contentRevision],
-             [content.sentence, content.tokens, content.tokenOrder, content.kind.wire, content.cefr.wire, content.language, content.modelVersion, content.cached],
+             [content.sentence, content.tokens, content.tokenOrder, ..._nativeSourceRevision(content.source)],
            ])))}';
 
   static const idPrefix = 'session:sentence-scramble-v1:';
@@ -459,8 +475,10 @@ sealed class ClozeSession extends AcceptedNativeExercise {
     required this.session,
     required this.word,
     required this.content,
-  }) : providerProvenance =
-           'cloze-model-v1:${sha256.convert(utf8.encode(content.modelVersion))}' {
+  }) : providerProvenance = _nativeProvenance(
+         content.source,
+         'cloze-model-v1',
+       ) {
     if (!session.id.startsWith(idPrefix) ||
         session.id.length == idPrefix.length ||
         !LearningEvidenceContract.validIdentifier(session.id) ||
@@ -468,7 +486,8 @@ sealed class ClozeSession extends AcceptedNativeExercise {
         session.activityType != 'cloze' ||
         session.startedAtUtc?.isUtc != true ||
         !_validClozeWord(word) ||
-        content.gapText.toLowerCase() != word.spelling.toLowerCase()) {
+        content.gapText.toLowerCase() != word.spelling.toLowerCase() ||
+        !_nativeSourceMatches(content.source, session, word)) {
       throw ArgumentError(
         'Cloze requires its original session, target and admitted gap',
       );
@@ -588,9 +607,40 @@ String _clozeContentRevision(
       'cloze-v1',
       variant.name,
       _clozeWordSnapshot(word),
-      [content.sentence, content.gapStart, content.gapEnd, content.kind.wire, content.cefr.wire, content.language, content.modelVersion, content.cached],
+      [content.sentence, content.gapStart, content.gapEnd, ..._nativeSourceRevision(content.source)],
       [for (final option in choices) _clozeWordSnapshot(option)],
     ])))}';
+
+List<Object?> _nativeSourceRevision(NativeSentenceSource source) =>
+    switch (source) {
+      GeneratedSentenceSource() => [
+        source.kind.wire,
+        source.cefr.wire,
+        source.language,
+        source.modelVersion,
+        source.cached,
+      ],
+      AuthoredSentenceSource() => [source.toJson()],
+    };
+
+String _nativeProvenance(NativeSentenceSource source, String prefix) =>
+    switch (source) {
+      GeneratedSentenceSource() =>
+        '$prefix:${sha256.convert(utf8.encode(source.modelVersion))}',
+      AuthoredSentenceSource() => source.provenance,
+    };
+
+bool _nativeSourceMatches(
+  NativeSentenceSource source,
+  LearningSessionDraft session,
+  QuizWord word,
+) => switch (source) {
+  GeneratedSentenceSource() => true,
+  AuthoredSentenceSource() =>
+    source.pack.ownerId == session.ownerId &&
+        jsonEncode(_clozeWordSnapshot(source.target.word)) ==
+            jsonEncode(_clozeWordSnapshot(word)),
+};
 
 final class TypedClozeAnswerInput extends NativeAnswerInput {
   const TypedClozeAnswerInput({

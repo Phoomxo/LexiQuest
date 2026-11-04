@@ -802,7 +802,7 @@ String _prefix(String mode) => switch (mode) {
 };
 
 Future<void> _scrollTo(WidgetTester tester, String mode, Finder target) async {
-  await tester.pump();
+  await tester.pumpAndSettle();
   final lesson = switch (mode) {
     'dictation' => find.byType(DictationQuizScreen),
     'wordScramble' => find.byType(WordScrambleScreen),
@@ -835,7 +835,7 @@ Future<void> _scrollTo(WidgetTester tester, String mode, Finder target) async {
         'viewport=${tester.getRect(scrollable)}',
   );
   await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
-  await tester.pump();
+  await tester.pumpAndSettle();
   expect(
     target.hitTestable(),
     findsOneWidget,

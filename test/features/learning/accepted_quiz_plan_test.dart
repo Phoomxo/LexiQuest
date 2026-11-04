@@ -9,6 +9,54 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 void main() {
   group('accepted meaning quiz plan', () {
     test(
+      'reverse policy is pinned and rejects rehashed tampering and hints',
+      () {
+        final original = _question();
+        final plan = AcceptedQuizPlan.create(
+          configuration: QuizConfiguration.category(
+            direction: MeaningQuizDirection.reverse,
+            hints: QuizHintPolicy.disabled,
+          ),
+          questions: [
+            QuizQuestion(
+              word: original.word,
+              options: const ['other', 'Polish'],
+              direction: MeaningQuizDirection.reverse,
+            ),
+          ],
+        );
+        final restored = AcceptedQuizPlan.parse(
+          id: plan.id,
+          json: plan.stableSerialization,
+        );
+        expect(restored.questions.single.prompt, original.word.meaning);
+        expect(restored.questions.single.correctAnswer, 'Polish');
+        expect(restored.configuration.allowsHints, isFalse);
+        final body =
+            jsonDecode(plan.stableSerialization) as Map<String, dynamic>;
+        expect(body['schemaVersion'], 3);
+        (body['configuration'] as Map<String, dynamic>)['direction'] =
+            'forward';
+        final tampered = jsonEncode(body);
+        expect(
+          () => AcceptedQuizPlan.parse(id: _id(tampered), json: tampered),
+          throwsFormatException,
+        );
+        final checkpoint = AwaitingQuizAnswer(
+          planId: plan.id,
+          questionOrdinal: 0,
+          assistance: QuizAssistance().showHint(10).hideHint(),
+        );
+        expect(() => checkpoint.validateFor(plan), throwsFormatException);
+        expect(
+          () =>
+              QuizCheckpoint.parse(checkpoint.stableSerialization, plan: plan),
+          throwsFormatException,
+        );
+      },
+    );
+
+    test(
       'round-trips exact words, option order, real activity and checksum',
       () {
         final plan = _plan();

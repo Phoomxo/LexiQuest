@@ -1,19 +1,14 @@
 import 'dart:convert';
 
 import '../../../ai/ai_models.dart';
+import 'native_sentence_source.dart';
 
-/// A locally admitted gap and the actual generation metadata, without an
-/// assertion about grammatical quality, curriculum level or external approval.
 final class ClozeContent {
   const ClozeContent._({
     required this.sentence,
     required this.gapStart,
     required this.gapEnd,
-    required this.kind,
-    required this.cefr,
-    required this.language,
-    required this.modelVersion,
-    required this.cached,
+    required this.source,
   });
 
   static const maxSentenceRunes = 1024;
@@ -34,23 +29,38 @@ final class ClozeContent {
     required String targetSpelling,
     required ContentResponse response,
   }) {
-    final text = response.text;
-    final kind = response.kind;
-    final cefr = response.cefr;
-    final language = response.language;
+    final source = GeneratedSentenceSource(
+      kind: response.kind,
+      cefr: response.cefr,
+      language: response.language,
+      modelVersion: response.modelVersion.trim(),
+      cached: response.cached,
+    );
     final originalModelVersion = response.modelVersion;
-    final cached = response.cached;
-    if (!supportsTarget(targetSpelling) ||
-        kind != ContentKind.sentence ||
-        language != 'en' ||
-        !_boundedText(text, maxSentenceRunes, maxSentenceUtf8Bytes) ||
-        _markup.hasMatch(text) ||
+    if (response.kind != ContentKind.sentence ||
+        response.language != 'en' ||
         !_boundedText(
           originalModelVersion,
           maxModelVersionRunes,
           maxModelVersionUtf8Bytes,
         ) ||
         _html.hasMatch(originalModelVersion)) {
+      _invalidContent();
+    }
+    return ClozeContent._admit(targetSpelling, response.text, source);
+  }
+
+  factory ClozeContent.authored(AuthoredSentenceSource source) =>
+      ClozeContent._admit(source.target.word.spelling, source.text, source);
+
+  factory ClozeContent._admit(
+    String targetSpelling,
+    String text,
+    NativeSentenceSource source,
+  ) {
+    if (!supportsTarget(targetSpelling) ||
+        !_boundedText(text, maxSentenceRunes, maxSentenceUtf8Bytes) ||
+        _markup.hasMatch(text)) {
       _invalidContent();
     }
 
@@ -89,11 +99,7 @@ final class ClozeContent {
       sentence: sentence,
       gapStart: gapStart,
       gapEnd: gapEnd,
-      kind: kind,
-      cefr: cefr,
-      language: language,
-      modelVersion: originalModelVersion.trim(),
-      cached: cached,
+      source: source,
     );
   }
 
@@ -102,11 +108,7 @@ final class ClozeContent {
   /// Half-open UTF-16 offsets into [sentence], matching String.substring.
   final int gapStart;
   final int gapEnd;
-  final ContentKind kind;
-  final CefrLevel cefr;
-  final String language;
-  final String modelVersion;
-  final bool cached;
+  final NativeSentenceSource source;
 
   String get prefix => sentence.substring(0, gapStart);
   String get gapText => sentence.substring(gapStart, gapEnd);

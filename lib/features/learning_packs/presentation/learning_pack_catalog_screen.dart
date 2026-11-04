@@ -740,6 +740,8 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             context: context,
             builder: (_) => LexicalQuizSetupDialog(
               packVersionId: shown.pack.id,
+              packTitle: shown.pack.manifest.title,
+              cefrLevel: shown.pack.manifest.cefrLevel,
               entries: requested.map((binding) => binding.entry),
             ),
           );
@@ -760,6 +762,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           input: configuration.input,
           limit: configuration.limit,
           settings: configuration.settings,
+          hints: configuration.hints,
           stillCurrent: () =>
               _resultCurrent(operation, scope) && _visible && available(),
         );

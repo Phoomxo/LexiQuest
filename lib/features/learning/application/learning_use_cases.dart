@@ -408,7 +408,30 @@ final class LearningUseCases {
   }) async {
     _requireCurrentNativeExercise(stillCurrent);
     final provider = contentProvider;
-    if (provider == null) return null;
+    if (provider == null) {
+      if (repository is! AuthoredNativeExerciseRepository) return null;
+      if (await _nativeExercises.hasAmbientTransaction()) {
+        throw StateError(
+          'Sentence Scramble preparation requires an independent read boundary',
+        );
+      }
+      _requireCurrentNativeExercise(stillCurrent);
+      final owner = await owners.getOrCreateActiveOwner();
+      _requireCurrentNativeExercise(stillCurrent);
+      return (repository as AuthoredNativeExerciseRepository)
+          .prepareAuthoredSentenceScramble(
+            session: LearningSessionDraft(
+              id: '${SentenceScrambleSession.idPrefix}${_nextId()}',
+              ownerId: owner.id,
+              activityType: 'sentenceScramble',
+              startedAtUtc: _nativeNow(),
+              appVersion: buildInfo.version,
+              buildId: buildInfo.buildId,
+            ),
+            categoryId: _optionalId(categoryId, 'categoryId'),
+            stillCurrent: stillCurrent,
+          );
+    }
     if (await _nativeExercises.hasAmbientTransaction()) {
       throw StateError(
         'Sentence Scramble generation requires an independent read boundary',
@@ -484,7 +507,31 @@ final class LearningUseCases {
   }) async {
     _requireCurrentNativeExercise(stillCurrent);
     final provider = contentProvider;
-    if (provider == null) return null;
+    if (provider == null) {
+      if (repository is! AuthoredNativeExerciseRepository) return null;
+      if (await _nativeExercises.hasAmbientTransaction()) {
+        throw StateError(
+          'Cloze preparation requires an independent read boundary',
+        );
+      }
+      _requireCurrentNativeExercise(stillCurrent);
+      final owner = await owners.getOrCreateActiveOwner();
+      _requireCurrentNativeExercise(stillCurrent);
+      return (repository as AuthoredNativeExerciseRepository)
+          .prepareAuthoredCloze(
+            session: LearningSessionDraft(
+              id: '${ClozeSession.idPrefix}${_nextId()}',
+              ownerId: owner.id,
+              activityType: 'cloze',
+              startedAtUtc: _nativeNow(),
+              appVersion: buildInfo.version,
+              buildId: buildInfo.buildId,
+            ),
+            categoryId: _optionalId(categoryId, 'categoryId'),
+            variant: variant,
+            stillCurrent: stillCurrent,
+          );
+    }
     if (await _nativeExercises.hasAmbientTransaction()) {
       throw StateError(
         'Cloze generation requires an independent read boundary',
@@ -1506,6 +1553,7 @@ final class LearningUseCases {
     required int limit,
     required bool Function() stillCurrent,
     LexicalQuizSettings settings = const LexicalQuizSettings(),
+    QuizHintPolicy hints = QuizHintPolicy.optional,
   }) async {
     final configuration = LexicalQuizConfiguration(
       packVersionId: packVersionId,
@@ -1513,6 +1561,7 @@ final class LearningUseCases {
       input: input,
       limit: limit,
       settings: settings,
+      hints: hints,
     );
     if (!stillCurrent()) {
       throw StateError('Lexical launch is no longer current');
@@ -1604,7 +1653,9 @@ final class LearningUseCases {
             wordIds: configuration.selectionKind == QuizSelectionKind.category
                 ? null
                 : configuration.wordIds,
-            limit: configuration.requestedItemCount,
+            limit: configuration.direction == MeaningQuizDirection.reverse
+                ? 100
+                : configuration.requestedItemCount,
           );
     if (words.isEmpty && launch.preparedPlan == null) {
       throw const ConfiguredQuizUnavailable(
@@ -1619,11 +1670,23 @@ final class LearningUseCases {
             ownerId: launch.session.ownerId,
             limit: 100,
           );
+    final questions = launch.preparedPlan != null
+        ? const <QuizQuestion>[]
+        : _questions(
+            words,
+            optionWords: optionWords,
+            direction: configuration.direction,
+          ).take(configuration.requestedItemCount).toList(growable: false);
+    if (launch.preparedPlan == null && questions.isEmpty) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.emptySelection,
+      );
+    }
     final plan =
         launch.preparedPlan ??
         AcceptedQuizPlan.create(
           configuration: configuration,
-          questions: _questions(words, optionWords: optionWords),
+          questions: questions,
         );
     final saved = await _configured.startConfiguredQuiz(
       session: launch.session,
@@ -1664,6 +1727,9 @@ final class LearningUseCases {
       expectedOwnerId: expectedOwnerId,
     );
     final checkpoint = saved.checkpoint;
+    if (visible && !saved.plan.configuration.allowsHints) {
+      throw StateError('Hints are disabled for this accepted quiz');
+    }
     if (checkpoint is! AwaitingQuizAnswer) {
       throw StateError('quiz question is not awaiting input');
     }
@@ -1981,7 +2047,50 @@ final class LearningUseCases {
   List<QuizQuestion> _questions(
     List<QuizWord> words, {
     List<QuizWord> optionWords = const [],
+    MeaningQuizDirection direction = MeaningQuizDirection.forward,
   }) {
+    if (direction == MeaningQuizDirection.reverse) {
+      final candidates = <String, QuizWord>{
+        for (final word in [...words, ...optionWords]) word.id: word,
+      }.values;
+      final meanings = <String, Set<String>>{};
+      for (final word in candidates) {
+        meanings
+            .putIfAbsent(normalizeLexicalResponse(word.meaning), () => {})
+            .add(normalizeLexicalResponse(word.spelling));
+      }
+      final questions = <QuizQuestion>[];
+      for (final word in words) {
+        final meaning = normalizeLexicalResponse(word.meaning);
+        if (meanings[meaning]!.length != 1) continue;
+        final spelling = normalizeLexicalResponse(word.spelling);
+        final distinct = <String, String>{};
+        for (final candidate in candidates) {
+          final label = normalizeLexicalResponse(candidate.spelling);
+          if (label != spelling &&
+              normalizeLexicalResponse(candidate.meaning) != meaning) {
+            distinct.putIfAbsent(label, () => candidate.spelling);
+          }
+        }
+        final distractors = distinct.values.toList()..sort();
+        if (distractors.isEmpty) continue;
+        final options = [word.spelling, ...distractors.take(3)];
+        final offset =
+            word.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+            options.length;
+        questions.add(
+          QuizQuestion(
+            word: word,
+            direction: direction,
+            options: List.unmodifiable([
+              ...options.skip(offset),
+              ...options.take(offset),
+            ]),
+          ),
+        );
+      }
+      return questions;
+    }
     final allMeanings = [
       ...words,
       ...optionWords,

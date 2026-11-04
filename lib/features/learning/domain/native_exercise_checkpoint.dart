@@ -8,6 +8,7 @@ import 'cloze_content.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 import 'learning_models.dart';
+import 'native_sentence_source.dart';
 import 'sentence_scramble_content.dart';
 
 enum NativeExerciseUnavailableReason {
@@ -54,26 +55,24 @@ final class AcceptedNativePlan {
   Map<String, Object?> toJson() {
     final session = exercise.session;
     final content = switch (exercise) {
-      SentenceScrambleSession(:final content) => _contentJson(
+      SentenceScrambleSession(:final content)
+          when content.source is AuthoredSentenceSource =>
+        (content.source as AuthoredSentenceSource).toJson(),
+      ClozeSession(:final content)
+          when content.source is AuthoredSentenceSource =>
+        (content.source as AuthoredSentenceSource).toJson(),
+      SentenceScrambleSession(:final content) => _generatedContentJson(
         content.sentence,
-        content.kind,
-        content.cefr,
-        content.language,
-        content.modelVersion,
-        content.cached,
+        content.source as GeneratedSentenceSource,
       ),
-      ClozeSession(:final content) => _contentJson(
+      ClozeSession(:final content) => _generatedContentJson(
         content.sentence,
-        content.kind,
-        content.cefr,
-        content.language,
-        content.modelVersion,
-        content.cached,
+        content.source as GeneratedSentenceSource,
       ),
       _ => null,
     };
     return {
-      'schemaVersion': 1,
+      'schemaVersion': content?['kind'] == 'authoredPack' ? 2 : 1,
       'policyVersion': EvidenceContext.currentPolicyVersion,
       'featureContractRevision': currentFeatureContractIdentity.revision,
       'featureContractHash': currentFeatureContractIdentity.semanticHash,
@@ -117,7 +116,7 @@ final class AcceptedNativePlan {
 
   factory AcceptedNativePlan.parse({required String id, required String json}) {
     final body = _decode(json, maxSerializedBytes);
-    if (body['schemaVersion'] != 1) {
+    if (body['schemaVersion'] != 1 && body['schemaVersion'] != 2) {
       throw NativeExerciseUnavailable(
         NativeExerciseUnavailableReason.unsupportedPolicy,
       );
@@ -163,32 +162,38 @@ final class AcceptedNativePlan {
       );
     }
 
+    AuthoredSentenceSource authored() =>
+        AuthoredSentenceSource.fromJson(_map(body['content']));
+    ClozeContent cloze() => body['schemaVersion'] == 2
+        ? ClozeContent.authored(authored())
+        : ClozeContent.parse(
+            targetSpelling: word.spelling,
+            response: response(),
+          );
+    SentenceScrambleContent scramble() => body['schemaVersion'] == 2
+        ? SentenceScrambleContent.authored(authored())
+        : SentenceScrambleContent.parse(
+            targetSpelling: word.spelling,
+            response: response(),
+          );
+
     final AcceptedNativeExercise exercise = switch (body['mode']) {
       'dictation' => DictationSession(session: session, word: word),
       'wordScramble' => WordScrambleSession(session: session, word: word),
       'sentenceScramble' => SentenceScrambleSession(
         session: session,
         word: word,
-        content: SentenceScrambleContent.parse(
-          targetSpelling: word.spelling,
-          response: response(),
-        ),
+        content: scramble(),
       ),
       'clozeTyped' => TypedClozeSession(
         session: session,
         word: word,
-        content: ClozeContent.parse(
-          targetSpelling: word.spelling,
-          response: response(),
-        ),
+        content: cloze(),
       ),
       'clozeChoice' => ChoiceClozeSession(
         session: session,
         word: word,
-        content: ClozeContent.parse(
-          targetSpelling: word.spelling,
-          response: response(),
-        ),
+        content: cloze(),
         choices: _list(body['choices']).map(_word),
       ),
       _ => throw const FormatException('Unsupported native mode'),
@@ -533,6 +538,18 @@ RecordAnswerCommand _answer(Object? value, NativeExerciseDraft draft) {
   }
   return command;
 }
+
+Map<String, Object?> _generatedContentJson(
+  String sentence,
+  GeneratedSentenceSource source,
+) => _contentJson(
+  sentence,
+  source.kind,
+  source.cefr,
+  source.language,
+  source.modelVersion,
+  source.cached,
+);
 
 Map<String, Object?> _contentJson(
   String sentence,

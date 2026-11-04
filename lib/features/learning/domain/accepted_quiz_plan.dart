@@ -12,6 +12,10 @@ part 'lexical_quiz.dart';
 
 enum QuizSelectionKind { category, wordIds, weakness }
 
+enum MeaningQuizDirection { forward, reverse }
+
+enum QuizHintPolicy { optional, disabled }
+
 final class QuizConfiguration {
   QuizConfiguration.lexical({
     required LexicalQuizConfiguration lexical,
@@ -23,13 +27,19 @@ final class QuizConfiguration {
          requestedItemCount: lexical.limit,
          lexical: lexical,
        );
-  QuizConfiguration.category({String? categoryId, int limit = 10})
-    : this._(
-        selectionKind: QuizSelectionKind.category,
-        categoryId: categoryId,
-        wordIds: const [],
-        requestedItemCount: limit,
-      );
+  QuizConfiguration.category({
+    String? categoryId,
+    int limit = 10,
+    MeaningQuizDirection direction = MeaningQuizDirection.forward,
+    QuizHintPolicy hints = QuizHintPolicy.optional,
+  }) : this._(
+         selectionKind: QuizSelectionKind.category,
+         categoryId: categoryId,
+         wordIds: const [],
+         requestedItemCount: limit,
+         direction: direction,
+         hints: hints,
+       );
 
   QuizConfiguration.sourcePractice({
     required Iterable<String> wordIds,
@@ -57,6 +67,8 @@ final class QuizConfiguration {
     required Iterable<String> wordIds,
     required this.requestedItemCount,
     this.lexical,
+    this.direction = MeaningQuizDirection.forward,
+    this.hints = QuizHintPolicy.optional,
   }) : wordIds = List.unmodifiable(wordIds.toSet().toList()..sort()) {
     if (requestedItemCount < 1 || requestedItemCount > 100) {
       throw const FormatException('Quiz item count must be 1..100.');
@@ -91,6 +103,11 @@ final class QuizConfiguration {
   final List<String> wordIds;
   final int requestedItemCount;
   final LexicalQuizConfiguration? lexical;
+  final MeaningQuizDirection direction;
+  final QuizHintPolicy hints;
+  bool get allowsHints => (lexical?.hints ?? hints) == QuizHintPolicy.optional;
+  bool get usesNewPolicy =>
+      direction != MeaningQuizDirection.forward || !allowsHints;
 
   String get activityType => lexical != null
       ? 'quiz'
@@ -103,12 +120,14 @@ final class QuizConfiguration {
   Map<String, Object?> toJson({int? acceptedItemCount}) => lexical != null
       ? lexical!.configurationJson(wordIds, acceptedItemCount)
       : {
-          'policyVersion': policyVersion,
+          'policyVersion': usesNewPolicy
+              ? 'meaning-quiz-configuration-v2'
+              : policyVersion,
           'requestedItemCount': requestedItemCount,
           'acceptedItemCount': ?acceptedItemCount,
-          'direction': 'forward',
+          'direction': direction.name,
           'inputMode': 'meaningChoice',
-          'hintPolicy': hintPolicy,
+          'hintPolicy': allowsHints ? hintPolicy : 'disabled-v1',
           'revealPolicy': revealPolicy,
           'selection': {
             'kind': selectionKind.name,
@@ -130,10 +149,21 @@ final class QuizConfiguration {
       'revealPolicy',
       'selection',
     });
-    if (body['policyVersion'] != policyVersion ||
-        body['direction'] != 'forward' ||
+    final direction = MeaningQuizDirection.values
+        .where((v) => v.name == body['direction'])
+        .firstOrNull;
+    final hints = switch (body['hintPolicy']) {
+      'current-optional-meaning-hint-v1' => QuizHintPolicy.optional,
+      'disabled-v1' => QuizHintPolicy.disabled,
+      _ => throw const FormatException('Unsupported hint policy.'),
+    };
+    if (direction == null ||
+        body['policyVersion'] !=
+            ((direction != MeaningQuizDirection.forward ||
+                    hints == QuizHintPolicy.disabled)
+                ? 'meaning-quiz-configuration-v2'
+                : policyVersion) ||
         body['inputMode'] != 'meaningChoice' ||
-        body['hintPolicy'] != hintPolicy ||
         body['revealPolicy'] != revealPolicy) {
       throw const FormatException('Unsupported quiz configuration.');
     }
@@ -156,6 +186,8 @@ final class QuizConfiguration {
         body['requestedItemCount'],
         'requestedItemCount',
       ),
+      direction: direction,
+      hints: hints,
     );
   }
 }
@@ -174,6 +206,7 @@ final class AcceptedQuizPlan {
                : QuizQuestion(
                    word: question.word,
                    options: List.unmodifiable(question.options),
+                   direction: question.direction,
                  ),
          ),
        ) {
@@ -187,7 +220,9 @@ final class AcceptedQuizPlan {
     final seen = <String>{};
     for (final question in this.questions) {
       _validateQuestion(question);
-      if ((configuration.lexical == null) != (question.lexical == null) ||
+      if ((question.lexical == null &&
+              question.direction != configuration.direction) ||
+          (configuration.lexical == null) != (question.lexical == null) ||
           (question.lexical != null &&
               (question.lexical!.input != configuration.lexical!.input ||
                   question.lexical!.source.packVersionId !=
@@ -237,7 +272,7 @@ final class AcceptedQuizPlan {
       );
     }
     final body = _map(jsonDecode(json), 'accepted quiz plan');
-    if (body['schemaVersion'] == 2) {
+    if (body['schemaVersion'] == 2 || body['schemaVersion'] == 4) {
       return _parseLexicalPlan(id, json, body);
     }
     _keys(body, {
@@ -251,7 +286,7 @@ final class AcceptedQuizPlan {
       'featureContractHash',
       'questions',
     });
-    if (body['schemaVersion'] != 1 ||
+    if ((body['schemaVersion'] != 1 && body['schemaVersion'] != 3) ||
         body['mode'] != 'meaning-quiz' ||
         body['questionBuilderVersion'] != 'current-meaning-options-v1') {
       throw const FormatException('Unsupported accepted quiz plan.');
@@ -291,10 +326,21 @@ final class AcceptedQuizPlan {
       ).map((option) => _string(option, 'option')).toList(growable: false);
       if (value['ordinal'] != ordinal ||
           value['contentChecksumSha256'] != quizWordChecksum(word) ||
-          value['correctOptionOrdinal'] != options.indexOf(word.meaning)) {
+          value['correctOptionOrdinal'] !=
+              options.indexOf(
+                configuration.direction == MeaningQuizDirection.forward
+                    ? word.meaning
+                    : word.spelling,
+              )) {
         throw const FormatException('Question pins do not match its content.');
       }
-      questions.add(QuizQuestion(word: word, options: options));
+      questions.add(
+        QuizQuestion(
+          word: word,
+          options: options,
+          direction: configuration.direction,
+        ),
+      );
     }
     final plan = AcceptedQuizPlan._(
       configuration: configuration,
@@ -345,7 +391,7 @@ final class AcceptedQuizPlan {
   Map<String, Object?> toJson() => isLexical
       ? _lexicalPlanJson(this)
       : {
-          'schemaVersion': 1,
+          'schemaVersion': configuration.usesNewPolicy ? 3 : 1,
           'mode': mode,
           'activityType': activityType,
           'configuration': configuration.toJson(
@@ -370,7 +416,7 @@ final class AcceptedQuizPlan {
                 ),
                 'options': questions[ordinal].options,
                 'correctOptionOrdinal': questions[ordinal].options.indexOf(
-                  questions[ordinal].word.meaning,
+                  questions[ordinal].correctAnswer,
                 ),
               },
           ],
@@ -893,6 +939,10 @@ sealed class QuizCheckpoint {
   QuizCloseReceipt? get close => null;
 
   void validateFor(AcceptedQuizPlan plan) {
+    if (!plan.configuration.allowsHints &&
+        (assistance.hintVisible || assistance.hintFirstShownAtUtcMs != null)) {
+      throw const FormatException('Hints are disabled for this quiz.');
+    }
     if (planId != plan.id || questionOrdinal >= plan.questions.length) {
       throw const FormatException(
         'Checkpoint does not belong to accepted plan.',
@@ -1068,8 +1118,11 @@ void _validateQuestion(QuizQuestion question) {
   if (question.options.isEmpty ||
       question.options.length > 4 ||
       question.options.toSet().length != question.options.length ||
+      (question.direction == MeaningQuizDirection.reverse &&
+          question.options.map(normalizeLexicalResponse).toSet().length !=
+              question.options.length) ||
       question.options
-              .where((option) => option == question.word.meaning)
+              .where((option) => option == question.correctAnswer)
               .length !=
           1) {
     throw const FormatException(

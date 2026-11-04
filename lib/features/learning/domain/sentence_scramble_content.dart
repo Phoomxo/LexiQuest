@@ -1,19 +1,15 @@
 import 'dart:convert';
 
 import '../../../ai/ai_models.dart';
+import 'native_sentence_source.dart';
 
-/// Admitted sentence text and provider metadata, without a grammar or level claim.
 final class SentenceScrambleContent {
   const SentenceScrambleContent._({
     required this.targetSpelling,
     required this.sentence,
     required this.tokens,
     required this.tokenOrder,
-    required this.kind,
-    required this.cefr,
-    required this.language,
-    required this.modelVersion,
-    required this.cached,
+    required this.source,
   });
 
   static const maxSentenceRunes = 1024;
@@ -33,12 +29,39 @@ final class SentenceScrambleContent {
     required String targetSpelling,
     required ContentResponse response,
   }) {
-    final sentence = _canonicalSentence(response.text);
-    if (!supportsTarget(targetSpelling) ||
-        response.kind != ContentKind.sentence ||
+    if (response.kind != ContentKind.sentence ||
         response.language != 'en' ||
+        !_boundedModelVersion(response.modelVersion)) {
+      _invalidContent();
+    }
+    return SentenceScrambleContent._admit(
+      targetSpelling,
+      response.text,
+      GeneratedSentenceSource(
+        kind: response.kind,
+        cefr: response.cefr,
+        language: response.language,
+        modelVersion: response.modelVersion.trim(),
+        cached: response.cached,
+      ),
+    );
+  }
+
+  factory SentenceScrambleContent.authored(AuthoredSentenceSource source) =>
+      SentenceScrambleContent._admit(
+        source.target.word.spelling,
+        source.text,
+        source,
+      );
+
+  factory SentenceScrambleContent._admit(
+    String targetSpelling,
+    String text,
+    NativeSentenceSource source,
+  ) {
+    final sentence = _canonicalSentence(text);
+    if (!supportsTarget(targetSpelling) ||
         sentence == null ||
-        !_boundedModelVersion(response.modelVersion) ||
         !_containsWholeAnchor(sentence, targetSpelling)) {
       _invalidContent();
     }
@@ -57,11 +80,7 @@ final class SentenceScrambleContent {
       sentence: sentence,
       tokens: List<String>.unmodifiable(tokens),
       tokenOrder: List<int>.unmodifiable(order),
-      kind: response.kind,
-      cefr: response.cefr,
-      language: response.language,
-      modelVersion: response.modelVersion.trim(),
-      cached: response.cached,
+      source: source,
     );
   }
 
@@ -73,11 +92,7 @@ final class SentenceScrambleContent {
 
   /// Stable bank order expressed as indices into [tokens].
   final List<int> tokenOrder;
-  final ContentKind kind;
-  final CefrLevel cefr;
-  final String language;
-  final String modelVersion;
-  final bool cached;
+  final NativeSentenceSource source;
 
   bool matchesResponse(String response) =>
       _canonicalSentence(response) == sentence;

@@ -107,6 +107,9 @@ void main() {
           scrollable: find.byType(Scrollable).first,
           maxScrolls: 30,
         );
+        await tester.ensureVisible(tile);
+        await tester.pumpAndSettle();
+        expect(tile.hitTestable(), findsOneWidget);
         await tester.tap(tile);
         await _until(
           tester,
@@ -115,7 +118,7 @@ void main() {
         await _until(tester, () {
           final import = find.byKey(const ValueKey('pack-import'));
           return import.evaluate().isNotEmpty &&
-              tester.widget<FilledButton>(import).onPressed != null;
+              tester.widget<ButtonStyleButton>(import).onPressed != null;
         });
         expect(
           (await tester.runAsync(() => ownerMigrationRows(fixture.database)))!,

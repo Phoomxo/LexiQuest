@@ -41,6 +41,7 @@ class QuizScreen extends StatefulWidget {
     this.preparedLaunch,
     this.voice,
     this.resultBackLabel,
+    this.configureBeforeStart = false,
   });
 
   final String? categoryId;
@@ -58,6 +59,7 @@ class QuizScreen extends StatefulWidget {
   final ConfiguredQuizLaunch? preparedLaunch;
   final VoiceUseCases? voice;
   final String? resultBackLabel;
+  final bool configureBeforeStart;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -82,6 +84,16 @@ bool _ownerChangedFailure(Object? error) =>
 class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   LearningUseCases? _learning;
   Future<ConfiguredQuizLaunch>? _launch;
+  bool _setupComplete = false;
+  MeaningQuizDirection _direction = MeaningQuizDirection.forward;
+  QuizHintPolicy _hints = QuizHintPolicy.optional;
+  bool get _needsSetup =>
+      widget.configureBeforeStart &&
+      !_setupComplete &&
+      widget.preparedLaunch == null &&
+      widget.resumeSessionId == null &&
+      widget.wordIds == null &&
+      _acceptedSessionId == null;
   String? _acceptedSessionId;
   String? _boundOwnerId;
   Future<ConfiguredQuizState?>? _load;
@@ -343,11 +355,13 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         oldWidget.selectionMode != widget.selectionMode ||
         oldWidget.resumeSessionId != widget.resumeSessionId ||
         oldWidget.expectedOwnerId != widget.expectedOwnerId ||
+        oldWidget.configureBeforeStart != widget.configureBeforeStart ||
         oldWidget.timeCallerContext != widget.timeCallerContext) {
       _retireTime();
       _binding++;
       _generation++;
       _launch = null;
+      _setupComplete = false;
       _acceptedSessionId = widget.resumeSessionId;
       _boundOwnerId =
           widget.expectedOwnerId ?? widget.preparedLaunch?.session.ownerId;
@@ -417,7 +431,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     _route = ModalRoute.of(context);
     _updateVisibility();
-    if (_visible && _load == null) {
+    if (_visible && _load == null && !_needsSetup) {
       _load = _open(_generation, _binding);
     }
     final timeBinding = _timeBinding;
@@ -464,7 +478,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _quiz = null;
     _load = null;
     _clearPendingUi();
-    if (_visible) _load = _open(_generation, _binding);
+    if (_visible && !_needsSetup) _load = _open(_generation, _binding);
   }
 
   void _clearPendingUi() {
@@ -508,7 +522,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     } else {
       if (widget.wordIds?.isEmpty ?? false) return null;
       final configuration = widget.wordIds == null
-          ? QuizConfiguration.category(categoryId: widget.categoryId)
+          ? QuizConfiguration.category(
+              categoryId: widget.categoryId,
+              direction: _direction,
+              hints: _hints,
+            )
           : widget.selectionMode == QuizWordSelectionMode.sourcePractice
           ? QuizConfiguration.sourcePractice(wordIds: widget.wordIds!)
           : QuizConfiguration.weaknessPractice(wordIds: widget.wordIds!);
@@ -605,6 +623,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               actionLabel: 'กลับไปเลือกกิจกรรม',
               onAction: () => Navigator.maybePop(context),
             )
+          : _needsSetup
+          ? _buildSetup()
           : FutureBuilder<ConfiguredQuizState?>(
               future: _load,
               builder: (context, snapshot) {
@@ -632,7 +652,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 if (snapshot.data == null) {
                   return _QuizMessage(
                     icon: Icons.library_add_outlined,
-                    message: 'ไม่พบคำศัพท์สำหรับแบบทดสอบนี้',
+                    message: _direction == MeaningQuizDirection.reverse
+                        ? 'ยังไม่มีคำศัพท์และตัวเลือกที่แยกความหมายได้ชัดเจนสำหรับทิศทางนี้ ลองฝึกคำศัพท์ → ความหมายหรือเพิ่มคำศัพท์ก่อน'
+                        : 'ไม่พบคำศัพท์สำหรับแบบทดสอบนี้',
                     actionLabel: 'กลับไปเลือกกิจกรรม',
                     onAction: () => Navigator.maybePop(context),
                   );
@@ -687,6 +709,75 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     return 'แบบทดสอบคำศัพท์';
   }
 
+  Widget _buildSetup() {
+    final generation = _generation;
+    final binding = _binding;
+    bool current() =>
+        _needsSetup && _current(generation) && binding == _binding;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'ตั้งค่าแบบทดสอบ',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const Text('ทิศทางคำถาม'),
+          RadioGroup<MeaningQuizDirection>(
+            key: const ValueKey('meaning-direction'),
+            groupValue: _direction,
+            onChanged: (value) {
+              if (value != null && current()) {
+                setState(() => _direction = value);
+              }
+            },
+            child: const Column(
+              children: [
+                RadioListTile<MeaningQuizDirection>(
+                  contentPadding: EdgeInsets.zero,
+                  value: MeaningQuizDirection.forward,
+                  title: Text('คำศัพท์ → ความหมาย'),
+                ),
+                RadioListTile<MeaningQuizDirection>(
+                  key: ValueKey('meaning-reverse'),
+                  contentPadding: EdgeInsets.zero,
+                  value: MeaningQuizDirection.reverse,
+                  title: Text('ความหมาย → คำศัพท์'),
+                ),
+              ],
+            ),
+          ),
+          SwitchListTile(
+            key: const ValueKey('meaning-hints'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('อนุญาตคำใบ้'),
+            value: _hints == QuizHintPolicy.optional,
+            onChanged: (value) {
+              if (!current()) return;
+              setState(
+                () => _hints = value
+                    ? QuizHintPolicy.optional
+                    : QuizHintPolicy.disabled,
+              );
+            },
+          ),
+          FilledButton(
+            key: const ValueKey('meaning-start'),
+            onPressed: () {
+              if (!current()) return;
+              setState(() {
+                _setupComplete = true;
+                _load = _open(generation, binding);
+              });
+            },
+            child: const Text('เริ่มฝึก'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
     final lexical = question.lexical;
@@ -713,6 +804,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   ? 'อ่านนิยามแล้วพิมพ์คำศัพท์'
                   : lexical != null
                   ? 'อ่านนิยามแล้วเลือกคำศัพท์'
+                  : question.direction == MeaningQuizDirection.reverse
+                  ? 'เลือกคำศัพท์ที่ตรงกับความหมาย'
                   : 'เลือกคำแปลที่ตรงกับคำศัพท์',
             ),
             const SizedBox(height: 12),
@@ -729,7 +822,13 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             if (!_answered) ...[
-              if (help != null || question.word.partOfSpeech.isNotEmpty)
+              if (_quiz!.plan.configuration.allowsHints &&
+                  (help == null
+                      ? question.word.partOfSpeech.isNotEmpty
+                      : help.hint != null ||
+                            help.strategy != null ||
+                            help.memoryCue != null ||
+                            help.examples.isNotEmpty))
                 TextButton(
                   onPressed: _blocked ? null : _toggleHint,
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -854,7 +953,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                       'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
                     ),
                     Text(
-                      '${question.word.spelling} — ${question.correctAnswer}',
+                      '${question.word.spelling} — ${question.word.meaning}',
                     ),
                     if (lexical != null)
                       LexicalEntryDetails(
@@ -1110,7 +1209,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   Future<void> _toggleHint() async {
     final quiz = _quiz;
-    if (quiz == null || _blocked || quiz.checkpoint is! AwaitingQuizAnswer) {
+    if (quiz == null ||
+        !quiz.plan.configuration.allowsHints ||
+        _blocked ||
+        quiz.checkpoint is! AwaitingQuizAnswer) {
       return;
     }
     final visible = !quiz.checkpoint.assistance.hintVisible;

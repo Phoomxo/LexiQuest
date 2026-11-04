@@ -6,6 +6,11 @@ import 'package:vocab_learning_app/features/content_reports/domain/content_repor
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_button.dart';
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_sheet.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/bundled_starter_pack.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_pack_repository.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_time_admission.dart';
 import 'package:vocab_learning_app/features/learning/presentation/native_exercise_checkpoint_binding.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
@@ -22,6 +27,105 @@ import '../support/content_report_ui_io.dart';
 import '../support/motivation_presentation_io.dart';
 
 void main() {
+  for (final mode in ['cloze', 'sentenceScramble']) {
+    testWidgets('authored $mode reports its pack entry', (tester) async {
+      final h = await motivationPresentationIo(
+        tester,
+        ContentReportCallerHarness.open,
+        stage: 'authored-report-fixture',
+      );
+      try {
+        final result = await motivationPresentationIo(tester, () async {
+          final scope = (await h.packs.captureOwner(stillCurrent: () => true))!;
+          final pack = await h.packs.importPack(
+            h.packs.prepareImport(scope: scope, pack: bundledStarterPack),
+          );
+          final reader = DriftLearningPackRepository(
+            database: h.storage.database,
+            ownerWrites: h.storage.ownerWrites,
+          );
+          var sequence = 0;
+          final learning = LearningUseCases(
+            owners: h.storage.owners,
+            repository: DriftLearningRepository(
+              h.storage.database,
+              ownerWrites: h.storage.ownerWrites,
+              lexicalContent: reader,
+            ),
+            generateId: () => 'authored-report-${++sequence}',
+            nowUtc: () => h.storage.now,
+            buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+          );
+          final exercise = mode == 'cloze'
+              ? await learning.prepareCloze(
+                  categoryId: pack.categoryId,
+                  variant: ClozeVariant.typed,
+                  stillCurrent: () => true,
+                )
+              : await learning.prepareSentenceScramble(
+                  categoryId: pack.categoryId,
+                  stillCurrent: () => true,
+                );
+          final binding = NativeExerciseCheckpointBinding(
+            learning: learning,
+            display: exercise!,
+            stillCurrent: () => true,
+          );
+          await binding.initialize();
+          final state = await binding.saveAnswer(
+            NativeExerciseDraft(
+              text: 'privatelearnertext',
+              responseTimeMs: 1000,
+            ),
+          );
+          return (learning, state);
+        }, stage: 'authored-report-ack');
+        await _mount(tester, h, result.$2, learning: result.$1);
+        final button = find.descendant(
+          of: find.byType(ContentReportButton),
+          matching: find.byType(TextButton),
+        );
+        await reportUiReveal(
+          tester,
+          button,
+          'authored-report-open',
+          scrollable: find.byType(ListView),
+        );
+        await reportUiTap(tester, button, 'authored-report-open');
+        await reportUiTapKey(tester, 'content-report-selection-review');
+        await reportUiTapKey(tester, 'content-report-reason:spelling');
+        await reportUiTapKey(tester, 'content-report-review');
+        await reportUiTapKey(tester, 'content-report-save');
+        await reportUiWait(
+          tester,
+          'authored-report-receipt',
+          () => find
+              .text('บันทึกในเครื่อง ยังไม่มีใบรับเรื่องจากเซิร์ฟเวอร์')
+              .evaluate()
+              .isNotEmpty,
+        );
+        final rows = await motivationPresentationIo(
+          tester,
+          () => h.queue.watchOwner(configuredOwnerId).first,
+          stage: 'authored-report-row',
+        );
+        final target =
+            jsonDecode(rows.single.payload.target.snapshotJson)
+                as Map<String, dynamic>;
+        expect(target['kind'], 'packEntry');
+        expect(
+          (target['source'] as Map<String, dynamic>)['packId'],
+          bundledStarterPack.manifest.packId,
+        );
+        expect(
+          rows.single.payload.reportJson,
+          isNot(contains('privatelearnertext')),
+        );
+      } finally {
+        await closeMotivationPresentation(tester, h.close);
+      }
+    });
+  }
   testWidgets(
     'actual owned-word report survives a harmless sheet route update',
     (tester) async {
@@ -318,12 +422,13 @@ Future<void> _mount(
   ContentReportCallerHarness h,
   NativeExerciseState state, {
   bool study = false,
+  LearningUseCases? learning,
 }) async {
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   final screen = switch (state.exercise) {
     DictationSession exercise => DictationQuizScreen(
       session: exercise,
-      learning: h.learning,
+      learning: learning ?? h.learning,
       resumeState: state,
       voice: VoiceUseCases(h.voice),
       learningTimeCallerContext: study
@@ -332,12 +437,12 @@ Future<void> _mount(
     ),
     WordScrambleSession exercise => WordScrambleScreen(
       session: exercise,
-      learning: h.learning,
+      learning: learning ?? h.learning,
       resumeState: state,
     ),
     ClozeSession exercise => FillInTheBlanksScreen(
       session: exercise,
-      learning: h.learning,
+      learning: learning ?? h.learning,
       resumeState: state,
       learningTimeCallerContext: study
           ? LearningTimeCallerContext.researchControlled
@@ -345,7 +450,7 @@ Future<void> _mount(
     ),
     SentenceScrambleSession exercise => SentenceScrambleScreen(
       session: exercise,
-      learning: h.learning,
+      learning: learning ?? h.learning,
       resumeState: state,
       voice: VoiceUseCases(h.voice),
     ),

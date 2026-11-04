@@ -74,6 +74,20 @@ abstract interface class NativeExerciseRepository {
   });
 }
 
+abstract interface class AuthoredNativeExerciseRepository {
+  Future<ClozeSession?> prepareAuthoredCloze({
+    required LearningSessionDraft session,
+    String? categoryId,
+    required ClozeVariant variant,
+    required bool Function() stillCurrent,
+  });
+  Future<SentenceScrambleSession?> prepareAuthoredSentenceScramble({
+    required LearningSessionDraft session,
+    String? categoryId,
+    required bool Function() stillCurrent,
+  });
+}
+
 abstract interface class LexicalQuizRepository {
   Future<AcceptedQuizPlan> prepareLexicalQuizPlan({
     required LearningSessionDraft session,

@@ -19,6 +19,9 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_models.dart';
+import '../domain/cloze_content.dart';
+import '../domain/sentence_scramble_content.dart';
+import '../domain/native_sentence_source.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
 import '../domain/matching_exercise.dart';
@@ -31,6 +34,7 @@ final class DriftLearningRepository
         ConfiguredQuizRepository,
         LexicalQuizRepository,
         NativeExerciseRepository,
+        AuthoredNativeExerciseRepository,
         SrsReviewRepository,
         CanonicalLearningTimeAdmissionRepository,
         SourceBoundVocabularyStartRepository {
@@ -93,6 +97,212 @@ final class DriftLearningRepository
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   final Expando<_NativeIssuance> _nativeBindings = Expando<_NativeIssuance>();
+
+  @override
+  Future<ClozeSession?> prepareAuthoredCloze({
+    required LearningSessionDraft session,
+    String? categoryId,
+    required ClozeVariant variant,
+    required bool Function() stillCurrent,
+  }) async =>
+      await _prepareAuthoredNative(
+            session,
+            categoryId,
+            stillCurrent,
+            variant: variant,
+          )
+          as ClozeSession?;
+
+  @override
+  Future<SentenceScrambleSession?> prepareAuthoredSentenceScramble({
+    required LearningSessionDraft session,
+    String? categoryId,
+    required bool Function() stillCurrent,
+  }) async =>
+      await _prepareAuthoredNative(session, categoryId, stillCurrent)
+          as SentenceScrambleSession?;
+
+  Future<AcceptedNativeExercise?> _prepareAuthoredNative(
+    LearningSessionDraft session,
+    String? categoryId,
+    bool Function() stillCurrent, {
+    ClozeVariant? variant,
+  }) async {
+    final reader = lexicalContent;
+    if (reader == null) return null;
+    if (!identical(reader.database, database) ||
+        !identical(reader.ownerWrites, _ownerWrites)) {
+      throw StateError(
+        'Lexical content must share the canonical database and owner coordinator',
+      );
+    }
+    _trackConfiguredOwner();
+    final epoch = _configuredOwnerEpoch;
+    bool current() => epoch == _configuredOwnerEpoch && stillCurrent();
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError(
+        'Authored preparation requires an independent read boundary',
+      );
+    }
+    if (!current()) throw StateError('Authored native owner changed');
+    return _ownerWrites.writeForActiveOwner(
+      expectedOwnerId: session.ownerId,
+      write: () async {
+        if (!current()) throw StateError('Authored native owner changed');
+        String? cursor;
+        while (true) {
+          final words = await listQuizWords(
+            ownerId: session.ownerId,
+            categoryId: categoryId,
+            afterWordId: cursor,
+            limit: 100,
+          );
+          if (!current()) throw StateError('Authored native owner changed');
+          if (words.isEmpty) return null;
+          for (final word in words) {
+            cursor = word.id;
+            if (!(variant == null
+                ? SentenceScrambleContent.supportsTarget(word.spelling)
+                : ClozeContent.supportsTarget(word.spelling))) {
+              continue;
+            }
+            CurrentLexicalContent? found;
+            try {
+              found = await reader.currentLexical(
+                expectedOwnerId: session.ownerId,
+                wordId: word.id,
+                stillCurrent: current,
+              );
+            } on PackStorageException catch (error) {
+              if ({
+                PackStorageFailureCode.notFound,
+                PackStorageFailureCode.staleContent,
+                PackStorageFailureCode.conflict,
+              }.contains(error.code)) {
+                continue;
+              }
+              rethrow;
+            }
+            if (!current()) throw StateError('Authored native owner changed');
+            if (found == null ||
+                !found.pack.isInstalled ||
+                found.pack.identityConflict ||
+                found.pack.manifest.language.split('-').first != 'en' ||
+                !_sameNativeWord(word, found)) {
+              continue;
+            }
+            final pack = _nativePackPin(found);
+            final target = LexicalEntryPin(
+              snapshotId: found.binding.snapshotId,
+              wordRevision: found.binding.wordRevision,
+              word: word,
+              entryJson: found.entry.canonicalJson,
+            );
+            for (var index = 0; index < target.entry.examples.length; index++) {
+              final source = AuthoredSentenceSource(
+                pack: pack,
+                target: target,
+                exampleIndex: index,
+              );
+              AcceptedNativeExercise exercise;
+              ClozeContent? cloze;
+              SentenceScrambleContent? scramble;
+              try {
+                if (variant == null) {
+                  scramble = SentenceScrambleContent.authored(source);
+                } else {
+                  cloze = ClozeContent.authored(source);
+                }
+              } on FormatException {
+                continue;
+              }
+              if (variant == null) {
+                exercise = SentenceScrambleSession(
+                  session: session,
+                  word: word,
+                  content: scramble!,
+                );
+              } else {
+                if (variant == ClozeVariant.typed) {
+                  exercise = TypedClozeSession(
+                    session: session,
+                    word: word,
+                    content: cloze!,
+                  );
+                } else {
+                  final choices = <QuizWord>[word];
+                  String? peerCursor;
+                  while (choices.length < 3) {
+                    final peers = await listQuizWords(
+                      ownerId: session.ownerId,
+                      categoryId: word.categoryId,
+                      afterWordId: peerCursor,
+                      limit: 100,
+                    );
+                    if (!current()) {
+                      throw StateError('Authored native owner changed');
+                    }
+                    if (peers.isEmpty) break;
+                    for (final peer in peers) {
+                      peerCursor = peer.id;
+                      if (ClozeContent.supportsTarget(peer.spelling) &&
+                          !choices.any(
+                            (v) =>
+                                v.spelling.toLowerCase() ==
+                                peer.spelling.toLowerCase(),
+                          )) {
+                        choices.add(peer);
+                      }
+                      if (choices.length == 3) break;
+                    }
+                  }
+                  if (choices.length != 3) break;
+                  choices.sort((a, b) => a.id.compareTo(b.id));
+                  final offset =
+                      word.id.codeUnits.fold<int>(
+                        0,
+                        (sum, unit) => sum + unit,
+                      ) %
+                      choices.length;
+                  exercise = ChoiceClozeSession(
+                    session: session,
+                    word: word,
+                    content: cloze!,
+                    choices: [...choices.skip(offset), ...choices.take(offset)],
+                  );
+                }
+              }
+              await _requireNativeTargets(exercise);
+              if (!current()) throw StateError('Authored native owner changed');
+              _nativeBindings[exercise] = _NativeIssuance(current);
+              return exercise;
+            }
+          }
+          if (words.length < 100) return null;
+        }
+      },
+    );
+  }
+
+  LexicalPackPin _nativePackPin(CurrentLexicalContent found) => LexicalPackPin(
+    ownerId: found.pack.ownerId,
+    packVersionId: found.pack.id,
+    packId: found.pack.manifest.packId,
+    version: found.pack.manifest.version,
+    packageSha256: found.pack.packageSha256,
+    manifestSha256: sha256
+        .convert(utf8.encode(found.pack.manifest.canonicalJson))
+        .toString(),
+  );
+
+  bool _sameNativeWord(QuizWord word, CurrentLexicalContent found) =>
+      found.word.id == word.id &&
+      found.word.categoryId == word.categoryId &&
+      found.word.spelling == word.spelling &&
+      found.word.meaning == word.meaning &&
+      found.word.partOfSpeech == word.partOfSpeech &&
+      word.contentRevision ==
+          'local-vocabulary-v1:${found.binding.wordRevision}';
 
   final Expando<_DriftSourceBoundVocabularyStart>
   _sourceBoundVocabularyLinkReceipts =
@@ -1615,6 +1825,15 @@ final class DriftLearningRepository
     required bool Function() stillCurrent,
   }) async {
     final plan = AcceptedNativePlan(exercise);
+    final authored = switch (exercise) {
+      ClozeSession(:final content) => content.source is AuthoredSentenceSource,
+      SentenceScrambleSession(:final content) =>
+        content.source is AuthoredSentenceSource,
+      _ => false,
+    };
+    if (authored && _nativeBindings[exercise] == null) {
+      throw StateError('Original authored launch is required');
+    }
     final binding = _nativeBindings[exercise] ??= _NativeIssuance(stillCurrent);
     await _writeNativeExercise<void>(
       exercise,
@@ -1659,15 +1878,19 @@ final class DriftLearningRepository
     required String expectedOwnerId,
     required bool Function() stillCurrent,
   }) async {
+    _trackConfiguredOwner();
+    final epoch = _configuredOwnerEpoch;
+    bool current() => epoch == _configuredOwnerEpoch && stillCurrent();
     if (await _ownerWrites.hasAmbientTransaction()) {
       throw StateError('Native resume requires committed source facts');
     }
+    if (!current()) throw StateError('Native owner changed');
     return database.transaction(() async {
-      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
+      await _requireTimeReadOwner(expectedOwnerId, current);
       final state = await _loadNative(sessionId, expectedOwnerId);
       await _requireTimeOrdinarySession(sessionId);
-      await _requireTimeReadOwner(expectedOwnerId, stillCurrent);
-      _nativeBindings[state.exercise] = _NativeIssuance(stillCurrent)
+      await _requireTimeReadOwner(expectedOwnerId, current);
+      _nativeBindings[state.exercise] = _NativeIssuance(current)
         ..startAttempted = true
         ..started = true;
       return state;
@@ -2298,6 +2521,59 @@ final class DriftLearningRepository
               revision) {
         throw StateError('Dictation target changed');
       }
+    }
+    final source = switch (session) {
+      ClozeSession(:final content) => content.source,
+      SentenceScrambleSession(:final content) => content.source,
+      _ => null,
+    };
+    if (source is AuthoredSentenceSource) {
+      final reader = lexicalContent;
+      if (reader == null ||
+          !identical(reader.database, database) ||
+          !identical(reader.ownerWrites, _ownerWrites) ||
+          source.pack.ownerId != session.ownerId) {
+        throw StateError('Authored source unavailable');
+      }
+      final found = await reader.currentLexical(
+        expectedOwnerId: session.ownerId,
+        wordId: session.word.id,
+        packVersionId: source.pack.packVersionId,
+        stillCurrent: () => true,
+      );
+      if (found == null ||
+          !found.pack.isInstalled ||
+          found.pack.identityConflict ||
+          found.pack.manifest.language.split('-').first != 'en' ||
+          !_sameNativeWord(session.word, found) ||
+          jsonEncode(_nativePackPin(found).toJson()) !=
+              jsonEncode(source.pack.toJson()) ||
+          found.binding.snapshotId != source.target.snapshotId ||
+          found.binding.wordRevision != source.target.wordRevision ||
+          found.entry.canonicalJson != source.target.entry.canonicalJson ||
+          !_sameNativeWord(source.target.word, found)) {
+        throw StateError('Authored native source changed');
+      }
+      final admitted = switch (session) {
+        ClozeSession() =>
+          ClozeContent.authored(source).sentence == session.content.sentence &&
+              ClozeContent.authored(source).gapStart ==
+                  session.content.gapStart &&
+              ClozeContent.authored(source).gapEnd == session.content.gapEnd,
+        SentenceScrambleSession() =>
+          jsonEncode([
+                SentenceScrambleContent.authored(source).sentence,
+                SentenceScrambleContent.authored(source).tokens,
+                SentenceScrambleContent.authored(source).tokenOrder,
+              ]) ==
+              jsonEncode([
+                session.content.sentence,
+                session.content.tokens,
+                session.content.tokenOrder,
+              ]),
+        _ => false,
+      };
+      if (!admitted) throw StateError('Authored native content changed');
     }
   }
 
@@ -3259,6 +3535,7 @@ final class DriftLearningRepository
           attempt.promptMode != question.promptMode ||
           attempt.occurredAtUtcMs < session.startedAtUtcMs ||
           evidence.contentRevision != question.evidenceContentRevision ||
+          (!plan.configuration.allowsHints && evidence.hintLevel == 1) ||
           (question.lexical != null &&
               (evidence.skillId != question.skillId ||
                   evidence.hintLevel < 0 ||

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/cloze_content.dart';
 
@@ -13,9 +14,12 @@ void main() {
         targetSpelling: 'cat',
         response: _response(modelVersion: version),
       );
-      expect(content.modelVersion, version);
-      expect(content.cefr, CefrLevel.unknown);
-      expect(content.cached, isTrue);
+      expect((content.source as GeneratedSentenceSource).modelVersion, version);
+      expect(
+        (content.source as GeneratedSentenceSource).cefr,
+        CefrLevel.unknown,
+      );
+      expect((content.source as GeneratedSentenceSource).cached, isTrue);
       expect(content.gapText, 'cat');
     },
   );
@@ -25,10 +29,12 @@ void main() {
     () {
       const version = 'synthetic_revision#0123456789abcdef';
       expect(
-        ClozeContent.parse(
-          targetSpelling: 'cat',
-          response: _response(modelVersion: version),
-        ).modelVersion,
+        (ClozeContent.parse(
+                  targetSpelling: 'cat',
+                  response: _response(modelVersion: version),
+                ).source
+                as GeneratedSentenceSource)
+            .modelVersion,
         version,
       );
     },

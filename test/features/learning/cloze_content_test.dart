@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
@@ -22,11 +23,17 @@ void main() {
       expect(content.prefix, 'The ');
       expect(content.gapText, 'CAT');
       expect(content.suffix, ' sleeps.');
-      expect(content.kind, ContentKind.sentence);
-      expect(content.cefr, CefrLevel.b1);
-      expect(content.language, 'en');
-      expect(content.modelVersion, 'synthetic-cloze-model-v1');
-      expect(content.cached, isTrue);
+      expect(
+        (content.source as GeneratedSentenceSource).kind,
+        ContentKind.sentence,
+      );
+      expect((content.source as GeneratedSentenceSource).cefr, CefrLevel.b1);
+      expect((content.source as GeneratedSentenceSource).language, 'en');
+      expect(
+        (content.source as GeneratedSentenceSource).modelVersion,
+        'synthetic-cloze-model-v1',
+      );
+      expect((content.source as GeneratedSentenceSource).cached, isTrue);
     },
   );
 
@@ -53,7 +60,7 @@ void main() {
       targetSpelling: 'cat',
       response: _response(cefr: CefrLevel.unknown),
     );
-    expect(content.cefr, CefrLevel.unknown);
+    expect((content.source as GeneratedSentenceSource).cefr, CefrLevel.unknown);
   });
 
   for (final example in <(String, String, String)>[
@@ -236,7 +243,10 @@ void main() {
         targetSpelling: 'cat',
         response: _response(modelVersion: '  synthetic-v1  '),
       );
-      expect(content.modelVersion, 'synthetic-v1');
+      expect(
+        (content.source as GeneratedSentenceSource).modelVersion,
+        'synthetic-v1',
+      );
     },
   );
 

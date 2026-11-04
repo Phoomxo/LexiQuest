@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
@@ -58,12 +59,18 @@ void main() {
         exercise.content.sentence,
         'We visit the ${exercise.word.spelling} today.',
       );
-      expect(exercise.content.cefr, CefrLevel.b2);
       expect(
-        exercise.content.modelVersion,
+        (exercise.content.source as GeneratedSentenceSource).cefr,
+        CefrLevel.b2,
+      );
+      expect(
+        (exercise.content.source as GeneratedSentenceSource).modelVersion,
         'synthetic-provider/opaque revision7',
       );
-      expect(exercise.content.cached, isTrue);
+      expect(
+        (exercise.content.source as GeneratedSentenceSource).cached,
+        isTrue,
+      );
       expect(await h.storage.snapshot(), before);
     },
   );

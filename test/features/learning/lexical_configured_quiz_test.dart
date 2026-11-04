@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show QueryExecutor, QueryInterceptor;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -1030,6 +1031,40 @@ void main() {
           expect(claim.mutation.payload['promptMode'], input.name);
         }
         expect((await h.researchCounts()).values, everyElement(0));
+      },
+    );
+
+    test(
+      'disabled authored hints are pinned and restored for ${input.name}',
+      () async {
+        final launch = await learning.prepareLexicalQuiz(
+          expectedOwnerId: configuredOwnerId,
+          packVersionId: installed.id,
+          entryCodes: const ['cat', 'dog'],
+          input: input,
+          limit: 2,
+          hints: QuizHintPolicy.disabled,
+          stillCurrent: () => true,
+        );
+        final state = await learning.startConfiguredQuiz(launch);
+        expect(state.plan.toJson()['schemaVersion'], 4);
+        final restored = AcceptedQuizPlan.parse(
+          id: state.plan.id,
+          json: state.plan.stableSerialization,
+        );
+        expect(restored.configuration.allowsHints, isFalse);
+        final body =
+            jsonDecode(state.plan.stableSerialization) as Map<String, dynamic>;
+        (body['configuration'] as Map<String, dynamic>)['hintPolicy'] =
+            'authored-optional-definition-assistance-v1';
+        final altered = jsonEncode(body);
+        expect(
+          () => AcceptedQuizPlan.parse(
+            id: 'quiz-plan:${sha256.convert(utf8.encode(altered))}',
+            json: altered,
+          ),
+          throwsFormatException,
+        );
       },
     );
 

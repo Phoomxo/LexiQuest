@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
@@ -39,11 +40,17 @@ void main() {
     expect(content.sentence, 'school — a place to learn.');
     expect(content.targetSpelling, 'school');
     expect(content.tokens, ['school', '—', 'a', 'place', 'to', 'learn.']);
-    expect(content.kind, ContentKind.sentence);
-    expect(content.cefr, CefrLevel.b1);
-    expect(content.language, 'en');
-    expect(content.modelVersion, 'synthetic-model/r7');
-    expect(content.cached, isTrue);
+    expect(
+      (content.source as GeneratedSentenceSource).kind,
+      ContentKind.sentence,
+    );
+    expect((content.source as GeneratedSentenceSource).cefr, CefrLevel.b1);
+    expect((content.source as GeneratedSentenceSource).language, 'en');
+    expect(
+      (content.source as GeneratedSentenceSource).modelVersion,
+      'synthetic-model/r7',
+    );
+    expect((content.source as GeneratedSentenceSource).cached, isTrue);
     expect(content.tokenOrder.toSet(), {0, 1, 2, 3, 4, 5});
     expect(
       content.tokenOrder.map((index) => content.tokens[index]).join(' '),
@@ -228,10 +235,15 @@ void main() {
       );
     }
     expect(
-      SentenceScrambleContent.parse(
-        targetSpelling: 'school',
-        response: response('school feels calm.', modelVersion: 'm' * 256),
-      ).modelVersion,
+      (SentenceScrambleContent.parse(
+                targetSpelling: 'school',
+                response: response(
+                  'school feels calm.',
+                  modelVersion: 'm' * 256,
+                ),
+              ).source
+              as GeneratedSentenceSource)
+          .modelVersion,
       'm' * 256,
     );
   });

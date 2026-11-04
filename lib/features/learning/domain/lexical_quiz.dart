@@ -51,6 +51,7 @@ final class LexicalQuizConfiguration {
     required this.input,
     required this.limit,
     this.settings = const LexicalQuizSettings(),
+    this.hints = QuizHintPolicy.optional,
   }) : entryCodes = List.unmodifiable(entryCodes) {
     _identifier(packVersionId, 'packVersionId');
     if (limit < 1 ||
@@ -72,14 +73,19 @@ final class LexicalQuizConfiguration {
   final LexicalQuizInput input;
   final int limit;
   final LexicalQuizSettings settings;
+  final QuizHintPolicy hints;
 
   Map<String, Object?> configurationJson(List<String> words, int? accepted) => {
-    'policyVersion': 'definition-quiz-configuration-v1',
+    'policyVersion': hints == QuizHintPolicy.optional
+        ? 'definition-quiz-configuration-v1'
+        : 'definition-quiz-configuration-v2',
     'requestedItemCount': limit,
     'acceptedItemCount': ?accepted,
     'direction': 'definition-to-word',
     'inputMode': input.name,
-    'hintPolicy': 'authored-optional-definition-assistance-v1',
+    'hintPolicy': hints == QuizHintPolicy.optional
+        ? 'authored-optional-definition-assistance-v1'
+        : 'disabled-v1',
     'revealPolicy': QuizConfiguration.revealPolicy,
     'selection': {
       'kind': 'authoredPack',
@@ -464,7 +470,7 @@ QuizWord _lexicalWordFromJson(Map<String, Object?> body) {
 }
 
 Map<String, Object?> _lexicalPlanJson(AcceptedQuizPlan plan) => {
-  'schemaVersion': 2,
+  'schemaVersion': plan.configuration.allowsHints ? 2 : 4,
   'mode': plan.mode,
   'activityType': plan.activityType,
   'configuration': plan.configuration.toJson(
@@ -530,6 +536,11 @@ AcceptedQuizPlan _parseLexicalPlan(
       ).map((e) => _string(e, 'entryCode')),
       input: input,
       limit: _int(config['requestedItemCount'], 'requestedItemCount'),
+      hints: switch (config['hintPolicy']) {
+        'authored-optional-definition-assistance-v1' => QuizHintPolicy.optional,
+        'disabled-v1' => QuizHintPolicy.disabled,
+        _ => throw const FormatException('Unsupported hint policy.'),
+      },
       settings: LexicalQuizSettings.fromJson(
         _map(config['settings'], 'settings'),
       ),

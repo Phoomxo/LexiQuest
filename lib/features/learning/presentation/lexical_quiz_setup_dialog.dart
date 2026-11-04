@@ -10,10 +10,14 @@ class LexicalQuizSetupDialog extends StatefulWidget {
     super.key,
     required this.packVersionId,
     required Iterable<LearningPackEntry> entries,
+    this.packTitle,
+    this.cefrLevel,
   }) : entries = List.unmodifiable(entries);
 
   final String packVersionId;
   final List<LearningPackEntry> entries;
+  final String? packTitle;
+  final String? cefrLevel;
 
   @override
   State<LexicalQuizSetupDialog> createState() => _LexicalQuizSetupDialogState();
@@ -27,6 +31,7 @@ class _LexicalQuizSetupDialogState extends State<LexicalQuizSetupDialog> {
   bool _audio = false;
   bool _largeControls = false;
   bool _reduceMotion = false;
+  bool _hints = true;
 
   List<String> _codes(LexicalQuizInput input) => [
     for (final entry in widget.entries)
@@ -59,6 +64,7 @@ class _LexicalQuizSetupDialogState extends State<LexicalQuizSetupDialog> {
         entryCodes: _codes(_input),
         input: _input,
         limit: _count,
+        hints: _hints ? QuizHintPolicy.optional : QuizHintPolicy.disabled,
         settings: LexicalQuizSettings(
           advisoryMinutes: _minutes.text.isEmpty
               ? null
@@ -85,6 +91,9 @@ class _LexicalQuizSetupDialogState extends State<LexicalQuizSetupDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.packTitle != null) Text(widget.packTitle!),
+            if (widget.cefrLevel != null)
+              Text('ระดับแพ็ก CEFR ${widget.cefrLevel}'),
             DropdownButtonFormField<LexicalQuizInput>(
               key: const ValueKey('definition-input-mode'),
               initialValue: _input,
@@ -146,6 +155,13 @@ class _LexicalQuizSetupDialogState extends State<LexicalQuizSetupDialog> {
                     ? 'ระบุ 1–180 นาที หรือเว้นว่าง'
                     : null;
               },
+            ),
+            SwitchListTile(
+              key: const ValueKey('definition-hints'),
+              contentPadding: EdgeInsets.zero,
+              value: _hints,
+              onChanged: (value) => setState(() => _hints = value),
+              title: const Text('อนุญาตคำใบ้'),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

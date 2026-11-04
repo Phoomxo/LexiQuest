@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -92,13 +93,22 @@ void main() {
       expect(resumed.content.sentence, original.content.sentence);
       expect(resumed.content.tokens, original.content.tokens);
       expect(resumed.content.tokenOrder, original.content.tokenOrder);
-      expect(resumed.content.cefr, CefrLevel.b2);
-      expect(resumed.content.language, 'en');
       expect(
-        resumed.content.modelVersion,
+        (resumed.content.source as GeneratedSentenceSource).cefr,
+        CefrLevel.b2,
+      );
+      expect(
+        (resumed.content.source as GeneratedSentenceSource).language,
+        'en',
+      );
+      expect(
+        (resumed.content.source as GeneratedSentenceSource).modelVersion,
         'synthetic-provider/retained opaque revision7',
       );
-      expect(resumed.content.cached, isTrue);
+      expect(
+        (resumed.content.source as GeneratedSentenceSource).cached,
+        isTrue,
+      );
       expect(resumed.providerProvenance, original.providerProvenance);
       expect(resumed.evidenceContentRevision, original.evidenceContentRevision);
       expect(blockedProvider.calls, 0);

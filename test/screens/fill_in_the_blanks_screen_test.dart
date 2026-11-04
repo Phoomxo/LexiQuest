@@ -167,6 +167,7 @@ void main() {
         await _mount(tester, f, ready: false);
         await _retryReady(tester);
         await tester.tap(find.byKey(const ValueKey('cloze-retry')));
+        await _until(tester, () => f.repository.starts.length == 2);
         await _ready(tester, f);
         expect(
           identical(f.repository.starts.first, f.repository.starts.last),
@@ -176,6 +177,7 @@ void main() {
         await _answer(tester, f);
         await _retryReady(tester);
         await tester.tap(find.byKey(const ValueKey('cloze-retry')));
+        await _until(tester, () => f.repository.answers.length == 2);
         await _finishReady(tester, f);
         expect(
           identical(f.repository.answers.first, f.repository.answers.last),
@@ -187,6 +189,7 @@ void main() {
         f.h.now = f.h.now.add(const Duration(minutes: 1));
         await tester.tap(find.byKey(const ValueKey('cloze-retry')));
         await _until(tester, () => f.summary != null);
+        expect(f.repository.finishes, hasLength(2));
         expect(
           identical(f.repository.finishes.first, f.repository.finishes.last),
           isTrue,
@@ -652,10 +655,13 @@ Future<void> _finishReady(WidgetTester tester, _Fixture f) async {
   );
 }
 
-Future<void> _retryReady(WidgetTester tester) => _until(
-  tester,
-  () => find.byKey(const ValueKey('cloze-retry')).evaluate().isNotEmpty,
-);
+Future<void> _retryReady(WidgetTester tester) async {
+  final retry = find.byKey(const ValueKey('cloze-retry'));
+  await _until(tester, () => retry.evaluate().isNotEmpty);
+  await tester.pumpAndSettle();
+  await _reveal(tester, retry);
+}
+
 Future<void> _until(WidgetTester tester, bool Function() ready) async {
   for (var i = 0; i < 150 && !ready(); i++) {
     await tester.runAsync(

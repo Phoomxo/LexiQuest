@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
@@ -38,7 +39,10 @@ void main() {
         expect(request.text, result!.word.spelling);
         expect(request.kind, ContentKind.sentence);
         expect(request.language, 'en');
-        expect(result.content.cefr, CefrLevel.unknown);
+        expect(
+          (result.content.source as GeneratedSentenceSource).cefr,
+          CefrLevel.unknown,
+        );
         expect(await h.storage.snapshot(), before);
       },
     );

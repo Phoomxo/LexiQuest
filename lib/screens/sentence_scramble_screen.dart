@@ -12,6 +12,7 @@ import '../features/learning/domain/learning_time_admission.dart';
 import '../features/learning/presentation/lesson_scaffold.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/native_sentence_source.dart';
 import '../features/learning/domain/sentence_scramble_content.dart';
 import '../features/learning/presentation/native_exercise_checkpoint_binding.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -811,7 +812,16 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
                   'A sentence game for fun.',
                 ),
               ),
-              Text(_copy('ประโยคสร้างด้วย AI', 'AI-generated sentence')),
+              Text(
+                _copy(
+                  widget.session.content.source is AuthoredSentenceSource
+                      ? 'ประโยคจากชุดคำศัพท์ที่ติดตั้ง'
+                      : 'ประโยคสร้างด้วย AI',
+                  widget.session.content.source is AuthoredSentenceSource
+                      ? 'Installed pack sentence'
+                      : 'AI-generated sentence',
+                ),
+              ),
               if (showForm) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -1072,16 +1082,58 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
                       _reportOverlay = open;
                     },
                     targetForSelection: (text, excerpt) =>
-                        ContentReportTarget.aiOutput(
-                          text: text,
-                          isExcerpt: excerpt,
-                          sessionId: widget.session.id,
-                          acceptedPlanId: _checkpoint!.state!.plan.id,
-                          contentKind: widget.session.content.kind.wire,
-                          modelVersion: widget.session.content.modelVersion,
-                          cached: widget.session.content.cached,
-                          origin: ContentReportAiOrigin.unrecorded,
-                        ),
+                        widget.session.content.source is AuthoredSentenceSource
+                        ? ContentReportTarget.packEntry(
+                            text: text,
+                            isExcerpt: excerpt,
+                            packId:
+                                (widget.session.content.source
+                                        as AuthoredSentenceSource)
+                                    .pack
+                                    .packId,
+                            packVersion:
+                                (widget.session.content.source
+                                        as AuthoredSentenceSource)
+                                    .pack
+                                    .version,
+                            packageSha256:
+                                (widget.session.content.source
+                                        as AuthoredSentenceSource)
+                                    .pack
+                                    .packageSha256,
+                            entryCode:
+                                (widget.session.content.source
+                                        as AuthoredSentenceSource)
+                                    .target
+                                    .entry
+                                    .code,
+                            entrySha256:
+                                (widget.session.content.source
+                                        as AuthoredSentenceSource)
+                                    .target
+                                    .entry
+                                    .contentSha256,
+                          )
+                        : ContentReportTarget.aiOutput(
+                            text: text,
+                            isExcerpt: excerpt,
+                            sessionId: widget.session.id,
+                            acceptedPlanId: _checkpoint!.state!.plan.id,
+                            contentKind:
+                                (widget.session.content.source
+                                        as GeneratedSentenceSource)
+                                    .kind
+                                    .wire,
+                            modelVersion:
+                                (widget.session.content.source
+                                        as GeneratedSentenceSource)
+                                    .modelVersion,
+                            cached:
+                                (widget.session.content.source
+                                        as GeneratedSentenceSource)
+                                    .cached,
+                            origin: ContentReportAiOrigin.unrecorded,
+                          ),
                     languageCode: widget.languageCode,
                   ),
               ],

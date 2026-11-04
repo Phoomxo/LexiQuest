@@ -612,6 +612,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                                         ownerChanges: _nativeOwnerSource,
                                       )
                                     : QuizScreen(
+                                        configureBeforeStart: true,
                                         resultBackLabel: 'กลับหน้าเรียน',
                                         learning: _learning,
                                         expectedOwnerId: _progress?.ownerId,
@@ -663,6 +664,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 () => _push(
                   context,
                   QuizScreen(
+                    configureBeforeStart: true,
                     resultBackLabel: 'กลับหน้าเรียน',
                     learning: _learning,
                     expectedOwnerId: _progress?.ownerId,
@@ -698,7 +700,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               key: const ValueKey('cloze-entry'),
               icon: Icons.short_text_outlined,
               title: 'เติมคำในบริบท',
-              subtitle: 'เลือกพิมพ์หรือเลือกคำจากประโยคที่สร้างด้วย AI',
+              subtitle: 'เลือกพิมพ์หรือเลือกคำจากประโยค',
               onTap: _openCloze,
             ),
           if (canQuiz)
@@ -714,8 +716,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               key: const ValueKey('sentence-scramble-entry'),
               icon: Icons.reorder_outlined,
               title: 'เกมเรียงประโยค',
-              subtitle:
-                  'เลือกหมวดหมู่ แล้วเรียงคำหรือพิมพ์ประโยคที่สร้างด้วย AI',
+              subtitle: 'เลือกหมวดหมู่ แล้วเรียงคำหรือพิมพ์ประโยค',
               onTap: _openSentenceScramble,
             ),
           if (canReading)
@@ -1368,6 +1369,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         context,
         QuizScreen(
           categoryId: categoryId,
+          configureBeforeStart: true,
           learning: _learning,
           resultBackLabel: 'กลับหน้าเรียน',
         ),
@@ -1753,6 +1755,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 )
               : practice
               ? QuizScreen(
+                  configureBeforeStart: true,
                   resultBackLabel: 'กลับหน้าเรียน',
                   learning: _learning,
                   expectedOwnerId: ownerId,

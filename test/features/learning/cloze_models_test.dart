@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,11 +86,11 @@ void main() {
           admitted.sentence,
           admitted.gapStart,
           admitted.gapEnd,
-          admitted.kind.wire,
-          admitted.cefr.wire,
-          admitted.language,
-          admitted.modelVersion,
-          admitted.cached,
+          (admitted.source as GeneratedSentenceSource).kind.wire,
+          (admitted.source as GeneratedSentenceSource).cefr.wire,
+          (admitted.source as GeneratedSentenceSource).language,
+          (admitted.source as GeneratedSentenceSource).modelVersion,
+          (admitted.source as GeneratedSentenceSource).cached,
         ],
         <Object?>[],
       ];
@@ -103,7 +104,10 @@ void main() {
         'cloze-model-v1:${sha256.convert(utf8.encode('synthetic-model'))}',
       );
       expect(exercise.providerProvenance.length, lessThanOrEqualTo(120));
-      expect(exercise.content.cefr, CefrLevel.unknown);
+      expect(
+        (exercise.content.source as GeneratedSentenceSource).cefr,
+        CefrLevel.unknown,
+      );
       expect(exercise.variant, ClozeVariant.typed);
     },
   );

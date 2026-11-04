@@ -84,6 +84,60 @@ void main() {
 
   tearDown(() => database.close());
 
+  for (final loss in ['owner ABA', 'covered', 'disposed']) {
+    testWidgets('retained setup controls cannot start a quiz after $loss', (
+      tester,
+    ) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      final owners = StreamController<String?>.broadcast(sync: true);
+      addTearDown(owners.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            learning: learning,
+            configureBeforeStart: true,
+            expectedOwnerId: 'local:guest',
+            ownerChanges: owners.stream,
+          ),
+        ),
+      );
+      owners.add('local:guest');
+      await tester.pumpAndSettle();
+      final start = tester
+          .widget<FilledButton>(find.byKey(const ValueKey('meaning-start')))
+          .onPressed!;
+      final hints = tester
+          .widget<SwitchListTile>(find.byKey(const ValueKey('meaning-hints')))
+          .onChanged!;
+      if (loss == 'owner ABA') {
+        owners.add('other');
+        owners.add('local:guest');
+        await tester.pump();
+      } else if (loss == 'covered') {
+        unawaited(
+          Navigator.of(tester.element(find.byType(QuizScreen))).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      } else {
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+      hints(false);
+      start();
+      await tester.pumpAndSettle();
+      expect(
+        await tester.runAsync(
+          () => database.select(database.learningSessions).get(),
+        ),
+        isEmpty,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('associative reading persists recall, cue, and completion', (
     tester,
   ) async {
@@ -243,6 +297,94 @@ void main() {
       });
       expect(evidence!.attempts, hasLength(2));
       expect(evidence.session.state, 'completed');
+    },
+  );
+
+  testWidgets(
+    'ordinary setup appears before acceptance and can disable hints at large text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            configureBeforeStart: true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('meaning-direction')), findsOneWidget);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      await tester.ensureVisible(find.byKey(const ValueKey('meaning-hints')));
+      await tester.tap(find.byKey(const ValueKey('meaning-hints')));
+      await tester.ensureVisible(find.byKey(const ValueKey('meaning-start')));
+      await tester.tap(find.byKey(const ValueKey('meaning-start')));
+      await _pumpUntilFound(tester, find.text('station'));
+      expect(find.text('ดูคำใบ้'), findsNothing);
+      expect(find.text('เฉลยคำตอบ'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'ordinary reverse setup renders meanings and accepts word choices',
+    (tester) async {
+      await tester.runAsync(
+        () => database
+            .into(database.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: 'word-2',
+                ownerId: 'local:guest',
+                categoryId: 'category-1',
+                spelling: 'ticket',
+                normalizedSpelling: 'ticket',
+                meaning: 'ตั๋ว',
+                normalizedMeaning: 'ตั๋ว',
+                partOfSpeech: 'noun',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            configureBeforeStart: true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('meaning-reverse')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('meaning-start')));
+      await _pumpUntilFound(tester, find.text('เลือกคำศัพท์ที่ตรงกับความหมาย'));
+      expect(find.text('สถานี'), findsOneWidget);
+      await tester.tap(find.text('station'));
+      await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
+      final receipt = await tester.runAsync(
+        () async => (
+          attempt: await database.select(database.answerAttempts).getSingle(),
+          session: await database.select(database.learningSessions).getSingle(),
+        ),
+      );
+      expect(receipt!.attempt.isCorrect, isTrue);
+      final plan =
+          jsonDecode(receipt.session.acceptedPlanJson!) as Map<String, dynamic>;
+      expect(plan['configuration']['direction'], 'reverse');
+      expect(plan['schemaVersion'], 3);
     },
   );
 
@@ -1087,6 +1229,11 @@ void main() {
       );
       await _pumpUntilFound(tester, find.text('เริ่มฝึกคำศัพท์'));
       await tester.tap(find.text('เริ่มฝึกคำศัพท์'));
+      await _pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey('meaning-start')),
+      );
+      await tester.tap(find.byKey(const ValueKey('meaning-start')));
       await _pumpUntilFound(tester, find.text('station'));
       final quizScreen = tester.widget<QuizScreen>(find.byType(QuizScreen));
       expect(quizScreen.expectedOwnerId, owner.id);

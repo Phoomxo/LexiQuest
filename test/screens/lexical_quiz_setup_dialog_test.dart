@@ -19,6 +19,8 @@ void main() {
       final entries = authoredLexicalPack().entries.toList();
       final dialog = LexicalQuizSetupDialog(
         packVersionId: 'synthetic-pack',
+        packTitle: 'Synthetic pack',
+        cefrLevel: 'A2',
         entries: entries,
       );
       entries.clear();
@@ -49,6 +51,8 @@ void main() {
       );
       await tester.tap(find.text('ตั้งค่า'));
       await tester.pumpAndSettle();
+      expect(find.text('Synthetic pack'), findsOneWidget);
+      expect(find.text('ระดับแพ็ก CEFR A2'), findsOneWidget);
       final minutes = find.byKey(const ValueKey('definition-time-goal'));
       await tester.ensureVisible(minutes);
       await tester.enterText(minutes, '181');
@@ -64,6 +68,7 @@ void main() {
         find.widgetWithText(SwitchListTile, 'ปุ่มฟังคำหลังตอบ'),
       );
       await _tap(tester, find.widgetWithText(SwitchListTile, 'ปุ่มขนาดใหญ่'));
+      await _tap(tester, find.byKey(const ValueKey('definition-hints')));
       final reducedMotion = tester.widget<SwitchListTile>(
         find.widgetWithText(SwitchListTile, 'ลดการเคลื่อนไหว'),
       );
@@ -77,6 +82,7 @@ void main() {
       expect(result!.settings.manualAudio, isTrue);
       expect(result!.settings.accessibleInput, isTrue);
       expect(result!.settings.reduceMotion, isTrue);
+      expect(result!.hints, QuizHintPolicy.disabled);
       expect(tester.takeException(), isNull);
     },
   );

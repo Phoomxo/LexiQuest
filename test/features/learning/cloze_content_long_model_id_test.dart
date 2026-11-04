@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/domain/native_sentence_source.dart';
 import 'package:vocab_learning_app/ai/ai_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/cloze_content.dart';
 
@@ -16,7 +17,7 @@ void main() {
         cached: false,
       ),
     );
-    expect(content.modelVersion, version);
+    expect((content.source as GeneratedSentenceSource).modelVersion, version);
   });
 
   test(
@@ -38,7 +39,7 @@ void main() {
           cached: false,
         ),
       );
-      expect(content.modelVersion, version);
+      expect((content.source as GeneratedSentenceSource).modelVersion, version);
       expect(content.gapText, 'cat');
     },
   );
