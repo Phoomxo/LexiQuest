@@ -769,9 +769,10 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         ),
       ),
     );
-    await _pumpUntilFound(tester, find.text('ฝึกคำที่ผิด (1)'));
+    final practice = find.text('ทบทวนคำที่เคยตอบผิด 1 คำ');
+    await _pumpUntilFound(tester, practice);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
+    await tester.tap(practice);
     await _pumpUntilFound(tester, find.text('คำถาม 1 จาก 1'));
     final quizScreen = tester.widget<QuizScreen>(find.byType(QuizScreen));
     final actualOwner = await tester.runAsync(
