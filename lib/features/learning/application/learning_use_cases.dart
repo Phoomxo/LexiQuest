@@ -973,6 +973,7 @@ final class LearningUseCases {
 
   Future<SrsReviewSession?> prepareSrsReview({
     required String expectedOwnerId,
+    SrsPackOrigin? packOrigin,
     Iterable<String>? sourceWordIds,
     int limit = 20,
     required bool Function() stillCurrent,
@@ -1003,6 +1004,7 @@ final class LearningUseCases {
       selection: selected == null
           ? SrsReviewSelection.due
           : SrsReviewSelection.source,
+      packOrigin: packOrigin,
       sourceWordIds: selected == null ? null : List.unmodifiable(selected),
       limit: limit,
       stillCurrent: stillCurrent,
@@ -1016,6 +1018,45 @@ final class LearningUseCases {
     }
     return review;
   }
+
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    final saved = await _srsReviews.resumeSrsReview(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      stillCurrent: stillCurrent,
+    );
+    if (!stillCurrent() ||
+        saved.review.id != sessionId ||
+        saved.review.ownerId != expectedOwnerId) {
+      throw StateError('SRS resume scope changed');
+    }
+    final scope = _SrsUseCaseScope(stillCurrent)
+      ..started = true
+      ..startNotified = true;
+    for (final intent in saved.answers) {
+      scope.answers[intent.cardIndex] = intent;
+      scope.confirmed.add(intent.cardIndex);
+      scope.notifiedAnswers.add(intent.cardIndex);
+    }
+    _srsScopes[saved.review] = scope;
+    return saved;
+  }
+
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) => _srsReviews.saveSrsCardPosition(
+    review,
+    cardIndex: cardIndex,
+    revealed: revealed,
+    stillCurrent: () => _currentSrs(review, stillCurrent),
+  );
 
   _SrsUseCaseScope _srsScope(SrsReviewSession review) {
     final scope = _srsScopes[review];

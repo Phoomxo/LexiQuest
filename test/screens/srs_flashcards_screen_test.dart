@@ -212,6 +212,105 @@ void main() {
     expect(() => result!.mistakeWordIds.add('other'), throwsUnsupportedError);
   });
 
+  testWidgets('history reopens the exact saved or revealed SRS card once', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    _closeDatabaseAfterUnmount(tester, db);
+    final owners = DriftLocalOwnerRepository(
+      db,
+      generateId: () => 'cold-owner',
+      nowUtc: () => DateTime.utc(2026, 11, 5),
+    );
+    await tester.runAsync(
+      () => _seedVocabularyWords(db, owners, ['apple', 'banana']),
+    );
+    final owner = (await tester.runAsync(owners.getOrCreateActiveOwner))!;
+    var nextId = 0;
+    Future<void> open({String? sessionId}) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            sourceWordIds: sessionId == null ? const ['apple', 'banana'] : null,
+            resumeSessionId: sessionId,
+            expectedOwnerId: owner.id,
+            ownerChanges: _watchOwner(db, owners),
+            learning: LearningUseCases(
+              owners: owners,
+              repository: DriftLearningRepository(db),
+              generateId: () => 'cold-${++nextId}',
+              nowUtc: () => DateTime.utc(2026, 11, 5),
+              buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await open();
+    await _pumpUntil(tester, find.text('apple'));
+    final session = (await tester.runAsync(
+      () => db.select(db.learningSessions).getSingle(),
+    ))!;
+    await tester.tap(find.byKey(const Key('srs-flip')));
+    await _pumpUntil(tester, find.byKey(const Key('srs-got')));
+    await tester.tap(find.byKey(const Key('srs-got')));
+    await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+    final oldNext = tester
+        .widget<FilledButton>(find.byKey(const Key('srs-next')))
+        .onPressed!;
+    final credits = (await tester.runAsync(
+      () => db.select(db.rewardTransactions).get(),
+    ))!.length;
+
+    await open(sessionId: session.id);
+    await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+    oldNext();
+    await tester.pump();
+    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('ผลที่คุณเลือก: จำได้แล้ว'), findsOneWidget);
+    expect(find.byKey(const Key('srs-got')), findsNothing);
+    await tester.tap(find.byKey(const Key('srs-next')));
+    await _pumpUntil(tester, find.text('banana'));
+    await open(sessionId: session.id);
+    await _pumpUntil(tester, find.text('banana'));
+    expect(find.text('2/2'), findsOneWidget);
+    expect(find.byKey(const Key('srs-flip')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('srs-flip')));
+    await _pumpUntil(tester, find.byKey(const Key('srs-again')));
+    await open(sessionId: session.id);
+    await _pumpUntil(tester, find.byKey(const Key('srs-again')));
+    expect(find.text('meaning-banana'), findsOneWidget);
+    expect(find.text('บันทึกแล้ว'), findsNothing);
+    expect(
+      await tester.runAsync(() => db.select(db.answerAttempts).get()),
+      hasLength(1),
+    );
+    expect(
+      await tester.runAsync(() => db.select(db.learningSessions).get()),
+      hasLength(1),
+    );
+    expect(
+      await tester.runAsync(() => db.select(db.rewardTransactions).get()),
+      hasLength(credits),
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(
+      () => db.customStatement(
+        "UPDATE vocabulary_words SET meaning = 'changed', local_revision = local_revision + 1 WHERE id = 'banana'",
+      ),
+    );
+    await open(sessionId: session.id);
+    await _pumpUntil(tester, find.byKey(const Key('srs-status')));
+    expect(find.byKey(const Key('srs-card')), findsNothing);
+    expect(
+      await tester.runAsync(() => db.select(db.learningSessions).get()),
+      hasLength(1),
+    );
+  });
+
   testWidgets('source Flashcards load failure stays in the error UI', (
     tester,
   ) async {
@@ -886,10 +985,35 @@ class _FailOnceRepository implements LearningRepository, SrsReviewRepository {
   );
 
   @override
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => srs.resumeSrsReview(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) => srs.saveSrsCardPosition(
+    review,
+    cardIndex: cardIndex,
+    revealed: revealed,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
     Iterable<String>? sourceWordIds,
+    SrsPackOrigin? packOrigin,
     int limit = 20,
     required bool Function() stillCurrent,
   }) {
@@ -900,6 +1024,7 @@ class _FailOnceRepository implements LearningRepository, SrsReviewRepository {
       session: session,
       selection: selection,
       sourceWordIds: sourceWordIds,
+      packOrigin: packOrigin,
       limit: limit,
       stillCurrent: stillCurrent,
     );

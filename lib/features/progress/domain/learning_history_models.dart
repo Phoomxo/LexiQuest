@@ -26,6 +26,7 @@ final class LearningHistoryEntry {
     this.hasAcceptedQuiz = false,
     this.hasAcceptedNative = false,
     this.hasAcceptedMatching = false,
+    this.hasAcceptedSrs = false,
   });
 
   final String sessionId;
@@ -38,6 +39,10 @@ final class LearningHistoryEntry {
   final bool hasAcceptedQuiz;
   final bool hasAcceptedNative;
   final bool hasAcceptedMatching;
+  final bool hasAcceptedSrs;
+
+  bool get isSrsWithoutSavedPosition =>
+      activityType == 'srsReview' && state == 'active' && !hasAcceptedSrs;
 }
 
 final class LearningHistoryDay {

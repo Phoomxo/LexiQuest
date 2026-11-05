@@ -54,10 +54,35 @@ final class SrsReviewUiRepository
   );
 
   @override
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => _srs.resumeSrsReview(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) => _srs.saveSrsCardPosition(
+    review,
+    cardIndex: cardIndex,
+    revealed: revealed,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
     Iterable<String>? sourceWordIds,
+    SrsPackOrigin? packOrigin,
     int limit = 20,
     required bool Function() stillCurrent,
   }) async {
@@ -67,6 +92,7 @@ final class SrsReviewUiRepository
       session: session,
       selection: selection,
       sourceWordIds: sourceWordIds,
+      packOrigin: packOrigin,
       limit: limit,
       stillCurrent: stillCurrent,
     );

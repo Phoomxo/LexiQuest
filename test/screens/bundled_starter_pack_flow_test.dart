@@ -319,7 +319,11 @@ void main() {
           tester.binding.handleAppLifecycleStateChanged(
             AppLifecycleState.resumed,
           );
-          await packUiReady(tester);
+          await idlePackUi(tester);
+          expect(
+            find.byKey(const ValueKey('pack-confirm-install')),
+            findsOneWidget,
+          );
         } else {
           final navigator = tester.state<NavigatorState>(
             find.byType(Navigator),
@@ -543,7 +547,10 @@ void main() {
       await tester.pump();
       expect(find.text('กิจกรรมไม่พร้อมใช้งาน'), findsNothing);
       await tapPackUi(tester, 'srs-flip');
-      await tester.pump(const Duration(milliseconds: 450));
+      await untilPackUi(
+        tester,
+        () => find.byKey(const ValueKey('srs-got')).evaluate().isNotEmpty,
+      );
       await tapPackUi(tester, 'srs-got');
       await untilPackUi(
         tester,
@@ -558,13 +565,63 @@ void main() {
   );
 
   testWidgets(
+    'cold resume by id rejects corrupted bytes from a round started in the catalog',
+    (tester) => _using(tester, (h) async {
+      await tester.runAsync(() => h.seed(bundledStarterPack));
+      await tester.pumpWidget(h.app());
+      await packUiReady(tester);
+      await tapPackUi(tester, 'pack-practice-starter');
+      await untilPackUi(
+        tester,
+        () => find.byKey(const Key('srs-card')).evaluate().isNotEmpty,
+      );
+      final session = (await tester.runAsync(
+        () => h.database.select(h.database.learningSessions).getSingle(),
+      ))!;
+      expect(session.activityType, 'srsReview');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(
+        () => h.database.customStatement(
+          'UPDATE learning_pack_versions SET package_bytes=zeroblob(package_byte_count)',
+        ),
+      );
+      final before = await tester.runAsync(
+        () => ownerMigrationRows(h.database),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            resumeSessionId: session.id,
+            expectedOwnerId: session.ownerId,
+            learning: h.learning,
+            ownerChanges: h.packs.watchActiveOwnerId(),
+          ),
+        ),
+      );
+      await untilPackUi(
+        tester,
+        () => find
+            .textContaining('เปิดรอบบัตรคำเดิมไม่ได้')
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(find.byKey(const Key('srs-card')), findsNothing);
+      expect(
+        await tester.runAsync(() => ownerMigrationRows(h.database)),
+        before,
+      );
+    }),
+  );
+
+  testWidgets(
     'a different installed starter digest stays separate from the included preview',
     (tester) => _using(tester, (h) async {
       const codec = LearningPackCodec();
       final other = codec.decode(
         codec.encode(
           metadata: bundledStarterPack.manifest,
-            entries: bundledStarterPack.entries.reversed.toList(),
+          entries: bundledStarterPack.entries.reversed.toList(),
         ),
       );
       await tester.runAsync(() => h.seed(other));
@@ -596,10 +653,155 @@ void main() {
       expect(find.byType(SrsFlashcardsScreen), findsNothing);
       expect(find.byKey(const ValueKey('pack-practice-starter')), findsNothing);
       expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
-      await _openPreview(tester);
-      expect(find.text('คืนไฟล์แพ็กในเครื่อง'), findsOneWidget);
+      expect(find.textContaining('ไฟล์ออฟไลน์เสียหาย'), findsOneWidget);
+      await tapPackUi(tester, 'pack-restore-starter');
+      await packUiReady(tester);
+      expect(find.text('ฝึก 12 คำ'), findsOneWidget);
+      expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
     }),
   );
+
+  for (final page in [
+    'preview',
+    'detail',
+    'word',
+    'retained detail',
+    'retained word',
+  ]) {
+    testWidgets(
+      'interruption restores the same $page and reading position',
+      (tester) => _using(tester, (h) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 640);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        await tester.runAsync(() => h.seed(bundledStarterPack));
+        if (page.startsWith('retained')) {
+          await tester.runAsync(() async {
+            final pack = await h.stored();
+            final scope = (await h.packs.captureOwner(
+              stillCurrent: () => true,
+            ))!;
+            await h.packs.changeCache(
+              h.packs.prepareCacheChange(
+                scope: scope,
+                stored: pack,
+                pinned: false,
+                remove: true,
+              ),
+            );
+          });
+        }
+        await tester.pumpWidget(h.app());
+        await packUiReady(tester);
+        final pack = (await tester.runAsync(h.stored))!;
+        if (page == 'preview') {
+          await tapPackUi(tester, 'pack-open-starter');
+          await idlePackUi(tester);
+        } else {
+          await tapPackUi(tester, 'pack-row-${pack.id}');
+          await idlePackUi(tester);
+          if (page.endsWith('word')) {
+            await tapPackUi(
+              tester,
+              'pack-word-${bundledStarterPack.entries.first.code}',
+            );
+            await idlePackUi(tester);
+          }
+        }
+        final list = find.byType(ListView);
+        final scrollable = find
+            .descendant(of: list, matching: find.byType(Scrollable))
+            .first;
+        final position = tester.state<ScrollableState>(scrollable).position;
+        position.jumpTo(150);
+        await tester.pumpAndSettle();
+        final marker = switch (page) {
+          'preview' => find.text('ตัวอย่างคำศัพท์'),
+          'detail' => find.byKey(const ValueKey('pack-pin')),
+          'retained detail' => find.byKey(const ValueKey('pack-repair')),
+          _ => find.text('คำจำกัดความภาษาอังกฤษ'),
+        };
+        expect(marker, findsOneWidget);
+        final offset = position.pixels;
+        expect(offset, greaterThan(0));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        expect(marker, findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await untilPackUi(tester, () => marker.evaluate().isNotEmpty);
+        expect(
+          tester.state<ScrollableState>(scrollable).position.pixels,
+          closeTo(offset, 1),
+        );
+        expect(find.text('ฝึก 12 คำ'), findsNothing);
+        expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+      }),
+    );
+  }
+
+  for (final change in ['owner ABA', 'package bytes', 'word revision']) {
+    testWidgets(
+      'interrupted pack word rejects restoration after changed $change',
+      (tester) => _using(tester, (h) async {
+        await tester.runAsync(() => h.seed(bundledStarterPack));
+        final pack = (await tester.runAsync(h.stored))!;
+        final word = bundledStarterPack.entries.first;
+        await tester.pumpWidget(h.app());
+        await packUiReady(tester);
+        await tapPackUi(tester, 'pack-row-${pack.id}');
+        await idlePackUi(tester);
+        await tapPackUi(tester, 'pack-word-${word.code}');
+        await idlePackUi(tester);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        switch (change) {
+          case 'owner ABA':
+            await tester.runAsync(
+              () => h.switchOwner('synthetic-actions-other'),
+            );
+            await tester.pump();
+            await tester.runAsync(
+              () => h.switchOwner('synthetic-actions-owner'),
+            );
+            await tester.pump();
+          case 'package bytes':
+            await tester.runAsync(
+              () => h.database.customStatement(
+                'UPDATE learning_pack_versions SET package_bytes=zeroblob(package_byte_count)',
+              ),
+            );
+          case 'word revision':
+            await tester.runAsync(
+              () => h.database.customStatement(
+                'UPDATE vocabulary_words SET local_revision=local_revision+1 WHERE spelling=?',
+                [word.spelling],
+              ),
+            );
+        }
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await packUiReady(tester);
+        expect(find.textContaining('กลับมาที่รายการแพ็ก'), findsOneWidget);
+        expect(find.text(word.spelling), findsNothing);
+        expect(find.byKey(const ValueKey('pack-open-starter')), findsOneWidget);
+        expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+      }),
+    );
+  }
 
   for (final ending in ['ordinary return', 'foreign cover', 'owner ABA']) {
     testWidgets(
@@ -986,7 +1188,7 @@ void main() {
   );
 
   testWidgets(
-    'reopening included bytes repairs cache without replacing edited words or history',
+    'restoring missing bytes from the catalog preserves edited words and history',
     (tester) => _using(tester, (h) async {
       await tester.pumpWidget(h.app());
       await _installStarter(tester);
@@ -1020,9 +1222,10 @@ void main() {
       await tester.tap(find.byTooltip('กลับไปยังรายการแพ็ก'));
       await packUiReady(tester);
       expect(find.byKey(const ValueKey('pack-practice-starter')), findsNothing);
-      await _openPreview(tester);
-      await tapPackUi(tester, 'pack-confirm-install');
-      await idlePackUi(tester);
+      expect(find.textContaining('ไม่มีไฟล์ออฟไลน์'), findsOneWidget);
+      await tapPackUi(tester, 'pack-restore-starter');
+      await packUiReady(tester);
+      expect(find.text('ฝึก 11 คำ'), findsOneWidget);
       final repaired = (await tester.runAsync(h.stored))!;
       expect(repaired.id, original.id);
       expect(repaired.packageSha256, original.packageSha256);

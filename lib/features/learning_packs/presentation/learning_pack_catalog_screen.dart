@@ -67,6 +67,9 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   PackOwnerScope? _scope;
   List<StoredLearningPack> _rows = const [];
   _PackView _view = const _Catalog();
+  _PackReadLocation? _suspendedReading;
+  static const _readingUnavailable =
+      'กลับมาที่รายการแพ็ก เพราะผู้เรียนหรือข้อมูลแพ็กที่เปิดไว้เปลี่ยนแล้ว';
   _PendingPackWrite? _pending;
   ModalRoute<dynamic>? _route;
   Route<dynamic>? _practiceRoute;
@@ -209,6 +212,9 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
 
   void _ownerChanged(String? owner) {
     if (!mounted || _retired) return;
+    final notice = _suspendedReading != null || _status == _readingUnavailable
+        ? _readingUnavailable
+        : null;
     final openStarter = _openStarterPending;
     _openStarterPending = false;
     _cancelWork();
@@ -224,7 +230,10 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         visible: () => _visible && _practiceRoute == null,
       )..addListener(_savedChanged);
     }
-    if (owner != null) unawaited(_reload(openStarter: openStarter));
+    _status = notice;
+    if (owner != null) {
+      unawaited(_reload(openStarter: openStarter, notice: notice));
+    }
   }
 
   void _savedChanged() {
@@ -232,6 +241,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   }
 
   void _cancelWork() {
+    _suspendedReading = null;
     _lease++;
     _operation++;
     _practiceChildRoute = null;
@@ -272,7 +282,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     return packs.captureOwner(stillCurrent: () => _current(lease));
   }
 
-  Future<void> _reload({bool openStarter = false, String? notice}) async {
+  Future<void> _reload({
+    bool openStarter = false,
+    String? notice,
+    _PackReadLocation? resume,
+  }) async {
     if (!_visible || _packs == null || _busy || _picker) return;
     final operation = ++_operation;
     setState(() => _busy = true);
@@ -289,7 +303,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           : await _packs!.list(scope);
       if (!_resultCurrent(operation, scope)) return;
       final installed = _matching(bundledStarterPack, rows);
-      PackDetail? readyStarter;
+      PackDetail? checkedStarter;
       String? detailFailure;
       if (scope != null &&
           installed != null &&
@@ -297,12 +311,18 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           installed.cacheState != PackCacheState.notCached) {
         try {
           final detail = await _packs!.detail(scope, installed.id);
-          if (detail.pack.cacheState == PackCacheState.verified &&
-              detail.pack.isInstalled) {
-            readyStarter = detail;
-          }
+          if (detail.pack.isInstalled) checkedStarter = detail;
         } on PackStorageException catch (error) {
           detailFailure = _failure(error);
+        }
+        if (!_resultCurrent(operation, scope)) return;
+      }
+      _PackView? restored;
+      if (resume != null && scope != null && scope.ownerId == resume.ownerId) {
+        try {
+          restored = await _restoreReading(resume, scope, rows, checkedStarter);
+        } on PackStorageException {
+          restored = null;
         }
         if (!_resultCurrent(operation, scope)) return;
       }
@@ -310,15 +330,17 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         _scope = scope;
         _rows = rows;
         _pending = null;
-        _view = openStarter && scope != null
-            ? _Preview(
-                bundledStarterPack,
-                PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
-                action: _starterPreviewAction(installed, readyStarter),
-              )
-            : _Catalog(readyStarter);
+        _view =
+            restored ??
+            (openStarter && scope != null
+                ? _starterPreview(
+                    _starterPreviewAction(installed, checkedStarter),
+                  )
+                : _Catalog(checkedStarter));
         _status = scope == null
             ? 'ไม่พบผู้เรียนที่พร้อมใช้งาน'
+            : resume != null && restored == null
+            ? _readingUnavailable
             : detailFailure ?? notice;
       });
     } catch (error) {
@@ -326,7 +348,10 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         setState(() => _status = _failure(error));
       }
     } finally {
-      if (_operationCurrent(operation)) setState(() => _busy = false);
+      if (_operationCurrent(operation)) {
+        _suspendedReading = null;
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -408,13 +433,26 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
 
   _PreviewAction _starterPreviewAction(
     StoredLearningPack? stored,
-    PackDetail? ready,
+    PackDetail? checked,
   ) {
-    if (ready != null) return _PreviewAction.installed;
-    return stored?.isInstalled == true
-        ? _PreviewAction.restore
-        : _PreviewAction.install;
+    if (stored == null || !stored.isInstalled) return _PreviewAction.install;
+    if (!stored.identityConflict &&
+        (stored.cacheState == PackCacheState.notCached ||
+            checked?.pack.cacheState == PackCacheState.corrupt)) {
+      return _PreviewAction.restore;
+    }
+    return _PreviewAction.installed;
   }
+
+  _Preview _starterPreview(
+    _PreviewAction action, [
+    PageStorageBucket? layout,
+  ]) => _Preview(
+    bundledStarterPack,
+    PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
+    action: action,
+    layout: layout,
+  );
 
   Future<void> _openStarter({
     _PreviewAction action = _PreviewAction.install,
@@ -431,11 +469,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       if (scope == null || !_resultCurrent(operation, scope)) return;
       setState(() {
         _scope = scope;
-        _view = _Preview(
-          bundledStarterPack,
-          PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
-          action: action,
-        );
+        _view = _starterPreview(action);
       });
     } catch (error) {
       if (_resultCurrent(operation, scope)) {
@@ -483,6 +517,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   Future<void> _applyPending() async {
     final pending = _pending;
     final scope = _scope;
+    final restoringFromCatalog = _view is _Catalog && pending is _PendingImport;
     if (_busy ||
         pending == null ||
         scope == null ||
@@ -505,22 +540,28 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       acknowledged = true;
       setState(() {
         _pending = null;
-        _status = switch (pending) {
-          _PendingImport(:final intent) =>
-            intent.install ? 'ติดตั้งแพ็กบทเรียนแล้ว' : 'เก็บไฟล์ออฟไลน์แล้ว',
-          _PendingCache(:final intent) =>
-            intent.repair != null
-                ? 'ซ่อมไฟล์แพ็กแล้ว'
-                : intent.pinned
-                ? 'ปักหมุดไฟล์แล้ว'
-                : 'เลิกปักหมุดไฟล์แล้ว',
-        };
+        _status = restoringFromCatalog
+            ? 'คืนไฟล์แพ็กในเครื่องแล้ว'
+            : switch (pending) {
+                _PendingImport(:final intent) =>
+                  intent.install
+                      ? 'ติดตั้งแพ็กบทเรียนแล้ว'
+                      : 'เก็บไฟล์ออฟไลน์แล้ว',
+                _PendingCache(:final intent) =>
+                  intent.repair != null
+                      ? 'ซ่อมไฟล์แพ็กแล้ว'
+                      : intent.pinned
+                      ? 'ปักหมุดไฟล์แล้ว'
+                      : 'เลิกปักหมุดไฟล์แล้ว',
+              };
         if (pending is _PendingCache && pending.intent.remove) {
           _status = 'ลบเฉพาะไฟล์แพ็กแล้ว การ์ด สื่อ และประวัติการเรียนยังอยู่';
         }
-        _view = _Detail(
-          PackDetail(pack: result, content: null, bindings: const []),
-        );
+        if (!restoringFromCatalog) {
+          _view = _Detail(
+            PackDetail(pack: result, content: null, bindings: const []),
+          );
+        }
       });
       _notice(_status!);
       final rows = await _packs!.list(scope);
@@ -528,7 +569,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       if (!_resultCurrent(operation, scope)) return;
       setState(() {
         _rows = rows;
-        _view = _Detail(detail);
+        _view = restoringFromCatalog ? _Catalog(detail) : _Detail(detail);
       });
     } catch (error) {
       if (_resultCurrent(operation, scope)) {
@@ -889,6 +930,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             }
             return SrsFlashcardsScreen(
               sourceWordIds: ids,
+              packOrigin: SrsPackOrigin(
+                packId: shown.pack.id,
+                packageSha256: shown.pack.packageSha256,
+                requireVerifiedBytes: fromCatalog,
+              ),
               verifySourceOnResume: requirePracticeContent,
               expectedOwnerId: scope.ownerId,
               ownerChanges: ownerChanges,
@@ -1108,13 +1154,129 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     }
   }
 
+  _PackReadLocation? _rememberReading() {
+    final scope = _scope;
+    final view = _view;
+    if (scope == null ||
+        !scope.isCurrent ||
+        !_canAct ||
+        _overlay ||
+        view is! _ReadingView) {
+      return null;
+    }
+    final StoredLearningPack? pack;
+    switch (view) {
+      case _Preview(:final source, pack: final preview):
+        if (!identical(preview, bundledStarterPack) ||
+            source.catalogId != bundledStarterCatalogId) {
+          return null;
+        }
+        pack = _matching(preview, _rows);
+      case _Detail(:final detail) || _Lexical(:final detail):
+        pack = detail.pack;
+    }
+    return (
+      ownerId: scope.ownerId,
+      bundledPreview: view is _Preview,
+      pack: pack == null
+          ? null
+          : (
+              id: pack.id,
+              revision: pack.revision,
+              sha: pack.packageSha256,
+              cache:
+                  view is _Preview && pack.cacheState == PackCacheState.cached
+                  ? view.action == _PreviewAction.restore
+                        ? PackCacheState.corrupt
+                        : PackCacheState.verified
+                  : pack.cacheState,
+            ),
+      word: view is _Lexical
+          ? (
+              id: view.content.word.id,
+              revision: view.content.binding.wordRevision,
+              sha: view.content.entry.contentSha256,
+            )
+          : null,
+      layout: view.layout,
+    );
+  }
+
+  Future<_PackView?> _restoreReading(
+    _PackReadLocation location,
+    PackOwnerScope scope,
+    List<StoredLearningPack> rows,
+    PackDetail? checkedStarter,
+  ) async {
+    final pin = location.pack;
+    if (pin == null) {
+      return location.bundledPreview &&
+              _matching(bundledStarterPack, rows) == null
+          ? _starterPreview(_PreviewAction.install, location.layout)
+          : null;
+    }
+    final row = rows.where((row) => row.id == pin.id).firstOrNull;
+    bool matches(StoredLearningPack pack) =>
+        pack.ownerId == location.ownerId &&
+        pack.id == pin.id &&
+        pack.revision == pin.revision &&
+        pack.packageSha256 == pin.sha &&
+        !pack.identityConflict;
+    if (row == null || !matches(row)) return null;
+    bool readable(StoredLearningPack pack) =>
+        matches(pack) &&
+        pack.cacheState == pin.cache &&
+        (pack.cacheState == PackCacheState.verified ||
+            (!location.bundledPreview &&
+                pack.isInstalled &&
+                pack.cacheState == PackCacheState.notCached));
+    final detail = checkedStarter?.pack.id == pin.id
+        ? checkedStarter!
+        : await _packs!.detail(scope, pin.id);
+    if (!readable(detail.pack) || detail.content == null) {
+      return null;
+    }
+    if (location.bundledPreview) {
+      return _starterPreview(
+        _starterPreviewAction(row, detail),
+        location.layout,
+      );
+    }
+    final word = location.word;
+    if (word == null) return _Detail(detail, layout: location.layout);
+    final content = await _packs!.currentLexical(
+      scope: scope,
+      wordId: word.id,
+      packVersionId: pin.id,
+    );
+    if (content == null ||
+        !readable(content.pack) ||
+        content.binding.wordRevision != word.revision ||
+        content.entry.contentSha256 != word.sha) {
+      return null;
+    }
+    return _Lexical(content, detail, layout: location.layout);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
+    final nextForeground = state == AppLifecycleState.resumed;
+    if (_foreground == nextForeground && state != AppLifecycleState.detached) {
+      return;
+    }
+    if (!nextForeground && !_picker && !_onSrsRoute) {
+      final location = state == AppLifecycleState.detached
+          ? null
+          : _suspendedReading ?? _rememberReading();
+      _cancelWork();
+      _suspendedReading = location;
+    }
+    _foreground = nextForeground;
     if (_foreground) _wakePicker();
-    if (!_foreground && !_picker && !_onSrsRoute) _cancelWork();
     _saved?.syncVisibility();
-    if (_foreground && !_picker && !_busy && !_retired) unawaited(_reload());
+    if (_foreground && !_picker && !_busy && !_retired) {
+      unawaited(_reload(resume: _suspendedReading, notice: _status));
+    }
   }
 
   @override
@@ -1156,55 +1318,67 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           ),
         ],
       ),
-      body: AdaptiveContentPane(
-        child: ListView(
-          key: _view is _Catalog
-              ? const ValueKey('pack-catalog-list')
-              : ObjectKey(_view),
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (_busy) ...[
-              LinearProgressIndicator(
-                value: _received != null && _expected != null && _expected! > 0
-                    ? _received! / _expected!
-                    : null,
-                semanticsLabel: 'กำลังดำเนินการกับแพ็กบทเรียน',
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (_status != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Semantics(liveRegion: true, child: Text(_status!)),
-              ),
-            if (_retired || _packs == null)
-              const Text('แพ็กบทเรียนยังไม่พร้อมใช้งาน')
-            else
-              ...switch (_view) {
-                _Catalog(:final readyStarter) => _catalog(readyStarter),
-                _Preview preview => _preview(preview),
-                _Remote(:final descriptor) => _remote(descriptor),
-                _Detail(:final detail) => _detail(detail),
-                _Lexical(:final content) => _lexical(content),
-              },
-            if (_pending != null) ...[
-              const SizedBox(height: 16),
-              FilledButton(
-                key: const ValueKey('pack-retry'),
-                onPressed: _retryAction(),
-                child: const Text('ลองบันทึกคำสั่งเดิมอีกครั้ง'),
-              ),
-              const Text(
-                'หากยังไม่แน่ใจผล กดโหลดรายการใหม่เพื่อตรวจข้อมูลที่บันทึกไว้',
-              ),
-            ],
-          ],
-        ),
-      ),
+      body: AdaptiveContentPane(child: _packList()),
     ),
   );
 
-  List<Widget> _catalog(PackDetail? readyStarter) {
+  Widget _packList() {
+    final reading = _view;
+    final list = ListView(
+      key: _view is _Catalog
+          ? const ValueKey('pack-catalog-list')
+          : reading is _ReadingView
+          ? const PageStorageKey('pack-reading-list')
+          : ObjectKey(_view),
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (_busy) ...[
+          LinearProgressIndicator(
+            value: _received != null && _expected != null && _expected! > 0
+                ? _received! / _expected!
+                : null,
+            semanticsLabel: 'กำลังดำเนินการกับแพ็กบทเรียน',
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (_status != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Semantics(liveRegion: true, child: Text(_status!)),
+          ),
+        if (_retired || _packs == null)
+          const Text('แพ็กบทเรียนยังไม่พร้อมใช้งาน')
+        else
+          ...switch (_view) {
+            _Catalog(:final checkedStarter) => _catalog(checkedStarter),
+            _Preview preview => _preview(preview),
+            _Remote(:final descriptor) => _remote(descriptor),
+            _Detail(:final detail) => _detail(detail),
+            _Lexical(:final content) => _lexical(content),
+          },
+        if (_pending != null) ...[
+          const SizedBox(height: 16),
+          FilledButton(
+            key: const ValueKey('pack-retry'),
+            onPressed: _retryAction(),
+            child: const Text('ลองบันทึกคำสั่งเดิมอีกครั้ง'),
+          ),
+          const Text(
+            'หากยังไม่แน่ใจผล กดโหลดรายการใหม่เพื่อตรวจข้อมูลที่บันทึกไว้',
+          ),
+        ],
+      ],
+    );
+    return reading is _ReadingView
+        ? PageStorage(
+            key: ObjectKey(reading.layout),
+            bucket: reading.layout,
+            child: list,
+          )
+        : list;
+  }
+
+  List<Widget> _catalog(PackDetail? checkedStarter) {
     bool matches(LearningPackManifest manifest) =>
         (_cefr == 'all' || manifest.cefrLevel == _cefr) &&
         '${manifest.title} ${manifest.provenance.author} ${manifest.objectives.join(' ')}'
@@ -1213,6 +1387,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     final starter = bundledStarterPack;
     final stored = _matching(starter, _rows);
     final installed = stored != null && stored.isInstalled ? stored : null;
+    final previewAction = _starterPreviewAction(installed, checkedStarter);
+    final readyStarter =
+        checkedStarter?.pack.cacheState == PackCacheState.verified
+        ? checkedStarter
+        : null;
     final batch = readyStarter?.bindings
         .where((binding) => binding.isCurrent)
         .take(20)
@@ -1254,8 +1433,25 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    '${starter.manifest.cefrLevel} · เวอร์ชัน ${starter.manifest.version} · ติดตั้งแล้ว',
+                    '${starter.manifest.cefrLevel} · เวอร์ชัน ${starter.manifest.version} · '
+                    '${previewAction == _PreviewAction.restore
+                        ? installed.cacheState == PackCacheState.notCached
+                              ? 'ติดตั้งคำศัพท์แล้ว · ไม่มีไฟล์ออฟไลน์'
+                              : 'ติดตั้งคำศัพท์แล้ว · ไฟล์ออฟไลน์เสียหาย'
+                        : 'ติดตั้งแล้ว'}',
                   ),
+                  if (previewAction == _PreviewAction.restore)
+                    FilledButton.icon(
+                      key: const ValueKey('pack-restore-starter'),
+                      onPressed: _action(
+                        () => _installPreview(
+                          _starterPreview(previewAction),
+                          install: true,
+                        ),
+                      ),
+                      icon: const Icon(Icons.restore),
+                      label: const Text('คืนไฟล์แพ็กในเครื่อง'),
+                    ),
                   if (_practiceAvailable &&
                       readyStarter != null &&
                       !readyStarter.pack.identityConflict &&
@@ -1274,12 +1470,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
                       TextButton(
                         key: const ValueKey('pack-open-starter'),
                         onPressed: _action(
-                          () => _openStarter(
-                            action: _starterPreviewAction(
-                              installed,
-                              readyStarter,
-                            ),
-                          ),
+                          () => _openStarter(action: previewAction),
                         ),
                         child: const Text('ดูตัวอย่าง'),
                       ),
@@ -1531,20 +1722,23 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     ),
   ];
 
-  Widget _metadataDetails(LearningPackManifest manifest) => ExpansionTile(
+  Widget _metadataDetails(LearningPackManifest manifest) => KeyedSubtree(
     key: const ValueKey('pack-metadata-details'),
-    title: const Text('รายละเอียดแพ็ก'),
-    childrenPadding: const EdgeInsets.all(16),
-    expandedCrossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('เป้าหมาย', style: Theme.of(context).textTheme.titleMedium),
-      for (final objective in manifest.objectives) Text('• $objective'),
-      const SizedBox(height: 16),
-      Text('ผู้จัดทำ: ${manifest.provenance.author}'),
-      Text('แหล่งที่มา: ${manifest.provenance.source}'),
-      Text('สิทธิ์ใช้งานที่ผู้จัดทำระบุ: ${manifest.provenance.license}'),
-      Text(manifest.provenance.attribution),
-    ],
+    child: ExpansionTile(
+      key: const PageStorageKey('pack-metadata-expanded'),
+      title: const Text('รายละเอียดแพ็ก'),
+      childrenPadding: const EdgeInsets.all(16),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('เป้าหมาย', style: Theme.of(context).textTheme.titleMedium),
+        for (final objective in manifest.objectives) Text('• $objective'),
+        const SizedBox(height: 16),
+        Text('ผู้จัดทำ: ${manifest.provenance.author}'),
+        Text('แหล่งที่มา: ${manifest.provenance.source}'),
+        Text('สิทธิ์ใช้งานที่ผู้จัดทำระบุ: ${manifest.provenance.license}'),
+        Text(manifest.provenance.attribution),
+      ],
+    ),
   );
 
   List<Widget> _entryPreview(LearningPack pack) => [
@@ -1675,17 +1869,32 @@ sealed class _PackView {
 }
 
 final class _Catalog extends _PackView {
-  const _Catalog([this.readyStarter]);
-  final PackDetail? readyStarter;
+  const _Catalog([this.checkedStarter]);
+  final PackDetail? checkedStarter;
+}
+
+typedef _PackReadLocation = ({
+  String ownerId,
+  bool bundledPreview,
+  ({String id, int revision, String sha, PackCacheState cache})? pack,
+  ({String id, int revision, String sha})? word,
+  PageStorageBucket layout,
+});
+
+sealed class _ReadingView extends _PackView {
+  _ReadingView({PageStorageBucket? layout})
+    : layout = layout ?? PageStorageBucket();
+  final PageStorageBucket layout;
 }
 
 enum _PreviewAction { install, installed, restore }
 
-final class _Preview extends _PackView {
-  const _Preview(
+final class _Preview extends _ReadingView {
+  _Preview(
     this.pack,
     this.source, {
     this.action = _PreviewAction.install,
+    super.layout,
   });
   final LearningPack pack;
   final PackSourceDescriptor source;
@@ -1697,13 +1906,13 @@ final class _Remote extends _PackView {
   final LearningPackDownloadDescriptor descriptor;
 }
 
-final class _Detail extends _PackView {
-  const _Detail(this.detail);
+final class _Detail extends _ReadingView {
+  _Detail(this.detail, {super.layout});
   final PackDetail detail;
 }
 
-final class _Lexical extends _PackView {
-  const _Lexical(this.content, this.detail);
+final class _Lexical extends _ReadingView {
+  _Lexical(this.content, this.detail, {super.layout});
   final CurrentLexicalContent content;
   final PackDetail detail;
 }

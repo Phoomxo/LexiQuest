@@ -12,14 +12,19 @@ import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.d
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/progress/domain/learning_history_models.dart';
 import 'package:vocab_learning_app/features/progress/presentation/today_resume_panel.dart';
 import 'package:vocab_learning_app/features/progress/presentation/resume_learning_history_entry.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/configured_quiz_harness.dart';
@@ -44,14 +49,15 @@ void main() {
         final before = await motivationPresentationIo(tester, f.h.snapshot);
         await tester.pumpWidget(f.app(scale: 2));
         await _ready(tester);
-        expect(find.text('ฝึกคำศัพท์ · เริ่มล่าสุด'), findsOneWidget);
+        expect(find.textContaining('ฝึกคำศัพท์ · เล่นต่อได้'), findsOneWidget);
+        expect(find.textContaining('เริ่มล่าสุด'), findsNothing);
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
         final button = find.byKey(const ValueKey('today-resume-open-history'));
         await tester.ensureVisible(button);
         await tester.pump(const Duration(milliseconds: 16));
         expect(button.hitTestable(), findsOneWidget);
         await tester.tap(button.hitTestable());
-        await _historyReady(tester);
+        await _historyReady(tester, f.activeSessionId);
         expect(find.byType(LearningHistoryScreen), findsOneWidget);
         expect(await motivationPresentationIo(tester, f.h.snapshot), before);
         expect(tester.takeException(), isNull);
@@ -91,6 +97,100 @@ void main() {
       }
     },
   );
+
+  for (final fromHistory in [false, true]) {
+    testWidgets(
+      '${fromHistory ? 'History' : 'Today'} opens the recorded SRS session without a new round',
+      (tester) async {
+        final f = await motivationPresentationIo(tester, _Fixture.open);
+        try {
+          final session = await motivationPresentationIo(tester, () async {
+            f.h.now = f.h.now.add(const Duration(minutes: 3));
+            final learning = f.dependencies.learning!;
+            final review = (await learning.prepareSrsReview(
+              expectedOwnerId: configuredOwnerId,
+              sourceWordIds: [configuredWordIds.first],
+              stillCurrent: () => true,
+            ))!;
+            await learning.startSrsReview(review, stillCurrent: () => true);
+            return review.id;
+          });
+          final before = await motivationPresentationIo(tester, f.h.snapshot);
+          await tester.pumpWidget(f.app(home: const ChooseModeScreen()));
+          await _ready(tester);
+          expect(find.text('ทบทวนคำศัพท์ · เล่นต่อได้'), findsOneWidget);
+          if (fromHistory) {
+            final history = find.byKey(
+              const ValueKey('today-resume-open-history'),
+            );
+            await tester.ensureVisible(history);
+            await tester.tap(history);
+            await _historyReady(tester, session);
+          }
+          final start = fromHistory
+              ? find.byKey(ValueKey(('history-resume', session)))
+              : find.byKey(const ValueKey('today-resume-start'));
+          await tester.ensureVisible(start);
+          await tester.pump();
+          await tester.tap(start.hitTestable());
+          await _until(
+            tester,
+            () =>
+                find.text('station').evaluate().isNotEmpty &&
+                find.byType(SrsFlashcardsScreen).evaluate().isNotEmpty,
+          );
+          expect(
+            tester
+                .widget<SrsFlashcardsScreen>(find.byType(SrsFlashcardsScreen))
+                .resumeSessionId,
+            session,
+          );
+          expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+          expect(tester.takeException(), isNull);
+        } finally {
+          await closeMotivationPresentation(tester, f.h.close);
+        }
+      },
+    );
+  }
+
+  test('SRS history follows both SRS entry-point feature flags', () async {
+    final f = await _Fixture.open();
+    try {
+      final entry = LearningHistoryEntry(
+        sessionId: 'synthetic-srs-history',
+        activityType: 'srsReview',
+        state: 'active',
+        startedAtUtc: f.h.now,
+        endedAtUtc: null,
+        answerCount: 0,
+        correctCount: 0,
+        hasAcceptedSrs: true,
+      );
+      for (final fieldEnabled in [false, true]) {
+        for (final featureEnabled in [false, true]) {
+          final dependencies = AppDependencies(
+            config: null,
+            runtimeStatus: f.dependencies.runtimeStatus,
+            guestSessionService: _NoGuest(),
+            learning: f.dependencies.learning,
+            fieldFeatures: BuildFieldFeatureRegistry({
+              if (fieldEnabled) FieldFeature.srs: FieldFeatureState.enabled,
+            }),
+            features: BuildFeatureRegistry({
+              if (featureEnabled) Feature.srs: FeatureState.enabled,
+            }),
+          );
+          expect(
+            canOpenLearningHistoryEntry(entry, dependencies: dependencies),
+            fieldEnabled && featureEnabled,
+          );
+        }
+      }
+    } finally {
+      await f.h.close();
+    }
+  });
 
   testWidgets('absent actual owner creates no owner or resume action', (
     tester,
@@ -418,7 +518,7 @@ Future<void> _ready(WidgetTester tester) => _until(
           null,
 );
 
-Future<void> _historyReady(WidgetTester tester) async {
+Future<void> _historyReady(WidgetTester tester, String sessionId) async {
   await _until(
     tester,
     () =>
@@ -431,14 +531,11 @@ Future<void> _historyReady(WidgetTester tester) async {
         matching: find.byType(Scrollable),
       )
       .first;
-  await tester.scrollUntilVisible(
-    find.text('เล่นต่อ'),
-    250,
-    scrollable: historyScroll,
-  );
-  await tester.ensureVisible(find.text('เล่นต่อ'));
+  final resume = find.byKey(ValueKey(('history-resume', sessionId)));
+  await tester.scrollUntilVisible(resume, 250, scrollable: historyScroll);
+  await tester.ensureVisible(resume);
   await tester.pump(const Duration(milliseconds: 16));
-  expect(find.text('เล่นต่อ').hitTestable(), findsOneWidget);
+  expect(resume.hitTestable(), findsOneWidget);
 }
 
 Future<void> _flush(WidgetTester tester, [int frames = 1]) async {

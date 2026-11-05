@@ -192,7 +192,7 @@ class _TodayResumePanelState extends State<TodayResumePanel>
             entry.sessionId == displayed.sessionId &&
             entry.activityType == displayed.activityType &&
             entry.state == 'active' &&
-            canOpenLearningHistoryEntry(entry),
+            canOpenLearningHistoryEntry(entry, dependencies: dependencies),
       );
       if (matches.isEmpty) throw StateError('Session is unavailable');
       await widget.onResume(matches.first, history.ownerId, activityCurrent);
@@ -254,10 +254,18 @@ class _TodayResumePanelState extends State<TodayResumePanel>
     }
     final history = _history;
     final read = _read;
-    final eligible = history?.entries.where(
-      (entry) => entry.state == 'active' && canOpenLearningHistoryEntry(entry),
-    );
-    final entry = eligible == null || eligible.isEmpty ? null : eligible.first;
+    final latest = history?.entries.firstOrNull;
+    final legacyLatest = latest?.isSrsWithoutSavedPosition == true;
+    final entry = history?.entries
+        .where(
+          (entry) =>
+              entry.state == 'active' &&
+              canOpenLearningHistoryEntry(entry, dependencies: _dependencies),
+        )
+        .firstOrNull;
+    final latestNote = legacyLatest
+        ? 'ทบทวนคำศัพท์ล่าสุด · ${learningHistoryDateTime(latest!.startedAtUtc)}\n$srsRestartHint'
+        : null;
     if (history != null && entry == null && !_failed) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -265,9 +273,9 @@ class _TodayResumePanelState extends State<TodayResumePanel>
           spacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text(
-              'ไม่มีกิจกรรมที่เล่นต่อได้ในประวัติล่าสุด',
-              key: ValueKey('today-resume-count'),
+            Text(
+              latestNote ?? 'ไม่มีกิจกรรมที่เล่นต่อได้ในประวัติล่าสุด',
+              key: const ValueKey('today-resume-count'),
             ),
             TextButton.icon(
               key: const ValueKey('today-resume-open-history'),
@@ -306,10 +314,15 @@ class _TodayResumePanelState extends State<TodayResumePanel>
             ] else if (history == null)
               const Text('กำลังอ่านประวัติกิจกรรมล่าสุด')
             else ...[
+              if (latestNote != null) ...[
+                Text(latestNote),
+                const SizedBox(height: 12),
+              ],
               Text(
-                '${learningHistoryActivityName(entry!.activityType)} · เริ่มล่าสุด',
+                '${learningHistoryActivityName(entry!.activityType)} · เล่นต่อได้',
                 key: const ValueKey('today-resume-count'),
               ),
+              Text('เริ่ม ${learningHistoryDateTime(entry.startedAtUtc)}'),
               Text('ตอบแล้ว ${entry.answerCount} คำตอบ'),
               const SizedBox(height: 8),
               OutlinedButton.icon(

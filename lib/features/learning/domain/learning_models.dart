@@ -149,11 +149,35 @@ final class RecordAnswerCommand {
 
 enum SrsReviewSelection { due, source }
 
+final class SrsPackOrigin {
+  const SrsPackOrigin({
+    required this.packId,
+    required this.packageSha256,
+    required this.requireVerifiedBytes,
+  });
+
+  final String packId;
+  final String packageSha256;
+  final bool requireVerifiedBytes;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SrsPackOrigin &&
+      packId == other.packId &&
+      packageSha256 == other.packageSha256 &&
+      requireVerifiedBytes == other.requireVerifiedBytes;
+
+  @override
+  int get hashCode => Object.hash(packId, packageSha256, requireVerifiedBytes);
+}
+
 final class SrsReviewSession {
   SrsReviewSession({
     required this.session,
     required Iterable<QuizWord> words,
     required this.selection,
+    this.packOrigin,
+    this.packEntryDigest,
   }) : words = List<QuizWord>.unmodifiable(words) {
     final started = session.startedAtUtc;
     if (!session.id.startsWith(idPrefix) ||
@@ -166,6 +190,15 @@ final class SrsReviewSession {
         this.words.isEmpty ||
         this.words.length > 20) {
       throw ArgumentError('Invalid owned SRS review');
+    }
+    final origin = packOrigin;
+    if ((origin == null) != (packEntryDigest == null) ||
+        origin != null &&
+            (selection != SrsReviewSelection.source ||
+                origin.packId.trim().isEmpty ||
+                !RegExp(r'^[0-9a-f]{64}$').hasMatch(packEntryDigest!) ||
+                !RegExp(r'^[0-9a-f]{64}$').hasMatch(origin.packageSha256))) {
+      throw ArgumentError('Invalid SRS pack origin');
     }
     final ids = <String>{};
     for (final word in this.words) {
@@ -182,13 +215,71 @@ final class SrsReviewSession {
   }
 
   static const idPrefix = 'session:srs-review-v1:';
+  static const planIdPrefix = 'srs-plan-v1:';
   final LearningSessionDraft session;
   final List<QuizWord> words;
   final SrsReviewSelection selection;
+  final SrsPackOrigin? packOrigin;
+  final String? packEntryDigest;
+
+  // Keep private word text in the vocabulary table. A changed word fails the plan hash.
+  late final String planJson = jsonEncode({
+    'version': 1,
+    'session': id,
+    'owner': ownerId,
+    'start': startedAtUtc.millisecondsSinceEpoch,
+    'app': session.appVersion,
+    'build': session.buildId,
+    'selection': selection.name,
+    'pack': switch (packOrigin) {
+      final origin? => {
+        'id': origin.packId,
+        'sha256': origin.packageSha256,
+        'requireVerifiedBytes': origin.requireVerifiedBytes,
+        'entries': packEntryDigest,
+      },
+      null => null,
+    },
+    'words': [
+      for (final word in words)
+        {
+          'id': word.id,
+          'revision': word.contentRevision,
+          'hash': sha256
+              .convert(
+                utf8.encode(
+                  jsonEncode([
+                    word.categoryId,
+                    word.spelling,
+                    word.meaning,
+                    word.partOfSpeech,
+                  ]),
+                ),
+              )
+              .toString(),
+        },
+    ],
+  });
+  late final String planId =
+      '$planIdPrefix${sha256.convert(utf8.encode(planJson))}';
 
   String get id => session.id;
   String get ownerId => session.ownerId;
   DateTime get startedAtUtc => session.startedAtUtc!;
+}
+
+final class SrsReviewResumeState {
+  SrsReviewResumeState({
+    required this.review,
+    required this.cardIndex,
+    required this.revealed,
+    required Iterable<SrsReviewAnswerIntent> answers,
+  }) : answers = List.unmodifiable(answers);
+
+  final SrsReviewSession review;
+  final int cardIndex;
+  final bool revealed;
+  final List<SrsReviewAnswerIntent> answers;
 }
 
 final class SrsReviewAnswerIntent {

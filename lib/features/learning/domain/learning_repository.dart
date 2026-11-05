@@ -132,6 +132,19 @@ abstract interface class ConfiguredQuizRepository {
 }
 
 abstract interface class SrsReviewRepository {
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  });
+
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  });
+
   Future<void> requireCurrentSrsReview(
     SrsReviewSession review, {
     required int confirmedAnswers,
@@ -141,6 +154,7 @@ abstract interface class SrsReviewRepository {
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
+    SrsPackOrigin? packOrigin,
     Iterable<String>? sourceWordIds,
     int limit = 20,
     required bool Function() stillCurrent,

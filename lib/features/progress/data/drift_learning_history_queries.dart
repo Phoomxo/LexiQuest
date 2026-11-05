@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/learning_models.dart' show SrsReviewSession;
 import '../domain/learning_history_models.dart';
 
 final class DriftLearningHistoryQueries {
@@ -34,7 +35,10 @@ final class DriftLearningHistoryQueries {
          (accepted_plan_id LIKE 'native-plan-v1:%' AND accepted_plan_json IS NOT NULL
           AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_native,
          (accepted_plan_id LIKE 'matching-plan-v1:%' AND accepted_plan_json IS NOT NULL
-          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_matching
+          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_matching,
+         (activity_type = 'srsReview' AND accepted_plan_id GLOB '${SrsReviewSession.planIdPrefix}*'
+          AND accepted_plan_json IS NOT NULL AND checkpoint_revision >= 1
+          AND checkpoint_json IS NOT NULL) AS has_accepted_srs
   FROM learning_sessions
   WHERE owner_id = ? AND activity_type <> 'assessment'
   AND NOT EXISTS (SELECT 1 FROM assessment_runs r WHERE r.learning_session_id = learning_sessions.id)
@@ -105,6 +109,7 @@ final class DriftLearningHistoryQueries {
               hasAcceptedQuiz: row.read<int>('has_accepted_quiz') == 1,
               hasAcceptedNative: row.read<int>('has_accepted_native') == 1,
               hasAcceptedMatching: row.read<int>('has_accepted_matching') == 1,
+              hasAcceptedSrs: row.readNullable<int>('has_accepted_srs') == 1,
             ),
           )
           .toList(growable: false);

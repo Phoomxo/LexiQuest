@@ -295,7 +295,10 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_date(day.day), style: textTheme.bodyMedium),
+                  Text(
+                    learningHistoryDate(day.day),
+                    style: textTheme.bodyMedium,
+                  ),
                   Text(
                     '${day.answerCount} คำตอบ',
                     style: textTheme.titleMedium,
@@ -317,7 +320,11 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
         for (final entry in history.entries) ...[
           _HistoryRound(
             entry,
-            onResume: canOpenLearningHistoryEntry(entry)
+            onResume:
+                canOpenLearningHistoryEntry(
+                  entry,
+                  dependencies: AppDependenciesScope.maybeOf(context),
+                )
                 ? _resuming
                       ? null
                       : () => unawaited(_resume(entry, history.ownerId))
@@ -353,8 +360,7 @@ class _HistoryRound extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final started = entry.startedAtUtc.toLocal();
-    final ended = entry.endedAtUtc?.toLocal();
+    final ended = entry.endedAtUtc;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
@@ -367,12 +373,12 @@ class _HistoryRound extends StatelessWidget {
           Text(_state(entry.state), style: textTheme.labelLarge),
           const SizedBox(height: 4),
           Text(
-            'เริ่ม ${_date(started)} ${_time(started)}',
+            'เริ่ม ${learningHistoryDateTime(entry.startedAtUtc)}',
             style: textTheme.bodyMedium,
           ),
           if (ended != null)
             Text(
-              'สิ้นสุด ${_date(ended)} ${_time(ended)}',
+              'สิ้นสุด ${learningHistoryDateTime(ended)}',
               style: textTheme.bodyMedium,
             ),
           const SizedBox(height: 8),
@@ -385,6 +391,7 @@ class _HistoryRound extends StatelessWidget {
           if (onResume != null) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
+              key: ValueKey(('history-resume', entry.sessionId)),
               onPressed: onResume,
               icon: Icon(
                 entry.state == 'completed'
@@ -401,6 +408,10 @@ class _HistoryRound extends StatelessWidget {
             const Text(
               'เปิดรอบเดิมไม่ได้: ไม่มีฉบับร่างในเครื่องที่รองรับ หรือรอบนี้ถูกยุติแล้ว',
             ),
+          ],
+          if (entry.isSrsWithoutSavedPosition) ...[
+            const SizedBox(height: 8),
+            const Text(srsRestartHint),
           ],
         ],
       ),
@@ -430,12 +441,6 @@ class _HistoryMessage extends StatelessWidget {
     ),
   );
 }
-
-String _date(DateTime value) =>
-    '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
-
-String _time(DateTime value) =>
-    '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 
 String _state(String value) => switch (value) {
   'completed' => 'จบแล้ว',

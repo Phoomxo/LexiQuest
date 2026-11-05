@@ -22,6 +22,8 @@ class SrsFlashcardsScreen extends StatefulWidget {
     super.key,
     this.wordList,
     this.sourceWordIds,
+    this.packOrigin,
+    this.resumeSessionId,
     this.verifySourceOnResume,
     this.voice,
     this.learning,
@@ -30,11 +32,16 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.languageCode = 'th',
     this.learningTime,
     this.timeCallerContext = LearningTimeCallerContext.ordinary,
-  }) : assert(wordList == null || sourceWordIds == null);
+  }) : assert(wordList == null || sourceWordIds == null),
+       assert(
+         resumeSessionId == null || (wordList == null && sourceWordIds == null),
+       );
 
   /// A presentation-only snapshot. Preview ratings never create learning facts.
   final List<Map<String, String>>? wordList;
   final List<String>? sourceWordIds;
+  final SrsPackOrigin? packOrigin;
+  final String? resumeSessionId;
   final Future<void> Function()? verifySourceOnResume;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
@@ -172,7 +179,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   bool get _isPreview => _preview != null;
-  bool get _isSource => _sourceIds != null;
+  bool get _isSource =>
+      _sourceIds != null || _review?.selection == SrsReviewSelection.source;
   int get _length => _preview?.length ?? _review?.words.length ?? 0;
   String _copy(String th, String en) => widget.languageCode == 'th' ? th : en;
 
@@ -260,7 +268,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       final source =
           widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
       _ownerRequired = source != null;
-      if ((!_isPreview && (learning == null || source == null)) ||
+      if ((widget.packOrigin != null && _sourceIds == null) ||
+          (widget.resumeSessionId != null &&
+              (_isPreview ||
+                  _sourceIds != null ||
+                  widget.expectedOwnerId == null)) ||
+          (!_isPreview && (learning == null || source == null)) ||
           (widget.expectedOwnerId != null &&
               (widget.expectedOwnerId!.trim().isEmpty || source == null))) {
         _invalidate();
@@ -320,6 +333,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         !identical(oldWidget.voice, widget.voice) ||
         !identical(oldWidget.ownerChanges, widget.ownerChanges) ||
         oldWidget.expectedOwnerId != widget.expectedOwnerId ||
+        oldWidget.resumeSessionId != widget.resumeSessionId ||
+        oldWidget.packOrigin != widget.packOrigin ||
         oldWidget.languageCode != widget.languageCode ||
         oldWidget.timeCallerContext != widget.timeCallerContext ||
         !identical(oldWidget.learningTime, widget.learningTime) ||
@@ -466,16 +481,43 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     _step = _Step.preparing;
     _redraw();
     try {
-      final review = await _learning!.prepareSrsReview(
-        expectedOwnerId: _ownerId!,
-        sourceWordIds: _sourceIds,
-        stillCurrent: () => _scopeCurrent(epoch),
-      );
-      if (!_scopeCurrent(epoch)) {
-        return;
+      final sessionId = widget.resumeSessionId;
+      if (sessionId != null) {
+        final state = await _learning!.resumeSrsReview(
+          sessionId: sessionId,
+          expectedOwnerId: _ownerId!,
+          stillCurrent: () => _scopeCurrent(epoch),
+        );
+        if (!_scopeCurrent(epoch)) return;
+        _review = state.review;
+        _index = state.cardIndex;
+        _isFlipped = state.revealed;
+        _controller.value = _isFlipped ? 1 : 0;
+        for (final answer in state.answers) {
+          if (answer.command.isCorrect) {
+            _correctCount++;
+          } else {
+            _mistakeWordIds.add(answer.command.wordId);
+          }
+        }
+        if (state.answers.length > _index) {
+          _rating = state.answers[_index];
+          _selectedRating = _rating!.command.isCorrect;
+          _step = _Step.saved;
+        } else {
+          _step = _Step.answering;
+        }
+      } else {
+        final review = await _learning!.prepareSrsReview(
+          expectedOwnerId: _ownerId!,
+          sourceWordIds: _sourceIds,
+          packOrigin: widget.packOrigin,
+          stillCurrent: () => _scopeCurrent(epoch),
+        );
+        if (!_scopeCurrent(epoch)) return;
+        _review = review;
+        _step = review == null ? _Step.empty : _Step.starting;
       }
-      _review = review;
-      _step = review == null ? _Step.empty : _Step.starting;
     } on Object {
       if (_scopeCurrent(epoch)) {
         _step = _Step.loadFailed;
@@ -485,6 +527,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     if (_current(epoch) && _review != null && _step == _Step.starting) {
       await _start(epoch);
+    } else if (_current(epoch) && _step == _Step.answering) {
+      _latency.start();
+      _autoplay(epoch, _index);
+      unawaited(_readyTime());
     }
   }
 
@@ -526,7 +572,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     return _CardText(word.spelling, word.meaning, word.partOfSpeech);
   }
 
-  void _flip(int epoch, int index) {
+  Future<void> _flip(int epoch, int index) async {
     if (!_cardCurrent(epoch, index) ||
         _operationPending ||
         _step != _Step.answering ||
@@ -535,7 +581,37 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     _timeBinding?.interacted();
     _suspendTime();
-    _isFlipped = !_isFlipped;
+    final revealed = !_isFlipped;
+    if (!_isPreview) {
+      _operationPending = true;
+      _redraw();
+      try {
+        await _learning!.saveSrsCardPosition(
+          _review!,
+          cardIndex: index,
+          revealed: revealed,
+          stillCurrent: () => _sameCard(epoch, index),
+        );
+      } on Object {
+        if (mounted && _cardCurrent(epoch, index)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                _copy(
+                  'บันทึกด้านของบัตรไม่สำเร็จ ลองอีกครั้ง',
+                  'Could not save this side of the card. Try again.',
+                ),
+              ),
+            ),
+          );
+        }
+        return;
+      } finally {
+        _operationSettled();
+      }
+    }
+    if (!mounted || !_sameCard(epoch, index)) return;
+    _isFlipped = revealed;
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.value = _isFlipped ? 1 : 0;
     } else if (_isFlipped) {
@@ -625,6 +701,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         return;
       }
       if (!last) {
+        if (!_isPreview) {
+          await _learning!.saveSrsCardPosition(
+            _review!,
+            cardIndex: index + 1,
+            revealed: false,
+            stillCurrent: () => _sameCard(epoch, index),
+          );
+          if (!_sameCard(epoch, index)) return;
+        }
         _resumeOffset = null;
         _index++;
         _controller.value = 0;
@@ -684,7 +769,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     if (!_current(_epoch) || route?.isActive != true) {
       return;
     }
-    final result = _isSource && summary != null
+    final result =
+        widget.resumeSessionId == null && _isSource && summary != null
         ? LearningSessionResult(
             summary: summary,
             mistakeWordIds: _mistakeWordIds,
@@ -695,7 +781,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     _timeBinding?.close();
     _summary = summary;
     _latency.stop();
-    if (!_isSource && !_isPreview && _time != null && summary != null) {
+    if (widget.resumeSessionId == null &&
+        !_isSource &&
+        !_isPreview &&
+        _time != null &&
+        summary != null) {
       _redraw();
       return;
     }
@@ -887,10 +977,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     switch (_suspended ? _Step.waiting : _step) {
       case _Step.loadFailed:
         return _message(
-          _copy(
-            'เปิดข้อมูลทบทวนในเครื่องไม่สำเร็จ',
-            'Unable to load local review',
-          ),
+          widget.resumeSessionId != null
+              ? _copy(
+                  'เปิดรอบบัตรคำเดิมไม่ได้ กรุณาตรวจคำศัพท์หรือกลับไปดูประวัติ',
+                  'Cannot open this flashcard round. Check the words or return to history.',
+                )
+              : _copy(
+                  'เปิดข้อมูลทบทวนในเครื่องไม่สำเร็จ',
+                  'Unable to load local review',
+                ),
           retry: true,
         );
       case _Step.startFailed:
@@ -1159,6 +1254,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                       ? _copy(
                           'บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง',
                           'Unable to confirm rating. Retry the same choice.',
+                        )
+                      : index < _length - 1
+                      ? _copy(
+                          'ไปคำถัดไปไม่สำเร็จ กรุณาลองอีกครั้ง',
+                          'Could not open the next word. Retry.',
                         )
                       : _copy(
                           'ปิดการทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง',

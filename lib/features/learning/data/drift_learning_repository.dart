@@ -1402,6 +1402,183 @@ final class DriftLearningRepository
   final _srsBindings = Expando<_SrsReviewBinding>();
 
   @override
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) async {
+    _trackConfiguredOwner();
+    final epoch = _configuredOwnerEpoch;
+    bool current() => epoch == _configuredOwnerEpoch && stillCurrent();
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('SRS resume requires a committed source');
+    }
+    return database.transaction(() async {
+      await _requireTimeReadOwner(expectedOwnerId, current);
+      final row = await _session(sessionId);
+      if (row == null ||
+          row.ownerId != expectedOwnerId ||
+          row.state != 'active' ||
+          row.activityType != 'srsReview' ||
+          row.acceptedPlanJson == null ||
+          row.acceptedPlanId?.startsWith(SrsReviewSession.planIdPrefix) !=
+              true) {
+        throw StateError('No resumable SRS plan for this learner');
+      }
+      await _requireTimeOrdinarySession(sessionId);
+      final plan = jsonDecode(row.acceptedPlanJson!) as Map<String, dynamic>;
+      final items = plan['words'] as List<dynamic>;
+      if (items.isEmpty || items.length > 20) {
+        throw StateError('Invalid SRS deck');
+      }
+      final ids = [for (final item in items) item['id'] as String];
+      final currentWords = await listQuizWords(
+        ownerId: expectedOwnerId,
+        wordIds: ids,
+        limit: ids.length,
+      );
+      final byId = {for (final word in currentWords) word.id: word};
+      if (byId.length != ids.length || !ids.every(byId.containsKey)) {
+        throw StateError('Original SRS deck changed');
+      }
+      final origin = plan['pack'] as Map<String, dynamic>?;
+      final review = SrsReviewSession(
+        session: LearningSessionDraft(
+          id: row.id,
+          ownerId: row.ownerId,
+          activityType: row.activityType,
+          startedAtUtc: _fromEpoch(row.startedAtUtcMs),
+          appVersion: row.appVersion,
+          buildId: row.buildId,
+        ),
+        words: [for (final id in ids) byId[id]!],
+        selection: SrsReviewSelection.values.byName(
+          plan['selection'] as String,
+        ),
+        packOrigin: origin == null
+            ? null
+            : SrsPackOrigin(
+                packId: origin['id'] as String,
+                packageSha256: origin['sha256'] as String,
+                requireVerifiedBytes: origin['requireVerifiedBytes'] as bool,
+              ),
+        packEntryDigest: origin?['entries'] as String?,
+      );
+      final binding = _SrsReviewBinding(current)
+        ..started = true
+        ..startAttempted = true
+        ..checkpointRevision = row.checkpointRevision;
+      final facts = await _requireSrsFacts(review, binding, hydrate: true);
+      if (review.packOrigin != null) await _requireSrsTargets(review);
+      await _requireTimeReadOwner(expectedOwnerId, current);
+      _srsBindings[review] = binding;
+      return SrsReviewResumeState(
+        review: review,
+        cardIndex: facts.position.cardIndex,
+        revealed: facts.position.revealed,
+        answers: binding.answers.values,
+      );
+    });
+  }
+
+  @override
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) async {
+    final binding = _srsBinding(review);
+    final revision = await _writeSrsBoundary<int>(
+      review.ownerId,
+      () => _srsCurrent(review, stillCurrent),
+      write: () async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (!binding.started ||
+            facts.session.state != 'active' ||
+            facts.session.checkpointRevision != binding.checkpointRevision) {
+          throw StateError('SRS position changed');
+        }
+        final previous = facts.position;
+        if (cardIndex == previous.cardIndex && revealed == previous.revealed) {
+          return facts.session.checkpointRevision;
+        }
+        final flip =
+            cardIndex == previous.cardIndex &&
+            facts.attempts.length == cardIndex;
+        final advance =
+            cardIndex == previous.cardIndex + 1 &&
+            cardIndex < review.words.length &&
+            facts.attempts.length == cardIndex &&
+            !revealed;
+        if (!flip && !advance) throw StateError('Invalid SRS card transition');
+        return _writeSrsPosition(
+          facts.session,
+          cardIndex,
+          revealed,
+          binding.answers.values.take(facts.attempts.length),
+        );
+      },
+      verify: (revision) async {
+        final facts = await _requireSrsFacts(review, binding);
+        if (facts.session.checkpointRevision != revision ||
+            facts.position.cardIndex != cardIndex ||
+            facts.position.revealed != revealed) {
+          throw StateError('SRS card position readback changed');
+        }
+        await _requireSrsTargets(review);
+      },
+    );
+    binding.checkpointRevision = revision;
+  }
+
+  String _srsPositionJson(
+    int cardIndex,
+    bool revealed,
+    Iterable<SrsReviewAnswerIntent> answers,
+  ) => jsonEncode({
+    'cardIndex': cardIndex,
+    'revealed': revealed,
+    'receipts': _timeDigest([
+      for (final intent in answers)
+        [
+          intent.command.id,
+          intent.command.wordId,
+          intent.command.isCorrect,
+          intent.command.responseTimeMs,
+          intent.command.occurredAtUtc.millisecondsSinceEpoch,
+        ],
+    ]),
+  });
+
+  Future<int> _writeSrsPosition(
+    db.LearningSession row,
+    int index,
+    bool revealed,
+    Iterable<SrsReviewAnswerIntent> answers,
+  ) async {
+    final revision = row.checkpointRevision + 1;
+    final changed =
+        await (database.update(database.learningSessions)..where(
+              (session) =>
+                  session.id.equals(row.id) &
+                  session.ownerId.equals(row.ownerId) &
+                  session.state.equals('active') &
+                  session.checkpointRevision.equals(row.checkpointRevision),
+            ))
+            .write(
+              db.LearningSessionsCompanion(
+                checkpointRevision: Value(revision),
+                checkpointJson: Value(
+                  _srsPositionJson(index, revealed, answers),
+                ),
+              ),
+            );
+    if (changed != 1) throw StateError('SRS card position changed');
+    return revision;
+  }
+
+  @override
   Future<void> requireCurrentSrsReview(
     SrsReviewSession review, {
     required int confirmedAnswers,
@@ -1417,6 +1594,9 @@ final class DriftLearningRepository
       if (binding.started || await _session(review.id) != null) {
         final facts = await _requireSrsFacts(review, binding);
         if (!binding.startAttempted ||
+            (binding.started &&
+                facts.session.checkpointRevision !=
+                    binding.checkpointRevision) ||
             facts.attempts.length < confirmedAnswers ||
             (binding.finished && facts.session.state != 'completed') ||
             (facts.session.state == 'completed' &&
@@ -1434,6 +1614,7 @@ final class DriftLearningRepository
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
+    SrsPackOrigin? packOrigin,
     Iterable<String>? sourceWordIds,
     int limit = 20,
     required bool Function() stillCurrent,
@@ -1489,15 +1670,25 @@ final class DriftLearningRepository
           throw StateError('Original SRS source target unavailable');
         }
         if (words.isEmpty) return null;
+        final ordered = ids == null
+            ? words
+            : [
+                for (final id in ids)
+                  words.singleWhere((word) => word.id == id),
+              ];
         return SrsReviewSession(
           session: session,
-          words: selection == SrsReviewSelection.due
-              ? words
-              : [
-                  for (final id in ids!)
-                    words.singleWhere((word) => word.id == id),
-                ],
+          words: ordered,
           selection: selection,
+          packOrigin: packOrigin,
+          packEntryDigest: packOrigin == null
+              ? null
+              : await _srsPackDigest(
+                  session.ownerId,
+                  ordered,
+                  packOrigin,
+                  stillCurrent,
+                ),
         );
       },
       verify: (review) async {
@@ -1548,7 +1739,28 @@ final class DriftLearningRepository
             }
           }
           binding.startAttempted = true;
-          await _startSession(review.session);
+          await _startSession(
+            review.session,
+            beforeObserved: () async {
+              final changed =
+                  await (database.update(database.learningSessions)..where(
+                        (row) =>
+                            row.id.equals(review.id) &
+                            row.checkpointRevision.equals(0),
+                      ))
+                      .write(
+                        db.LearningSessionsCompanion(
+                          acceptedPlanId: Value(review.planId),
+                          acceptedPlanJson: Value(review.planJson),
+                          checkpointRevision: const Value(1),
+                          checkpointJson: Value(
+                            _srsPositionJson(0, false, const []),
+                          ),
+                        ),
+                      );
+              if (changed != 1) throw StateError('Original SRS plan changed');
+            },
+          );
           inserted = true;
         } else if (!binding.startAttempted) {
           throw StateError('SRS start requires its original prepared handle');
@@ -1562,6 +1774,7 @@ final class DriftLearningRepository
       },
     );
     binding.started = true;
+    if (result.inserted) binding.checkpointRevision = 1;
     return result;
   }
 
@@ -1580,7 +1793,7 @@ final class DriftLearningRepository
     if (original != null && !identical(original, intent)) {
       throw StateError('Original SRS rating intent changed');
     }
-    return _writeSrsBoundary<AnswerRecordResult>(
+    final result = await _writeSrsBoundary<AnswerRecordResult>(
       review.ownerId,
       () => _srsCurrent(review, stillCurrent),
       write: () async {
@@ -1596,6 +1809,7 @@ final class DriftLearningRepository
           return AnswerRecordResult(inserted: false, srs: saved);
         }
         if (facts.session.state != 'active' ||
+            facts.session.checkpointRevision != binding.checkpointRevision ||
             binding.closing != null ||
             intent.cardIndex != facts.attempts.length) {
           throw StateError('SRS rating is not the next original card');
@@ -1607,7 +1821,14 @@ final class DriftLearningRepository
         }
         await _requireSrsTargets(review, [intent.cardIndex]);
         binding.answers[intent.cardIndex] = intent;
-        return _recordAnswer(intent.command);
+        final result = await _recordAnswer(intent.command);
+        await _writeSrsPosition(
+          facts.session,
+          intent.cardIndex,
+          true,
+          binding.answers.values.take(intent.cardIndex + 1),
+        );
+        return result;
       },
       verify: (result) async {
         final facts = await _requireSrsFacts(review, binding);
@@ -1620,6 +1841,8 @@ final class DriftLearningRepository
         }
       },
     );
+    if (result.inserted) binding.checkpointRevision++;
+    return result;
   }
 
   @override
@@ -1657,6 +1880,9 @@ final class DriftLearningRepository
           );
         }
         binding.closing = intent;
+        if (facts.session.checkpointRevision != binding.checkpointRevision) {
+          throw StateError('SRS completion position changed');
+        }
         await _requireSrsTargets(review);
         binding.finishAttempted = true;
         final summary = await _finishSession(
@@ -1733,32 +1959,68 @@ final class DriftLearningRepository
     SrsReviewSession review, [
     Iterable<int>? cardIndices,
   ]) async {
-    for (final index
-        in cardIndices ?? List.generate(review.words.length, (i) => i)) {
-      final target = review.words[index];
-      final row = await database
-          .customSelect(
-            'SELECT w.category_id,w.spelling,w.meaning,w.part_of_speech,w.local_revision '
-            'FROM vocabulary_words w JOIN vocabulary_categories c '
-            'ON c.id = w.category_id AND c.owner_id = w.owner_id '
-            'WHERE w.id = ? AND w.owner_id = ? AND w.is_deleted = 0 '
-            'AND c.is_deleted = 0',
-            variables: [
-              Variable<String>(target.id),
-              Variable<String>(review.ownerId),
-            ],
-          )
-          .getSingleOrNull();
-      if (row == null ||
-          row.read<String>('category_id') != target.categoryId ||
-          row.read<String>('spelling') != target.spelling ||
-          row.read<String>('meaning') != target.meaning ||
-          row.read<String>('part_of_speech') != target.partOfSpeech ||
-          'local-vocabulary-v1:${row.read<int>('local_revision')}' !=
-              target.contentRevision) {
+    final pack = review.packOrigin;
+    if (pack != null &&
+        await _srsPackDigest(review.ownerId, review.words, pack, () => true) !=
+            review.packEntryDigest) {
+      throw StateError('Original SRS pack content changed');
+    }
+    final targets = cardIndices?.map((i) => review.words[i]) ?? review.words;
+    final current = await listQuizWords(
+      ownerId: review.ownerId,
+      wordIds: targets.map((word) => word.id),
+      limit: targets.length,
+    );
+    final byId = {for (final word in current) word.id: word};
+    for (final target in targets) {
+      final word = byId[target.id];
+      if (word == null ||
+          _timeVocabularyWordIdentity(word) !=
+              _timeVocabularyWordIdentity(target)) {
         throw StateError('Original SRS target changed');
       }
     }
+  }
+
+  Future<String> _srsPackDigest(
+    String ownerId,
+    List<QuizWord> words,
+    SrsPackOrigin origin,
+    bool Function() stillCurrent,
+  ) async {
+    final packs =
+        lexicalContent ??
+        DriftLearningPackRepository(
+          database: database,
+          ownerWrites: _ownerWrites,
+        );
+    final detail = await packs.detail(
+      expectedOwnerId: ownerId,
+      packVersionId: origin.packId,
+      stillCurrent: stillCurrent,
+    );
+    if (!detail.pack.isInstalled ||
+        detail.pack.packageSha256 != origin.packageSha256 ||
+        (origin.requireVerifiedBytes &&
+            (detail.pack.cacheState != PackCacheState.verified ||
+                detail.pack.identityConflict))) {
+      throw StateError('Original SRS pack unavailable');
+    }
+    final bindings = {
+      for (final binding in detail.bindings)
+        if (binding.isCurrent) binding.wordId: binding,
+    };
+    final entries = <String>[];
+    for (final word in words) {
+      final binding = bindings[word.id];
+      if (binding == null ||
+          word.contentRevision !=
+              'local-vocabulary-v1:${binding.wordRevision}') {
+        throw StateError('Original SRS pack target changed');
+      }
+      entries.add(binding.entry.contentSha256);
+    }
+    return _timeDigest(entries);
   }
 
   void _validateSrsRating(SrsReviewAnswerIntent intent) {
@@ -1793,8 +2055,18 @@ final class DriftLearningRepository
     }
   }
 
-  Future<({db.LearningSession session, List<db.AnswerAttempt> attempts})>
-  _requireSrsFacts(SrsReviewSession review, _SrsReviewBinding binding) async {
+  Future<
+    ({
+      db.LearningSession session,
+      List<db.AnswerAttempt> attempts,
+      ({int cardIndex, bool revealed}) position,
+    })
+  >
+  _requireSrsFacts(
+    SrsReviewSession review,
+    _SrsReviewBinding binding, {
+    bool hydrate = false,
+  }) async {
     final row = await _session(review.id);
     final original = review.session;
     if (row == null ||
@@ -1803,10 +2075,10 @@ final class DriftLearningRepository
         row.startedAtUtcMs != review.startedAtUtc.millisecondsSinceEpoch ||
         row.appVersion != original.appVersion ||
         row.buildId != original.buildId ||
-        row.acceptedPlanId != null ||
-        row.acceptedPlanJson != null ||
-        row.checkpointJson != null ||
-        row.checkpointRevision != 0 ||
+        row.acceptedPlanId != review.planId ||
+        row.acceptedPlanJson != review.planJson ||
+        row.checkpointJson == null ||
+        row.checkpointRevision < 1 ||
         (row.state != 'active' && row.state != 'completed')) {
       throw StateError('Original SRS session facts changed');
     }
@@ -1820,8 +2092,29 @@ final class DriftLearningRepository
     }
     var previous = review.startedAtUtc.millisecondsSinceEpoch;
     for (var index = 0; index < attempts.length; index++) {
-      final intent = binding.answers[index];
       final attempt = attempts[index];
+      if (hydrate) {
+        binding.answers[index] = SrsReviewAnswerIntent(
+          review: review,
+          cardIndex: index,
+          command: RecordAnswerCommand(
+            id: attempt.id,
+            ownerId: attempt.ownerId,
+            sessionId: attempt.sessionId,
+            wordId: attempt.wordId,
+            promptMode: attempt.promptMode,
+            isCorrect: attempt.isCorrect,
+            responseTimeMs: attempt.responseTimeMs,
+            attemptNumber: attempt.attemptNumber,
+            occurredAtUtc: _fromEpoch(attempt.occurredAtUtcMs)!,
+            providerProvenance: attempt.providerProvenance,
+            evidenceContext: EvidenceContext.fromJson(
+              jsonDecode(attempt.evidenceContextJson) as Map<String, dynamic>,
+            ),
+          ),
+        );
+      }
+      final intent = binding.answers[index];
       if (intent == null ||
           attempt.id != intent.command.id ||
           !_sameAttempt(attempt, intent.command) ||
@@ -1847,7 +2140,26 @@ final class DriftLearningRepository
                 row.score != score))) {
       throw StateError('SRS outcome differs from its original ratings');
     }
-    return (session: row, attempts: attempts);
+    final stored = jsonDecode(row.checkpointJson!) as Map<String, dynamic>;
+    final index = stored['cardIndex'] as int;
+    final revealed = stored['revealed'] as bool;
+    if (row.checkpointJson !=
+            _srsPositionJson(
+              index,
+              revealed,
+              binding.answers.values.take(attempts.length),
+            ) ||
+        index < 0 ||
+        index >= review.words.length ||
+        (attempts.length != index &&
+            !(attempts.length == index + 1 && revealed))) {
+      throw StateError('SRS position does not match its original receipts');
+    }
+    return (
+      session: row,
+      attempts: attempts,
+      position: (cardIndex: index, revealed: revealed),
+    );
   }
 
   @override
@@ -4128,6 +4440,7 @@ final class _SrsReviewBinding {
   bool startAttempted = false;
   bool started = false;
   bool finishAttempted = false;
+  int checkpointRevision = 0;
   bool finished = false;
   final answers = <int, SrsReviewAnswerIntent>{};
   SrsReviewFinishIntent? closing;

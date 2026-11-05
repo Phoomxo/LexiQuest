@@ -47,6 +47,34 @@ void main() {
     );
   }
 
+  testWidgets('unfinished legacy SRS explains how to start another round', (
+    tester,
+  ) async {
+    final entry = LearningHistoryEntry(
+      sessionId: 'v39-srs',
+      activityType: 'srsReview',
+      state: 'active',
+      startedAtUtc: DateTime.utc(2026, 11, 5, 6, 50),
+      endedAtUtc: null,
+      answerCount: 1,
+      correctCount: 1,
+    );
+    await tester.pumpWidget(
+      _app(
+        LearningHistoryScreen(
+          loader: ({before}) async => _history(entries: [entry]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('เริ่มรอบใหม่จากแพ็กหรือศูนย์ทบทวน'),
+      findsOneWidget,
+    );
+    expect(find.text('ถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+    expect(find.text('เล่นต่อ'), findsNothing);
+  });
+
   testWidgets('history labels saved Cloze rounds without inventing resume', (
     tester,
   ) async {

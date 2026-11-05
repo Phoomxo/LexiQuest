@@ -429,16 +429,42 @@ final class SrsAckRepository extends GenericLearningDelegate
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
+    SrsPackOrigin? packOrigin,
     Iterable<String>? sourceWordIds,
     int limit = 20,
     required bool Function() stillCurrent,
   }) => delegate.prepareSrsReview(
     session: session,
     selection: selection,
+    packOrigin: packOrigin,
     sourceWordIds: sourceWordIds,
     limit: limit,
     stillCurrent: stillCurrent,
   );
+  @override
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => delegate.resumeSrsReview(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) => delegate.saveSrsCardPosition(
+    review,
+    cardIndex: cardIndex,
+    revealed: revealed,
+    stillCurrent: stillCurrent,
+  );
+
   @override
   Future<SrsReviewStartResult> startSrsReview(
     SrsReviewSession review, {

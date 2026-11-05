@@ -12,6 +12,172 @@ void main() {
   setUp(() async => h = await SrsReviewHarness.open());
   tearDown(() => h.close());
 
+  test('changing a word during the reveal rolls back the saved face', () async {
+    final review = await h.ready(source: true);
+    final before = await h.storage.snapshot();
+    final probe = _AfterSrsWrite(
+      'learning_sessions',
+      onUpdate: true,
+      after: (executor) async {
+        await executor.runUpdate(
+          'UPDATE vocabulary_words SET is_deleted = 1 WHERE id = ?',
+          [review.words.last.id],
+        );
+      },
+    );
+    await expectLater(
+      h.database.runWithInterceptor(
+        () => h.learning.saveSrsCardPosition(
+          review,
+          cardIndex: 0,
+          revealed: true,
+          stillCurrent: () => true,
+        ),
+        interceptor: probe,
+      ),
+      throwsStateError,
+    );
+    expect(probe.fired, isTrue);
+    expect(await h.storage.snapshot(), before);
+  });
+
+  test(
+    'cold resume keeps the original deck, card face and acknowledged grade',
+    () async {
+      final original = await h.ready(sourceWordIds: h.wordIds.reversed);
+      final first = h.useCases(repository: DriftLearningRepository(h.database));
+      Future<SrsReviewResumeState> read() => first.resumeSrsReview(
+        sessionId: original.id,
+        expectedOwnerId: original.ownerId,
+        stillCurrent: () => true,
+      );
+      await h.learning.saveSrsCardPosition(
+        original,
+        cardIndex: 0,
+        revealed: true,
+        stillCurrent: () => true,
+      );
+      final revealed = await read();
+      expect(revealed.review.words.map((word) => word.id), h.wordIds.reversed);
+      expect(
+        (revealed.cardIndex, revealed.revealed, revealed.answers.length),
+        (0, true, 0),
+      );
+      final answer = first.prepareSrsRating(
+        review: revealed.review,
+        cardIndex: 0,
+        recalled: false,
+        responseTimeMs: 42,
+      );
+      await first.commitSrsRating(answer, stillCurrent: () => true);
+      await h.settleNotifications();
+      final notifications = (h.notifications, h.questEvents, h.streakEvents);
+      final stored = await h.storage.snapshot();
+      final graded = await read();
+      expect(
+        (
+          graded.cardIndex,
+          graded.revealed,
+          graded.answers.single.command.isCorrect,
+        ),
+        (0, true, false),
+      );
+      final retry = await first.commitSrsRating(
+        graded.answers.single,
+        stillCurrent: () => true,
+      );
+      expect(retry.inserted, isFalse);
+      expect(await h.storage.snapshot(), stored);
+      expect((h.notifications, h.questEvents, h.streakEvents), notifications);
+      await first.saveSrsCardPosition(
+        graded.review,
+        cardIndex: 1,
+        revealed: false,
+        stillCurrent: () => true,
+      );
+      await first.saveSrsCardPosition(
+        graded.review,
+        cardIndex: 1,
+        revealed: false,
+        stillCurrent: () => true,
+      );
+      final next = await read();
+      expect(
+        (next.cardIndex, next.revealed, next.answers.length),
+        (1, false, 1),
+      );
+      expect(next.review.id, original.id);
+      await expectLater(
+        first.saveSrsCardPosition(
+          revealed.review,
+          cardIndex: 0,
+          revealed: false,
+          stillCurrent: () => true,
+        ),
+        throwsStateError,
+      );
+      expect(
+        (await h.database.select(h.database.learningSessions).get()),
+        hasLength(1),
+      );
+      expect(
+        (await h.database.select(h.database.answerAttempts).get()),
+        hasLength(1),
+      );
+    },
+  );
+
+  for (final change in [
+    'legacy',
+    'wrong owner',
+    'edited word',
+    'changed receipt',
+    'invalid checkpoint',
+  ]) {
+    test('cold resume rejects $change without writing', () async {
+      final original = await h.ready(source: true);
+      await h.learning.commitSrsRating(
+        h.answer(original),
+        stillCurrent: () => true,
+      );
+      switch (change) {
+        case 'legacy':
+          await h.database.customStatement(
+            'UPDATE learning_sessions SET accepted_plan_id=NULL, accepted_plan_json=NULL, checkpoint_json=NULL, checkpoint_revision=0 WHERE id=?',
+            [original.id],
+          );
+        case 'edited word':
+          await h.database.customStatement(
+            'UPDATE vocabulary_words SET meaning=? WHERE id=?',
+            ['modified', original.words.last.id],
+          );
+        case 'changed receipt':
+          await h.database.customStatement(
+            'UPDATE answer_attempts SET response_time_ms=8 WHERE session_id=?',
+            [original.id],
+          );
+        case 'invalid checkpoint':
+          await h.database.customStatement(
+            "UPDATE learning_sessions SET checkpoint_json='{}' WHERE id=?",
+            [original.id],
+          );
+      }
+      final before = await h.storage.snapshot();
+      final cold = h.useCases(repository: DriftLearningRepository(h.database));
+      await expectLater(
+        cold.resumeSrsReview(
+          sessionId: original.id,
+          expectedOwnerId: change == 'wrong owner'
+              ? configuredOtherOwnerId
+              : original.ownerId,
+          stillCurrent: () => true,
+        ),
+        throwsA(anything),
+      );
+      expect(await h.storage.snapshot(), before);
+    });
+  }
+
   test(
     'source selection keeps explicit owned order without due rows or facts',
     () async {
@@ -725,16 +891,42 @@ final class _LostAckRepository extends Fake
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
+    SrsPackOrigin? packOrigin,
     Iterable<String>? sourceWordIds,
     int limit = 20,
     required bool Function() stillCurrent,
   }) => repository.prepareSrsReview(
     session: session,
     selection: selection,
+    packOrigin: packOrigin,
     sourceWordIds: sourceWordIds,
     limit: limit,
     stillCurrent: stillCurrent,
   );
+  @override
+  Future<SrsReviewResumeState> resumeSrsReview({
+    required String sessionId,
+    required String expectedOwnerId,
+    required bool Function() stillCurrent,
+  }) => repository.resumeSrsReview(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
+  Future<void> saveSrsCardPosition(
+    SrsReviewSession review, {
+    required int cardIndex,
+    required bool revealed,
+    required bool Function() stillCurrent,
+  }) => repository.saveSrsCardPosition(
+    review,
+    cardIndex: cardIndex,
+    revealed: revealed,
+    stillCurrent: stillCurrent,
+  );
+
   @override
   Future<SrsReviewStartResult> startSrsReview(
     SrsReviewSession review, {

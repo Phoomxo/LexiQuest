@@ -19,6 +19,31 @@ void main() {
   });
 
   testWidgets(
+    'an imported preview and its pending install action do not resume after leaving the app',
+    (tester) => _using(tester, (h) async {
+      final pack = syntheticPackUiContent();
+      await tester.pumpWidget(
+        h.app(pickFile: () async => XFile.fromData(pack.bytes)),
+      );
+      await packUiReady(tester);
+      await tapPackUi(tester, 'pack-import');
+      final install = find.byKey(const ValueKey('pack-confirm-install'));
+      await untilPackUi(tester, () => install.evaluate().isNotEmpty);
+      final retained = tester.widget<FilledButton>(install).onPressed!;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(install, findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await packUiReady(tester);
+      expect(install, findsNothing);
+      retained();
+      await tester.pump();
+      expect(await tester.runAsync(() => h.count('learning_pack_versions')), 0);
+      expect(await tester.runAsync(() => h.count('vocabulary_words')), 0);
+    }),
+  );
+
+  testWidgets(
     'runtime replacement permanently retires a retained preview action',
     (tester) => _using(tester, (h) async {
       final pack = syntheticPackUiContent();
