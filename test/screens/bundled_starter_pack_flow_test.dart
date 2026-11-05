@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_button.dart';
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_sheet.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/bundled_starter_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/http_learning_pack_source.dart';
 import 'package:vocab_learning_app/features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -55,6 +56,7 @@ void main() {
         );
         await tapPackUi(tester, 'pack-open-starter');
         await idlePackUi(tester);
+        await tapPackUi(tester, 'pack-metadata-details');
         expect(find.textContaining('AI-assisted'), findsWidgets);
         await revealPackUi(tester, 'pack-confirm-install');
         await untilPackUi(
@@ -95,6 +97,81 @@ void main() {
         await closePackUi(tester, h);
       }
     },
+  );
+
+  testWidgets(
+    'starter preview puts its summary warning and install in the first viewport',
+    (tester) => _using(tester, (h) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(h.app());
+      await packUiReady(tester);
+      await tapPackUi(tester, 'pack-open-starter');
+      await idlePackUi(tester);
+
+      final pack = bundledStarterPack;
+      final manifest = pack.manifest;
+      final summary = find.textContaining(
+        '${manifest.cefrLevel} · เวอร์ชัน ${manifest.version} · ${manifest.entryCount} คำ',
+      );
+      final warning = find.textContaining(
+        'ยังไม่ได้รับการรับรองจากผู้เชี่ยวชาญ',
+      );
+      final install = find.byKey(const ValueKey('pack-confirm-install'));
+      expect(find.text(manifest.title).hitTestable(), findsOneWidget);
+      expect(summary.hitTestable(), findsOneWidget);
+      expect(
+        tester.widget<Text>(summary).data,
+        contains('${(pack.byteCount / 1024).toStringAsFixed(1)} KiB'),
+      );
+      expect(warning.hitTestable(), findsOneWidget);
+      expect(install.hitTestable(), findsOneWidget);
+      expect(tester.getBottomRight(install).dy, lessThanOrEqualTo(640));
+      expect(
+        tester.getBottomRight(warning).dy,
+        lessThan(tester.getTopLeft(install).dy),
+      );
+
+      await tapPackUi(tester, 'pack-metadata-details');
+      for (final objective in manifest.objectives) {
+        expect(find.text('• $objective'), findsOneWidget);
+      }
+      expect(
+        find.text('ผู้จัดทำ: ${manifest.provenance.author}'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('แหล่งที่มา: ${manifest.provenance.source}'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'สิทธิ์ใช้งานที่ผู้จัดทำระบุ: ${manifest.provenance.license}',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(manifest.provenance.attribution), findsOneWidget);
+    }),
+  );
+
+  testWidgets(
+    'starter preview remains usable at double text scale on a small screen',
+    (tester) => _using(tester, (h) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(h.app(largeText: true));
+      await packUiReady(tester);
+      await tapPackUi(tester, 'pack-open-starter');
+      await idlePackUi(tester);
+      await revealPackUi(tester, 'pack-confirm-install');
+      await tapPackUi(tester, 'pack-metadata-details');
+      await revealPackUi(tester, 'pack-confirm-install');
+      expect(tester.takeException(), isNull);
+    }),
   );
 
   testWidgets(

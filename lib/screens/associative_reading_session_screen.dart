@@ -831,6 +831,8 @@ class _AssociativeReadingSessionScreenState
                       child: Text(
                         _currentStage < 6
                             ? 'เสร็จแล้ว ไปขั้นถัดไป'
+                            : _sessionFinished
+                            ? 'จบการฝึกและดูผล'
                             : 'บันทึกและจบการฝึก',
                       ),
                     ),
@@ -988,6 +990,8 @@ class _AssociativeReadingSessionScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('นำคำศัพท์เป้าหมายหนึ่งคำไปแต่งประโยคใหม่'),
+            const SizedBox(height: 8),
+            const Text('ฝึกเสริม ข้ามได้ ไม่ตรวจคะแนนและไม่บันทึกประโยค'),
             const SizedBox(height: 12),
             TextField(
               onChanged: (_) => _readingInput(),
@@ -995,6 +999,10 @@ class _AssociativeReadingSessionScreenState
                 hintText: 'พิมพ์ประโยคใหม่',
                 border: OutlineInputBorder(),
               ),
+            ),
+            TextButton(
+              onPressed: _saving || _completed ? null : _nextStage,
+              child: const Text('ข้ามการแต่งประโยค'),
             ),
           ],
         );
@@ -1014,6 +1022,7 @@ class _AssociativeReadingSessionScreenState
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+            if (_sessionFinished) const Text('บันทึกผลทดสอบจากความจำแล้ว'),
             if (total > 0)
               Text('จำได้ถูกต้อง: $correct / $total คำ')
             else

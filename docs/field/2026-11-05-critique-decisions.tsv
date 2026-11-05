@@ -1,0 +1,13 @@
+id	decision	reason	evidence	status
+D01	Implement all five approved P2 findings	Current request explicitly authorizes remaining critique work	2026-11-04T23-19-27Z__lib.md	accepted
+D02	Use existing result and owner/content contracts	Avoid duplicate learning/reward persistence	LearningSessionResult, ScoreScreen, source_practice_screen	accepted
+D03	Keep sentence optional and unsaved with explicit disclosure and skip	Resolve misleading save expectations without new data collection	associative_reading_session_screen Stage5/6	accepted
+D04	Derive Tutor readiness from nullable GeminiScope	Existing epoch and invalidations already express trusted account context	gemini_contracts and app_bootstrap.scopeFor	accepted
+D05	Compact preview and expand original metadata	Expose install while preserving attribution and quality disclosure	learning_pack_catalog_screen metadata callers	accepted
+D06	Move Reading early and collapse secondary motivation	Reduce scrolling without changing feature/reward authority	choose_mode_screen and motivation panels	accepted
+D07	Serialize Flutter checks and preserve prior evidence	Consistent source snapshot and no shared build locks	104 Android and 5716 host passes; unchanged input hashes	verified
+D08	Propagate Quiz owned routes through nested mistake practice	An internal repair route must not retire the surrounding Reading result	Independent Reading review; nested-repair-green.log	verified focused
+D09	Use plain Thai online-account prerequisite text	Avoid technical session wording and futile retry advice in offline trial	APK35 unavailable baseline and nullable scope contract	accepted
+D10	Track the actual owned Reading route during preparation and result handoff	Transient foreign cover must not revive an asynchronous launch	Reading pending launch test; independent re-review; final native and host passes	verified
+D11	Regenerate only the Home large-text golden	Reading is intentionally the first activity; original failure evidence must remain intact	home-golden-update.log and visual inspection	accepted
+D12	Wait for the selected Definition count instead of global animation settlement	The compact catalog leaves its busy indicator visible while configuration is open	definition-wait-red.log and definition-wait-green.log	verified focused

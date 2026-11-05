@@ -1228,6 +1228,7 @@ void main() {
         find.text('Your study activity'),
         eligible ? findsOneWidget : findsNothing,
       );
+      await tester.scrollUntilVisible(find.text('ฝึกคำศัพท์'), 150);
       expect(find.text('ฝึกคำศัพท์'), findsOneWidget);
       for (final table in [
         'research_consents',
@@ -1435,6 +1436,28 @@ void main() {
     expect(find.text('ภาพรวมการเรียน'), findsNothing);
     expect(find.text('ฝึกจุดอ่อน'), findsNothing);
     expect(find.text('อ่านและทบทวนคำศัพท์'), findsOneWidget);
+  });
+
+  testWidgets('compact Home exposes Reading before secondary activities', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => snapshot(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await tester.pumpAndSettle();
+    expect(find.text('อ่านและทบทวนคำศัพท์').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('nested progress keeps the feature registry closed', (

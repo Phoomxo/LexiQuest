@@ -1258,6 +1258,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       ),
       child: const Text('เก็บไฟล์ออฟไลน์ก่อน'),
     ),
+    _metadataDetails(pack.manifest),
     ..._entryPreview(pack),
   ];
 
@@ -1269,6 +1270,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       icon: const Icon(Icons.download),
       label: const Text('ดาวน์โหลดเพื่อตรวจและดูตัวอย่าง'),
     ),
+    _metadataDetails(descriptor.manifest),
   ];
 
   List<Widget> _detail(PackDetail detail) {
@@ -1311,6 +1313,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           icon: const Icon(Icons.delete_outline),
           label: const Text('ลบเฉพาะไฟล์แพ็กออฟไลน์'),
         ),
+      _metadataDetails(pack.manifest),
       const SizedBox(height: 16),
       if (pack.isInstalled) ...[
         if (_definitionAvailable &&
@@ -1379,14 +1382,6 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     Text(
       '${manifest.cefrLevel} · เวอร์ชัน ${manifest.version} · ${manifest.entryCount} คำ · ${_size(bytes)}',
     ),
-    const SizedBox(height: 16),
-    Text('เป้าหมาย', style: Theme.of(context).textTheme.titleMedium),
-    for (final objective in manifest.objectives) Text('• $objective'),
-    const SizedBox(height: 16),
-    Text('ผู้จัดทำ: ${manifest.provenance.author}'),
-    Text('แหล่งที่มา: ${manifest.provenance.source}'),
-    Text('สิทธิ์ใช้งานที่ผู้จัดทำระบุ: ${manifest.provenance.license}'),
-    Text(manifest.provenance.attribution),
     const Padding(
       padding: EdgeInsets.symmetric(vertical: 12),
       child: Text(
@@ -1394,6 +1389,22 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       ),
     ),
   ];
+
+  Widget _metadataDetails(LearningPackManifest manifest) => ExpansionTile(
+    key: const ValueKey('pack-metadata-details'),
+    title: const Text('รายละเอียดแพ็ก'),
+    childrenPadding: const EdgeInsets.all(16),
+    expandedCrossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('เป้าหมาย', style: Theme.of(context).textTheme.titleMedium),
+      for (final objective in manifest.objectives) Text('• $objective'),
+      const SizedBox(height: 16),
+      Text('ผู้จัดทำ: ${manifest.provenance.author}'),
+      Text('แหล่งที่มา: ${manifest.provenance.source}'),
+      Text('สิทธิ์ใช้งานที่ผู้จัดทำระบุ: ${manifest.provenance.license}'),
+      Text(manifest.provenance.attribution),
+    ],
+  );
 
   List<Widget> _entryPreview(LearningPack pack) => [
     const SizedBox(height: 16),

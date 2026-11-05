@@ -14,6 +14,58 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets('unavailable scope does not invite key setup and recovers', (
+    tester,
+  ) async {
+    final tutor = _FakeGeminiTutor()..scope = null;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiTutorScreen(
+          voice: VoiceUseCases(_FakeVoice()),
+          geminiTutor: tutor,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 0);
+    expect(
+      find.textContaining('ยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้'),
+      findsOneWidget,
+    );
+    expect(find.text('ตั้งค่าผู้ช่วย AI ก่อนเริ่มใช้งาน'), findsNothing);
+
+    tutor.scope = const GeminiScope(
+      ownerId: 'synthetic-ready',
+      firebaseUid: null,
+      isAnonymous: true,
+    );
+    tutor.changes.add(++tutor.epoch);
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 1);
+    expect(
+      find.textContaining('ระบบจะส่งข้อความเมื่อคุณกดส่ง'),
+      findsOneWidget,
+    );
+
+    tutor.scope = null;
+    tutor.changes.add(++tutor.epoch);
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 1);
+    expect(
+      find.textContaining('ยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('ตั้งค่าผู้ช่วย AI'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('gemini-key-input')))
+          .enabled,
+      isFalse,
+    );
+    expect(tutor.loadCalls, 1);
+  });
+
   testWidgets(
     'reduced-motion chat moves to the latest answer without animated scrolling',
     (tester) async {
@@ -1210,6 +1262,7 @@ final class _FakeGeminiTutor implements GeminiTutorController {
   bool hasKey = true;
   bool providerConsent = true;
   Completer<void>? settingsGate;
+  int loadCalls = 0;
 
   @override
   Future<void> configure({
@@ -1224,6 +1277,7 @@ final class _FakeGeminiTutor implements GeminiTutorController {
 
   @override
   Future<GeminiSettingsStatus> loadSettings() async {
+    loadCalls += 1;
     await settingsGate?.future;
     return GeminiSettingsStatus(
       hasKey: hasKey,

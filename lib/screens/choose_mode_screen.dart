@@ -100,6 +100,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   bool _openingLadder = false;
   bool _openingReminder = false;
   bool _openingReading = false;
+  Route<dynamic>? _readingChildRoute;
 
   @override
   void initState() {
@@ -161,7 +162,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         !_openingMatching &&
         !_openingLadder &&
         !_openingReminder &&
+        !_openingReading &&
         !_openingMotivation) {
+      _invalidateNative();
+    }
+    if (_openingReading &&
+        ((_readingChildRoute?.isActive != true && !visible) ||
+            !Visibility.of(context))) {
       _invalidateNative();
     }
     _nativeRouteVisible = visible;
@@ -654,9 +661,15 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             onTap: _reviewCenterAction(),
           ),
           const SizedBox(height: 24),
-          _motivationEntry(),
           Text('เลือกกิจกรรม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
+          if (canReading)
+            _LearningTile(
+              icon: Icons.menu_book_outlined,
+              title: 'อ่านและทบทวนคำศัพท์',
+              subtitle: 'อ่าน ทบทวนจากความจำ และเลือกฝึกแต่งประโยค',
+              onTap: () => _openReading(context),
+            ),
           if (canQuiz) ...[
             _LearningTile(
               icon: Icons.quiz_outlined,
@@ -720,13 +733,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               title: 'เกมเรียงประโยค',
               subtitle: 'เลือกหมวดหมู่ แล้วเรียงคำหรือพิมพ์ประโยค',
               onTap: _openSentenceScramble,
-            ),
-          if (canReading)
-            _LearningTile(
-              icon: Icons.menu_book_outlined,
-              title: 'อ่านและทบทวนคำศัพท์',
-              subtitle: 'อ่าน ทบทวนจากความจำ และแต่งประโยคด้วยคำเป้าหมาย',
-              onTap: () => _openReading(context),
             ),
           if (canViewProgress)
             _LearningTile(
@@ -824,6 +830,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   ? null
                   : _openReminder,
             ),
+          _motivationEntry(),
         ],
       ),
     );
@@ -1662,8 +1669,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       final generation = _nativeGeneration;
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ExpansionTile(
+          key: const ValueKey('home-motivation-details'),
+          title: const Text('ภารกิจและคู่หู'),
+          subtitle: const Text('ดูภารกิจ วันพัก และคำแนะนำจากคู่หู'),
           children: [
             TodayMotivationPanel(
               key: ValueKey((runtime, ownerId, generation)),
@@ -1692,23 +1701,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               runtime: runtime,
               ownerId: ownerId,
               progress: dependencies.progress,
-              onOpenQuests: () => _openMotivation(
-                runtime,
-                dependencies,
-                ownerId,
-                generation,
-                practice: false,
-              ),
-              onPractice:
-                  _learning == null || !_features.isVisible(FieldFeature.quiz)
-                  ? null
-                  : () => _openMotivation(
-                      runtime,
-                      dependencies,
-                      ownerId,
-                      generation,
-                      practice: true,
-                    ),
             ),
           ],
         ),
@@ -1875,6 +1867,19 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
     if (_openingReading) return;
     final generation = _nativeGeneration;
+    final ownerGeneration = _nativeOwnerGeneration;
+    final flowRoutes = <Route<dynamic>>[];
+    void ownedRouteChanged(Route<dynamic>? route, bool visible) {
+      flowRoutes.removeWhere((entry) => !entry.isActive);
+      if (route != null && visible) {
+        if (!flowRoutes.contains(route)) flowRoutes.add(route);
+      } else if (route?.isActive == true &&
+          identical(route, flowRoutes.lastOrNull)) {
+        _invalidateNative();
+      }
+      _readingChildRoute = flowRoutes.lastOrNull;
+    }
+
     bool current() =>
         mounted &&
         generation == _nativeGeneration &&
@@ -1882,23 +1887,49 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         identical(learning, _learning) &&
         identical(dependencies, _nativeDependencies) &&
         _features.isVisible(FieldFeature.reading) &&
-        ModalRoute.of(context)?.isCurrent == true &&
         Visibility.of(context) &&
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    if (!current()) return;
+    bool launchCurrent() =>
+        current() && ModalRoute.of(context)?.isCurrent == true;
+    Widget guarded(BuildContext childContext, Widget child) {
+      final route = ModalRoute.of(childContext);
+      final visible = ModalRoute.isCurrentOf(childContext) == true;
+      if (identical(route, flowRoutes.lastOrNull) &&
+          route?.isActive == true &&
+          !visible) {
+        _invalidateNative();
+      }
+      return ValueListenableBuilder<int>(
+        valueListenable: _nativeChanges,
+        builder: (_, _, _) => current()
+            ? child
+            : Scaffold(
+                appBar: AppBar(title: const Text('กลับหน้าเรียน')),
+                body: Center(
+                  child: Text(
+                    ownerGeneration != _nativeOwnerGeneration
+                        ? 'บัญชีผู้เรียนเปลี่ยนแล้ว กรุณาเปิดกิจกรรมใหม่'
+                        : 'ข้อมูลเปลี่ยนแล้ว กรุณากลับไปหน้าเรียน',
+                  ),
+                ),
+              ),
+      );
+    }
+
+    if (!launchCurrent()) return;
     _openingReading = true;
     try {
       final owner = await learning.owners.getOrCreateActiveOwner();
-      if (!current() || owner.id != ownerId) return;
+      if (!launchCurrent() || owner.id != ownerId) return;
       final packs = dependencies?.learningPacks;
       final scope = await packs?.captureOwner(stillCurrent: current);
-      if (!current() ||
+      if (!launchCurrent() ||
           (packs != null && (scope == null || scope.ownerId != ownerId))) {
         return;
       }
       final words = await learning.prepareReading();
       if (!context.mounted ||
-          !current() ||
+          !launchCurrent() ||
           (scope != null && !scope.isCurrent)) {
         return;
       }
@@ -1915,7 +1946,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         final lexical = scope == null || word.contentRevision == null
             ? null
             : await packs!.currentLexical(scope: scope, wordId: word.id);
-        if (!current() || (scope != null && !scope.isCurrent)) return;
+        if (!launchCurrent() || (scope != null && !scope.isCurrent)) return;
         final actual = lexical?.word;
         if (actual != null &&
             (actual.ownerId != ownerId ||
@@ -1932,7 +1963,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       }
       final passage = ReadingMaterial(items);
       if (!context.mounted ||
-          !current() ||
+          !launchCurrent() ||
           (scope != null && !scope.isCurrent)) {
         return;
       }
@@ -1940,27 +1971,150 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           packs?.watchActiveOwnerId() ??
           dependencies?.progress?.watchActiveOwnerId();
       if (screenOwners == null) return;
-      await _push(
-        context,
-        AssociativeReadingSessionScreen(
-          cefrLevel: '',
-          targetWords: words
-              .map(
-                (word) => (
-                  spelling: word.spelling,
-                  id: word.id,
-                  contentRevision: word.contentRevision,
-                ),
-              )
-              .toList(growable: false),
-          passageText: passage.passageText,
-          supportedText: passage.supportedText,
-          documentId: passage.contentId,
-          learning: learning,
-          associativeLearning: dependencies?.associativeLearning,
+      Future<bool> validateWords() async {
+        if (!current() || (scope != null && !scope.isCurrent)) return false;
+        final activeOwner = await learning.owners.getOrCreateActiveOwner();
+        if (!current() || activeOwner.id != ownerId) return false;
+        final latest = await learning.repository.listQuizWords(
           ownerId: ownerId,
-          ownerChanges: screenOwners,
+          wordIds: words.map((word) => word.id),
+          limit: words.length,
+        );
+        if (!current() || latest.length != words.length) return false;
+        final byId = {for (final word in latest) word.id: word};
+        return words.every((word) {
+          final actual = byId[word.id];
+          return actual != null &&
+              actual.categoryId == word.categoryId &&
+              actual.spelling == word.spelling &&
+              actual.meaning == word.meaning &&
+              actual.partOfSpeech == word.partOfSpeech &&
+              actual.contentRevision == word.contentRevision;
+        });
+      }
+
+      final result = await AppNavigator.pushPage<LearningSessionResult>(
+        context,
+        AppPage<LearningSessionResult>(
+          name: 'learning/reading',
+          builder: (readingContext) => guarded(
+            readingContext,
+            AssociativeReadingSessionScreen(
+              cefrLevel: '',
+              targetWords: words
+                  .map(
+                    (word) => (
+                      spelling: word.spelling,
+                      id: word.id,
+                      contentRevision: word.contentRevision,
+                    ),
+                  )
+                  .toList(growable: false),
+              passageText: passage.passageText,
+              supportedText: passage.supportedText,
+              documentId: passage.contentId,
+              learning: learning,
+              associativeLearning: dependencies?.associativeLearning,
+              ownerId: ownerId,
+              ownerChanges: screenOwners,
+            ),
+          ),
         ),
+        onRouteCreated: (route) => ownedRouteChanged(route, true),
+      );
+      if (result == null || !launchCurrent()) return;
+      final summary = result.summary;
+      final total = summary.correctCount + summary.wrongCount;
+      final mistakes = result.mistakeWordIds.toSet();
+      final targetIds = words.map((word) => word.id).toSet();
+      if (summary.id.trim().isEmpty ||
+          summary.state != 'completed' ||
+          summary.correctCount < 0 ||
+          summary.wrongCount < 0 ||
+          total != words.length ||
+          summary.score != (summary.correctCount * 100 / total).round() ||
+          mistakes.length != summary.wrongCount ||
+          mistakes.length != result.mistakeWordIds.length ||
+          !mistakes.every(targetIds.contains) ||
+          !await validateWords() ||
+          !context.mounted ||
+          !launchCurrent()) {
+        return;
+      }
+      var repairing = false;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/reading-result',
+          builder: (scoreContext) => guarded(
+            scoreContext,
+            ScoreScreen(
+              backLabel: 'กลับหน้าเรียน',
+              correctAnswers: summary.correctCount,
+              wrongAnswers: summary.wrongCount,
+              score: summary.score,
+              resultOwnerId: ownerId,
+              resultSessionId: summary.id,
+              learningTime: dependencies?.learningTime,
+              mistakes: words
+                  .where((word) => mistakes.contains(word.id))
+                  .toList(growable: false),
+              onPracticeMistakes:
+                  mistakes.isEmpty || !_features.isVisible(FieldFeature.quiz)
+                  ? null
+                  : () async {
+                      if (repairing ||
+                          !current() ||
+                          !_features.isVisible(FieldFeature.quiz) ||
+                          !scoreContext.mounted ||
+                          ModalRoute.of(scoreContext)?.isCurrent != true) {
+                        return;
+                      }
+                      repairing = true;
+                      try {
+                        if (!await validateWords() ||
+                            !current() ||
+                            !_features.isVisible(FieldFeature.quiz) ||
+                            !scoreContext.mounted ||
+                            ModalRoute.of(scoreContext)?.isCurrent != true) {
+                          return;
+                        }
+                        await AppNavigator.pushPage<void>(
+                          scoreContext,
+                          AppPage<void>(
+                            name: 'learning/reading-repair',
+                            builder: (repairContext) => guarded(
+                              repairContext,
+                              QuizScreen(
+                                resultBackLabel: 'กลับหน้าเรียน',
+                                wordIds: mistakes.toList(growable: false),
+                                learning: learning,
+                                expectedOwnerId: ownerId,
+                                ownerChanges: screenOwners,
+                                onOwnedRouteChanged: ownedRouteChanged,
+                              ),
+                            ),
+                          ),
+                          onRouteCreated: (route) =>
+                              ownedRouteChanged(route, true),
+                        );
+                        if (scoreContext.mounted &&
+                            ModalRoute.of(scoreContext)?.isCurrent == true) {
+                          Navigator.of(scoreContext).pop();
+                        }
+                      } on Object {
+                        if (scoreContext.mounted &&
+                            ModalRoute.of(scoreContext)?.isCurrent == true) {
+                          Navigator.of(scoreContext).pop();
+                        }
+                      } finally {
+                        repairing = false;
+                      }
+                    },
+            ),
+          ),
+        ),
+        onRouteCreated: (route) => ownedRouteChanged(route, true),
       );
     } on Object {
       if (context.mounted && current()) {
@@ -1970,6 +2124,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       }
     } finally {
       _openingReading = false;
+      _readingChildRoute = null;
+      if (mounted) _syncProgress();
     }
   }
 

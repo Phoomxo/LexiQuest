@@ -189,7 +189,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
     await _pumpUntilFound(tester, find.text('ขั้นที่ 5: แต่งประโยคใหม่'));
     await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
     await _pumpUntilFound(tester, find.text('ขั้นที่ 6: สรุปผล'));
-    await tester.tap(find.text('บันทึกและจบการฝึก'));
+    await tester.tap(find.text('จบการฝึกและดูผล'));
     for (var attempt = 0; attempt < 50; attempt++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 10)),

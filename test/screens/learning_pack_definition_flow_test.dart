@@ -67,9 +67,21 @@ void main() {
         );
         await tester.ensureVisible(count);
         await tester.tap(count);
-        await tester.pumpAndSettle();
+        await untilPackUi(
+          tester,
+          () => find.text('1 คำ').last.hitTestable().evaluate().isNotEmpty,
+        );
         await tester.tap(find.text('1 คำ').last);
-        await tester.pumpAndSettle();
+        await untilPackUi(
+          tester,
+          () =>
+              find.text('1 คำ').evaluate().length == 1 &&
+              find
+                  .descendant(of: count, matching: find.text('1 คำ'))
+                  .hitTestable()
+                  .evaluate()
+                  .isNotEmpty,
+        );
         expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
         await tester.tap(find.byKey(const ValueKey('definition-start')));
         await untilPackUi(

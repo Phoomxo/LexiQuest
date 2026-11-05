@@ -16,6 +16,33 @@ import 'package:vocab_learning_app/screens/associative_reading_session_screen.da
 
 void main() {
   group('B3 Associative Reading Session Screen Tests', () {
+    testWidgets(
+      'Stage 5 is optional and skips through the existing checkpoint',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: '',
+              targetWords: [(spelling: 'cat', id: null, contentRevision: null)],
+              passageText: 'The cat sleeps.',
+            ),
+          ),
+        );
+        for (var stage = 1; stage < 5; stage++) {
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await tester.pumpAndSettle();
+        }
+        expect(
+          find.text('ฝึกเสริม ข้ามได้ ไม่ตรวจคะแนนและไม่บันทึกประโยค'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('ข้ามการแต่งประโยค'));
+        await tester.pumpAndSettle();
+        expect(find.text('ขั้นที่ 6: สรุปผล'), findsOneWidget);
+        expect(find.text('บันทึกผลทดสอบจากความจำแล้ว'), findsNothing);
+      },
+    );
+
     testWidgets('Renders stages and progresses through 6 stages', (
       WidgetTester tester,
     ) async {
@@ -512,7 +539,7 @@ void main() {
         }
 
         expect(result, isNull);
-        await tester.tap(find.text('บันทึกและจบการฝึก'));
+        await tester.tap(find.text('จบการฝึกและดูผล'));
         await tester.pumpAndSettle();
 
         expect(result, isNotNull);

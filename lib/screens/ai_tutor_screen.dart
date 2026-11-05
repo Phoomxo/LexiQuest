@@ -287,7 +287,15 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   Future<void> _loadKeyStatus({TutorWordDraft? draft}) async {
     final tutor = _tutor;
-    if (tutor == null) return;
+    if (tutor == null || tutor.scope == null) {
+      if (draft != null) {
+        setState(() {
+          _draftPending = false;
+          _error = _draftUnavailable;
+        });
+      }
+      return;
+    }
     final epoch = _interactionEpoch;
     final scopeEpoch = tutor.epoch;
     try {
@@ -339,8 +347,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       );
       return;
     }
-    if (tutor == null) {
-      setState(() => _error = 'ผู้ช่วยฝึกภาษายังไม่พร้อมใช้งาน');
+    if (tutor == null || tutor.scope == null || _visibleScope != tutor.scope) {
+      setState(
+        () => _error =
+            'ผู้ช่วย AI ยังไม่พร้อม แอปยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้ คุณยังฝึกในเครื่องได้',
+      );
       return;
     }
     if (_wordTarget != null && _shareLearningSummary) {
@@ -350,7 +361,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       );
       return;
     }
-    if (!_hasKey || !_providerActive || tutor.scope == null) {
+    if (!_hasKey || !_providerActive) {
       setState(
         () => _error = _geminiFailureText(
           !_hasKey
@@ -939,7 +950,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                     vertical: 8,
                   ),
                   child: Text(
-                    _hasKey
+                    _tutor == null ||
+                            _visibleScope == null ||
+                            _visibleScope != _tutor?.scope
+                        ? 'ผู้ช่วย AI ยังไม่พร้อม แอปยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้ คุณยังฝึกในเครื่องได้'
+                        : _hasKey
                         ? _providerActive
                               ? 'ระบบจะส่งข้อความเมื่อคุณกดส่ง ตามความยินยอมในรอบนี้'
                               : 'กรุณาเปิดการยินยอมสำหรับรอบนี้ในการตั้งค่า'

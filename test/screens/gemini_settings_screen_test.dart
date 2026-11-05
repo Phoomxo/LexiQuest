@@ -22,6 +22,74 @@ Future<void> _scrollTo(
 }
 
 void main() {
+  testWidgets('missing controller disables setup and explains prerequisite', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: GeminiSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('ยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้'),
+      findsOneWidget,
+    );
+    expect(find.text('ยกเลิกการตรวจสอบแล้ว'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('gemini-key-input')))
+          .enabled,
+      isFalse,
+    );
+    final consent = find.widgetWithText(
+      CheckboxListTile,
+      'ยินยอมส่งข้อความที่พิมพ์หรือพูดให้ Google Gemini',
+    );
+    expect(tester.widget<CheckboxListTile>(consent).onChanged, isNull);
+    final save = find.byKey(const ValueKey('gemini-save-key'));
+    await _scrollTo(tester, save);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+  });
+
+  testWidgets('scope availability controls setup and clears typed key', (
+    tester,
+  ) async {
+    final tutor = _FakeSettingsTutor()..scope = null;
+    await tester.pumpWidget(
+      MaterialApp(home: GeminiSettingsScreen(geminiTutor: tutor)),
+    );
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 0);
+    expect(
+      find.textContaining('ยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้'),
+      findsOneWidget,
+    );
+    expect(find.text('ยกเลิกการตรวจสอบแล้ว'), findsNothing);
+    final input = find.byKey(const ValueKey('gemini-key-input'));
+    expect(tester.widget<TextField>(input).enabled, isFalse);
+    expect(tutor.configuredKeys, isEmpty);
+
+    tutor.scope = const GeminiScope(
+      ownerId: 'synthetic-ready',
+      firebaseUid: null,
+      isAnonymous: true,
+    );
+    tutor.changes.add(++tutor.epoch);
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 1);
+    expect(tester.widget<TextField>(input).enabled, isTrue);
+    await tester.enterText(input, 'synthetic-key');
+
+    tutor.scope = null;
+    tutor.changes.add(++tutor.epoch);
+    await tester.pumpAndSettle();
+    expect(tutor.loadCalls, 1);
+    expect(tester.widget<TextField>(input).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(input).enabled, isFalse);
+    final save = find.byKey(const ValueKey('gemini-save-key'));
+    await _scrollTo(tester, save);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+    expect(tutor.configuredKeys, isEmpty);
+  });
+
   testWidgets('loading state is announced', (tester) async {
     final gate = Completer<void>();
     final tutor = _FakeSettingsTutor()..loadGate = gate;
@@ -421,6 +489,7 @@ final class _FakeSettingsTutor implements GeminiTutorController {
   bool hasKey = false;
   bool providerConsent = false;
   bool summaryConsent = false;
+  int loadCalls = 0;
   int removeCalls = 0;
   bool invalidateOnRemove = false;
   GeminiException? removeFailure;
@@ -453,6 +522,7 @@ final class _FakeSettingsTutor implements GeminiTutorController {
 
   @override
   Future<GeminiSettingsStatus> loadSettings() async {
+    loadCalls += 1;
     await loadGate?.future;
     return GeminiSettingsStatus(
       hasKey: hasKey,

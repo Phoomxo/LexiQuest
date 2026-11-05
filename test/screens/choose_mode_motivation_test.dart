@@ -183,6 +183,13 @@ Future<bool> _revealToday(WidgetTester tester) async {
   tester.state<ScrollableState>(scrollable).position.jumpTo(0);
   await tester.pump(const Duration(milliseconds: 16));
   for (var step = 0; step < 45; step++) {
+    final details = find.byKey(const ValueKey('home-motivation-details'));
+    if (details.evaluate().isNotEmpty &&
+        find.byType(TodayMotivationPanel).evaluate().isEmpty) {
+      await tester.ensureVisible(details);
+      await tester.tap(find.text('ภารกิจและคู่หู'));
+      await _flush(tester, 20);
+    }
     final panel = find.byType(TodayMotivationPanel);
     if (panel.evaluate().isNotEmpty) {
       await tester.ensureVisible(panel);

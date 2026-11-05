@@ -1416,10 +1416,13 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               result.state.plan.configuration.lexical?.settings.reduceMotion ==
               true,
           builder: (scoreContext) {
-            widget.onOwnedRouteChanged?.call(
-              ModalRoute.of(scoreContext),
-              ModalRoute.isCurrentOf(scoreContext) == true,
-            );
+            final visible = ModalRoute.isCurrentOf(scoreContext) == true;
+            if (!_practicingMistakes || visible) {
+              widget.onOwnedRouteChanged?.call(
+                ModalRoute.of(scoreContext),
+                visible,
+              );
+            }
             return ValueListenableBuilder<String?>(
               valueListenable: _ownerToken,
               builder: (context, owner, _) => scoreCurrent()
@@ -1472,28 +1475,45 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   ) async {
     if (_practicingMistakes || !_ownerCurrent) return;
     final scoreRoute = ModalRoute.of(scoreContext);
+    Route<dynamic>? childRoute;
     _practicingMistakes = true;
     try {
       await AppNavigator.pushPage<void>(
         scoreContext,
         AppPage<void>(
           name: 'learning/mistake-practice',
-          builder: (_) => QuizScreen(
-            resultBackLabel: widget.resultBackLabel,
-            wordIds: mistakes.map((word) => word.id).toSet().toList(),
-            learning: _learning,
-            expectedOwnerId: _boundOwnerId,
-            ownerChanges: widget.ownerChanges,
-            learningTime: _time,
-            timeCallerContext: widget.timeCallerContext,
-          ),
+          builder: (practiceContext) {
+            final route = ModalRoute.of(practiceContext);
+            final visible = ModalRoute.isCurrentOf(practiceContext) == true;
+            if (visible || childRoute?.isCurrent != true) {
+              widget.onOwnedRouteChanged?.call(route, visible);
+            }
+            return QuizScreen(
+              resultBackLabel: widget.resultBackLabel,
+              wordIds: mistakes.map((word) => word.id).toSet().toList(),
+              learning: _learning,
+              expectedOwnerId: _boundOwnerId,
+              ownerChanges: widget.ownerChanges,
+              learningTime: _time,
+              timeCallerContext: widget.timeCallerContext,
+              onOwnedRouteChanged: (route, current) {
+                if (route == null || current) childRoute = route;
+                widget.onOwnedRouteChanged?.call(route, current);
+              },
+            );
+          },
         ),
+        onRouteCreated: (route) =>
+            widget.onOwnedRouteChanged?.call(route, true),
       );
       if (scoreContext.mounted && scoreRoute?.isCurrent == true) {
         Navigator.of(scoreContext).pop();
       }
     } finally {
       _practicingMistakes = false;
+      if (scoreContext.mounted && scoreRoute?.isCurrent == true) {
+        widget.onOwnedRouteChanged?.call(scoreRoute, true);
+      }
     }
   }
 }

@@ -32,6 +32,9 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
   String? _error;
   String? _notice;
 
+  bool get _available =>
+      _tutor != null && _visibleScope != null && _visibleScope == _tutor?.scope;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -84,10 +87,10 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
     final originalScope = tutor?.scope;
     final epoch = _epoch;
     final scopeEpoch = tutor?.epoch;
-    if (tutor == null) {
+    if (tutor == null || originalScope == null) {
       setState(() {
         _loading = false;
-        _error = 'ระบบ Gemini ยังไม่พร้อมใช้งานบนแอปเวอร์ชันนี้';
+        _error = null;
       });
       return;
     }
@@ -114,7 +117,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
 
   Future<void> _validateAndSave() async {
     final tutor = _tutor;
-    if (tutor == null || _saving) return;
+    if (tutor == null || !_available || _saving) return;
     final key = _keyController.text.trim();
     if (key.isEmpty) {
       setState(() => _error = 'กรุณากรอกรหัสเชื่อมต่อ Gemini');
@@ -154,7 +157,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
 
   Future<void> _saveConsents() async {
     final tutor = _tutor;
-    if (tutor == null || _saving) return;
+    if (tutor == null || !_available || _saving) return;
     final bump = _providerConsent ? 0 : 1;
     final epoch = _epoch + bump;
     final scopeEpoch = tutor.epoch + bump;
@@ -184,7 +187,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
 
   Future<void> _removeKey() async {
     final tutor = _tutor;
-    if (tutor == null || _saving) return;
+    if (tutor == null || !_available || _saving) return;
     final epoch = _epoch;
     final scopeEpoch = tutor.epoch;
     final originalScope = tutor.scope;
@@ -207,7 +210,9 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !_current(epoch, scopeEpoch)) return;
+    if (confirmed != true || !_available || !_current(epoch, scopeEpoch)) {
+      return;
+    }
     final resultEpoch = epoch + 1;
     final resultScopeEpoch = scopeEpoch + 1;
     setState(() {
@@ -270,7 +275,9 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     Text(
-                      _hasKey
+                      !_available
+                          ? 'ผู้ช่วย AI ยังไม่พร้อม แอปยังยืนยันบัญชีสำหรับบริการออนไลน์ไม่ได้ คุณยังฝึกในเครื่องได้'
+                          : _hasKey
                           ? 'สถานะ: มีรหัสเชื่อมต่อที่ตรวจสอบแล้ว'
                           : 'สถานะ: ยังไม่มีรหัสเชื่อมต่อ',
                       key: const ValueKey<String>('gemini-key-status'),
@@ -286,7 +293,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                     TextField(
                       key: const ValueKey<String>('gemini-key-input'),
                       controller: _keyController,
-                      enabled: !_saving,
+                      enabled: _available && !_saving,
                       obscureText: true,
                       autocorrect: false,
                       enableSuggestions: false,
@@ -313,7 +320,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                       subtitle: const Text(
                         'จำเป็นสำหรับผู้ช่วยฝึกภาษา และยกเลิกได้ทุกเมื่อ',
                       ),
-                      onChanged: _saving
+                      onChanged: !_available || _saving
                           ? null
                           : (value) => setState(() {
                               _providerConsent = value ?? false;
@@ -328,7 +335,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                         'ส่งเฉพาะจำนวนคำตอบ ความแม่นยำ จำนวนคำที่ถึงกำหนด '
                         'และคำอ่อนสูงสุด 3 คำ ไม่ส่งอีเมล รหัสบัญชี หรือประวัติดิบ',
                       ),
-                      onChanged: !_providerConsent || _saving
+                      onChanged: !_available || !_providerConsent || _saving
                           ? null
                           : (value) => setState(
                               () => _summaryConsent = value ?? false,
@@ -360,7 +367,9 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                     const SizedBox(height: 16),
                     FilledButton(
                       key: const ValueKey<String>('gemini-save-key'),
-                      onPressed: _saving ? null : _validateAndSave,
+                      onPressed: !_available || _saving
+                          ? null
+                          : _validateAndSave,
                       child: Text(
                         _saving
                             ? 'กำลังตรวจสอบ...'
@@ -377,13 +386,15 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
                     if (_hasKey) ...[
                       const SizedBox(height: 8),
                       OutlinedButton(
-                        onPressed: _saving ? null : _saveConsents,
+                        onPressed: !_available || _saving
+                            ? null
+                            : _saveConsents,
                         child: const Text('ใช้การยินยอมสำหรับรอบนี้'),
                       ),
                       const SizedBox(height: 8),
                       TextButton(
                         key: const ValueKey<String>('gemini-remove-key'),
-                        onPressed: _saving ? null : _removeKey,
+                        onPressed: !_available || _saving ? null : _removeKey,
                         child: const Text('ลบรหัสเชื่อมต่อ Gemini'),
                       ),
                     ],
