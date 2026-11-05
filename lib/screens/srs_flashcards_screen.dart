@@ -896,12 +896,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       );
     } on Object {
       if (_cardCurrent(epoch, index) && audioEpoch == _audioEpoch) {
+        // A rejected request can already have been superseded on the shared engine.
+        _ownsPlayback = false;
         _voiceFailed = true;
       }
     } finally {
       if (_cardCurrent(epoch, index) && audioEpoch == _audioEpoch) {
         _voiceBusy = false;
         _redraw();
+        if (_voiceFailed) unawaited(_readyTime());
       }
     }
   }
@@ -1231,12 +1234,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               ],
             ),
             if (_voiceFailed)
-              Text(
-                _copy(
-                  'ฟังเสียงไม่สำเร็จ ลองอีกครั้งได้',
-                  'Audio unavailable. You can retry.',
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _copy(
+                    'ฟังเสียงไม่สำเร็จ ลองอีกครั้งได้',
+                    'Audio unavailable. You can retry.',
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             const SizedBox(height: 20),
             if (_operationPending)

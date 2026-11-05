@@ -6,11 +6,13 @@ import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.d
 import 'package:vocab_learning_app/features/learning/domain/learning_time_admission.dart';
 import 'package:vocab_learning_app/features/learning_time/application/learning_time_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_time/data/drift_learning_time_repository.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 
 import '../support/review_center_harness.dart';
+import '../support/srs_review_ui_harness.dart' show SrsUiVoice;
 
 void main() {
   testWidgets(
@@ -234,6 +236,68 @@ void main() {
       }
     },
   );
+
+  testWidgets('failed SRS audio releases Stop and admits fresh reading time', (
+    tester,
+  ) async {
+    final h = await _TimeHarness.open(tester);
+    final first = Completer<void>();
+    final voice = SrsUiVoice()..holdSpeak = first.future;
+    final stop = find.byKey(const Key('srs-stop'));
+    final listen = find.byKey(const Key('srs-listen'));
+    final failure = find.textContaining('Audio unavailable');
+    try {
+      await tester.runAsync(() => h.base.seedDue(configuredWordIds.first));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            learning: h.base.learning,
+            learningTime: h.time,
+            expectedOwnerId: configuredOwnerId,
+            ownerChanges: h.base.ownerChanges,
+            voice: VoiceUseCases(voice),
+            languageCode: 'en',
+          ),
+        ),
+      );
+      await _until(
+        tester,
+        () => voice.requests.isNotEmpty && stop.evaluate().isNotEmpty,
+      );
+      expect(tester.widget<IconButton>(stop).onPressed, isNotNull);
+      expect(h.accepting, isFalse);
+      h.advance(const Duration(seconds: 4));
+      first.completeError(StateError('Synthetic unavailable voice'));
+      await _until(tester, () => failure.evaluate().isNotEmpty);
+      expect(tester.widget<IconButton>(stop).onPressed, isNull);
+      expect(tester.widget<IconButton>(listen).onPressed, isNotNull);
+      expect(voice.stops, 0);
+      await tester.ensureVisible(failure);
+      await tester.pump();
+      expect(tester.getSemantics(failure).flagsCollection.isLiveRegion, isTrue);
+      await _until(tester, () => h.accepting);
+      h.advance(const Duration(seconds: 2));
+      voice.holdSpeak = null;
+      await tester.ensureVisible(listen);
+      await tester.tap(listen);
+      await _until(tester, () => voice.requests.length == 2);
+      expect(failure, findsNothing);
+      expect(tester.widget<IconButton>(stop).onPressed, isNotNull);
+      expect(h.accepting, isFalse);
+      await tester.runAsync(h.time.retryPending);
+      final segments = (await tester.runAsync(h.segments))!;
+      expect(segments.map((r) => r['active_duration_us']), [2000000]);
+      expect(
+        await tester.runAsync(
+          () => h.base.database.select(h.base.database.answerAttempts).get(),
+        ),
+        isEmpty,
+      );
+    } finally {
+      if (!first.isCompleted) first.complete();
+      await h.close(tester);
+    }
+  });
 
   testWidgets('SRS preview cannot create time or learning facts', (
     tester,

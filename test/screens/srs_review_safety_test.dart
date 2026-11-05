@@ -537,6 +537,34 @@ void main() {
     },
   );
 
+  testWidgets('an old SRS voice failure leaves the next card playing', (
+    tester,
+  ) async {
+    final (h, _) = await _fixture(tester);
+    final first = _gate();
+    final voice = SrsUiVoice()..holdSpeak = first.future;
+    await _open(tester, h, voice: voice);
+    await _ready(tester);
+    await _until(tester, () => voice.requests.length == 1);
+    await _tap(tester, 'srs-flip');
+    await _tap(tester, 'srs-got');
+    await _saved(tester);
+    voice.holdSpeak = null;
+    await _tap(tester, 'srs-next');
+    await _until(tester, () => voice.requests.length == 2);
+    final priorStops = voice.stops;
+    first.completeError(StateError('Late synthetic voice rejection'));
+    await _drain(tester);
+    expect(find.text('2/2'), findsOneWidget);
+    expect(voice.requests.last.contentId, h.wordIds[1]);
+    expect(voice.stops, priorStops);
+    expect(find.textContaining('Audio unavailable'), findsNothing);
+    expect(
+      tester.widget<IconButton>(find.byKey(const Key('srs-stop'))).onPressed,
+      isNotNull,
+    );
+  });
+
   testWidgets(
     '320 px 200 percent and IME restore saved Next at its prior position after resume',
     (tester) async {
