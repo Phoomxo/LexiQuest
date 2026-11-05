@@ -283,7 +283,12 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       await tester.enterText(find.byType(TextField).at(0), words[0].spelling);
       await tester.enterText(find.byType(TextField).at(1), words[1].spelling);
 
-      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      final submit = find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(submit);
+      await tester.pumpAndSettle();
+      expect(submit.hitTestable(), findsOneWidget);
+      await tester.tap(submit.hitTestable());
       await _pumpUntilFound(
         tester,
         find.text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง'),
@@ -300,11 +305,10 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         'edited after commit',
       );
 
-      final retry = find.text('เสร็จแล้ว ไปขั้นถัดไป');
-      await tester.ensureVisible(retry);
+      await tester.ensureVisible(submit);
       await tester.pumpAndSettle();
-      expect(retry.hitTestable(), findsOneWidget);
-      await tester.tap(retry.hitTestable());
+      expect(submit.hitTestable(), findsOneWidget);
+      await tester.tap(submit.hitTestable());
       await _pumpUntilFound(tester, find.text('ขั้นที่ 4: สร้างตัวช่วยจำ'));
       final evidence = await tester.runAsync(() async {
         final attempts = await database.select(database.answerAttempts).get();
