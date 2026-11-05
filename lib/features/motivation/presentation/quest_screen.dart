@@ -7,6 +7,7 @@ import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/motivation_runtime.dart';
 import '../../../widgets/adaptive_content_pane.dart';
 import '../../quest/domain/quest_models.dart';
+import 'quest_objective_label.dart';
 import 'today_motivation_panel.dart';
 
 class QuestScreen extends StatefulWidget {
@@ -508,7 +509,7 @@ class _QuestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      '${instance.definition?.objectives.where((row) => row.objectiveId == objective.objectiveId).firstOrNull?.description ?? 'ความคืบหน้าที่บันทึก'}: ${objective.currentCount}/${objective.targetCount}',
+                      '${questObjectiveLabel(instance.definition, objective.objectiveId) ?? 'ความคืบหน้าที่บันทึก'}: ${objective.currentCount}/${objective.targetCount}',
                     ),
                     const SizedBox(height: 6),
                     Semantics(

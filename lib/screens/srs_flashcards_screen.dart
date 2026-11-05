@@ -73,6 +73,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   final _latency = Stopwatch();
   final _mistakeWordIds = <String>{};
   final _autoplayed = <int>{};
+  final _cardScroll = ScrollController(keepScrollOffset: false);
+  double? _resumeOffset;
   AppDependencies? _dependencies;
   LearningUseCases? _learning;
   VoiceUseCases? _voice;
@@ -335,6 +337,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     } else if (state == AppLifecycleState.resumed) {
       _tryBegin();
     } else {
+      if (!_suspended && _hasCard && _cardScroll.hasClients) {
+        _resumeOffset ??= _cardScroll.offset;
+      }
       _pauseGeneration++;
       _suspended = true;
       _latency.stop();
@@ -620,6 +625,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         return;
       }
       if (!last) {
+        _resumeOffset = null;
         _index++;
         _controller.value = 0;
         _isFlipped = false;
@@ -839,6 +845,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     unawaited(_owners?.cancel());
     unawaited(_stopPlayback());
     WidgetsBinding.instance.removeObserver(this);
+    _cardScroll.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -867,7 +874,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                 leave: true,
               )
             : _hasCard && _current(_epoch)
-            ? _buildCard(_epoch, _index)
+            ? NotificationListener<Notification>(
+                onNotification: _restoreCardScroll,
+                child: _buildCard(_epoch, _index),
+              )
             : _buildMessage(),
       ),
     );
@@ -1008,6 +1018,26 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     );
   }
 
+  bool _restoreCardScroll(Notification event) {
+    if (event is ScrollStartNotification && event.depth == 0) {
+      _resumeOffset = null;
+    }
+    final target = _resumeOffset;
+    if (event is ScrollMetricsNotification &&
+        event.depth == 0 &&
+        target != null &&
+        _cardScroll.hasClients) {
+      final position = _cardScroll.position;
+      final offset = target
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
+      if (position.pixels != offset) _cardScroll.jumpTo(offset);
+      // Pack details can grow the card after its first layout.
+      _resumeOffset = offset < target ? target : null;
+    }
+    return false;
+  }
+
   Widget _buildCard(int epoch, int index) {
     final card = _card;
     final saved =
@@ -1021,6 +1051,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     final failed = _step == _Step.saveFailed || _step == _Step.finishFailed;
     return SafeArea(
       child: SingleChildScrollView(
+        key: ValueKey(index),
+        controller: _cardScroll,
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -538,7 +538,7 @@ void main() {
   );
 
   testWidgets(
-    '320 px 200 percent and IME keep self-rating and saved Next reachable',
+    '320 px 200 percent and IME restore saved Next at its prior position after resume',
     (tester) async {
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
@@ -552,8 +552,23 @@ void main() {
       await _tap(tester, 'srs-flip');
       await _tap(tester, 'srs-again');
       await _saved(tester);
-      await _reveal(tester, find.byKey(const Key('srs-next')));
-      expect(find.byKey(const Key('srs-next')).hitTestable(), findsOneWidget);
+      final next = find.byKey(const Key('srs-next'));
+      await _reveal(tester, next);
+      expect(next.hitTestable(), findsOneWidget);
+      final before = tester.getCenter(next);
+      expect(find.text('1/2').hitTestable(), findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(next, findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _saved(tester);
+      expect(tester.getCenter(next).dy, closeTo(before.dy, 1));
+      expect(next.hitTestable(), findsOneWidget);
+      await tester.tap(next);
+      await _until(
+        tester,
+        () => find.text('2/2').hitTestable().evaluate().isNotEmpty,
+      );
       expect(await _count(tester, h, 'answer_attempts'), 1);
       expect(tester.takeException(), isNull);
     },

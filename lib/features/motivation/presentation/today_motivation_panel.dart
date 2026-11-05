@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/motivation_runtime.dart';
 import '../domain/motivation_snapshot.dart';
+import 'quest_objective_label.dart';
 
 class TodayMotivationPanel extends StatefulWidget {
   const TodayMotivationPanel({
@@ -196,12 +197,6 @@ class _TodayMotivationPanelState extends State<TodayMotivationPanel>
     final objective = next?.progress
         .where((row) => !row.isComplete)
         .firstOrNull;
-    final description =
-        next?.definition?.objectives
-            .where((row) => row.objectiveId == objective?.objectiveId)
-            .firstOrNull
-            ?.description ??
-        'คำตอบที่บันทึก';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -225,7 +220,7 @@ class _TodayMotivationPanelState extends State<TodayMotivationPanel>
               Text(
                 objective == null
                     ? 'เลือกแบบฝึกเพื่อเริ่มรอบถัดไปได้ตามสะดวก'
-                    : 'เป้าหมายถัดไป: $description ${objective.currentCount}/${objective.targetCount}',
+                    : 'เป้าหมายถัดไป: ${questObjectiveLabel(next?.definition, objective.objectiveId) ?? 'คำตอบที่บันทึก'} ${objective.currentCount}/${objective.targetCount}',
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(

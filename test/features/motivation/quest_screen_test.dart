@@ -310,6 +310,28 @@ void main() {
   });
 
   testWidgets(
+    'Quest shows Thai built-in objective labels with pinned counts and preserves custom copy',
+    (tester) async {
+      final fixture = (await tester.runAsync(() => _UiFixture.open()))!;
+      addTearDown(() => _close(tester, fixture));
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(420, 2400);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final before = await _real(tester, fixture.h.storage.snapshot);
+      await tester.pumpWidget(
+        _app(QuestScreen(runtime: fixture.runtime, ownerId: configuredOwnerId)),
+      );
+      await _ready(tester, 'quest-review-freeze');
+      expect(find.text('ตอบถูกวันนี้: 0/5'), findsOneWidget);
+      expect(find.text('ตอบถูกวันนี้: 1/5'), findsOneWidget);
+      expect(find.text('ตอบถูกสัปดาห์นี้: 1/20'), findsOneWidget);
+      expect(find.text('Correct answers: 1/1'), findsOneWidget);
+      expect(await _real(tester, fixture.h.storage.snapshot), before);
+    },
+  );
+
+  testWidgets(
     'Today reads actual progress without writes and guards its navigation callback',
     (tester) async {
       final fixture = await tester.runAsync(() => _UiFixture.open());
@@ -330,6 +352,7 @@ void main() {
         ),
       );
       await _ready(tester, 'today-open-quests');
+      expect(find.text('เป้าหมายถัดไป: ตอบถูกสัปดาห์นี้ 1/20'), findsOneWidget);
       final old = tester
           .widget<OutlinedButton>(
             find.byKey(const ValueKey('today-open-quests')),

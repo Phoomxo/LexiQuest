@@ -16,6 +16,10 @@ void main() {
   testWidgets(
     'one-word pack resumes its revealed card and finishes the original SRS session',
     (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final h = (await tester.runAsync(LearningPackUiHarness.open))!;
       try {
         await tester.runAsync(() => h.seed(syntheticPackUiContent()));
@@ -60,6 +64,24 @@ void main() {
           () => find.byKey(const Key('srs-next')).evaluate().isNotEmpty,
         );
         expect(await tester.runAsync(() => h.count('answer_attempts')), 1);
+        final details = find.text('The cat sleeps.');
+        await untilPackUi(tester, () => details.evaluate().isNotEmpty);
+        await revealPackUi(tester, 'srs-next');
+        final next = find.byKey(const Key('srs-next'));
+        final before = tester.getCenter(next);
+        expect(find.text('1/1').hitTestable(), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        expect(next, findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await untilPackUi(tester, () => details.evaluate().isNotEmpty);
+        await tester.pump();
+        expect(tester.getCenter(next).dy, closeTo(before.dy, 1));
+        expect(next.hitTestable(), findsOneWidget);
         await tapPackUi(tester, 'srs-next');
         await untilPackUi(
           tester,
