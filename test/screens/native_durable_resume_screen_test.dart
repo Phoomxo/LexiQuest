@@ -555,6 +555,7 @@ void main() {
                 );
                 await _scrollTo(tester, mode, response);
                 await tester.enterText(response, edited);
+                FocusManager.instance.primaryFocus?.unfocus();
               }
               final save = find.byKey(const ValueKey('native-draft-save'));
               await _scrollTo(tester, mode, save);
@@ -839,7 +840,9 @@ Future<void> _scrollTo(WidgetTester tester, String mode, Finder target) async {
   expect(
     target.hitTestable(),
     findsOneWidget,
-    reason: 'the current lesson target must be inside the actual viewport',
+    reason:
+        'Target ${tester.getRect(target)}, list ${tester.getRect(scrollable)}, '
+        'keyboard inset ${tester.view.viewInsets.bottom}',
   );
 }
 
