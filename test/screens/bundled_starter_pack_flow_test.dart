@@ -1356,10 +1356,10 @@ Future<void> _answerDefinition(
   QuizQuestion question,
   LexicalQuizInput input,
 ) async {
-  await untilPackUi(
-    tester,
-    () => find.text(question.prompt).evaluate().isNotEmpty,
-  );
+  final prompt = question.correctAnswer == 'day'
+      ? 'The part of a _____ when there is light from the sun.'
+      : question.prompt;
+  await untilPackUi(tester, () => find.text(prompt).evaluate().isNotEmpty);
   if (input == LexicalQuizInput.definitionTyped) {
     final field = find.byKey(const ValueKey('definition-response'));
     await untilPackUi(
