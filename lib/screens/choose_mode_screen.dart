@@ -1631,6 +1631,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                     QuizScreen(
                       resultBackLabel: 'กลับหน้าเรียน',
                       wordIds: [word.id],
+                      selectionMode: QuizWordSelectionMode.selectedWord,
                       learning: learning,
                       expectedOwnerId: owner,
                       ownerChanges: owners,

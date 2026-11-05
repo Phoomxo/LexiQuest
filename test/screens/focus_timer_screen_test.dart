@@ -58,9 +58,11 @@ void main() {
       await _tap(tester, 'focus-stop');
       expect(_remaining(tester), '01:00');
       await _tap(tester, 'focus-start');
-      clock.advance(const Duration(seconds: 3));
+      clock.advance(const Duration(milliseconds: 3900));
       await _tap(tester, 'focus-finish');
-      expect(_remaining(tester), '00:57');
+      expect(_elapsed(tester), '00:03');
+      expect(find.text('Time focused'), findsOneWidget);
+      expect(_key('focus-remaining'), findsNothing);
       expect(_status(tester), 'Finished early');
       expect(_enabled(tester, 'focus-start'), isFalse);
       expect(_enabled(tester, 'focus-resume'), isFalse);
@@ -70,6 +72,22 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('finishing a paused interval counts only active seconds', (
+    tester,
+  ) async {
+    final clock = _Clock();
+    await _open(tester, _owners(), clock);
+    await _tap(tester, 'focus-start');
+    clock.advance(const Duration(milliseconds: 1900));
+    await _tap(tester, 'focus-pause');
+    expect(find.text('Time remaining'), findsOneWidget);
+    expect(_remaining(tester), '24:59');
+    clock.advance(const Duration(minutes: 3));
+    await _tap(tester, 'focus-finish');
+    expect(_elapsed(tester), '00:01');
+    expect(_key('focus-remaining'), findsNothing);
+  });
 
   testWidgets('invalid minute drafts retain the last valid duration', (
     tester,
@@ -106,7 +124,7 @@ void main() {
       expect(_remaining(tester), '00:01');
       clock.advance(const Duration(microseconds: 500));
       await tester.pump(const Duration(seconds: 1));
-      expect(_remaining(tester), '00:00');
+      expect(_elapsed(tester), '01:00');
       expect(_status(tester), 'Interval complete');
       expect(_enabled(tester, 'focus-new-interval'), isTrue);
       expect(_enabled(tester, 'focus-start'), isFalse);
@@ -114,7 +132,7 @@ void main() {
       final completedStatus = _status(tester);
       clock.advance(const Duration(hours: 1));
       await tester.pump(const Duration(seconds: 1));
-      expect(_remaining(tester), '00:00');
+      expect(_elapsed(tester), '01:00');
       expect(_status(tester), completedStatus);
     },
   );
@@ -166,7 +184,7 @@ void main() {
       finish();
       stop();
       await tester.pump();
-      expect(_remaining(tester), '00:00');
+      expect(_elapsed(tester), '01:00');
       expect(_status(tester), 'Interval complete');
       expect(_enabled(tester, 'focus-new-interval'), isTrue);
       expect(_enabled(tester, 'focus-start'), isFalse);
@@ -866,7 +884,7 @@ void main() {
         await _tap(tester, 'focus-start');
         clock.advance(const Duration(minutes: 1));
         await tester.pump(const Duration(seconds: 1));
-        expect(_remaining(tester), '00:00');
+        expect(_elapsed(tester), '01:00');
         expect(await tester.runAsync(h.snapshotAllTables), before);
         await _leave(tester);
         expect(await tester.runAsync(h.snapshotAllTables), before);
@@ -1075,6 +1093,9 @@ Finder _key(String key, {bool offstage = false}) =>
 
 String _remaining(WidgetTester tester) =>
     tester.widget<Text>(_key('focus-remaining')).data!;
+
+String _elapsed(WidgetTester tester) =>
+    tester.widget<Text>(_key('focus-elapsed')).data!;
 
 String _status(WidgetTester tester) =>
     tester.widget<Text>(_key('focus-status')).data!;

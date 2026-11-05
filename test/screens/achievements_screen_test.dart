@@ -34,7 +34,11 @@ void main() {
     expect(find.text('ความสำเร็จ'), findsOneWidget);
     expect(find.text('เรียนจบรอบแรก'), findsOneWidget);
     expect(find.text('คะแนนประสบการณ์'), findsOneWidget);
-    expect(find.text('คำนวณจาก 2 คำตอบที่บันทึกไว้'), findsOneWidget);
+    expect(
+      find.textContaining('52 XP จากการเรียนและภารกิจที่บันทึก'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('บันทึกแล้ว 2 คำตอบ'), findsOneWidget);
     expect(find.textContaining('ปลดล็อกจากคำตอบที่บันทึกไว้'), findsOneWidget);
     expect(find.textContaining('session-1'), findsNothing);
     expect(find.textContaining('วิธีคำนวณรุ่น'), findsNothing);
@@ -103,7 +107,7 @@ final _withAchievement = ProgressSnapshot(
   correctCount: 2,
   wrongCount: 0,
   accuracy: 1,
-  totalXp: 2,
+  totalXp: 52,
   completedSessions: 1,
   streakDays: 1,
   dueReviewCount: 0,

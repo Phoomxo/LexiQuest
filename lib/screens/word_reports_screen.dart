@@ -284,8 +284,8 @@ class _WordReportsScreenState extends State<WordReportsScreen>
           children: [
             Text(
               _text(
-                'อ่านรายงานในเครื่องไม่สำเร็จ',
-                'Could not load local reports.',
+                'อ่านรายงานคำศัพท์ในเครื่องไม่สำเร็จ',
+                'Could not load local word reports.',
               ),
             ),
             OutlinedButton(
@@ -303,7 +303,7 @@ class _WordReportsScreenState extends State<WordReportsScreen>
     } else if (_snapshot!.isEmpty) {
       body = Center(
         child: Text(
-          _text('ยังไม่มีรายงานในเครื่อง', 'No local reports yet.'),
+          _text('ยังไม่มีรายงานคำศัพท์ในเครื่อง', 'No local word reports yet.'),
           key: const ValueKey('word-reports-empty'),
         ),
       );
@@ -360,7 +360,7 @@ class _WordReportsScreenState extends State<WordReportsScreen>
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
         title: M3Theme.appBarTitle(
           context,
-          _text('รายงานในเครื่อง', 'Local reports'),
+          _text('รายงานคำศัพท์ในเครื่อง', 'Local word reports'),
         ),
         actions: [
           if (_dependencies?.contentReports != null)

@@ -678,6 +678,26 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       () => database.select(database.learningSessions).getSingle(),
     );
     expect(session!.activityType, 'sourcePractice');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(
+          resumeSessionId: session.id,
+          expectedOwnerId: session.ownerId,
+          learning: learning,
+        ),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('station'));
+    expect(find.text('ฝึกความหมาย'), findsOneWidget);
+    await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('ถูกต้อง'));
+    final answer = await tester.runAsync(
+      () => database.select(database.answerAttempts).getSingle(),
+    );
+    expect(answer!.sessionId, session.id);
+    expect(answer.wordId, 'word-1');
+    expect(answer.isCorrect, isTrue);
   });
 
   testWidgets('quiz route title fits compact 200 percent text with Back', (
@@ -1086,7 +1106,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
     } else {
       await captureNativeFeedback(tester);
     }
-    await tester.scrollUntilVisible(find.text('ดูผลการเรียน'), 150);
+    expect(find.text('ถูกต้อง').hitTestable(), findsOneWidget);
     expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
   });
 

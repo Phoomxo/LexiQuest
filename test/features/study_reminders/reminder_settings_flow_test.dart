@@ -272,6 +272,82 @@ void main() {
   );
 
   testWidgets(
+    'first reminder finds Bangkok in Thai or English and reopens with the saved time and zone',
+    (tester) async {
+      final f = await _open(tester);
+      try {
+        await _mount(tester, f);
+        final zone = find.byKey(const Key('reminder-zone'));
+        final search = find.byKey(const Key('reminder-zone-search'));
+        await _show(tester, zone);
+        await tester.tap(zone);
+        await tester.pumpAndSettle();
+        for (final query in ['กรุงเทพ', 'bAnGkOk']) {
+          await tester.enterText(search, query);
+          await tester.pumpAndSettle();
+          expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
+          expect(find.text('Africa/Abidjan'), findsNothing);
+        }
+        await tester.tap(find.byKey(const Key('reminder-zone-cancel')));
+        await tester.pumpAndSettle();
+        expect(
+          find.descendant(of: zone, matching: find.text('เลือกเขตเวลา')),
+          findsOneWidget,
+        );
+        await tester.tap(zone);
+        await tester.pumpAndSettle();
+        await tester.enterText(search, 'new york');
+        await tester.pumpAndSettle();
+        expect(find.text('America/New_York').hitTestable(), findsOneWidget);
+        await tester.enterText(search, 'กรุงเทพ');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Asia/Bangkok'));
+        await tester.pumpAndSettle();
+        final time = find.byKey(const Key('reminder-time'));
+        await _show(tester, time, delta: -300);
+        await tester.tap(time);
+        await tester.pumpAndSettle();
+        final dialog = find.byType(TimePickerDialog);
+        await tester.tap(
+          find.text(
+            MaterialLocalizations.of(tester.element(dialog)).okButtonLabel,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final timeText = tester
+            .widget<Text>(
+              find.descendant(of: time, matching: find.byType(Text)),
+            )
+            .data!;
+        expect(timeText, isNot('เลือกเวลา'));
+        final save = find.byKey(const Key('reminder-save'));
+        await _show(tester, save);
+        await tester.tap(save);
+        await _wait(
+          tester,
+          () => find.text('บันทึกการเตือน').hitTestable().evaluate().isNotEmpty,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _mount(tester, f);
+        expect(
+          find.descendant(of: zone, matching: find.text('Asia/Bangkok')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: time, matching: find.text(timeText)),
+          findsOneWidget,
+        );
+        expect(find.text('ค่าที่บันทึก: ปิดการเตือน'), findsOneWidget);
+        expect(f.platform.permissionRequests, 0);
+        expect(f.platform.alarmRevision, isNull);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await closeMotivationPresentation(tester, f.close);
+      }
+    },
+  );
+
+  testWidgets(
     'retained save while actual time picker covers settings changes no stored facts',
     (tester) async {
       final f = await _open(tester);
@@ -649,22 +725,51 @@ void main() {
   );
 
   testWidgets(
-    'actual owner ABA clears the draft and retained save cannot write',
+    'actual owner ABA clears the open zone picker and rejects retained choice and save',
     (tester) async {
       final f = await _open(tester);
       Future<void>? closing;
       Future<void> close() =>
           closing ??= closeMotivationPresentation(tester, f.close);
       try {
+        await motivationPresentationIo(
+          tester,
+          () => f.runtime.repository.writeForOwner(
+            ownerId: configuredOwnerId,
+            baseRevision: 0,
+            choice: const StudyReminderChoice(
+              enabled: false,
+              minuteOfDay: 1140,
+              timezoneId: 'Asia/Bangkok',
+            ),
+            updatedAtUtc: f.h.now,
+            stillCurrent: () => true,
+          ),
+        );
         await _mount(tester, f);
         await _show(tester, find.byKey(const Key('reminder-save')));
         final stale = tester
             .widget<FilledButton>(find.byKey(const Key('reminder-save')))
             .onPressed!;
+        final zone = find.byKey(const Key('reminder-zone'));
+        await _show(tester, zone, delta: -300);
+        await tester.tap(zone);
+        await tester.pumpAndSettle();
+        final search = find.byKey(const Key('reminder-zone-search'));
+        await tester.enterText(search, 'Bangkok');
+        await tester.pumpAndSettle();
+        final selected = tester.widget<ListTile>(
+          find.widgetWithText(ListTile, 'Asia/Bangkok'),
+        );
+        expect(selected.selected, isTrue);
+        final retainedChoice = selected.onTap!;
         await motivationPresentationIo(
           tester,
           () => f.switchOwner(configuredOtherOwnerId),
         );
+        await tester.pumpAndSettle();
+        expect(find.text('Asia/Bangkok'), findsNothing);
+        expect(search, findsNothing);
         await motivationPresentationIo(
           tester,
           () => f.switchOwner(configuredOwnerId),
@@ -673,6 +778,7 @@ void main() {
           tester,
           f.h.storage.snapshot,
         );
+        retainedChoice();
         stale();
         await tester.pump();
         expect(

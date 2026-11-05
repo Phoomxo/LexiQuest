@@ -275,9 +275,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     child: ListTile(
                       leading: const Icon(Icons.toll_outlined),
                       title: const Text('คะแนนประสบการณ์'),
-                      trailing: Text('${progress.totalXp}'),
                       subtitle: Text(
-                        'คำนวณจาก ${progress.sampleSize} คำตอบที่บันทึกไว้',
+                        '${progress.totalXp} XP จากการเรียนและภารกิจที่บันทึก\n'
+                        'บันทึกแล้ว ${progress.sampleSize} คำตอบ',
                       ),
                     ),
                   ),

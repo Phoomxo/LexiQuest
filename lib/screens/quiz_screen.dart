@@ -22,7 +22,7 @@ import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
 
-enum QuizWordSelectionMode { weakness, sourcePractice }
+enum QuizWordSelectionMode { weakness, sourcePractice, selectedWord }
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
@@ -527,9 +527,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               direction: _direction,
               hints: _hints,
             )
-          : widget.selectionMode == QuizWordSelectionMode.sourcePractice
-          ? QuizConfiguration.sourcePractice(wordIds: widget.wordIds!)
-          : QuizConfiguration.weaknessPractice(wordIds: widget.wordIds!);
+          : widget.selectionMode == QuizWordSelectionMode.weakness
+          ? QuizConfiguration.weaknessPractice(wordIds: widget.wordIds!)
+          : QuizConfiguration.sourcePractice(wordIds: widget.wordIds!);
       final launchFuture = _launch ??= widget.preparedLaunch == null
           ? learning.prepareConfiguredQuiz(
               configuration: configuration,
@@ -699,8 +699,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     if (activity == 'sourcePractice' ||
         (activity == null &&
             widget.wordIds != null &&
-            widget.selectionMode == QuizWordSelectionMode.sourcePractice)) {
-      return 'แบบทดสอบจากเนื้อหานี้';
+            widget.selectionMode != QuizWordSelectionMode.weakness)) {
+      return widget.selectionMode == QuizWordSelectionMode.sourcePractice
+          ? 'แบบทดสอบจากเนื้อหานี้'
+          : 'ฝึกความหมาย';
     }
     if (activity == 'weaknessPractice' ||
         (activity == null && widget.wordIds != null)) {
@@ -784,13 +786,50 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     final typed = lexical is DefinitionTypedContent;
     final accessible =
         _quiz!.plan.configuration.lexical?.settings.accessibleInput == true;
-    final help = lexical?.target.entry;
+    final entry = lexical?.target.entry;
+    final hint = entry == null
+        ? question.word.partOfSpeech
+        : (entry.hint ??
+              entry.strategy ??
+              entry.memoryCue ??
+              entry.examples.firstOrNull?.text);
+    final answerWord = RegExp(
+      r'(?<![\p{L}\p{N}\p{M}\p{Pc}])' +
+          RegExp.escape(question.correctAnswer) +
+          r'(?![\p{L}\p{N}\p{M}\p{Pc}])',
+      caseSensitive: false,
+      unicode: true,
+    );
+    final maskedHint = hint?.replaceAll(answerWord, '_____');
     return SafeArea(
       child: SingleChildScrollView(
+        key: ValueKey((session.id, _index, _answered)),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_answered) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _quiz!.checkpoint.answer!.isCorrect
+                      ? 'ถูกต้อง'
+                      : 'ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _blocked ? null : _next,
+                child: Text(
+                  _index == session.questions.length - 1
+                      ? 'ดูผลการเรียน'
+                      : 'คำถามถัดไป',
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('${question.word.spelling} — ${question.word.meaning}'),
+            ],
             LessonProgress(
               current: _index + 1,
               total: session.questions.length,
@@ -799,36 +838,35 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 case final minutes?)
               Text('เป้าหมาย $minutes นาที · พักหรือจบเมื่อพร้อม'),
             const SizedBox(height: 24),
-            Text(
-              typed
-                  ? 'อ่านนิยามแล้วพิมพ์คำศัพท์'
-                  : lexical != null
-                  ? 'อ่านนิยามแล้วเลือกคำศัพท์'
-                  : question.direction == MeaningQuizDirection.reverse
-                  ? 'เลือกคำศัพท์ที่ตรงกับความหมาย'
-                  : 'เลือกคำแปลที่ตรงกับคำศัพท์',
-            ),
+            if (!_answered)
+              Text(
+                typed
+                    ? 'อ่านนิยามแล้วพิมพ์คำศัพท์'
+                    : lexical != null
+                    ? 'อ่านนิยามแล้วเลือกคำศัพท์'
+                    : question.direction == MeaningQuizDirection.reverse
+                    ? 'เลือกคำศัพท์ที่ตรงกับความหมาย'
+                    : 'เลือกคำแปลที่ตรงกับคำศัพท์',
+              ),
             const SizedBox(height: 12),
             Text(
-              question.prompt,
+              lexical != null && !_answered
+                  ? question.prompt.replaceAll(answerWord, '_____')
+                  : question.prompt,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 4),
             if (lexical == null && (_hintVisible || _answered))
               Text(
-                question.word.partOfSpeech,
+                _answered ? question.word.partOfSpeech : maskedHint!,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             if (!_answered) ...[
               if (_quiz!.plan.configuration.allowsHints &&
-                  (help == null
-                      ? question.word.partOfSpeech.isNotEmpty
-                      : help.hint != null ||
-                            help.strategy != null ||
-                            help.memoryCue != null ||
-                            help.examples.isNotEmpty))
+                  maskedHint != null &&
+                  maskedHint.isNotEmpty)
                 TextButton(
                   onPressed: _blocked ? null : _toggleHint,
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -842,22 +880,20 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 child: const Text('เฉลยคำตอบ'),
               ),
             ],
-            if (help != null && _hintVisible && !_answered) ...[
-              if (help.hint != null) Text('คำใบ้: ${help.hint}'),
-              if (help.strategy != null) Text('วิธีฝึก: ${help.strategy}'),
-              if (help.memoryCue != null) Text('ช่วยจำ: ${help.memoryCue}'),
-              for (final example in help.examples)
-                Text('ตัวอย่าง: ${example.text}'),
-            ],
+            if (lexical != null &&
+                maskedHint != null &&
+                _hintVisible &&
+                !_answered)
+              Text('คำใบ้: $maskedHint'),
             if (lexical != null &&
                 _quiz!.checkpoint.assistance.hintFirstShownAtUtcMs != null)
               const Text('ใช้ตัวช่วยแล้วในข้อนี้'),
             const SizedBox(height: 24),
-            if (typed) ...[
+            if (typed && !_answered) ...[
               TextField(
                 key: const ValueKey('definition-response'),
                 controller: _typed,
-                enabled: !_answered && !_blocked,
+                enabled: !_blocked,
                 autocorrect: false,
                 enableSuggestions: false,
                 textInputAction: TextInputAction.done,
@@ -870,62 +906,66 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     _record(question, null, typedResponse: _typed.text),
               ),
               const SizedBox(height: 12),
-              if (!_answered) ...[
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _typedDirty
-                        ? 'ร่างยังไม่ได้บันทึก'
-                        : 'เก็บร่างแล้ว ยังไม่บันทึกคำตอบ',
-                    key: const ValueKey('definition-draft-status'),
-                  ),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _typedDirty
+                      ? 'ร่างยังไม่ได้บันทึก'
+                      : 'เก็บร่างแล้ว ยังไม่บันทึกคำตอบ',
+                  key: const ValueKey('definition-draft-status'),
                 ),
-                if (_typed.text.length > 512)
-                  const Text('คำตอบยาวเกิน 512 ตัวอักษร'),
-                if (!_typed.value.composing.isCollapsed)
-                  const Text('ยืนยันข้อความบนแป้นพิมพ์ก่อนส่ง'),
-                OutlinedButton(
-                  key: const ValueKey('definition-save-draft'),
-                  onPressed:
-                      _blocked ||
-                          !_typedDirty ||
-                          !_typed.value.composing.isCollapsed ||
-                          _typed.text.length > 512
-                      ? null
-                      : _saveTypedDraft,
-                  child: const Text('เก็บร่าง'),
-                ),
-                FilledButton(
-                  key: const ValueKey('definition-submit'),
-                  onPressed:
-                      _blocked ||
-                          _typed.text.trim().isEmpty ||
-                          _typed.text.length > 512 ||
-                          !_typed.value.composing.isCollapsed
-                      ? null
-                      : () =>
-                            _record(question, null, typedResponse: _typed.text),
-                  child: const Text('บันทึกคำตอบ'),
-                ),
-              ],
+              ),
+              if (_typed.text.length > 512)
+                const Text('คำตอบยาวเกิน 512 ตัวอักษร'),
+              if (!_typed.value.composing.isCollapsed)
+                const Text('ยืนยันข้อความบนแป้นพิมพ์ก่อนส่ง'),
+              OutlinedButton(
+                key: const ValueKey('definition-save-draft'),
+                onPressed:
+                    _blocked ||
+                        !_typedDirty ||
+                        !_typed.value.composing.isCollapsed ||
+                        _typed.text.length > 512
+                    ? null
+                    : _saveTypedDraft,
+                child: const Text('เก็บร่าง'),
+              ),
+              FilledButton(
+                key: const ValueKey('definition-submit'),
+                onPressed:
+                    _blocked ||
+                        _typed.text.trim().isEmpty ||
+                        _typed.text.length > 512 ||
+                        !_typed.value.composing.isCollapsed
+                    ? null
+                    : () => _record(question, null, typedResponse: _typed.text),
+                child: const Text('บันทึกคำตอบ'),
+              ),
             ],
-            ...question.options.map((option) {
-              final feedbackColors = _answerColors(question, option);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: FilledButton.tonal(
-                  onPressed: _answered || _blocked
-                      ? null
-                      : () => _record(question, option),
-                  style: FilledButton.styleFrom(
-                    minimumSize: Size.fromHeight(accessible ? 64 : 52),
-                    backgroundColor: feedbackColors?.background,
-                    foregroundColor: feedbackColors?.foreground,
-                  ),
-                  child: Text(option),
-                ),
-              );
-            }),
+            ...question.options
+                .where(
+                  (option) =>
+                      !_answered ||
+                      option == _selected ||
+                      option == question.correctAnswer,
+                )
+                .map((option) {
+                  final feedbackColors = _answerColors(question, option);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: FilledButton.tonal(
+                      onPressed: _answered || _blocked
+                          ? null
+                          : () => _record(question, option),
+                      style: FilledButton.styleFrom(
+                        minimumSize: Size.fromHeight(accessible ? 64 : 52),
+                        backgroundColor: feedbackColors?.background,
+                        foregroundColor: feedbackColors?.foreground,
+                      ),
+                      child: Text(option),
+                    ),
+                  );
+                }),
             const SizedBox(height: 16),
             if (_saving)
               const LinearProgressIndicator(semanticsLabel: 'กำลังบันทึกคำตอบ'),
@@ -937,65 +977,40 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 label: const Text('ลองบันทึกอีกครั้ง'),
               ),
             if (_answered) ...[
-              Semantics(
-                liveRegion: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _quiz!.checkpoint.answer!.isCorrect
-                          ? 'ถูกต้อง'
-                          : 'ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
-                    ),
-                    Text(
-                      '${question.word.spelling} — ${question.word.meaning}',
-                    ),
-                    if (lexical != null)
-                      LexicalEntryDetails(
-                        entry: lexical.target.entry,
-                        showIdentity: false,
-                        showAssistance: true,
-                      ),
-                    if (_quiz!.acknowledgedContrastiveExplanation
-                        case final explanation?)
-                      Text(
-                        explanation,
-                        key: const ValueKey(
-                          'definition-contrastive-explanation',
-                        ),
-                      ),
-                    if (_quiz!
-                            .plan
-                            .configuration
-                            .lexical
-                            ?.settings
-                            .manualAudio ==
-                        true) ...[
-                      OutlinedButton.icon(
-                        key: const ValueKey('definition-feedback-audio'),
-                        onPressed: _voice == null || _audioBusy || _blocked
-                            ? null
-                            : _speakAnswer,
-                        icon: const Icon(Icons.volume_up_outlined),
-                        label: Text(
-                          _voice == null
-                              ? 'ระบบเสียงยังไม่พร้อม'
-                              : _audioBusy
-                              ? 'กำลังเล่นเสียง'
-                              : 'ฟังคำศัพท์',
-                        ),
-                      ),
-                      if (_audioFailed)
-                        const Text('เล่นเสียงไม่สำเร็จ ลองฟังอีกครั้งได้'),
-                    ],
-                  ],
-                ),
+              Text(
+                'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
               ),
+              if (lexical != null)
+                LexicalEntryDetails(
+                  entry: lexical.target.entry,
+                  showIdentity: false,
+                  showAssistance: true,
+                ),
+              if (_quiz!.acknowledgedContrastiveExplanation
+                  case final explanation?)
+                Text(
+                  explanation,
+                  key: const ValueKey('definition-contrastive-explanation'),
+                ),
+              if (_quiz!.plan.configuration.lexical?.settings.manualAudio ==
+                  true) ...[
+                OutlinedButton.icon(
+                  key: const ValueKey('definition-feedback-audio'),
+                  onPressed: _voice == null || _audioBusy || _blocked
+                      ? null
+                      : _speakAnswer,
+                  icon: const Icon(Icons.volume_up_outlined),
+                  label: Text(
+                    _voice == null
+                        ? 'ระบบเสียงยังไม่พร้อม'
+                        : _audioBusy
+                        ? 'กำลังเล่นเสียง'
+                        : 'ฟังคำศัพท์',
+                  ),
+                ),
+                if (_audioFailed)
+                  const Text('เล่นเสียงไม่สำเร็จ ลองฟังอีกครั้งได้'),
+              ],
               const SizedBox(height: 16),
               _reportQuestion(question),
             ],
@@ -1006,15 +1021,6 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 onPressed: _retryAction,
                 icon: const Icon(Icons.refresh),
                 label: const Text('ลองบันทึกอีกครั้ง'),
-              ),
-            if (_answered)
-              FilledButton(
-                onPressed: _blocked ? null : _next,
-                child: Text(
-                  _index == session.questions.length - 1
-                      ? 'ดูผลการเรียน'
-                      : 'คำถามถัดไป',
-                ),
               ),
           ],
         ),

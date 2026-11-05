@@ -586,24 +586,14 @@ class _ShopPageState extends State<ShopPage> with WidgetsBindingObserver {
                       ),
                     Semantics(
                       label: 'เหรียญคงเหลือ ${account.balance} เหรียญ',
+                      excludeSemantics: true,
                       child: Card(
                         child: ListTile(
                           leading: const Icon(Icons.toll_outlined),
                           title: const Text('เหรียญคงเหลือ'),
-                          subtitle: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${account.balance}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
-                              ),
-                              Text(
-                                'มีรายการรับและใช้เหรียญ ${account.transactionCount} รายการ',
-                              ),
-                            ],
+                          subtitle: Text(
+                            '${account.balance}',
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
                       ),

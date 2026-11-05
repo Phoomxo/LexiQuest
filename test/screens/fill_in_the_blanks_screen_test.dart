@@ -12,6 +12,36 @@ import '../support/cloze_session_harness.dart';
 
 void main() {
   for (final variant in ClozeVariant.values) {
+    testWidgets('$variant shows the saved result and finish together at 200%', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final f = await _Fixture.open(tester, variant);
+      try {
+        await _mount(tester, f, scale: 2);
+        await _answer(tester, f);
+        await _until(tester, () => f.repository.answers.isNotEmpty);
+        await tester.runAsync(f.repository.settle);
+        await tester.pumpAndSettle();
+        final result = find.byKey(const ValueKey('cloze-feedback'));
+        final finish = find.byKey(const ValueKey('cloze-finish'));
+        expect(result.hitTestable(), findsOneWidget);
+        expect(finish.hitTestable(), findsOneWidget);
+        expect(
+          tester.getBottomLeft(result).dy,
+          lessThan(tester.getTopLeft(finish).dy),
+        );
+        await tester.tap(finish);
+        await _until(tester, () => f.summary != null);
+        expect(f.summary!.correctCount, 1);
+      } finally {
+        await f.close(tester);
+      }
+    });
+
     testWidgets(
       'accepted $variant renders one masked gap and finishes actual saved facts',
       (tester) async {

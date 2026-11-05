@@ -104,9 +104,14 @@ void main() {
       await tap('matching-word-0');
       await tap('matching-meaning-1');
       await tap('matching-check');
-      expect(find.text('คู่นี้ยังไม่ตรงกัน ลองเลือกใหม่'), findsOneWidget);
+      const feedback = 'station กับ ตั๋ว ยังไม่ตรงกัน ลองเลือกใหม่';
+      expect(find.text(feedback), findsOneWidget);
+      final announcement = tester.getSemantics(find.text(feedback));
+      expect(announcement.label, contains(feedback));
+      expect(announcement.flagsCollection.isLiveRegion, isTrue);
       expect(h.repository.commits, 1);
       await tap('matching-continue');
+      expect(find.text(feedback), findsNothing);
       for (var index = 0; index < 2; index++) {
         await tap('matching-word-$index');
         await tap('matching-meaning-$index');

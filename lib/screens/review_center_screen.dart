@@ -683,7 +683,10 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     ReviewQueue.due => _text('ถึงกำหนด', 'Due'),
     ReviewQueue.incorrect => _text('ประวัติตอบผิด', 'Incorrect history'),
     ReviewQueue.saved => _text('บันทึกไว้', 'Saved'),
-    ReviewQueue.reported => _text('รายงานในเครื่อง', 'Local reports'),
+    ReviewQueue.reported => _text(
+      'รายงานคำศัพท์ในเครื่อง',
+      'Local word reports',
+    ),
   };
 
   String _localDateTime(DateTime utc) {
@@ -811,8 +814,8 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
                     'No previously missed words.',
                   ),
                   ReviewQueue.reported => _text(
-                    'ยังไม่มีรายงานในเครื่อง',
-                    'No local reports yet.',
+                    'ยังไม่มีรายงานคำศัพท์ในเครื่อง',
+                    'No local word reports yet.',
                   ),
                   null => _text(
                     'ยังไม่มีรายการให้ทบทวน',
@@ -858,7 +861,10 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
               (
                 'reports',
                 'review-center-reports',
-                _text('ประวัติรายงานในเครื่อง', 'Local report history'),
+                _text(
+                  'ประวัติรายงานคำศัพท์ในเครื่อง',
+                  'Local word report history',
+                ),
                 _reports != null,
               ),
               (
@@ -972,9 +978,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
       Card(
         child: ExpansionTile(
           key: ValueKey('review-center-report:${row.reportId}'),
-          title: Text(
-            _text('รายงานที่บันทึกในเครื่อง', 'Report saved on this device'),
-          ),
+          title: Text(_text('รายงานคำศัพท์ในเครื่อง', 'Local word report')),
           subtitle: Text(row.report.target.spelling),
           childrenPadding: const EdgeInsets.all(16),
           children: [

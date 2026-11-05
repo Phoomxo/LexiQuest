@@ -61,6 +61,8 @@ void main() {
     );
     expect(progress.semanticsLabel, 'กำลังโหลดร้านค้ารางวัล');
     await _waitFor(tester, find.text('เหรียญคงเหลือ'));
+    expect(find.text('200'), findsOneWidget);
+    expect(find.textContaining('รายการรับและใช้เหรียญ'), findsNothing);
   });
 
   shopTestWidgets(

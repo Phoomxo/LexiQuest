@@ -55,6 +55,7 @@ enum _Step {
 class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     with WidgetsBindingObserver {
   final _response = TextEditingController();
+  final _scroll = ScrollController();
   final _latency = Stopwatch();
   AppDependencies? _dependencies;
   StreamSubscription<String?>? _owners;
@@ -356,7 +357,10 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
       await _checkpoint!.saveAnswer(
         _checkpoint!.hasPendingInput ? null : _captureDraft(),
       );
-      if (_current(epoch)) setState(_restoreCheckpoint);
+      if (_current(epoch)) {
+        setState(_restoreCheckpoint);
+        if (_step == _Step.saved && _scroll.hasClients) _scroll.jumpTo(0);
+      }
     } on Object {
       if (_current(epoch)) setState(() => _step = _Step.saveFailed);
     }
@@ -466,6 +470,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     WidgetsBinding.instance.removeObserver(this);
     _latency.stop();
     _response.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -502,8 +507,57 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
           icon: const Icon(Icons.arrow_back),
         ),
         body: ListView(
+          controller: _scroll,
           padding: const EdgeInsets.all(24),
           children: [
+            if (!_invalidated && saved) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  key: const ValueKey('cloze-feedback'),
+                  _pendingAnswer!.isCorrect
+                      ? _copy(
+                          'ตรงกับคำศัพท์เป้าหมาย · ${widget.session.word.spelling}',
+                          'Matches the target word · ${widget.session.word.spelling}',
+                        )
+                      : _copy(
+                          'คำศัพท์เป้าหมายคือ ${widget.session.word.spelling}',
+                          'The target vocabulary word is ${widget.session.word.spelling}',
+                        ),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_step == _Step.finishFailed)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _copy(
+                      'ยังยืนยันการจบกิจกรรมไม่ได้',
+                      'Finish could not be confirmed.',
+                    ),
+                  ),
+                ),
+              FilledButton(
+                key: ValueKey(
+                  _step == _Step.finishFailed ? 'cloze-retry' : 'cloze-finish',
+                ),
+                onPressed: busy ? null : _finish,
+                child: Text(
+                  _step == _Step.finishFailed
+                      ? _copy('ลองส่งอีกครั้ง', 'Retry')
+                      : _copy('เสร็จสิ้น', 'Finish'),
+                ),
+              ),
+              if (widget.session is TypedClozeSession)
+                Text(
+                  _copy(
+                    'ผลนี้ตรวจเฉพาะคำที่พิมพ์ เปรียบเทียบลายมือกับคำตอบได้ด้วยตนเอง',
+                    'This result checks typed text only. Compare your handwriting with the answer yourself.',
+                  ),
+                ),
+              const SizedBox(height: 24),
+            ],
             if (!_invalidated) ...[
               LessonProgress(
                 current: 1,
@@ -528,13 +582,14 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                 child: Text(_copy('กลับไปหน้าเรียน', 'Back to learning')),
               ),
             ] else ...[
-              Text(
-                _copy(
-                  'เติมคำศัพท์เป้าหมายตามความหมายนี้ในช่องว่าง',
-                  'Fill the gap with your target vocabulary word for this meaning.',
+              if (!saved)
+                Text(
+                  _copy(
+                    'เติมคำศัพท์เป้าหมายตามความหมายนี้ในช่องว่าง',
+                    'Fill the gap with your target vocabulary word for this meaning.',
+                  ),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
               const SizedBox(height: 12),
               Text(
                 _copy(
@@ -576,7 +631,9 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                     },
                     child: Column(
                       children: [
-                        for (final word in choices)
+                        for (final word in choices.where(
+                          (word) => !saved || word.id == _selected,
+                        ))
                           RadioListTile<String>(
                             key: ValueKey('cloze-option-${word.id}'),
                             value: word.id,
@@ -630,36 +687,32 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                 const LinearProgressIndicator(),
               ],
               const SizedBox(height: 16),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  key: const ValueKey('cloze-status'),
-                  _copy(
-                    failed
-                        ? 'ยังยืนยันผลไม่ได้ กรุณาลองส่งรายการเดิมอีกครั้ง'
-                        : busy
-                        ? 'กำลังดำเนินการ…'
-                        : saved
-                        ? 'บันทึกคำตอบแล้ว กดเสร็จสิ้นเพื่อปิดกิจกรรม'
-                        : 'ตอบเมื่อพร้อม แล้วกดบันทึกคำตอบ',
-                    failed
-                        ? 'Confirmation is unavailable. Retry the original request.'
-                        : busy
-                        ? 'Working…'
-                        : saved
-                        ? 'Answer saved. Finish to close this activity.'
-                        : 'Answer when ready, then save your response.',
+              if (!saved || busy)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    key: const ValueKey('cloze-status'),
+                    _copy(
+                      failed
+                          ? 'ยังยืนยันผลไม่ได้ กรุณาลองส่งรายการเดิมอีกครั้ง'
+                          : busy
+                          ? 'กำลังดำเนินการ…'
+                          : 'ตอบเมื่อพร้อม แล้วกดบันทึกคำตอบ',
+                      failed
+                          ? 'Confirmation is unavailable. Retry the original request.'
+                          : busy
+                          ? 'Working…'
+                          : 'Answer when ready, then save your response.',
+                    ),
                   ),
                 ),
-              ),
-              if (failed) ...[
+              if (failed && !saved) ...[
                 const SizedBox(height: 12),
                 OutlinedButton(
                   key: const ValueKey('cloze-retry'),
                   onPressed: () => switch (_step) {
                     _Step.startFailed => _start(),
                     _Step.saveFailed => _save(),
-                    _Step.finishFailed => _finish(),
                     _ => Future<void>.value(),
                   },
                   child: Text(_copy('ลองส่งอีกครั้ง', 'Retry')),
@@ -667,35 +720,6 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
               ],
               if (saved) ...[
                 const SizedBox(height: 16),
-                if (widget.session is TypedClozeSession)
-                  Text(
-                    _copy(
-                      'ผลนี้ตรวจเฉพาะคำที่พิมพ์ เปรียบเทียบลายมือกับคำตอบได้ด้วยตนเอง',
-                      'This result checks typed text only. Compare your handwriting with the answer yourself.',
-                    ),
-                  ),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    key: const ValueKey('cloze-feedback'),
-                    _pendingAnswer!.isCorrect
-                        ? _copy(
-                            'ตรงกับคำศัพท์เป้าหมาย · ${widget.session.word.spelling}',
-                            'Matches the target word · ${widget.session.word.spelling}',
-                          )
-                        : _copy(
-                            'คำศัพท์เป้าหมายคือ ${widget.session.word.spelling}',
-                            'The target vocabulary word is ${widget.session.word.spelling}',
-                          ),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  key: const ValueKey('cloze-finish'),
-                  onPressed: _step == _Step.saved ? _finish : null,
-                  child: Text(_copy('เสร็จสิ้น', 'Finish')),
-                ),
                 if (_step == _Step.saved &&
                     widget.learningTimeCallerContext !=
                         LearningTimeCallerContext.researchControlled &&

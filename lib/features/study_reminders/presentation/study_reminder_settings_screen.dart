@@ -24,7 +24,11 @@ class StudyReminderSettingsScreen extends StatefulWidget {
 class _StudyReminderSettingsScreenState
     extends State<StudyReminderSettingsScreen>
     with WidgetsBindingObserver {
+  static const _retiredMessage =
+      'พื้นที่ข้อมูลหรือหน้าจอเปลี่ยนแล้ว โปรดกลับไปเปิดการเตือนใหม่';
+
   StreamSubscription<void>? _changes;
+  Completer<void>? _zonePickerRetirement;
   StudyReminderView? _view;
   StudyReminderChangeIntent? _pending;
   ModalRoute<dynamic>? _route;
@@ -73,7 +77,9 @@ class _StudyReminderSettingsScreenState
   }
 
   void _retire() {
+    if (_retired) return;
     _retired = true;
+    _zonePickerRetirement?.complete();
     _generation++;
     _read++;
     _pending = null;
@@ -83,7 +89,7 @@ class _StudyReminderSettingsScreenState
     _minute = null;
     _zone = null;
     _enabled = false;
-    _status = 'พื้นที่ข้อมูลหรือหน้าจอเปลี่ยนแล้ว โปรดกลับไปเปิดการเตือนใหม่';
+    _status = _retiredMessage;
   }
 
   @override
@@ -186,49 +192,21 @@ class _StudyReminderSettingsScreenState
     final generation = _generation;
     if (!_current(generation) || _busy || _choosing) return;
     _choosing = true;
+    final retirement = _zonePickerRetirement = Completer<void>();
     try {
-      final zones = learningTimezoneIds;
-      final result = await showModalBottomSheet<String>(
-        context: context,
-        isScrollControlled: true,
-        builder: (sheetContext) => FractionallySizedBox(
-          heightFactor: 0.8,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'เลือกเขตเวลา',
-                    style: Theme.of(sheetContext).textTheme.titleLarge,
+      final result = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => FutureBuilder<void>(
+            future: retirement.future,
+            builder: (_, _) => _current(generation)
+                ? _ReminderZonePicker(
+                    selected: _zone,
+                    stillCurrent: () => _current(generation),
+                  )
+                : Scaffold(
+                    appBar: AppBar(),
+                    body: const Center(child: Text(_retiredMessage)),
                   ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: zones.length,
-                    itemBuilder: (_, index) => ListTile(
-                      title: Text(zones[index]),
-                      selected: zones[index] == _zone,
-                      onTap: () {
-                        if (_current(generation) &&
-                            ModalRoute.of(sheetContext)?.isCurrent == true) {
-                          Navigator.of(sheetContext).pop(zones[index]);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                TextButton(
-                  key: const Key('reminder-zone-cancel'),
-                  onPressed: () {
-                    if (ModalRoute.of(sheetContext)?.isCurrent == true) {
-                      Navigator.of(sheetContext).pop();
-                    }
-                  },
-                  child: const Text('ยกเลิก'),
-                ),
-              ],
-            ),
           ),
         ),
       );
@@ -238,6 +216,7 @@ class _StudyReminderSettingsScreenState
         });
       }
     } finally {
+      _zonePickerRetirement = null;
       _choosing = false;
     }
   }
@@ -310,8 +289,7 @@ class _StudyReminderSettingsScreenState
 
   @override
   void dispose() {
-    _retired = true;
-    _generation++;
+    _retire();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_changes?.cancel());
     super.dispose();
@@ -416,6 +394,89 @@ class _StudyReminderSettingsScreenState
               child: const Text('กลับ'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderZonePicker extends StatefulWidget {
+  const _ReminderZonePicker({
+    required this.selected,
+    required this.stillCurrent,
+  });
+
+  final String? selected;
+  final bool Function() stillCurrent;
+
+  @override
+  State<_ReminderZonePicker> createState() => _ReminderZonePickerState();
+}
+
+class _ReminderZonePickerState extends State<_ReminderZonePicker> {
+  final _zones = learningTimezoneIds;
+  var _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final matches = _query.isEmpty
+        ? _zones
+        : _zones
+              .where(
+                (zone) =>
+                    zone.toLowerCase().replaceAll('_', ' ').contains(_query) ||
+                    (zone == 'Asia/Bangkok' &&
+                        'กรุงเทพมหานคร'.contains(_query)),
+              )
+              .toList();
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(key: Key('reminder-zone-cancel')),
+        title: const Text('เลือกเขตเวลา'),
+      ),
+      body: SafeArea(
+        child: AdaptiveContentPane(
+          maxWidth: AdaptiveContentPane.formMaxWidth,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  key: const Key('reminder-zone-search'),
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    labelText: 'ค้นหาเมืองหรือเขตเวลา',
+                  ),
+                  onChanged: (value) => setState(() {
+                    _query = value.trim().toLowerCase().replaceAll('_', ' ');
+                  }),
+                ),
+              ),
+              Expanded(
+                child: matches.isEmpty
+                    ? const Center(child: Text('ไม่พบเขตเวลาที่ค้นหา'))
+                    : ListView.builder(
+                        itemCount: matches.length,
+                        itemBuilder: (_, index) {
+                          final zone = matches[index];
+                          return ListTile(
+                            title: Text(zone),
+                            subtitle: zone == 'Asia/Bangkok'
+                                ? const Text('กรุงเทพมหานคร')
+                                : null,
+                            selected: zone == widget.selected,
+                            onTap: () {
+                              if (widget.stillCurrent() &&
+                                  ModalRoute.of(context)?.isCurrent == true) {
+                                Navigator.of(context).pop(zone);
+                              }
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

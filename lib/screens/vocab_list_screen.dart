@@ -285,7 +285,10 @@ class _VocabListScreenState extends State<VocabListScreen>
                                   ),
                                   icon: const Icon(Icons.flag_outlined),
                                   label: Text(
-                                    _text('รายงานในเครื่อง', 'Local reports'),
+                                    _text(
+                                      'รายงานคำศัพท์ในเครื่อง',
+                                      'Local word reports',
+                                    ),
                                   ),
                                 ),
                               if (binding != null)

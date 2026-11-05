@@ -342,16 +342,18 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
     ),
   );
 
-  String _duration(Duration value) {
-    final seconds =
-        (value.inMicroseconds + Duration.microsecondsPerSecond - 1) ~/
-        Duration.microsecondsPerSecond;
+  String _duration(int seconds) {
     return '${(seconds ~/ 60).toString().padLeft(2, '0')}:'
         '${(seconds % 60).toString().padLeft(2, '0')}';
   }
 
   List<Widget> _controls(FocusTimerSnapshot snapshot) {
     final configure = _action(_configure);
+    final finished = snapshot.state == FocusTimerState.finished;
+    final elapsedSeconds = snapshot.elapsed.inSeconds;
+    final displaySeconds = finished
+        ? elapsedSeconds
+        : Duration(minutes: snapshot.minutes).inSeconds - elapsedSeconds;
     final editable = switch (snapshot.state) {
       FocusTimerState.configured ||
       FocusTimerState.stopped ||
@@ -389,18 +391,23 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
         child: Text(status, key: const ValueKey('focus-status')),
       ),
       const SizedBox(height: 16),
-      Text(
-        _duration(snapshot.remaining),
-        key: const ValueKey('focus-remaining'),
-        style: Theme.of(context).textTheme.headlineLarge,
-      ),
-      if (snapshot.state == FocusTimerState.finished)
-        Text(
-          _text(
-            'เวลาโฟกัสในช่วงนี้: ${_duration(snapshot.elapsed)} (ไม่บันทึก)',
-            'Local focus interval: ${_duration(snapshot.elapsed)} (not recorded)',
-          ),
+      MergeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              finished
+                  ? _text('เวลาที่โฟกัส', 'Time focused')
+                  : _text('เวลาที่เหลือ', 'Time remaining'),
+            ),
+            Text(
+              _duration(displaySeconds),
+              key: ValueKey(finished ? 'focus-elapsed' : 'focus-remaining'),
+              style: Theme.of(context).textTheme.headlineLarge,
+            ),
+          ],
         ),
+      ),
       const SizedBox(height: 24),
       TextField(
         key: const ValueKey('focus-minutes'),
@@ -444,7 +451,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
           _timer.finish,
         ),
       ],
-      if (snapshot.state == FocusTimerState.finished)
+      if (finished)
         button('focus-new-interval', 'ช่วงเวลาใหม่', 'New interval', () {
           _timer.configureMinutes(snapshot.minutes);
           _inputError = null;

@@ -372,17 +372,13 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
       !_invalidated &&
       (widget._scopeCurrent?.call() ??
           ContentReportOwnerGuard.currentOf(context));
-  Widget _content(BuildContext context, bool current) => _sheetBody(context, [
+  List<Widget> _sourceDetails(ContentReportTarget target) => [
     Text(
-      _text('รายงานปัญหาเนื้อหา', 'Report content'),
-      style: Theme.of(context).textTheme.titleLarge,
-    ),
-    Text(
-      widget.target.isExcerpt
+      target.isExcerpt
           ? _text('ข้อความบางส่วนที่เลือก', 'Selected excerpt')
           : _text('เนื้อหาที่เลือก', 'Selected content'),
     ),
-    SelectableText(widget.target.text),
+    SelectableText(target.text),
     Text(
       _text(
         'ข้อมูลต้นทางเป็นข้อมูลที่รายงาน ไม่ใช่การรับรองเนื้อหา',
@@ -391,8 +387,18 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
     ),
     ExpansionTile(
       title: Text(_text('ข้อมูลต้นทางที่แนบ', 'Attached source facts')),
-      children: [SelectableText(widget.target.snapshotJson)],
+      children: [SelectableText(target.snapshotJson)],
     ),
+  ];
+
+  Widget _content(BuildContext context, bool current) => _sheetBody(context, [
+    Text(
+      _record == null
+          ? _text('รายงานปัญหาเนื้อหา', 'Report content')
+          : _text('บันทึกรายงานเนื้อหาแล้ว', 'Content report saved'),
+      style: Theme.of(context).textTheme.titleLarge,
+    ),
+    if (_record == null) ..._sourceDetails(widget.target),
     if (!_reviewing) ...[
       Text(_text('ปัญหาที่พบ', 'Issue')),
       Wrap(
@@ -462,14 +468,19 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
         child: Text(_text('ตรวจรายงานก่อนบันทึก', 'Review report')),
       ),
     ] else ...[
-      Text(wordReportReasonLabel(_payload!.reason, widget.languageCode)),
-      if (_payload!.comment != null) SelectableText(_payload!.comment!),
       if (_record == null) ...[
+        Text(wordReportReasonLabel(_payload!.reason, widget.languageCode)),
+        if (_payload!.comment != null) SelectableText(_payload!.comment!),
         Text(
-          _text(
-            'บันทึกในเครื่องก่อน การส่งต้องกดส่งแยกอีกครั้ง',
-            'Save locally first. Sending requires a separate action.',
-          ),
+          widget.reports.transport.enabled
+              ? _text(
+                  'บันทึกในเครื่องก่อน การส่งต้องกดส่งแยกอีกครั้ง',
+                  'Save locally first. Sending requires a separate action.',
+                )
+              : _text(
+                  'ขณะนี้บันทึกรายงานได้เฉพาะในเครื่อง ผู้จัดจะยังไม่ได้รับรายงาน',
+                  'Sending is unavailable. The report stays on this device and the organizer will not receive it.',
+                ),
         ),
         if (!_saveAttempted)
           OutlinedButton(
@@ -503,6 +514,24 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
         ContentReportStatus(
           record: _record!,
           languageCode: widget.languageCode,
+        ),
+        ExpansionTile(
+          key: const ValueKey('content-report-saved-details'),
+          title: Text(
+            _text('ดูรายงานเนื้อหาที่บันทึกไว้', 'View saved content report'),
+          ),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ..._sourceDetails(_record!.payload.target),
+            Text(
+              wordReportReasonLabel(
+                _record!.payload.reason,
+                widget.languageCode,
+              ),
+            ),
+            if (_record!.payload.comment case final comment?)
+              SelectableText(comment),
+          ],
         ),
         if (widget.reports.transport.enabled &&
             _record!.acknowledgement == null)

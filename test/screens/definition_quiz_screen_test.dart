@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/bundled_starter_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
@@ -26,6 +27,100 @@ void main() {
     () => TestWidgetsFlutterBinding.ensureInitialized()
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed),
   );
+
+  testWidgets('starter cat hint keeps its full example until reveal', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(
+      () =>
+          _Fixture.open(LexicalQuizInput.definitionChoice, starterWord: 'cat'),
+    ))!;
+    addTearDown(() => _close(tester, fixture));
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        _app(
+          fixture,
+          QuizScreen(
+            learning: fixture.learning,
+            preparedLaunch: fixture.launch,
+            expectedOwnerId: configuredOwnerId,
+            ownerChanges: fixture.ownerChanges,
+          ),
+        ),
+      );
+      await _wait(tester, () => find.text('ดูคำใบ้').evaluate().isNotEmpty);
+      await _tap(tester, find.text('ดูคำใบ้'));
+      final hint = find.text('คำใบ้: ชื่อสัตว์ที่ร้องเหมียว');
+      await _wait(tester, () => hint.evaluate().isNotEmpty);
+      await tester.ensureVisible(hint);
+      await tester.pump();
+      expect(
+        tester.getSemantics(hint).label,
+        contains('ชื่อสัตว์ที่ร้องเหมียว'),
+      );
+      const example = 'The cat is under the chair.';
+      expect(find.textContaining(example), findsNothing);
+      expect(
+        find.bySemanticsLabel(RegExp(RegExp.escape(example))),
+        findsNothing,
+      );
+      expect(
+        await tester.runAsync(() => fixture.h.count('answer_attempts')),
+        0,
+      );
+      await _tap(tester, find.text('เฉลยคำตอบ'));
+      await _wait(tester, () => find.text(example).evaluate().isNotEmpty);
+      expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
+      await tester.ensureVisible(find.text(example));
+      await tester.pump();
+      expect(tester.getSemantics(find.text(example)).label, contains(example));
+      expect(
+        await tester.runAsync(() => fixture.h.count('answer_attempts')),
+        1,
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('day definition hides the target in the prompt until graded', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(
+      () => _Fixture.open(LexicalQuizInput.definitionTyped, starterWord: 'day'),
+    ))!;
+    addTearDown(() => _close(tester, fixture));
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        _app(
+          fixture,
+          QuizScreen(
+            learning: fixture.learning,
+            preparedLaunch: fixture.launch,
+            expectedOwnerId: configuredOwnerId,
+            ownerChanges: fixture.ownerChanges,
+          ),
+        ),
+      );
+      const original = 'The part of a day when there is light from the sun.';
+      const withoutAnswer =
+          'The part of a _____ when there is light from the sun.';
+      final prompt = find.text(withoutAnswer);
+      await _wait(tester, () => prompt.evaluate().isNotEmpty);
+      await tester.ensureVisible(prompt);
+      await tester.pump();
+      expect(tester.getSemantics(prompt).label, contains(withoutAnswer));
+      expect(find.text(original), findsNothing);
+      expect(fixture.launch.preparedPlan!.questions.single.prompt, original);
+      await _tap(tester, find.text('เฉลยคำตอบ'));
+      await _wait(tester, () => find.text(original).evaluate().isNotEmpty);
+      expect(find.text('day — กลางวัน'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
 
   for (final input in LexicalQuizInput.values) {
     testWidgets(
@@ -156,6 +251,7 @@ void main() {
           await tester.runAsync(() => fixture.h.count('answer_attempts')),
           1,
         );
+        expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
         final progress = await tester.runAsync(
           () => DriftProgressQueries(
             fixture.h.database,
@@ -318,6 +414,7 @@ final class _Fixture {
   static Future<_Fixture> open(
     LexicalQuizInput input, {
     bool feedbackAudio = false,
+    String? starterWord,
   }) async {
     final fixture = _Fixture(await ConfiguredQuizHarness.open());
     var ids = 0;
@@ -332,7 +429,10 @@ final class _Fixture {
     );
     final scope = await fixture.packs.captureOwner(stillCurrent: () => true);
     final pack = await fixture.packs.importPack(
-      fixture.packs.prepareImport(scope: scope!, pack: authoredLexicalPack()),
+      fixture.packs.prepareImport(
+        scope: scope!,
+        pack: starterWord != null ? bundledStarterPack : authoredLexicalPack(),
+      ),
     );
     fixture.learning = LearningUseCases(
       owners: fixture.h.owners,
@@ -351,7 +451,7 @@ final class _Fixture {
     fixture.launch = await fixture.learning.prepareLexicalQuiz(
       expectedOwnerId: configuredOwnerId,
       packVersionId: pack.id,
-      entryCodes: const ['cat', 'dog'],
+      entryCodes: starterWord != null ? [starterWord] : const ['cat', 'dog'],
       input: input,
       limit: 1,
       settings: LexicalQuizSettings(

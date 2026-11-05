@@ -460,6 +460,17 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
           };
     final selecting =
         checkpoint.phase == MatchingPhase.selecting && !_busy && !_failed;
+    String feedback(MatchingPairIntent answer) {
+      if (answer.isCorrect) {
+        return _english ? 'Matched correctly' : 'จับคู่ถูกแล้ว';
+      }
+      final word = plan.words[answer.wordIndex].spelling;
+      final meaning = plan.words[answer.meaningIndex].meaning;
+      return _english
+          ? '$word and $meaning do not match. Try another pair.'
+          : '$word กับ $meaning ยังไม่ตรงกัน ลองเลือกใหม่';
+    }
+
     Widget tile(int index, {required bool meaning}) {
       final matched = checkpoint.matched.contains(index);
       final selected = (meaning ? _meaning : _word) == index;
@@ -580,11 +591,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
         Semantics(
           liveRegion: true,
           child: Text(
-            checkpoint.answer!.isCorrect
-                ? (_english ? 'Matched correctly' : 'จับคู่ถูกแล้ว')
-                : (_english
-                      ? 'These do not match. Try another pair.'
-                      : 'คู่นี้ยังไม่ตรงกัน ลองเลือกใหม่'),
+            feedback(checkpoint.answer!),
             key: const ValueKey('matching-feedback'),
           ),
         ),

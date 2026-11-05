@@ -82,6 +82,10 @@ void main() {
         'Reviewed comment',
       );
       await tapKey(tester, 'content-report-review');
+      expect(
+        find.text('Save locally first. Sending requires a separate action.'),
+        findsOneWidget,
+      );
       expect(transport.submissions, 0);
       expect(queue.rows, isEmpty);
       await tapKey(tester, 'content-report-save');
@@ -403,6 +407,12 @@ void main() {
     );
     await tapKey(tester, 'content-report-reason:spelling');
     await tapKey(tester, 'content-report-review');
+    expect(
+      find.text(
+        'Sending is unavailable. The report stays on this device and the organizer will not receive it.',
+      ),
+      findsOneWidget,
+    );
     await tapKey(tester, 'content-report-save');
     expect(queue.rows.length, 1);
     expect(
@@ -414,6 +424,19 @@ void main() {
       find.text('Sending is unavailable. Your report remains on this device.'),
       findsOneWidget,
     );
+    await tapKey(tester, 'content-report-saved-details');
+    final details = find.byKey(const ValueKey('content-report-saved-details'));
+    expect(
+      find.descendant(
+        of: details,
+        matching: find.text(queue.rows.values.single.payload.target.text),
+      ),
+      findsOneWidget,
+    );
+    owners.add('another-owner');
+    await tester.pumpAndSettle();
+    expect(details, findsNothing);
+    expect(find.text('Selected synthetic reply'), findsNothing);
     expect(transport.submissions, 0);
     expect(transport.reads, 0);
     await tester.pumpWidget(const SizedBox.shrink());

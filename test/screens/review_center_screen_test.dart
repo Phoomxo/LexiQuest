@@ -180,7 +180,7 @@ void main() {
       expect(_count(tester, 'due'), 'Due: 1');
       expect(_count(tester, 'incorrect'), 'Incorrect history: 2');
       expect(_count(tester, 'saved'), 'Saved: 2');
-      expect(_count(tester, 'reported'), 'Local reports: 2');
+      expect(_count(tester, 'reported'), 'Local word reports: 2');
       expect(find.text('Words ready across all queues: 1'), findsOneWidget);
       await _reveal(tester, _word(configuredWordIds.first));
       for (final queue in ['due', 'incorrect', 'saved']) {
@@ -771,7 +771,7 @@ void main() {
       expect(_count(tester, 'due'), 'Due: Unavailable');
       expect(_count(tester, 'incorrect'), 'Incorrect history: Unavailable');
       expect(_count(tester, 'saved'), 'Saved: 1');
-      expect(_count(tester, 'reported'), 'Local reports: 1');
+      expect(_count(tester, 'reported'), 'Local word reports: 1');
       queries.fail = false;
       await tester.tap(find.byKey(const ValueKey('review-center-refresh')));
       await _ready(tester);

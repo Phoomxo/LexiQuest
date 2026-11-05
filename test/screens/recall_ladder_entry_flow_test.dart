@@ -173,6 +173,19 @@ void main() {
             final screen = tester.widget<QuizScreen>(page);
             expect(screen.wordIds, [configuredWordIds.last]);
             expect(screen.expectedOwnerId, configuredOwnerId);
+            await _until(
+              tester,
+              () => find.text('journey').evaluate().isNotEmpty,
+            );
+            expect(find.text('ฝึกความหมาย'), findsOneWidget);
+            expect(find.text('ฝึกคำที่ผิด'), findsNothing);
+            final session = await motivationPresentationIo(
+              tester,
+              () => f.h.database
+                  .select(f.h.database.learningSessions)
+                  .getSingle(),
+            );
+            expect(session.activityType, 'sourcePractice');
           } else if (stage == RecallLadderStage.matching) {
             await _until(
               tester,
