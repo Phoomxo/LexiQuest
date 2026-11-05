@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/content_reports/presentation/content
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_sheet.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/bundled_starter_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/http_learning_pack_source.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/presentation/learning_pack_catalog_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/lexical_quiz_setup_dialog.dart';
@@ -50,6 +51,10 @@ void main() {
         await packUiReady(tester);
         final starter = find.byKey(const ValueKey('pack-open-starter'));
         expect(starter, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('pack-practice-starter')),
+          findsNothing,
+        );
         expect(
           await tester.runAsync(() => ownerMigrationRows(h.database)),
           before,
@@ -503,11 +508,23 @@ void main() {
   }
 
   testWidgets(
-    'included pack starts a real twelve-card SRS deck and saves its first rating',
+    'installed starter offers one direct twelve-card SRS deck and a read-only preview',
     (tester) => _using(tester, (h) async {
       await tester.pumpWidget(h.app());
       await _installStarter(tester);
-      await tapPackUi(tester, 'pack-practice-0');
+      await tester.tap(find.byTooltip('กลับไปยังรายการแพ็ก'));
+      await packUiReady(tester);
+      expect(find.text(bundledStarterPack.manifest.title), findsOneWidget);
+      expect(find.text('ฝึก 12 คำ'), findsOneWidget);
+      await tapPackUi(tester, 'pack-open-starter');
+      await idlePackUi(tester);
+      expect(find.text('ติดตั้งแพ็กนี้แล้ว'), findsOneWidget);
+      expect(find.byKey(const ValueKey('pack-confirm-install')), findsNothing);
+      expect(find.byKey(const ValueKey('pack-cache-preview')), findsNothing);
+      expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+      await tester.tap(find.byTooltip('กลับไปยังรายการแพ็ก'));
+      await packUiReady(tester);
+      await tapPackUi(tester, 'pack-practice-starter');
       await untilPackUi(
         tester,
         () => find.byKey(const ValueKey('srs-card')).evaluate().isNotEmpty,
@@ -537,6 +554,50 @@ void main() {
       final answer = (await tester.runAsync(h.canonicalAnswer))!;
       expect(answer.read<String>('prompt_mode'), 'srsRecall');
       expect(answer.read<String>('owner_id'), 'synthetic-actions-owner');
+    }),
+  );
+
+  testWidgets(
+    'a different installed starter digest stays separate from the included preview',
+    (tester) => _using(tester, (h) async {
+      const codec = LearningPackCodec();
+      final other = codec.decode(
+        codec.encode(
+          metadata: bundledStarterPack.manifest,
+            entries: bundledStarterPack.entries.reversed.toList(),
+        ),
+      );
+      await tester.runAsync(() => h.seed(other));
+      final installed = (await tester.runAsync(h.stored))!;
+      await tester.pumpWidget(h.app());
+      await packUiReady(tester);
+      expect(find.byKey(const ValueKey('pack-practice-starter')), findsNothing);
+      await revealPackUi(tester, 'pack-row-${installed.id}');
+      await _openPreview(tester);
+      expect(find.text('ติดตั้งและเพิ่มคำศัพท์'), findsOneWidget);
+      expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+    }),
+  );
+
+  testWidgets(
+    'catalog shortcut rechecks changed package bytes before starting practice',
+    (tester) => _using(tester, (h) async {
+      await tester.runAsync(() => h.seed(bundledStarterPack));
+      await tester.pumpWidget(h.app());
+      await packUiReady(tester);
+      expect(find.text('ฝึก 12 คำ'), findsOneWidget);
+      await tester.runAsync(
+        () => h.database.customStatement(
+          "UPDATE learning_pack_versions SET package_bytes=zeroblob(package_byte_count)",
+        ),
+      );
+      await tapPackUi(tester, 'pack-practice-starter');
+      await packUiReady(tester);
+      expect(find.byType(SrsFlashcardsScreen), findsNothing);
+      expect(find.byKey(const ValueKey('pack-practice-starter')), findsNothing);
+      expect(await tester.runAsync(() => h.count('learning_sessions')), 0);
+      await _openPreview(tester);
+      expect(find.text('คืนไฟล์แพ็กในเครื่อง'), findsOneWidget);
     }),
   );
 
@@ -949,6 +1010,7 @@ void main() {
       ))!..remove('learning_pack_versions');
       await tester.pumpWidget(h.app());
       await packUiReady(tester);
+      expect(find.text('ฝึก 11 คำ'), findsOneWidget);
       await tapPackUi(tester, 'pack-row-${original.id}');
       await idlePackUi(tester);
       await tapPackUi(tester, 'pack-remove');
@@ -957,6 +1019,7 @@ void main() {
       await idlePackUi(tester);
       await tester.tap(find.byTooltip('กลับไปยังรายการแพ็ก'));
       await packUiReady(tester);
+      expect(find.byKey(const ValueKey('pack-practice-starter')), findsNothing);
       await _openPreview(tester);
       await tapPackUi(tester, 'pack-confirm-install');
       await idlePackUi(tester);

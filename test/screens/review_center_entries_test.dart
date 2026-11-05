@@ -141,6 +141,23 @@ void main() {
           expect(hub.wordReports, same(h.wordReports));
           expect(hub.languageCode, 'en');
           expect(find.text('Review Center'), findsOneWidget);
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await _until(
+            tester,
+            () => find
+                .byKey(const ValueKey('review-center-count-saved'))
+                .evaluate()
+                .isEmpty,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await _until(
+            tester,
+            () => find.text('Saved: 1').evaluate().isNotEmpty,
+          );
           expect(
             await motivationPresentationIo(
               tester,

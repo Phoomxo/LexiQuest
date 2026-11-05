@@ -30,10 +30,15 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  GuestSessionService? _guest;
-  AccountUseCases? _account;
-  ResearchConsentUseCases? _researchConsent;
-  ResearchRuntimeAvailability _researchAvailability =
+  AppDependencies? _dependencies;
+  GuestSessionService? get _guest =>
+      widget.guestSessionService ?? _dependencies?.guestSessionService;
+  AccountUseCases? get _account => widget.account ?? _dependencies?.account;
+  ResearchConsentUseCases? get _researchConsent =>
+      widget.researchConsent ?? _dependencies?.researchConsent;
+  ResearchRuntimeAvailability get _researchAvailability =>
+      widget.researchAvailability ??
+      _dependencies?.researchAvailability ??
       ResearchRuntimeAvailability.disabled;
   bool _guestFlowInFlight = false;
   bool _busy = false;
@@ -45,15 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final dependencies = AppDependenciesScope.maybeOf(context);
-    _guest ??= widget.guestSessionService ?? dependencies?.guestSessionService;
-    _account ??= widget.account ?? dependencies?.account;
-    _researchConsent ??=
-        widget.researchConsent ?? dependencies?.researchConsent;
-    _researchAvailability =
-        widget.researchAvailability ??
-        dependencies?.researchAvailability ??
-        ResearchRuntimeAvailability.disabled;
+    _dependencies = AppDependenciesScope.maybeOf(context);
   }
 
   Future<void> _signIn() async {
@@ -158,7 +155,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await AppNavigator.resetTo<void>(context, AppRoute.home);
       } else {
         _show(
-          'เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่',
+          _account == null
+              ? 'เปิดข้อมูลการเรียนในเครื่องไม่สำเร็จ กรุณาลองอีกครั้ง'
+              : 'เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่',
         );
       }
     } finally {
@@ -290,7 +289,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ? 20.0
         : 16.0;
     return Scaffold(
-      appBar: AppBar(title: const Text('เข้าสู่ระบบ LexiQuest')),
+      appBar: AppBar(
+        title: Text(
+          _account == null
+              ? 'เริ่มเรียนกับ LexiQuest'
+              : 'เข้าสู่ระบบ LexiQuest',
+        ),
+      ),
       body: SafeArea(
         child: Stack(
           children: [
@@ -357,17 +362,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'สร้างคลังคำของคุณ ฝึกทบทวน '
-                    'และติดตามความก้าวหน้าภาษาอังกฤษ',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  if (_account != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'สร้างคลังคำของคุณ ฝึกทบทวน '
+                      'และติดตามความก้าวหน้าภาษาอังกฤษ',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 24),
                   if (_account == null) ...[
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: FilledButton(
+                        key: const ValueKey<String>('guest-mode-button'),
+                        onPressed: _busy || _guest == null ? null : _startGuest,
+                        child: const Text('เริ่มเรียนในเครื่อง'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Semantics(
                       key: const ValueKey<String>('local-mode-notice'),
                       liveRegion: true,
@@ -378,148 +394,136 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          'ขณะนี้ใช้บัญชีออนไลน์ไม่ได้ '
-                          'แต่คุณเริ่มเรียนและเก็บข้อมูลไว้ในเครื่องได้ทันที',
+                          _guest == null
+                              ? 'ยังเปิดข้อมูลการเรียนในเครื่องไม่ได้'
+                              : 'คำศัพท์และความก้าวหน้าของคุณจะบันทึกไว้ในเครื่องนี้',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: colorScheme.onPrimaryContainer),
                         ),
                       ),
                     ),
+                  ] else ...[
+                    TextField(
+                      controller: _email,
+                      enabled: !_busy,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [
+                        AutofillHints.username,
+                        AutofillHints.email,
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'อีเมล',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ).copyWith(errorText: _emailError),
+                      onChanged: (_) {
+                        if (_emailError != null || _accountError != null) {
+                          setState(() {
+                            _emailError = null;
+                            _accountError = null;
+                          });
+                        }
+                      },
+                    ),
                     const SizedBox(height: 12),
+                    TextField(
+                      controller: _password,
+                      enabled: !_busy,
+                      obscureText: _obscure,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => _signIn(),
+                      decoration: InputDecoration(
+                        labelText: 'รหัสผ่าน',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        errorText: _passwordError,
+                        suffixIcon: IconButton(
+                          tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                          onPressed: _busy
+                              ? null
+                              : () => setState(() => _obscure = !_obscure),
+                          icon: Icon(
+                            _obscure ? Icons.visibility : Icons.visibility_off,
+                          ),
+                        ),
+                      ),
+                      onChanged: (_) {
+                        if (_passwordError != null || _accountError != null) {
+                          setState(() {
+                            _passwordError = null;
+                            _accountError = null;
+                          });
+                        }
+                      },
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _busy ? null : _forgotPassword,
+                        child: const Text('ลืมรหัสผ่าน'),
+                      ),
+                    ),
+                    if (_accountError case final message?) ...[
+                      Semantics(
+                        key: const ValueKey<String>('account-error'),
+                        liveRegion: true,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: colorScheme.onErrorContainer,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  message,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: colorScheme.onErrorContainer,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     SizedBox(
                       height: 48,
                       child: FilledButton(
-                        key: const ValueKey<String>('guest-mode-button'),
-                        onPressed: _busy ? null : _startGuest,
-                        child: const Text('เริ่มเรียนในเครื่อง'),
+                        onPressed: _busy ? null : _signIn,
+                        child: const Text('เข้าสู่ระบบ'),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                  TextField(
-                    controller: _email,
-                    enabled: _account != null && !_busy,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [
-                      AutofillHints.username,
-                      AutofillHints.email,
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'อีเมล',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ).copyWith(errorText: _emailError),
-                    onChanged: (_) {
-                      if (_emailError != null || _accountError != null) {
-                        setState(() {
-                          _emailError = null;
-                          _accountError = null;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _password,
-                    enabled: _account != null && !_busy,
-                    obscureText: _obscure,
-                    autofillHints: const [AutofillHints.password],
-                    onSubmitted: _account == null ? null : (_) => _signIn(),
-                    decoration: InputDecoration(
-                      labelText: 'รหัสผ่าน',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      errorText: _passwordError,
-                      suffixIcon: IconButton(
-                        tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
-                        onPressed: _account == null
-                            ? null
-                            : () => setState(() => _obscure = !_obscure),
-                        icon: Icon(
-                          _obscure ? Icons.visibility : Icons.visibility_off,
-                        ),
-                      ),
-                    ),
-                    onChanged: (_) {
-                      if (_passwordError != null || _accountError != null) {
-                        setState(() {
-                          _passwordError = null;
-                          _accountError = null;
-                        });
-                      }
-                    },
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _account == null || _busy
-                          ? null
-                          : _forgotPassword,
-                      child: const Text('ลืมรหัสผ่าน'),
-                    ),
-                  ),
-                  if (_accountError case final message?) ...[
-                    Semantics(
-                      key: const ValueKey<String>('account-error'),
-                      liveRegion: true,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: colorScheme.onErrorContainer,
+                    if (_account?.googleSignInAvailable == true) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          key: const ValueKey<String>('google-sign-in-button'),
+                          onPressed: _busy ? null : _signInWithGoogle,
+                          icon: const ExcludeSemantics(
+                            child: Text(
+                              'G',
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                message,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      color: colorScheme.onErrorContainer,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  SizedBox(
-                    height: 48,
-                    child: FilledButton(
-                      onPressed: _account == null || _busy ? null : _signIn,
-                      child: const Text('เข้าสู่ระบบ'),
-                    ),
-                  ),
-                  if (_account?.googleSignInAvailable == true) ...[
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        key: const ValueKey<String>('google-sign-in-button'),
-                        onPressed: _busy ? null : _signInWithGoogle,
-                        icon: const ExcludeSemantics(
-                          child: Text(
-                            'G',
-                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
+                          label: const Text('ใช้บัญชี Google'),
                         ),
-                        label: const Text('ใช้บัญชี Google'),
                       ),
-                    ),
-                  ],
-                  if (_account != null) ...[
+                    ],
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 48,
                       child: OutlinedButton(
                         key: const ValueKey<String>('guest-mode-button'),
-                        onPressed: _busy ? null : _startGuest,
+                        onPressed: _busy || _guest == null ? null : _startGuest,
                         child: const Text('เรียนต่อโดยไม่ใช้บัญชี'),
                       ),
                     ),
@@ -543,9 +547,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             if (_busy)
-              const Center(
+              Center(
                 child: CircularProgressIndicator(
-                  semanticsLabel: 'กำลังเข้าสู่ระบบ',
+                  semanticsLabel: _account == null
+                      ? 'กำลังเปิดการเรียนในเครื่อง'
+                      : 'กำลังเข้าสู่ระบบ',
                 ),
               ),
           ],

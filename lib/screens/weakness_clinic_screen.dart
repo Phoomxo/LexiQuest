@@ -346,7 +346,7 @@ class _WeaknessBody extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onPractice,
                   icon: const Icon(Icons.healing_outlined),
-                  label: Text('ฝึกคำที่ผิด (${practiceWords.length})'),
+                  label: Text('ทบทวนคำที่เคยตอบผิด ${practiceWords.length} คำ'),
                 ),
               if (canQuiz && canReview) const SizedBox(height: 8),
               if (canReview)

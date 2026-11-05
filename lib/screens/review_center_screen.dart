@@ -55,9 +55,14 @@ class ReviewCenterScreen extends StatefulWidget {
 
 /// A transient return intent, distinct from the lifetime of private read rows.
 final class _ReviewLaunch {
-  _ReviewLaunch({required this.generation, required this.quiz});
+  _ReviewLaunch({
+    required this.generation,
+    required this.quiz,
+    required this.resumable,
+  });
   final int generation;
   final bool quiz;
+  final bool resumable;
   Route<dynamic>? route;
   Route<dynamic>? ownedChildRoute;
   bool returnCurrent = true;
@@ -93,9 +98,12 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
 
   String _text(String th, String en) => widget.languageCode == 'en' ? en : th;
   bool get _contextCurrent =>
-      mounted && !_invalidated && _ownerKnown && _foreground && _paneVisible;
+      mounted && !_invalidated && _ownerKnown && _paneVisible;
   bool get _readVisible =>
-      _contextCurrent && _route?.isCurrent == true && _launch == null;
+      _contextCurrent &&
+      _foreground &&
+      _route?.isCurrent == true &&
+      _launch == null;
   bool get _ready => _readVisible && _snapshot != null && !_readFailed;
 
   @override
@@ -201,7 +209,6 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     final read = _read;
     _read = null;
     _snapshot = null;
-    _filter = null;
     _readFailed = false;
     unawaited(read?.cancel());
     _changed();
@@ -312,14 +319,33 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
-    if (!_foreground) {
+    if (state == AppLifecycleState.detached) {
+      _foreground = false;
+      _invalidate();
+      return;
+    }
+    final foreground = state == AppLifecycleState.resumed;
+    if (_foreground == foreground || _invalidated) return;
+    _foreground = foreground;
+    if (foreground) {
+      if (_readVisible) _startRead();
+      return;
+    }
+    final launch = _launch;
+    if (launch == null
+        ? _route?.isCurrent == true
+        : launch.resumable &&
+              launch.returnCurrent &&
+              launch.route?.isCurrent == true) {
+      _clearRead();
+    } else {
       _invalidate();
     }
   }
 
   bool _launchCurrent(_ReviewLaunch launch) =>
       _contextCurrent &&
+      (_foreground || launch.resumable) &&
       launch.contextCurrent &&
       launch.generation == _launchGeneration &&
       identical(launch, _launch);
@@ -360,11 +386,16 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     required int epoch,
     required Widget Function(_ReviewLaunch) builder,
     bool quiz = false,
+    bool resumable = false,
   }) async {
     if (!_ready || epoch != _readEpoch) {
       return;
     }
-    final launch = _ReviewLaunch(generation: _launchGeneration, quiz: quiz);
+    final launch = _ReviewLaunch(
+      generation: _launchGeneration,
+      quiz: quiz,
+      resumable: resumable,
+    );
     _launch = launch;
     _clearRead();
     try {
@@ -454,6 +485,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         _openChild(
           name: 'review-center/due',
           epoch: epoch,
+          resumable: true,
           builder: (_) => SrsFlashcardsScreen(
             expectedOwnerId: owner,
             ownerChanges: owners,
@@ -693,8 +725,8 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
       children: [
         Text(
           _text(
-            'พร้อมฝึก ${snapshot.eligibleWordCount} คำ',
-            'Words ready to practice: ${snapshot.eligibleWordCount}',
+            'พร้อมฝึกจากทุกหมวด ${snapshot.eligibleWordCount} คำ',
+            'Words ready across all queues: ${snapshot.eligibleWordCount}',
           ),
           key: const ValueKey('review-center-word-count'),
           style: Theme.of(context).textTheme.titleLarge,
@@ -759,6 +791,44 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
               ),
           ],
         ),
+        if (empty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(switch (filter) {
+                  ReviewQueue.saved => _text(
+                    'ยังไม่มีคำที่บันทึกไว้',
+                    'No saved words yet.',
+                  ),
+                  ReviewQueue.due => _text(
+                    'ยังไม่มีคำถึงกำหนดทบทวน',
+                    'No words due for review.',
+                  ),
+                  ReviewQueue.incorrect => _text(
+                    'ยังไม่มีคำที่เคยตอบผิด',
+                    'No previously missed words.',
+                  ),
+                  ReviewQueue.reported => _text(
+                    'ยังไม่มีรายงานในเครื่อง',
+                    'No local reports yet.',
+                  ),
+                  null => _text(
+                    'ยังไม่มีรายการให้ทบทวน',
+                    'No review items yet.',
+                  ),
+                }),
+                if (filter != null && queues.isNotEmpty)
+                  Text(
+                    _text(
+                      'คำแนะนำให้ฝึกด้านบนมาจากหมวดอื่น',
+                      'Practice suggestions above come from other queues.',
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ExpansionTile(
           key: const ValueKey('review-center-tools'),
           tilePadding: EdgeInsets.zero,
@@ -820,13 +890,6 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
               ),
           ],
         ),
-        if (empty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              _text('ยังไม่มีรายการให้ทบทวน', 'No review items yet.'),
-            ),
-          ),
       ],
     );
   }

@@ -181,7 +181,7 @@ void main() {
       expect(_count(tester, 'incorrect'), 'Incorrect history: 2');
       expect(_count(tester, 'saved'), 'Saved: 2');
       expect(_count(tester, 'reported'), 'Local reports: 2');
-      expect(find.text('Words ready to practice: 1'), findsOneWidget);
+      expect(find.text('Words ready across all queues: 1'), findsOneWidget);
       await _reveal(tester, _word(configuredWordIds.first));
       for (final queue in ['due', 'incorrect', 'saved']) {
         expect(
@@ -336,6 +336,18 @@ void main() {
         () => find.byKey(const ValueKey('srs-next')).evaluate().isNotEmpty,
       );
       expect(await tester.runAsync(() => _tableCount(h, 'answer_attempts')), 1);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('srs-next')), findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _until(
+        tester,
+        () => find.byKey(const ValueKey('srs-next')).evaluate().isNotEmpty,
+      );
+      expect(
+        await tester.runAsync(() => _tableCount(h, 'learning_sessions')),
+        1,
+      );
       await _tapIn(
         tester,
         SrsFlashcardsScreen,
@@ -503,34 +515,47 @@ void main() {
     },
   );
 
-  testWidgets(
-    'actual coalesced owner A to B to A hides all rows and rejects an old row callback',
-    (tester) async {
-      final h = await _fixture(tester);
-      await tester.runAsync(() => h.save(configuredWordIds.first));
-      await _open(tester, h);
-      await _ready(tester);
-      final target = find.byKey(
-        ValueKey('review-center-practice-saved:${configuredWordIds.first}'),
-      );
-      await _reveal(tester, target);
-      final retained = tester.widget<ButtonStyleButton>(target).onPressed!;
-      final before = await tester.runAsync(h.snapshotAllTables);
-      await tester.runAsync(
-        () => h.database.transaction(() async {
-          await h.switchOwner(configuredOtherOwnerId);
-          await h.switchOwner(configuredOwnerId);
-        }),
-      );
-      await _unavailable(tester);
-      retained();
-      await _drain(tester);
-      expect(find.text('station'), findsNothing);
-      expect(find.byType(QuizScreen), findsNothing);
-      expect(await tester.runAsync(h.snapshotAllTables), before);
-      expect(tester.takeException(), isNull);
-    },
-  );
+  for (final suspended in [false, true]) {
+    testWidgets(
+      'actual coalesced owner A to B to A (suspended: $suspended) hides all rows and rejects an old row callback',
+      (tester) async {
+        final h = await _fixture(tester);
+        await tester.runAsync(() => h.save(configuredWordIds.first));
+        await _open(tester, h);
+        await _ready(tester);
+        final target = find.byKey(
+          ValueKey('review-center-practice-saved:${configuredWordIds.first}'),
+        );
+        await _reveal(tester, target);
+        final retained = tester.widget<ButtonStyleButton>(target).onPressed!;
+        final before = await tester.runAsync(h.snapshotAllTables);
+        if (suspended) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await tester.pump();
+        }
+        await tester.runAsync(
+          () => h.database.transaction(() async {
+            await h.switchOwner(configuredOtherOwnerId);
+            await h.switchOwner(configuredOwnerId);
+          }),
+        );
+        if (suspended) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
+        await _unavailable(tester);
+        retained();
+        await _drain(tester);
+        expect(find.text('station'), findsNothing);
+        expect(find.byType(QuizScreen), findsNothing);
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final event in ['null-to-same', 'error', 'done']) {
     testWidgets(
@@ -617,7 +642,73 @@ void main() {
     },
   );
 
-  for (final reason in ['hidden', 'inactive', 'dependency-replaced']) {
+  testWidgets(
+    'resume rereads saved words for the same owner, preserves the filter and rejects a pre-pause action',
+    (tester) async {
+      final h = await _fixture(tester);
+      await tester.runAsync(() => h.save(configuredWordIds.first));
+      await _open(tester, h);
+      await _ready(tester);
+      await _tap(tester, 'review-center-filter-saved');
+      final target = find.byKey(
+        ValueKey('review-center-practice-saved:${configuredWordIds.first}'),
+      );
+      await _reveal(tester, target);
+      final retained = tester.widget<ButtonStyleButton>(target).onPressed!;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await _until(tester, () => find.text('station').evaluate().isEmpty);
+      retained();
+      await tester.runAsync(() => h.save(configuredWordIds[1]));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _ready(tester);
+      expect(_count(tester, 'saved'), 'Saved: 2');
+      expect(
+        tester
+            .widget<ChoiceChip>(
+              find.byKey(const ValueKey('review-center-filter-saved')),
+            )
+            .selected,
+        isTrue,
+      );
+      retained();
+      await _drain(tester);
+      expect(find.byType(QuizScreen), findsNothing);
+      expect(
+        await tester.runAsync(() => _tableCount(h, 'learning_sessions')),
+        0,
+      );
+    },
+  );
+
+  testWidgets(
+    'a due card revised during pause stays retired after returning to Review Center practice',
+    (tester) async {
+      final h = await _fixture(tester);
+      final id = configuredWordIds.first;
+      await tester.runAsync(() => h.seedDue(id));
+      await _open(tester, h);
+      await _ready(tester);
+      await _tap(tester, 'review-center-due-practice');
+      await _srsReady(tester);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.runAsync(
+        () => h.database.customStatement(
+          'UPDATE vocabulary_words SET local_revision = local_revision + 1 WHERE id = ?',
+          [id],
+        ),
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _until(
+        tester,
+        () => find.text('Activity unavailable').evaluate().isNotEmpty,
+      );
+      expect(find.byKey(const ValueKey('srs-card')), findsNothing);
+      expect(await tester.runAsync(() => _tableCount(h, 'answer_attempts')), 0);
+    },
+  );
+
+  for (final reason in ['hidden', 'dependency-replaced']) {
     testWidgets(
       'a $reason hub cannot deliver its retained row action or old private counts',
       (tester) async {
@@ -650,20 +741,9 @@ void main() {
         await _reveal(tester, target);
         final retained = tester.widget<ButtonStyleButton>(target).onPressed!;
         final before = await tester.runAsync(h.snapshotAllTables);
-        if (reason == 'inactive') {
-          tester.binding.handleAppLifecycleStateChanged(
-            AppLifecycleState.inactive,
-          );
-        } else {
-          changed.value = true;
-        }
+        changed.value = true;
         await tester.pump();
         retained();
-        if (reason == 'inactive') {
-          tester.binding.handleAppLifecycleStateChanged(
-            AppLifecycleState.resumed,
-          );
-        }
         if (reason == 'hidden') changed.value = false;
         await _unavailable(tester);
         expect(find.text('station'), findsNothing);
@@ -952,6 +1032,59 @@ void main() {
   );
 
   for (final language in ['th', 'en']) {
+    testWidgets(
+      '$language empty saved filter names its queue and keeps keyboard focus at 200 percent',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 700);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final h = await _fixture(tester);
+        await tester.runAsync(() => h.seedWrong());
+        await _open(
+          tester,
+          h,
+          language: language,
+          scale: 2,
+          reducedMotion: true,
+        );
+        await _ready(tester);
+        final filter = find.byKey(const ValueKey('review-center-filter-saved'));
+        await _reveal(tester, filter);
+        final focus = Focus.of(
+          tester.element(
+            find.descendant(of: filter, matching: find.byType(Text)),
+          ),
+        );
+        focus.requestFocus();
+        await tester.pumpAndSettle();
+        final scroll = Scrollable.of(tester.element(filter)).position;
+        final offset = scroll.pixels;
+        final rowTop = tester.getTopLeft(filter).dy;
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(tester.widget<ChoiceChip>(filter).selected, isTrue);
+        expect(focus.hasFocus, isTrue);
+        expect(scroll.pixels, offset);
+        expect(tester.getTopLeft(filter).dy, rowTop);
+        expect(filter.hitTestable(), findsOneWidget);
+        expect(
+          find.text(
+            language == 'th' ? 'ยังไม่มีคำที่บันทึกไว้' : 'No saved words yet.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            language == 'th'
+                ? 'คำแนะนำให้ฝึกด้านบนมาจากหมวดอื่น'
+                : 'Practice suggestions above come from other queues.',
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
     testWidgets(
       '${language}320px200percent IME and keyboard keep filters, unavailable rows and report details reachable',
       (tester) async {

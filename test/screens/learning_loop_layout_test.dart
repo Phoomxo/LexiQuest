@@ -84,7 +84,7 @@ void main() {
       ),
       owners: owners,
     );
-    expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
+    expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ').hitTestable(), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
       matchesGoldenFile('goldens/weakness_large_text.png'),
@@ -145,7 +145,7 @@ void main() {
       owners: owners,
     );
     expect(find.textContaining('ตอบผิด 2/3'), findsOneWidget);
-    expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
+    expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

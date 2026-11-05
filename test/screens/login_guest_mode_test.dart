@@ -82,38 +82,49 @@ void main() {
     }
   });
 
-  testWidgets(
-    'local mode is explained and offers the primary learning action',
-    (tester) async {
-      await tester.pumpWidget(
-        _loginHarness(guestSessionService: _CompleterGuestSessionService()),
-      );
+  testWidgets('local mode opens learning at 320dp with double text size', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final guest = _CompleterGuestSessionService();
+    await tester.pumpWidget(_loginHarness(guestSessionService: guest));
 
-      expect(
-        find.byKey(const ValueKey<String>('local-mode-notice')),
-        findsOneWidget,
-      );
-      expect(find.text('เริ่มเรียนในเครื่อง'), findsOneWidget);
-      expect(
-        tester
-            .widget<FilledButton>(
-              find.ancestor(
-                of: find.text('เริ่มเรียนในเครื่อง'),
-                matching: find.byType(FilledButton),
-              ),
-            )
-            .onPressed,
-        isNotNull,
-      );
-      expect(find.text('สร้างบัญชีใหม่'), findsNothing);
-      expect(
-        tester
-            .widgetList<TextField>(find.byType(TextField))
-            .every((field) => field.enabled == false),
-        isTrue,
-      );
-    },
-  );
+    expect(
+      find.byKey(const ValueKey<String>('local-mode-notice')),
+      findsOneWidget,
+    );
+    expect(find.text('เริ่มเรียนในเครื่อง'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.ancestor(
+              of: find.text('เริ่มเรียนในเครื่อง'),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('สร้างบัญชีใหม่'), findsNothing);
+    expect(find.text('เริ่มเรียนกับ LexiQuest'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('ลืมรหัสผ่าน'), findsNothing);
+    final start = find.byKey(guestModeButtonKey);
+    await tester.pumpAndSettle();
+    expect(start.hitTestable(), findsOneWidget);
+    await tester.tap(start);
+    await tester.pump();
+    expect(guest.startCalls, 1);
+    guest.complete(const GuestSessionStarted(uid: 'local-trial'));
+    await tester.pumpAndSettle();
+    expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('tablet keeps the login form centered within 560dp', (
     tester,
@@ -123,11 +134,19 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
+    final account = AccountUseCases(
+      gateway: _LoginAccountGateway(),
+      owners: _MutableOwners(_owner('tablet-login-owner')),
+      upgradeGuestOwner: UpgradeGuestOwner(_LoginUpgrades()),
+    );
     await tester.pumpWidget(
-      _loginHarness(guestSessionService: _CompleterGuestSessionService()),
+      _loginHarness(
+        guestSessionService: _CompleterGuestSessionService(),
+        account: account,
+      ),
     );
     await tester.pumpAndSettle();
-
+    expect(find.text('เข้าสู่ระบบ LexiQuest'), findsOneWidget);
     final emailField = tester.getRect(find.byType(TextField).first);
     expect(emailField.width, lessThanOrEqualTo(560));
     expect(emailField.center.dx, closeTo(640, 1));

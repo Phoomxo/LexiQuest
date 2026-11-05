@@ -272,7 +272,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     return packs.captureOwner(stillCurrent: () => _current(lease));
   }
 
-  Future<void> _reload({bool openStarter = false}) async {
+  Future<void> _reload({bool openStarter = false, String? notice}) async {
     if (!_visible || _packs == null || _busy || _picker) return;
     final operation = ++_operation;
     setState(() => _busy = true);
@@ -288,6 +288,24 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           ? <StoredLearningPack>[]
           : await _packs!.list(scope);
       if (!_resultCurrent(operation, scope)) return;
+      final installed = _matching(bundledStarterPack, rows);
+      PackDetail? readyStarter;
+      String? detailFailure;
+      if (scope != null &&
+          installed != null &&
+          installed.isInstalled &&
+          installed.cacheState != PackCacheState.notCached) {
+        try {
+          final detail = await _packs!.detail(scope, installed.id);
+          if (detail.pack.cacheState == PackCacheState.verified &&
+              detail.pack.isInstalled) {
+            readyStarter = detail;
+          }
+        } on PackStorageException catch (error) {
+          detailFailure = _failure(error);
+        }
+        if (!_resultCurrent(operation, scope)) return;
+      }
       setState(() {
         _scope = scope;
         _rows = rows;
@@ -296,9 +314,12 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             ? _Preview(
                 bundledStarterPack,
                 PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
+                action: _starterPreviewAction(installed, readyStarter),
               )
-            : const _Catalog();
-        _status = scope == null ? 'ไม่พบผู้เรียนที่พร้อมใช้งาน' : null;
+            : _Catalog(readyStarter);
+        _status = scope == null
+            ? 'ไม่พบผู้เรียนที่พร้อมใช้งาน'
+            : detailFailure ?? notice;
       });
     } catch (error) {
       if (_resultCurrent(operation, scope)) {
@@ -385,7 +406,19 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     }
   }
 
-  Future<void> _openStarter() async {
+  _PreviewAction _starterPreviewAction(
+    StoredLearningPack? stored,
+    PackDetail? ready,
+  ) {
+    if (ready != null) return _PreviewAction.installed;
+    return stored?.isInstalled == true
+        ? _PreviewAction.restore
+        : _PreviewAction.install;
+  }
+
+  Future<void> _openStarter({
+    _PreviewAction action = _PreviewAction.install,
+  }) async {
     if (!_canAct) return;
     final operation = ++_operation;
     setState(() {
@@ -401,6 +434,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         _view = _Preview(
           bundledStarterPack,
           PackSourceDescriptor.configuredCatalog(bundledStarterCatalogId),
+          action: action,
         );
       });
     } catch (error) {
@@ -412,8 +446,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     }
   }
 
-  StoredLearningPack? _matching(LearningPack pack) {
-    for (final row in _rows) {
+  StoredLearningPack? _matching(
+    LearningPack pack,
+    List<StoredLearningPack> rows,
+  ) {
+    for (final row in rows) {
       if (row.manifest.packId == pack.manifest.packId &&
           row.manifest.version == pack.manifest.version &&
           row.packageSha256 == pack.packageSha256) {
@@ -429,7 +466,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   }) async {
     final scope = _scope;
     if (!_canAct || scope == null || !scope.isCurrent) return;
-    final existing = _matching(preview.pack);
+    final existing = _matching(preview.pack, _rows);
     _pending = _PendingImport(
       _packs!.prepareImport(
         scope: scope,
@@ -697,6 +734,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     List<PackLexicalBinding> requested, {
     bool definition = false,
   }) async {
+    final fromCatalog = _view is _Catalog;
     final dependencies = _dependencies;
     final scope = _scope;
     bool available() => definition ? _definitionAvailable : _practiceAvailable;
@@ -714,11 +752,20 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _status = null;
     });
     var launched = false;
+    var refreshCatalog = false;
     Route<dynamic>? launchedRoute;
     Future<void> requirePracticeContent() async {
       final fresh = await _packs!.detail(scope, shown.pack.id);
       if (!_resultCurrent(operation, scope) || !available()) {
         throw const PackStorageException(PackStorageFailureCode.staleContent);
+      }
+      if (fromCatalog) {
+        if (fresh.pack.cacheState != PackCacheState.verified) {
+          throw const PackStorageException(PackStorageFailureCode.corrupt);
+        }
+        if (!fresh.pack.isInstalled || fresh.pack.identityConflict) {
+          throw const PackStorageException(PackStorageFailureCode.conflict);
+        }
       }
       for (final selected in requested) {
         if (!fresh.bindings.any(
@@ -858,6 +905,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       );
     } catch (error) {
       if (_resultCurrent(operation, scope)) {
+        refreshCatalog = fromCatalog && error is PackStorageException;
         setState(() => _status = _failure(error));
       }
     } finally {
@@ -868,8 +916,12 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _saved?.syncVisibility();
       if (_operationCurrent(operation)) {
         setState(() => _busy = false);
-        if (launched && _visible && scope.isCurrent) {
-          await _openStored(shown.pack);
+        if ((launched || refreshCatalog) && _visible && scope.isCurrent) {
+          if (fromCatalog) {
+            await _reload(notice: refreshCatalog ? _status : null);
+          } else {
+            await _openStored(shown.pack);
+          }
         }
       }
     }
@@ -1106,7 +1158,9 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       ),
       body: AdaptiveContentPane(
         child: ListView(
-          key: ObjectKey(_view),
+          key: _view is _Catalog
+              ? const ValueKey('pack-catalog-list')
+              : ObjectKey(_view),
           padding: const EdgeInsets.all(16),
           children: [
             if (_busy) ...[
@@ -1127,8 +1181,8 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
               const Text('แพ็กบทเรียนยังไม่พร้อมใช้งาน')
             else
               ...switch (_view) {
-                _Catalog() => _catalog(),
-                _Preview(:final pack) => _preview(pack),
+                _Catalog(:final readyStarter) => _catalog(readyStarter),
+                _Preview preview => _preview(preview),
                 _Remote(:final descriptor) => _remote(descriptor),
                 _Detail(:final detail) => _detail(detail),
                 _Lexical(:final content) => _lexical(content),
@@ -1150,13 +1204,22 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     ),
   );
 
-  List<Widget> _catalog() {
+  List<Widget> _catalog(PackDetail? readyStarter) {
     bool matches(LearningPackManifest manifest) =>
         (_cefr == 'all' || manifest.cefrLevel == _cefr) &&
         '${manifest.title} ${manifest.provenance.author} ${manifest.objectives.join(' ')}'
             .toLowerCase()
             .contains(_search.text.trim().toLowerCase());
-    final local = _rows.where((row) => matches(row.manifest)).toList();
+    final starter = bundledStarterPack;
+    final stored = _matching(starter, _rows);
+    final installed = stored != null && stored.isInstalled ? stored : null;
+    final batch = readyStarter?.bindings
+        .where((binding) => binding.isCurrent)
+        .take(20)
+        .toList();
+    final local = _rows
+        .where((row) => row.id != installed?.id && matches(row.manifest))
+        .toList();
     final remote = (_downloads?.catalog ?? <LearningPackDownloadDescriptor>[])
         .where((row) => matches(row.manifest))
         .toList();
@@ -1166,18 +1229,71 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           'แพ็กเริ่มต้นที่มีในแอป',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        Card(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: ListTile(
-            key: const ValueKey('pack-open-starter'),
-            title: Text(bundledStarterPack.manifest.title),
-            subtitle: Text(
-              '${bundledStarterPack.manifest.cefrLevel} · เวอร์ชัน ${bundledStarterPack.manifest.version} · ${bundledStarterPack.manifest.entryCount} คำ\nเปิดตัวอย่างและเลือกติดตั้งได้โดยไม่ใช้อินเทอร์เน็ต',
+        if (installed == null)
+          Card(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: ListTile(
+              key: const ValueKey('pack-open-starter'),
+              title: Text(bundledStarterPack.manifest.title),
+              subtitle: Text(
+                '${bundledStarterPack.manifest.cefrLevel} · เวอร์ชัน ${bundledStarterPack.manifest.version} · ${bundledStarterPack.manifest.entryCount} คำ\nเปิดตัวอย่างและเลือกติดตั้งได้โดยไม่ใช้อินเทอร์เน็ต',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _action(_openStarter),
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _action(_openStarter),
+          )
+        else
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    starter.manifest.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    '${starter.manifest.cefrLevel} · เวอร์ชัน ${starter.manifest.version} · ติดตั้งแล้ว',
+                  ),
+                  if (_practiceAvailable &&
+                      readyStarter != null &&
+                      !readyStarter.pack.identityConflict &&
+                      batch != null &&
+                      batch.isNotEmpty)
+                    FilledButton.icon(
+                      key: const ValueKey('pack-practice-starter'),
+                      onPressed: _action(
+                        () => _startPractice(readyStarter, batch),
+                      ),
+                      icon: const Icon(Icons.style_outlined),
+                      label: Text('ฝึก ${batch.length} คำ'),
+                    ),
+                  Wrap(
+                    children: [
+                      TextButton(
+                        key: const ValueKey('pack-open-starter'),
+                        onPressed: _action(
+                          () => _openStarter(
+                            action: _starterPreviewAction(
+                              installed,
+                              readyStarter,
+                            ),
+                          ),
+                        ),
+                        child: const Text('ดูตัวอย่าง'),
+                      ),
+                      TextButton(
+                        key: ValueKey('pack-row-${installed.id}'),
+                        onPressed: _action(() => _openStored(installed)),
+                        child: const Text('รายละเอียดแพ็ก'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
         const SizedBox(height: 16),
       ],
       TextField(
@@ -1214,8 +1330,9 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
         label: const Text('นำเข้าไฟล์แพ็ก'),
       ),
       const SizedBox(height: 20),
-      Text('แพ็กในเครื่อง', style: Theme.of(context).textTheme.titleMedium),
-      if (local.isEmpty)
+      if (local.isNotEmpty || installed == null || !matches(starter.manifest))
+        Text('แพ็กในเครื่อง', style: Theme.of(context).textTheme.titleMedium),
+      if (local.isEmpty && (installed == null || !matches(starter.manifest)))
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
           child: Text('ยังไม่มีแพ็กในเครื่องที่ตรงกับการค้นหา'),
@@ -1253,26 +1370,35 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     ];
   }
 
-  List<Widget> _preview(LearningPack pack) => [
-    ..._metadata(pack.manifest, pack.byteCount),
-    const Text('ดูตัวอย่างไฟล์แล้ว ยังไม่เพิ่มคำศัพท์จนกว่าจะเลือกติดตั้ง'),
-    const SizedBox(height: 16),
-    FilledButton(
-      key: const ValueKey('pack-confirm-install'),
-      onPressed: _action(
-        () => _installPreview(_view as _Preview, install: true),
+  List<Widget> _preview(_Preview preview) => [
+    ..._metadata(preview.pack.manifest, preview.pack.byteCount),
+    if (preview.action == _PreviewAction.installed)
+      const Text('ติดตั้งแพ็กนี้แล้ว')
+    else ...[
+      Text(
+        preview.action == _PreviewAction.restore
+            ? 'ติดตั้งคำศัพท์แล้ว สามารถคืนไฟล์จากแพ็กที่มีในแอปได้'
+            : 'ดูตัวอย่างไฟล์แล้ว ยังไม่เพิ่มคำศัพท์จนกว่าจะเลือกติดตั้ง',
       ),
-      child: const Text('ติดตั้งและเพิ่มคำศัพท์'),
-    ),
-    OutlinedButton(
-      key: const ValueKey('pack-cache-preview'),
-      onPressed: _action(
-        () => _installPreview(_view as _Preview, install: false),
+      const SizedBox(height: 16),
+      FilledButton(
+        key: const ValueKey('pack-confirm-install'),
+        onPressed: _action(() => _installPreview(preview, install: true)),
+        child: Text(
+          preview.action == _PreviewAction.restore
+              ? 'คืนไฟล์แพ็กในเครื่อง'
+              : 'ติดตั้งและเพิ่มคำศัพท์',
+        ),
       ),
-      child: const Text('เก็บไฟล์ออฟไลน์ก่อน'),
-    ),
-    _metadataDetails(pack.manifest),
-    ..._entryPreview(pack),
+      if (preview.action == _PreviewAction.install)
+        OutlinedButton(
+          key: const ValueKey('pack-cache-preview'),
+          onPressed: _action(() => _installPreview(preview, install: false)),
+          child: const Text('เก็บไฟล์ออฟไลน์ก่อน'),
+        ),
+    ],
+    _metadataDetails(preview.pack.manifest),
+    ..._entryPreview(preview.pack),
   ];
 
   List<Widget> _remote(LearningPackDownloadDescriptor descriptor) => [
@@ -1304,6 +1430,46 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           onPressed: _action(() => _installStored(detail)),
           child: const Text('เพิ่มคำศัพท์จากแพ็ก'),
         ),
+      if (pack.isInstalled) ...[
+        if (_practiceAvailable && current.isNotEmpty) ...[
+          const Text('ฝึกเฉพาะคำที่ยังตรงกับเนื้อหานี้ ชุดละไม่เกิน 20 คำ'),
+          for (var offset = 0; offset < current.length; offset += 20)
+            FilledButton.icon(
+              key: ValueKey('pack-practice-${offset ~/ 20}'),
+              onPressed: _action(
+                () => _startPractice(
+                  detail,
+                  current.skip(offset).take(20).toList(),
+                ),
+              ),
+              icon: const Icon(Icons.style_outlined),
+              label: Text(
+                'ทบทวนชุดที่ ${offset ~/ 20 + 1} (${current.skip(offset).take(20).length} คำ)',
+              ),
+            ),
+        ],
+        if (_definitionAvailable &&
+            current.any((binding) => binding.entry.definition != null)) ...[
+          const Text('ฝึกจากนิยามที่มีอยู่ในแพ็ก'),
+          for (var offset = 0; offset < current.length; offset += 20)
+            if (current
+                .skip(offset)
+                .take(20)
+                .any((binding) => binding.entry.definition != null))
+              OutlinedButton.icon(
+                key: ValueKey('pack-definition-${offset ~/ 20}'),
+                onPressed: _action(
+                  () => _startPractice(
+                    detail,
+                    current.skip(offset).take(20).toList(),
+                    definition: true,
+                  ),
+                ),
+                icon: const Icon(Icons.quiz_outlined),
+                label: Text('ฝึกนิยามชุดที่ ${offset ~/ 20 + 1}'),
+              ),
+        ],
+      ],
       if (pack.cacheState == PackCacheState.verified)
         OutlinedButton.icon(
           key: const ValueKey('pack-pin'),
@@ -1329,44 +1495,6 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       _metadataDetails(pack.manifest),
       const SizedBox(height: 16),
       if (pack.isInstalled) ...[
-        if (_definitionAvailable &&
-            current.any((binding) => binding.entry.definition != null)) ...[
-          const Text('ฝึกจากนิยามที่มีอยู่ในแพ็ก'),
-          for (var offset = 0; offset < current.length; offset += 20)
-            if (current
-                .skip(offset)
-                .take(20)
-                .any((binding) => binding.entry.definition != null))
-              OutlinedButton.icon(
-                key: ValueKey('pack-definition-${offset ~/ 20}'),
-                onPressed: _action(
-                  () => _startPractice(
-                    detail,
-                    current.skip(offset).take(20).toList(),
-                    definition: true,
-                  ),
-                ),
-                icon: const Icon(Icons.quiz_outlined),
-                label: Text('ฝึกนิยามชุดที่ ${offset ~/ 20 + 1}'),
-              ),
-        ],
-        if (_practiceAvailable && current.isNotEmpty) ...[
-          const Text('ฝึกเฉพาะคำที่ยังตรงกับเนื้อหานี้ ชุดละไม่เกิน 20 คำ'),
-          for (var offset = 0; offset < current.length; offset += 20)
-            FilledButton.icon(
-              key: ValueKey('pack-practice-${offset ~/ 20}'),
-              onPressed: _action(
-                () => _startPractice(
-                  detail,
-                  current.skip(offset).take(20).toList(),
-                ),
-              ),
-              icon: const Icon(Icons.style_outlined),
-              label: Text(
-                'ทบทวนชุดที่ ${offset ~/ 20 + 1} (${current.skip(offset).take(20).length} คำ)',
-              ),
-            ),
-        ],
         Text('คำศัพท์ในแพ็ก', style: Theme.of(context).textTheme.titleMedium),
         for (final binding in detail.bindings)
           Card(
@@ -1547,13 +1675,21 @@ sealed class _PackView {
 }
 
 final class _Catalog extends _PackView {
-  const _Catalog();
+  const _Catalog([this.readyStarter]);
+  final PackDetail? readyStarter;
 }
 
+enum _PreviewAction { install, installed, restore }
+
 final class _Preview extends _PackView {
-  const _Preview(this.pack, this.source);
+  const _Preview(
+    this.pack,
+    this.source, {
+    this.action = _PreviewAction.install,
+  });
   final LearningPack pack;
   final PackSourceDescriptor source;
+  final _PreviewAction action;
 }
 
 final class _Remote extends _PackView {

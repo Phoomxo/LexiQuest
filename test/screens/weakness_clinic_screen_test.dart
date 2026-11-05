@@ -52,11 +52,11 @@ void main() {
           );
           await _hostReadUntil(
             tester,
-            () => find.text('ฝึกคำที่ผิด (1)').evaluate().isNotEmpty,
+            () => find.text('ทบทวนคำที่เคยตอบผิด 1 คำ').evaluate().isNotEmpty,
           );
           await reportUiTap(
             tester,
-            find.text('ฝึกคำที่ผิด (1)'),
+            find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'),
             'clinic-report-practice',
           );
           final answer = find.widgetWithText(FilledButton, 'สถานี');
@@ -185,7 +185,7 @@ void main() {
           );
           await _hostReadUntil(
             tester,
-            () => find.text('ฝึกคำที่ผิด (1)').evaluate().isNotEmpty,
+            () => find.text('ทบทวนคำที่เคยตอบผิด 1 คำ').evaluate().isNotEmpty,
           );
           expect(
             await motivationPresentationIo(tester, h.snapshotAllTables),
@@ -326,12 +326,12 @@ void main() {
       );
       await _hostReadUntil(
         tester,
-        () => find.text('ฝึกคำที่ผิด (20)').evaluate().isNotEmpty,
+        () => find.text('ทบทวนคำที่เคยตอบผิด 20 คำ').evaluate().isNotEmpty,
       );
-      expect(find.text('ฝึกคำที่ผิด (20)'), findsOneWidget);
+      expect(find.text('ทบทวนคำที่เคยตอบผิด 20 คำ'), findsOneWidget);
       expect(await tester.runAsync(() => _clinicSessionCount(h)), 0);
       expect(await tester.runAsync(h.snapshotAllTables), before);
-      await tester.tap(find.text('ฝึกคำที่ผิด (20)'));
+      await tester.tap(find.text('ทบทวนคำที่เคยตอบผิด 20 คำ'));
       await _clinicCanonicalStart(tester, h);
       expect(
         tester.widget<QuizScreen>(find.byType(QuizScreen)).wordIds,
@@ -392,17 +392,17 @@ void main() {
         );
         await _hostReadUntil(
           tester,
-          () => find.text('ฝึกคำที่ผิด (1)').evaluate().isNotEmpty,
+          () => find.text('ทบทวนคำที่เคยตอบผิด 1 คำ').evaluate().isNotEmpty,
         );
-        expect(find.text('ฝึกคำที่ผิด (1)'), findsOneWidget);
+        expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'), findsOneWidget);
         final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'ฝึกคำที่ผิด (1)'),
+          find.widgetWithText(FilledButton, 'ทบทวนคำที่เคยตอบผิด 1 คำ'),
         );
         expect(button.onPressed, isNotNull);
         expect(find.text('ยังไม่มีคำที่ถึงกำหนดทบทวน'), findsOneWidget);
         expect(await tester.runAsync(() => _clinicSessionCount(h)), 0);
         expect(await tester.runAsync(h.snapshotAllTables), before);
-        await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
+        await tester.tap(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'));
         await _clinicCanonicalStart(tester, h);
         final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
         expect(quiz.expectedOwnerId, configuredOwnerId);
@@ -461,7 +461,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ฝึกคำที่ผิด (1)'), findsNothing);
+    expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'), findsNothing);
     expect(find.text('ทบทวนคำที่ถึงกำหนด (1)'), findsNothing);
     expect(find.text('เปิดแบบฝึกที่รองรับจากหน้าเรียน'), findsOneWidget);
   });
@@ -543,7 +543,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.widgetWithText(FilledButton, 'ฝึกคำที่ผิด (1)'),
+      find.widgetWithText(FilledButton, 'ทบทวนคำที่เคยตอบผิด 1 คำ'),
       findsOneWidget,
     );
     expect(

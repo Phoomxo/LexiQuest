@@ -51,7 +51,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
   ProgressHostBinding? _binding;
   ModalRoute<dynamic>? _route;
   Object? _childToken;
-  Object? _externalChildToken;
+  Object? _backgroundChildToken;
   ProgressHostBinding? _childBinding;
   String? _childOwner;
   int? _childGeneration;
@@ -74,7 +74,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
     final owner = _childOwner;
     final generation = _childGeneration;
     return _childToken != null &&
-        (_foreground || identical(_externalChildToken, _childToken)) &&
+        (_foreground || identical(_backgroundChildToken, _childToken)) &&
         _paneVisible &&
         binding != null &&
         identical(binding, _binding) &&
@@ -174,6 +174,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
     )
     destination, {
     FieldFeature? feature,
+    bool handlesBackground = false,
   }) {
     final binding = _binding;
     final owner = binding?.ownerId;
@@ -204,6 +205,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
           _paneVisible;
       final token = Object();
       _childToken = token;
+      if (handlesBackground) _backgroundChildToken = token;
       _childBinding = binding;
       _childOwner = owner;
       _childGeneration = generation;
@@ -217,7 +219,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                   !identical(binding, _binding) ||
                   !identical(dependencies, _dependencies) ||
                   !binding.isLaunchCurrent(generation, owner) ||
-                  (!_foreground && !identical(_externalChildToken, token)) ||
+                  (!_foreground && !identical(_backgroundChildToken, token)) ||
                   !_paneVisible) {
                 return const Scaffold(
                   body: _DashboardMessage('กิจกรรมไม่พร้อมใช้งาน'),
@@ -226,7 +228,9 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
               return destination(owner, owners, current, (value) {
                 if (!mounted || !identical(_childToken, token)) return;
                 if (value && !current()) return;
-                _externalChildToken = value ? token : null;
+                _backgroundChildToken = value || handlesBackground
+                    ? token
+                    : null;
                 binding.syncVisibility(ownedCover: _ownsCover);
               });
             },
@@ -235,7 +239,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
       } finally {
         if (mounted && identical(_childToken, token)) {
           _childToken = null;
-          _externalChildToken = null;
+          _backgroundChildToken = null;
           _childBinding = null;
           _childOwner = null;
           _childGeneration = null;
@@ -331,6 +335,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
                           context,
                         ).languageCode,
                       ),
+                      handlesBackground: true,
                     ),
                     icon: const Icon(Icons.fact_check_outlined),
                     label: const Text('ศูนย์ทบทวน'),

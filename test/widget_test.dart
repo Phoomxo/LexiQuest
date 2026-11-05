@@ -7,12 +7,9 @@ void main() {
     // Build LoginScreen and trigger a frame.
     await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
 
-    // Verify the Login title appears
-    expect(find.textContaining('เข้าสู่ระบบ'), findsWidgets);
-
-    // Verify Email and Password TextFields are present (Thai-only labels since localization update)
-    expect(find.widgetWithText(TextField, 'อีเมล'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'รหัสผ่าน'), findsOneWidget);
+    expect(find.text('เริ่มเรียนกับ LexiQuest'), findsOneWidget);
+    expect(find.textContaining('เข้าสู่ระบบ'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
 
     // A bare screen has no online account provider, so local learning is primary.
     expect(
