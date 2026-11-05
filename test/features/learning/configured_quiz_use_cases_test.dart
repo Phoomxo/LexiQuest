@@ -77,10 +77,16 @@ void main() {
         final sessionId = review?.id ?? session!.id;
         final created = await h.session(sessionId);
         expect(created['activity_type'], activity);
-        expect(created['accepted_plan_id'], isNull);
-        expect(created['accepted_plan_json'], isNull);
-        expect(created['checkpoint_revision'], 0);
-        expect(created['checkpoint_json'], isNull);
+        expect(created['accepted_plan_id'], review?.planId);
+        expect(created['accepted_plan_json'], review?.planJson);
+        expect(created['checkpoint_revision'], review == null ? 0 : 1);
+        if (review == null) {
+          expect(created['checkpoint_json'], isNull);
+        } else {
+          final position = jsonDecode(created['checkpoint_json']! as String);
+          expect(position['cardIndex'], 0);
+          expect(position['revealed'], isFalse);
+        }
         h.now = h.now.add(const Duration(seconds: 3));
         final word = review?.words.single ?? session!.questions.single.word;
         final recorded = review != null
@@ -118,9 +124,16 @@ void main() {
         expect(recorded.inserted, isTrue);
         expect(summary.state, 'completed');
         expect(summary.correctCount, 1);
-        expect(completed['accepted_plan_json'], isNull);
-        expect(completed['checkpoint_revision'], 0);
-        expect(completed['checkpoint_json'], isNull);
+        expect(completed['accepted_plan_id'], review?.planId);
+        expect(completed['accepted_plan_json'], review?.planJson);
+        expect(completed['checkpoint_revision'], review == null ? 0 : 2);
+        if (review == null) {
+          expect(completed['checkpoint_json'], isNull);
+        } else {
+          final position = jsonDecode(completed['checkpoint_json']! as String);
+          expect(position['cardIndex'], 0);
+          expect(position['revealed'], isTrue);
+        }
         expect(await h.session('synthetic-unchanged-prior-session'), prior);
         expect(await h.count('answer_attempts'), 1);
         expect(await h.count('srs_states'), 1);

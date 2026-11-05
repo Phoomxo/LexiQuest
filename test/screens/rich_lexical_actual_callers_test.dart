@@ -144,6 +144,14 @@ void main() {
         );
         expect(find.text('Think of meowing.'), findsNothing);
         expect(find.text('Read the entire authored definition.'), findsNothing);
+        final session = before['learning_sessions']!.single;
+        final position = jsonDecode(session['checkpoint_json']! as String);
+        expect(position['cardIndex'], 0);
+        expect(position['revealed'], isFalse);
+        position['revealed'] = true;
+        session['checkpoint_json'] = jsonEncode(position);
+        session['checkpoint_revision'] =
+            (session['checkpoint_revision']! as int) + 1;
         expect(
           await motivationPresentationIo(tester, () => _rows(h.database)),
           before,
@@ -199,7 +207,7 @@ Future<void> _until(WidgetTester tester, bool Function() done) async {
   fail('Actual rich-card caller did not reach the expected state');
 }
 
-Future<Map<String, Object?>> _rows(AppDatabase db) async => {
+Future<Map<String, List<Map<String, Object?>>>> _rows(AppDatabase db) async => {
   for (final table in db.allTables)
     table.actualTableName:
         (await db
@@ -207,6 +215,6 @@ Future<Map<String, Object?>> _rows(AppDatabase db) async => {
                   'SELECT * FROM ${table.actualTableName} ORDER BY rowid',
                 )
                 .get())
-            .map((row) => jsonEncode(row.data))
+            .map((row) => Map<String, Object?>.of(row.data))
             .toList(),
 };
