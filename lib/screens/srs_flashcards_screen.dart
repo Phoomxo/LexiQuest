@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/semantics.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
@@ -81,6 +82,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   final _mistakeWordIds = <String>{};
   final _autoplayed = <int>{};
   final _cardScroll = ScrollController(keepScrollOffset: false);
+  final _revealedFace = GlobalKey();
   double? _resumeOffset;
   AppDependencies? _dependencies;
   LearningUseCases? _learning;
@@ -582,6 +584,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     _timeBinding?.interacted();
     _suspendTime();
     final revealed = !_isFlipped;
+    final pauseGeneration = _pauseGeneration;
     if (!_isPreview) {
       _operationPending = true;
       _redraw();
@@ -612,15 +615,33 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     if (!mounted || !_sameCard(epoch, index)) return;
     _isFlipped = revealed;
+    TickerFuture? revealAnimation;
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.value = _isFlipped ? 1 : 0;
     } else if (_isFlipped) {
-      _controller.forward();
+      revealAnimation = _controller.forward();
     } else {
       _controller.reverse();
     }
     _redraw();
     unawaited(_readyTime());
+    if (!revealed || !SemanticsBinding.instance.semanticsEnabled) return;
+    if (revealAnimation != null) {
+      try {
+        await revealAnimation.orCancel;
+      } on TickerCanceled {
+        return;
+      }
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    if (_pauseGeneration == pauseGeneration &&
+        _cardCurrent(epoch, index) &&
+        _step == _Step.answering &&
+        _isFlipped) {
+      _revealedFace.currentContext?.findRenderObject()?.sendSemanticsEvent(
+        const FocusSemanticEvent(),
+      );
+    }
   }
 
   Future<void> _rate(int epoch, int index, bool recalled) async {
@@ -1371,6 +1392,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   );
 
   Widget _back(_CardText card) => Column(
+    key: _revealedFace,
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       Text(

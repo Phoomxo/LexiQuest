@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
@@ -814,6 +815,79 @@ void main() {
     expect(fakeVoice.spokenRequests.length, 1);
   });
 
+  for (final reduceMotion in [false, true]) {
+    testWidgets(
+      'revealing a card moves accessibility focus to its meaning (reduced motion: $reduceMotion)',
+      (tester) async {
+        final focused = _recordFocusRequests(tester);
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(disableAnimations: reduceMotion),
+              child: child!,
+            ),
+            home: SrsFlashcardsScreen(
+              wordList: const [
+                {'word': 'bus', 'translation': 'รถโดยสาร', 'example': 'noun'},
+              ],
+              voice: VoiceUseCases(FakeVoiceProvider()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(focused, isEmpty);
+        tester.semantics.tap(find.semantics.byLabel('ดูคำแปล'));
+        await tester.pumpAndSettle();
+        final meaning = tester.getSemantics(
+          find.byKey(const Key('srs-meaning')),
+        );
+        expect(meaning.label, contains('bus'));
+        expect(meaning.label, contains('รถโดยสาร'));
+        expect(meaning.label, contains('noun'));
+        expect(focused, [meaning.id]);
+        focused.clear();
+        await _revealSrsAction(tester, find.byKey(const Key('srs-got')));
+        tester.semantics.tap(find.semantics.byLabel('จำได้แล้ว'));
+        await tester.pumpAndSettle();
+        expect(focused, isEmpty);
+      },
+    );
+  }
+
+  testWidgets(
+    'leaving during a reveal does not take accessibility focus back',
+    (tester) async {
+      final focused = _recordFocusRequests(tester);
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          home: SrsFlashcardsScreen(
+            wordList: const [
+              {'word': 'bus', 'translation': 'รถโดยสาร'},
+            ],
+            voice: VoiceUseCases(FakeVoiceProvider()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      tester.semantics.tap(find.semantics.byLabel('ดูคำแปล'));
+      await tester.pump();
+      unawaited(
+        navigator.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Next page')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Next page'), findsOneWidget);
+      expect(focused, isEmpty);
+    },
+  );
+
   testWidgets(
     'Tapping card flips to back side displaying translation and buttons',
     (WidgetTester tester) async {
@@ -851,6 +925,20 @@ void main() {
       expect(find.text('บันทึกแล้ว'), findsNothing);
     },
   );
+}
+
+List<int> _recordFocusRequests(WidgetTester tester) {
+  final focused = <int>[];
+  tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
+    SystemChannels.accessibility,
+    (message) async {
+      if (message['type'] == 'focus') {
+        focused.add(message['nodeId'] as int);
+      }
+      return null;
+    },
+  );
+  return focused;
 }
 
 Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
