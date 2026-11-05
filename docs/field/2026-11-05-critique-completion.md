@@ -1,6 +1,6 @@
 # Critique completion: internal trial 36
 
-Status: application verification passed; signed artifact acceptance is pending. This record does not certify a public release.
+Status: all five approved critique findings are closed for internal offline trial 36. Application, signed artifact, fresh-install and upgrade acceptance pass. This record does not certify a public release.
 
 ## Intent and source
 
@@ -20,7 +20,7 @@ Five pre-existing critique files and 16 failure images remain untouched.
 | R | Reading result and repair, honest optional sentence, simpler Home; Reading worker | choose_mode_screen, associative_reading_session_screen, quiz_screen, affected screen tests | Completed and wrong-answer flows, single original session, owner/content/route guards, optional skip, Reading-only gate | Done |
 | T | Explain unavailable Tutor before key entry; Tutor worker | gemini_settings_screen, ai_tutor_screen, their tests | Null scope makes no load/configure call; recovery and scope loss clear stale input; connected behavior remains | Done |
 | P | Compact pack preview; pack worker | learning_pack_catalog_screen and affected pack tests | Install discoverable at 320px, warning visible, complete expandable provenance, large text, existing confirmation/owner guards | Done |
-| V | Integrate, independently review, verify and package; root | This record, decision trail, native runner and affected golden | Focused and full host checks, analysis, native affected flows, signed APK36 fresh/upgrade evidence | Running |
+| V | Integrate, independently review, verify and package; root | This record, decision trail, native runner and affected golden | Focused and full host checks, analysis, native affected flows, signed APK36 fresh/upgrade evidence | Done |
 
 The root is the only Flutter/Dart/build runner. Each production file has one writer.
 Implementation begins after regression tests demonstrate the defects. All writers pause for a consistent verification snapshot.
@@ -58,11 +58,11 @@ The follow-up repairs that callback propagation and exercises the full repair-to
 The Tutor/pack independent diff review finds no actionable defect. Root refines the prerequisite copy into plain Thai.
 The initial comment review finds no new suppressions or comments requiring removal.
 The upgrade emulator baseline matches APK35 SHA-256 and all 29 preserved tables: 24 words, 20 answers, 7 sessions, and both starter versions.
-These are pre-upgrade facts; APK36 preservation is still pending.
+These were the pre-upgrade facts; the completed APK36 comparison appears below.
 The nested repair test passes after waiting for the complete route-pop chain: three completed sessions and three answer attempts (`nested-repair-green.log`).
 The broader Reading result suite then passes 14 cases (`reading-final.log`), including delayed launch cancellation, owner/content changes and foreign cover.
 Root replaces the temporary child-active flag with the actual owned route to cover the gap before Score, and strengthens the asynchronous negative test.
-Those last changes must pass the native and full-host checks below; the earlier 14-case run does not attest them.
+Those last changes subsequently pass the native and full-host checks below; the earlier 14-case run alone does not attest them.
 Only the intentional Home large-text golden is regenerated and visually reviewed (`home-golden-update.log`). Original failure images remain intact.
 The first analyzer pass reports five issues; root fixes mounted-context handling and required braces before native compilation.
 
@@ -73,7 +73,8 @@ The first analyzer pass reports five issues; root fixes mounted-context handling
 - Pending Reading launch: a transient foreign cover retires preparation. The owned-route reference also protects the gap before Score.
 - Comments/suppressions: no new comments or suppressions requiring removal. No broad comment cleanup is part of this task.
 
-Final acceptance and artifact receipt: pending.
+Final source review confirms coverage of all five findings without a new actionable gap.
+Signed artifact installation and preservation acceptance follow below.
 
 Native environment recovery: the first Android launch is killed by ActivityManager's process-start timeout before any test runs.
 Host free memory is about 1.6 GB with two emulators. The idle upgrade emulator is stopped without resetting its data, raising free memory to about 4.1 GB.
@@ -98,12 +99,95 @@ The full host suite is rerun on the final test snapshot under the `delivery36-fi
 The final run passes 5,716 host tests and reports no analyzer issues, both exit 0.
 `full-host-delivery36-final-result.json` records 1,094 input hashes with zero changes during verification.
 The Definition test-only change also passes independent review with every original learning-data assertion retained.
-The signed offlineTrial36 artifact must now be built from the committed matching source and checked through upgrade and fresh-install flows.
+The signed offlineTrial36 artifact is built from the committed matching source; upgrade and fresh-install acceptance follow below.
 Only task-owned emulators `LexiQuest_Synthetic_API35` (5556) and `LexiQuest_All44_API35` (5554) may be used.
 The physical Vivo is excluded from this run.
 
 APK35 evidence is historical baseline, not evidence that these changes pass.
-All44 baseline is from APK33, followed by affected-flow checks through APK35. This task will state exactly what is rerun.
+All44 baseline is from APK33, followed by affected-flow checks through APK35. This task reruns the affected suites and normal-APK flows listed below, not a new all44 normal-APK replay.
+
+## Signed artifact
+
+Application commit: `1e172e804cc5d4a0f4894cb8f7c392f55cd52552`.
+Source tree: `74fcef56ebf81d9e1523af4790f5453697e7cbe3`.
+`committed-source36-match.json` and `package36-verified.json` match all 1,094 verified input hashes before and after packaging.
+Package: `D:/LexiQuest-Storage/maintenance/2026-11-05/critique-completion/package/lexiquest-1.0.0+36`.
+
+| Artifact | SHA-256 |
+|---|---|
+| APK36 | `1A9EFBA870EF03BC87B18991FBF2076B48B39F5E427F1A5277CC598D75C26C5A` |
+| AAB36 | `0A96D72872B826852A3CB114D375757877C04DC1CE1A70B7CD76E088CEF72E6E` |
+| Signing certificate, unchanged from APK35 | `E1B00E17896BFB73FE0DC42429768B966465213D49A8A5165DE06688CC8FDC1F` |
+| Model, unchanged | `D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B` |
+
+Packaging and APK/AAB identity/model checks pass (`package36.log`, exit 0).
+The offline profile disables billing, cloud sync, content-report upload and Google sign-in, with empty AI/voice service URLs.
+The build reports a future Flutter/Kotlin plugin migration warning; it does not fail the current build. Dependency migration is not part of this patch.
+`preexisting-preserved-final.json` confirms that the five original critique files and 16 failure images retain their original hashes.
+The original critique files remain untracked; they are worktree evidence, not part of the application commit.
+
+## Installed APK36 acceptance
+
+Both emulators run Android API35 and are used one at a time. The APK pulled back from each emulator matches the signed APK36 hash above.
+No physical-device operation, real-provider call, public deployment, purchase, or research enrollment is part of this acceptance.
+
+### Upgrade from APK35
+
+`LexiQuest_All44_API35` on emulator-5554 receives `adb install -r`, retaining the synthetic baseline.
+The normal app opens to its local-learning entry screen. Before starting any lesson, the database is copied and compared with the pre-upgrade snapshot.
+`upgrade36/upgrade36-verified.json` confirms identical rows and columns across all 29 preserved tables:
+24 vocabulary words, 20 answers, 7 sessions, and both starter versions, including cached 1.0.1 bytes and the uncached 1.0.0 revision.
+Integrity and foreign-key checks pass; research rows/events remain zero and reminders remain disabled.
+The comparator rejects six intentional mutations: answer, pack bytes, pack revision, research row, research outbox type, and reminder activation.
+The reused verifier is `D:/LexiQuest-Storage/maintenance/2026-11-04/content-quality/upgrade35/verify_upgrade35.py`; it compares schema and row multisets using `verify_snapshot.py` and the existing 29-table ledger.
+Independent final review accepts its comparison/mutation logic and the fresh Reading verifier. The reviewer does not rerun the checks.
+The emulator is stopped after acceptance. This upgrade check proves opening and preservation, not a new lesson after upgrade.
+
+### Fresh installation and Reading repair
+
+`LexiQuest_Synthetic_API35` on emulator-5556 is verified as booted/unlocked, with a 320x640 viewport and font scale 1.0.
+The application package is absent before the normal signed installation; no uninstall is needed in this step.
+`fresh36-artifact.json` records installed versionCode 36 and the pulled APK hash.
+The following normal-app evidence is separate from the 104-case Android test runner:
+
+| Flow | Evidence and observed result |
+|---|---|
+| Local entry | `fresh36-001`–`002`: learning starts without an online account |
+| Starter preview | `fresh36-003`–`005`: warning and install button visible on the first viewport; full original attribution/license accessible by expansion |
+| Install and Definition configuration | `fresh36-006`–`010`: starter 1.0.1 installed; one-word choice selected, then cancelled without a learning session |
+| Home | `fresh36-011`–`013`: one recorded swipe exposes Reading as the first activity; `fresh36-038` shows the collapsed motivation section after activities |
+| Reading stages | `fresh36-013`–`020`: two deliberately wrong recalls, two synthetic association cues, explicit unsaved sentence disclosure and skip |
+| Result and repair | `fresh36-021`–`030`: Reading reports 0/2, repair targets the same two words, finishes 2/2, and returns to Home |
+| Tutor unavailable | `fresh36-033`–`034`: prerequisite message; key, both consent controls and save disabled; no false cancellation or supplied key |
+| Relaunch | `fresh36-039`–`040`: local entry and Home still open after process restart |
+
+`actions.jsonl` records the interactions. Each named capture has PNG and XML evidence.
+The 2x-text preview check is from the 104-case Android suite; the normal APK observations above use font scale 1.0.
+
+`fresh36-reading-verified.json` checks the immutable database copy against the exact expected result:
+12 vocabulary rows and snapshots, one completed `associativeReading` session (0 correct, 2 wrong),
+one completed `weaknessPractice` session (2 correct, 0 wrong), and exactly four answer attempts for the same two word IDs.
+The Reading checkpoint is stage6/completed, with exactly one completion event.
+Starter 1.0.1 bytes retain the original hash; the synthetic optional sentence is absent from every text cell.
+Research rows/events and enabled reminders remain zero. Five intentional data mutations are rejected.
+
+The first external verifier expected the generic name `quiz` for the repair session. Source inspection shows that explicit repair word IDs select `QuizConfiguration.weaknessPractice`.
+The verifier is corrected to require that exact contract and gains a mutation that changes it back to `quiz`, which must fail.
+No application code or data changes for this correction (`fresh36-verifier-correction.json`).
+The first UI evidence selector assumed an enabled-field `EditText` class; the disabled Flutter field is an `android.view.View`.
+The corrected check uses the observed node and requires both enabled/clickable flags to be false, alongside both consent controls and the save button (`fresh36-ui-checks.json`).
+
+`fresh36-restart-verified.json` repeats the strict learning-data check after relaunch.
+`fresh36-restart-comparison.json` confirms identical canonical rows and columns in all 29 preserved tables before and after relaunch.
+Original database evidence remains unchanged. The crash buffer contains no matching app crash or fatal exception.
+The fresh-install emulator is stopped after acceptance.
+
+## Delivery checkpoint
+
+The application artifact is pinned to commit `1e172e804cc5d4a0f4894cb8f7c392f55cd52552`; subsequent repository changes only record acceptance evidence in this document and the decision trail.
+The five fixes reuse existing result, scope, navigation and Material components without adding a dependency, backend or migration.
+The next in-scope step is user evaluation of the signed offline APK36. No task-owned emulator or Flutter test/build process is left running.
+There is no unresolved implementation failure among these five critique findings.
 
 ## Release-only dependencies
 
