@@ -590,7 +590,13 @@ Future<void> _reveal(WidgetTester tester, Finder target) async {
   expect(target, findsOneWidget);
   await Scrollable.ensureVisible(tester.element(target), alignment: .35);
   await tester.pump();
-  expect(target.hitTestable(), findsOneWidget);
+  expect(
+    target.hitTestable(),
+    findsOneWidget,
+    reason:
+        'Target ${tester.getRect(target)}, list ${tester.getRect(scrollable)}, '
+        'keyboard inset ${tester.view.viewInsets.bottom}',
+  );
 }
 
 Future<void> _ready(WidgetTester tester, _Fixture f) async {
@@ -643,7 +649,12 @@ Future<void> _answer(
 Future<void> _finishReady(WidgetTester tester, _Fixture f) async {
   await _until(tester, () => f.repository.answers.isNotEmpty);
   await tester.runAsync(f.repository.settle);
-  await tester.pump();
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle(
+    const Duration(milliseconds: 16),
+    EnginePhase.sendSemanticsUpdate,
+    const Duration(seconds: 5),
+  );
   await _reveal(tester, find.byKey(const ValueKey('cloze-finish')));
   await _until(
     tester,
