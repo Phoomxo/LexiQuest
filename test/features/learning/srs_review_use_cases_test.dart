@@ -402,6 +402,18 @@ class GenericLearningDelegate implements LearningRepository {
 final class SrsAckRepository extends GenericLearningDelegate
     implements SrsReviewRepository {
   SrsAckRepository(super.delegate);
+
+  @override
+  Future<void> requireCurrentSrsReview(
+    SrsReviewSession review, {
+    required int confirmedAnswers,
+    required bool Function() stillCurrent,
+  }) => delegate.requireCurrentSrsReview(
+    review,
+    confirmedAnswers: confirmedAnswers,
+    stillCurrent: stillCurrent,
+  );
+
   String? loseAfter;
   bool _lost = false;
   Future<T> _ack<T>(String stage, Future<T> Function() operation) async {

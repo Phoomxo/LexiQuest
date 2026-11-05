@@ -1038,6 +1038,15 @@ final class LearningUseCases {
     return true;
   }
 
+  Future<void> requireCurrentSrsReview(SrsReviewSession review) {
+    final scope = _srsScope(review);
+    return _srsReviews.requireCurrentSrsReview(
+      review,
+      confirmedAnswers: scope.confirmed.length,
+      stillCurrent: scope.current,
+    );
+  }
+
   Future<SrsReviewSession> startSrsReview(
     SrsReviewSession review, {
     required bool Function() stillCurrent,

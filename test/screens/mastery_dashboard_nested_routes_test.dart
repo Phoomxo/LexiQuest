@@ -54,11 +54,15 @@ void main() {
         await _wait(
           tester,
           () => find
-              .byKey(const ValueKey('review-center-manage-saved'))
+              .byKey(const ValueKey('review-center-tools'))
               .evaluate()
               .isNotEmpty,
         );
         final reviewState = tester.state(find.byType(ReviewCenterScreen));
+        final tools = find.byKey(const ValueKey('review-center-tools'));
+        await tester.ensureVisible(tools);
+        await tester.tap(tools);
+        await tester.pumpAndSettle();
         final saved = find.byKey(const ValueKey('review-center-manage-saved'));
         await tester.ensureVisible(saved);
         await tester.pumpAndSettle();

@@ -97,6 +97,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   bool _openingSrs = false;
   bool _openingMotivation = false;
   bool _openingMatching = false;
+  int _matchingGeneration = 0;
+  Route<void>? _matchingChildRoute;
   bool _openingLadder = false;
   bool _openingReminder = false;
   bool _openingReading = false;
@@ -126,7 +128,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       if (!(_openingReminder &&
           _nativeDependencies?.studyReminders?.isRequestingPermission ==
               true)) {
-        _invalidateNative();
+        _invalidateNative(keepMatching: _matchingChildRoute?.isCurrent == true);
       }
       _progress?.invalidateLaunch();
     } else if (_openingReminder &&
@@ -169,6 +171,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     if (_openingReading &&
         ((_readingChildRoute?.isActive != true && !visible) ||
             !Visibility.of(context))) {
+      _invalidateNative();
+    }
+    if (_openingMatching && _matchingChildRoute == null && !visible) {
       _invalidateNative();
     }
     _nativeRouteVisible = visible;
@@ -599,7 +604,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 if (canReview && progress.dueReviewCount > 0)
                   'ถึงกำหนด ${progress.dueReviewCount} คำ',
                 if (canWeakness && progress.weaknesses.isNotEmpty)
-                  'คำที่ควรฝึก ${progress.weaknesses.length} คำ',
+                  'เคยตอบผิด ${progress.weaknesses.length} คำ',
               ];
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -640,7 +645,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                         hasDue
                             ? 'ทบทวน ${progress.dueReviewCount} คำ'
                             : hasWeakness
-                            ? 'ฝึกคำที่ผิด ${progress.weaknesses.length} คำ'
+                            ? 'ทบทวนคำที่เคยตอบผิด ${progress.weaknesses.length} คำ'
                             : 'เริ่มฝึกคำศัพท์',
                       ),
                     )
@@ -657,7 +662,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             key: const ValueKey('review-center-entry'),
             icon: Icons.collections_bookmark_outlined,
             title: 'ศูนย์ทบทวน',
-            subtitle: 'คำถึงกำหนด คำที่ผิด คำที่บันทึก และรายงานในเครื่อง',
+            subtitle: 'คำถึงกำหนด ประวัติตอบผิด คำที่บันทึก และรายงานในเครื่อง',
             onTap: _reviewCenterAction(),
           ),
           const SizedBox(height: 24),
@@ -798,7 +803,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               key: const ValueKey('learning-goal-onboarding-entry'),
               icon: Icons.flag_outlined,
               title: 'เป้าหมายและแผนการเรียน',
-              subtitle: 'เลือกตั้งเป้าหมายและความชอบ หรือข้ามได้',
+              subtitle: 'เลือกเป้าหมายและเขตเวลาที่ใช้นับวันเรียน หรือข้ามได้',
               onTap: _readAction(
                 () => _push(
                   context,
@@ -836,7 +841,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     );
   }
 
-  void _invalidateNative() {
+  void _invalidateNative({bool keepMatching = false}) {
+    if (!keepMatching) _matchingGeneration++;
     _nativeGeneration++;
     if (_nativeNoticeScheduled) return;
     _nativeNoticeScheduled = true;
@@ -917,14 +923,21 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     LearningUseCases learning,
     AppDependencies dependencies,
   ) =>
-      mounted &&
       generation == _nativeGeneration &&
+      _nativeScopeCurrent(ownerId, learning, dependencies) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  bool _nativeScopeCurrent(
+    String ownerId,
+    LearningUseCases learning,
+    AppDependencies dependencies,
+  ) =>
+      mounted &&
       ownerId == _nativeOwnerId &&
       identical(_nativeDependencies, dependencies) &&
       identical(_learning, learning) &&
       _features.isVisible(FieldFeature.quiz) &&
-      Visibility.of(context) &&
-      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      Visibility.of(context);
 
   bool _canOpenNative(
     int generation,
@@ -951,12 +964,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         !_canOpenNative(_nativeGeneration, ownerId, learning, dependencies)) {
       return;
     }
-    final generation = _nativeGeneration;
+    final generation = ++_matchingGeneration;
     _openingMatching = true;
     bool current() =>
         _openingMatching &&
-        _nativeContextCurrent(generation, ownerId, learning, dependencies) &&
-        identical(matching, dependencies.matching);
+        generation == _matchingGeneration &&
+        _nativeScopeCurrent(ownerId, learning, dependencies) &&
+        identical(matching, dependencies.matching) &&
+        (_matchingChildRoute?.isCurrent ??
+            (ModalRoute.of(context)?.isCurrent == true &&
+                WidgetsBinding.instance.lifecycleState ==
+                    AppLifecycleState.resumed));
     try {
       final plan = await matching.prepare(
         expectedOwnerId: ownerId,
@@ -995,6 +1013,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   ),
           ),
         ),
+        onRouteCreated: (route) => _matchingChildRoute = route,
       );
     } on Object {
       if (current() && mounted && ModalRoute.of(context)?.isCurrent == true) {
@@ -1003,6 +1022,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         );
       }
     } finally {
+      _matchingChildRoute = null;
       _openingMatching = false;
       if (mounted) _syncProgress();
     }

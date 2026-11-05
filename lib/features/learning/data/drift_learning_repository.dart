@@ -1402,6 +1402,35 @@ final class DriftLearningRepository
   final _srsBindings = Expando<_SrsReviewBinding>();
 
   @override
+  Future<void> requireCurrentSrsReview(
+    SrsReviewSession review, {
+    required int confirmedAnswers,
+    required bool Function() stillCurrent,
+  }) async {
+    if (await _ownerWrites.hasAmbientTransaction()) {
+      throw StateError('SRS resume requires a committed source');
+    }
+    final binding = _srsBinding(review);
+    await database.transaction(() async {
+      await _requireTimeReadOwner(review.ownerId, stillCurrent);
+      await _requireSrsTargets(review);
+      if (binding.started || await _session(review.id) != null) {
+        final facts = await _requireSrsFacts(review, binding);
+        if (!binding.startAttempted ||
+            facts.attempts.length < confirmedAnswers ||
+            (binding.finished && facts.session.state != 'completed') ||
+            (facts.session.state == 'completed' &&
+                (!binding.finishAttempted ||
+                    binding.closing?.endedAtUtc.millisecondsSinceEpoch !=
+                        facts.session.endedAtUtcMs))) {
+          throw StateError('Original SRS receipts changed');
+        }
+      }
+      await _requireTimeReadOwner(review.ownerId, stillCurrent);
+    });
+  }
+
+  @override
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,
@@ -1606,7 +1635,7 @@ final class DriftLearningRepository
     if (binding.closing != null && !identical(binding.closing, intent)) {
       throw StateError('Original SRS closing intent changed');
     }
-    return _writeSrsBoundary<SrsReviewFinishResult>(
+    final result = await _writeSrsBoundary<SrsReviewFinishResult>(
       review.ownerId,
       () => _srsCurrent(review, stillCurrent),
       write: () async {
@@ -1647,6 +1676,8 @@ final class DriftLearningRepository
         if (result.inserted) await _requireSrsTargets(review);
       },
     );
+    binding.finished = true;
+    return result;
   }
 
   Future<T> _writeSrsBoundary<T>(
@@ -4097,6 +4128,7 @@ final class _SrsReviewBinding {
   bool startAttempted = false;
   bool started = false;
   bool finishAttempted = false;
+  bool finished = false;
   final answers = <int, SrsReviewAnswerIntent>{};
   SrsReviewFinishIntent? closing;
 }

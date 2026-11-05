@@ -10,6 +10,77 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/matching_quiz_screen.dart';
 
 void main() {
+  for (final fromHistory in [false, true]) {
+    testWidgets(
+      'first ${fromHistory ? 'history read' : 'start'} recovers after background with its original session',
+      (tester) async {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        final h = _Harness();
+        addTearDown(h.owners.close);
+        final plan = h.repository.plan;
+        if (fromHistory) {
+          await h.repository.start(plan, stillCurrent: () => true);
+        }
+        final ack = Completer<void>();
+        h.repository.nextLoadAck = ack;
+        await tester.pumpWidget(
+          h.app(resumeSessionId: fromHistory ? plan.session.id : null),
+        );
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        if (!fromHistory) ack.complete();
+        await tester.pump();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        if (fromHistory) ack.complete();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('matching-word-0')), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(h.repository.starts, fromHistory ? [plan] : [plan, plan]);
+        expect(
+          h.repository.resumes,
+          fromHistory ? [plan.session.id, plan.session.id] : isEmpty,
+        );
+        expect(h.repository.current!.plan.session.id, plan.session.id);
+        expect(h.repository.commits, 0);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
+  testWidgets(
+    'owner changes during an interrupted first start retire its result',
+    (tester) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      final h = _Harness();
+      addTearDown(h.owners.close);
+      final ack = Completer<void>();
+      h.repository.nextLoadAck = ack;
+      await tester.pumpWidget(h.app());
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      h.owners.add('synthetic-other-owner');
+      h.owners.add(h.repository.plan.session.ownerId);
+      ack.complete();
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('matching-unavailable')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('matching-word-0')), findsNothing);
+      expect(h.repository.starts, [h.repository.plan]);
+      expect(h.repository.resumes, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets(
     'small dark board at 200 percent supports selection, wrong feedback, and canonical result',
     (tester) async {
@@ -156,7 +227,7 @@ final class _Harness {
   final owners = StreamController<String?>.broadcast(sync: true);
   final navigator = GlobalKey<NavigatorState>();
   late final MatchingUseCases matching;
-  Widget app({double textScale = 1}) => MaterialApp(
+  Widget app({double textScale = 1, String? resumeSessionId}) => MaterialApp(
     navigatorKey: navigator,
     theme: ThemeData.dark(useMaterial3: true),
     builder: (context, child) => MediaQuery(
@@ -170,7 +241,8 @@ final class _Harness {
       matching: matching,
       expectedOwnerId: 'synthetic-matching-screen-owner',
       ownerChanges: owners.stream,
-      preparedPlan: repository.plan,
+      preparedPlan: resumeSessionId == null ? repository.plan : null,
+      resumeSessionId: resumeSessionId,
     ),
   );
 }
@@ -205,6 +277,9 @@ final class _Repository implements MatchingRepository {
     ],
   );
   _State? current;
+  final starts = <MatchingPlan>[];
+  final resumes = <String>[];
+  Completer<void>? nextLoadAck;
   int saves = 0;
   int commits = 0;
   int wrong = 0;
@@ -223,21 +298,38 @@ final class _Repository implements MatchingRepository {
   Future<MatchingState> start(
     MatchingPlan plan, {
     required bool Function() stillCurrent,
-  }) async => current ??= _State(
-    plan,
-    MatchingCheckpoint(
-      phase: MatchingPhase.selecting,
-      attemptCount: 0,
-      matched: [],
-    ),
-    1,
-  );
+  }) async {
+    starts.add(plan);
+    final state = current ??= _State(
+      plan,
+      MatchingCheckpoint(
+        phase: MatchingPhase.selecting,
+        attemptCount: 0,
+        matched: [],
+      ),
+      1,
+    );
+    await _acknowledgeLoad();
+    return state;
+  }
+
   @override
   Future<MatchingState> resume({
     required String sessionId,
     required String expectedOwnerId,
     required bool Function() stillCurrent,
-  }) async => current!;
+  }) async {
+    resumes.add(sessionId);
+    await _acknowledgeLoad();
+    return current!;
+  }
+
+  Future<void> _acknowledgeLoad() async {
+    final ack = nextLoadAck;
+    nextLoadAck = null;
+    if (ack != null) await ack.future;
+  }
+
   @override
   Future<MatchingState> save(
     MatchingState state,

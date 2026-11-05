@@ -27,8 +27,14 @@ void main() {
     expect(find.byKey(const Key('srs-card')), findsNothing);
     expect(find.byKey(const Key('srs-listen')), findsNothing);
     expect(voice.requests, isEmpty);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     ack.complete();
+    await _drain(tester);
+    expect(find.byKey(const Key('srs-card')), findsNothing);
+    expect(voice.requests, isEmpty);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await _ready(tester);
+    expect(repository.starts, hasLength(1));
     expect(voice.requests, hasLength(1));
     expect(voice.requests.single.text, await _spelling(tester, h, 0));
     expect(voice.requests.single.contentId, h.wordIds.first);
@@ -304,7 +310,11 @@ void main() {
         repository.finishes[1].endedAtUtc,
         repository.finishes[0].endedAtUtc,
       );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       ack.complete();
+      await _drain(tester);
+      expect(returned, isFalse);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await _until(tester, () => returned);
       expect(result, isNotNull);
       expect(result!.summary.id, repository.starts.single.id);
@@ -326,12 +336,7 @@ void main() {
     },
   );
 
-  for (final reason in [
-    'foreign-route',
-    'hidden',
-    'inactive',
-    'learning-replaced',
-  ]) {
+  for (final reason in ['foreign-route', 'hidden', 'learning-replaced']) {
     testWidgets('held rating ACK cannot revive SRS after $reason', (
       tester,
     ) async {
@@ -379,21 +384,12 @@ void main() {
             ),
           ),
         );
-      } else if (reason == 'inactive') {
-        tester.binding.handleAppLifecycleStateChanged(
-          AppLifecycleState.inactive,
-        );
       } else {
         changed.value = true;
       }
       await tester.pump();
       ack.complete();
       await _drain(tester);
-      if (reason == 'inactive') {
-        tester.binding.handleAppLifecycleStateChanged(
-          AppLifecycleState.resumed,
-        );
-      }
       if (reason == 'hidden') changed.value = false;
       if (reason == 'foreign-route') {
         expect(find.text('foreign'), findsOneWidget);
@@ -405,6 +401,66 @@ void main() {
       expect(repository.finishes, isEmpty);
       expect(await tester.runAsync(h.storage.snapshot), before);
       expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'rating acknowledged in background resumes once on its saved card',
+    (tester) async {
+      final (h, repository) = await _fixture(tester);
+      final ack = _gate();
+      repository.afterRating = () => ack.future;
+      final voice = SrsUiVoice();
+      await _open(tester, h, voice: voice);
+      await _ready(tester);
+      await _tap(tester, 'srs-flip');
+      await _tap(tester, 'srs-got');
+      await _untilAsync(
+        tester,
+        () async => await h.storage.count('answer_attempts') == 1,
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      ack.complete();
+      await _drain(tester);
+      expect(find.byKey(const Key('srs-next')), findsNothing);
+      expect(voice.stops, 1);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _saved(tester);
+      expect(find.text('1/2'), findsOneWidget);
+      expect(voice.requests, hasLength(1));
+      await _tap(tester, 'srs-next');
+      await _until(tester, () => find.text('2/2').evaluate().isNotEmpty);
+      expect(repository.ratings, hasLength(1));
+      expect(repository.starts, hasLength(1));
+      expect(await _count(tester, h, 'answer_attempts'), 1);
+    },
+  );
+
+  for (final change in ['word revision', 'active owner']) {
+    testWidgets('resume rejects a changed $change before exposing a card', (
+      tester,
+    ) async {
+      final (h, repository) = await _fixture(tester);
+      await _open(tester, h);
+      await _ready(tester);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      if (change == 'word revision') {
+        await tester.runAsync(
+          () => h.database.customStatement(
+            'UPDATE vocabulary_words SET local_revision=local_revision+1 WHERE id=?',
+            [h.wordIds.first],
+          ),
+        );
+      } else {
+        await tester.runAsync(
+          () => h.storage.switchOwner(configuredOtherOwnerId),
+        );
+      }
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _unavailable(tester);
+      expect(find.byKey(const Key('srs-card')), findsNothing);
+      expect(repository.ratings, isEmpty);
+      expect(repository.starts, hasLength(1));
     });
   }
 

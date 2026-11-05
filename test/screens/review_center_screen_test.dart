@@ -181,7 +181,7 @@ void main() {
       expect(_count(tester, 'incorrect'), 'Incorrect history: 2');
       expect(_count(tester, 'saved'), 'Saved: 2');
       expect(_count(tester, 'reported'), 'Local reports: 2');
-      expect(find.text('Words in ready queues: 3'), findsOneWidget);
+      expect(find.text('Words ready to practice: 1'), findsOneWidget);
       await _reveal(tester, _word(configuredWordIds.first));
       for (final queue in ['due', 'incorrect', 'saved']) {
         expect(
@@ -234,9 +234,20 @@ void main() {
         expect(find.textContaining('Not sent.'), findsNothing);
       }
       h.now = h.now.add(const Duration(minutes: 1));
-      await _tap(tester, 'review-center-refresh');
+      await tester.tap(find.byKey(const ValueKey('review-center-refresh')));
       await _ready(tester);
-      expect(find.textContaining(h.now.toIso8601String()), findsOneWidget);
+      await _tap(tester, 'review-center-tools');
+      final updated = find.byKey(const ValueKey('review-center-evaluated-at'));
+      final local = h.now.toLocal();
+      final strings = MaterialLocalizations.of(tester.element(updated));
+      expect(
+        tester.widget<Text>(updated).data,
+        contains(strings.formatShortDate(local)),
+      );
+      expect(
+        tester.widget<Text>(updated).data,
+        contains(strings.formatTimeOfDay(TimeOfDay.fromDateTime(local))),
+      );
       expect(await tester.runAsync(h.snapshotAllTables), before);
       expect(tester.takeException(), isNull);
     },
@@ -682,7 +693,7 @@ void main() {
       expect(_count(tester, 'saved'), 'Saved: 1');
       expect(_count(tester, 'reported'), 'Local reports: 1');
       queries.fail = false;
-      await _tap(tester, 'review-center-refresh');
+      await tester.tap(find.byKey(const ValueKey('review-center-refresh')));
       await _ready(tester);
       expect(_count(tester, 'due'), 'Due: 1');
       expect(await tester.runAsync(h.snapshotAllTables), before);
@@ -800,6 +811,10 @@ void main() {
         ('review-center-history', LearningHistoryScreen),
       ]) {
         await _ready(tester);
+        if (find.byKey(ValueKey(key)).evaluate().isEmpty) {
+          await _tap(tester, 'review-center-tools');
+          await tester.pumpAndSettle();
+        }
         await _tap(tester, key);
         await _until(tester, () {
           final child = find.byType(type);
@@ -842,6 +857,8 @@ void main() {
       final nav = GlobalKey<NavigatorState>();
       await _open(tester, h, navigatorKey: nav);
       await _ready(tester);
+      await _tap(tester, 'review-center-tools');
+      await tester.pumpAndSettle();
       await _tap(tester, 'review-center-history');
       final historyFinder = find.byType(LearningHistoryScreen);
       await _until(tester, () {
@@ -898,6 +915,39 @@ void main() {
       nav.currentState!.pop();
       await _unavailable(tester);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    '320px shows an available practice action and its word before scrolling',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final h = await _fixture(tester);
+      await tester.runAsync(() => h.seedWrong(wordId: configuredWordIds.first));
+      await _open(tester, h, language: 'th');
+      await _ready(tester);
+      expect(
+        find
+            .byKey(const ValueKey('review-center-incorrect-practice'))
+            .hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('review-center-due-practice')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('review-center-saved-practice')),
+        findsNothing,
+      );
+      expect(find.text('station').hitTestable(), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('review-center-evaluated-at')),
+        findsNothing,
+      );
     },
   );
 

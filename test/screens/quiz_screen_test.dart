@@ -1302,7 +1302,8 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       await tester.pumpAndSettle();
       await tester.tap(find.text('กลับหน้าเรียน'));
       await _pumpUntilFound(tester, find.text('วันนี้อยากฝึกอะไร'));
-      await _pumpUntilFound(tester, find.text('คำที่ควรฝึก 1 คำ'));
+      await _pumpUntilFound(tester, find.text('เคยตอบผิด 1 คำ'));
+      expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'), findsOneWidget);
       expect(hubLoads, 2);
       expect(
         await database.select(database.answerAttempts).get(),

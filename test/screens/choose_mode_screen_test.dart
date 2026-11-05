@@ -1299,7 +1299,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('ทบทวน 3 คำ'), findsOneWidget);
-    expect(find.text('ถึงกำหนด 3 คำ • คำที่ควรฝึก 1 คำ'), findsOneWidget);
+    expect(find.text('ถึงกำหนด 3 คำ • เคยตอบผิด 1 คำ'), findsOneWidget);
     expect(find.text('ฝึกคำศัพท์'), findsOneWidget);
     expect(find.text('ฝึกคำแปล แล้วดูคำที่ควรทบทวน'), findsOneWidget);
     expect(find.text('ฝึกจากคลังคำศัพท์'), findsNothing);
@@ -1322,8 +1322,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('ฝึกคำที่ผิด 1 คำ'), findsOneWidget);
-      await tester.tap(find.text('ฝึกคำที่ผิด 1 คำ'));
+      expect(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'), findsOneWidget);
+      await tester.tap(find.text('ทบทวนคำที่เคยตอบผิด 1 คำ'));
       await tester.pumpAndSettle();
       expect(find.byType(WeaknessClinicScreen), findsOneWidget);
       due = 2;
@@ -1383,7 +1383,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('เริ่มฝึกคำศัพท์'), findsOneWidget);
     expect(find.textContaining('ถึงกำหนด 0 คำ'), findsNothing);
-    expect(find.textContaining('คำที่ควรฝึก 0 คำ'), findsNothing);
+    expect(find.textContaining('เคยตอบผิด 0 คำ'), findsNothing);
     expect(find.textContaining('100%'), findsNothing);
   });
 

@@ -43,6 +43,17 @@ final class SrsReviewUiRepository
   int genericWrites = 0;
 
   @override
+  Future<void> requireCurrentSrsReview(
+    SrsReviewSession review, {
+    required int confirmedAnswers,
+    required bool Function() stillCurrent,
+  }) => _srs.requireCurrentSrsReview(
+    review,
+    confirmedAnswers: confirmedAnswers,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,

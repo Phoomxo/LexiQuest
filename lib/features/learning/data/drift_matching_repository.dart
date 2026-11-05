@@ -86,7 +86,7 @@ final class DriftMatchingRepository implements MatchingRepository {
     if (lease == null) {
       throw StateError('Original matching preparation is required');
     }
-    return _boundary(
+    final state = await _boundary(
       plan.session.ownerId,
       () => lease.current && stillCurrent(),
       write: () async {
@@ -123,11 +123,11 @@ final class DriftMatchingRepository implements MatchingRepository {
           ),
         );
         await _requireTargets(plan);
-        final state = await _read(plan.session.id, plan.session.ownerId, lease);
-        lease.started = true;
-        return state;
+        return _read(plan.session.id, plan.session.ownerId, lease);
       },
     );
+    lease.started = true;
+    return state;
   }
 
   @override
@@ -485,7 +485,8 @@ final class DriftMatchingRepository implements MatchingRepository {
         checkpoint.answer!.occurredAtUtcMs < lastTime) {
       throw StateError('Matching answer precedes acknowledged evidence');
     }
-    if (checkpoint.endedAtUtcMs != null && checkpoint.endedAtUtcMs! < lastTime) {
+    if (checkpoint.endedAtUtcMs != null &&
+        checkpoint.endedAtUtcMs! < lastTime) {
       throw StateError('Matching close precedes acknowledged evidence');
     }
     if (row.state == 'active') await _requireTargets(plan);

@@ -187,12 +187,12 @@ class _TodayMotivationPanelState extends State<TodayMotivationPanel>
   Widget build(BuildContext context) {
     final view = _view;
     final next = view?.history
-              .where(
-                (row) =>
-                    row.period?.contains(view.evaluatedAtUtc) == true &&
-                    row.state.name == 'active',
-              )
-              .firstOrNull;
+        .where(
+          (row) =>
+              row.period?.contains(view.evaluatedAtUtc) == true &&
+              row.state.name == 'active',
+        )
+        .firstOrNull;
     final objective = next?.progress
         .where((row) => !row.isComplete)
         .firstOrNull;
@@ -269,18 +269,25 @@ class MotivationTotals extends StatelessWidget {
   const MotivationTotals({super.key, required this.snapshot});
   final MotivationSnapshot snapshot;
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 12,
-    runSpacing: 12,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 8,
     children: [
-      _Metric(
-        label: 'วันที่เรียนต่อเนื่อง',
-        value: '${snapshot.state.currentStreakDays} วัน',
-      ),
-      _Metric(label: 'XP จากภารกิจ', value: '${snapshot.questXp} XP'),
-      _Metric(
-        label: 'สิทธิ์พักสตรีก',
-        value: '${snapshot.state.freezeCount} สิทธิ์',
+      Text('เขตเวลาสำหรับวันเรียนใหม่ · ${snapshot.timezoneId}'),
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          _Metric(
+            label: 'วันที่เรียนต่อเนื่อง',
+            value: '${snapshot.state.currentStreakDays} วัน',
+          ),
+          _Metric(label: 'XP จากภารกิจ', value: '${snapshot.questXp} XP'),
+          _Metric(
+            label: 'สิทธิ์พักสตรีก',
+            value: '${snapshot.state.freezeCount} สิทธิ์',
+          ),
+        ],
       ),
     ],
   );

@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show TableUpdate;
+import 'package:drift/drift.dart' show TableUpdate, Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/motivation/presentation/quest_screen.dart';
 import 'package:vocab_learning_app/features/motivation/presentation/today_motivation_panel.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
@@ -47,6 +48,8 @@ void main() {
             entry.evaluate().isNotEmpty &&
             tester.widget<OutlinedButton>(entry).onPressed != null,
       );
+      final defaultZone = find.text('เขตเวลาสำหรับวันเรียนใหม่ · UTC');
+      expect(defaultZone, findsOneWidget);
       await tester.ensureVisible(entry);
       await tester.pump(const Duration(milliseconds: 16));
       await _until(tester, () => entry.hitTestable().evaluate().isNotEmpty);
@@ -68,6 +71,7 @@ void main() {
             null,
       );
       expect(find.text('ภารกิจและวันพัก'), findsOneWidget);
+      expect(defaultZone, findsOneWidget);
       expect(
         await _real(tester, () => ownerMigrationRows(fixture.h.database)),
         before,
@@ -75,6 +79,20 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Today shows the selected learning timezone beside the streak', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(
+      () => _Fixture.open(timezoneId: 'Asia/Bangkok'),
+    ))!;
+    addTearDown(() => _close(tester, fixture));
+    await tester.pumpWidget(_app(fixture));
+    expect(await _revealToday(tester), isTrue);
+    final zone = find.text('เขตเวลาสำหรับวันเรียนใหม่ · Asia/Bangkok');
+    await _until(tester, () => zone.evaluate().isNotEmpty);
+    expect(find.text('วันที่เรียนต่อเนื่อง'), findsOneWidget);
+  });
 
   testWidgets(
     'retained Today navigation callback is inert after actual coalesced owner A-B-A',
@@ -268,8 +286,25 @@ final class _Fixture {
   final AppDependencies dependencies;
   final Stream<String?> ownerChanges;
 
-  static Future<_Fixture> open({bool hidden = false}) async {
+  static Future<_Fixture> open({
+    bool hidden = false,
+    String? timezoneId,
+  }) async {
     final h = await QuestHarness.open();
+    if (timezoneId != null) {
+      await h.database
+          .into(h.database.learningProfiles)
+          .insert(
+            db.LearningProfilesCompanion.insert(
+              ownerId: configuredOwnerId,
+              revision: 1,
+              onboardingState: 'completed',
+              interestCodesJson: '[]',
+              updatedAtUtcMs: h.now.millisecondsSinceEpoch,
+              learningTimezoneId: Value(timezoneId),
+            ),
+          );
+    }
     var id = 0;
     final runtime = MotivationRuntime(
       database: h.database,

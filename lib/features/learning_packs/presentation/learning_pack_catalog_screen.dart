@@ -55,6 +55,7 @@ class LearningPackCatalogScreen extends StatefulWidget {
 
 class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     with WidgetsBindingObserver {
+  static const _srsRouteName = 'learning-packs/srs';
   final _search = TextEditingController();
   LearningPackUseCases? _packs;
   HttpLearningPackSource? _downloads;
@@ -102,7 +103,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       !_busy &&
       _pending == null &&
       _packs != null;
-  bool _current(int lease) => _visible && lease == _lease;
+  bool get _onSrsRoute =>
+      _practiceRoute?.settings.name == _srsRouteName &&
+      _practiceRoute?.isCurrent == true;
+  bool _current(int lease) =>
+      mounted && !_retired && lease == _lease && (_visible || _onSrsRoute);
   bool _operationCurrent(int operation) =>
       mounted && !_retired && operation == _operation;
   bool _resultCurrent(int operation, PackOwnerScope? scope) =>
@@ -710,9 +715,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
     });
     var launched = false;
     Route<dynamic>? launchedRoute;
-    try {
+    Future<void> requirePracticeContent() async {
       final fresh = await _packs!.detail(scope, shown.pack.id);
-      if (!_resultCurrent(operation, scope) || !available()) return;
+      if (!_resultCurrent(operation, scope) || !available()) {
+        throw const PackStorageException(PackStorageFailureCode.staleContent);
+      }
       for (final selected in requested) {
         if (!fresh.bindings.any(
           (binding) =>
@@ -724,6 +731,11 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
           throw const PackStorageException(PackStorageFailureCode.staleContent);
         }
       }
+    }
+
+    try {
+      await requirePracticeContent();
+      if (!_resultCurrent(operation, scope) || !available()) return;
       final ids = List<String>.unmodifiable(
         requested.map((binding) => binding.wordId),
       );
@@ -803,7 +815,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
-          name: definition ? 'learning-packs/definition' : 'learning-packs/srs',
+          name: definition ? 'learning-packs/definition' : _srsRouteName,
           reduceMotion:
               quizLaunch?.configuration.lexical?.settings.reduceMotion == true,
           builder: (_) {
@@ -830,6 +842,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
             }
             return SrsFlashcardsScreen(
               sourceWordIds: ids,
+              verifySourceOnResume: requirePracticeContent,
               expectedOwnerId: scope.ownerId,
               ownerChanges: ownerChanges,
               learning: dependencies!.learning,
@@ -1047,7 +1060,7 @@ class _LearningPackCatalogState extends State<LearningPackCatalogScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
     if (_foreground) _wakePicker();
-    if (!_foreground && !_picker) _cancelWork();
+    if (!_foreground && !_picker && !_onSrsRoute) _cancelWork();
     _saved?.syncVisibility();
     if (_foreground && !_picker && !_busy && !_retired) unawaited(_reload());
   }

@@ -22,6 +22,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
     super.key,
     this.wordList,
     this.sourceWordIds,
+    this.verifySourceOnResume,
     this.voice,
     this.learning,
     this.expectedOwnerId,
@@ -34,6 +35,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
   /// A presentation-only snapshot. Preview ratings never create learning facts.
   final List<Map<String, String>>? wordList;
   final List<String>? sourceWordIds;
+  final Future<void> Function()? verifySourceOnResume;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
   final String? expectedOwnerId;
@@ -89,6 +91,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   bool _routeVisible = false;
   bool _redrawScheduled = false;
   bool _operationPending = false;
+  bool _suspended = false;
+  int _pauseGeneration = 0;
   bool _isFlipped = false;
   bool _ownsPlayback = false;
   bool _voiceBusy = false;
@@ -310,6 +314,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               rows.length,
             ).every((i) => mapEquals(_previewInput[i], rows[i])));
     if (!identical(oldWidget.learning, widget.learning) ||
+        oldWidget.verifySourceOnResume != widget.verifySourceOnResume ||
         !identical(oldWidget.voice, widget.voice) ||
         !identical(oldWidget.ownerChanges, widget.ownerChanges) ||
         oldWidget.expectedOwnerId != widget.expectedOwnerId ||
@@ -325,20 +330,34 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.detached) {
       _invalidate();
+    } else if (state == AppLifecycleState.resumed) {
+      _tryBegin();
+    } else {
+      _pauseGeneration++;
+      _suspended = true;
+      _latency.stop();
+      _suspendTime();
+      unawaited(_stopPlayback());
+      _redraw();
     }
   }
 
-  bool _current(int epoch) =>
+  bool _scopeCurrent(int epoch) =>
       mounted &&
       !_invalidated &&
       epoch == _epoch &&
       (!_ownerRequired || _ownerId != null) &&
       _routeVisible &&
       _route?.isCurrent == true &&
-      Visibility.of(context) &&
+      Visibility.of(context);
+
+  bool get _foreground =>
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  bool _current(int epoch) =>
+      _scopeCurrent(epoch) && _foreground && !_suspended;
 
   bool get _hasCard => switch (_step) {
     _Step.answering ||
@@ -351,7 +370,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   };
 
   bool _cardCurrent(int epoch, int index) =>
-      _current(epoch) &&
+      _foreground && !_suspended && _sameCard(epoch, index);
+
+  bool _sameCard(int epoch, int index) =>
+      _scopeCurrent(epoch) &&
       _hasCard &&
       index == _index &&
       index >= 0 &&
@@ -371,6 +393,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   void _tryBegin() {
+    if (_suspended) {
+      unawaited(_resumeStudy());
+      return;
+    }
     if (_beginRequested || !_current(_epoch)) {
       return;
     }
@@ -385,6 +411,48 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
   }
 
+  Future<void> _resumeStudy() async {
+    final epoch = _epoch;
+    if (!_foreground || !_scopeCurrent(epoch) || _operationPending) return;
+    final generation = _pauseGeneration;
+    _operationPending = true;
+    try {
+      await widget.verifySourceOnResume?.call();
+      final review = _review;
+      if (review != null && _scopeCurrent(epoch)) {
+        await _learning!.requireCurrentSrsReview(review);
+      }
+    } on Object {
+      if (_scopeCurrent(epoch) && generation == _pauseGeneration) _invalidate();
+    } finally {
+      _operationPending = false;
+    }
+    if (!_scopeCurrent(epoch) || !_foreground) return;
+    if (generation != _pauseGeneration) {
+      unawaited(_resumeStudy());
+      return;
+    }
+    _suspended = false;
+    _redraw();
+    if (!_beginRequested) {
+      _tryBegin();
+    } else if (_step == _Step.starting) {
+      unawaited(_start(epoch));
+    } else if (_step == _Step.answering) {
+      _latency.start();
+      _autoplay(epoch, _index);
+      unawaited(_readyTime());
+    } else if (_step == _Step.finishing && _summary != null) {
+      _complete(_summary);
+    }
+  }
+
+  void _operationSettled() {
+    _operationPending = false;
+    _redraw();
+    if (_suspended) unawaited(_resumeStudy());
+  }
+
   Future<void> _prepare(int epoch) async {
     if (!_current(epoch) || _operationPending) {
       return;
@@ -396,20 +464,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       final review = await _learning!.prepareSrsReview(
         expectedOwnerId: _ownerId!,
         sourceWordIds: _sourceIds,
-        stillCurrent: () => _current(epoch),
+        stillCurrent: () => _scopeCurrent(epoch),
       );
-      if (!_current(epoch)) {
+      if (!_scopeCurrent(epoch)) {
         return;
       }
       _review = review;
       _step = review == null ? _Step.empty : _Step.starting;
     } on Object {
-      if (_current(epoch)) {
+      if (_scopeCurrent(epoch)) {
         _step = _Step.loadFailed;
       }
     } finally {
-      _operationPending = false;
-      _redraw();
+      _operationSettled();
     }
     if (_current(epoch) && _review != null && _step == _Step.starting) {
       await _start(epoch);
@@ -426,20 +493,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     try {
       await _learning!.startSrsReview(
         _review!,
-        stillCurrent: () => _current(epoch),
+        stillCurrent: () => _scopeCurrent(epoch),
       );
-      if (!_current(epoch)) {
+      if (!_scopeCurrent(epoch)) {
         return;
       }
       _step = _Step.answering;
-      _latency.start();
+      if (_current(epoch)) _latency.start();
     } on Object {
-      if (_current(epoch)) {
+      if (_scopeCurrent(epoch)) {
         _step = _Step.startFailed;
       }
     } finally {
-      _operationPending = false;
-      _redraw();
+      _operationSettled();
     }
     if (_current(epoch) && _step == _Step.answering) {
       _autoplay(epoch, _index);
@@ -497,9 +563,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           await _learning!.prepareOrdinaryAnswer(
             expectedOwnerId: _review!.ownerId,
             sessionId: _review!.id,
-            stillCurrent: () => _cardCurrent(epoch, index),
+            stillCurrent: () => _sameCard(epoch, index),
           );
-          if (!_cardCurrent(epoch, index)) return;
+          if (!_sameCard(epoch, index)) return;
           _rating = _learning!.prepareSrsRating(
             review: _review!,
             cardIndex: index,
@@ -509,10 +575,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         }
         await _learning!.commitSrsRating(
           _rating!,
-          stillCurrent: () => _cardCurrent(epoch, index),
+          stillCurrent: () => _sameCard(epoch, index),
         );
       }
-      if (!_cardCurrent(epoch, index)) {
+      if (!_sameCard(epoch, index)) {
         return;
       }
       _latency.stop();
@@ -525,12 +591,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       }
       _step = _Step.saved;
     } on Object {
-      if (_cardCurrent(epoch, index)) {
+      if (_sameCard(epoch, index)) {
         _step = _Step.saveFailed;
       }
     } finally {
-      _operationPending = false;
-      _redraw();
+      _operationSettled();
     }
   }
 
@@ -570,26 +635,26 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         if (!_isPreview) {
           summary = await _learning!.finishSrsReview(
             _finish!,
-            stillCurrent: () => _cardCurrent(epoch, index),
+            stillCurrent: () => _sameCard(epoch, index),
           );
-          if (!_cardCurrent(epoch, index)) {
+          if (!_sameCard(epoch, index)) {
             return;
           }
           if (!_validSummary(summary)) {
             throw StateError('Invalid SRS summary');
           }
+          _summary = summary;
         }
         if (_cardCurrent(epoch, index)) {
           _complete(summary);
         }
       }
     } on Object {
-      if (_cardCurrent(epoch, index)) {
+      if (_sameCard(epoch, index)) {
         _step = _Step.finishFailed;
       }
     } finally {
-      _operationPending = false;
-      _redraw();
+      _operationSettled();
     }
     if (!last && _cardCurrent(epoch, _index) && _step == _Step.answering) {
       _autoplay(epoch, _index);
@@ -623,7 +688,6 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     _timeRequest++;
     _timeBinding?.close();
     _summary = summary;
-    _epoch++;
     _latency.stop();
     if (!_isSource && !_isPreview && _time != null && summary != null) {
       _redraw();
@@ -810,7 +874,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Widget _buildMessage() {
-    switch (_step) {
+    switch (_suspended ? _Step.waiting : _step) {
       case _Step.loadFailed:
         return _message(
           _copy(

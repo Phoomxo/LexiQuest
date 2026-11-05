@@ -875,6 +875,17 @@ class _FailOnceRepository implements LearningRepository, SrsReviewRepository {
   SrsReviewRepository get srs => delegate as SrsReviewRepository;
 
   @override
+  Future<void> requireCurrentSrsReview(
+    SrsReviewSession review, {
+    required int confirmedAnswers,
+    required bool Function() stillCurrent,
+  }) => srs.requireCurrentSrsReview(
+    review,
+    confirmedAnswers: confirmedAnswers,
+    stillCurrent: stillCurrent,
+  );
+
+  @override
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,

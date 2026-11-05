@@ -140,6 +140,8 @@ void main() {
     'owned SRS records front and reveal separately; Done returns null',
     (tester) async {
       final h = await _TimeHarness.open(tester);
+      final resumeGate = Completer<void>();
+      Future<void> verifySource() => resumeGate.future;
       Object? returned = 'not-returned';
       try {
         await tester.runAsync(() => h.base.seedDue(configuredWordIds.first));
@@ -152,6 +154,7 @@ void main() {
                     returned = await Navigator.of(context).push<Object?>(
                       MaterialPageRoute(
                         builder: (_) => SrsFlashcardsScreen(
+                          verifySourceOnResume: verifySource,
                           learning: h.base.learning,
                           learningTime: h.time,
                           expectedOwnerId: configuredOwnerId,
@@ -207,6 +210,20 @@ void main() {
           hasLength(1),
         );
         expect(returned, 'not-returned');
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        expect(find.text('Due flashcards complete'), findsNothing);
+        expect(find.byKey(const Key('srs-done')), findsNothing);
+        resumeGate.complete();
+        await _until(
+          tester,
+          () => find.byKey(const Key('srs-done')).evaluate().isNotEmpty,
+        );
         await tester.ensureVisible(find.byKey(const Key('srs-done')));
         await tester.tap(find.byKey(const Key('srs-done')));
         await _until(tester, () => returned == null);

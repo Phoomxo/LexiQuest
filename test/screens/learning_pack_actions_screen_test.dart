@@ -14,7 +14,7 @@ void main() {
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   });
   testWidgets(
-    'one-word pack starts and finishes the canonical owned SRS caller',
+    'one-word pack resumes its revealed card and finishes the original SRS session',
     (tester) async {
       final h = (await tester.runAsync(LearningPackUiHarness.open))!;
       try {
@@ -37,6 +37,23 @@ void main() {
         expect(await tester.runAsync(() => h.count('learning_sessions')), 1);
         await tapPackUi(tester, 'srs-flip');
         await tester.pump(const Duration(milliseconds: 450));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await untilPackUi(
+          tester,
+          () => find.byKey(const Key('srs-got')).evaluate().isNotEmpty,
+        );
+        expect(find.byKey(const Key('srs-meaning')), findsOneWidget);
+        expect(await tester.runAsync(() => h.count('learning_sessions')), 1);
         await tapPackUi(tester, 'srs-got');
         await untilPackUi(
           tester,

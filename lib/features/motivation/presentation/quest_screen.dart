@@ -346,10 +346,8 @@ class _QuestScreenState extends State<QuestScreen> with WidgetsBindingObserver {
                 ),
               if (view != null) ...[
                 MotivationTotals(snapshot: view.motivation),
-                const SizedBox(height: 12),
-                Text('เขตเวลา ${view.motivation.timezoneId}'),
                 if (view.motivation.usedUtcFallback)
-                  const Text('วันที่ยังไม่มีเขตเวลาที่เลือกอ้างอิง UTC'),
+                  const Text('ประวัติวันที่ไม่มีเขตเวลากำกับจะใช้ UTC'),
                 const SizedBox(height: 12),
                 const Text(
                   'ภารกิจอ้างอิงคำตอบตามเป้าหมายที่บันทึกแล้ว วันพักใช้รักษาสตรีกเมื่อเว้นวันเรียน',

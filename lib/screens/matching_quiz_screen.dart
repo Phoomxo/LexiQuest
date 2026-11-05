@@ -43,6 +43,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     with WidgetsBindingObserver {
   StreamSubscription<String?>? _owners;
   MatchingState? _state;
+  String? _openedSessionId;
   ModalRoute<Object?>? _route;
   AppDependencies? _dependencies;
   bool _configured = false;
@@ -110,7 +111,8 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     final route = ModalRoute.of(context);
     if (_configured) {
       if (!identical(_dependencies, dependencies) ||
-          !identical(_route, route)) {
+          !identical(_route, route) ||
+          route?.isCurrent != true) {
         _retire();
       }
       return;
@@ -137,13 +139,22 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) {
-      _foreground = false;
+    final foreground = state == AppLifecycleState.resumed;
+    if (_retired || _foreground == foreground) return;
+    _foreground = foreground;
+    if (!foreground) {
       _latency.stop();
       _generation++;
-    } else {
-      _foreground = true;
-      if (!_retired && _state != null) unawaited(_load());
+      setState(() {
+        _state = null;
+        _retry = null;
+        _busy = true;
+        _failed = false;
+        _word = null;
+        _meaning = null;
+      });
+    } else if (_configured) {
+      unawaited(_load());
     }
   }
 
@@ -158,14 +169,14 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     }
     final generation = ++_generation;
     if (_retired || !_foreground) return;
-    final saved = _state;
-    Future<MatchingState> load() => saved == null && widget.preparedPlan != null
+    final sessionId = _openedSessionId ?? widget.resumeSessionId;
+    Future<MatchingState> load() => sessionId == null
         ? widget.matching.start(
-            widget.preparedPlan!,
+            prepared!,
             stillCurrent: () => _current(generation),
           )
         : widget.matching.resume(
-            sessionId: saved?.plan.session.id ?? widget.resumeSessionId!,
+            sessionId: sessionId,
             expectedOwnerId: widget.expectedOwnerId,
             stillCurrent: () => _current(generation),
           );
@@ -187,10 +198,13 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
     try {
       final saved = await operation();
       if (!_current(currentGeneration)) return;
-      if (saved.plan.session.ownerId != widget.expectedOwnerId) {
-        throw StateError('Matching owner changed');
+      if (saved.plan.session.ownerId != widget.expectedOwnerId ||
+          saved.plan.session.id !=
+              (widget.resumeSessionId ?? widget.preparedPlan!.session.id)) {
+        throw StateError('Matching session changed');
       }
       setState(() {
+        _openedSessionId = saved.plan.session.id;
         _state = saved;
         _word = saved.checkpoint.selectedWord;
         _meaning = saved.checkpoint.selectedMeaning;
@@ -363,6 +377,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
   Widget build(BuildContext context) {
     _timeBinding?.syncVisibility();
     final state = _state;
+    final retry = _retry;
     final summary = state?.completedSummary;
     if (summary != null && !_retired) {
       return ScoreScreen(
@@ -413,9 +428,11 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
                 ),
                 OutlinedButton(
                   key: const ValueKey('matching-retry'),
-                  onPressed: _busy || _retry == null
+                  onPressed: _busy || retry == null
                       ? null
-                      : () => _run(_retry!),
+                      : () {
+                          if (!_busy && identical(_retry, retry)) _run(retry);
+                        },
                   child: Text(_english ? 'Retry' : 'ลองอีกครั้ง'),
                 ),
               ],
@@ -430,6 +447,17 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
   List<Widget> _board(BuildContext context, MatchingState state) {
     final plan = state.plan;
     final checkpoint = state.checkpoint;
+    final generation = _generation;
+    VoidCallback? guarded(VoidCallback? action) => action == null
+        ? null
+        : () {
+            if (identical(state, _state) &&
+                !_busy &&
+                !_failed &&
+                _current(generation)) {
+              action();
+            }
+          };
     final selecting =
         checkpoint.phase == MatchingPhase.selecting && !_busy && !_failed;
     Widget tile(int index, {required bool meaning}) {
@@ -453,19 +481,20 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
                   ? Theme.of(context).colorScheme.secondaryContainer
                   : null,
             ),
-            onPressed: !selecting || matched
-                ? null
-                : () {
-                    if (!_current(_generation)) return;
-                    _timeBinding?.interacted();
-                    setState(() {
-                      if (meaning) {
-                        _meaning = selected ? null : index;
-                      } else {
-                        _word = selected ? null : index;
-                      }
-                    });
-                  },
+            onPressed: guarded(
+              !selecting || matched
+                  ? null
+                  : () {
+                      _timeBinding?.interacted();
+                      setState(() {
+                        if (meaning) {
+                          _meaning = selected ? null : index;
+                        } else {
+                          _word = selected ? null : index;
+                        }
+                      });
+                    },
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -528,21 +557,23 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
       if (checkpoint.phase == MatchingPhase.selecting) ...[
         OutlinedButton(
           key: const ValueKey('matching-save-selection'),
-          onPressed: selecting ? _saveSelection : null,
+          onPressed: guarded(selecting ? _saveSelection : null),
           child: Text(_english ? 'Save selection' : 'บันทึกคู่ที่เลือก'),
         ),
         FilledButton(
           key: const ValueKey('matching-check'),
-          onPressed: selecting && _word != null && _meaning != null
-              ? () => _saveSelection(submit: true)
-              : null,
+          onPressed: guarded(
+            selecting && _word != null && _meaning != null
+                ? () => _saveSelection(submit: true)
+                : null,
+          ),
           child: Text(_english ? 'Check pair' : 'ตรวจคู่'),
         ),
       ],
       if (checkpoint.phase == MatchingPhase.pending)
         FilledButton(
           key: const ValueKey('matching-confirm'),
-          onPressed: _busy || _failed ? null : _commit,
+          onPressed: guarded(_busy || _failed ? null : _commit),
           child: Text(_english ? 'Save answer' : 'บันทึกคำตอบ'),
         ),
       if (checkpoint.phase == MatchingPhase.answered) ...[
@@ -559,7 +590,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
         ),
         FilledButton(
           key: const ValueKey('matching-continue'),
-          onPressed: _busy || _failed ? null : _continue,
+          onPressed: guarded(_busy || _failed ? null : _continue),
           child: Text(
             checkpoint.matched.length == plan.words.length
                 ? (_english ? 'Finish practice' : 'จบแบบฝึก')
@@ -570,7 +601,7 @@ class _MatchingQuizScreenState extends State<MatchingQuizScreen>
       if (checkpoint.phase == MatchingPhase.closing)
         FilledButton(
           key: const ValueKey('matching-finish'),
-          onPressed: _busy || _failed ? null : _finish,
+          onPressed: guarded(_busy || _failed ? null : _finish),
           child: Text(_english ? 'Save result' : 'บันทึกผล'),
         ),
       if (checkpoint.phase == MatchingPhase.abandoned)

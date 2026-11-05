@@ -567,6 +567,15 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
           : null,
       toolbarHeight: M3Theme.appBarToolbarHeight(context),
       title: M3Theme.appBarTitle(context, _text('ศูนย์ทบทวน', 'Review Center')),
+      actions: [
+        if (_ready)
+          IconButton(
+            key: const ValueKey('review-center-refresh'),
+            tooltip: _text('อ่านสถานะล่าสุด', 'Refresh queues'),
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+      ],
     ),
     body: AdaptiveContentPane(child: _body()),
   );
@@ -623,6 +632,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         ? snapshot.reportRows
         : const <ReviewReportRow>[];
     return ListView.builder(
+      key: ValueKey(epoch),
       padding: const EdgeInsets.all(16),
       itemCount: 1 + words.length + reports.length,
       itemBuilder: (context, index) {
@@ -644,161 +654,182 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     ReviewQueue.reported => _text('รายงานในเครื่อง', 'Local reports'),
   };
 
-  Widget _header(ReviewCenterSnapshot snapshot, int epoch) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      for (final queue in ReviewQueue.values)
-        Text(
-          '${_queueName(queue)}: ${switch (snapshot.queueStates[queue]!) {
-            ReviewQueueReady(:final count) => '$count',
-            ReviewQueueLoading() => _text('กำลังอ่าน', 'Loading'),
-            ReviewQueueUnavailable() => _text('ไม่พร้อมใช้งาน', 'Unavailable'),
-          }}',
-          key: ValueKey('review-center-count-${queue.name}'),
-        ),
-      const SizedBox(height: 12),
-      Text(
-        _text(
-          'คำในคิวที่อ่านสำเร็จ: ${snapshot.distinctWordCount}',
-          'Words in ready queues: ${snapshot.distinctWordCount}',
-        ),
-        key: const ValueKey('review-center-word-count'),
-      ),
-      Text(
-        _text(
-          'พร้อมฝึก ${snapshot.eligibleWordCount} คำ · ไม่พร้อมใช้ ${snapshot.unavailableWordCount} คำ',
-          '${snapshot.eligibleWordCount} available · ${snapshot.unavailableWordCount} unavailable words',
-        ),
-      ),
-      Text(
-        _text(
-          'ประเมินเวลา UTC: ${snapshot.evaluatedAtUtc.toIso8601String()}',
-          'Evaluated at UTC: ${snapshot.evaluatedAtUtc.toIso8601String()}',
-        ),
-        key: const ValueKey('review-center-evaluated-at'),
-      ),
-      OutlinedButton.icon(
-        key: const ValueKey('review-center-refresh'),
-        onPressed: _ready && epoch == _readEpoch ? _refresh : null,
-        icon: const Icon(Icons.refresh),
-        label: Text(_text('อ่านสถานะล่าสุด', 'Refresh queues')),
-      ),
-      const SizedBox(height: 12),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final queue in <ReviewQueue?>[null, ...ReviewQueue.values])
-            ChoiceChip(
-              key: ValueKey('review-center-filter-${queue?.name ?? 'all'}'),
-              label: Text(
-                queue == null
-                    ? _text('ทั้งหมด', 'All')
-                    : queue == ReviewQueue.incorrect
-                    ? _text('ตอบผิด', 'Incorrect')
-                    : _queueName(queue),
-              ),
-              selected: _filter == queue,
-              onSelected: (_) {
-                if (_ready &&
-                    epoch == _readEpoch &&
-                    identical(snapshot, _snapshot)) {
-                  setState(() => _filter = queue);
-                }
-              },
-            ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      Text(
-        _text(
-          'ฝึกครั้งละไม่เกิน 20 คำที่พร้อมใช้ รายการด้านล่างแสดงครบทุกคำ เหตุผลอาจซ้ำคำเดียวกันได้',
-          'Practice up to 20 available words per round. The full list below keeps every reason; queue counts can overlap.',
-        ),
-      ),
+  String _localDateTime(DateTime utc) {
+    final local = utc.toLocal();
+    final strings = MaterialLocalizations.of(context);
+    final time = strings.formatTimeOfDay(
+      TimeOfDay.fromDateTime(local),
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+    return '${strings.formatShortDate(local)} · $time';
+  }
+
+  Widget _header(ReviewCenterSnapshot snapshot, int epoch) {
+    final filter = _filter;
+    final queues = [
       for (final queue in [
         ReviewQueue.due,
-        ReviewQueue.saved,
         ReviewQueue.incorrect,
+        ReviewQueue.saved,
       ])
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: SizedBox(
-            width: double.infinity,
+        if (_learning != null &&
+            _feature(
+              queue == ReviewQueue.due ? FieldFeature.srs : FieldFeature.quiz,
+            ) &&
+            _targets(snapshot, queue).isNotEmpty)
+          queue,
+    ];
+    final allReady = snapshot.queueStates.values.every(
+      (state) => state is ReviewQueueReady,
+    );
+    final empty = filter == null
+        ? allReady && snapshot.wordRows.isEmpty && snapshot.reportRows.isEmpty
+        : switch (snapshot.queueStates[filter]) {
+            ReviewQueueReady(count: 0) => true,
+            _ => false,
+          };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _text(
+            'พร้อมฝึก ${snapshot.eligibleWordCount} คำ',
+            'Words ready to practice: ${snapshot.eligibleWordCount}',
+          ),
+          key: const ValueKey('review-center-word-count'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        for (final queue in queues)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: FilledButton(
               key: ValueKey('review-center-${queue.name}-practice'),
-              onPressed:
-                  _learning == null ||
-                      !_feature(
-                        queue == ReviewQueue.due
-                            ? FieldFeature.srs
-                            : FieldFeature.quiz,
-                      ) ||
-                      _targets(snapshot, queue).isEmpty
+              style: queue == queues.first
                   ? null
-                  : () => _practice(snapshot, queue, epoch),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  _text(
-                    'ฝึก${_queueName(queue)} (สูงสุด ${queue == ReviewQueue.due ? 20 : _targets(snapshot, queue).length} คำ)',
-                    'Practice ${_queueName(queue)} (up to ${queue == ReviewQueue.due ? 20 : _targets(snapshot, queue).length} words)',
-                  ),
-                  textAlign: TextAlign.center,
+                  : FilledButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer,
+                      foregroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onSecondaryContainer,
+                    ),
+              onPressed: () => _practice(snapshot, queue, epoch),
+              child: Text(switch (queue) {
+                ReviewQueue.due => _text(
+                  'ทบทวนคำถึงกำหนด (สูงสุด 20 คำ)',
+                  'Review due words (up to 20)',
+                ),
+                ReviewQueue.incorrect => _text(
+                  'ทบทวนคำที่เคยตอบผิด ${_targets(snapshot, queue).length} คำ',
+                  'Practice previously missed words (${_targets(snapshot, queue).length})',
+                ),
+                _ => _text(
+                  'ฝึกคำที่บันทึกไว้ ${_targets(snapshot, queue).length} คำ',
+                  'Practice saved words (${_targets(snapshot, queue).length})',
+                ),
+              }),
+            ),
+          ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final queue in <ReviewQueue?>[null, ...ReviewQueue.values])
+              ChoiceChip(
+                key: ValueKey('review-center-filter-${queue?.name ?? 'all'}'),
+                label: queue == null
+                    ? Text(_text('ทั้งหมด', 'All'))
+                    : Text(
+                        '${_queueName(queue)}: ${switch (snapshot.queueStates[queue]!) {
+                          ReviewQueueReady(:final count) => '$count',
+                          ReviewQueueLoading() => _text('กำลังอ่าน', 'Loading'),
+                          ReviewQueueUnavailable() => _text('ไม่พร้อมใช้งาน', 'Unavailable'),
+                        }}',
+                        key: ValueKey('review-center-count-${queue.name}'),
+                      ),
+                selected: filter == queue,
+                onSelected: (_) {
+                  if (_ready &&
+                      epoch == _readEpoch &&
+                      identical(snapshot, _snapshot)) {
+                    setState(() => _filter = queue);
+                  }
+                },
+              ),
+          ],
+        ),
+        ExpansionTile(
+          key: const ValueKey('review-center-tools'),
+          tilePadding: EdgeInsets.zero,
+          title: Text(_text('ประวัติและการจัดการ', 'History and tools')),
+          children: [
+            Text(
+              _text(
+                'ปรับปรุงเมื่อ ${_localDateTime(snapshot.evaluatedAtUtc)} (เวลาเครื่อง)',
+                'Updated ${_localDateTime(snapshot.evaluatedAtUtc)} (device time)',
+              ),
+              key: const ValueKey('review-center-evaluated-at'),
+            ),
+            if (snapshot.unavailableWordCount > 0)
+              Text(
+                _text(
+                  'คำที่ไม่พร้อมใช้งาน ${snapshot.unavailableWordCount} คำ',
+                  '${snapshot.unavailableWordCount} unavailable words',
                 ),
               ),
+            for (final (destination, key, label, enabled) in [
+              (
+                'saved',
+                'review-center-manage-saved',
+                _text('จัดการคำที่บันทึก', 'Manage saved words'),
+                _saved != null,
+              ),
+              (
+                'reports',
+                'review-center-reports',
+                _text('ประวัติรายงานในเครื่อง', 'Local report history'),
+                _reports != null,
+              ),
+              (
+                'content-reports',
+                'review-center-content-reports',
+                _text(
+                  'กล่องรายงานเนื้อหาและใบรับเรื่อง',
+                  'Content reports and receipts',
+                ),
+                _dependencies?.contentReports != null,
+              ),
+              (
+                'history',
+                'review-center-history',
+                _text('ประวัติการเรียน', 'Learning history'),
+                _review != null,
+              ),
+            ])
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  key: ValueKey(key),
+                  onPressed: enabled ? () => _manage(destination, epoch) : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(label, textAlign: TextAlign.center),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (empty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              _text('ยังไม่มีรายการให้ทบทวน', 'No review items yet.'),
             ),
           ),
-        ),
-      for (final (destination, key, label, enabled) in [
-        (
-          'saved',
-          'review-center-manage-saved',
-          _text('จัดการคำที่บันทึก', 'Manage saved words'),
-          _saved != null,
-        ),
-        (
-          'reports',
-          'review-center-reports',
-          _text('ประวัติรายงานในเครื่อง', 'Local report history'),
-          _reports != null,
-        ),
-        (
-          'content-reports',
-          'review-center-content-reports',
-          _text(
-            'กล่องรายงานเนื้อหาและใบรับเรื่อง',
-            'Content reports and receipts',
-          ),
-          _dependencies?.contentReports != null,
-        ),
-        (
-          'history',
-          'review-center-history',
-          _text('ประวัติการเรียน', 'Learning history'),
-          _review != null,
-        ),
-      ])
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            key: ValueKey(key),
-            onPressed: enabled ? () => _manage(destination, epoch) : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(label, textAlign: TextAlign.center),
-            ),
-          ),
-        ),
-      const SizedBox(height: 16),
-      if (snapshot.wordRows.isEmpty &&
-          snapshot.reportRows.isEmpty &&
-          snapshot.queueStates.values.every(
-            (state) => state is ReviewQueueReady,
-          ))
-        Text(_text('ยังไม่มีรายการให้ทบทวน', 'No review items yet.')),
-    ],
-  );
+      ],
+    );
+  }
 
   Widget _wordRow(
     ReviewCenterSnapshot snapshot,
@@ -826,20 +857,20 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
             Text(
               switch (reason) {
                 DueReason(:final dueAtUtc) => _text(
-                  'ถึงกำหนด UTC: ${dueAtUtc.toIso8601String()}',
-                  'Due at UTC: ${dueAtUtc.toIso8601String()}',
+                  'ถึงกำหนด ${_localDateTime(dueAtUtc)}',
+                  'Due ${_localDateTime(dueAtUtc)}',
                 ),
                 IncorrectReason(
                   :final incorrectCount,
                   :final lastIncorrectAtUtc,
                 ) =>
                   _text(
-                    'ประวัติตอบผิด $incorrectCount ครั้ง · ล่าสุด UTC ${lastIncorrectAtUtc.toIso8601String()}',
-                    'Incorrect history: $incorrectCount · last at UTC ${lastIncorrectAtUtc.toIso8601String()}',
+                    'เคยตอบผิด $incorrectCount ครั้ง · ล่าสุด ${_localDateTime(lastIncorrectAtUtc)}',
+                    'Missed $incorrectCount times · last ${_localDateTime(lastIncorrectAtUtc)}',
                   ),
                 SavedReason(:final state) => _text(
-                  'บันทึกไว้เมื่อ UTC ${state.firstSavedAtUtc.toIso8601String()}',
-                  'Saved at UTC ${state.firstSavedAtUtc.toIso8601String()}',
+                  'บันทึกไว้เมื่อ ${_localDateTime(state.firstSavedAtUtc)}',
+                  'Saved ${_localDateTime(state.firstSavedAtUtc)}',
                 ),
               },
               key: ValueKey(

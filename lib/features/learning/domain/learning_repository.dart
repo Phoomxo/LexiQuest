@@ -132,6 +132,12 @@ abstract interface class ConfiguredQuizRepository {
 }
 
 abstract interface class SrsReviewRepository {
+  Future<void> requireCurrentSrsReview(
+    SrsReviewSession review, {
+    required int confirmedAnswers,
+    required bool Function() stillCurrent,
+  });
+
   Future<SrsReviewSession?> prepareSrsReview({
     required LearningSessionDraft session,
     required SrsReviewSelection selection,

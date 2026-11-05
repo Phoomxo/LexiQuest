@@ -107,6 +107,50 @@ void main() {
   );
 
   test(
+    'an interrupted start rolls back and reopens its original prepared plan exactly once',
+    () async {
+      final observer = ConfiguredQuizObserver(h.database);
+      final matching = DriftMatchingRepository(
+        DriftLearningRepository(
+          h.database,
+          ownerWrites: h.ownerWrites,
+          lifecycleObserver: observer,
+        ),
+      );
+      final plan = (await matching.prepare(
+        session: LearningSessionDraft(
+          id: '${MatchingPlan.sessionPrefix}interrupted-start',
+          ownerId: configuredOwnerId,
+          activityType: MatchingPlan.activityType,
+          startedAtUtc: h.now,
+          appVersion: 'synthetic',
+          buildId: 'synthetic',
+        ),
+        categoryId: configuredCategoryId,
+        limit: 2,
+        stillCurrent: () => true,
+      ))!;
+      final before = await h.snapshot();
+      await expectLater(
+        matching.start(
+          plan,
+          stillCurrent: () => observer.acceptedFacts.isEmpty,
+        ),
+        throwsStateError,
+      );
+      expect(observer.acceptedFacts, hasLength(1));
+      expect(await h.snapshot(), before);
+      final state = await matching.start(plan, stillCurrent: () => true);
+      final after = await h.snapshot();
+      final replay = await matching.start(plan, stillCurrent: () => true);
+      expect(replay.plan.id, state.plan.id);
+      expect(replay.plan.session.id, plan.session.id);
+      expect(await h.count('learning_sessions'), 1);
+      expect(await h.snapshot(), after);
+    },
+  );
+
+  test(
     'wrong and correct pairs acknowledge once and finish from canonical counts',
     () async {
       var state = await start();

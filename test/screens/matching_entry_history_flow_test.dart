@@ -55,6 +55,33 @@ void main() {
                 .evaluate()
                 .isNotEmpty,
           );
+          if (index == 0) {
+            final before = await motivationPresentationIo(tester, f.h.snapshot);
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.inactive,
+            );
+            await tester.pump();
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.resumed,
+            );
+            await _wait(
+              tester,
+              () => find
+                  .byWidgetPredicate(
+                    (widget) =>
+                        widget is FilledButton &&
+                        widget.key == const ValueKey('matching-continue') &&
+                        widget.onPressed != null,
+                  )
+                  .evaluate()
+                  .isNotEmpty,
+            );
+            expect(find.text('จับคู่ถูกแล้ว'), findsOneWidget);
+            expect(
+              await motivationPresentationIo(tester, f.h.snapshot),
+              before,
+            );
+          }
           await _tap(tester, 'matching-continue');
           if (index < 3) {
             await _wait(
@@ -121,6 +148,74 @@ void main() {
             0,
           );
         }
+      } finally {
+        await closeMotivationPresentation(tester, f.h.close);
+      }
+    },
+  );
+
+  testWidgets(
+    'deleted Matching content stays hidden on resume and retry without replaying a stale check',
+    (tester) async {
+      final f = (await tester.runAsync(_Fixture.open))!;
+      try {
+        await tester.pumpWidget(f.app(const ChooseModeScreen()));
+        await _tap(tester, 'matching-entry');
+        final tile = find.byKey(const ValueKey('matching-word-0'));
+        final error = find.byKey(const ValueKey('matching-error'));
+        await _wait(tester, () => tile.evaluate().isNotEmpty);
+        final plan = tester
+            .widget<MatchingQuizScreen>(find.byType(MatchingQuizScreen))
+            .preparedPlan!;
+        await _tap(tester, 'matching-word-0');
+        await _tap(tester, 'matching-meaning-0');
+        final oldCheck = tester
+            .widget<FilledButton>(find.byKey(const ValueKey('matching-check')))
+            .onPressed!;
+        final before = await motivationPresentationIo(tester, f.h.snapshot);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        expect(tile, findsNothing);
+        Future<void> setDeleted(int value) => motivationPresentationIo(
+          tester,
+          () => f.h.database.customStatement(
+            'UPDATE vocabulary_words SET is_deleted = ? WHERE id = ?',
+            [value, plan.words.first.id],
+          ),
+        );
+        await setDeleted(1);
+        final deleted = await motivationPresentationIo(tester, f.h.snapshot);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        expect(tile, findsNothing);
+        await _wait(tester, () => error.evaluate().isNotEmpty);
+        oldCheck();
+        await _tap(tester, 'matching-retry');
+        await _wait(tester, () => error.evaluate().isNotEmpty);
+        expect(tile, findsNothing);
+        expect(await motivationPresentationIo(tester, f.h.snapshot), deleted);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await setDeleted(0);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _wait(tester, () => tile.evaluate().isNotEmpty);
+        oldCheck();
+        await tester.pump();
+        expect(await motivationPresentationIo(tester, f.h.snapshot), before);
+        expect(
+          await motivationPresentationIo(
+            tester,
+            () => f.h.count('learning_sessions'),
+          ),
+          1,
+        );
       } finally {
         await closeMotivationPresentation(tester, f.h.close);
       }
