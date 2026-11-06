@@ -135,8 +135,11 @@ void main() {
     await pumpScreen(
       tester,
       textScale: 2,
-      pickFile: () async =>
-          file(bytes, name: 'travel.csv', mimeType: 'text/csv'),
+      pickFile: () async => file(
+        bytes,
+        name: 'travel.csv',
+        mimeType: 'text/comma-separated-values',
+      ),
     );
     await tester.tap(find.byKey(const ValueKey('open-import')));
     await tester.pumpAndSettle();
@@ -239,6 +242,56 @@ void main() {
       () => vocabulary.watchWords(categoryId).first,
     );
     expect(words, hasLength(3));
+  });
+
+  testWidgets('repeated file reports replay without claiming new words', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      pickFile: () async => file(
+        Uint8List.fromList(
+          utf8.encode('word,meaning,partOfSpeech\ntrain,รถไฟ,noun'),
+        ),
+        name: 'train.csv',
+        mimeType: 'text/comma-separated-values',
+      ),
+    );
+    for (var round = 0; round < 2; round++) {
+      await tester.tap(find.byKey(const ValueKey('open-import')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('choose-import-file')));
+      await pumpUntilFound(
+        tester,
+        find.text(
+          round == 0
+              ? 'ผ่าน 1 · ต้องแก้ 0 · ซ้ำ 0'
+              : 'ผ่าน 0 · ต้องแก้ 0 · ซ้ำ 1',
+        ),
+      );
+      await tester.ensureVisible(find.byKey(const ValueKey('confirm-import')));
+      await tester.tap(find.byKey(const ValueKey('confirm-import')));
+      await pumpUntilFound(tester, find.byKey(const ValueKey('open-import')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          round == 0
+              ? 'เพิ่ม 1 · ซ้ำ 0 · ไม่ผ่าน 0'
+              : 'เคยนำเข้าไฟล์ชุดนี้แล้ว · รอบนี้ไม่มีการเพิ่มคำศัพท์',
+        ),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    }
+    expect(
+      await database.select(database.vocabularyImports).get(),
+      hasLength(1),
+    );
+    expect(
+      await tester.runAsync(() => vocabulary.watchWords(categoryId).first),
+      hasLength(2),
+    );
   });
 
   testWidgets('picker and preview cancellation never persist', (tester) async {

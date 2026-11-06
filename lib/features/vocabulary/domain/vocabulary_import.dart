@@ -16,12 +16,14 @@ final class VocabularyImportResult {
     required this.accepted,
     required this.duplicates,
     required this.rejected,
+    this.replayed = false,
   });
 
   final String importId;
   final int accepted;
   final int duplicates;
   final List<VocabularyImportRowFailure> rejected;
+  final bool replayed;
 }
 
 final class PreparedVocabularyImportRow {

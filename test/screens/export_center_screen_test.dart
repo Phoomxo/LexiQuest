@@ -14,6 +14,8 @@ import 'package:vocab_learning_app/features/export/domain/export_contracts.dart'
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 
 const _rewardKey = ValueKey<String>('export-rewards');
 const _createKey = ValueKey<String>('export-create');
@@ -105,6 +107,83 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Anki shows only supported data and preserves CSV choices', (
+    tester,
+  ) async {
+    var id = 0;
+    final vocabulary = VocabularyUseCases(
+      owners: exports.owners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'anki-${++id}',
+      nowUtc: exports.nowUtc,
+    );
+    await tester.runAsync(() async {
+      final category = await vocabulary.createCategory('Travel');
+      await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'station',
+          meaning: 'สถานี',
+          partOfSpeech: 'noun',
+        ),
+      );
+    });
+    await _pumpExport(tester, exports);
+    await tester.tap(find.text('Anki'));
+    await tester.pump();
+    expect(find.text('ประวัติคำตอบ'), findsNothing);
+    expect(find.text('ประวัติการอ่าน'), findsNothing);
+    expect(
+      find.text('คำศัพท์ ความหมาย หมวดหมู่ และรหัสคำศัพท์'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Anki ใช้เฉพาะคลังคำศัพท์ โดยไม่รวมประวัติการฝึก'),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(find.byKey(_createKey));
+    await tester.tap(find.byKey(_createKey));
+    await _waitFor(tester, () => store.saved != null);
+    expect(store.saved!.format, ExportFormat.anki);
+    expect(store.saved!.recordCount, 1);
+    expect(
+      utf8.decode(store.saved!.bytes),
+      contains('station\tสถานี\tTravel\t'),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('CSV'),
+      -200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('CSV'));
+    await tester.pump();
+    for (final label in ['ประวัติคำตอบ', 'ประวัติการอ่าน']) {
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, label),
+            )
+            .value,
+        isTrue,
+      );
+    }
+    await tester.tap(find.text('คลังคำศัพท์'));
+    await tester.tap(find.text('Anki'));
+    await tester.pump();
+    store.saved = null;
+    await tester.ensureVisible(find.byKey(_createKey));
+    await tester.tap(find.byKey(_createKey));
+    await _waitFor(
+      tester,
+      () => find
+          .text('กรุณาเลือกข้อมูลอย่างน้อยหนึ่งประเภท')
+          .evaluate()
+          .isNotEmpty,
+    );
+    expect(store.saved, isNull);
+  });
 
   testWidgets('production-style default hides research export', (tester) async {
     await _pumpExport(

@@ -611,6 +611,16 @@ void main() {
         ),
         isEmpty,
       );
+      await tester.runAsync(
+        () => dependencies.vocabulary!.createWord(
+          CreateWordCommand(
+            categoryId: word.categoryId,
+            spelling: 'train',
+            meaning: 'รถไฟ',
+            partOfSpeech: 'noun',
+          ),
+        ),
+      );
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

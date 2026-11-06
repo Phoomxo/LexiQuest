@@ -113,6 +113,7 @@ void main() {
             runtime.catalog.configuration.stableSerialization,
           );
           expect(index.plan.mode, 'meaning-quiz');
+          expect(index.plan.questions.single.word.id, opportunityWordId);
           await tester.tap(find.text(index.plan.questions.first.correctAnswer));
           await _untilFound(tester, find.text('ดูผลการเรียน'));
           await tester.tap(find.text('ดูผลการเรียน'));
@@ -639,6 +640,22 @@ Future<_UiRuntime> _runtime(
       longLived: true,
     ),
   ))!;
+  await tester.runAsync(() async {
+    final word = await (fixture.database.select(
+      fixture.database.vocabularyWords,
+    )..where((row) => row.id.equals(opportunityWordId))).getSingle();
+    await fixture.database
+        .into(fixture.database.vocabularyWords)
+        .insert(
+          word.copyWith(
+            id: '$opportunityWordId-distractor',
+            spelling: 'river',
+            normalizedSpelling: 'river',
+            meaning: 'แม่น้ำ',
+            normalizedMeaning: 'แม่น้ำ',
+          ),
+        );
+  });
   return _UiRuntime(fixture);
 }
 

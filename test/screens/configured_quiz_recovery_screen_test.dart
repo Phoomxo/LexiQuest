@@ -170,7 +170,11 @@ void main() {
     await mount(tester, quiz);
     expect(find.text('ถูกต้อง'), findsNothing);
     expect(await tester.runAsync(() => harness.count('answer_attempts')), 0);
-    await tester.tap(find.text('ลองบันทึกอีกครั้ง'));
+    final retry = find.text('ลองบันทึกอีกครั้ง');
+    await tester.ensureVisible(retry);
+    await tester.pumpAndSettle();
+    expect(retry.hitTestable(), findsOneWidget);
+    await tester.tap(retry);
     await _until(tester, find.text('ถูกต้อง'));
     final attempt = (await tester.runAsync(
       () =>

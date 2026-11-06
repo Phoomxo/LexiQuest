@@ -29,12 +29,14 @@ final class StudyReminderView {
 final class StudyReminderChangeIntent {
   const StudyReminderChangeIntent._(
     this._issuer,
+    this._ownerGeneration,
     this.lease,
     this.baseRevision,
     this.choice,
     this.updatedAtUtc,
   );
   final StudyReminderRuntime _issuer;
+  final int _ownerGeneration;
   final StudyReminderLease lease;
   final int baseRevision;
   final StudyReminderChoice choice;
@@ -66,6 +68,7 @@ final class StudyReminderRuntime {
   String? _ownerId, _scopeToken, _scopeOwner, _ackOwner;
   StudyReminderRequestAck? _ack;
   var _generation = 0;
+  var _ownerGeneration = 0;
   var _foreground = false;
   var _permissionPending = false;
   Completer<void>? _permissionResumed;
@@ -91,6 +94,7 @@ final class StudyReminderRuntime {
   void _observed(String? owner) {
     if (_retired) return;
     final previous = _scopeToken;
+    if (_ownerId != owner) _ownerGeneration++;
     _ownerId = owner;
     _scopeToken = null;
     _scopeOwner = null;
@@ -247,6 +251,7 @@ final class StudyReminderRuntime {
     _require(lease);
     return StudyReminderChangeIntent._(
       this,
+      _ownerGeneration,
       lease,
       setting.revision,
       choice,
@@ -254,6 +259,27 @@ final class StudyReminderRuntime {
         now.millisecondsSinceEpoch,
         isUtc: true,
       ),
+    );
+  }
+
+  Future<StudyReminderChangeIntent> renewChange(
+    StudyReminderChangeIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    bool current() =>
+        identical(intent._issuer, this) &&
+        intent._ownerGeneration == _ownerGeneration &&
+        intent.lease.ownerId == _ownerId &&
+        stillCurrent();
+    final lease = await _capture(intent.lease.ownerId, current);
+    _require(lease);
+    return StudyReminderChangeIntent._(
+      this,
+      intent._ownerGeneration,
+      lease,
+      intent.baseRevision,
+      intent.choice,
+      intent.updatedAtUtc,
     );
   }
 

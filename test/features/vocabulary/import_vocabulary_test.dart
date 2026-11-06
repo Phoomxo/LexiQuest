@@ -110,6 +110,8 @@ void main() {
       );
 
       expect(replay.importId, first.importId);
+      expect(first.replayed, isFalse);
+      expect(replay.replayed, isTrue);
       expect(replay.accepted, 1);
       expect(
         await database.select(database.vocabularyImports).get(),

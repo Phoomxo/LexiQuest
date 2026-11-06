@@ -27,6 +27,35 @@ void main() {
     );
   });
 
+  test('Android CSV MIME alias preserves vocabulary rows', () {
+    final preview = parseVocabularyImportFile(
+      fileName: 'travel.csv',
+      mimeType: 'text/comma-separated-values; charset=utf-8',
+      bytes: bytes('word,meaning,partOfSpeech\nstation,สถานี,noun'),
+    );
+
+    expect(preview.readyCount, 1);
+    expect(preview.rows.single.toMap(), {
+      'word': 'station',
+      'meaning': 'สถานี',
+      'partOfSpeech': 'noun',
+    });
+    expect(
+      () => parseVocabularyImportFile(
+        fileName: 'travel.json',
+        mimeType: 'text/comma-separated-values',
+        bytes: bytes('[]'),
+      ),
+      throwsA(
+        isA<VocabularyImportFileFailure>().having(
+          (failure) => failure.code,
+          'code',
+          'unsupportedType',
+        ),
+      ),
+    );
+  });
+
   test('JSON accepts the same three vocabulary fields', () {
     final preview = parseVocabularyImportFile(
       fileName: 'travel.json',

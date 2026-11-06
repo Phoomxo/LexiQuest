@@ -663,12 +663,14 @@ class ContentReportOwnerGuard extends StatefulWidget {
     required this.builder,
     required this.languageCode,
     this.sourceLease,
+    this.resumeSameOwner = false,
   });
   final String expectedOwnerId;
   final Stream<String?> ownerChanges;
   final Widget Function(BuildContext, bool) builder;
   final String languageCode;
   final ValueListenable<bool>? sourceLease;
+  final bool resumeSameOwner;
   static bool currentOf(BuildContext context) =>
       context.findAncestorStateOfType<_ReportOwnerGuardState>()?._current ==
       true;
@@ -714,7 +716,13 @@ class _ReportOwnerGuardState extends State<ContentReportOwnerGuard>
   void _changed() {
     final scope = _scope!;
     if (_everCurrent &&
-        (!scope.current || _generation != scope.ownerGeneration)) {
+        (_generation != scope.ownerGeneration ||
+            (!scope.current &&
+                (!widget.resumeSameOwner ||
+                    _foreground ||
+                    !_paneVisible ||
+                    _route?.isCurrent != true ||
+                    widget.sourceLease?.value == false)))) {
       _invalidated = true;
     }
     if (scope.current) {
@@ -738,7 +746,8 @@ class _ReportOwnerGuardState extends State<ContentReportOwnerGuard>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.expectedOwnerId != widget.expectedOwnerId ||
         !identical(oldWidget.ownerChanges, widget.ownerChanges) ||
-        !identical(oldWidget.sourceLease, widget.sourceLease)) {
+        !identical(oldWidget.sourceLease, widget.sourceLease) ||
+        oldWidget.resumeSameOwner != widget.resumeSameOwner) {
       oldWidget.sourceLease?.removeListener(_sourceChanged);
       widget.sourceLease?.addListener(_sourceChanged);
       _invalidated = true;
@@ -749,7 +758,10 @@ class _ReportOwnerGuardState extends State<ContentReportOwnerGuard>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
-    if (!_foreground) _invalidated = true;
+    if (!_foreground &&
+        (!widget.resumeSameOwner || state == AppLifecycleState.detached)) {
+      _invalidated = true;
+    }
     _scope?.synchronize();
   }
 

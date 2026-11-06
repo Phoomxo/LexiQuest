@@ -654,7 +654,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     icon: Icons.library_add_outlined,
                     message: _direction == MeaningQuizDirection.reverse
                         ? 'ยังไม่มีคำศัพท์และตัวเลือกที่แยกความหมายได้ชัดเจนสำหรับทิศทางนี้ ลองฝึกคำศัพท์ → ความหมายหรือเพิ่มคำศัพท์ก่อน'
-                        : 'ไม่พบคำศัพท์สำหรับแบบทดสอบนี้',
+                        : 'ยังไม่มีคำศัพท์และตัวเลือกที่แยกความหมายได้ชัดเจนสำหรับแบบทดสอบนี้ เพิ่มคำศัพท์ที่มีความหมายต่างกันแล้วลองอีกครั้ง',
                     actionLabel: 'กลับไปเลือกกิจกรรม',
                     onAction: () => Navigator.maybePop(context),
                   );

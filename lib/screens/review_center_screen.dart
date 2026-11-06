@@ -538,6 +538,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
       _openChild(
         name: 'review-center/$destination',
         epoch: epoch,
+        resumable: destination == 'content-reports',
         builder: (launch) => switch (destination) {
           'saved' => SavedWordsScreen(
             expectedOwnerId: owner,

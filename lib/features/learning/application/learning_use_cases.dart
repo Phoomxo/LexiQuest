@@ -7,6 +7,7 @@ import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
+import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../domain/accepted_quiz_plan.dart';
 import '../domain/cloze_content.dart';
 import '../domain/evidence_context.dart';
@@ -1712,21 +1713,41 @@ final class LearningUseCases {
         ConfiguredQuizUnavailableReason.emptySelection,
       );
     }
-    final optionWords =
-        launch.preparedPlan != null ||
-            configuration.selectionKind == QuizSelectionKind.category
+    final forwardWordQuiz =
+        launch.preparedPlan == null &&
+        configuration.direction == MeaningQuizDirection.forward;
+    final optionWords = forwardWordQuiz
+        ? await _forwardQuizOptionWords(launch.session.ownerId)
+        : launch.preparedPlan != null ||
+              configuration.selectionKind == QuizSelectionKind.category
         ? const <QuizWord>[]
         : await repository.listQuizWords(
             ownerId: launch.session.ownerId,
             limit: 100,
           );
+    final validMeaningsBySpelling = forwardWordQuiz
+        ? <String, Set<String>>{}
+        : null;
+    if (validMeaningsBySpelling != null) {
+      for (final word in [...words, ...optionWords]) {
+        validMeaningsBySpelling
+            .putIfAbsent(normalizeVocabularyText(word.spelling), () => {})
+            .add(normalizeVocabularyText(word.meaning));
+      }
+    }
     final questions = launch.preparedPlan != null
         ? const <QuizQuestion>[]
         : _questions(
-            words,
-            optionWords: optionWords,
-            direction: configuration.direction,
-          ).take(configuration.requestedItemCount).toList(growable: false);
+                words,
+                optionWords: optionWords,
+                direction: configuration.direction,
+                validMeaningsBySpelling: validMeaningsBySpelling,
+              )
+              .where(
+                (question) => !forwardWordQuiz || question.options.length > 1,
+              )
+              .take(configuration.requestedItemCount)
+              .toList(growable: false);
     if (launch.preparedPlan == null && questions.isEmpty) {
       throw const ConfiguredQuizUnavailable(
         ConfiguredQuizUnavailableReason.emptySelection,
@@ -2094,10 +2115,30 @@ final class LearningUseCases {
     }
   }
 
+  Future<List<QuizWord>> _forwardQuizOptionWords(String ownerId) async {
+    final words = <QuizWord>[];
+    String? cursor;
+    while (true) {
+      final page = await repository.listQuizWords(
+        ownerId: ownerId,
+        afterWordId: cursor,
+        limit: 100,
+      );
+      words.addAll(page);
+      if (page.length < 100) return words;
+      final nextCursor = page.last.id;
+      if (nextCursor == cursor) {
+        throw StateError('Quiz word page did not advance');
+      }
+      cursor = nextCursor;
+    }
+  }
+
   List<QuizQuestion> _questions(
     List<QuizWord> words, {
     List<QuizWord> optionWords = const [],
     MeaningQuizDirection direction = MeaningQuizDirection.forward,
+    Map<String, Set<String>>? validMeaningsBySpelling,
   }) {
     if (direction == MeaningQuizDirection.reverse) {
       final candidates = <String, QuizWord>{
@@ -2141,14 +2182,23 @@ final class LearningUseCases {
       }
       return questions;
     }
-    final allMeanings = [
-      ...words,
-      ...optionWords,
-    ].map((word) => word.meaning).toSet().toList(growable: false)..sort();
+    final allMeanings = <String, String>{
+      for (final word in [...words, ...optionWords])
+        (validMeaningsBySpelling == null
+                ? word.meaning
+                : normalizeVocabularyText(word.meaning)):
+            word.meaning,
+    }.values.toList(growable: false)..sort();
     return words
         .map((word) {
+          final validMeanings =
+              validMeaningsBySpelling?[normalizeVocabularyText(word.spelling)];
           final distractors = allMeanings
-              .where((meaning) => meaning != word.meaning)
+              .where(
+                (meaning) => validMeanings == null
+                    ? meaning != word.meaning
+                    : !validMeanings.contains(normalizeVocabularyText(meaning)),
+              )
               .take(3)
               .toList(growable: true);
           final options = <String>[word.meaning, ...distractors];

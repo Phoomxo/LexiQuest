@@ -372,8 +372,10 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'เพิ่ม ${result.accepted} · ซ้ำ ${result.duplicates} · '
-            'ไม่ผ่าน ${result.rejected.length}',
+            result.replayed
+                ? 'เคยนำเข้าไฟล์ชุดนี้แล้ว · รอบนี้ไม่มีการเพิ่มคำศัพท์'
+                : 'เพิ่ม ${result.accepted} · ซ้ำ ${result.duplicates} · '
+                      'ไม่ผ่าน ${result.rejected.length}',
           ),
         ),
       );

@@ -435,29 +435,40 @@ class _LearningProfileEditorScreenState
                             onChanged: (_) => _edited(),
                           ),
                           const SizedBox(height: 16),
-                          TextFormField(
-                            key: const ValueKey('learning-profile-date'),
-                            controller: _date,
-                            enabled: !_busy && _pending == null,
-                            keyboardType: TextInputType.datetime,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'วันที่เป้าหมายหรือวันสอบ',
-                              helperText:
-                                  'ปี ค.ศ.-เดือน-วัน เช่น 2026-12-31 เว้นว่างเพื่อล้าง',
+                          ExcludeSemantics(
+                            child: Text(
+                              'วันที่เป้าหมายหรือวันสอบ',
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return null;
-                              }
-                              try {
-                                LearningCivilDate.parse(value.trim());
-                                return null;
-                              } catch (_) {
-                                return 'ใส่วันที่ที่มีจริงในรูปแบบ YYYY-MM-DD';
-                              }
-                            },
-                            onChanged: (_) => _edited(),
+                          ),
+                          const SizedBox(height: 8),
+                          Semantics(
+                            label: 'วันที่เป้าหมายหรือวันสอบ',
+                            child: TextFormField(
+                              key: const ValueKey('learning-profile-date'),
+                              controller: _date,
+                              enabled: !_busy && _pending == null,
+                              keyboardType: TextInputType.datetime,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                helperText:
+                                    'ปี ค.ศ.-เดือน-วัน เช่น 2026-12-31 เว้นว่างเพื่อล้าง',
+                                helperMaxLines: 6,
+                                errorMaxLines: 4,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return null;
+                                }
+                                try {
+                                  LearningCivilDate.parse(value.trim());
+                                  return null;
+                                } catch (_) {
+                                  return 'ใส่วันที่ที่มีจริงในรูปแบบ YYYY-MM-DD';
+                                }
+                              },
+                              onChanged: (_) => _edited(),
+                            ),
                           ),
                           if (days != null)
                             Padding(
@@ -471,28 +482,39 @@ class _LearningProfileEditorScreenState
                               ),
                             ),
                           const SizedBox(height: 16),
-                          TextFormField(
-                            key: const ValueKey('learning-profile-minutes'),
-                            controller: _minutes,
-                            enabled: !_busy && _pending == null,
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.done,
-                            decoration: const InputDecoration(
-                              labelText: 'เวลาที่อยากเรียนต่อวัน (นาที)',
-                              helperText: '1 ถึง 180 นาที หรือเว้นว่าง',
+                          ExcludeSemantics(
+                            child: Text(
+                              'เวลาที่อยากเรียนต่อวัน (นาที)',
+                              style: Theme.of(context).textTheme.bodyLarge,
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return null;
-                              }
-                              final minutes = int.tryParse(value.trim());
-                              return minutes == null ||
-                                      minutes < 1 ||
-                                      minutes > 180
-                                  ? 'ใส่จำนวนเต็มระหว่าง 1 ถึง 180'
-                                  : null;
-                            },
-                            onChanged: (_) => _edited(),
+                          ),
+                          const SizedBox(height: 8),
+                          Semantics(
+                            label: 'เวลาที่อยากเรียนต่อวัน (นาที)',
+                            child: TextFormField(
+                              key: const ValueKey('learning-profile-minutes'),
+                              controller: _minutes,
+                              enabled: !_busy && _pending == null,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.done,
+                              decoration: const InputDecoration(
+                                helperText: '1 ถึง 180 นาที หรือเว้นว่าง',
+                                helperMaxLines: 4,
+                                errorMaxLines: 4,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return null;
+                                }
+                                final minutes = int.tryParse(value.trim());
+                                return minutes == null ||
+                                        minutes < 1 ||
+                                        minutes > 180
+                                    ? 'ใส่จำนวนเต็มระหว่าง 1 ถึง 180'
+                                    : null;
+                              },
+                              onChanged: (_) => _edited(),
+                            ),
                           ),
                           const SizedBox(height: 20),
                           Text(

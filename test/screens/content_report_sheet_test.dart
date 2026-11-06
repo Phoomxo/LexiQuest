@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/content_reports/application/content_report_use_cases.dart';
 import 'package:vocab_learning_app/features/content_reports/domain/content_report.dart';
+import 'package:vocab_learning_app/features/content_reports/domain/content_report_transport.dart';
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_inbox.dart';
 import 'package:vocab_learning_app/features/content_reports/presentation/content_report_sheet.dart';
 
@@ -26,7 +27,7 @@ void main() {
     owners = StreamController<String?>.broadcast(sync: true);
   });
   tearDown(() async {
-    await owners.close();
+    if (!owners.isClosed) await owners.close();
   });
 
   Future<void> mount(
@@ -259,6 +260,248 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  for (final pauseFrame in [false, true]) {
+    testWidgets(
+      'inbox resumes the same owner and rejects old actions with pause frame $pauseFrame',
+      (tester) async {
+        final payload = syntheticReport();
+        await reports.save(expectedOwnerId: 'owner', payload: payload);
+        await mount(
+          tester,
+          ContentReportInbox(
+            expectedOwnerId: 'owner',
+            reports: reports,
+            ownerChanges: owners.stream,
+            languageCode: 'en',
+          ),
+        );
+        await tapKey(tester, 'content-report-row-${payload.reportId}');
+        final send = tester
+            .widget<FilledButton>(
+              find.byKey(ValueKey('content-report-send-${payload.reportId}')),
+            )
+            .onPressed!;
+        final refresh = tester
+            .widget<OutlinedButton>(
+              find.byKey(
+                ValueKey('content-report-refresh-${payload.reportId}'),
+              ),
+            )
+            .onPressed!;
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        if (pauseFrame) await tester.pumpAndSettle();
+        send();
+        refresh();
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Selected synthetic reply'), findsWidgets);
+        send();
+        refresh();
+        await tester.pumpAndSettle();
+        expect(transport.submissions, 0);
+        expect(transport.reads, 0);
+        final refreshKey = 'content-report-refresh-${payload.reportId}';
+        if (find.byKey(ValueKey(refreshKey)).evaluate().isEmpty) {
+          await tapKey(tester, 'content-report-row-${payload.reportId}');
+        }
+        await tapKey(tester, refreshKey);
+        expect(transport.reads, 1);
+        expect(transport.submissions, 0);
+        expect(queue.rows, hasLength(1));
+        expect(queue.rows.values.single.payload.reportJson, payload.reportJson);
+        expect(
+          queue.rows.values.single.payload.reportSha256,
+          payload.reportSha256,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
+  for (final loss in [
+    'other owner',
+    'unknown owner',
+    'stream error',
+    'stream done',
+  ]) {
+    testWidgets('inbox background $loss never revives old content or actions', (
+      tester,
+    ) async {
+      final payload = syntheticReport();
+      await reports.save(expectedOwnerId: 'owner', payload: payload);
+      await mount(
+        tester,
+        ContentReportInbox(
+          expectedOwnerId: 'owner',
+          reports: reports,
+          ownerChanges: owners.stream,
+          languageCode: 'en',
+        ),
+      );
+      await tapKey(tester, 'content-report-row-${payload.reportId}');
+      final retained = tester
+          .widget<FilledButton>(
+            find.byKey(ValueKey('content-report-send-${payload.reportId}')),
+          )
+          .onPressed!;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      switch (loss) {
+        case 'other owner':
+          owners.add('other');
+          owners.add('owner');
+        case 'unknown owner':
+          owners.add(null);
+          owners.add('owner');
+        case 'stream error':
+          owners.addError(StateError('Synthetic owner stream failure'));
+          owners.add('owner');
+        case 'stream done':
+          unawaited(owners.close());
+          await tester.pump();
+      }
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      retained();
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Selected synthetic reply', skipOffstage: false),
+        findsNothing,
+      );
+      expect(transport.submissions, 0);
+      expect(transport.reads, 0);
+      expect(queue.rows.values.single.payload.reportJson, payload.reportJson);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  for (final fail in [false, true]) {
+    testWidgets(
+      'inbox receipt ${fail ? 'failure' : 'success'} while paused clears busy and reloads locally',
+      (tester) async {
+        final pending = _PendingReceiptTransport(transport);
+        addTearDown(() {
+          if (!pending.release.isCompleted) pending.release.complete();
+        });
+        reports = ContentReportUseCases(
+          queue: queue,
+          transport: pending,
+          generateId: () => 'synthetic-ui',
+          nowUtc: () => DateTime.utc(2026),
+        );
+        final payload = syntheticReport();
+        await reports.save(expectedOwnerId: 'owner', payload: payload);
+        await mount(
+          tester,
+          ContentReportInbox(
+            expectedOwnerId: 'owner',
+            reports: reports,
+            ownerChanges: owners.stream,
+            languageCode: 'en',
+          ),
+        );
+        await tapKey(tester, 'content-report-row-${payload.reportId}');
+        final refreshKey = ValueKey(
+          'content-report-refresh-${payload.reportId}',
+        );
+        tester.widget<OutlinedButton>(find.byKey(refreshKey)).onPressed!();
+        await tester.pump();
+        expect(pending.reads, 1);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        if (fail) {
+          pending.release.completeError(
+            StateError('Synthetic receipt failure'),
+          );
+        } else {
+          pending.release.complete();
+        }
+        await tester.pumpAndSettle();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Selected synthetic reply'), findsWidgets);
+        if (find.byKey(refreshKey).evaluate().isEmpty) {
+          await tapKey(tester, 'content-report-row-${payload.reportId}');
+        }
+        expect(
+          tester.widget<OutlinedButton>(find.byKey(refreshKey)).onPressed,
+          isNotNull,
+        );
+        expect(find.byType(LinearProgressIndicator), findsNothing);
+        expect(
+          find.text(
+            fail
+                ? 'Saved locally. No server receipt.'
+                : 'Received by the server.',
+          ),
+          findsOneWidget,
+        );
+        expect(pending.reads, 1);
+        expect(transport.submissions, 0);
+        expect(queue.rows, hasLength(1));
+        expect(queue.rows.values.single.payload.reportJson, payload.reportJson);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
+  testWidgets('inbox foreign route cover retires old actions after return', (
+    tester,
+  ) async {
+    final payload = syntheticReport();
+    await reports.save(expectedOwnerId: 'owner', payload: payload);
+    await mount(
+      tester,
+      ContentReportInbox(
+        expectedOwnerId: 'owner',
+        reports: reports,
+        ownerChanges: owners.stream,
+        languageCode: 'en',
+      ),
+    );
+    await tapKey(tester, 'content-report-row-${payload.reportId}');
+    final retained = tester
+        .widget<FilledButton>(
+          find.byKey(ValueKey('content-report-send-${payload.reportId}')),
+        )
+        .onPressed!;
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    unawaited(
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('Synthetic foreign cover')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    navigator.pop();
+    await tester.pumpAndSettle();
+    retained();
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Selected synthetic reply', skipOffstage: false),
+      findsNothing,
+    );
+    expect(transport.submissions, 0);
+    expect(transport.reads, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   for (final language in ['th', 'en']) {
     testWidgets(
@@ -570,4 +813,32 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+}
+
+final class _PendingReceiptTransport implements ContentReportTransport {
+  _PendingReceiptTransport(this.delegate);
+  final FakeContentReportTransport delegate;
+  final release = Completer<void>();
+  int reads = 0;
+  @override
+  bool get enabled => delegate.enabled;
+  @override
+  ContentReportIdentityBinding? get currentBinding => delegate.currentBinding;
+  @override
+  Future<void> requireCurrent(ContentReportIdentityBinding binding) =>
+      delegate.requireCurrent(binding);
+  @override
+  Future<ContentReportAcknowledgement> submit(
+    ContentReportIdentityBinding binding,
+    ContentReportPayload payload,
+  ) => delegate.submit(binding, payload);
+  @override
+  Future<ContentReportAcknowledgement?> readReceipt(
+    ContentReportIdentityBinding binding,
+    ContentReportPayload payload,
+  ) async {
+    reads++;
+    await release.future;
+    return delegate.readReceipt(binding, payload);
+  }
 }

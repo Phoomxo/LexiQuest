@@ -294,6 +294,23 @@ void main() {
     return delayed;
   }
 
+  Future<void> addQuizDistractor() async {
+    final station = await (database.select(
+      database.vocabularyWords,
+    )..where((row) => row.id.equals('word-station'))).getSingle();
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          station.copyWith(
+            id: 'word-river',
+            spelling: 'river',
+            normalizedSpelling: 'river',
+            meaning: 'แม่น้ำ',
+            normalizedMeaning: 'แม่น้ำ',
+          ),
+        );
+  }
+
   Future<void> prepareAsk(
     WidgetTester tester, {
     String? text,
@@ -336,6 +353,7 @@ void main() {
   testWidgets('Ask Lexi target opens one exact local source-practice session', (
     tester,
   ) async {
+    await tester.runAsync(addQuizDistractor);
     await prepareAsk(tester);
     await tester.tap(find.byKey(const ValueKey('start-source-ask-lexi')));
     await _pumpUntilFound(tester, find.byType(AiTutorScreen));
@@ -365,6 +383,7 @@ void main() {
   testWidgets('rapid Ask Lexi target taps open one local Quiz session', (
     tester,
   ) async {
+    await tester.runAsync(addQuizDistractor);
     await prepareAsk(tester);
     await tester.tap(find.byKey(const ValueKey('start-source-ask-lexi')));
     await _pumpUntilFound(tester, find.byType(AiTutorScreen));
@@ -387,6 +406,7 @@ void main() {
   testWidgets('Ask Lexi target stays local after provider failure', (
     tester,
   ) async {
+    await tester.runAsync(addQuizDistractor);
     await tester.runAsync(
       () => tutor.updateConsents(
         providerConsent: true,
@@ -913,6 +933,9 @@ void main() {
     testWidgets(
       'Voice Result hides recorded owner after known late Source invalidation repair=$repairActive',
       (tester) async {
+        if (repairActive != 'none') {
+          await tester.runAsync(addQuizDistractor);
+        }
         final delayed = useDelayedOwners();
         final gateway = _SourceSpeechGateway();
         await prepareVoice(tester, speech: SpeechPracticeUseCases(gateway));
@@ -969,6 +992,7 @@ void main() {
               .onPracticeMistakes!();
           await _pumpUntilFound(tester, find.byType(QuizScreen));
           await _pumpAsyncWork(tester);
+          expect(find.text('station'), findsOneWidget);
         }
         for (
           var round = 0;
@@ -985,7 +1009,10 @@ void main() {
             await _pumpUntilFound(tester, find.byType(QuizScreen));
             await _pumpAsyncWork(tester);
           }
-          await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
+          final reveal = find.text('เฉลยคำตอบ (นับเป็นข้อผิด)');
+          await tester.ensureVisible(reveal);
+          expect(reveal.hitTestable(), findsOneWidget);
+          await tester.tap(reveal);
           await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
           await tester.ensureVisible(find.text('ดูผลการเรียน'));
           await tester.tap(find.text('ดูผลการเรียน'));
@@ -1700,6 +1727,7 @@ void main() {
   testWidgets('preview and confirmation write nothing before Quiz starts', (
     tester,
   ) async {
+    await tester.runAsync(addQuizDistractor);
     await tester.pumpWidget(screen());
 
     await tester.tap(find.byKey(const ValueKey('choose-source-file')));
@@ -1712,7 +1740,7 @@ void main() {
     expect(find.textContaining('คำที่ยังไม่อยู่ในหมวด'), findsOneWidget);
     expect(find.textContaining('quiet'), findsWidgets);
     await _expectNoPracticeWrites(database);
-    expect(await database.select(database.vocabularyWords).get(), hasLength(1));
+    expect(await database.select(database.vocabularyWords).get(), hasLength(2));
     expect(await database.select(database.vocabularyImports).get(), isEmpty);
 
     await _scrollUntilFound(
@@ -1735,7 +1763,7 @@ void main() {
         .select(database.learningSessions)
         .getSingle();
     expect(session.activityType, 'sourcePractice');
-    expect(await database.select(database.vocabularyWords).get(), hasLength(1));
+    expect(await database.select(database.vocabularyWords).get(), hasLength(2));
     expect(await database.select(database.vocabularyImports).get(), isEmpty);
   });
 
@@ -2100,6 +2128,7 @@ void main() {
   });
 
   testWidgets('rapid Quiz taps create one source session', (tester) async {
+    await tester.runAsync(addQuizDistractor);
     await tester.pumpWidget(screen());
     await tester.tap(find.byKey(const ValueKey('choose-source-file')));
     await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
@@ -2231,6 +2260,7 @@ void main() {
   testWidgets('editing while Quiz launch awaits requires fresh confirmation', (
     tester,
   ) async {
+    await tester.runAsync(addQuizDistractor);
     final delayedOwners = useDelayedOwners();
     await tester.pumpWidget(screen());
     await tester.tap(find.byKey(const ValueKey('choose-source-file')));

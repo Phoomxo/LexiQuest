@@ -7,6 +7,8 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
@@ -98,6 +100,24 @@ Future<void> _recall(WidgetTester tester, {required bool correct}) async {
     () => find.text('ขั้นที่ 6: สรุปผล').evaluate().isNotEmpty,
   );
   expect(find.text('บันทึกผลทดสอบจากความจำแล้ว'), findsOneWidget);
+}
+
+Future<void> _addRepairDistractor(LearningPackUiHarness h) async {
+  final vocabulary = VocabularyUseCases(
+    owners: h.learning.owners,
+    vocabulary: DriftVocabularyRepository(h.database),
+    generateId: h.learning.generateId,
+    nowUtc: h.learning.nowUtc,
+  );
+  final category = await vocabulary.createCategory('Synthetic repair options');
+  await vocabulary.createWord(
+    CreateWordCommand(
+      categoryId: category.id,
+      spelling: 'dog',
+      meaning: 'สุนัข',
+      partOfSpeech: 'noun',
+    ),
+  );
 }
 
 void main() {
@@ -222,6 +242,10 @@ void main() {
           if (correct) {
             expect(score.onPracticeMistakes, isNull);
           } else {
+            await motivationPresentationIo(
+              tester,
+              () => _addRepairDistractor(h),
+            );
             final repair = find.text('ฝึกคำที่ผิด (1)');
             await tester.ensureVisible(repair);
             await tester.pumpAndSettle();
@@ -533,6 +557,7 @@ void main() {
       final retained = tester
           .widget<ScoreScreen>(find.byType(ScoreScreen))
           .onPracticeMistakes!;
+      await motivationPresentationIo(tester, () => _addRepairDistractor(h));
       await tester.ensureVisible(find.text('ฝึกคำที่ผิด (1)'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('ฝึกคำที่ผิด (1)'));

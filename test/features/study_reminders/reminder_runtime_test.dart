@@ -93,6 +93,95 @@ void main() {
     },
   );
 
+  for (final committed in [false, true]) {
+    test(
+      'renew after resume preserves original reminder intent committed=$committed',
+      () async {
+        final f = await _Fixture.open();
+        try {
+          final intent = await f.intent(true);
+          if (committed) {
+            f.platform.loseScheduleAck = true;
+            await expectLater(
+              f.runtime.apply(intent),
+              throwsA(isA<StudyReminderException>()),
+            );
+          }
+          final before = await f.h.storage.snapshot();
+          f.runtime.setForeground(false);
+          expect(intent.lease.isCurrent, isFalse);
+          f.h.now = f.h.now.add(const Duration(hours: 1));
+          f.runtime.setForeground(true);
+          await f.runtime.reconcileForeground();
+          final renewed = await f.runtime.renewChange(
+            intent,
+            stillCurrent: () => true,
+          );
+          expect(renewed.baseRevision, intent.baseRevision);
+          expect(renewed.choice, same(intent.choice));
+          expect(renewed.updatedAtUtc, intent.updatedAtUtc);
+          expect(renewed.lease.isCurrent, isTrue);
+          expect(await f.h.storage.snapshot(), before);
+          await expectLater(
+            f.runtime.apply(intent),
+            throwsA(isA<StudyReminderException>()),
+          );
+          final view = await f.runtime.apply(renewed);
+          expect(view.setting.revision, 1);
+          expect(view.setting.updatedAtUtc, intent.updatedAtUtc);
+          expect(view.requestAck?.revision, 1);
+          if (committed) expect(await f.h.storage.snapshot(), before);
+          expect(f.platform.permissionRequests, 0);
+        } finally {
+          await f.close();
+        }
+      },
+    );
+  }
+
+  test(
+    'renew rejects a foreign issuer stale caller and owner ABA without writes',
+    () async {
+      final f = await _Fixture.open();
+      final other = await _Fixture.open();
+      try {
+        final intent = await f.intent(true);
+        final before = await f.h.storage.snapshot();
+        final otherBefore = await other.h.storage.snapshot();
+        final rejected = throwsA(
+          isA<StudyReminderException>().having(
+            (e) => e.code,
+            'code',
+            StudyReminderFailureCode.ownerChanged,
+          ),
+        );
+        await expectLater(
+          other.runtime.renewChange(intent, stillCurrent: () => true),
+          rejected,
+        );
+        await expectLater(
+          f.runtime.renewChange(intent, stillCurrent: () => false),
+          rejected,
+        );
+        f.runtime.setForeground(false);
+        await f.switchOwner(configuredOtherOwnerId);
+        await f.switchOwner(configuredOwnerId);
+        f.runtime.setForeground(true);
+        await expectLater(
+          f.runtime.renewChange(intent, stillCurrent: () => true),
+          rejected,
+        );
+        expect(await f.h.storage.snapshot(), before);
+        expect(await other.h.storage.snapshot(), otherBefore);
+        expect(f.platform.permissionRequests, 0);
+        expect(other.platform.permissionRequests, 0);
+      } finally {
+        await other.close();
+        await f.close();
+      }
+    },
+  );
+
   test(
     'disable is durable despite a lost native cancellation acknowledgement',
     () async {

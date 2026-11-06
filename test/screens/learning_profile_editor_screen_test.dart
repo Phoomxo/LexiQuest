@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide LearningProfile;
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
@@ -891,60 +893,145 @@ void main() {
 
   for (final brightness in Brightness.values) {
     testWidgets(
-      'editor action remains reachable at320px200percent with keyboard ${brightness.name}',
+      'editor fields remain readable at320px200percent with keyboard ${brightness.name}',
       (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = const Size(320, 800);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        final repository = _Repository();
-        final profile = _useCases(repository);
-        addTearDown(profile.dispose);
-        addTearDown(repository.close);
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: ThemeData(brightness: brightness),
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: const TextScaler.linear(2),
-                viewInsets: const EdgeInsets.only(bottom: 260),
+        final semantics = tester.ensureSemantics();
+        try {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(320, 800);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final repository = _Repository();
+          final profile = _useCases(repository);
+          addTearDown(profile.dispose);
+          addTearDown(repository.close);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: brightness == Brightness.dark
+                  ? M3Theme.darkTheme
+                  : M3Theme.lightTheme,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: const TextScaler.linear(2),
+                  viewInsets: const EdgeInsets.only(bottom: 260),
+                ),
+                child: child!,
               ),
-              child: child!,
+              home: LearningProfileEditorScreen(profile: profile),
             ),
-            home: LearningProfileEditorScreen(profile: profile),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.byKey(const ValueKey('learning-profile-goal')),
-          'แผนการเรียน',
-        );
-        final zone = find.byKey(const ValueKey('learning-profile-timezone-0'));
-        await tester.ensureVisible(zone);
-        await tester.tap(zone);
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.byKey(const Key('learning-timezone-search')),
-          'กรุงเทพ',
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
-        await tester.tap(find.text('Asia/Bangkok'));
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(
-          find.byKey(const ValueKey('learning-profile-save')),
-        );
-        await tester.tap(find.byKey(const ValueKey('learning-profile-save')));
-        await tester.pumpAndSettle();
-        expect(repository.changes.single.draft.goalText, 'แผนการเรียน');
-        expect(
-          repository.changes.single.draft.learningTimezoneId,
-          'Asia/Bangkok',
-        );
-        expect(tester.takeException(), isNull);
+          );
+          await tester.pumpAndSettle();
+          for (final text in const [
+            'วันที่เป้าหมายหรือวันสอบ',
+            'ปี ค.ศ.-เดือน-วัน เช่น 2026-12-31 เว้นว่างเพื่อล้าง',
+            'เวลาที่อยากเรียนต่อวัน (นาที)',
+            '1 ถึง 180 นาที หรือเว้นว่าง',
+          ]) {
+            await tester.ensureVisible(find.text(text));
+            await tester.pumpAndSettle();
+            _readableProfileTextBounds(tester, text);
+          }
+          for (final (key, label, value) in const [
+            ('learning-profile-date', 'วันที่เป้าหมายหรือวันสอบ', '2026-02-29'),
+            (
+              'learning-profile-minutes',
+              'เวลาที่อยากเรียนต่อวัน (นาที)',
+              '181',
+            ),
+          ]) {
+            final field = find.byKey(ValueKey(key));
+            await tester.ensureVisible(field);
+            await tester.enterText(field, value);
+            await tester.pumpAndSettle();
+            final spokenLabel = tester.getSemantics(field).label;
+            expect(spokenLabel, contains(label));
+            expect(spokenLabel.split(label), hasLength(2));
+            final labelBounds = _readableProfileTextBounds(tester, label);
+            final editable = tester.renderObject<RenderBox>(
+              find.descendant(of: field, matching: find.byType(EditableText)),
+            );
+            final inputBounds = MatrixUtils.transformRect(
+              editable.getTransformTo(null),
+              Offset.zero & editable.size,
+            );
+            expect(
+              labelBounds.bottom,
+              lessThanOrEqualTo(inputBounds.top + 0.5),
+            );
+          }
+          final save = find.byKey(const ValueKey('learning-profile-save'));
+          await tester.ensureVisible(save);
+          await tester.tap(save);
+          await tester.pumpAndSettle();
+          for (final error in const [
+            'ใส่วันที่ที่มีจริงในรูปแบบ YYYY-MM-DD',
+            'ใส่จำนวนเต็มระหว่าง 1 ถึง 180',
+          ]) {
+            await tester.ensureVisible(find.text(error));
+            await tester.pumpAndSettle();
+            _readableProfileTextBounds(tester, error);
+          }
+          expect(repository.changes, isEmpty);
+          await tester.enterText(
+            find.byKey(const ValueKey('learning-profile-date')),
+            '2026-12-31',
+          );
+          await tester.enterText(
+            find.byKey(const ValueKey('learning-profile-minutes')),
+            '25',
+          );
+          await tester.enterText(
+            find.byKey(const ValueKey('learning-profile-goal')),
+            'แผนการเรียน',
+          );
+          final zone = find.byKey(
+            const ValueKey('learning-profile-timezone-0'),
+          );
+          await tester.ensureVisible(zone);
+          await tester.tap(zone);
+          await tester.pumpAndSettle();
+          await tester.enterText(
+            find.byKey(const Key('learning-timezone-search')),
+            'กรุงเทพ',
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
+          await tester.tap(find.text('Asia/Bangkok'));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('learning-profile-save')),
+          );
+          await tester.tap(find.byKey(const ValueKey('learning-profile-save')));
+          await tester.pumpAndSettle();
+          expect(repository.changes.single.draft.goalText, 'แผนการเรียน');
+          expect(
+            repository.changes.single.draft.targetDate,
+            LearningCivilDate(2026, 12, 31),
+          );
+          expect(repository.changes.single.draft.dailyMinutes, 25);
+          expect(
+            repository.changes.single.draft.learningTimezoneId,
+            'Asia/Bangkok',
+          );
+          expect(tester.takeException(), isNull);
+        } finally {
+          semantics.dispose();
+        }
       },
     );
   }
+}
+
+Rect _readableProfileTextBounds(WidgetTester tester, String text) {
+  final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
+  expect(paragraph.didExceedMaxLines, isFalse, reason: text);
+  final bounds = MatrixUtils.transformRect(
+    paragraph.getTransformTo(null),
+    Offset.zero & paragraph.size,
+  );
+  expect(bounds.left, greaterThanOrEqualTo(0), reason: text);
+  expect(bounds.right, lessThanOrEqualTo(320), reason: text);
+  return bounds;
 }
 
 Future<void> _until(WidgetTester tester, Finder finder) async {

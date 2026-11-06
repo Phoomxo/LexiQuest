@@ -70,8 +70,8 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         format: _format,
         selection: ExportSelection(
           includeVocabulary: _vocabulary,
-          includeAttempts: _attempts,
-          includeReading: _reading,
+          includeAttempts: _format != ExportFormat.anki && _attempts,
+          includeReading: _format != ExportFormat.anki && _reading,
           includeRewards: _rewards,
           includeLearningTime: _learningTime,
         ),
@@ -195,26 +195,34 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                   ? null
                   : (value) => setState(() => _vocabulary = value ?? false),
               title: const Text('คลังคำศัพท์'),
-              subtitle: const Text('คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา'),
-            ),
-            CheckboxListTile(
-              value: _attempts,
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _attempts = value ?? false),
-              title: const Text('ประวัติคำตอบ'),
-              subtitle: const Text(
-                'คำตอบ เวลาตอบ รูปแบบการฝึก และแหล่งที่มาของผล',
+              subtitle: Text(
+                _format == ExportFormat.anki
+                    ? 'คำศัพท์ ความหมาย หมวดหมู่ และรหัสคำศัพท์'
+                    : 'คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา',
               ),
             ),
-            CheckboxListTile(
-              value: _reading,
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _reading = value ?? false),
-              title: const Text('ประวัติการอ่าน'),
-              subtitle: const Text('ตำแหน่ง รุ่นเอกสาร และสถานะอ่านจบ'),
-            ),
+            if (_format == ExportFormat.anki)
+              const Text('Anki ใช้เฉพาะคลังคำศัพท์ โดยไม่รวมประวัติการฝึก'),
+            if (_format != ExportFormat.anki)
+              CheckboxListTile(
+                value: _attempts,
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _attempts = value ?? false),
+                title: const Text('ประวัติคำตอบ'),
+                subtitle: const Text(
+                  'คำตอบ เวลาตอบ รูปแบบการฝึก และแหล่งที่มาของผล',
+                ),
+              ),
+            if (_format != ExportFormat.anki)
+              CheckboxListTile(
+                value: _reading,
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _reading = value ?? false),
+                title: const Text('ประวัติการอ่าน'),
+                subtitle: const Text('ตำแหน่ง รุ่นเอกสาร และสถานะอ่านจบ'),
+              ),
             if (_format == ExportFormat.csv || _format == ExportFormat.pdf)
               CheckboxListTile(
                 key: const ValueKey<String>('export-rewards'),
@@ -242,11 +250,12 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                 ),
               ),
             const SizedBox(height: 12),
-            const Text(
-              'ไฟล์ระบุจำนวนข้อมูล วันที่และเวลา รุ่นโครงสร้างข้อมูล '
-              'รุ่นวิธีคำนวณ และรายการข้อมูลที่ไม่รวม '
-              'โดยไม่ส่งออกรหัสลับ',
-            ),
+            if (_format != ExportFormat.anki)
+              const Text(
+                'ไฟล์ระบุจำนวนข้อมูล วันที่และเวลา รุ่นโครงสร้างข้อมูล '
+                'รุ่นวิธีคำนวณ และรายการข้อมูลที่ไม่รวม '
+                'โดยไม่ส่งออกรหัสลับ',
+              ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,

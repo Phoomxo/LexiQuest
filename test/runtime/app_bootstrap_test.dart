@@ -2122,7 +2122,7 @@ final class _BootstrapStudyObserver
 
 Future<String> _completeBootstrapQuiz(AppDependencies dependencies) async {
   final category = await dependencies.vocabulary!.createCategory('Synthetic');
-  await dependencies.vocabulary!.createWord(
+  final target = await dependencies.vocabulary!.createWord(
     CreateWordCommand(
       categoryId: category.id,
       spelling: 'river',
@@ -2130,10 +2130,22 @@ Future<String> _completeBootstrapQuiz(AppDependencies dependencies) async {
       partOfSpeech: 'noun',
     ),
   );
+  final optionsCategory = await dependencies.vocabulary!.createCategory(
+    'Synthetic distractors',
+  );
+  await dependencies.vocabulary!.createWord(
+    CreateWordCommand(
+      categoryId: optionsCategory.id,
+      spelling: 'station',
+      meaning: 'สถานี',
+      partOfSpeech: 'noun',
+    ),
+  );
   final learning = dependencies.learning!;
   final session = await learning.startQuiz(categoryId: category.id, limit: 1);
   final initial = session.configured!;
   final question = initial.plan.questions.single;
+  expect(question.word.id, target.id);
   final pending = await learning.prepareQuizAnswer(
     sessionId: session.id,
     expectedOwnerId: initial.ownerId,

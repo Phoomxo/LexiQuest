@@ -48,7 +48,7 @@ bool canOpenLearningHistoryEntry(
         nativeHistoryActivities.contains(entry.activityType) &&
         const {'active', 'completed'}.contains(entry.state)) ||
     (entry.hasAcceptedQuiz &&
-        entry.state == 'active' &&
+        const {'active', 'completed'}.contains(entry.state) &&
         const {
           'quiz',
           'weaknessPractice',

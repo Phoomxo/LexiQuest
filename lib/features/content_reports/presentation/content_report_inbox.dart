@@ -21,12 +21,14 @@ class ContentReportInbox extends StatefulWidget {
   State<ContentReportInbox> createState() => _ContentReportInboxState();
 }
 
-class _ContentReportInboxState extends State<ContentReportInbox> {
+class _ContentReportInboxState extends State<ContentReportInbox>
+    with WidgetsBindingObserver {
   late Stream<List<ContentReportRecord>> _rows;
   final _updated = <String, ContentReportRecord>{};
   String? _busyId;
   String? _error;
   bool _invalidated = false;
+  int _actionEpoch = 0;
   String _text(String th, String en) => widget.languageCode == 'en' ? en : th;
 
   String _queuedAtLabel(DateTime queuedAtUtc) {
@@ -53,7 +55,23 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _rows = widget.reports.watchOwner(widget.expectedOwnerId);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _actionEpoch++;
+    } else if (!_invalidated) {
+      setState(() => _rows = widget.reports.watchOwner(widget.expectedOwnerId));
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -63,6 +81,7 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
         !identical(oldWidget.reports, widget.reports) ||
         !identical(oldWidget.ownerChanges, widget.ownerChanges)) {
       _invalidated = true;
+      _actionEpoch++;
       _updated.clear();
     }
   }
@@ -71,15 +90,15 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
     BuildContext scopeContext,
     ContentReportRecord row, {
     required bool send,
+    required int actionEpoch,
   }) async {
-    if (_busyId != null || !ContentReportOwnerGuard.currentOf(scopeContext)) {
-      return;
-    }
     bool current() =>
         mounted &&
         !_invalidated &&
+        _actionEpoch == actionEpoch &&
         scopeContext.mounted &&
         ContentReportOwnerGuard.currentOf(scopeContext);
+    if (_busyId != null || !current()) return;
     setState(() {
       _busyId = row.payload.reportId;
       _error = null;
@@ -116,7 +135,9 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
         );
       }
     } finally {
-      if (current()) setState(() => _busyId = null);
+      if (mounted && _busyId == row.payload.reportId) {
+        setState(() => _busyId = null);
+      }
     }
   }
 
@@ -136,6 +157,7 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
             expectedOwnerId: widget.expectedOwnerId,
             ownerChanges: widget.ownerChanges,
             languageCode: widget.languageCode,
+            resumeSameOwner: true,
             builder: (scopeContext, current) =>
                 StreamBuilder<List<ContentReportRecord>>(
                   stream: _rows,
@@ -212,91 +234,105 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
           ),
   );
 
-  Widget _report(
-    BuildContext context,
-    ContentReportRecord row,
-    bool current,
-  ) => ExpansionTile(
-    key: ValueKey('content-report-row-${row.payload.reportId}'),
-    title: Text(
-      row.payload.target.text
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim()
-          .characters
-          .take(120)
-          .toString(),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    ),
-    subtitle: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(wordReportReasonLabel(row.payload.reason, widget.languageCode)),
-        Text(contentReportDeliveryLabel(row.delivery, widget.languageCode)),
-        Text(
-          '${_sourceLabel(row.payload.target)}\n${_queuedAtLabel(row.payload.queuedAtUtc)}',
-        ),
-      ],
-    ),
-    childrenPadding: const EdgeInsets.only(bottom: 16),
-    expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(
-        row.payload.target.isExcerpt
-            ? _text('ข้อความบางส่วนที่เลือก', 'Selected excerpt')
-            : _text('เนื้อหาที่เลือก', 'Selected content'),
+  Widget _report(BuildContext context, ContentReportRecord row, bool current) {
+    final actionEpoch = _actionEpoch;
+    return ExpansionTile(
+      key: ValueKey('content-report-row-${row.payload.reportId}'),
+      title: Text(
+        row.payload.target.text
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim()
+            .characters
+            .take(120)
+            .toString(),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-      SelectableText(row.payload.target.text),
-      if (row.payload.comment != null) SelectableText(row.payload.comment!),
-      ContentReportStatus(
-        record: row,
-        languageCode: widget.languageCode,
-        showReportId: false,
-        showDelivery: false,
-      ),
-      ExpansionTile(
-        key: ValueKey('content-report-source-${row.payload.reportId}'),
-        title: Text(
-          _text(
-            'รายละเอียดต้นทางสำหรับตรวจสอบ',
-            'Source details for verification',
-          ),
-        ),
-        subtitle: Text(
-          _text(
-            'ดูข้อมูลอ้างอิงที่แนบกับรายงาน',
-            'View the attached reference data',
-          ),
-        ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SelectableText(row.payload.reportId),
-          SelectableText(
-            '${_text('เวลาที่บันทึก', 'Saved at')} (UTC) ${row.payload.queuedAtUtc.toIso8601String()}',
+          Text(wordReportReasonLabel(row.payload.reason, widget.languageCode)),
+          Text(contentReportDeliveryLabel(row.delivery, widget.languageCode)),
+          Text(
+            '${_sourceLabel(row.payload.target)}\n${_queuedAtLabel(row.payload.queuedAtUtc)}',
           ),
-          SelectableText(row.payload.target.snapshotJson),
         ],
       ),
-      if (_busyId == row.payload.reportId) const LinearProgressIndicator(),
-      if (widget.reports.transport.enabled && row.acknowledgement == null)
-        FilledButton(
-          key: ValueKey('content-report-send-${row.payload.reportId}'),
-          onPressed:
-              !current || _busyId != null || !widget.reports.transport.enabled
-              ? null
-              : () => _operate(context, row, send: true),
-          child: Text(_text('ส่งเนื้อหาที่ตรวจแล้ว', 'Send reviewed content')),
+      childrenPadding: const EdgeInsets.only(bottom: 16),
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          row.payload.target.isExcerpt
+              ? _text('ข้อความบางส่วนที่เลือก', 'Selected excerpt')
+              : _text('เนื้อหาที่เลือก', 'Selected content'),
         ),
-      if (widget.reports.transport.enabled)
-        OutlinedButton(
-          key: ValueKey('content-report-refresh-${row.payload.reportId}'),
-          onPressed:
-              !current || _busyId != null || !widget.reports.transport.enabled
-              ? null
-              : () => _operate(context, row, send: false),
-          child: Text(
-            _text('ตรวจใบรับเรื่องและสถานะ', 'Check receipt and review status'),
+        SelectableText(row.payload.target.text),
+        if (row.payload.comment != null) SelectableText(row.payload.comment!),
+        ContentReportStatus(
+          record: row,
+          languageCode: widget.languageCode,
+          showReportId: false,
+          showDelivery: false,
+        ),
+        ExpansionTile(
+          key: ValueKey('content-report-source-${row.payload.reportId}'),
+          title: Text(
+            _text(
+              'รายละเอียดต้นทางสำหรับตรวจสอบ',
+              'Source details for verification',
+            ),
           ),
+          subtitle: Text(
+            _text(
+              'ดูข้อมูลอ้างอิงที่แนบกับรายงาน',
+              'View the attached reference data',
+            ),
+          ),
+          children: [
+            SelectableText(row.payload.reportId),
+            SelectableText(
+              '${_text('เวลาที่บันทึก', 'Saved at')} (UTC) ${row.payload.queuedAtUtc.toIso8601String()}',
+            ),
+            SelectableText(row.payload.target.snapshotJson),
+          ],
         ),
-    ],
-  );
+        if (_busyId == row.payload.reportId) const LinearProgressIndicator(),
+        if (widget.reports.transport.enabled && row.acknowledgement == null)
+          FilledButton(
+            key: ValueKey('content-report-send-${row.payload.reportId}'),
+            onPressed:
+                !current || _busyId != null || !widget.reports.transport.enabled
+                ? null
+                : () => _operate(
+                    context,
+                    row,
+                    send: true,
+                    actionEpoch: actionEpoch,
+                  ),
+            child: Text(
+              _text('ส่งเนื้อหาที่ตรวจแล้ว', 'Send reviewed content'),
+            ),
+          ),
+        if (widget.reports.transport.enabled)
+          OutlinedButton(
+            key: ValueKey('content-report-refresh-${row.payload.reportId}'),
+            onPressed:
+                !current || _busyId != null || !widget.reports.transport.enabled
+                ? null
+                : () => _operate(
+                    context,
+                    row,
+                    send: false,
+                    actionEpoch: actionEpoch,
+                  ),
+            child: Text(
+              _text(
+                'ตรวจใบรับเรื่องและสถานะ',
+                'Check receipt and review status',
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }

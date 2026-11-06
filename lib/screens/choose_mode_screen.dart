@@ -1427,10 +1427,12 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         identical(runtime, dependencies.studyReminders) &&
         !runtime.isRetired &&
         runtime.currentOwnerId == owner &&
-        Visibility.of(context) &&
-        (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed ||
-            (_openingReminder && runtime.isRequestingPermission));
-    if (!current()) return;
+        Visibility.of(context);
+    if (!current() ||
+        !runtime.isForeground ||
+        WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
     _openingReminder = true;
     try {
       await AppNavigator.pushPage<void>(
@@ -1441,10 +1443,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
             valueListenable: _nativeChanges,
             builder: (_, _, _) => current()
                 ? StudyReminderSettingsScreen(
-                    key: ValueKey((
-                      'study-reminder-settings',
-                      _nativeGeneration,
-                    )),
+                    key: ValueKey(('study-reminder-settings', ownerGeneration)),
                     runtime: runtime,
                     ownerId: owner,
                   )

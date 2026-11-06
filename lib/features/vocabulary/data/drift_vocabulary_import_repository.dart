@@ -186,6 +186,7 @@ final class DriftVocabularyImportRepository
             .get();
     return VocabularyImportResult(
       importId: replay.id,
+      replayed: true,
       accepted: replay.acceptedCount,
       duplicates: replay.duplicateCount,
       rejected: [

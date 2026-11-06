@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
+import 'package:vocab_learning_app/features/content_reports/application/content_report_use_cases.dart';
+import 'package:vocab_learning_app/features/content_reports/presentation/content_report_inbox.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
@@ -14,6 +16,7 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/review_center_harness.dart';
 import '../support/motivation_presentation_io.dart';
+import '../features/content_reports/content_report_test_support.dart';
 
 void main() {
   setUpAll(() async {
@@ -44,6 +47,18 @@ void main() {
           });
           final before = (await tester.runAsync(h.snapshotAllTables))!;
           expect(before, hasLength(45));
+          final contentQueue = MemoryContentReportQueue()
+            ..activeOwner = configuredOwnerId;
+          final contentReports = ContentReportUseCases(
+            queue: contentQueue,
+            generateId: () => 'synthetic-entry-report',
+            nowUtc: () => DateTime.utc(2026),
+          );
+          final contentPayload = syntheticReport();
+          await contentReports.save(
+            expectedOwnerId: configuredOwnerId,
+            payload: contentPayload,
+          );
           final dependencies = AppDependencies(
             runtimeStatus: const AppRuntimeStatus(
               localData: RuntimeAvailability.ready,
@@ -60,6 +75,7 @@ void main() {
             learning: h.learning,
             savedWords: h.savedWords,
             wordReports: h.wordReports,
+            contentReports: contentReports,
             fieldFeatures: const BuildFieldFeatureRegistry.allEnabled(),
           );
           observation = h.ownerChanges.listen(observed.add);
@@ -165,6 +181,46 @@ void main() {
               stage: 'review-entry/snapshot/actual-hub',
             ),
             before,
+          );
+          final toolsEntry = find.byKey(const ValueKey('review-center-tools'));
+          await tester.ensureVisible(toolsEntry);
+          await tester.tap(toolsEntry);
+          await tester.pumpAndSettle();
+          final reportsEntry = find.byKey(
+            const ValueKey('review-center-content-reports'),
+          );
+          await tester.scrollUntilVisible(
+            reportsEntry,
+            200,
+            scrollable: find.byType(Scrollable).last,
+          );
+          await tester.tap(reportsEntry);
+          await _until(
+            tester,
+            () => find.text('Selected synthetic reply').evaluate().isNotEmpty,
+          );
+          expect(find.byType(ContentReportInbox), findsOneWidget);
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await tester.pump();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await _until(
+            tester,
+            () => find.text('Selected synthetic reply').evaluate().isNotEmpty,
+          );
+          expect(find.text('Activity unavailable'), findsNothing);
+          expect(contentQueue.rows, hasLength(1));
+          expect(
+            contentQueue.rows.values.single.payload.reportJson,
+            contentPayload.reportJson,
+          );
+          await tester.tap(find.byType(BackButton).hitTestable());
+          await _until(
+            tester,
+            () => find.text('Saved: 1').evaluate().isNotEmpty,
           );
           await tester.tap(find.byType(BackButton).hitTestable());
           await _until(

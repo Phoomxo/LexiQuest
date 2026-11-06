@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/features/progress/domain/learning_history_models.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/features/progress/presentation/resume_learning_history_entry.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -16,6 +18,187 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 import '../support/review_center_harness.dart';
 
 void main() {
+  test(
+    'completed quiz history requires its accepted plan and allowed state',
+    () {
+      for (final activity in ['quiz', 'sourcePractice', 'weaknessPractice']) {
+        for (final state in ['active', 'completed', 'abandoned']) {
+          for (final accepted in [false, true]) {
+            final entry = LearningHistoryEntry(
+              sessionId: 'synthetic-history-$activity-$state',
+              activityType: activity,
+              state: state,
+              startedAtUtc: configuredStart,
+              endedAtUtc: state == 'active' ? null : configuredStart,
+              answerCount: 1,
+              correctCount: 0,
+              hasAcceptedQuiz: accepted,
+            );
+            expect(
+              canOpenLearningHistoryEntry(entry),
+              accepted && state != 'abandoned',
+              reason: '$activity / $state / accepted=$accepted',
+            );
+          }
+        }
+      }
+    },
+  );
+
+  for (final changeOwner in [false, true]) {
+    testWidgets(
+      changeOwner
+          ? 'completed quiz history retires its score and retained retry after owner ABA'
+          : 'completed quiz history reopens original score without writes and starts mistake practice',
+      (tester) async {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        late final Zone ioZone;
+        final h = (await tester.runAsync(() {
+          ioZone = Zone.current;
+          return ReviewCenterHarness.open();
+        }))!;
+        final owners = StreamController<String?>.broadcast(sync: true);
+        try {
+          final finished = (await tester.runAsync(() async {
+            var quiz = (await h.learning.startQuiz(limit: 1)).configured!;
+            quiz = await h.learning.prepareQuizAnswer(
+              sessionId: quiz.sessionId,
+              expectedOwnerId: quiz.ownerId,
+              expectedRevision: quiz.checkpointRevision,
+              revealed: true,
+            );
+            quiz = (await h.learning.commitQuizAnswer(
+              sessionId: quiz.sessionId,
+              expectedOwnerId: quiz.ownerId,
+              expectedRevision: quiz.checkpointRevision,
+            )).state;
+            quiz = await h.learning.prepareQuizFinish(
+              sessionId: quiz.sessionId,
+              expectedOwnerId: quiz.ownerId,
+              expectedRevision: quiz.checkpointRevision,
+            );
+            return h.learning.finishConfiguredQuiz(
+              sessionId: quiz.sessionId,
+              expectedOwnerId: quiz.ownerId,
+              expectedRevision: quiz.checkpointRevision,
+            );
+          }))!;
+          final before = (await tester.runAsync(h.snapshotAllTables))!;
+          await tester.pumpWidget(
+            AppDependenciesScope(
+              dependencies: AppDependencies(
+                runtimeStatus: const AppRuntimeStatus(
+                  localData: RuntimeAvailability.ready,
+                  firebase: RuntimeAvailability.unavailable,
+                  supabase: RuntimeAvailability.unavailable,
+                  backends: RuntimeAvailability.unavailable,
+                ),
+                config: null,
+                guestSessionService: _HistoryGuest(),
+                database: h.database,
+                localOwners: h.owners,
+                progress: h.progress,
+                learning: h.learning,
+              ),
+              child: _app(LearningHistoryScreen(ownerChanges: owners.stream)),
+            ),
+          );
+          owners.add(configuredOwnerId);
+          final open = find.byKey(
+            ValueKey(('history-resume', finished.summary.id)),
+          );
+          Future<ScoreScreen> openScore() async {
+            await _historyReadUntil(tester, () => open.evaluate().isNotEmpty);
+            await tester.ensureVisible(open);
+            expect(find.text('ดูผล'), findsOneWidget);
+            await tester.tap(open);
+            await _historyReadUntil(
+              tester,
+              () => find.text('ดูผลการเรียน').evaluate().isNotEmpty,
+            );
+            await tester.pumpAndSettle();
+            final route = tester.widget<QuizScreen>(find.byType(QuizScreen));
+            expect(route.resumeSessionId, finished.summary.id);
+            expect(route.expectedOwnerId, configuredOwnerId);
+            await tester.tap(find.text('ดูผลการเรียน'));
+            await _historyReadUntil(
+              tester,
+              () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+            );
+            await tester.pumpAndSettle();
+            final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+            expect(score.resultSessionId, finished.summary.id);
+            expect(score.resultOwnerId, configuredOwnerId);
+            expect(score.correctAnswers, 0);
+            expect(score.wrongAnswers, 1);
+            expect(score.score, 0);
+            expect(score.mistakes.map((word) => word.id), [
+              configuredWordIds[0],
+            ]);
+            expect(await tester.runAsync(h.snapshotAllTables), before);
+            return score;
+          }
+
+          final score = await openScore();
+          if (changeOwner) {
+            final retainedRetry = score.onPracticeMistakes!;
+            owners.add(configuredOtherOwnerId);
+            owners.add(configuredOwnerId);
+            retainedRetry();
+            await tester.pumpAndSettle();
+            expect(find.byType(ScoreScreen), findsNothing);
+            expect(find.text('station'), findsNothing);
+            expect(await tester.runAsync(h.snapshotAllTables), before);
+          } else {
+            final back = find.text('กลับประวัติการเรียน');
+            await tester.ensureVisible(back);
+            await tester.tap(back);
+            await _historyReadUntil(
+              tester,
+              () =>
+                  find.byType(QuizScreen).evaluate().isEmpty &&
+                  open.evaluate().isNotEmpty,
+            );
+            await openScore();
+            final retry = find.text('ฝึกคำที่ผิด (1)');
+            await tester.ensureVisible(retry);
+            await tester.tap(retry);
+            await _historyReadUntil(
+              tester,
+              () =>
+                  find.text('เฉลยคำตอบ (นับเป็นข้อผิด)').evaluate().isNotEmpty,
+            );
+            final practice = tester.widget<QuizScreen>(find.byType(QuizScreen));
+            expect(practice.wordIds, [configuredWordIds[0]]);
+            expect(practice.expectedOwnerId, configuredOwnerId);
+            final afterPractice = (await tester.runAsync(h.snapshotAllTables))!;
+            expect(
+              afterPractice['learning_sessions'],
+              containsAll(before['learning_sessions']!),
+            );
+            expect(
+              afterPractice['learning_sessions']!.length,
+              before['learning_sessions']!.length + 1,
+            );
+            expect(afterPractice['answer_attempts'], before['answer_attempts']);
+            expect(
+              afterPractice['points_ledger_entries'],
+              before['points_ledger_entries'],
+            );
+          }
+          expect(tester.takeException(), isNull);
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          await owners.close();
+          await tester.runAsync(() => ioZone.run(h.close));
+        }
+      },
+    );
+  }
+
   for (final (activity, title) in [
     ('wordScramble', 'เกมเรียงตัวอักษร'),
     ('sentenceScramble', 'เกมเรียงประโยค'),

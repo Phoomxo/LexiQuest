@@ -43,7 +43,8 @@ class _StudyReminderSettingsScreenState
       mounted &&
       !_retired &&
       generation == _generation &&
-      (_foreground || (_busy && widget.runtime.isRequestingPermission)) &&
+      ((_foreground && widget.runtime.isForeground) ||
+          (_busy && widget.runtime.isRequestingPermission)) &&
       ((_route?.isCurrent ?? true) || _choosing) &&
       !widget.runtime.isRetired &&
       widget.runtime.currentOwnerId == widget.ownerId;
@@ -60,7 +61,10 @@ class _StudyReminderSettingsScreenState
         if (widget.runtime.isRetired ||
             widget.runtime.currentOwnerId != widget.ownerId) {
           setState(_retire);
-        } else if (!_busy && _foreground && (_route?.isCurrent ?? true)) {
+        } else if (!_busy &&
+            _foreground &&
+            widget.runtime.isForeground &&
+            (_route?.isCurrent ?? true)) {
           unawaited(_load(resetDraft: false));
         }
       },
@@ -79,7 +83,9 @@ class _StudyReminderSettingsScreenState
   void _retire() {
     if (_retired) return;
     _retired = true;
-    _zonePickerRetirement?.complete();
+    if (_zonePickerRetirement?.isCompleted == false) {
+      _zonePickerRetirement!.complete();
+    }
     _generation++;
     _read++;
     _pending = null;
@@ -121,9 +127,17 @@ class _StudyReminderSettingsScreenState
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
     if (!_foreground &&
+        !_retired &&
         !(_busy && widget.runtime.isRequestingPermission) &&
         mounted) {
-      setState(_retire);
+      setState(() {
+        _generation++;
+        _read++;
+        _loading = true;
+        if (_zonePickerRetirement?.isCompleted == false) {
+          _zonePickerRetirement!.complete();
+        }
+      });
     } else if (_foreground && !_busy && !_retired) {
       unawaited(_load(resetDraft: false));
     }
@@ -158,8 +172,13 @@ class _StudyReminderSettingsScreenState
     }
   }
 
-  void _edited(VoidCallback change) {
-    if (_busy || !_current(_generation) || _route?.isCurrent == false) return;
+  void _edited(int generation, VoidCallback change) {
+    if (_busy ||
+        _loading ||
+        !_current(generation) ||
+        _route?.isCurrent == false) {
+      return;
+    }
     setState(() {
       change();
       _pending = null;
@@ -167,9 +186,8 @@ class _StudyReminderSettingsScreenState
     });
   }
 
-  Future<void> _chooseTime() async {
-    final generation = _generation;
-    if (!_current(generation) || _busy || _choosing) return;
+  Future<void> _chooseTime(int generation) async {
+    if (!_current(generation) || _busy || _loading || _choosing) return;
     _choosing = true;
     try {
       final result = await showTimePicker(
@@ -179,7 +197,7 @@ class _StudyReminderSettingsScreenState
             : TimeOfDay(hour: _minute! ~/ 60, minute: _minute! % 60),
       );
       if (_current(generation) && result != null) {
-        _edited(() {
+        _edited(generation, () {
           _minute = result.hour * 60 + result.minute;
         });
       }
@@ -188,9 +206,8 @@ class _StudyReminderSettingsScreenState
     }
   }
 
-  Future<void> _chooseZone() async {
-    final generation = _generation;
-    if (!_current(generation) || _busy || _choosing) return;
+  Future<void> _chooseZone(int generation) async {
+    if (!_current(generation) || _busy || _loading || _choosing) return;
     _choosing = true;
     final retirement = _zonePickerRetirement = Completer<void>();
     try {
@@ -213,7 +230,7 @@ class _StudyReminderSettingsScreenState
           );
       final zone = result?.timezoneId;
       if (_current(generation) && zone != null) {
-        _edited(() {
+        _edited(generation, () {
           _zone = zone;
         });
       }
@@ -223,9 +240,10 @@ class _StudyReminderSettingsScreenState
     }
   }
 
-  Future<void> _save() async {
-    final generation = _generation;
-    if (!_writeCurrent(generation) || _busy || _view == null) return;
+  Future<void> _save(int generation) async {
+    if (!_writeCurrent(generation) || _busy || _loading || _view == null) {
+      return;
+    }
     if (_minute == null || _zone == null) {
       setState(() {
         _status = 'เลือกเวลาและเขตเวลาก่อนบันทึก';
@@ -237,15 +255,23 @@ class _StudyReminderSettingsScreenState
       _status = null;
     });
     try {
-      final intent = _pending ??= await widget.runtime.prepareChange(
-        expectedOwnerId: widget.ownerId,
-        choice: StudyReminderChoice(
-          enabled: _enabled,
-          minuteOfDay: _minute!,
-          timezoneId: _zone!,
-        ),
-        stillCurrent: () => _writeCurrent(generation),
-      );
+      final pending = _pending;
+      final intent = pending == null
+          ? await widget.runtime.prepareChange(
+              expectedOwnerId: widget.ownerId,
+              choice: StudyReminderChoice(
+                enabled: _enabled,
+                minuteOfDay: _minute!,
+                timezoneId: _zone!,
+              ),
+              stillCurrent: () => _writeCurrent(generation),
+            )
+          : await widget.runtime.renewChange(
+              pending,
+              stillCurrent: () => _writeCurrent(generation),
+            );
+      if (!_writeCurrent(generation)) return;
+      _pending = intent;
       final view = await widget.runtime.apply(intent);
       if (!_current(generation)) return;
       setState(() {
@@ -280,11 +306,13 @@ class _StudyReminderSettingsScreenState
         });
       }
     } finally {
-      if (_current(generation)) {
+      if (mounted && !_retired) {
         setState(() {
           _busy = false;
         });
-        unawaited(_load(resetDraft: false));
+        if (_foreground && widget.runtime.isForeground) {
+          unawaited(_load(resetDraft: false));
+        }
       }
     }
   }
@@ -300,7 +328,9 @@ class _StudyReminderSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final view = _view;
-    final editable = !_retired && !_busy && !_loading && view != null;
+    final generation = _generation;
+    final editable =
+        _writeCurrent(generation) && !_busy && !_loading && view != null;
     final time = _minute == null
         ? 'เลือกเวลา'
         : TimeOfDay(
@@ -352,21 +382,21 @@ class _StudyReminderSettingsScreenState
               value: _enabled,
               onChanged:
                   editable && (view.platform.supported == true || _enabled)
-                  ? (value) => _edited(() {
+                  ? (value) => _edited(generation, () {
                       _enabled = value;
                     })
                   : null,
             ),
             OutlinedButton.icon(
               key: const Key('reminder-time'),
-              onPressed: editable ? _chooseTime : null,
+              onPressed: editable ? () => _chooseTime(generation) : null,
               icon: const Icon(Icons.schedule),
               label: Text(time),
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               key: const Key('reminder-zone'),
-              onPressed: editable ? _chooseZone : null,
+              onPressed: editable ? () => _chooseZone(generation) : null,
               icon: const Icon(Icons.public),
               label: Text(_zone ?? 'เลือกเขตเวลา'),
             ),
@@ -382,7 +412,7 @@ class _StudyReminderSettingsScreenState
             const SizedBox(height: 20),
             FilledButton(
               key: const Key('reminder-save'),
-              onPressed: editable ? _save : null,
+              onPressed: editable ? () => _save(generation) : null,
               child: Text(
                 _busy
                     ? 'กำลังบันทึก…'

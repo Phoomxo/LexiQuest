@@ -73,6 +73,34 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
             updatedAtUtcMs: 1,
           ),
         );
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'option-category',
+            ownerId: owner.id,
+            name: 'Synthetic distractors',
+            normalizedName: 'synthetic distractors',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-option',
+            ownerId: owner.id,
+            categoryId: 'option-category',
+            spelling: 'ticket',
+            normalizedSpelling: 'ticket',
+            meaning: 'ตั๋ว',
+            normalizedMeaning: 'ตั๋ว',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
     learning = LearningUseCases(
       owners: owners,
       repository: DriftLearningRepository(database),
@@ -722,7 +750,8 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
             body: ElevatedButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => QuizScreen(learning: learning),
+                  builder: (_) =>
+                      QuizScreen(categoryId: 'category-1', learning: learning),
                 ),
               ),
               child: const Text('เปิดแบบทดสอบ'),
@@ -827,7 +856,9 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
           buildInfo: learning.buildInfo,
         );
         await tester.pumpWidget(
-          MaterialApp(home: QuizScreen(learning: failing)),
+          MaterialApp(
+            home: QuizScreen(categoryId: 'category-1', learning: failing),
+          ),
         );
         await _pumpUntilFound(tester, find.text('station'));
         await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
@@ -871,7 +902,9 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
           buildInfo: learning.buildInfo,
         );
         await tester.pumpWidget(
-          MaterialApp(home: QuizScreen(learning: failing)),
+          MaterialApp(
+            home: QuizScreen(categoryId: 'category-1', learning: failing),
+          ),
         );
         await _pumpUntilFound(tester, find.text('station'));
         await tester.tap(find.text('สถานี'));
@@ -923,7 +956,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         nowUtc: learning.nowUtc,
         buildInfo: learning.buildInfo,
       );
-      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: pending)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(categoryId: 'category-1', learning: pending),
+        ),
+      );
       await _pumpUntilFound(tester, find.text('station'));
       await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
@@ -958,7 +995,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
   testWidgets('hint uses existing part of speech without writing evidence', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
+      ),
+    );
     await _pumpUntilFound(tester, find.text('station'));
     final before = (await database.select(database.outboxOperations).get())
         .map((r) => r.toJson())
@@ -985,7 +1026,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
   testWidgets('hiding a seen hint retains the captured answer receipt', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
+      ),
+    );
     await _pumpUntilFound(tester, find.text('station'));
     await tester.tap(find.text('ดูคำใบ้'));
     await _pumpUntilFound(tester, find.text('noun'));
@@ -1014,7 +1059,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
     final semantics = tester.ensureSemantics();
     try {
       await database.customUpdate(
-        "UPDATE vocabulary_words SET meaning = 'คำแปลสังเคราะห์ที่ยาวเพื่อทดสอบการเลื่อนและการขยายตัวอักษร', part_of_speech = 'ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว'",
+        "UPDATE vocabulary_words SET meaning = 'คำแปลสังเคราะห์ที่ยาวเพื่อทดสอบการเลื่อนและการขยายตัวอักษร', part_of_speech = 'ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว' WHERE id = 'word-1'",
       );
       final failing = LearningUseCases(
         owners: learning.owners,
@@ -1032,7 +1077,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
             ).copyWith(textScaler: const TextScaler.linear(2)),
             child: child!,
           ),
-          home: QuizScreen(learning: failing),
+          home: QuizScreen(categoryId: 'category-1', learning: failing),
         ),
       );
       await _pumpUntilFound(tester, find.text('station'));
@@ -1095,7 +1140,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
           ).copyWith(textScaler: const TextScaler.linear(1.8)),
           child: child!,
         ),
-        home: QuizScreen(learning: learning),
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
       ),
     );
     await _pumpUntilFound(tester, find.text('station'));
@@ -1149,7 +1194,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
           ).copyWith(textScaler: const TextScaler.linear(2)),
           child: child!,
         ),
-        home: QuizScreen(learning: learning),
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
       ),
     );
     await _pumpUntilFound(tester, find.text('station'));
@@ -1189,6 +1234,29 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('single-word forward quiz explains missing distinct choices', (
+    tester,
+  ) async {
+    await database.customUpdate(
+      "UPDATE vocabulary_words SET is_deleted = 1 WHERE id = 'word-option'",
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
+      ),
+    );
+    await _pumpUntilFound(
+      tester,
+      find.text(
+        'ยังไม่มีคำศัพท์และตัวเลือกที่แยกความหมายได้ชัดเจนสำหรับแบบทดสอบนี้ เพิ่มคำศัพท์ที่มีความหมายต่างกันแล้วลองอีกครั้ง',
+      ),
+    );
+    expect(await database.select(database.learningSessions).get(), isEmpty);
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+    expect(find.byType(ScoreScreen), findsNothing);
+    expect(find.text('100%'), findsNothing);
+  });
+
   testWidgets('missing category shows honest empty state', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -1208,7 +1276,9 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       ),
     );
     await tester.tap(find.text('เลือกกิจกรรม'));
-    final emptyState = find.text('ไม่พบคำศัพท์สำหรับแบบทดสอบนี้');
+    final emptyState = find.text(
+      'ยังไม่มีคำศัพท์และตัวเลือกที่แยกความหมายได้ชัดเจนสำหรับแบบทดสอบนี้ เพิ่มคำศัพท์ที่มีความหมายต่างกันแล้วลองอีกครั้ง',
+    );
     await _pumpUntilFound(tester, emptyState);
 
     expect(emptyState, findsOneWidget);
@@ -1248,6 +1318,9 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
     'wrong answer is explained then practiced from the score screen',
     (tester) async {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await database.customUpdate(
+        "UPDATE vocabulary_words SET is_deleted = 1 WHERE id = 'word-option'",
+      );
       final ownerChanges = _actualProgressOwners(database, learning, ioZone);
       final owner = await database.select(database.localOwners).getSingle();
       await database
@@ -1362,7 +1435,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         nowUtc: learning.nowUtc,
         buildInfo: learning.buildInfo,
       );
-      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: failing)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(categoryId: 'category-1', learning: failing),
+        ),
+      );
       await _pumpUntilFound(
         tester,
         find.textContaining('เปิดแบบทดสอบไม่สำเร็จ'),
@@ -1398,7 +1475,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         nowUtc: learning.nowUtc,
         buildInfo: learning.buildInfo,
       );
-      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: failing)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(categoryId: 'category-1', learning: failing),
+        ),
+      );
       await _pumpUntilFound(tester, find.text('station'));
       await tester.tap(find.text('ดูคำใบ้'));
       await _pumpUntilFound(
@@ -1457,7 +1538,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       );
       await tester.pumpWidget(
         MaterialApp(
-          home: QuizScreen(learning: pending, ownerChanges: owners.stream),
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: pending,
+            ownerChanges: owners.stream,
+          ),
         ),
       );
       await _pumpUntilFound(tester, find.text('station'));
@@ -1515,7 +1600,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       await tester.pumpWidget(
         MaterialApp(
           navigatorKey: navigator,
-          home: QuizScreen(learning: pending),
+          home: QuizScreen(categoryId: 'category-1', learning: pending),
         ),
       );
       await _pumpUntilFound(tester, find.text('station'));
@@ -1580,7 +1665,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       nowUtc: learning.nowUtc,
       buildInfo: learning.buildInfo,
     );
-    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: pending)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(categoryId: 'category-1', learning: pending),
+      ),
+    );
     await _pumpUntilFound(tester, find.text('station'));
     await tester.tap(find.text('สถานี'));
     for (var i = 0; i < 60 && repository.commands.isEmpty; i++) {
@@ -1624,7 +1713,11 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(SystemChannels.platform, null);
     });
-    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(categoryId: 'category-1', learning: learning),
+      ),
+    );
     await _pumpUntilFound(tester, find.text('station'));
     await tester.tap(find.text('สถานี'));
     await _pumpUntilFound(tester, find.text('ถูกต้อง'));
