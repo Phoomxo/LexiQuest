@@ -27,6 +27,169 @@ void main() {
     expect(repository.changes, isEmpty);
   });
 
+  testWidgets(
+    'timezone cancel stays clean and default differs from explicit UTC',
+    (tester) async {
+      final repository = _Repository();
+      final profile = _useCases(repository);
+      addTearDown(profile.dispose);
+      addTearDown(repository.close);
+      await _openEditor(tester, profile);
+      final initialZone = find.byKey(
+        const ValueKey('learning-profile-timezone-0'),
+      );
+      await tester.ensureVisible(initialZone);
+      await tester.tap(initialZone);
+      await tester.pumpAndSettle();
+      final search = find.byKey(const Key('learning-timezone-search'));
+      await tester.enterText(search, 'no such timezone');
+      await tester.pumpAndSettle();
+      expect(find.text('ไม่พบเขตเวลาที่ค้นหา'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('learning-timezone-cancel')));
+      await tester.pumpAndSettle();
+      expect(find.text('UTC (ค่าเริ่มต้น)'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Open editor'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(repository.changes, isEmpty);
+
+      await tester.tap(find.text('Open editor'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(initialZone);
+      await tester.tap(initialZone);
+      await tester.pumpAndSettle();
+      await tester.enterText(search, 'UTC');
+      await tester.pumpAndSettle();
+      final explicitUtc = find.widgetWithText(ListTile, 'UTC');
+      await tester.ensureVisible(explicitUtc);
+      await tester.tap(explicitUtc);
+      await tester.pumpAndSettle();
+      expect(repository.changes, isEmpty);
+      final save = find.byKey(const ValueKey('learning-profile-save'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(repository.changes.single.draft.learningTimezoneId, 'UTC');
+
+      final savedZone = find.byKey(
+        const ValueKey('learning-profile-timezone-1'),
+      );
+      await tester.ensureVisible(savedZone);
+      await tester.tap(savedZone);
+      await tester.pumpAndSettle();
+      await tester.enterText(search, 'UTC');
+      await tester.pumpAndSettle();
+      final defaultUtc = find.widgetWithText(ListTile, 'UTC (ค่าเริ่มต้น)');
+      await tester.tap(defaultUtc);
+      await tester.pumpAndSettle();
+      expect(repository.changes, hasLength(1));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(repository.changes, hasLength(2));
+      expect(repository.changes.last.draft.learningTimezoneId, isNull);
+      expect(repository.changes.last.expectedRevision, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('timezone route guards covered actions and clears on owner ABA', (
+    tester,
+  ) async {
+    final repository = _Repository()
+      ..snapshot = LearningProfileSnapshot(
+        ownerId: 'a',
+        profile: LearningProfile(
+          ownerId: 'a',
+          revision: 1,
+          draft: LearningProfileDraft(
+            onboardingState: LearningOnboardingState.completed,
+            learningTimezoneId: 'Asia/Bangkok',
+          ),
+          updatedAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+      );
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    final save = find.byKey(const ValueKey('learning-profile-save'));
+    await tester.ensureVisible(save);
+    final retainedSave = tester.widget<FilledButton>(save).onPressed!;
+    final retainedReload = tester
+        .widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'โหลดแผนล่าสุด'),
+        )
+        .onPressed!;
+    final zone = find.byKey(const ValueKey('learning-profile-timezone-1'));
+    await tester.ensureVisible(zone);
+    final retainedOpen = tester.widget<OutlinedButton>(zone).onPressed!;
+    await tester.tap(zone);
+    await tester.pumpAndSettle();
+    final search = find.byKey(const Key('learning-timezone-search'));
+    await tester.enterText(search, 'Bangkok');
+    await tester.pumpAndSettle();
+    final selected = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'Asia/Bangkok'),
+    );
+    expect(selected.selected, isTrue);
+    final retainedChoice = selected.onTap!;
+    final reads = repository.reads;
+    retainedSave();
+    retainedReload();
+    retainedOpen();
+    for (final state in const [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pumpAndSettle();
+    expect(repository.reads, reads);
+    expect(repository.changes, isEmpty);
+    expect(search, findsOneWidget);
+
+    repository.snapshot = null;
+    repository.owner = 'b';
+    repository.owners.add(null);
+    repository.owners.add('b');
+    await tester.pumpAndSettle();
+    expect(search, findsNothing);
+    expect(find.text('Asia/Bangkok'), findsNothing);
+    repository.owner = 'a';
+    repository.owners.add('a');
+    await tester.pumpAndSettle();
+    retainedChoice();
+    retainedSave();
+    retainedReload();
+    retainedOpen();
+    await tester.pumpAndSettle();
+    expect(repository.changes, isEmpty);
+    expect(search, findsNothing);
+    expect(
+      find.text(
+        'ผู้เรียนหรือพื้นที่ข้อมูลเปลี่ยนแล้ว โปรดกลับไปเลือกเขตเวลาใหม่',
+      ),
+      findsOneWidget,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final freshZone = find.byKey(const ValueKey('learning-profile-timezone-0'));
+    await tester.ensureVisible(freshZone);
+    await tester.tap(freshZone);
+    await tester.pumpAndSettle();
+    expect(search, findsOneWidget);
+    expect(find.text('UTC (ค่าเริ่มต้น)').hitTestable(), findsOneWidget);
+    await tester.tap(find.byKey(const Key('learning-timezone-cancel')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('dirty Back keeps draft until explicit discard', (tester) async {
     final repository = _Repository();
     final profile = _useCases(repository);
@@ -127,6 +290,8 @@ void main() {
     await tester.tap(save);
     await tester.pumpAndSettle();
     final original = repository.changes.single;
+    final zone = find.byKey(const ValueKey('learning-profile-timezone-0'));
+    expect(tester.widget<OutlinedButton>(zone).onPressed, isNull);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.textContaining('ไม่ยกเลิกคำขอที่ส่งไปแล้ว'), findsOneWidget);
@@ -261,12 +426,12 @@ void main() {
         await tester.ensureVisible(zone);
         await tester.tap(zone);
         await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.text('Asia/Bangkok'),
-          250,
-          scrollable: find.byType(Scrollable).last,
-          maxScrolls: 80,
-        );
+        final search = find.byKey(const Key('learning-timezone-search'));
+        for (final query in ['กรุงเทพ', 'bangkok']) {
+          await tester.enterText(search, query);
+          await tester.pumpAndSettle();
+          expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
+        }
         await tester.tap(find.text('Asia/Bangkok').last);
         await tester.pumpAndSettle();
         await tester.ensureVisible(
@@ -419,6 +584,79 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  testWidgets('late resume load preserves an explicitly reselected timezone', (
+    tester,
+  ) async {
+    final repository = _Repository()
+      ..snapshot = LearningProfileSnapshot(
+        ownerId: 'a',
+        profile: LearningProfile(
+          ownerId: 'a',
+          revision: 1,
+          draft: LearningProfileDraft(
+            onboardingState: LearningOnboardingState.completed,
+            learningTimezoneId: 'Asia/Bangkok',
+          ),
+          updatedAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+      );
+    final profile = _useCases(repository);
+    addTearDown(profile.dispose);
+    addTearDown(repository.close);
+    await _openEditor(tester, profile);
+    final pending = Completer<LearningProfileSnapshot>();
+    repository.readResult = pending.future;
+    final reads = repository.reads;
+    for (final state in const [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pumpAndSettle();
+    expect(repository.reads, reads + 1);
+    final zone = find.byKey(const ValueKey('learning-profile-timezone-1'));
+    await tester.ensureVisible(zone);
+    await tester.tap(zone);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('learning-timezone-search')),
+      'Bangkok',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Asia/Bangkok'));
+    await tester.pumpAndSettle();
+    expect(repository.changes, isEmpty);
+
+    pending.complete(
+      LearningProfileSnapshot(
+        ownerId: 'a',
+        profile: LearningProfile(
+          ownerId: 'a',
+          revision: 1,
+          draft: LearningProfileDraft(
+            onboardingState: LearningOnboardingState.completed,
+            learningTimezoneId: 'UTC',
+          ),
+          updatedAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Asia/Bangkok'), findsOneWidget);
+    final save = find.byKey(const ValueKey('learning-profile-save'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(repository.changes.single.draft.learningTimezoneId, 'Asia/Bangkok');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('late resume load preserves a newly typed draft through saving', (
     tester,
@@ -681,12 +919,28 @@ void main() {
           find.byKey(const ValueKey('learning-profile-goal')),
           'แผนการเรียน',
         );
+        final zone = find.byKey(const ValueKey('learning-profile-timezone-0'));
+        await tester.ensureVisible(zone);
+        await tester.tap(zone);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('learning-timezone-search')),
+          'กรุงเทพ',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
+        await tester.tap(find.text('Asia/Bangkok'));
+        await tester.pumpAndSettle();
         await tester.ensureVisible(
           find.byKey(const ValueKey('learning-profile-save')),
         );
         await tester.tap(find.byKey(const ValueKey('learning-profile-save')));
         await tester.pumpAndSettle();
         expect(repository.changes.single.draft.goalText, 'แผนการเรียน');
+        expect(
+          repository.changes.single.draft.learningTimezoneId,
+          'Asia/Bangkok',
+        );
         expect(tester.takeException(), isNull);
       },
     );
@@ -760,11 +1014,13 @@ final class _Repository implements LearningProfileRepository {
   Future<LearningProfileSnapshot>? readResult;
   LearningProfileSnapshot? snapshot;
   bool failNext = false;
+  var reads = 0;
   @override
   Future<LearningProfileSnapshot> read({
     required String expectedOwnerId,
     required bool Function() stillCurrent,
   }) async {
+    reads++;
     if (readResult case final result?) return result;
     return snapshot ?? LearningProfileSnapshot(ownerId: expectedOwnerId);
   }

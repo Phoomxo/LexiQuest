@@ -278,7 +278,7 @@ void main() {
       try {
         await _mount(tester, f);
         final zone = find.byKey(const Key('reminder-zone'));
-        final search = find.byKey(const Key('reminder-zone-search'));
+        final search = find.byKey(const Key('learning-timezone-search'));
         await _show(tester, zone);
         await tester.tap(zone);
         await tester.pumpAndSettle();
@@ -288,7 +288,7 @@ void main() {
           expect(find.text('Asia/Bangkok').hitTestable(), findsOneWidget);
           expect(find.text('Africa/Abidjan'), findsNothing);
         }
-        await tester.tap(find.byKey(const Key('reminder-zone-cancel')));
+        await tester.tap(find.byKey(const Key('learning-timezone-cancel')));
         await tester.pumpAndSettle();
         expect(
           find.descendant(of: zone, matching: find.text('เลือกเขตเวลา')),
@@ -755,7 +755,7 @@ void main() {
         await _show(tester, zone, delta: -300);
         await tester.tap(zone);
         await tester.pumpAndSettle();
-        final search = find.byKey(const Key('reminder-zone-search'));
+        final search = find.byKey(const Key('learning-timezone-search'));
         await tester.enterText(search, 'Bangkok');
         await tester.pumpAndSettle();
         final selected = tester.widget<ListTile>(

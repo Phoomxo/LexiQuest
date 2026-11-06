@@ -812,7 +812,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               Semantics(
                 liveRegion: true,
                 child: Text(
-                  _quiz!.checkpoint.answer!.isCorrect
+                  _revealed
+                      ? 'เปิดเฉลยแล้ว ข้อนี้นับเป็นข้อผิด'
+                      : _quiz!.checkpoint.answer!.isCorrect
                       ? 'ถูกต้อง'
                       : 'ยังไม่ถูก ลองดูคำตอบที่ถูกต้องอีกครั้ง',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -877,7 +879,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     ? null
                     : () => _record(question, null, reveal: true),
                 style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                child: const Text('เฉลยคำตอบ'),
+                child: const Text('เฉลยคำตอบ (นับเป็นข้อผิด)'),
               ),
             ],
             if (lexical != null &&

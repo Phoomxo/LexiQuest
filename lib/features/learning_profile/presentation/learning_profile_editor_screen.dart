@@ -7,7 +7,7 @@ import '../../../runtime/app_dependencies.dart';
 import '../../../widgets/adaptive_content_pane.dart';
 import '../application/learning_profile_use_cases.dart';
 import '../domain/learning_profile.dart';
-import '../domain/learning_timezone.dart';
+import 'learning_timezone_picker.dart';
 
 class LearningProfileEditorScreen extends StatefulWidget {
   const LearningProfileEditorScreen({
@@ -32,6 +32,7 @@ class _LearningProfileEditorScreenState
   final _minutes = TextEditingController();
   final _interests = <String>{};
   StreamSubscription<String?>? _owners;
+  Completer<void>? _timezonePickerRetirement;
   LearningProfileSnapshot? _snapshot;
   LearningProfileChange? _pending;
   String? _owner;
@@ -100,6 +101,7 @@ class _LearningProfileEditorScreenState
 
   void _ownerChanged(String? owner) {
     if (!mounted || (_retired && owner != null)) return;
+    _invalidateTimezonePicker();
     final generation = ++_generation;
     setState(() {
       _owner = owner;
@@ -124,6 +126,55 @@ class _LearningProfileEditorScreenState
 
   bool _current(String owner, int generation) =>
       mounted && !_retired && _owner == owner && _generation == generation;
+
+  void _invalidateTimezonePicker() {
+    final retirement = _timezonePickerRetirement;
+    if (retirement != null && !retirement.isCompleted) retirement.complete();
+  }
+
+  Future<void> _chooseTimezone() async {
+    final owner = _owner;
+    final generation = _generation;
+    if (owner == null ||
+        !_current(owner, generation) ||
+        _snapshot == null ||
+        _busy ||
+        _pending != null ||
+        _confirmingDiscard ||
+        _timezonePickerRetirement != null) {
+      return;
+    }
+    final retirement = _timezonePickerRetirement = Completer<void>();
+    try {
+      final result = await Navigator.of(context).push<LearningTimezoneSelection>(
+        MaterialPageRoute(
+          builder: (_) => FutureBuilder<void>(
+            future: retirement.future,
+            builder: (_, _) => _current(owner, generation)
+                ? LearningTimezonePicker(
+                    selected: _timezone,
+                    includeDefault: true,
+                    stillCurrent: () => _current(owner, generation),
+                  )
+                : Scaffold(
+                    appBar: AppBar(),
+                    body: const Center(
+                      child: Text(
+                        'ผู้เรียนหรือพื้นที่ข้อมูลเปลี่ยนแล้ว โปรดกลับไปเลือกเขตเวลาใหม่',
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+      );
+      if (_current(owner, generation) && result != null) {
+        _timezone = result.timezoneId;
+        _edited();
+      }
+    } finally {
+      _timezonePickerRetirement = null;
+    }
+  }
 
   Future<void> _load(String owner, int generation) async {
     final revision = ++_readRevision;
@@ -168,7 +219,9 @@ class _LearningProfileEditorScreenState
   }
 
   Future<void> _leaveOrReload({bool reload = false}) async {
-    if (_busy || _confirmingDiscard) return;
+    if (_busy || _confirmingDiscard || _timezonePickerRetirement != null) {
+      return;
+    }
     final owner = _owner;
     final generation = _generation;
     if (owner == null) return;
@@ -228,7 +281,12 @@ class _LearningProfileEditorScreenState
   Future<void> _save({bool skip = false}) async {
     final snapshot = _snapshot;
     final owner = _owner;
-    if (_busy || snapshot == null || owner == null) return;
+    if (_busy ||
+        snapshot == null ||
+        owner == null ||
+        _timezonePickerRetirement != null) {
+      return;
+    }
     if (!skip &&
         _pending == null &&
         !(_form.currentState?.validate() ?? false)) {
@@ -298,7 +356,10 @@ class _LearningProfileEditorScreenState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_busy && !_dirty) {
+    if (state == AppLifecycleState.resumed &&
+        !_busy &&
+        !_dirty &&
+        _timezonePickerRetirement == null) {
       final owner = _owner;
       if (owner != null) unawaited(_load(owner, _generation));
     }
@@ -306,6 +367,7 @@ class _LearningProfileEditorScreenState
 
   @override
   void dispose() {
+    _invalidateTimezonePicker();
     _generation++;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_owners?.cancel());
@@ -433,42 +495,24 @@ class _LearningProfileEditorScreenState
                             onChanged: (_) => _edited(),
                           ),
                           const SizedBox(height: 20),
-                          DropdownButtonFormField<String>(
+                          Text(
+                            'เขตเวลาสำหรับวันเรียนและภารกิจ',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
                             key: ValueKey(
                               'learning-profile-timezone-${_snapshot?.revision}',
                             ),
-                            initialValue: _timezone ?? '',
-                            isExpanded: true,
-                            itemHeight: null,
-                            menuMaxHeight: 320,
-                            decoration: const InputDecoration(
-                              labelText: 'เขตเวลาสำหรับวันเรียนและภารกิจ',
-                              helperText:
-                                  'ใช้กับวันเรียนและรอบภารกิจใหม่ ประวัติเดิมคงเขตเวลาเดิม',
-                              helperMaxLines: 3,
-                            ),
-                            items: [
-                              const DropdownMenuItem(
-                                value: '',
-                                child: Text('UTC (ค่าเริ่มต้น)'),
-                              ),
-                              for (final zone in learningTimezoneIds)
-                                DropdownMenuItem(
-                                  value: zone,
-                                  child: Text(
-                                    zone,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
-                            onChanged: _busy || _pending != null
+                            onPressed: _busy || _pending != null
                                 ? null
-                                : (value) {
-                                    _timezone = value == null || value.isEmpty
-                                        ? null
-                                        : value;
-                                    _edited();
-                                  },
+                                : _chooseTimezone,
+                            icon: const Icon(Icons.public),
+                            label: Text(_timezone ?? 'UTC (ค่าเริ่มต้น)'),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'ใช้กับวันเรียนและรอบภารกิจใหม่ ประวัติเดิมคงเขตเวลาเดิม',
                           ),
                           const SizedBox(height: 20),
                           Text(

@@ -247,7 +247,7 @@ void main() {
         find.byKey(ValueKey('content-report-row-${payload.reportId}')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Selected synthetic reply'), findsOneWidget);
+      expect(find.text('Selected synthetic reply'), findsNWidgets(2));
       owners.add('other-owner');
       await tester.pumpAndSettle();
       expect(
@@ -261,6 +261,106 @@ void main() {
   );
 
   for (final language in ['th', 'en']) {
+    testWidgets(
+      'collapsed reports identify their target and status in $language',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 640);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final semantics = tester.ensureSemantics();
+        try {
+          final texts = [
+            'cat',
+            'dog',
+            List.filled(40, 'ข้อความสังเคราะห์').join('\n'),
+          ];
+          final payloads = <ContentReportPayload>[];
+          for (var index = 0; index < texts.length; index++) {
+            final original = syntheticReport(
+              id: 'content-report:preview-$index',
+            );
+            final payload = ContentReportPayload.create(
+              reportId: original.reportId,
+              target: ContentReportTarget.tutorReply(
+                text: texts[index],
+                isExcerpt: false,
+                replyId: 'synthetic-reply-$index',
+                modelVersion: 'synthetic-model',
+                generatedAtUtcMs: 1,
+              ),
+              reason: original.reason,
+              comment: null,
+              queuedAtUtc: original.queuedAtUtc,
+            );
+            payloads.add(payload);
+            await reports.save(expectedOwnerId: 'owner', payload: payload);
+          }
+          await mount(
+            tester,
+            ContentReportInbox(
+              expectedOwnerId: 'owner',
+              reports: reports,
+              ownerChanges: owners.stream,
+              languageCode: language,
+            ),
+            scale: 2,
+          );
+          final status = language == 'th'
+              ? 'บันทึกในเครื่อง ยังไม่มีใบรับเรื่องจากเซิร์ฟเวอร์'
+              : 'Saved locally. No server receipt.';
+          for (final payload in payloads) {
+            final row = find.byKey(
+              ValueKey('content-report-row-${payload.reportId}'),
+            );
+            await tester.scrollUntilVisible(
+              row,
+              100,
+              scrollable: find.byType(Scrollable).first,
+            );
+            final tile = tester.widget<ExpansionTile>(row);
+            expect(tile.initiallyExpanded, isFalse);
+            expect(
+              find.descendant(of: row, matching: find.text(status)),
+              findsOneWidget,
+            );
+            final preview = tile.title as Text;
+            expect(
+              preview.data,
+              startsWith(payload.target.text.split('\n').first),
+            );
+            expect(preview.data!.characters.length, lessThanOrEqualTo(120));
+            expect(
+              tester
+                  .getSemantics(
+                    find.descendant(of: row, matching: find.byWidget(preview)),
+                  )
+                  .label,
+              contains(preview.data!),
+            );
+            expect(find.text(payload.target.snapshotJson), findsNothing);
+            expect(
+              queue.rows[payload.reportId]!.payload.reportJson,
+              payload.reportJson,
+            );
+          }
+          final last = payloads.last;
+          expect(find.text(last.target.text), findsNothing);
+          await tapKey(tester, 'content-report-row-${last.reportId}');
+          expect(find.text(last.target.text), findsOneWidget);
+          expect(transport.submissions, 0);
+          expect(transport.reads, 0);
+          expect(tester.takeException(), isNull);
+          owners.add('other-owner');
+          await tester.pumpAndSettle();
+          expect(find.byType(ExpansionTile), findsNothing);
+          await tester.pumpWidget(const SizedBox.shrink());
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+
     testWidgets(
       'inbox shows local time and keeps source evidence behind details in $language',
       (tester) async {
@@ -294,7 +394,7 @@ void main() {
         );
         expect(find.text(payload.target.snapshotJson), findsNothing);
         await tapKey(tester, 'content-report-row-${payload.reportId}');
-        expect(find.text('Selected synthetic reply'), findsOneWidget);
+        expect(find.text('Selected synthetic reply'), findsNWidgets(2));
         expect(find.text(payload.target.snapshotJson), findsNothing);
         expect(find.text(payload.reportId), findsNothing);
         await tapKey(tester, 'content-report-source-${payload.reportId}');

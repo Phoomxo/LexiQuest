@@ -452,11 +452,12 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
         ),
       ],
       if (finished)
-        button('focus-new-interval', 'ช่วงเวลาใหม่', 'New interval', () {
-          _timer.configureMinutes(snapshot.minutes);
-          _inputError = null;
-          _replaceInput(snapshot.minutes.toString());
-        }),
+        button(
+          'focus-new-interval',
+          'ช่วงเวลาใหม่',
+          'New interval',
+          _configure,
+        ),
     ];
   }
 }

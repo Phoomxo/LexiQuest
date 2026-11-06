@@ -568,16 +568,36 @@ class _ContentReportSheetState extends State<ContentReportSheet> {
   ]);
 }
 
+String contentReportDeliveryLabel(
+  ContentReportDelivery delivery,
+  String languageCode,
+) => switch (delivery) {
+  ContentReportDelivery.queued =>
+    languageCode == 'en'
+        ? 'Saved locally. No server receipt.'
+        : 'บันทึกในเครื่อง ยังไม่มีใบรับเรื่องจากเซิร์ฟเวอร์',
+  ContentReportDelivery.unconfirmed =>
+    languageCode == 'en'
+        ? 'Delivery unconfirmed. Check receipt before retrying.'
+        : 'ยังยืนยันการส่งไม่ได้ ตรวจใบรับเรื่องก่อนลองส่งอีกครั้ง',
+  ContentReportDelivery.received =>
+    languageCode == 'en'
+        ? 'Received by the server.'
+        : 'เซิร์ฟเวอร์รับเรื่องแล้ว',
+};
+
 class ContentReportStatus extends StatelessWidget {
   const ContentReportStatus({
     super.key,
     required this.record,
     this.languageCode = 'th',
     this.showReportId = true,
+    this.showDelivery = true,
   });
   final ContentReportRecord record;
   final String languageCode;
   final bool showReportId;
+  final bool showDelivery;
   @override
   Widget build(BuildContext context) {
     final en = languageCode == 'en';
@@ -585,18 +605,8 @@ class ContentReportStatus extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(switch (record.delivery) {
-          ContentReportDelivery.queued =>
-            en
-                ? 'Saved locally. No server receipt.'
-                : 'บันทึกในเครื่อง ยังไม่มีใบรับเรื่องจากเซิร์ฟเวอร์',
-          ContentReportDelivery.unconfirmed =>
-            en
-                ? 'Delivery unconfirmed. Check receipt before retrying.'
-                : 'ยังยืนยันการส่งไม่ได้ ตรวจใบรับเรื่องก่อนลองส่งอีกครั้ง',
-          ContentReportDelivery.received =>
-            en ? 'Received by the server.' : 'เซิร์ฟเวอร์รับเรื่องแล้ว',
-        }),
+        if (showDelivery)
+          Text(contentReportDeliveryLabel(record.delivery, languageCode)),
         if (showReportId) SelectableText(record.payload.reportId),
         if (ack != null) ...[
           SelectableText(ack.receipt.receiptId),

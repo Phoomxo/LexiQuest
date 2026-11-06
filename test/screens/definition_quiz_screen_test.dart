@@ -69,7 +69,7 @@ void main() {
         await tester.runAsync(() => fixture.h.count('answer_attempts')),
         0,
       );
-      await _tap(tester, find.text('เฉลยคำตอบ'));
+      await _tap(tester, find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await _wait(tester, () => find.text(example).evaluate().isNotEmpty);
       expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
       await tester.ensureVisible(find.text(example));
@@ -114,7 +114,7 @@ void main() {
       expect(tester.getSemantics(prompt).label, contains(withoutAnswer));
       expect(find.text(original), findsNothing);
       expect(fixture.launch.preparedPlan!.questions.single.prompt, original);
-      await _tap(tester, find.text('เฉลยคำตอบ'));
+      await _tap(tester, find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await _wait(tester, () => find.text(original).evaluate().isNotEmpty);
       expect(find.text('day — กลางวัน'), findsOneWidget);
     } finally {

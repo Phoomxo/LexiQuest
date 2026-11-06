@@ -89,6 +89,39 @@ void main() {
     expect(_key('focus-remaining'), findsNothing);
   });
 
+  for (final completed in [false, true]) {
+    testWidgets(
+      'new interval validates the edited minutes after completed=$completed',
+      (tester) async {
+        final clock = _Clock();
+        await _open(tester, _owners(), clock);
+        await _tap(tester, 'focus-start');
+        clock.advance(
+          completed ? const Duration(minutes: 25) : const Duration(seconds: 2),
+        );
+        await tester.pump(const Duration(seconds: 1));
+        if (!completed) await _tap(tester, 'focus-finish');
+        final elapsed = _elapsed(tester);
+
+        await _reveal(tester, _key('focus-minutes'));
+        await tester.enterText(_key('focus-minutes'), '0');
+        await _tap(tester, 'focus-new-interval');
+        expect(_field(tester).controller!.text, '0');
+        expect(_field(tester).decoration!.errorText, isNotEmpty);
+        expect(_elapsed(tester), elapsed);
+
+        await _reveal(tester, _key('focus-minutes'));
+        await tester.enterText(_key('focus-minutes'), '5');
+        await _tap(tester, 'focus-new-interval');
+        expect(_field(tester).controller!.text, '5');
+        expect(_field(tester).decoration!.errorText, isNull);
+        expect(_remaining(tester), '05:00');
+        expect(_enabled(tester, 'focus-start'), isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('invalid minute drafts retain the last valid duration', (
     tester,
   ) async {

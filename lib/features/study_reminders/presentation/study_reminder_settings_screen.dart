@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../runtime/app_dependencies.dart';
 import '../../../widgets/adaptive_content_pane.dart';
-import '../../learning_profile/domain/learning_timezone.dart';
+import '../../learning_profile/presentation/learning_timezone_picker.dart';
 import '../application/study_reminder_runtime.dart';
 import '../domain/study_reminder.dart';
 
@@ -194,25 +194,27 @@ class _StudyReminderSettingsScreenState
     _choosing = true;
     final retirement = _zonePickerRetirement = Completer<void>();
     try {
-      final result = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (_) => FutureBuilder<void>(
-            future: retirement.future,
-            builder: (_, _) => _current(generation)
-                ? _ReminderZonePicker(
-                    selected: _zone,
-                    stillCurrent: () => _current(generation),
-                  )
-                : Scaffold(
-                    appBar: AppBar(),
-                    body: const Center(child: Text(_retiredMessage)),
-                  ),
-          ),
-        ),
-      );
-      if (_current(generation) && result != null) {
+      final result = await Navigator.of(context)
+          .push<LearningTimezoneSelection>(
+            MaterialPageRoute(
+              builder: (_) => FutureBuilder<void>(
+                future: retirement.future,
+                builder: (_, _) => _current(generation)
+                    ? LearningTimezonePicker(
+                        selected: _zone,
+                        stillCurrent: () => _current(generation),
+                      )
+                    : Scaffold(
+                        appBar: AppBar(),
+                        body: const Center(child: Text(_retiredMessage)),
+                      ),
+              ),
+            ),
+          );
+      final zone = result?.timezoneId;
+      if (_current(generation) && zone != null) {
         _edited(() {
-          _zone = result;
+          _zone = zone;
         });
       }
     } finally {
@@ -394,89 +396,6 @@ class _StudyReminderSettingsScreenState
               child: const Text('กลับ'),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReminderZonePicker extends StatefulWidget {
-  const _ReminderZonePicker({
-    required this.selected,
-    required this.stillCurrent,
-  });
-
-  final String? selected;
-  final bool Function() stillCurrent;
-
-  @override
-  State<_ReminderZonePicker> createState() => _ReminderZonePickerState();
-}
-
-class _ReminderZonePickerState extends State<_ReminderZonePicker> {
-  final _zones = learningTimezoneIds;
-  var _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final matches = _query.isEmpty
-        ? _zones
-        : _zones
-              .where(
-                (zone) =>
-                    zone.toLowerCase().replaceAll('_', ' ').contains(_query) ||
-                    (zone == 'Asia/Bangkok' &&
-                        'กรุงเทพมหานคร'.contains(_query)),
-              )
-              .toList();
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(key: Key('reminder-zone-cancel')),
-        title: const Text('เลือกเขตเวลา'),
-      ),
-      body: SafeArea(
-        child: AdaptiveContentPane(
-          maxWidth: AdaptiveContentPane.formMaxWidth,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  key: const Key('reminder-zone-search'),
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    labelText: 'ค้นหาเมืองหรือเขตเวลา',
-                  ),
-                  onChanged: (value) => setState(() {
-                    _query = value.trim().toLowerCase().replaceAll('_', ' ');
-                  }),
-                ),
-              ),
-              Expanded(
-                child: matches.isEmpty
-                    ? const Center(child: Text('ไม่พบเขตเวลาที่ค้นหา'))
-                    : ListView.builder(
-                        itemCount: matches.length,
-                        itemBuilder: (_, index) {
-                          final zone = matches[index];
-                          return ListTile(
-                            title: Text(zone),
-                            subtitle: zone == 'Asia/Bangkok'
-                                ? const Text('กรุงเทพมหานคร')
-                                : null,
-                            selected: zone == widget.selected,
-                            onTap: () {
-                              if (widget.stillCurrent() &&
-                                  ModalRoute.of(context)?.isCurrent == true) {
-                                Navigator.of(context).pop(zone);
-                              }
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
         ),
       ),
     );

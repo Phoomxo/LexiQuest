@@ -353,7 +353,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       await tester.tap(find.byKey(const ValueKey('meaning-start')));
       await _pumpUntilFound(tester, find.text('station'));
       expect(find.text('ดูคำใบ้'), findsNothing);
-      expect(find.text('เฉลยคำตอบ'), findsOneWidget);
+      expect(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -527,7 +527,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         );
         await _pumpUntilFound(tester, find.text('station'));
         owners.add(owner.id);
-        await tester.tap(find.text('เฉลยคำตอบ'));
+        await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
         await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
         await tester.tap(find.text('ดูผลการเรียน'));
         await _pumpUntilFound(tester, find.byType(ScoreScreen));
@@ -594,7 +594,7 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         ),
       );
       await _pumpUntilFound(tester, find.text('station'));
-      await tester.tap(find.text('เฉลยคำตอบ'));
+      await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
       await tester.tap(find.text('ดูผลการเรียน'));
       await _pumpUntilFound(tester, find.byType(ScoreScreen));
@@ -830,12 +830,13 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
           MaterialApp(home: QuizScreen(learning: failing)),
         );
         await _pumpUntilFound(tester, find.text('station'));
-        await tester.tap(find.text('เฉลยคำตอบ'));
+        await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
         await _pumpUntilFound(tester, find.text('ลองบันทึกอีกครั้ง'));
         expect(find.text('station — สถานี'), findsNothing);
         await tester.tap(find.text('ลองบันทึกอีกครั้ง'));
         await _pumpUntilFound(tester, find.text('station — สถานี'));
         expect(find.text('คำตอบของคุณ: ไม่ได้ตอบ (ขอเฉลย)'), findsOneWidget);
+        expect(find.text('เปิดเฉลยแล้ว ข้อนี้นับเป็นข้อผิด'), findsOneWidget);
         expect(repository.commands, hasLength(2));
         expect(
           _evidence(repository.commands.last),
@@ -924,8 +925,8 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
       );
       await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: pending)));
       await _pumpUntilFound(tester, find.text('station'));
-      await tester.tap(find.text('เฉลยคำตอบ'));
-      await tester.tap(find.text('เฉลยคำตอบ'));
+      await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
+      await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await tester.pump();
       expect(
         tester
@@ -1045,12 +1046,16 @@ void main({Future<void> Function(WidgetTester)? captureNativeFeedback}) {
         find.text('ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว'),
         findsOneWidget,
       );
-      await tester.ensureVisible(find.text('เฉลยคำตอบ'));
+      await tester.ensureVisible(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       expect(
-        tester.getSize(find.widgetWithText(TextButton, 'เฉลยคำตอบ')).height,
+        tester
+            .getSize(
+              find.widgetWithText(TextButton, 'เฉลยคำตอบ (นับเป็นข้อผิด)'),
+            )
+            .height,
         greaterThanOrEqualTo(48),
       );
-      await tester.tap(find.text('เฉลยคำตอบ'));
+      await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
       await _pumpUntilFound(tester, find.text('ลองบันทึกอีกครั้ง'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 5));

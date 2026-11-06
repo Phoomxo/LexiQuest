@@ -985,7 +985,7 @@ void main() {
             await _pumpUntilFound(tester, find.byType(QuizScreen));
             await _pumpAsyncWork(tester);
           }
-          await tester.tap(find.text('เฉลยคำตอบ'));
+          await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
           await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
           await tester.ensureVisible(find.text('ดูผลการเรียน'));
           await tester.tap(find.text('ดูผลการเรียน'));

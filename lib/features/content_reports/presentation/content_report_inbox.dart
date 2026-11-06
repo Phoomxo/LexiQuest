@@ -218,9 +218,25 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
     bool current,
   ) => ExpansionTile(
     key: ValueKey('content-report-row-${row.payload.reportId}'),
-    title: Text(wordReportReasonLabel(row.payload.reason, widget.languageCode)),
-    subtitle: Text(
-      '${_sourceLabel(row.payload.target)}\n${_queuedAtLabel(row.payload.queuedAtUtc)}',
+    title: Text(
+      row.payload.target.text
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim()
+          .characters
+          .take(120)
+          .toString(),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    ),
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(wordReportReasonLabel(row.payload.reason, widget.languageCode)),
+        Text(contentReportDeliveryLabel(row.delivery, widget.languageCode)),
+        Text(
+          '${_sourceLabel(row.payload.target)}\n${_queuedAtLabel(row.payload.queuedAtUtc)}',
+        ),
+      ],
     ),
     childrenPadding: const EdgeInsets.only(bottom: 16),
     expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,6 +252,7 @@ class _ContentReportInboxState extends State<ContentReportInbox> {
         record: row,
         languageCode: widget.languageCode,
         showReportId: false,
+        showDelivery: false,
       ),
       ExpansionTile(
         key: ValueKey('content-report-source-${row.payload.reportId}'),

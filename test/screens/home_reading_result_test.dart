@@ -243,11 +243,12 @@ void main() {
             );
             await untilPackUi(
               tester,
-              () => find.text('เฉลยคำตอบ').evaluate().isNotEmpty,
+              () =>
+                  find.text('เฉลยคำตอบ (นับเป็นข้อผิด)').evaluate().isNotEmpty,
             );
-            await tester.ensureVisible(find.text('เฉลยคำตอบ'));
+            await tester.ensureVisible(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
             await tester.pumpAndSettle();
-            await tester.tap(find.text('เฉลยคำตอบ'));
+            await tester.tap(find.text('เฉลยคำตอบ (นับเป็นข้อผิด)'));
             await untilPackUi(
               tester,
               () => find.text('ดูผลการเรียน').evaluate().isNotEmpty,
@@ -268,7 +269,8 @@ void main() {
             await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
             await untilPackUi(
               tester,
-              () => find.text('เฉลยคำตอบ').evaluate().isNotEmpty,
+              () =>
+                  find.text('เฉลยคำตอบ (นับเป็นข้อผิด)').evaluate().isNotEmpty,
             );
             final answer = find.widgetWithText(FilledButton, 'แมว');
             await tester.ensureVisible(answer);
@@ -536,7 +538,7 @@ void main() {
       await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
       await untilPackUi(
         tester,
-        () => find.text('เฉลยคำตอบ').evaluate().isNotEmpty,
+        () => find.text('เฉลยคำตอบ (นับเป็นข้อผิด)').evaluate().isNotEmpty,
       );
       final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
       final quizContext = tester.element(find.byType(QuizScreen));
