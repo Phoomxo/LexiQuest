@@ -152,6 +152,8 @@ void main() {
       contains('station\tสถานี\tTravel\t'),
     );
     await tester.pumpAndSettle();
+    expect(find.textContaining('บันทึกไฟล์แล้ว ('), findsOneWidget);
+    expect(find.textContaining('บันทึกไฟล์ 11'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('CSV'),
       -200,
@@ -296,7 +298,7 @@ void main() {
     );
     expect(_liveRegion(tester, _statusKey), isTrue);
     final status = tester.widget<Text>(find.byKey(_statusKey)).data!;
-    expect(status, contains(artifact.suggestedFileName));
+    expect(status, startsWith('บันทึกไฟล์แล้ว ('));
     expect(status, isNot(contains('content://')));
     expect(status, matches(RegExp(r'(ไบต์|KB)\)$')));
   });
@@ -444,7 +446,7 @@ final class _MemoryStore implements ExportArtifactStore {
     await revalidateBeforeWrite();
     saved = artifact;
     return ExportSaveResult(
-      path: 'content://downloads/${artifact.suggestedFileName}',
+      path: 'content://com.android.providers.downloads.documents/document/11',
       bytesWritten: artifact.bytes.length,
     );
   }

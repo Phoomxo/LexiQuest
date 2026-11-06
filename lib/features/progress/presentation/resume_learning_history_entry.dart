@@ -79,6 +79,7 @@ Future<void> resumeLearningHistoryEntry(
   required AppDependencies? dependencies,
   required Stream<String?>? ownerChanges,
   required bool Function() stillCurrent,
+  void Function(Route<dynamic>? route, bool current)? onOwnedRouteChanged,
   String languageCode = 'th',
   String? resultBackLabel,
 }) async {
@@ -87,21 +88,56 @@ Future<void> resumeLearningHistoryEntry(
     throw StateError('Learning history is unavailable');
   }
   final learning = dependencies?.learning;
-  if (entry.activityType == 'srsReview') {
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'learning/resume-srs',
-        builder: (_) => SrsFlashcardsScreen(
-          resumeSessionId: entry.sessionId,
-          expectedOwnerId: expectedOwnerId,
-          ownerChanges:
-              ownerChanges ?? dependencies?.progress?.watchActiveOwnerId(),
-          learning: learning,
-          voice: dependencies?.voice,
-          learningTime: dependencies?.learningTime,
-          languageCode: languageCode,
+  Future<T?> open<T>(
+    String name,
+    Widget Function(void Function(Route<dynamic>?, bool)) builder,
+  ) async {
+    Route<dynamic>? pageRoute;
+    Route<dynamic>? ownedChildRoute;
+    void childChanged(Route<dynamic>? route, bool current) {
+      if (route == null || current) ownedChildRoute = route;
+      if (route != null) {
+        onOwnedRouteChanged?.call(route, current);
+      } else if (pageRoute?.isCurrent == true) {
+        onOwnedRouteChanged?.call(pageRoute, true);
+      }
+    }
+
+    try {
+      return await AppNavigator.pushPage<T>(
+        context,
+        AppPage<T>(
+          name: name,
+          builder: (pageContext) {
+            final current = ModalRoute.isCurrentOf(pageContext) == true;
+            if (current || ownedChildRoute?.isCurrent != true) {
+              onOwnedRouteChanged?.call(ModalRoute.of(pageContext), current);
+            }
+            return builder(childChanged);
+          },
         ),
+        onRouteCreated: (route) {
+          pageRoute = route;
+          onOwnedRouteChanged?.call(route, true);
+        },
+      );
+    } finally {
+      onOwnedRouteChanged?.call(null, false);
+    }
+  }
+
+  if (entry.activityType == 'srsReview') {
+    await open<void>(
+      'learning/resume-srs',
+      (_) => SrsFlashcardsScreen(
+        resumeSessionId: entry.sessionId,
+        expectedOwnerId: expectedOwnerId,
+        ownerChanges:
+            ownerChanges ?? dependencies?.progress?.watchActiveOwnerId(),
+        learning: learning,
+        voice: dependencies?.voice,
+        learningTime: dependencies?.learningTime,
+        languageCode: languageCode,
       ),
     );
     return;
@@ -112,20 +148,17 @@ Future<void> resumeLearningHistoryEntry(
     if (matching == null || owners == null) {
       throw StateError('Matching history is unavailable');
     }
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'learning/resume-matching',
-        builder: (_) => MatchingQuizScreen(
-          matching: matching,
-          expectedOwnerId: expectedOwnerId,
-          ownerChanges: owners,
-          resumeSessionId: entry.sessionId,
-          learning: learning,
-          learningTime: dependencies?.learningTime,
-          languageCode: languageCode,
-          resultBackLabel: resultBackLabel,
-        ),
+    await open<void>(
+      'learning/resume-matching',
+      (_) => MatchingQuizScreen(
+        matching: matching,
+        expectedOwnerId: expectedOwnerId,
+        ownerChanges: owners,
+        resumeSessionId: entry.sessionId,
+        learning: learning,
+        learningTime: dependencies?.learningTime,
+        languageCode: languageCode,
+        resultBackLabel: resultBackLabel,
       ),
     );
     return;
@@ -133,21 +166,18 @@ Future<void> resumeLearningHistoryEntry(
   if (entry.hasAcceptedNative) {
     if (learning == null) throw StateError('Learning history is unavailable');
     Future<LearningSessionSummary?> openNative() =>
-        AppNavigator.pushPage<LearningSessionSummary>(
-          context,
-          AppPage<LearningSessionSummary>(
-            name: 'learning/resume-native',
-            builder: (_) => NativeExerciseResumeScreen(
-              sessionId: entry.sessionId,
-              expectedOwnerId: expectedOwnerId,
-              learning: learning,
-              stillCurrent: stillCurrent,
-              languageCode: languageCode,
-              ownerChanges: ownerChanges,
-              voice: dependencies?.voice,
-              learningTime: dependencies?.learningTime,
-              resultBackLabel: resultBackLabel,
-            ),
+        open<LearningSessionSummary>(
+          'learning/resume-native',
+          (_) => NativeExerciseResumeScreen(
+            sessionId: entry.sessionId,
+            expectedOwnerId: expectedOwnerId,
+            learning: learning,
+            stillCurrent: stillCurrent,
+            languageCode: languageCode,
+            ownerChanges: ownerChanges,
+            voice: dependencies?.voice,
+            learningTime: dependencies?.learningTime,
+            resultBackLabel: resultBackLabel,
           ),
         );
     final summary = await openNative();
@@ -158,17 +188,15 @@ Future<void> resumeLearningHistoryEntry(
     }
     return;
   }
-  await AppNavigator.pushPage<void>(
-    context,
-    AppPage<void>(
-      name: 'learning/resume-quiz',
-      builder: (_) => QuizScreen(
-        resumeSessionId: entry.sessionId,
-        expectedOwnerId: expectedOwnerId,
-        learning: learning,
-        ownerChanges: ownerChanges,
-        resultBackLabel: resultBackLabel,
-      ),
+  await open<void>(
+    'learning/resume-quiz',
+    (childChanged) => QuizScreen(
+      resumeSessionId: entry.sessionId,
+      expectedOwnerId: expectedOwnerId,
+      learning: learning,
+      ownerChanges: ownerChanges,
+      resultBackLabel: resultBackLabel,
+      onOwnedRouteChanged: childChanged,
     ),
   );
 }

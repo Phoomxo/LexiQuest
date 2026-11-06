@@ -17,11 +17,13 @@ class LearningHistoryScreen extends StatefulWidget {
     super.key,
     this.loader,
     this.ownerChanges,
+    this.onOwnedRouteChanged,
     this.languageCode = 'th',
   });
 
   final LearningHistoryLoader? loader;
   final Stream<String?>? ownerChanges;
+  final void Function(Route<dynamic>? route, bool current)? onOwnedRouteChanged;
   final String languageCode;
 
   @override
@@ -213,6 +215,7 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
         dependencies: dependencies,
         ownerChanges: widget.ownerChanges,
         stillCurrent: current,
+        onOwnedRouteChanged: widget.onOwnedRouteChanged,
         languageCode: widget.languageCode,
         resultBackLabel: widget.languageCode == 'th'
             ? 'กลับประวัติการเรียน'

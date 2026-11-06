@@ -80,7 +80,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
       if (!mounted) return;
       setState(() {
         _status =
-            'บันทึกไฟล์ ${_displayName(result.path)} แล้ว '
+            'บันทึกไฟล์แล้ว '
             '(${_readableBytes(result.bytesWritten)})';
       });
     } on ExportException catch (error) {
@@ -300,15 +300,6 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
       'เขียนไฟล์ไม่สำเร็จและล้างไฟล์ชั่วคราวแล้ว',
     ExportFailureCode.unavailable => 'ระบบบันทึกไฟล์ไม่พร้อมใช้งาน',
   };
-}
-
-String _displayName(String path) {
-  final segments = Uri.tryParse(path)?.pathSegments;
-  if (segments != null && segments.isNotEmpty) {
-    return Uri.decodeComponent(segments.last);
-  }
-  final normalized = path.replaceAll('\\', '/');
-  return normalized.substring(normalized.lastIndexOf('/') + 1);
 }
 
 String _readableBytes(int bytes) {

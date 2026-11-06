@@ -57,11 +57,11 @@ class ReviewCenterScreen extends StatefulWidget {
 final class _ReviewLaunch {
   _ReviewLaunch({
     required this.generation,
-    required this.quiz,
+    required this.tracksOwnedRoutes,
     required this.resumable,
   });
   final int generation;
-  final bool quiz;
+  final bool tracksOwnedRoutes;
   final bool resumable;
   Route<dynamic>? route;
   Route<dynamic>? ownedChildRoute;
@@ -358,7 +358,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         _route?.isCurrent == true) {
       return;
     }
-    if (launch.quiz && launch.ownedChildRoute != null) {
+    if (launch.tracksOwnedRoutes && launch.ownedChildRoute != null) {
       return;
     }
     launch.returnCurrent = false;
@@ -385,7 +385,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     required String name,
     required int epoch,
     required Widget Function(_ReviewLaunch) builder,
-    bool quiz = false,
+    bool tracksOwnedRoutes = false,
     bool resumable = false,
   }) async {
     if (!_ready || epoch != _readEpoch) {
@@ -393,7 +393,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
     }
     final launch = _ReviewLaunch(
       generation: _launchGeneration,
-      quiz: quiz,
+      tracksOwnedRoutes: tracksOwnedRoutes,
       resumable: resumable,
     );
     _launch = launch;
@@ -510,7 +510,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
       _openChild(
         name: 'review-center/${queue.name}',
         epoch: epoch,
-        quiz: true,
+        tracksOwnedRoutes: true,
         builder: (launch) => QuizScreen(
           resultBackLabel: _text('กลับศูนย์ทบทวน', 'Back to review center'),
           expectedOwnerId: owner,
@@ -539,6 +539,7 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
         name: 'review-center/$destination',
         epoch: epoch,
         resumable: destination == 'content-reports',
+        tracksOwnedRoutes: destination == 'history',
         builder: (launch) => switch (destination) {
           'saved' => SavedWordsScreen(
             expectedOwnerId: owner,
@@ -561,6 +562,8 @@ class _ReviewCenterScreenState extends State<ReviewCenterScreen>
           ),
           _ => LearningHistoryScreen(
             ownerChanges: owners,
+            onOwnedRouteChanged: (route, current) =>
+                _ownedRouteChanged(launch, route, current),
             loader: ({before}) => review.progress.loadHistoryForOwner(
               expectedOwnerId: owner,
               stillCurrent: () =>

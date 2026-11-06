@@ -998,6 +998,204 @@ void main() {
     },
   );
 
+  for (final path in ['score', 'mistake retry', 'foreign Score cover']) {
+    testWidgets('Review Center History owns its completed quiz $path route', (
+      tester,
+    ) async {
+      final h = await _fixture(tester);
+      final finished = (await tester.runAsync(() async {
+        var quiz = (await h.learning.startQuiz(limit: 1)).configured!;
+        quiz = await h.learning.prepareQuizAnswer(
+          sessionId: quiz.sessionId,
+          expectedOwnerId: quiz.ownerId,
+          expectedRevision: quiz.checkpointRevision,
+          revealed: true,
+        );
+        quiz = (await h.learning.commitQuizAnswer(
+          sessionId: quiz.sessionId,
+          expectedOwnerId: quiz.ownerId,
+          expectedRevision: quiz.checkpointRevision,
+        )).state;
+        quiz = await h.learning.prepareQuizFinish(
+          sessionId: quiz.sessionId,
+          expectedOwnerId: quiz.ownerId,
+          expectedRevision: quiz.checkpointRevision,
+        );
+        return h.learning.finishConfiguredQuiz(
+          sessionId: quiz.sessionId,
+          expectedOwnerId: quiz.ownerId,
+          expectedRevision: quiz.checkpointRevision,
+        );
+      }))!;
+      final before = (await tester.runAsync(h.snapshotAllTables))!;
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        _reviewReportApp(h, _screen(h), navigatorKey: nav),
+      );
+      await _ready(tester);
+      await _tap(tester, 'review-center-tools');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'review-center-history');
+      final original = find.byKey(
+        ValueKey(('history-resume', finished.summary.id)),
+      );
+      await _until(tester, () => original.evaluate().isNotEmpty);
+      final loader = tester
+          .widget<LearningHistoryScreen>(find.byType(LearningHistoryScreen))
+          .loader!;
+      await _tapIn(tester, LearningHistoryScreen, original);
+      await _until(
+        tester,
+        () => find.text('ดูผลการเรียน').evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      final openScore = find.text('ดูผลการเรียน');
+      await tester.ensureVisible(openScore);
+      expect(openScore.hitTestable(), findsOneWidget);
+      await tester.tap(openScore);
+      await tester.pump();
+      await _until(
+        tester,
+        () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      final originalScore = tester.widget<ScoreScreen>(
+        find.byType(ScoreScreen),
+      );
+      expect(originalScore.resultSessionId, finished.summary.id);
+      expect(originalScore.resultOwnerId, configuredOwnerId);
+      expect(originalScore.correctAnswers, 0);
+      expect(originalScore.wrongAnswers, 1);
+      expect(originalScore.score, 0);
+      expect(await tester.runAsync(h.snapshotAllTables), before);
+
+      if (path == 'foreign Score cover') {
+        unawaited(
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(
+                body: Text('synthetic foreign History Score cover'),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        for (final covered in [true, false]) {
+          if (!covered) {
+            nav.currentState!.pop();
+            await tester.pumpAndSettle();
+          }
+          Object? rejected;
+          await tester.runAsync(() async {
+            try {
+              await loader();
+            } catch (error) {
+              rejected = error;
+            }
+          });
+          expect(
+            rejected,
+            isA<ReviewCenterReadException>().having(
+              (error) => error.code,
+              'owner-scoped read code',
+              ReviewReadFailureCode.ownerInvalidated,
+            ),
+          );
+          if (covered) {
+            expect(
+              find.text('synthetic foreign History Score cover'),
+              findsOneWidget,
+            );
+          }
+        }
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+        return;
+      }
+
+      String? retrySessionId;
+      if (path == 'mistake retry') {
+        await _tapIn(tester, ScoreScreen, find.text('ฝึกคำที่ผิด (1)'));
+        final meaning = (await tester.runAsync(
+          () => h.word(configuredWordIds.first),
+        ))!.meaning;
+        final answer = find.widgetWithText(FilledButton, meaning);
+        await _until(tester, () => answer.evaluate().isNotEmpty);
+        final retry = tester.widget<QuizScreen>(find.byType(QuizScreen));
+        expect(retry.wordIds, [configuredWordIds.first]);
+        expect(retry.expectedOwnerId, configuredOwnerId);
+        await _tapIn(tester, QuizScreen, answer);
+        await _until(
+          tester,
+          () => find.text('ดูผลการเรียน').evaluate().isNotEmpty,
+        );
+        await _tapIn(tester, QuizScreen, find.text('ดูผลการเรียน'));
+        await _until(
+          tester,
+          () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+        );
+        await tester.pumpAndSettle();
+        final retryScore = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+        retrySessionId = retryScore.resultSessionId;
+        expect(retrySessionId, isNotNull);
+        expect(retrySessionId, isNot(finished.summary.id));
+        expect(retryScore.resultOwnerId, configuredOwnerId);
+        expect(retryScore.correctAnswers, 1);
+        expect(retryScore.wrongAnswers, 0);
+        expect(retryScore.score, 100);
+      }
+
+      final beforeReturn = (await tester.runAsync(h.snapshotAllTables))!;
+      await _tapIn(tester, ScoreScreen, find.text('กลับประวัติการเรียน'));
+      await _until(
+        tester,
+        () =>
+            find.byType(QuizScreen).evaluate().isEmpty &&
+            original.evaluate().isNotEmpty,
+      );
+      expect(
+        find.text('ไม่สามารถอ่านประวัติการเรียนในเครื่องได้'),
+        findsNothing,
+      );
+      final history = (await tester.runAsync(() => loader()))!;
+      final restored = history.entries.singleWhere(
+        (entry) => entry.sessionId == finished.summary.id,
+      );
+      expect(restored.state, 'completed');
+      expect(restored.answerCount, 1);
+      expect(restored.correctCount, 0);
+      expect(restored.hasAcceptedQuiz, isTrue);
+      expect(history.entries, hasLength(path == 'mistake retry' ? 2 : 1));
+      if (retrySessionId != null) {
+        final repaired = history.entries.singleWhere(
+          (entry) => entry.sessionId == retrySessionId,
+        );
+        expect(repaired.state, 'completed');
+        expect(repaired.answerCount, 1);
+        expect(repaired.correctCount, 1);
+      }
+      final after = (await tester.runAsync(h.snapshotAllTables))!;
+      expect(after, beforeReturn);
+      if (path == 'score') {
+        expect(after, before);
+      } else {
+        for (final table in [
+          'learning_sessions',
+          'answer_attempts',
+          'points_ledger_entries',
+        ]) {
+          expect(after[table], containsAll(before[table]!));
+        }
+        expect(after['learning_sessions'], hasLength(2));
+        expect(after['answer_attempts'], hasLength(2));
+      }
+      nav.currentState!.pop();
+      await _ready(tester);
+      expect(await tester.runAsync(h.snapshotAllTables), after);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets(
     '320px shows an available practice action and its word before scrolling',
     (tester) async {
@@ -1146,7 +1344,11 @@ Future<ReviewCenterHarness> _fixture(
   return h;
 }
 
-Widget _reviewReportApp(ReviewCenterHarness h, Widget screen) {
+Widget _reviewReportApp(
+  ReviewCenterHarness h,
+  Widget screen, {
+  GlobalKey<NavigatorState>? navigatorKey,
+}) {
   final queue = DriftContentReportQueue(
     database: h.database,
     ownerWrites: h.ownerWrites,
@@ -1178,7 +1380,7 @@ Widget _reviewReportApp(ReviewCenterHarness h, Widget screen) {
         ordinarySessionGuard: queue.requireOrdinarySession,
       ),
     ),
-    child: MaterialApp(home: screen),
+    child: MaterialApp(navigatorKey: navigatorKey, home: screen),
   );
 }
 
