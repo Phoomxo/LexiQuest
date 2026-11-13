@@ -92,6 +92,12 @@ HTML ต้นทาง `ลองใช้งาน.html` มี SHA-256 `400b0
 
 Questions skipped: งานและเกณฑ์ได้รับอนุมัติแล้ว.
 
+## Current P2/S3/S5 source integration
+
+The verified slice passes all1,903 local Flutter tests and clean full analysis with517 unchanged inputs before/after. See [the attestation](p2-s3-local.txt) and [input manifest](p2-s3-inputs.tsv). Independent reviews accepted the library/P2/Score, Weakness/Profile, actual logout and final Source/history return-label changes. The refined profile-clamp candidate passed unchanged production and was rejected as a defect; no clamp patch was added.
+
+Windows Home and Quiz feedback renders were inspected before updating their goldens. This is local source/render evidence. New-source Android images, Linux CI rendering, complete TalkBack and the remaining48/44/64 catalogue criteria are still separate checks. The latest installed/native milestone remains08ce39bc/v28.
+
 ## Milestone source review corrections
 
 The independent reviewer found a live-result repair route that ignored the quiz/weakness registry and a standalone-camera lookup race that could create a category/outbox for a new owner before detecting a switch. Both were reproduced with focused RED tests. The corrected source propagates the registry and pins expected owner IDs through vocabulary writer boundaries. The reviewer accepted the corrected source, including parent-to-WeaknessBody registry propagation. Root verified 101 boundary tests and clean full static analysis. This is source acceptance only; Android visual, camera, and TalkBack observations remain separate.

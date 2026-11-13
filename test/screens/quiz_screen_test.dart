@@ -75,6 +75,22 @@ void main() {
             updatedAtUtcMs: 1,
           ),
         );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-2',
+            ownerId: owner.id,
+            categoryId: 'category-1',
+            spelling: 'ticket',
+            normalizedSpelling: 'ticket',
+            meaning: 'ตั๋ว',
+            normalizedMeaning: 'ตั๋ว',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
     learning = LearningUseCases(
       owners: owners,
       repository: DriftLearningRepository(database),
@@ -93,7 +109,7 @@ void main() {
       final owner = await database.select(database.localOwners).getSingle();
       await database
           .into(database.vocabularyWords)
-          .insert(
+          .insertOnConflictUpdate(
             VocabularyWordsCompanion.insert(
               id: 'word-2',
               ownerId: owner.id,
@@ -118,6 +134,7 @@ void main() {
             ),
             config: null,
             guestSessionService: _UnusedGuestSession(),
+            learning: learning,
             fieldFeatures: BuildFieldFeatureRegistry({
               FieldFeature.quiz: hiddenFeature == FieldFeature.quiz
                   ? FieldFeatureState.hidden
@@ -185,6 +202,10 @@ void main() {
     await _pumpUntilFound(tester, find.text('station'));
     expect(find.text('ชุดการเดินทาง'), findsOneWidget);
     await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
+    await tester.tap(find.text('คำถามถัดไป'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
     await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
     await tester.tap(find.text('ดูผลการเรียน'));
     await _pumpUntilFound(tester, find.byType(ScoreScreen));
@@ -198,7 +219,7 @@ void main() {
     expect(find.byType(QuizScreen), findsNothing);
     final saved = await database.select(database.learningSessions).getSingle();
     expect(saved.state, 'completed');
-    expect(saved.correctCount, 1);
+    expect(saved.correctCount, 2);
   });
 
   testWidgets('associative reading persists recall, cue, and completion', (
@@ -285,7 +306,7 @@ void main() {
       await tester.runAsync(
         () => database
             .into(database.vocabularyWords)
-            .insert(
+            .insertOnConflictUpdate(
               VocabularyWordsCompanion.insert(
                 id: 'word-2',
                 ownerId: owner!.id,
@@ -373,13 +394,19 @@ void main() {
 
     expect(find.text('station'), findsOneWidget);
     await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(find.byType(ScoreScreen), findsNothing);
+    await tester.tap(find.text('คำถามถัดไป'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
     await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
     await tester.tap(find.text('ดูผลการเรียน'));
     await _pumpUntilFound(tester, find.byType(ScoreScreen));
 
     expect(find.byType(ScoreScreen), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
-    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(await database.select(database.answerAttempts).get(), hasLength(2));
     final session = await database
         .select(database.learningSessions)
         .getSingle();
@@ -621,7 +648,15 @@ void main() {
         nowUtc: learning.nowUtc,
         buildInfo: learning.buildInfo,
       );
-      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: pending)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            learning: pending,
+            categoryName: 'ชุดการเดินทาง',
+            returnLabel: 'กลับไปเลือกกิจกรรม',
+          ),
+        ),
+      );
       await _pumpUntilFound(tester, find.text('station'));
       await tester.tap(find.text('เฉลยคำตอบ'));
       await tester.tap(find.text('เฉลยคำตอบ'));
@@ -638,16 +673,31 @@ void main() {
       expect(find.text('station — สถานี'), findsNothing);
       expect(find.text('ดูผลการเรียน'), findsNothing);
       acknowledgement.complete();
-      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
       expect(repository.commands.single.isCorrect, isFalse);
+      await tester.tap(find.text('คำถามถัดไป'));
+      await tester.pump();
+      await tester.tap(find.text('เฉลยคำตอบ'));
+      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      expect(repository.commands, hasLength(2));
+      expect(
+        repository.commands.every((command) => !command.isCorrect),
+        isTrue,
+      );
       await tester.tap(find.text('ดูผลการเรียน'));
       await _pumpUntilFound(tester, find.byType(ScoreScreen));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
+      expect(find.text('กลับไปเลือกกิจกรรม'), findsOneWidget);
+      expect(find.text('กลับไปที่ชุดคำ'), findsNothing);
+      await tester.tap(find.text('ฝึกคำที่ผิด (2)'));
       await _pumpUntilFound(tester, find.text('ฝึกคำที่ผิด'));
       expect(
+        tester.widget<QuizScreen>(find.byType(QuizScreen)).returnLabel,
+        'กลับไปเลือกกิจกรรม',
+      );
+      expect(
         await database.select(database.answerAttempts).get(),
-        hasLength(1),
+        hasLength(2),
       );
       expect(await database.select(database.rewardTransactions).get(), isEmpty);
     },
@@ -690,7 +740,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     try {
       await database.customUpdate(
-        "UPDATE vocabulary_words SET meaning = 'คำแปลสังเคราะห์ที่ยาวเพื่อทดสอบการเลื่อนและการขยายตัวอักษร', part_of_speech = 'ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว'",
+        "UPDATE vocabulary_words SET meaning = 'คำแปลสังเคราะห์ที่ยาวเพื่อทดสอบการเลื่อนและการขยายตัวอักษร', part_of_speech = 'ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว' WHERE id = 'word-1'",
       );
       final failing = LearningUseCases(
         owners: learning.owners,
@@ -731,15 +781,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('ลองบันทึกอีกครั้ง'));
       await tester.tap(find.text('ลองบันทึกอีกครั้ง'));
-      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
       expect(
         find.byWidgetPredicate(
           (w) => w is Semantics && w.properties.liveRegion == true,
         ),
         findsWidgets,
       );
-      await tester.ensureVisible(find.text('ดูผลการเรียน'));
-      expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
+      await tester.ensureVisible(find.text('คำถามถัดไป'));
+      expect(find.text('คำถามถัดไป').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     } finally {
       semantics.dispose();
@@ -774,8 +824,8 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile(screenGolden('quiz_feedback_large_text.png')),
     );
-    await tester.scrollUntilVisible(find.text('ดูผลการเรียน'), 150);
-    expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('คำถามถัดไป'), 150);
+    expect(find.text('คำถามถัดไป').hitTestable(), findsOneWidget);
   });
 
   testWidgets('answer feedback uses accessible dark semantic color pairs', (
@@ -789,9 +839,9 @@ void main() {
     final owner = await database.select(database.localOwners).getSingle();
     await database
         .into(database.vocabularyWords)
-        .insert(
+        .insertOnConflictUpdate(
           VocabularyWordsCompanion.insert(
-            id: 'word-color-pair',
+            id: 'word-2',
             ownerId: owner.id,
             categoryId: 'category-1',
             spelling: 'ticket',
@@ -894,7 +944,7 @@ void main() {
       final owner = await database.select(database.localOwners).getSingle();
       await database
           .into(database.vocabularyWords)
-          .insert(
+          .insertOnConflictUpdate(
             VocabularyWordsCompanion.insert(
               id: 'word-2',
               ownerId: owner.id,

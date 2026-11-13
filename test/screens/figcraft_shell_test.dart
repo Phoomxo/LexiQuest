@@ -117,7 +117,11 @@ void main() {
       300,
       scrollable: find.descendant(
         of: find.byKey(const PageStorageKey('vocabulary-categories')),
-        matching: find.byType(Scrollable),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
       ),
     );
     await tester.pumpAndSettle();

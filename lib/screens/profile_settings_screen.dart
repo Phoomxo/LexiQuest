@@ -15,11 +15,13 @@ class ProfileSettingsScreen extends StatefulWidget {
     this.loader,
     this.account,
     this.onOpenMenu,
+    this.isActive = true,
   });
 
   final ProfileProgressLoader? loader;
   final AccountUseCases? account;
   final VoidCallback? onOpenMenu;
+  final bool isActive;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -43,13 +45,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     _bindSources();
   }
 
-  void _bindSources() {
+  void _bindSources({bool reload = false}) {
     final account = _currentAccount;
     final uid = account?.currentSession?.uid;
     final accountChanged = !identical(_account, account) || _accountUid != uid;
     _account = account;
     _accountUid = uid;
-    if (_load == null || _currentLoader != _loader || accountChanged) {
+    if (reload ||
+        _load == null ||
+        _currentLoader != _loader ||
+        accountChanged) {
       _load = _loadProgress();
     }
   }
@@ -57,7 +62,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didUpdateWidget(ProfileSettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _bindSources();
+    _bindSources(reload: widget.isActive && !oldWidget.isActive);
   }
 
   Future<ProgressSnapshot> _loadProgress() {

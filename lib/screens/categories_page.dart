@@ -27,6 +27,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Stream<List<VocabularyCategorySummary>>? _categories;
   Stream<List<VocabularyWord>>? _matches;
   bool _choosingDestination = false;
+  bool _hadScope = false;
 
   @override
   void dispose() {
@@ -34,8 +35,17 @@ class _CategoriesPageState extends State<CategoriesPage> {
     super.dispose();
   }
 
-  VocabularyUseCases? _useCases(BuildContext context) =>
-      widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+  VocabularyUseCases? _useCases(BuildContext context) {
+    final scope = AppDependenciesScope.maybeOf(context);
+    if (scope != null) {
+      _hadScope = true;
+      return scope.vocabulary;
+    }
+    return _hadScope ? null : widget.vocabulary;
+  }
+
+  bool _isCurrent(VocabularyUseCases useCases) =>
+      mounted && identical(_useCases(context), useCases);
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +55,30 @@ class _CategoriesPageState extends State<CategoriesPage> {
       _categories = useCases?.watchLibrary();
       _matches = useCases?.searchWords(_query);
     }
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+    final addWord = useCases == null
+        ? null
+        : FilledButton.icon(
+            key: const ValueKey('library-add-word'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(96, 48),
+              textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(9),
+              ),
+            ),
+            onPressed: _choosingDestination
+                ? null
+                : () => _chooseDestination(context, useCases),
+            icon: const Icon(Icons.add),
+            label: Text(_choosingDestination ? 'กำลังเปิด…' : 'เพิ่มคำ'),
+          );
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: MediaQuery.textScalerOf(context).scale(1) >= 1.5
-            ? 160
-            : M3Theme.appBarToolbarHeight(context),
+        toolbarHeight: M3Theme.rootAppBarToolbarHeight(context),
         centerTitle: false,
         titleSpacing: 24,
         title: Text(
@@ -61,15 +90,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
           ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (useCases != null)
-            TextButton.icon(
-              key: const ValueKey('library-add-word'),
-              onPressed: _choosingDestination
-                  ? null
-                  : () => _chooseDestination(context, useCases),
-              icon: const Icon(Icons.add),
-              label: Text(_choosingDestination ? 'กำลังเปิด…' : 'เพิ่มคำ'),
-            ),
+          if (!largeText && addWord != null)
+            Padding(padding: const EdgeInsets.only(right: 8), child: addWord),
           if (widget.onOpenMenu != null)
             IconButton(
               key: const ValueKey<String>('shell-drawer-button'),
@@ -82,74 +104,120 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: AdaptiveContentPane(
         child: useCases == null
             ? const _LocalDataUnavailable()
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    child: SearchBar(
-                      key: const ValueKey('category-search'),
-                      controller: _searchController,
-                      hintText: 'ค้นหาคำในคลัง',
-                      elevation: const WidgetStatePropertyAll(0),
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+            : CustomScrollView(
+                key: const PageStorageKey('vocabulary-categories'),
+                slivers: [
+                  if (largeText && addWord != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: addWord,
                         ),
                       ),
-                      leading: const Icon(Icons.search),
-                      onChanged: (value) => setState(() {
-                        _query = normalizeVocabularyText(value);
-                        _matches = useCases.searchWords(_query);
-                      }),
+                    ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                    sliver: SliverToBoxAdapter(
+                      child: SearchBar(
+                        key: const ValueKey('category-search'),
+                        controller: _searchController,
+                        hintText: 'ค้นหาคำในคลัง',
+                        elevation: const WidgetStatePropertyAll(0),
+                        surfaceTintColor: const WidgetStatePropertyAll(
+                          Colors.transparent,
+                        ),
+                        backgroundColor: WidgetStatePropertyAll(
+                          Theme.of(context).colorScheme.surface,
+                        ),
+                        constraints: const BoxConstraints(minHeight: 58),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                        ),
+                        leading: const Icon(Icons.search),
+                        onChanged: (value) {
+                          if (!_isCurrent(useCases)) return;
+                          setState(() {
+                            _query = normalizeVocabularyText(value);
+                            _matches = useCases.searchWords(_query);
+                          });
+                        },
+                      ),
                     ),
                   ),
-                  Padding(
+                  SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          _query.isEmpty ? 'ชุดคำของฉัน' : 'ผลการค้นหา',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        TextButton.icon(
-                          key: const ValueKey('add-category'),
-                          onPressed: () => _showAddCategory(context, useCases),
-                          icon: const Icon(Icons.create_new_folder_outlined),
-                          label: const Text('เพิ่มชุด'),
-                        ),
-                      ],
+                    sliver: SliverToBoxAdapter(
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            _query.isEmpty ? 'ชุดคำของฉัน' : 'ผลการค้นหา',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          TextButton.icon(
+                            key: const ValueKey('add-category'),
+                            onPressed: () =>
+                                _showAddCategory(context, useCases),
+                            icon: const Icon(Icons.create_new_folder_outlined),
+                            style: TextButton.styleFrom(
+                              textStyle: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            label: const Text('เพิ่มชุด'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  Expanded(
-                    child: StreamBuilder<List<VocabularyCategorySummary>>(
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    sliver: StreamBuilder<List<VocabularyCategorySummary>>(
                       key: ValueKey((useCases, 'library')),
                       stream: _categories,
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
-                          return _FailureState(
-                            onRetry: () => setState(
-                              () => _categories = useCases.watchLibrary(),
+                          return SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _FailureState(
+                              onRetry: () {
+                                if (!_isCurrent(useCases)) return;
+                                setState(
+                                  () => _categories = useCases.watchLibrary(),
+                                );
+                              },
                             ),
                           );
                         }
                         if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                          return const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                              ),
                             ),
                           );
                         }
                         if (snapshot.data!.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
-                              textAlign: TextAlign.center,
+                          return const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Text(
+                                'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           );
                         }
@@ -169,16 +237,27 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           stream: _matches,
                           builder: (context, matches) {
                             if (matches.hasError) {
-                              return _FailureState(
-                                onRetry: () => setState(
-                                  () => _matches = useCases.searchWords(_query),
+                              return SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _FailureState(
+                                  onRetry: () {
+                                    if (!_isCurrent(useCases)) return;
+                                    setState(
+                                      () => _matches = useCases.searchWords(
+                                        _query,
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             }
                             if (!matches.hasData) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  semanticsLabel: 'กำลังค้นหาคำในคลัง',
+                              return const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    semanticsLabel: 'กำลังค้นหาคำในคลัง',
+                                  ),
                                 ),
                               );
                             }
@@ -192,36 +271,48 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                 )
                                 .toList(growable: false);
                             if (words.isEmpty && categories.isEmpty) {
-                              return const Center(
-                                child: Text('ไม่พบคำหรือชุดที่ค้นหา'),
+                              return const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Center(
+                                  child: Text('ไม่พบคำหรือชุดที่ค้นหา'),
+                                ),
                               );
                             }
-                            return ListView(
-                              key: PageStorageKey('library-search:$_query'),
-                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                              children: [
-                                for (final summary in categories)
-                                  _categoryTile(context, useCases, summary),
-                                for (final word in words)
-                                  ListTile(
-                                    title: Text(word.spelling),
-                                    subtitle: Text(byId[word.categoryId]!.name),
-                                    trailing: const Icon(Icons.chevron_right),
-                                    onTap: () => _openCategory(
-                                      context,
-                                      useCases,
-                                      byId[word.categoryId]!,
-                                      initialQuery: word.spelling,
-                                    ),
-                                  ),
-                                if (words.length == 50)
-                                  const Padding(
+                            return SliverList.builder(
+                              itemCount:
+                                  categories.length +
+                                  words.length +
+                                  (words.length == 50 ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index < categories.length) {
+                                  return _categoryTile(
+                                    context,
+                                    useCases,
+                                    categories[index],
+                                  );
+                                }
+                                final wordIndex = index - categories.length;
+                                if (wordIndex == words.length) {
+                                  return const Padding(
                                     padding: EdgeInsets.all(8),
                                     child: Text(
                                       'แสดง 50 คำแรก พิมพ์เพิ่มเพื่อค้นหาให้แคบลง',
                                     ),
+                                  );
+                                }
+                                final word = words[wordIndex];
+                                return ListTile(
+                                  title: Text(word.spelling),
+                                  subtitle: Text(byId[word.categoryId]!.name),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => _openCategory(
+                                    context,
+                                    useCases,
+                                    byId[word.categoryId]!,
+                                    initialQuery: word.spelling,
                                   ),
-                              ],
+                                );
+                              },
                             );
                           },
                         );
@@ -238,9 +329,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     BuildContext context,
     VocabularyUseCases useCases,
     List<VocabularyCategorySummary> summaries,
-  ) => ListView.separated(
-    key: const PageStorageKey('vocabulary-categories'),
-    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+  ) => SliverList.separated(
     itemCount: summaries.length,
     separatorBuilder: (_, _) => const Divider(),
     itemBuilder: (context, index) =>
@@ -254,16 +343,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
   ) {
     final category = summary.category;
     return ListTile(
+      minTileHeight: 98,
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       leading: const Icon(Icons.folder_outlined),
       title: Text(
         category.name,
         style: Theme.of(
           context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       subtitle: Text(
         '${summary.wordCount} คำ${summary.previewSpellings.isEmpty ? '' : ' · ${summary.previewSpellings.join(' · ')}'}',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -492,25 +583,28 @@ class _CategoriesPageState extends State<CategoriesPage> {
     VocabularyUseCases useCases,
     VocabularyCategory category,
   ) async {
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบหมวดหมู่'),
-        content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true) return;
     try {
+      await _requireDestinationContext(useCases, category.ownerId);
+      if (!context.mounted) return;
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ลบหมวดหมู่'),
+          content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('ลบ'),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true) return;
+      await _requireDestinationContext(useCases, category.ownerId);
       await useCases.deleteCategory(category.id);
     } catch (_) {
       if (context.mounted) {

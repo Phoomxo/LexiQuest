@@ -82,7 +82,11 @@ void main() {
     );
   });
 
-  Future<void> pumpLibrary(WidgetTester tester, {double scale = 1}) async {
+  Future<void> pumpLibrary(
+    WidgetTester tester, {
+    double scale = 1,
+    bool travelContrast = false,
+  }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -101,6 +105,16 @@ void main() {
             partOfSpeech: 'noun',
           ),
         );
+        if (travelContrast && name == 'การเดินทาง') {
+          await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'ticket',
+              meaning: 'ตั๋ว',
+              partOfSpeech: 'noun',
+            ),
+          );
+        }
       }
     });
     await tester.pumpWidget(
@@ -303,7 +317,7 @@ void main() {
     tester,
   ) async {
     try {
-      await pumpLibrary(tester);
+      await pumpLibrary(tester, travelContrast: true);
       await tester.tap(find.text('การเดินทาง'));
       await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
       await tester.pumpAndSettle();
@@ -317,14 +331,34 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'สถานี'));
+      await _pumpUntil(tester, find.text('คำถามถัดไป'));
+      await tester.ensureVisible(find.text('คำถามถัดไป'));
+      await tester.tap(find.text('คำถามถัดไป'));
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'ตั๋ว'));
+      await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
       await _pumpUntil(tester, find.text('ดูผลการเรียน'));
       await tester.ensureVisible(find.text('ดูผลการเรียน'));
       await tester.tap(find.text('ดูผลการเรียน'));
       await _pumpUntil(tester, find.byType(ScoreScreen));
       await tester.pumpAndSettle();
-      final sessionId = tester
-          .widget<ScoreScreen>(find.byType(ScoreScreen))
-          .sessionId;
+      final firstScore = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+      final sessionId = firstScore.sessionId;
+      expect(sessionId, isNotNull);
+      expect(firstScore.correctAnswers, 2);
+      expect(firstScore.wrongAnswers, 0);
+      final savedSession = (await tester.runAsync(
+        () => database.select(database.learningSessions).getSingle(),
+      ))!;
+      final savedAttempts = (await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ))!;
+      expect(savedSession.id, sessionId);
+      expect(savedSession.state, 'completed');
+      expect(savedSession.correctCount, 2);
+      expect(savedSession.wrongCount, 0);
+      expect(savedSession.score, 100);
+      expect(savedAttempts, hasLength(2));
       await tester.ensureVisible(find.text('กลับไปที่ชุดคำ'));
       await tester.tap(find.text('กลับไปที่ชุดคำ'));
       await _pumpUntil(tester, find.text('ดูผลล่าสุด'));
@@ -333,17 +367,23 @@ void main() {
       await tester.tap(find.text('ดูผลล่าสุด'));
       await _pumpUntil(tester, find.byType(ScoreScreen));
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<ScoreScreen>(find.byType(ScoreScreen)).sessionId,
-        sessionId,
-      );
+      final reopened = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+      expect(reopened.sessionId, sessionId);
+      expect(reopened.correctAnswers, 2);
+      expect(reopened.wrongAnswers, 0);
       expect(find.text('100%'), findsOneWidget);
       expect(find.text('การเดินทาง'), findsOneWidget);
       expect(
         await tester.runAsync(
           () => database.select(database.answerAttempts).get(),
         ),
-        hasLength(1),
+        savedAttempts,
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.learningSessions).getSingle(),
+        ),
+        savedSession,
       );
     } finally {
       await disposeLibrary(tester);
@@ -501,34 +541,38 @@ void main() {
     },
   );
 
-  testWidgets('practice uses only the selected set and returns to its words', (
-    tester,
-  ) async {
-    try {
-      await pumpLibrary(tester);
-      await tester.tap(find.text('การเดินทาง'));
-      await _pumpUntil(tester, find.text('station'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('ฝึกจากชุดนี้'));
-      await _pumpUntil(
-        tester,
-        find.descendant(
-          of: find.byType(QuizScreen),
-          matching: find.text('station'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('apple'), findsNothing);
-      await tester.pageBack();
-      await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
-      await tester.pumpAndSettle();
-      expect(find.text('station'), findsOneWidget);
-      expect(find.text('การเดินทาง'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    } finally {
-      await disposeLibrary(tester);
-    }
-  });
+  testWidgets(
+    'one-meaning practice offers Add in the selected set and returns to its words',
+    (tester) async {
+      try {
+        await pumpLibrary(tester);
+        await tester.tap(find.text('การเดินทาง'));
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ฝึกจากชุดนี้'));
+        await _pumpUntil(
+          tester,
+          find.descendant(
+            of: find.byType(QuizScreen),
+            matching: find.text('รอบนี้ยังไม่มีความหมายอื่นให้เลือก'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('quiz-add-word')), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('apple'), findsNothing);
+        expect(find.text('ดูผลการเรียน'), findsNothing);
+        await tester.pageBack();
+        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+        await tester.pumpAndSettle();
+        expect(find.text('station'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
 }
 
 final class _DelayedOwners extends Fake implements LocalOwnerRepository {

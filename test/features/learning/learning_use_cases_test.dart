@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -67,6 +68,57 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'quiz option formula counts distinct meanings rather than word rows',
+    () async {
+      final single = await useCases.startQuiz(
+        categoryId: 'category-1',
+        limit: 1,
+      );
+      expect(single.questions.single.options, hasLength(1));
+      await database
+          .update(database.vocabularyWords)
+          .write(const VocabularyWordsCompanion(meaning: Value('สถานี')));
+      final duplicateMeanings = await useCases.startQuiz(
+        categoryId: 'category-1',
+        limit: 4,
+      );
+      expect(duplicateMeanings.questions, hasLength(4));
+      expect(
+        duplicateMeanings.questions.every(
+          (question) => question.options.toSet().length == 1,
+        ),
+        isTrue,
+      );
+      await (database.update(database.vocabularyWords)
+            ..where((word) => word.id.equals('word-2')))
+          .write(const VocabularyWordsCompanion(meaning: Value('ตั๋ว')));
+      final contrast = await useCases.startQuiz(
+        categoryId: 'category-1',
+        limit: 4,
+      );
+      expect(
+        contrast.questions.every(
+          (question) => question.options.toSet().length == 2,
+        ),
+        isTrue,
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.rewardTransactions).get(), isEmpty);
+      expect(await database.select(database.srsStates).get(), isEmpty);
+      expect(
+        (await database.select(database.learningSessions).get()).every(
+          (session) => session.state == 'active',
+        ),
+        isTrue,
+      );
+    },
+  );
 
   test(
     'starts quiz from local words with deterministic unique options',

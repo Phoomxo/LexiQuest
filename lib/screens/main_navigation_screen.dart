@@ -63,6 +63,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         features.isVisible(FieldFeature.reading);
     final showLibrary = features.isVisible(FieldFeature.vocabulary);
     final progressIndex = (showPractice ? 1 : 0) + (showLibrary ? 1 : 0);
+    final profileIndex =
+        progressIndex + (features.isVisible(FieldFeature.mastery) ? 1 : 0);
     return [
       if (showPractice)
         _NavigationEntry(
@@ -95,7 +97,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           label: 'ความก้าวหน้า',
         ),
       _NavigationEntry(
-        screen: ProfileSettingsScreen(onOpenMenu: _openDrawer),
+        screen: ProfileSettingsScreen(
+          onOpenMenu: _openDrawer,
+          isActive: _currentIndex == profileIndex,
+        ),
         icon: Icons.person_outlined,
         selectedIcon: Icons.person,
         label: 'บัญชี',

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
@@ -5,11 +6,14 @@ import 'package:uuid/uuid.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'score_screen.dart';
+import 'add_vocab_screen.dart';
+import 'categories_page.dart';
 import '../navigation/app_routes.dart';
 
 enum QuizWordSelectionMode { weakness, sourcePractice }
@@ -19,6 +23,7 @@ class QuizScreen extends StatefulWidget {
     super.key,
     this.categoryId,
     this.categoryName,
+    this.returnLabel,
     this.learning,
     this.wordIds,
     this.featureRegistry,
@@ -27,6 +32,7 @@ class QuizScreen extends StatefulWidget {
 
   final String? categoryId;
   final String? categoryName;
+  final String? returnLabel;
   final LearningUseCases? learning;
   final List<String>? wordIds;
   final FieldFeatureRegistry? featureRegistry;
@@ -52,6 +58,21 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _practicingMistakes = false;
   bool _hintVisible = false;
   bool _revealed = false;
+  AppDependencies? _dependencies;
+  bool _wasScoped = false;
+  String? _ownerId;
+  String? _categoryId;
+  List<String>? _wordIds;
+  QuizWordSelectionMode? _selectionMode;
+  int _generation = 0;
+  bool _addingWords = false;
+
+  LearningUseCases? get _currentLearning {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    return dependencies == null
+        ? (_wasScoped ? null : widget.learning)
+        : dependencies.learning;
+  }
 
   FieldFeatureRegistry get _features =>
       widget.featureRegistry ??
@@ -62,22 +83,164 @@ class _QuizScreenState extends State<QuizScreen> {
       _features.isVisible(FieldFeature.weakness) &&
       _features.isVisible(FieldFeature.quiz);
 
+  String get _returnLabel =>
+      widget.returnLabel ??
+      (widget.categoryName == null ? 'กลับไปเลือกกิจกรรม' : 'กลับไปที่ชุดคำ');
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_load != null) return;
-    _learning =
-        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
-    final learning = _learning;
-    _load = learning == null
-        ? Future<QuizSession>.error(
-            StateError('local learning dependency unavailable'),
-          )
-        : widget.wordIds == null
-        ? learning.startQuiz(categoryId: widget.categoryId)
-        : widget.selectionMode == QuizWordSelectionMode.sourcePractice
-        ? learning.startSourcePracticeForWords(wordIds: widget.wordIds!)
-        : learning.startWeaknessPractice(wordIds: widget.wordIds!);
+    _bindLearning();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuizScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindLearning();
+  }
+
+  void _bindLearning({bool reload = false}) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (dependencies != null) _wasScoped = true;
+    final learning = _currentLearning;
+    if (!reload &&
+        _load != null &&
+        identical(dependencies, _dependencies) &&
+        identical(learning, _learning) &&
+        widget.categoryId == _categoryId &&
+        listEquals(widget.wordIds, _wordIds) &&
+        widget.selectionMode == _selectionMode) {
+      return;
+    }
+    _dependencies = dependencies;
+    _learning = learning;
+    _categoryId = widget.categoryId;
+    _wordIds = widget.wordIds == null
+        ? null
+        : List.unmodifiable(widget.wordIds!);
+    _selectionMode = widget.selectionMode;
+    final generation = ++_generation;
+    _ownerId = null;
+    _session = null;
+    _index = 0;
+    _answered = false;
+    _saving = false;
+    _addingWords = false;
+    _selected = null;
+    _questionStartedAt = null;
+    _attemptId = null;
+    _submittedAtUtc = null;
+    _responseTimeMs = null;
+    _practicingMistakes = false;
+    _hintVisible = false;
+    _revealed = false;
+    _mistakes.clear();
+    _load = _startSession(learning, generation);
+    _load!.ignore();
+  }
+
+  bool _current(int generation) =>
+      mounted &&
+      generation == _generation &&
+      identical(AppDependenciesScope.maybeOf(context), _dependencies) &&
+      identical(_currentLearning, _learning) &&
+      widget.categoryId == _categoryId &&
+      listEquals(widget.wordIds, _wordIds) &&
+      widget.selectionMode == _selectionMode;
+
+  Future<QuizSession> _startSession(
+    LearningUseCases? learning,
+    int generation,
+  ) async {
+    if (learning == null) {
+      throw StateError('local learning dependency unavailable');
+    }
+    final owner = await learning.owners.getOrCreateActiveOwner();
+    if (!_current(generation)) throw StateError('quiz context changed');
+    final session = _wordIds == null
+        ? await learning.startQuiz(categoryId: _categoryId)
+        : _selectionMode == QuizWordSelectionMode.sourcePractice
+        ? await learning.startSourcePracticeForWords(wordIds: _wordIds!)
+        : await learning.startWeaknessPractice(wordIds: _wordIds!);
+    final currentOwner = await learning.owners.getOrCreateActiveOwner();
+    if (!_current(generation) || currentOwner.id != owner.id) {
+      throw StateError('quiz context changed');
+    }
+    _ownerId = owner.id;
+    return session;
+  }
+
+  bool _hasChoiceContrast(QuizSession session) => session.questions.every(
+    (question) => question.options.toSet().length >= 2,
+  );
+
+  Future<void> _addWords() async {
+    final generation = _generation;
+    final dependencies = _dependencies;
+    final vocabulary = dependencies?.vocabulary;
+    final ownerId = _ownerId;
+    final categoryId = _categoryId;
+    if (_addingWords ||
+        _saving ||
+        !_current(generation) ||
+        !_features.isVisible(FieldFeature.vocabulary) ||
+        vocabulary == null ||
+        ownerId == null) {
+      return;
+    }
+    setState(() => _addingWords = true);
+    try {
+      final owner = await vocabulary.owners.getOrCreateActiveOwner();
+      if (!mounted ||
+          !_current(generation) ||
+          owner.id != ownerId ||
+          !_features.isVisible(FieldFeature.vocabulary)) {
+        return;
+      }
+      if (categoryId == null) {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'vocabulary/quiz-add-destination',
+            builder: (_) => const CategoriesPage(),
+          ),
+        );
+        return;
+      }
+      VocabularyWord? savedWord;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'vocabulary/quiz-add-word',
+          builder: (_) => AddWordScreen(
+            categoryId: categoryId,
+            categoryName: widget.categoryName,
+            vocabulary: vocabulary,
+            expectedOwnerId: ownerId,
+            onCreated: (word) => savedWord = word,
+          ),
+        ),
+      );
+      if (savedWord == null || !_current(generation)) return;
+      final currentOwner = await vocabulary.owners.getOrCreateActiveOwner();
+      if (!_current(generation) ||
+          currentOwner.id != ownerId ||
+          savedWord!.ownerId != ownerId ||
+          savedWord!.categoryId != categoryId) {
+        return;
+      }
+      setState(() => _bindLearning(reload: true));
+    } catch (_) {
+      if (mounted && _current(generation)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เปิดคลังคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+    } finally {
+      if (_current(generation)) setState(() => _addingWords = false);
+    }
   }
 
   @override
@@ -96,6 +259,7 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       body: AdaptiveContentPane(
         child: FutureBuilder<QuizSession>(
+          key: ValueKey(_generation),
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -122,6 +286,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 message: 'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
               );
             }
+            if (!_hasChoiceContrast(session)) return _buildOneChoiceFallback();
             _session ??= session;
             _questionStartedAt ??= DateTime.now();
             return _buildQuestion(session);
@@ -136,6 +301,60 @@ class _QuizScreenState extends State<QuizScreen> {
       : widget.selectionMode == QuizWordSelectionMode.sourcePractice
       ? 'แบบทดสอบจากเนื้อหานี้'
       : 'ฝึกคำที่ผิด';
+
+  Widget _buildOneChoiceFallback() {
+    final canAdd =
+        _features.isVisible(FieldFeature.vocabulary) &&
+        _dependencies?.vocabulary != null;
+    // Loading retains the existing active zero-attempt session, as Back does.
+    // This fallback never records an answer or manufactures a completed result.
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.categoryName != null) ...[
+              Text(
+                widget.categoryName!,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+            ],
+            const Text('รอบนี้ยังไม่มีความหมายอื่นให้เลือก'),
+            const SizedBox(height: 8),
+            const Text('เพิ่มคำที่มีความหมายต่างกัน แล้วลองเริ่มรอบใหม่'),
+            if (canAdd) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                key: const ValueKey('quiz-add-word'),
+                onPressed: _addingWords ? null : _addWords,
+                icon: const Icon(Icons.add),
+                label: Text(
+                  _categoryId == null
+                      ? 'เปิดคลังเพื่อเพิ่มคำ'
+                      : 'เพิ่มคำในชุดนี้',
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _addingWords
+                  ? null
+                  : () => setState(() => _bindLearning(reload: true)),
+              child: const Text('ลองเริ่มรอบใหม่'),
+            ),
+            TextButton(
+              onPressed: _addingWords
+                  ? null
+                  : () => Navigator.maybePop(context),
+              child: Text(_returnLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
@@ -304,6 +523,12 @@ class _QuizScreenState extends State<QuizScreen> {
     final learning = _learning;
     final session = _session;
     if (learning == null || session == null) return;
+    final generation = _generation;
+    if (!_current(generation) ||
+        !_hasChoiceContrast(session) ||
+        !identical(question, session.questions[_index])) {
+      return;
+    }
     if (_attemptId == null) {
       _selected = option;
       _revealed = reveal;
@@ -328,7 +553,7 @@ class _QuizScreenState extends State<QuizScreen> {
         attemptId: _attemptId,
         occurredAtUtc: _submittedAtUtc,
       );
-      if (!mounted) return;
+      if (!_current(generation)) return;
       setState(() {
         _answered = true;
         _saving = false;
@@ -344,7 +569,7 @@ class _QuizScreenState extends State<QuizScreen> {
         // Device feedback must not turn a committed answer into a retry.
       }
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current(generation)) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
@@ -353,8 +578,10 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _next() async {
-    if (_saving) return;
+    final generation = _generation;
+    if (_saving || !_answered || !_current(generation)) return;
     final session = _session!;
+    final learning = _learning!;
     if (_index < session.questions.length - 1) {
       setState(() {
         _index++;
@@ -371,8 +598,16 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     setState(() => _saving = true);
     try {
-      final summary = await _learning!.finishSession(session.id);
-      if (!mounted) return;
+      final summary = await learning.finishSession(session.id);
+      if (!mounted || !_current(generation)) return;
+      final mistakes = List<QuizWord>.unmodifiable(_mistakes);
+      final mistakeIds = List<String>.unmodifiable(
+        mistakes.map((word) => word.id).toSet(),
+      );
+      final categoryId = widget.categoryId;
+      final categoryName = widget.categoryName;
+      final returnLabel = _returnLabel;
+      final canPracticeMistakes = _canPracticeMistakes;
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
@@ -381,21 +616,27 @@ class _QuizScreenState extends State<QuizScreen> {
             correctAnswers: summary.correctCount,
             wrongAnswers: summary.wrongCount,
             score: summary.score,
-            categoryName: widget.categoryName,
+            categoryName: categoryName,
             sessionId: summary.id,
-            returnLabel: widget.categoryName == null
-                ? 'กลับไปเลือกกิจกรรม'
-                : 'กลับไปที่ชุดคำ',
-            mistakes: List.unmodifiable(_mistakes),
-            onPracticeMistakes: _mistakes.isEmpty || !_canPracticeMistakes
+            returnLabel: returnLabel,
+            mistakes: mistakes,
+            onPracticeMistakes: mistakes.isEmpty || !canPracticeMistakes
                 ? null
-                : () => _practiceMistakes(scoreContext),
+                : () => _practiceMistakes(
+                    scoreContext,
+                    generation: generation,
+                    learning: learning,
+                    wordIds: mistakeIds,
+                    categoryId: categoryId,
+                    categoryName: categoryName,
+                    returnLabel: returnLabel,
+                  ),
           ),
         ),
       );
-      if (mounted) Navigator.of(context).pop();
+      if (mounted && _current(generation)) Navigator.of(context).pop();
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_current(generation)) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('จบรอบการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง')),
@@ -403,25 +644,47 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> _practiceMistakes(BuildContext scoreContext) async {
-    if (_practicingMistakes || !_canPracticeMistakes) return;
+  Future<void> _practiceMistakes(
+    BuildContext scoreContext, {
+    required int generation,
+    required LearningUseCases learning,
+    required List<String> wordIds,
+    required String? categoryId,
+    required String? categoryName,
+    required String returnLabel,
+  }) async {
+    if (!_current(generation) ||
+        _practicingMistakes ||
+        !_canPracticeMistakes ||
+        !identical(_learning, learning) ||
+        !scoreContext.mounted ||
+        ModalRoute.of(scoreContext)?.isCurrent != true) {
+      return;
+    }
     _practicingMistakes = true;
+    final features = _features;
     try {
       await AppNavigator.pushPage<void>(
         scoreContext,
         AppPage<void>(
           name: 'learning/mistake-practice',
           builder: (_) => QuizScreen(
-            wordIds: _mistakes.map((word) => word.id).toSet().toList(),
-            categoryName: widget.categoryName,
-            learning: _learning,
-            featureRegistry: _features,
+            categoryId: categoryId,
+            wordIds: wordIds,
+            categoryName: categoryName,
+            returnLabel: returnLabel,
+            learning: learning,
+            featureRegistry: features,
           ),
         ),
       );
-      if (scoreContext.mounted) Navigator.of(scoreContext).pop();
+      if (_current(generation) &&
+          scoreContext.mounted &&
+          ModalRoute.of(scoreContext)?.isCurrent == true) {
+        Navigator.of(scoreContext).pop();
+      }
     } finally {
-      _practicingMistakes = false;
+      if (_current(generation)) _practicingMistakes = false;
     }
   }
 }

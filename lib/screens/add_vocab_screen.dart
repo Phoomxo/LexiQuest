@@ -14,6 +14,7 @@ class AddWordScreen extends StatefulWidget {
     this.initialDraft,
     this.expectedOwnerId,
     this.categoryName,
+    this.onCreated,
   }) : assert(word == null || initialDraft == null);
 
   final String categoryId;
@@ -22,6 +23,7 @@ class AddWordScreen extends StatefulWidget {
   final CreateWordCommand? initialDraft;
   final String? expectedOwnerId;
   final String? categoryName;
+  final ValueChanged<VocabularyWord>? onCreated;
 
   @override
   State<AddWordScreen> createState() => _AddWordScreenState();
@@ -31,8 +33,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _wordController;
   late final TextEditingController _meaningController;
   late final TextEditingController _partOfSpeechController;
-  AppDependencies? _draftDependencies;
-  bool _draftDependenciesCaptured = false;
+  AppDependencies? _writeDependencies;
+  bool _writeContextCaptured = false;
+  String? _writeOwnerId;
+  String? _writeCategoryId;
+  CreateWordCommand? _writeDraft;
+  VocabularyWord? _writeWord;
   bool _saving = false;
   String? _wordError;
   String? _meaningError;
@@ -56,9 +62,16 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.initialDraft != null && !_draftDependenciesCaptured) {
-      _draftDependencies = AppDependenciesScope.maybeOf(context);
-      _draftDependenciesCaptured = true;
+    if ((widget.initialDraft != null ||
+            widget.expectedOwnerId != null ||
+            widget.word != null) &&
+        !_writeContextCaptured) {
+      _writeDependencies = AppDependenciesScope.maybeOf(context);
+      _writeContextCaptured = true;
+      _writeOwnerId = widget.word?.ownerId ?? widget.expectedOwnerId;
+      _writeCategoryId = widget.categoryId;
+      _writeDraft = widget.initialDraft;
+      _writeWord = widget.word;
     }
   }
 
@@ -89,11 +102,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (widget.categoryName != null) ...[
+              Text('เก็บในชุด ${widget.categoryName}'),
+              const SizedBox(height: 8),
+            ],
             if (widget.initialDraft != null) ...[
-              if (widget.categoryName != null) ...[
-                Text('เก็บในชุด ${widget.categoryName}'),
-                const SizedBox(height: 8),
-              ],
               const Text('ผลสแกนยังไม่ยืนยัน ตรวจชื่อและกรอกคำแปลเอง'),
               const SizedBox(height: 16),
             ],
@@ -220,13 +233,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
     setState(() => _saving = true);
     final draft = widget.initialDraft;
-    final expectedOwnerId = widget.expectedOwnerId;
+    final word = widget.word;
+    final expectedOwnerId = word?.ownerId ?? widget.expectedOwnerId;
+    final bound = draft != null || word != null || expectedOwnerId != null;
     try {
       VocabularyWord? created;
-      if (widget.word == null) {
-        if (draft != null) {
-          await _requireDraftContext(useCases, draft, expectedOwnerId);
-        }
+      if (bound) await _requireWriteContext(useCases, expectedOwnerId);
+      if (word == null) {
         created = await useCases.createWord(
           CreateWordCommand(
             categoryId: widget.categoryId,
@@ -236,30 +249,34 @@ class _AddWordScreenState extends State<AddWordScreen> {
             cefrLevel: draft?.cefrLevel,
             source: draft?.source ?? 'manual',
           ),
-          expectedOwnerId: draft == null ? null : expectedOwnerId,
+          expectedOwnerId: expectedOwnerId,
         );
       } else {
         await useCases.updateWord(
           UpdateWordCommand(
-            id: widget.word!.id,
+            id: word.id,
             categoryId: widget.categoryId,
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
-            cefrLevel: widget.word!.cefrLevel,
-            source: widget.word!.source,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
           ),
         );
       }
-      if (draft != null) {
-        await _requireDraftContext(useCases, draft, expectedOwnerId);
-        if (created == null ||
-            created.ownerId != expectedOwnerId ||
-            created.categoryId != draft.categoryId) {
+      if (bound) {
+        await _requireWriteContext(useCases, expectedOwnerId);
+        if (word == null &&
+            (created == null ||
+                created.ownerId != expectedOwnerId ||
+                created.categoryId != _writeCategoryId)) {
           throw const VocabularyNotFoundFailure();
         }
+      }
+      if (draft != null) {
         if (mounted) Navigator.pop<VocabularyWord>(context, created);
       } else if (mounted) {
+        if (created != null) widget.onCreated?.call(created);
         Navigator.pop(context);
       }
     } on VocabularyNotFoundFailure {
@@ -284,21 +301,24 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
   }
 
-  Future<void> _requireDraftContext(
+  Future<void> _requireWriteContext(
     VocabularyUseCases useCases,
-    CreateWordCommand draft,
     String? expectedOwnerId,
   ) async {
     if (!mounted ||
-        !_draftDependenciesCaptured ||
+        !_writeContextCaptured ||
         expectedOwnerId == null ||
-        !identical(AppDependenciesScope.maybeOf(context), _draftDependencies) ||
-        !identical(widget.initialDraft, draft) ||
-        widget.expectedOwnerId != expectedOwnerId ||
-        widget.categoryId != draft.categoryId) {
+        !identical(AppDependenciesScope.maybeOf(context), _writeDependencies) ||
+        _writeOwnerId != expectedOwnerId ||
+        !identical(widget.initialDraft, _writeDraft) ||
+        !identical(widget.word, _writeWord) ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId) ||
+        widget.categoryId != _writeCategoryId ||
+        (_writeDraft != null && _writeDraft!.categoryId != widget.categoryId)) {
       throw const VocabularyNotFoundFailure();
     }
-    final dependencies = _draftDependencies;
+    final dependencies = _writeDependencies;
     final currentVocabulary = dependencies?.vocabulary;
     if (currentVocabulary != null && !identical(currentVocabulary, useCases)) {
       throw const VocabularyNotFoundFailure();
@@ -308,9 +328,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
     if (!mounted ||
         owner.id != expectedOwnerId ||
         !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
-        !identical(widget.initialDraft, draft) ||
-        widget.categoryId != draft.categoryId ||
-        widget.expectedOwnerId != expectedOwnerId) {
+        !identical(widget.initialDraft, _writeDraft) ||
+        !identical(widget.word, _writeWord) ||
+        widget.categoryId != _writeCategoryId ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId)) {
       throw const VocabularyNotFoundFailure();
     }
   }

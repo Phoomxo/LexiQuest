@@ -401,6 +401,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         AppPage<void>(
           name: 'learning/source-quiz',
           builder: (_) => QuizScreen(
+            categoryId: widget.categoryId,
+            categoryName: widget.categoryName,
+            returnLabel: 'กลับไปเลือกกิจกรรม',
             wordIds: preview.matchedWords
                 .take(_maxPracticeWords)
                 .map((word) => word.id)
@@ -643,6 +646,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                             AppPage<void>(
                               name: repairRouteName,
                               builder: (_) => QuizScreen(
+                                categoryId: widget.categoryId,
+                                categoryName: widget.categoryName,
+                                returnLabel: 'กลับไปเลือกกิจกรรม',
                                 wordIds: mistakeIds,
                                 learning: captured.learning,
                               ),
@@ -860,6 +866,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                                           resultOpen &&
                                           repairing
                                       ? QuizScreen(
+                                          categoryId: widget.categoryId,
+                                          categoryName: widget.categoryName,
+                                          returnLabel: 'กลับไปเลือกกิจกรรม',
                                           wordIds: [word.id],
                                           learning: learning,
                                         )

@@ -715,8 +715,11 @@ class _SettingScreenState extends State<SettingScreen> {
     final account = _account;
     final session = _account?.currentSession;
     final isRegistered = session != null && !session.isAnonymous;
-    return Scaffold(
-      appBar: AppBar(title: const Text('ตั้งค่า')),
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: !_busy,
+        title: const Text('ตั้งค่า'),
+      ),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.proseMaxWidth,
         child: ListView(
@@ -1038,6 +1041,7 @@ class _SettingScreenState extends State<SettingScreen> {
         ),
       ),
     );
+    return PopScope(canPop: !_busy, child: scaffold);
   }
 }
 

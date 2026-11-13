@@ -24,6 +24,7 @@ import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
@@ -224,6 +225,41 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(MasteryDashboardScreen), findsOneWidget);
         expect(await _databaseSnapshot(db), before);
+        if (hiddenFeature == null) {
+          await tester.scrollUntilVisible(
+            historyRow,
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.ensureVisible(historyRow);
+          await tester.tap(historyRow);
+          await _waitFor(
+            tester,
+            () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+          );
+          await tester.pumpAndSettle();
+          final repair = find.text('ฝึกคำที่ผิด (1)');
+          await tester.ensureVisible(repair);
+          await tester.tap(repair);
+          await _waitFor(
+            tester,
+            () => find
+                .text('รอบนี้ยังไม่มีความหมายอื่นให้เลือก')
+                .evaluate()
+                .isNotEmpty,
+          );
+          expect(
+            tester.widget<QuizScreen>(find.byType(QuizScreen)).returnLabel,
+            'กลับไปที่ผลการฝึก',
+          );
+          await tester.tap(find.text('กลับไปที่ผลการฝึก'));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const ValueKey('score-session:synthetic-session')),
+            findsOneWidget,
+          );
+          expect(find.text('50%'), findsOneWidget);
+        }
       },
     );
   }
@@ -675,21 +711,43 @@ void main() {
       await tester.pumpWidget(app(dependencies(ownersA)));
       await _waitFor(
         tester,
-        () =>
-            ownersA.reads == 1 &&
-            find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
+        () => find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
       );
       await _openWeakness(tester);
-      expect(ownersA.reads, 2);
+      await _waitFor(
+        tester,
+        () => find
+            .descendant(
+              of: find.byType(WeaknessClinicScreen),
+              matching: find.textContaining('คำนวณจาก 0 คำตอบ'),
+            )
+            .evaluate()
+            .isNotEmpty,
+      );
+      final readsABeforeReplacement = ownersA.reads;
       await tester.pumpWidget(app(dependencies(ownersB)));
-      await _waitFor(tester, () => ownersB.reads >= 1);
+      await _waitFor(
+        tester,
+        () => find
+            .descendant(
+              of: find.byType(MasteryDashboardScreen, skipOffstage: false),
+              matching: find.text('คะแนนประสบการณ์', skipOffstage: false),
+              skipOffstage: false,
+            )
+            .evaluate()
+            .isNotEmpty,
+      );
+      final readsBBeforeReturn = ownersB.reads;
       await _popWeakness(tester);
       await _waitFor(
         tester,
-        () => find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
+        () =>
+            ownersB.reads > readsBBeforeReturn &&
+            find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
       );
-      expect(ownersA.reads, 2);
-      expect(ownersB.reads, 2);
+      expect(ownersA.reads, readsABeforeReplacement);
+      expect(readsBBeforeReturn, greaterThan(0));
+      expect(ownersB.reads, greaterThan(readsBBeforeReturn));
       _expectMetric('คะแนนประสบการณ์', '1');
       expect(await _databaseSnapshot(db), before);
       expect(tester.takeException(), isNull);

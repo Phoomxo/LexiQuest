@@ -27,20 +27,30 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 
 | Card | Write owner and boundary | Acceptance | Status |
 | --- | --- | --- | --- |
-| S1 | Root owns shell, practice home, and progress read projection. Test agent owns shell/home tests. Independent critic owns no production files. | Four Thai tabs, actual due preview/count, distinct new/empty/error states, library entry, contextual return, feature gating, large text. | Executing |
-| S2 | `s1_tests` owns library summaries, search, destination selection and set UI. | Search, add/import, preserve selected set and filters, reopen persisted words. | Executing; async owner/scope review corrections pending |
-| S3 | `ground_routes` owns progress category context and latest-set result; root integrates learning evidence. | Real answers, feedback, result context, durable and idempotent outcomes. | Executing; selected-set SQLite regression passed on previous source, new projection checks pending |
-| S4 | `ground_routes` owns editable manual correction from camera results and its tests. | Explicit confirmation into selected set, failure recovery, known-object device evidence. | Executing; real captures recorded, correction GREEN/device retry pending; known-object accuracy not checked |
-| S5 | `s1_tests` owns Settings/Profile; `ground_routes` owns progress/export/account boundary cases; root integrates. | Owner isolation, export/deletion, offline learning, research default-off. | Executing; stale-scope subcard accepted with 377 checks; full-export implementation/composition disposition remains open |
-| S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Pending |
-| S7 | All writers paused for integration. | Current-SHA regression, 48/44/64 disposition, Android APK/hash/CI, independent runtime critique. | Pending |
+| S1 | Root integrates shell, home and progress; all production writers currently frozen. | Four Thai tabs, actual due preview/count, distinct new/empty/error states, contextual return, gating and large text. | Current local source accepted; P2 native visuals/a11y pending |
+| S2 | Root integrates library/search/set scope guards and accepted independent reviews. | Search, add/import, selected-set/filter context and persisted words. | Current local source accepted in full1903; new-APK retest pending |
+| S3 | Root integrates Quiz/Score/Weakness/source/history fixes. | Real answers, honest assessment, durable outcomes and origin-specific return. | Full1903 and review accepted; remaining catalogue/native criteria remain open |
+| S4 | Existing scanner/manual-correction authority and its tests. | Explicit save into original set, recovery and separate accuracy evidence. | v28 actual-photo/manual journey accepted; known-object accuracy not_checked; other service criteria open |
+| S5 | Existing Settings/Profile/export/account boundaries. | Owner isolation, export/deletion, offline learning, research default-off. | Full-export adapter committed; new logout/freshness/scope subcards accepted; remaining catalogue/composition/release criteria open |
+| S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Grounded; two architecture sketches running, no production/migration changes |
+| S7 | Root integrates the frozen source. | Current-SHA regression, 48/44/64 disposition, APK/hash/CI and native critique. | Full1903/analysis clean with517 unchanged inputs; new APK/native/CI and ledger reconciliation pending |
 
 ## Grounded constraints
 
-- A vivo V2041 is connected. Its existing `com.lexiquest.app` is versionCode 26. Inspect signing and data compatibility before any replacement. Do not clear or uninstall it.
+### S6 architecture task board
+
+- [x] Ground: three read-only source explorers and a separate explainer traced committed answers through Quest, Streak, XP/coins and schema/owner inventory. Working artifacts: build/architect-s6/grounding.txt and how.txt; no S6 production changes.
+- [ ] Sketch: compare two complete data/interface designs, then synthesize against replay, recurrence, owner/timezone and reward provenance checks.
+- [ ] Agree: proceed under the existing implementation authorization once the sketch/write set/checks are concrete; no new discussion-only approval gate.
+- [ ] Implement: reserve the actual next migration before migration code, then implement verifiable units after the current UI verification/build snapshot is closed.
+- [ ] Scrap: conditional review step if the selected shape cannot protect its invariants; never patch around an invalid ownership model.
+
+Arena checklist: frame complete (build/architect-s6/rubric.txt); two independent candidates running (gpt-6-astra and gpt-6.1-sol); cross-judge pending; pick/graft/verify pending. Canonical UI remains the existing Mastery screen. No S6 production/test source or schema reservation has changed. Claude/Grok skill defaults are unavailable here; source explorers inherited the parent model and the separate explainer used gpt-6-astra. Record actual supported models for the remaining judge.
+
+- Baseline vivo V2041 had versionCode26. Signed v28 is now installed with existing data retained; read actual device/signing/schema state before the next update. Do not clear or uninstall it.
 - Flutter dependencies resolve using the existing lockfile. No dependency upgrade is part of this task.
-- Existing progress has no vocabulary count or due-word preview. Extend its read projection without a schema migration rather than infer empty vocabulary from zero answers.
-- Existing library lacks selected-set camera and quiz entry. Camera acceptance currently chooses a mapped category. These must share an explicit destination before the core journey can pass.
+- Baseline progress lacked vocabulary count/due preview; the current read projection supplies them without a migration. Never infer empty vocabulary from zero answers.
+- Baseline library lacked selected-set camera/Quiz entry; the implemented destination pin and manual correction passed the v28 core journey. Retain that context during further changes.
 - Baseline screenshots and new Android screenshots are distinct from FigCraft design renders. TalkBack and known-object accuracy require their own observations.
 
 ## First S1 code slice

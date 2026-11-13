@@ -20,6 +20,13 @@ import 'source_practice_screen.dart';
 
 enum _AddWordMethod { manual, camera, file }
 
+typedef _CategoryContext = ({
+  AppDependencies? dependencies,
+  VocabularyUseCases vocabulary,
+  String id,
+  String name,
+});
+
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
     super.key,
@@ -52,6 +59,9 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Future<SessionHistoryEntry?>? _latest;
   bool _addStarted = false;
   bool _openingLatest = false;
+  AppDependencies? _dependencies;
+  bool _dependenciesCaptured = false;
+  bool _invalidated = false;
 
   @override
   void initState() {
@@ -59,6 +69,100 @@ class _VocabListScreenState extends State<VocabListScreen> {
     _searchController = TextEditingController(text: widget.initialQuery);
     _query = normalizeVocabularyText(widget.initialQuery);
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!_dependenciesCaptured) {
+      _dependencies = dependencies;
+      _dependenciesCaptured = true;
+    } else if (!identical(_dependencies, dependencies)) {
+      _invalidated = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant VocabListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categoryId != widget.categoryId) {
+      _dependencies = AppDependenciesScope.maybeOf(context);
+      _dependenciesCaptured = true;
+      _invalidated = false;
+      _addStarted = false;
+      _searchController.text = widget.initialQuery;
+      _query = normalizeVocabularyText(widget.initialQuery);
+    } else if (!identical(oldWidget.vocabulary, widget.vocabulary)) {
+      _invalidated = true;
+    }
+  }
+
+  _CategoryContext? get _currentCategory {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = dependencies == null
+        ? widget.vocabulary
+        : dependencies.vocabulary;
+    if (_invalidated ||
+        !_dependenciesCaptured ||
+        !identical(_dependencies, dependencies) ||
+        vocabulary == null ||
+        (dependencies != null &&
+            widget.vocabulary != null &&
+            !identical(widget.vocabulary, vocabulary))) {
+      return null;
+    }
+    return (
+      dependencies: dependencies,
+      vocabulary: vocabulary,
+      id: widget.categoryId,
+      name: widget.categoryName,
+    );
+  }
+
+  bool _isCurrent(_CategoryContext category) {
+    if (!mounted) return false;
+    final current = _currentCategory;
+    return current != null &&
+        identical(current.dependencies, category.dependencies) &&
+        identical(current.vocabulary, category.vocabulary) &&
+        current.id == category.id &&
+        current.name == category.name;
+  }
+
+  Future<String?> _currentOwner(
+    _CategoryContext category, {
+    String? expectedOwnerId,
+  }) async {
+    if (!_isCurrent(category)) return null;
+    try {
+      final owner = await category.vocabulary.owners.getOrCreateActiveOwner();
+      if (!_isCurrent(category)) return null;
+      if (expectedOwnerId == null || owner.id == expectedOwnerId) {
+        return owner.id;
+      }
+    } catch (_) {
+      if (!_isCurrent(category)) return null;
+    }
+    if (mounted) setState(() => _invalidated = true);
+    return null;
+  }
+
+  Widget _unavailableCategory(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่'),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.maybePop(context),
+            child: const Text('กลับไปเลือกชุดคำ'),
+          ),
+        ],
+      ),
+    ),
+  );
 
   @override
   void dispose() {
@@ -69,27 +173,35 @@ class _VocabListScreenState extends State<VocabListScreen> {
   @override
   Widget build(BuildContext context) {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final useCases = widget.vocabulary ?? dependencies?.vocabulary;
-    final importer = widget.importer ?? dependencies?.vocabularyImporter;
+    final category = _currentCategory;
+    final useCases = category?.vocabulary;
+    final importer = dependencies == null
+        ? widget.importer
+        : dependencies.vocabularyImporter;
+    final progress = category == null ? null : dependencies?.progress;
     final learning = dependencies?.learning;
     final sourcePicker = dependencies?.sourcePracticeFilePicker;
     final features =
         dependencies?.fieldFeatures ??
         const BuildFieldFeatureRegistry.allEnabled();
     if (!identical(useCases, _vocabulary) ||
-        _categoryId != widget.categoryId ||
-        !identical(_progress, dependencies?.progress)) {
+        _categoryId != category?.id ||
+        !identical(_progress, progress)) {
       _vocabulary = useCases;
-      _categoryId = widget.categoryId;
-      _words = useCases?.watchWords(widget.categoryId);
-      _progress = dependencies?.progress;
-      _latest = _progress?.loadLatestSessionForCategory(widget.categoryId);
+      _categoryId = category?.id;
+      _words = useCases?.watchWords(category!.id);
+      _progress = progress;
+      _latest = category == null
+          ? null
+          : _progress?.loadLatestSessionForCategory(category.id);
       _latest?.ignore();
     }
-    if (widget.startAdding && !_addStarted && useCases != null) {
+    if (widget.startAdding && !_addStarted && category != null) {
       _addStarted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _showAddWordOptions(context, useCases, importer, features);
+        if (_isCurrent(category)) {
+          _showAddWordOptions(context, category, importer, features);
+        }
       });
     }
     final canPracticeSource =
@@ -102,11 +214,11 @@ class _VocabListScreenState extends State<VocabListScreen> {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, widget.categoryName),
+        title: M3Theme.appBarTitle(context, category?.name ?? 'ชุดคำศัพท์'),
       ),
       body: AdaptiveContentPane(
-        child: useCases == null
-            ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
+        child: category == null || useCases == null
+            ? _unavailableCategory(context)
             : StreamBuilder<List<VocabularyWord>>(
                 key: ValueKey((useCases, widget.categoryId)),
                 stream: _words,
@@ -156,14 +268,22 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                       snapshot.hasError || allWords.isEmpty
                                       ? null
                                       : () async {
+                                          if (await _currentOwner(
+                                                category,
+                                                expectedOwnerId:
+                                                    allWords.first.ownerId,
+                                              ) ==
+                                              null) {
+                                            return;
+                                          }
+                                          if (!context.mounted) return;
                                           await AppNavigator.pushPage<void>(
                                             context,
                                             AppPage<void>(
                                               name: 'learning/category-quiz',
                                               builder: (_) => QuizScreen(
-                                                categoryId: widget.categoryId,
-                                                categoryName:
-                                                    widget.categoryName,
+                                                categoryId: category.id,
+                                                categoryName: category.name,
                                                 learning: learning,
                                               ),
                                             ),
@@ -188,7 +308,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 key: const ValueKey('add-word'),
                                 onPressed: () => _showAddWordOptions(
                                   context,
-                                  useCases,
+                                  category,
                                   importer,
                                   features,
                                 ),
@@ -272,27 +392,35 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                   children: [
                                     TextButton.icon(
                                       key: const ValueKey('source-practice'),
-                                      onPressed: () =>
-                                          AppNavigator.pushPage<void>(
-                                            context,
-                                            AppPage<void>(
-                                              name:
-                                                  'vocabulary/source-practice',
-                                              builder: (_) =>
-                                                  SourcePracticeScreen(
-                                                    categoryId:
-                                                        widget.categoryId,
-                                                    categoryName:
-                                                        widget.categoryName,
-                                                    vocabulary: useCases,
-                                                    learning: learning,
-                                                    filePicker: sourcePicker,
-                                                    associativeLearning:
-                                                        dependencies
-                                                            ?.associativeLearning,
-                                                  ),
-                                            ),
+                                      onPressed: () async {
+                                        if (await _currentOwner(
+                                              category,
+                                              expectedOwnerId: allWords.isEmpty
+                                                  ? null
+                                                  : allWords.first.ownerId,
+                                            ) ==
+                                            null) {
+                                          return;
+                                        }
+                                        if (!context.mounted) return;
+                                        await AppNavigator.pushPage<void>(
+                                          context,
+                                          AppPage<void>(
+                                            name: 'vocabulary/source-practice',
+                                            builder: (_) =>
+                                                SourcePracticeScreen(
+                                                  categoryId: category.id,
+                                                  categoryName: category.name,
+                                                  vocabulary: useCases,
+                                                  learning: learning,
+                                                  filePicker: sourcePicker,
+                                                  associativeLearning:
+                                                      dependencies
+                                                          ?.associativeLearning,
+                                                ),
                                           ),
+                                        );
+                                      },
                                       icon: const Icon(
                                         Icons.menu_book_outlined,
                                       ),
@@ -361,14 +489,14 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 ),
                                 onTap: () => _openWordEditor(
                                   context,
-                                  useCases,
+                                  category,
                                   word: word,
                                 ),
                                 trailing: IconButton(
                                   tooltip: 'ลบคำศัพท์ ${word.spelling}',
                                   icon: const Icon(Icons.delete_outline),
                                   onPressed: () =>
-                                      _deleteWord(context, useCases, word),
+                                      _deleteWord(context, category, word),
                                 ),
                               );
                             },
@@ -383,7 +511,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
   }
 
   void _refreshLatest() {
-    if (mounted) {
+    if (mounted && _currentCategory != null) {
       setState(() {
         _latest = _progress?.loadLatestSessionForCategory(widget.categoryId);
         _latest?.ignore();
@@ -393,13 +521,15 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
   Future<void> _openLatestResult() async {
     final progress = _progress;
-    final categoryId = widget.categoryId;
-    if (progress == null || _openingLatest) return;
+    final category = _currentCategory;
+    if (progress == null || category == null || _openingLatest) return;
+    final categoryId = category.id;
     setState(() => _openingLatest = true);
     try {
       final entry = await progress.loadLatestSessionForCategory(categoryId);
       if (!mounted) return;
-      if (!identical(
+      if (!_isCurrent(category) ||
+          !identical(
             progress,
             AppDependenciesScope.maybeOf(context)?.progress,
           ) ||
@@ -421,7 +551,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
             wrongAnswers: summary.wrongCount,
             score: summary.score,
             sessionId: summary.id,
-            categoryName: entry.categoryName ?? widget.categoryName,
+            categoryName: entry.categoryName ?? category.name,
             mistakes: entry.mistakes,
             returnLabel: 'กลับไปที่ชุดคำ',
           ),
@@ -440,68 +570,90 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
   Future<void> _showAddWordOptions(
     BuildContext context,
-    VocabularyUseCases useCases,
+    _CategoryContext category,
     ImportVocabulary? importer,
     FieldFeatureRegistry features,
   ) async {
+    final ownerId = await _currentOwner(category);
+    if (ownerId == null || !context.mounted) return;
+    var chosen = false;
     final method = await showModalBottomSheet<_AddWordMethod>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  'เพิ่มคำใน ${widget.categoryName}',
-                  style: Theme.of(context).textTheme.titleLarge,
+      builder: (sheetContext) {
+        AppDependenciesScope.maybeOf(sheetContext);
+        void choose(_AddWordMethod method) {
+          if (!sheetContext.mounted || chosen) return;
+          chosen = true;
+          Navigator.pop(sheetContext, _isCurrent(category) ? method : null);
+        }
+
+        if (!_isCurrent(category)) {
+          return SafeArea(child: _unavailableCategory(sheetContext));
+        }
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'เพิ่มคำใน ${category.name}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('พิมพ์คำศัพท์'),
-                onTap: () => Navigator.pop(sheetContext, _AddWordMethod.manual),
-              ),
-              if (features.isVisible(FieldFeature.objectScanner))
                 ListTile(
-                  leading: const Icon(Icons.photo_camera_outlined),
-                  title: const Text('ถ่ายภาพ'),
-                  subtitle:
-                      features.stateOf(FieldFeature.objectScanner) ==
-                          FieldFeatureState.limited
-                      ? const Text('อนุญาตกล้องและเตรียมโมเดลก่อนถ่าย')
-                      : null,
-                  onTap: () =>
-                      Navigator.pop(sheetContext, _AddWordMethod.camera),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('พิมพ์คำศัพท์'),
+                  onTap: () => choose(_AddWordMethod.manual),
                 ),
-              ListTile(
-                key: const ValueKey('import-words'),
-                leading: const Icon(Icons.file_upload_outlined),
-                title: const Text('นำเข้าจากไฟล์'),
-                subtitle: Text(
-                  importer == null
-                      ? 'ยังไม่พร้อมนำเข้าในขณะนี้'
-                      : 'เลือกไฟล์ CSV หรือ JSON แล้วตรวจรายการ',
+                if (features.isVisible(FieldFeature.objectScanner))
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_outlined),
+                    title: const Text('ถ่ายภาพ'),
+                    subtitle:
+                        features.stateOf(FieldFeature.objectScanner) ==
+                            FieldFeatureState.limited
+                        ? const Text('อนุญาตกล้องและเตรียมโมเดลก่อนถ่าย')
+                        : null,
+                    onTap: () => choose(_AddWordMethod.camera),
+                  ),
+                ListTile(
+                  key: const ValueKey('import-words'),
+                  leading: const Icon(Icons.file_upload_outlined),
+                  title: const Text('นำเข้าจากไฟล์'),
+                  subtitle: Text(
+                    importer == null
+                        ? 'ยังไม่พร้อมนำเข้าในขณะนี้'
+                        : 'เลือกไฟล์ CSV หรือ JSON แล้วตรวจรายการ',
+                  ),
+                  enabled: importer != null,
+                  onTap: importer == null
+                      ? null
+                      : () => choose(_AddWordMethod.file),
                 ),
-                enabled: importer != null,
-                onTap: importer == null
-                    ? null
-                    : () => Navigator.pop(sheetContext, _AddWordMethod.file),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
-    if (!context.mounted) return;
+    if (!context.mounted || method == null) return;
+    if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+        !context.mounted) {
+      return;
+    }
+    final currentImporter = category.dependencies == null
+        ? widget.importer
+        : category.dependencies?.vocabularyImporter;
+    if (!identical(importer, currentImporter)) return;
     switch (method) {
       case _AddWordMethod.manual:
-        _openWordEditor(context, useCases);
+        await _openWordEditor(context, category, expectedOwnerId: ownerId);
         return;
       case _AddWordMethod.camera:
         await AppNavigator.pushPage<VocabularyWord>(
@@ -509,8 +661,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
           AppPage<VocabularyWord>(
             name: 'vocabulary/camera',
             builder: (_) => ObjectScannerScreen(
-              targetCategoryId: widget.categoryId,
-              targetCategoryName: widget.categoryName,
+              targetCategoryId: category.id,
+              targetCategoryName: category.name,
             ),
           ),
         );
@@ -521,31 +673,38 @@ class _VocabListScreenState extends State<VocabListScreen> {
           AppPage<void>(
             name: 'vocabulary/import',
             builder: (_) => AddMultipleWordsScreen(
-              categoryId: widget.categoryId,
-              categoryName: widget.categoryName,
+              categoryId: category.id,
+              categoryName: category.name,
               importer: importer,
-              vocabulary: useCases,
+              vocabulary: category.vocabulary,
             ),
           ),
         );
         return;
-      case null:
-        return;
     }
   }
 
-  void _openWordEditor(
+  Future<void> _openWordEditor(
     BuildContext context,
-    VocabularyUseCases useCases, {
+    _CategoryContext category, {
     VocabularyWord? word,
-  }) {
-    AppNavigator.pushPage<void>(
+    String? expectedOwnerId,
+  }) async {
+    if (word != null && word.categoryId != category.id) return;
+    final ownerId = await _currentOwner(
+      category,
+      expectedOwnerId: expectedOwnerId ?? word?.ownerId,
+    );
+    if (ownerId == null || !context.mounted) return;
+    await AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
         builder: (_) => AddWordScreen(
-          categoryId: widget.categoryId,
-          vocabulary: useCases,
+          categoryId: category.id,
+          categoryName: category.name,
+          vocabulary: category.vocabulary,
+          expectedOwnerId: ownerId,
           word: word,
         ),
       ),
@@ -554,29 +713,59 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
   Future<void> _deleteWord(
     BuildContext context,
-    VocabularyUseCases useCases,
+    _CategoryContext category,
     VocabularyWord word,
   ) async {
+    if (word.categoryId != category.id ||
+        await _currentOwner(category, expectedOwnerId: word.ownerId) == null ||
+        !context.mounted) {
+      return;
+    }
+    var chosen = false;
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบคำศัพท์'),
-        content: Text('ลบ “${word.spelling}” หรือไม่'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) {
+        AppDependenciesScope.maybeOf(dialogContext);
+        void choose(bool accepted) {
+          if (!dialogContext.mounted || chosen) return;
+          chosen = true;
+          Navigator.pop(dialogContext, accepted && _isCurrent(category));
+        }
+
+        if (!_isCurrent(category)) {
+          return AlertDialog(
+            title: const Text('ชุดคำนี้ไม่พร้อมใช้งาน'),
+            actions: [
+              TextButton(
+                onPressed: () => choose(false),
+                child: const Text('กลับ'),
+              ),
+            ],
+          );
+        }
+        return AlertDialog(
+          title: const Text('ลบคำศัพท์'),
+          content: Text('ลบ “${word.spelling}” หรือไม่'),
+          actions: [
+            TextButton(
+              onPressed: () => choose(false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => choose(true),
+              child: const Text('ลบ'),
+            ),
+          ],
+        );
+      },
     );
     if (accepted != true) return;
     try {
-      await useCases.deleteWord(word.id);
+      if (await _currentOwner(category, expectedOwnerId: word.ownerId) ==
+          null) {
+        return;
+      }
+      await category.vocabulary.deleteWord(word.id);
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(

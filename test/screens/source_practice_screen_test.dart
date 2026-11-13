@@ -120,6 +120,34 @@ void main() {
             updatedAtUtcMs: 1,
           ),
         );
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'distractor-category',
+            ownerId: ownerId,
+            name: 'คำอื่นสำหรับตัวเลือก',
+            normalizedName: 'คำอื่นสำหรับตัวเลือก',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'distractor-word',
+            ownerId: ownerId,
+            categoryId: 'distractor-category',
+            spelling: 'cup',
+            normalizedSpelling: 'cup',
+            meaning: 'แก้ว',
+            normalizedMeaning: 'แก้ว',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
     vocabulary = VocabularyUseCases(
       owners: owners,
       vocabulary: DriftVocabularyRepository(database),
@@ -167,6 +195,10 @@ void main() {
       ),
       config: null,
       guestSessionService: _UnusedGuestSession(),
+      database: database,
+      localOwners: owners,
+      vocabulary: vocabulary,
+      learning: learning,
       geminiTutor: withTutor ? tutor : null,
       speechPractice: speech,
     ),
@@ -761,6 +793,7 @@ void main() {
         await _pumpAsyncWork(tester);
         final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
         expect(quiz.wordIds, ['word-station']);
+        expect(quiz.returnLabel, 'กลับไปเลือกกิจกรรม');
         expect(quiz.selectionMode, QuizWordSelectionMode.weakness);
         expect(find.text('คำถาม 1 จาก 1'), findsOneWidget);
         expect(identical(quiz.learning, learning), isTrue);
@@ -1698,7 +1731,7 @@ void main() {
     expect(find.textContaining('คำที่ยังไม่อยู่ในหมวด'), findsOneWidget);
     expect(find.textContaining('quiet'), findsWidgets);
     await _expectNoPracticeWrites(database);
-    expect(await database.select(database.vocabularyWords).get(), hasLength(1));
+    expect(await database.select(database.vocabularyWords).get(), hasLength(2));
     expect(await database.select(database.vocabularyImports).get(), isEmpty);
 
     await _scrollUntilFound(
@@ -1721,9 +1754,41 @@ void main() {
         .select(database.learningSessions)
         .getSingle();
     expect(session.activityType, 'sourcePractice');
-    expect(await database.select(database.vocabularyWords).get(), hasLength(1));
+    expect(await database.select(database.vocabularyWords).get(), hasLength(2));
     expect(await database.select(database.vocabularyImports).get(), isEmpty);
   });
+
+  testWidgets(
+    'source Quiz keeps its exact category context for adding a distractor',
+    (tester) async {
+      await tester.pumpWidget(screen());
+      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
+      await _scrollUntilFound(
+        tester,
+        find.byKey(const ValueKey('confirm-source')),
+      );
+      await tester.tap(find.byKey(const ValueKey('confirm-source')));
+      await _scrollUntilFound(
+        tester,
+        find.byKey(const ValueKey('start-source-quiz')),
+      );
+      await tester.tap(find.byKey(const ValueKey('start-source-quiz')));
+      await _pumpUntilFound(tester, find.byType(QuizScreen));
+      final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(quiz.categoryId, 'category-1');
+      expect(quiz.categoryName, 'Travel');
+      expect(quiz.returnLabel, 'กลับไปเลือกกิจกรรม');
+      expect(quiz.selectionMode, QuizWordSelectionMode.sourcePractice);
+      expect(quiz.wordIds, ['word-station']);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.rewardTransactions).get(), isEmpty);
+    },
+  );
 
   testWidgets('editing invalidates preview and recomputes matches', (
     tester,
@@ -1903,6 +1968,10 @@ void main() {
         'word-station',
         'word-airport',
       ]);
+      expect(
+        tester.widget<QuizScreen>(find.byType(QuizScreen)).returnLabel,
+        'กลับไปเลือกกิจกรรม',
+      );
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
       expect(find.byType(QuizScreen), findsNothing);

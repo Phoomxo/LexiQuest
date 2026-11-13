@@ -102,9 +102,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         : ((width - 720) / 2).clamp(24.0, double.infinity).toDouble();
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: MediaQuery.textScalerOf(context).scale(1) >= 1.5
-            ? 160
-            : M3Theme.appBarToolbarHeight(context),
+        toolbarHeight: M3Theme.rootAppBarToolbarHeight(context),
         title: Text(
           'ฝึกภาษา',
           maxLines: 2,
@@ -129,7 +127,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           horizontalPadding,
-          16,
+          24,
           horizontalPadding,
           24,
         ),
@@ -180,13 +178,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   if (hasDue)
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -195,14 +193,18 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                               case final categoryName?) ...[
                             Text(
                               'จากชุด $categoryName',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(fontSize: 15),
                             ),
                             const SizedBox(height: 8),
                           ],
                           if (nextWord != null) ...[
                             Text(
                               'ลองนึกความหมายก่อนเปิดคำแปล',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(fontSize: 15),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -212,16 +214,32 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                             ),
                             const SizedBox(height: 16),
                           ],
-                          FilledButton.icon(
-                            onPressed: () => _push(
-                              context,
-                              SrsFlashcardsScreen(learning: _learning),
-                            ),
-                            icon: const Icon(Icons.event_repeat_outlined),
-                            label: Text(
-                              nextWord == null
-                                  ? 'ทบทวน ${progress.dueReviewCount} คำ'
-                                  : 'ทบทวนคำนี้',
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(165, 48),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                              ),
+                              onPressed: () => _push(
+                                context,
+                                SrsFlashcardsScreen(learning: _learning),
+                              ),
+                              icon: const Icon(Icons.event_repeat_outlined),
+                              label: Text(
+                                nextWord == null
+                                    ? 'ทบทวน ${progress.dueReviewCount} คำ'
+                                    : 'ทบทวนคำนี้',
+                              ),
                             ),
                           ),
                         ],
@@ -247,9 +265,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               );
             },
           ),
+          const SizedBox(height: 48),
+          Text(
+            'ฝึกเพิ่มเติม',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 24),
-          Text('ฝึกเพิ่มเติม', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
           FutureBuilder<ProgressSnapshot>(
             future: _load,
             builder: (_, snapshot) => Column(
@@ -465,8 +488,19 @@ class _LearningTile extends StatelessWidget {
         ListTile(
           minVerticalPadding: 16,
           leading: Icon(icon),
-          title: Text(title),
-          subtitle: Text(subtitle),
+          title: Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 15),
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: onTap,
         ),
