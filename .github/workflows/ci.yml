@@ -106,7 +106,17 @@ jobs:
         run: ./tool/cli/prepare-field-model.ps1
 
       - name: Flutter unit and widget tests
+        id: flutter-tests
         run: flutter test --reporter compact
+
+      - name: Upload images from failed Flutter golden tests
+        if: failure() && steps.flutter-tests.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: flutter-golden-diffs
+          path: test/screens/failures/*.png
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Voice API CPU-only tests
         working-directory: backend/voice_api
