@@ -109,6 +109,8 @@ void main() {
       final result = await load();
 
       expect(result.sampleSize, 0);
+      expect(result.vocabularyWordCount, 2);
+      expect(result.nextDueSpelling, isNull);
       expect(result.accuracy, isNull);
       expect(result.streakDays, 0);
       expect(result.weaknesses, isEmpty);
@@ -123,6 +125,29 @@ void main() {
       }
     },
   );
+
+  test('home preview excludes other owners and deleted due words', () async {
+    await startSession();
+    await record('meaningChoice', false);
+    await database.customStatement(
+      'UPDATE srs_states SET due_at_utc_ms = 1 WHERE word_id = ?',
+      ['word-1'],
+    );
+    final due = await load();
+    expect(due.dueReviewCount, 1);
+    expect(due.nextDueSpelling, 'station');
+    expect((await load('another-owner')).vocabularyWordCount, 0);
+    expect((await load('another-owner')).nextDueSpelling, isNull);
+
+    await database.customStatement(
+      'UPDATE vocabulary_words SET is_deleted = 1 WHERE id = ?',
+      ['word-1'],
+    );
+    final deleted = await load();
+    expect(deleted.vocabularyWordCount, 1);
+    expect(deleted.dueReviewCount, 0);
+    expect(deleted.nextDueSpelling, isNull);
+  });
 
   test('mixed attempts derive accuracy points weakness and streak', () async {
     await learning.startSession(

@@ -16,14 +16,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('ทบทวน 3 คำ'), findsOneWidget);
-    expect(find.text('ถึงกำหนด 3 คำ • คำที่ควรฝึก 1 คำ'), findsOneWidget);
+    expect(find.text('ถึงเวลาทบทวน 3 คำ'), findsOneWidget);
     expect(find.text('ฝึกคำศัพท์'), findsOneWidget);
     expect(find.text('ฝึกคำแปล แล้วดูคำที่ควรทบทวน'), findsOneWidget);
     expect(find.text('ฝึกจากคลังคำศัพท์'), findsNothing);
   });
 
   testWidgets(
-    'hub prioritizes weaknesses when nothing is due and refreshes on return',
+    'hub keeps extra practice reachable and refreshes due words on return',
     (tester) async {
       var calls = 0;
       var due = 0;
@@ -38,13 +38,15 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('ฝึกคำที่ผิด 1 คำ'), findsOneWidget);
-      await tester.tap(find.text('ฝึกคำที่ผิด 1 คำ'));
+      expect(find.text('ทบทวนครบแล้ว'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('ฝึกจุดอ่อน'), 200);
+      await tester.tap(find.text('ฝึกจุดอ่อน'));
       await tester.pumpAndSettle();
       expect(find.byType(WeaknessClinicScreen), findsOneWidget);
       due = 2;
       await tester.pageBack();
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('ทบทวน 2 คำ'), -200);
       expect(find.text('ทบทวน 2 คำ'), findsOneWidget);
       expect(calls, greaterThanOrEqualTo(3));
     },
@@ -78,25 +80,72 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('ทบทวน 2 คำ'), findsNothing);
-      await tester.tap(find.text('ลองใหม่'));
+      expect(find.text('ทบทวนครบแล้ว'), findsNothing);
+      expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsNothing);
+      await tester.tap(find.text('ลองอีกครั้ง'));
       await tester.pumpAndSettle();
       expect(find.text('ทบทวน 2 คำ'), findsOneWidget);
     },
   );
 
-  testWidgets('fresh owner sees a quiz recommendation without fake progress', (
+  testWidgets('fresh owner reaches the library without an empty quiz', (
+    tester,
+  ) async {
+    var libraryOpened = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          loader: () async => snapshot(empty: true),
+          onOpenLibrary: () => libraryOpened = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsOneWidget);
+    expect(find.text('เริ่มฝึกคำศัพท์'), findsNothing);
+    expect(find.textContaining('ถึงกำหนด 0 คำ'), findsNothing);
+    expect(find.textContaining('คำที่ควรฝึก 0 คำ'), findsNothing);
+    expect(find.textContaining('100%'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'เลือกชุดคำศัพท์'));
+    expect(libraryOpened, isTrue);
+  });
+
+  testWidgets('saved vocabulary with no due words shows a completed queue', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: ChooseModeScreen(loader: () async => snapshot(empty: true)),
+        home: ChooseModeScreen(
+          loader: () async => snapshot(empty: true, words: 2),
+        ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('เริ่มฝึกคำศัพท์'), findsOneWidget);
-    expect(find.textContaining('ถึงกำหนด 0 คำ'), findsNothing);
-    expect(find.textContaining('คำที่ควรฝึก 0 คำ'), findsNothing);
-    expect(find.textContaining('100%'), findsNothing);
+
+    expect(find.text('ทบทวนครบแล้ว'), findsOneWidget);
+    expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsNothing);
+    expect(
+      find.widgetWithText(FilledButton, 'เลือกชุดคำศัพท์'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the first due word is shown without exposing its meaning', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          loader: () async => snapshot(due: 3, nextDueSpelling: 'station'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('station'), findsOneWidget);
+    expect(find.text('สถานี'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'ทบทวนคำนี้'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'เลือกชุดคำศัพท์'), findsNothing);
   });
 
   testWidgets('tablet centers the learning actions within 720dp', (
@@ -190,32 +239,38 @@ void main() {
   });
 }
 
-ProgressSnapshot snapshot({int due = 0, bool empty = false}) =>
-    ProgressSnapshot(
-      sampleSize: empty ? 0 : 3,
-      correctCount: empty ? 0 : 1,
-      wrongCount: empty ? 0 : 2,
-      accuracy: empty ? null : 1 / 3,
-      totalXp: 0,
-      completedSessions: 0,
-      streakDays: 0,
-      dueReviewCount: due,
-      masteredWordCount: 0,
-      achievementCount: 0,
-      gameLevel: 1,
-      skills: [],
-      weaknesses: empty
-          ? []
-          : const [
-              WeaknessEvidence(
-                wordId: 'synthetic-1',
-                spelling: 'station',
-                meaning: 'สถานี',
-                sampleSize: 3,
-                incorrectCount: 2,
-                errorRate: 2 / 3,
-                dueAtUtc: null,
-              ),
-            ],
-      recommendations: [],
-    );
+ProgressSnapshot snapshot({
+  int due = 0,
+  bool empty = false,
+  int? words,
+  String? nextDueSpelling,
+}) => ProgressSnapshot(
+  sampleSize: empty ? 0 : 3,
+  correctCount: empty ? 0 : 1,
+  wrongCount: empty ? 0 : 2,
+  accuracy: empty ? null : 1 / 3,
+  totalXp: 0,
+  completedSessions: 0,
+  streakDays: 0,
+  dueReviewCount: due,
+  vocabularyWordCount: words ?? (empty ? 0 : 2),
+  nextDueSpelling: nextDueSpelling,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 1,
+  skills: [],
+  weaknesses: empty
+      ? []
+      : const [
+          WeaknessEvidence(
+            wordId: 'synthetic-1',
+            spelling: 'station',
+            meaning: 'สถานี',
+            sampleSize: 3,
+            incorrectCount: 2,
+            errorRate: 2 / 3,
+            dueAtUtc: null,
+          ),
+        ],
+  recommendations: [],
+);

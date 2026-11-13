@@ -246,7 +246,10 @@ final class DriftLearningRepository implements LearningRepository {
             database.vocabularyWords.ownerId.equals(ownerId) &
                 database.vocabularyWords.isDeleted.equals(false),
           )
-          ..orderBy([OrderingTerm.asc(database.srsStates.dueAtUtcMs)])
+          ..orderBy([
+            OrderingTerm.asc(database.srsStates.dueAtUtcMs),
+            OrderingTerm.asc(database.vocabularyWords.id),
+          ])
           ..limit(limit);
     final rows = await query.get();
     return rows

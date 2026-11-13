@@ -76,10 +76,10 @@ void main() {
         .toList();
 
     expect(destinations.map((destination) => destination.label), <String>[
-      'เรียน',
-      'คำศัพท์',
-      'ก้าวหน้า',
-      'โปรไฟล์',
+      'ฝึกภาษา',
+      'คลังคำศัพท์',
+      'ความก้าวหน้า',
+      'บัญชี',
     ]);
   });
 
@@ -110,7 +110,7 @@ void main() {
     await _pumpHome(tester, ready: false);
     await _openDrawer(tester);
 
-    expect(find.text('คำศัพท์'), findsWidgets);
+    expect(find.text('คลังคำศัพท์'), findsWidgets);
     expect(find.text('ร้านค้ารางวัล'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -133,7 +133,7 @@ void main() {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('คำศัพท์').last);
+    await tester.tap(find.text('คลังคำศัพท์').last);
     await tester.pumpAndSettle();
 
     expect(find.byType(CategoriesPage), findsOneWidget);

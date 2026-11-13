@@ -8,6 +8,7 @@ import '../runtime/field_feature_registry.dart';
 import '../services/ai_reading_content_adapter.dart';
 
 import 'associative_reading_session_screen.dart';
+import 'categories_page.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
@@ -22,12 +23,16 @@ class ChooseModeScreen extends StatefulWidget {
     this.learning,
     this.featureRegistry,
     this.onOpenMenu,
+    this.onOpenLibrary,
+    this.isActive = true,
   });
 
   final ProgressLoader? loader;
   final LearningUseCases? learning;
   final FieldFeatureRegistry? featureRegistry;
   final VoidCallback? onOpenMenu;
+  final VoidCallback? onOpenLibrary;
+  final bool isActive;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
@@ -48,6 +53,12 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _load ??= _loadProgress();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChooseModeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) _refresh();
   }
 
   Future<ProgressSnapshot> _loadProgress() {
@@ -78,12 +89,23 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     final horizontalPadding = width < 360
         ? 16.0
         : width < 600
-        ? 20.0
+        ? 24.0
         : ((width - 720) / 2).clamp(24.0, double.infinity).toDouble();
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, 'เลือกแบบฝึก'),
+        toolbarHeight: MediaQuery.textScalerOf(context).scale(1) >= 1.5
+            ? 160
+            : M3Theme.appBarToolbarHeight(context),
+        title: Text(
+          'ฝึกภาษา',
+          maxLines: 2,
+          softWrap: true,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: false,
+        titleSpacing: horizontalPadding,
         actions: widget.onOpenMenu == null
             ? null
             : [
@@ -103,11 +125,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           24,
         ),
         children: [
-          Text(
-            'วันนี้อยากฝึกอะไร',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 12),
           FutureBuilder<ProgressSnapshot>(
             future: _load,
             builder: (context, snapshot) {
@@ -130,56 +147,70 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                     TextButton.icon(
                       onPressed: _refresh,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('ลองใหม่'),
+                      label: const Text('ลองอีกครั้ง'),
                     ),
                   ],
                 );
               }
               final progress = snapshot.requireData;
               final hasDue = canReview && progress.dueReviewCount > 0;
-              final hasWeakness = canWeakness && progress.weaknesses.isNotEmpty;
-              final hasRecommendation = hasDue || hasWeakness || canQuiz;
-              final queueSummary = <String>[
-                if (canReview && progress.dueReviewCount > 0)
-                  'ถึงกำหนด ${progress.dueReviewCount} คำ',
-                if (canWeakness && progress.weaknesses.isNotEmpty)
-                  'คำที่ควรฝึก ${progress.weaknesses.length} คำ',
-              ];
+              final canLibrary = _features.isVisible(FieldFeature.vocabulary);
+              final nextWord = progress.nextDueSpelling;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (queueSummary.isNotEmpty) Text(queueSummary.join(' • ')),
-                  if (queueSummary.isNotEmpty) const SizedBox(height: 12),
-                  if (hasRecommendation)
+                  Text(
+                    hasDue
+                        ? 'ถึงเวลาทบทวน ${progress.dueReviewCount} คำ'
+                        : progress.vocabularyWordCount == 0
+                        ? 'เพิ่มคำศัพท์เพื่อเริ่มฝึก'
+                        : canReview
+                        ? 'ทบทวนครบแล้ว'
+                        : 'เลือกกิจกรรมฝึกภาษา',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (hasDue) ...[
+                    if (nextWord != null) ...[
+                      Text(
+                        'ลองนึกความหมายก่อนเปิดคำแปล',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        nextWord,
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     FilledButton.icon(
                       onPressed: () => _push(
                         context,
-                        hasDue
-                            ? SrsFlashcardsScreen(learning: _learning)
-                            : hasWeakness
-                            ? WeaknessClinicScreen(
-                                loader: widget.loader,
-                                learning: _learning,
-                                featureRegistry: _features,
-                              )
-                            : QuizScreen(learning: _learning),
+                        SrsFlashcardsScreen(learning: _learning),
                       ),
-                      icon: Icon(
-                        hasDue
-                            ? Icons.event_repeat_outlined
-                            : hasWeakness
-                            ? Icons.healing_outlined
-                            : Icons.play_arrow,
-                      ),
+                      icon: const Icon(Icons.event_repeat_outlined),
                       label: Text(
-                        hasDue
+                        nextWord == null
                             ? 'ทบทวน ${progress.dueReviewCount} คำ'
-                            : hasWeakness
-                            ? 'ฝึกคำที่ผิด ${progress.weaknesses.length} คำ'
-                            : 'เริ่มฝึกคำศัพท์',
+                            : 'ทบทวนคำนี้',
                       ),
-                    )
-                  else if (canReading)
+                    ),
+                  ] else if (canLibrary) ...[
+                    Text(
+                      progress.vocabularyWordCount == 0
+                          ? 'เก็บคำที่อยากใช้ แล้วนำคำในชุดนั้นมาฝึก'
+                          : 'ฝึกเพิ่มได้จากชุดคำศัพท์ของคุณ',
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _openLibrary,
+                      icon: const Icon(Icons.menu_book_outlined),
+                      label: const Text('เลือกชุดคำศัพท์'),
+                    ),
+                  ] else if (canReading)
                     const Text('เลือกกิจกรรมอ่านด้านล่าง')
                   else
                     const Text('ยังไม่มีกิจกรรมที่เปิดใช้งานในหน้านี้'),
@@ -188,7 +219,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             },
           ),
           const SizedBox(height: 24),
-          Text('เลือกกิจกรรม', style: Theme.of(context).textTheme.titleLarge),
+          Text('ฝึกเพิ่มเติม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           if (canQuiz) ...[
             _LearningTile(
@@ -249,6 +280,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         ],
       ),
     );
+  }
+
+  void _openLibrary() {
+    if (widget.onOpenLibrary case final open?) {
+      open();
+    } else {
+      _push(context, const CategoriesPage());
+    }
   }
 
   Future<void> _openCategoryQuiz(BuildContext context) async {

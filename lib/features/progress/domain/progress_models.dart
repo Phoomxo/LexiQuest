@@ -76,6 +76,8 @@ final class ProgressSnapshot {
     required this.skills,
     required this.weaknesses,
     required this.recommendations,
+    this.vocabularyWordCount = 0,
+    this.nextDueSpelling,
     this.achievements = const [],
     this.algorithmVersion = 1,
     this.averageResponseTimeMs,
@@ -90,6 +92,8 @@ final class ProgressSnapshot {
   final int completedSessions;
   final int streakDays;
   final int dueReviewCount;
+  final int vocabularyWordCount;
+  final String? nextDueSpelling;
   final int masteredWordCount;
   final int achievementCount;
   final int gameLevel;

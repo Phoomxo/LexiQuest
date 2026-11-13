@@ -48,17 +48,30 @@ final class DriftProgressQueries {
                     database.learningSessions.state.equals('completed'),
               ))
             .getSingle();
-    final dueCountExpression = database.srsStates.id.count();
-    final dueRow =
-        await (database.selectOnly(database.srsStates)
-              ..addColumns([dueCountExpression])
+    final wordCount = database.vocabularyWords.id.count();
+    final wordRow =
+        await (database.selectOnly(database.vocabularyWords)
+              ..addColumns([wordCount])
               ..where(
-                database.srsStates.ownerId.equals(ownerId) &
-                    database.srsStates.dueAtUtcMs.isSmallerOrEqualValue(
-                      nowUtc.millisecondsSinceEpoch,
-                    ),
+                database.vocabularyWords.ownerId.equals(ownerId) &
+                    database.vocabularyWords.isDeleted.equals(false),
               ))
             .getSingle();
+    final dueWords = await database
+        .customSelect(
+          '''
+      SELECT w.spelling FROM srs_states s
+      INNER JOIN vocabulary_words w ON w.id = s.word_id AND w.owner_id = s.owner_id
+      WHERE s.owner_id = ? AND w.is_deleted = 0 AND s.due_at_utc_ms <= ?
+      ORDER BY s.due_at_utc_ms ASC, w.id ASC
+      ''',
+          variables: [
+            Variable<String>(ownerId),
+            Variable<int>(nowUtc.millisecondsSinceEpoch),
+          ],
+          readsFrom: {database.srsStates, database.vocabularyWords},
+        )
+        .get();
     final masteredCountExpression = database.srsStates.id.count();
     final masteredRow =
         await (database.selectOnly(database.srsStates)
@@ -93,7 +106,9 @@ final class DriftProgressQueries {
         attempts.map((row) => row.occurredAtUtcMs),
         nowUtc,
       ),
-      dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
+      dueReviewCount: dueWords.length,
+      vocabularyWordCount: wordRow.read(wordCount) ?? 0,
+      nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
       gameLevel: (totalXp ~/ 20) + 1,

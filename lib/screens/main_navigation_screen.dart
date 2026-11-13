@@ -65,17 +65,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           screen: ChooseModeScreen(
             featureRegistry: features,
             onOpenMenu: _openDrawer,
+            onOpenLibrary: _openLibrary,
+            isActive: _currentIndex == 0,
           ),
           icon: Icons.school_outlined,
           selectedIcon: Icons.school,
-          label: 'เรียน',
+          label: 'ฝึกภาษา',
         ),
       if (features.isVisible(FieldFeature.vocabulary))
         _NavigationEntry(
           screen: CategoriesPage(onOpenMenu: _openDrawer),
           icon: Icons.menu_book_outlined,
           selectedIcon: Icons.menu_book,
-          label: 'คำศัพท์',
+          label: 'คลังคำศัพท์',
         ),
       if (features.isVisible(FieldFeature.mastery))
         _NavigationEntry(
@@ -85,13 +87,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
           icon: Icons.analytics_outlined,
           selectedIcon: Icons.analytics,
-          label: 'ก้าวหน้า',
+          label: 'ความก้าวหน้า',
         ),
       _NavigationEntry(
         screen: ProfileSettingsScreen(onOpenMenu: _openDrawer),
         icon: Icons.person_outlined,
         selectedIcon: Icons.person,
-        label: 'โปรไฟล์',
+        label: 'บัญชี',
       ),
     ];
   }
@@ -129,6 +131,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
+
+  void _openLibrary() {
+    final index = _entries.indexWhere(
+      (entry) => entry.screen is CategoriesPage,
+    );
+    if (index >= 0) _selectDestination(index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,14 +217,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   if (features.isVisible(FieldFeature.vocabulary))
                     ListTile(
                       leading: const Icon(Icons.menu_book),
-                      title: const Text('คำศัพท์'),
+                      title: const Text('คลังคำศัพท์'),
                       onTap: () {
                         _scaffoldKey.currentState?.closeDrawer();
-                        setState(() {
-                          _currentIndex = _entries.indexWhere(
-                            (entry) => entry.screen is CategoriesPage,
-                          );
-                        });
+                        _openLibrary();
                       },
                     ),
                   if (features.isVisible(FieldFeature.shop))
@@ -349,6 +354,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _selectDestination(int index) {
     setState(() {
       _currentIndex = index;
+      _entries = _buildEntries(_fieldFeatures(context));
     });
   }
 
