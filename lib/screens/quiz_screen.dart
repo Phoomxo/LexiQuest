@@ -6,6 +6,8 @@ import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
@@ -19,6 +21,7 @@ class QuizScreen extends StatefulWidget {
     this.categoryName,
     this.learning,
     this.wordIds,
+    this.featureRegistry,
     this.selectionMode = QuizWordSelectionMode.weakness,
   });
 
@@ -26,6 +29,7 @@ class QuizScreen extends StatefulWidget {
   final String? categoryName;
   final LearningUseCases? learning;
   final List<String>? wordIds;
+  final FieldFeatureRegistry? featureRegistry;
   final QuizWordSelectionMode selectionMode;
 
   @override
@@ -48,6 +52,15 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _practicingMistakes = false;
   bool _hintVisible = false;
   bool _revealed = false;
+
+  FieldFeatureRegistry get _features =>
+      widget.featureRegistry ??
+      AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
+      const BuildFieldFeatureRegistry.allEnabled();
+
+  bool get _canPracticeMistakes =>
+      _features.isVisible(FieldFeature.weakness) &&
+      _features.isVisible(FieldFeature.quiz);
 
   @override
   void didChangeDependencies() {
@@ -374,7 +387,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 ? 'กลับไปเลือกกิจกรรม'
                 : 'กลับไปที่ชุดคำ',
             mistakes: List.unmodifiable(_mistakes),
-            onPracticeMistakes: _mistakes.isEmpty
+            onPracticeMistakes: _mistakes.isEmpty || !_canPracticeMistakes
                 ? null
                 : () => _practiceMistakes(scoreContext),
           ),
@@ -391,7 +404,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _practiceMistakes(BuildContext scoreContext) async {
-    if (_practicingMistakes) return;
+    if (_practicingMistakes || !_canPracticeMistakes) return;
     _practicingMistakes = true;
     try {
       await AppNavigator.pushPage<void>(
@@ -402,6 +415,7 @@ class _QuizScreenState extends State<QuizScreen> {
             wordIds: _mistakes.map((word) => word.id).toSet().toList(),
             categoryName: widget.categoryName,
             learning: _learning,
+            featureRegistry: _features,
           ),
         ),
       );

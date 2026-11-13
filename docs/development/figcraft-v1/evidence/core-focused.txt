@@ -14,7 +14,7 @@
 00:02 +12: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
 00:02 +13: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
 00:02 +13: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: add category validates inside the dialog before persistence
-WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
 Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
 Here is the stacktrace from when the database was opened a second time:
 #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
@@ -57,7 +57,7 @@ This warning will only appear on debug builds.
 00:03 +17: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
 00:03 +18: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
 00:03 +18: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: add word validates every field and guards pending navigation
-WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
 Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
 Here is the stacktrace from when the database was opened a second time:
 #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
@@ -96,7 +96,7 @@ Here is the stacktrace from when the database was opened a second time:
 This warning will only appear on debug builds.
 00:03 +19: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
 00:03 +19: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: category retry creates one fresh subscription and recovers
-WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
 Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
 Here is the stacktrace from when the database was opened a second time:
 #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
@@ -137,7 +137,7 @@ Here is the stacktrace from when the database was opened a second time:
 This warning will only appear on debug builds.
 00:04 +21: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
 00:04 +21: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: guest vocabulary survives widget reconstruction without cloud
-WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
 Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
 Here is the stacktrace from when the database was opened a second time:
 #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)

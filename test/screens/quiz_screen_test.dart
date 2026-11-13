@@ -14,6 +14,11 @@ import 'package:vocab_learning_app/features/learning/data/drift_associative_lear
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
@@ -80,6 +85,78 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final hiddenFeature in [FieldFeature.quiz, FieldFeature.weakness]) {
+    testWidgets('live score hides repair when $hiddenFeature is hidden', (
+      tester,
+    ) async {
+      final owner = await database.select(database.localOwners).getSingle();
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'word-2',
+              ownerId: owner.id,
+              categoryId: 'category-1',
+              spelling: 'ticket',
+              normalizedSpelling: 'ticket',
+              meaning: 'ตั๋ว',
+              normalizedMeaning: 'ตั๋ว',
+              partOfSpeech: 'noun',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: AppDependencies(
+            runtimeStatus: const AppRuntimeStatus(
+              localData: RuntimeAvailability.ready,
+              firebase: RuntimeAvailability.unavailable,
+              supabase: RuntimeAvailability.unavailable,
+              backends: RuntimeAvailability.unavailable,
+            ),
+            config: null,
+            guestSessionService: _UnusedGuestSession(),
+            fieldFeatures: BuildFieldFeatureRegistry({
+              FieldFeature.quiz: hiddenFeature == FieldFeature.quiz
+                  ? FieldFeatureState.hidden
+                  : FieldFeatureState.enabled,
+              FieldFeature.weakness: hiddenFeature == FieldFeature.weakness
+                  ? FieldFeatureState.hidden
+                  : FieldFeatureState.enabled,
+            }),
+          ),
+          child: MaterialApp(
+            home: QuizScreen(categoryId: 'category-1', learning: learning),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('ตั๋ว'));
+      await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
+      await tester.tap(find.text('คำถามถัดไป'));
+      await tester.pump();
+      await tester.tap(find.text('ตั๋ว'));
+      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      await tester.tap(find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+      await tester.pumpAndSettle();
+
+      expect(find.text('50%'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expect(find.text('ฝึกคำที่ผิด (1)'), findsNothing);
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      expect(session.state, 'completed');
+      expect(session.wrongCount, 1);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(2),
+      );
+    });
+  }
 
   testWidgets('selected set name and return context survive the saved result', (
     tester,
@@ -918,6 +995,8 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   }
   fail('Timed out waiting for $finder');
 }
+
+final class _UnusedGuestSession extends Fake implements GuestSessionService {}
 
 class _FailOnceRepository implements LearningRepository {
   _FailOnceRepository(

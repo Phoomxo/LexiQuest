@@ -157,6 +157,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
           builder: (_) => QuizScreen(
             wordIds: entry.mistakes.map((word) => word.id).toList(),
             learning: learning,
+            featureRegistry: _features,
           ),
         ),
       );

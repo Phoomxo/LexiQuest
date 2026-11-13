@@ -241,6 +241,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
           cefrLevel: mapped.cefrLevel,
           source: 'object-scanner:${result.modelId}@${result.modelVersion}',
         ),
+        expectedOwnerId: ownerId,
       );
       await _requireOwner(ownerId);
       return word;
@@ -272,7 +273,10 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     }
     if (categoryId != null) throw const VocabularyNotFoundFailure();
     try {
-      final category = await vocabulary.createCategory(name);
+      final category = await vocabulary.createCategory(
+        name,
+        expectedOwnerId: expectedOwnerId,
+      );
       await _requireOwner(expectedOwnerId);
       return category;
     } on DuplicateVocabularyFailure {

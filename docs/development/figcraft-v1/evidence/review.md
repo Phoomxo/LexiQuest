@@ -91,3 +91,7 @@ HTML ต้นทาง `ลองใช้งาน.html` มี SHA-256 `400b0
 อ่าน source, route factory, CSV ทั้งสาม และ tests ที่ใช้เป็น candidates. ตรวจ assert จำนวนแถว/ID ไม่ซ้ำ 48/44/64 และไม่มี runtime pass. รัน Impeccable context แล้วไม่พบ PRODUCT.md/DESIGN.md; scoped native review ใช้ blueprint/design evidence ที่ผู้ใช้ตรึงไว้. Native detector/overlay ไม่เกี่ยวข้อง. ไม่เปิด server ไม่เปลี่ยน device setting ไม่รัน Flutter/Gradle ไม่อ้างผล CI. ผู้พัฒนาต้องตรวจ hash/line pointers ใหม่บน SHA ส่งมอบ.
 
 Questions skipped: งานและเกณฑ์ได้รับอนุมัติแล้ว.
+
+## Milestone source review corrections
+
+The independent reviewer found a live-result repair route that ignored the quiz/weakness registry and a standalone-camera lookup race that could create a category/outbox for a new owner before detecting a switch. Both were reproduced with focused RED tests. The corrected source propagates the registry and pins expected owner IDs through vocabulary writer boundaries. The reviewer accepted the corrected source, including parent-to-WeaknessBody registry propagation. Root verified 101 boundary tests and clean full static analysis. This is source acceptance only; Android visual, camera, and TalkBack observations remain separate.

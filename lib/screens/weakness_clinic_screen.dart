@@ -101,8 +101,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
             return _WeaknessBody(
               progress,
               learning: widget.learning,
-              canQuiz: features.isVisible(FieldFeature.quiz),
-              canReview: features.isVisible(FieldFeature.srs),
+              features: features,
               onReturn: () {
                 if (!mounted) return;
                 _retry();
@@ -119,20 +118,20 @@ class _WeaknessBody extends StatelessWidget {
   const _WeaknessBody(
     this.progress, {
     this.learning,
-    required this.canQuiz,
-    required this.canReview,
+    required this.features,
     required this.onReturn,
   });
 
   final ProgressSnapshot progress;
   final LearningUseCases? learning;
-  final bool canQuiz;
-  final bool canReview;
+  final FieldFeatureRegistry features;
   final VoidCallback onReturn;
 
   @override
   Widget build(BuildContext context) {
     final practiceWords = progress.weaknesses.take(20).toList(growable: false);
+    final canQuiz = features.isVisible(FieldFeature.quiz);
+    final canReview = features.isVisible(FieldFeature.srs);
     return Column(
       children: [
         Padding(
@@ -180,6 +179,7 @@ class _WeaknessBody extends StatelessWidget {
                               .map((item) => item.wordId)
                               .toList(),
                           learning: learning,
+                          featureRegistry: features,
                         ),
                       ),
                     );

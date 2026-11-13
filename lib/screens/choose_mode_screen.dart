@@ -264,7 +264,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           icon: Icons.quiz_outlined,
           title: 'ฝึกคำศัพท์',
           subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
-          onTap: () => _push(context, QuizScreen(learning: _learning)),
+          onTap: () => _push(
+            context,
+            QuizScreen(learning: _learning, featureRegistry: _features),
+          ),
         ),
         _LearningTile(
           icon: Icons.category_outlined,
@@ -336,7 +339,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     if (categoryId != null && context.mounted) {
       await _push(
         context,
-        QuizScreen(categoryId: categoryId, learning: _learning),
+        QuizScreen(
+          categoryId: categoryId,
+          learning: _learning,
+          featureRegistry: _features,
+        ),
       );
     }
   }

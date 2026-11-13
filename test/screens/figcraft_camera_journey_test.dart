@@ -231,10 +231,21 @@ void main() {
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(milliseconds: 1));
-        if (databaseOpen) await tester.runAsync(fixture.database.close);
+        if (databaseOpen) {
+          await tester.runAsync(fixture.database.close);
+        }
         await tester.pump(const Duration(milliseconds: 1));
-        if (directory != null)
+        if (directory != null) {
+          final temporaryRoot = Directory.systemTemp.resolveSymbolicLinksSync();
+          final target = directory!.resolveSymbolicLinksSync();
+          expect(
+            target.startsWith(
+              '$temporaryRoot${Platform.pathSeparator}lexiquest-synthetic-camera-',
+            ),
+            isTrue,
+          );
           await tester.runAsync(() => directory!.delete(recursive: true));
+        }
         messenger.setMockMethodCallHandler(
           const MethodChannel('flutter_tts'),
           null,
