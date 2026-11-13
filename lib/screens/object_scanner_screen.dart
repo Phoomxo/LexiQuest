@@ -505,7 +505,7 @@ final class _ResultCard extends StatelessWidget {
             if (vocabulary == null) ...[
               const SizedBox(height: 8),
               const Text(
-                'พบวัตถุจริง แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์',
+                'ยังไม่มีคำแปลที่ตรวจสอบแล้วสำหรับคำนี้ ถ้าชื่อไม่ตรงกับภาพ ลองถ่ายใหม่อีกครั้ง',
               ),
             ],
             const SizedBox(height: 12),
