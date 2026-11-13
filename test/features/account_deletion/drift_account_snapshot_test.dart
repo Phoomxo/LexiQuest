@@ -40,12 +40,20 @@ void main() {
 
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
+      expect(snapshot.schemaVersion, database.schemaVersion);
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       expect(json['schemaVersion'], 10);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
+      expect(
+        snapshot.recordCount,
+        data.values.fold<int>(
+          0,
+          (count, rows) => count + (rows as List).length,
+        ),
+      );
       expect((data['vocabulary_categories'] as List).single['id'], 'cat-a');
       expect(utf8.decode(snapshot.bytes), isNot(contains('cat-b')));
       expect(utf8.decode(snapshot.bytes), isNot(contains('uid-b')));

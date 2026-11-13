@@ -6,17 +6,27 @@ import '../../../data/local/app_database.dart';
 import '../domain/account_deletion_contracts.dart';
 
 final class LocalAccountSnapshot {
+  static const exclusions = [
+    'cloud-only records',
+    'authentication credentials',
+    'API keys and tokens',
+  ];
+
   const LocalAccountSnapshot({
     required this.bytes,
     required this.sha256,
     required this.coveredScopes,
     required this.generatedAtUtc,
+    required this.schemaVersion,
+    required this.recordCount,
   });
 
   final Uint8List bytes;
   final String sha256;
   final Set<String> coveredScopes;
   final DateTime generatedAtUtc;
+  final int schemaVersion;
+  final int recordCount;
 }
 
 /// Creates the complete owner-scoped local snapshot used before account deletion.
@@ -35,7 +45,7 @@ final class DriftAccountSnapshotBuilder {
     }
 
     final scopes = requiredFullAccountExportScopes.toList()..sort();
-    final data = <String, Object?>{};
+    final data = <String, List<Map<String, Object?>>>{};
     await database.transaction(() async {
       for (final scope in scopes) {
         final rows = await database
@@ -55,11 +65,7 @@ final class DriftAccountSnapshotBuilder {
           'generatedAtUtc': generatedAt.toIso8601String(),
           'ownerId': owner,
           'coveredScopes': scopes,
-          'exclusions': const [
-            'cloud-only records',
-            'authentication credentials',
-            'API keys and tokens',
-          ],
+          'exclusions': LocalAccountSnapshot.exclusions,
           'data': data,
         }),
       ),
@@ -69,6 +75,11 @@ final class DriftAccountSnapshotBuilder {
       sha256: sha256.convert(bytes).toString(),
       coveredScopes: Set.unmodifiable(scopes),
       generatedAtUtc: generatedAt,
+      schemaVersion: database.schemaVersion,
+      recordCount: data.values.fold<int>(
+        0,
+        (count, rows) => count + rows.length,
+      ),
     );
   }
 
