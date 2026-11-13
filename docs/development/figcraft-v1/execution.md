@@ -32,20 +32,20 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 | S3 | Root integrates Quiz/Score/Weakness/source/history fixes. | Real answers, honest assessment, durable outcomes and origin-specific return. | Full1903 and review accepted; remaining catalogue/native criteria remain open |
 | S4 | Existing scanner/manual-correction authority and its tests. | Explicit save into original set, recovery and separate accuracy evidence. | v28 actual-photo/manual journey accepted; known-object accuracy not_checked; other service criteria open |
 | S5 | Existing Settings/Profile/export/account boundaries. | Owner isolation, export/deletion, offline learning, research default-off. | Full-export adapter committed; new logout/freshness/scope subcards accepted; remaining catalogue/composition/release criteria open |
-| S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Grounded; two architecture sketches running, no production/migration changes |
-| S7 | Root integrates the frozen source. | Current-SHA regression, 48/44/64 disposition, APK/hash/CI and native critique. | Full1903/analysis clean with517 unchanged inputs; new APK/native/CI and ledger reconciliation pending |
+| S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Reconstruction selected; economy unit passes44/review; segmented calendar reframe running; schema10 unchanged |
+| S7 | Root integrates the frozen source. | Current-SHA regression, 48/44/64 disposition, APK/hash/CI and native critique. | Baseline04c19a93 full1903/CI/build accepted; vivo v29 observations accepted; new emulator P2 images, subsequent S6 integration and catalogue reconciliation pending |
 
 ## Grounded constraints
 
 ### S6 architecture task board
 
 - [x] Ground: three read-only source explorers and a separate explainer traced committed answers through Quest, Streak, XP/coins and schema/owner inventory. Working artifacts: build/architect-s6/grounding.txt and how.txt; no S6 production changes.
-- [ ] Sketch: compare two complete data/interface designs, then synthesize against replay, recurrence, owner/timezone and reward provenance checks.
-- [ ] Agree: proceed under the existing implementation authorization once the sketch/write set/checks are concrete; no new discussion-only approval gate.
-- [ ] Implement: reserve the actual next migration before migration code, then implement verifiable units after the current UI verification/build snapshot is closed.
+- [x] Sketch: both whole packages and alternatives read; reconstruction selected, independent judge A23/B24of30. See s6-architecture.md for grafts and constraints.
+- [x] Agree: existing implementation authorization applies; no new discussion-only approval gate. UI baseline04c19a93 now has successful full CI and vivo v29 evidence.
+- [ ] Implement: S6-A economy44GREEN/analysis/review accepted; S6-B single-interval premise disproved and exact-segment reframe selected, implementation running. Schema10/11unreserved; actualv10 dump saved before migration.
 - [ ] Scrap: conditional review step if the selected shape cannot protect its invariants; never patch around an invalid ownership model.
 
-Arena checklist: frame complete (build/architect-s6/rubric.txt); two independent candidates running (gpt-6-astra and gpt-6.1-sol); cross-judge pending; pick/graft/verify pending. Canonical UI remains the existing Mastery screen. No S6 production/test source or schema reservation has changed. Claude/Grok skill defaults are unavailable here; source explorers inherited the parent model and the separate explainer used gpt-6-astra. Record actual supported models for the remaining judge.
+Arena checklist: original frame, both candidates, cross-judge, pick and graft complete; implementation verification is per unit. Actual models: gpt-6-astra/high, gpt-6.1-sol/high, cross-judge gpt-6.1-terra/high. The single-interval calendar premise was disproved by a rerunnable St Johns test; a directed comparison chose exact segments over honest refusal (18/15of20). Current writer is candidate-a on the calendar primitive/test only. Root owns integration/queue. Canonical UI remains existing Mastery, schema10 and11unreserved. Claude/Grok defaults are unavailable; no provider or model identity is invented.
 
 - Baseline vivo V2041 had versionCode26. Signed v28 is now installed with existing data retained; read actual device/signing/schema state before the next update. Do not clear or uninstall it.
 - Flutter dependencies resolve using the existing lockfile. No dependency upgrade is part of this task.

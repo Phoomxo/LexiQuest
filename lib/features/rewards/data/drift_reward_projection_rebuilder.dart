@@ -88,7 +88,8 @@ final class DriftRewardProjectionRebuilder {
                 (r) =>
                     r.ownerId.equals(ownerId) &
                     r.amount.isBiggerThanValue(0) &
-                    r.entryType.equals('rewardPurchase').not(),
+                    r.entryType.equals('rewardPurchase').not() &
+                    r.entryType.equals('questClaimXpV1').not(),
               )
               ..orderBy([(r) => OrderingTerm.asc(r.id)]))
             .get();
