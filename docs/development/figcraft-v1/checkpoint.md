@@ -1,6 +1,13 @@
 # Continuous execution checkpoint
 
-Updated 2026-11-14, approximately 06:36 Bangkok. Running work, not a pause or completion.
+Updated 2026-11-14, approximately 06:45 Bangkok. Running work, not a pause or completion.
+
+## Latest verified unit at06:45
+
+- S6-A committed/pushed as e6019de044a5a27f40136ff1f331f064cf3abd9a; its CI43528611142 is running. PR16's remote head is this commit until the next push. The complete1903 baseline remains04c19a93.
+- S6-B exact-segment primitive is now accepted: motivation38, clean scoped analysis, unchanged source hashes and independent final review. See evidence/s6-b-calendar.txt and the updated s6-architecture.md. Both former P1s are resolved; no current intentional RED remains. No production caller/migration/claim has been wired.
+- Root is committing S6-B locally, holding the push until the next integration point to avoid cancelling e6019de0 CI. Check actual local HEAD versus remote/PR head before making claims. Old live-delta details below describe the completed debugging history, not active calendar blockers.
+- All implementation writers are frozen. Candidate-a resumes ONLY read-only migration notes; candidate-b lifecycle notes are frozen; cross-judge is read-only/accepted. Latest session96752 is consumed exit0 and Flutter queue is clear. Root owns the next schema-fixture/codegen/test unit; schema10/11unreserved remains unchanged.
 
 ## Live delta at06:36 (newer than historical details below)
 

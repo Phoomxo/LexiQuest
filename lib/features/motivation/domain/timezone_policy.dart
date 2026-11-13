@@ -9,13 +9,155 @@
 /// app start-up before invoking any method here.
 library;
 
+import 'dart:math' as math;
+
 import 'package:timezone/timezone.dart';
+
+/// Includes [startUtc] and excludes [endUtc].
+final class UtcSegment {
+  const UtcSegment._(this.startUtc, this.endUtc);
+
+  final DateTime startUtc;
+  final DateTime endUtc;
+
+  bool containsUtc(DateTime utc) {
+    if (!utc.isUtc) throw ArgumentError.value(utc, 'utc', 'must be UTC');
+    return !utc.isBefore(startUtc) && utc.isBefore(endUtc);
+  }
+}
+
+/// Civil labels are UTC date ordinals. Clock rollbacks can split a labelled
+/// day or week into multiple disjoint UTC segments.
+final class LearningCalendarWindow {
+  const LearningCalendarWindow._({
+    required this.timezoneId,
+    required this.offsetSeconds,
+    required this.civilDay,
+    required this.weekMonday,
+    required this.daySegments,
+    required this.weekSegments,
+  });
+
+  final String timezoneId;
+  final int offsetSeconds;
+  final DateTime civilDay;
+  final DateTime weekMonday;
+  final List<UtcSegment> daySegments;
+  final List<UtcSegment> weekSegments;
+}
 
 /// Policy namespace — not meant to be instantiated.
 abstract final class TimezonePolicy {
   /// Schema version. Increment when the calculation logic changes so that
   /// cached streak values can be invalidated if necessary.
   static const int version = 1;
+
+  /// Captures the UTC segments of the occurrence's day and Monday-based week
+  /// from [epochEffectiveAtUtc] until (but excluding) [epochExpiresAtUtc].
+  static LearningCalendarWindow captureWindow(
+    DateTime occurredAtUtc,
+    String timezoneId, {
+    DateTime? epochEffectiveAtUtc,
+    DateTime? epochExpiresAtUtc,
+  }) {
+    if (!occurredAtUtc.isUtc) {
+      throw ArgumentError.value(occurredAtUtc, 'occurredAtUtc', 'must be UTC');
+    }
+    if (epochEffectiveAtUtc != null &&
+        (!epochEffectiveAtUtc.isUtc ||
+            epochEffectiveAtUtc.isAfter(occurredAtUtc))) {
+      throw ArgumentError.value(
+        epochEffectiveAtUtc,
+        'epochEffectiveAtUtc',
+        'must be UTC and at or before the occurrence',
+      );
+    }
+    if (epochExpiresAtUtc != null &&
+        (!epochExpiresAtUtc.isUtc ||
+            !epochExpiresAtUtc.isAfter(occurredAtUtc))) {
+      throw ArgumentError.value(
+        epochExpiresAtUtc,
+        'epochExpiresAtUtc',
+        'must be UTC and after the occurrence',
+      );
+    }
+    if (!timeZoneDatabase.isInitialized) {
+      throw StateError('timezone database is not initialized');
+    }
+    final location = timeZoneDatabase.locations[timezoneId];
+    if (location == null) {
+      throw ArgumentError.value(timezoneId, 'timezoneId', 'unknown IANA zone');
+    }
+
+    // Floor to the containing tzdb millisecond, including before the Unix epoch.
+    final occurrenceMs =
+        (occurredAtUtc.microsecondsSinceEpoch - occurredAtUtc.microsecond) ~/
+        Duration.microsecondsPerMillisecond;
+    final offset = location.timeZone(occurrenceMs).offset;
+    final wallMs = occurrenceMs + offset;
+    RangeError.checkValueInInterval(wallMs, minTime, maxTime, 'civil time');
+    final wall = DateTime.fromMillisecondsSinceEpoch(wallMs, isUtc: true);
+    final day = DateTime.utc(wall.year, wall.month, wall.day);
+    final dayMs = day.millisecondsSinceEpoch;
+    final weekMs =
+        dayMs - (day.weekday - DateTime.monday) * Duration.millisecondsPerDay;
+    var minOffset = offset;
+    var maxOffset = offset;
+    for (final zone in location.zones) {
+      minOffset = math.min(minOffset, zone.offset);
+      maxOffset = math.max(maxOffset, zone.offset);
+    }
+
+    List<UtcSegment> segments(int civilStart, int days) {
+      final civilEnd = civilStart + days * Duration.millisecondsPerDay;
+      var cursor = civilStart - maxOffset;
+      final limit = civilEnd - minOffset;
+      if (civilStart < minTime ||
+          civilEnd > maxTime ||
+          cursor < minTime ||
+          limit > maxTime) {
+        throw RangeError('Calendar period exceeds the supported date range');
+      }
+      final result = <UtcSegment>[];
+      while (cursor < limit) {
+        final interval = location.lookupTimeZone(cursor);
+        final next = math.min(interval.end, limit);
+        final first = math.max(cursor, civilStart - interval.timeZone.offset);
+        final last = math.min(next, civilEnd - interval.timeZone.offset);
+        if (first < last) {
+          var start = DateTime.fromMillisecondsSinceEpoch(first, isUtc: true);
+          var end = DateTime.fromMillisecondsSinceEpoch(last, isUtc: true);
+          if (epochEffectiveAtUtc != null &&
+              start.isBefore(epochEffectiveAtUtc)) {
+            start = epochEffectiveAtUtc;
+          }
+          if (epochExpiresAtUtc != null && end.isAfter(epochExpiresAtUtc)) {
+            end = epochExpiresAtUtc;
+          }
+          if (start.isBefore(end)) {
+            if (result.isNotEmpty &&
+                result.last.endUtc.isAtSameMomentAs(start)) {
+              start = result.removeLast().startUtc;
+            }
+            result.add(UtcSegment._(start, end));
+          }
+        }
+        cursor = next;
+      }
+      return List.unmodifiable(result);
+    }
+
+    final days = segments(dayMs, 1);
+    final weeks = segments(weekMs, 7);
+    return LearningCalendarWindow._(
+      timezoneId: timezoneId,
+      offsetSeconds: offset ~/ Duration.millisecondsPerSecond,
+      civilDay: day,
+      weekMonday: DateTime.fromMillisecondsSinceEpoch(weekMs, isUtc: true),
+      daySegments: days,
+      weekSegments: weeks,
+    );
+  }
 
   /// Returns the learner's *learning day* as a local [DateTime] with no
   /// time component (year/month/day only) for the given [utcNow] in the

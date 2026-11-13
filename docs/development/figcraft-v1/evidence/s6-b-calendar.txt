@@ -1,0 +1,36 @@
+S6-B calendar primitive, 2026-11-14, parent e6019de0.
+Scope: timezone_policy.dart and its existing test, no production callers yet.
+
+RED sequence from actual installed Flutter/timezone0.9.4 data:
+- Missing captureWindow API, then initial26 focused checks passed.
+- Gaza repeated midnight:19 passed/one failed, expected21Z but constructor22Z.
+- Earliest-boundary fix passed78 reward/motivation tests, but St Johns then
+  disproved one civil day = one contiguous UTC interval:20 passed/one failed.
+  Existing label facts show Saturday -> Sunday -> Saturday -> Sunday.
+  build/s6-b-midnight-red-v2.txt and s6-b-noncontiguous-red.txt preserve evidence.
+
+Root read both bounded whole primitive alternatives. Exact segments chosen over
+typed refusal; judge A18/B15of20. Both need inverse interval enumeration; exact
+segments avoid rejecting valid dates or admitting a min/max hull gap.
+UtcSegment lists are private-constructed, ordered, normalized and unmodifiable.
+Both epoch ends retain microseconds; pre-1970 tzdb lookup floors correctly.
+Old day APIs unchanged; no single-interval compatibility getters added.
+The logical civil date/rule/cadence identifies a future reward, never a segment.
+
+Final GREEN: flutter test --no-pub --reporter expanded test/features/motivation
+38 passed, build/s6-b-segments-green.txt.
+Scoped analysis of lib/features/motivation and test/features/motivation: clean.
+Formatting/diff checks passed; both input hashes unchanged throughout verification.
+Independent s6_cross_judge reviewed actual final source and accepted both P1 fixes,
+epoch precision, immutability, valid-TZDB progress, gap exclusion and test coverage.
+
+Windows source bytes SHA256:
+policy ce01154c6f3c32a55d040074d1b7cca2888ef0587876c34c3e69115bf7f9aa74
+test f584de5394cbd868c11c47d54817bbbb71dfd0aeafac808a840ff00a3809675e
+GREEN9165896426ef9dcf940fbc63a4e3e845279718203476ad147f61be74f1b3e4bd
+analysis d6ccf93f781531122ca657b613c1d5945cc73012ab65ecb13f9ba24be63da6e0
+
+The first Gaza|Apia batch selector hit Windows .bat pipe quoting; corrected
+full-file command observed the real RED. No assertions were skipped/weakened.
+Synthetic Monday rollback is explicitly test-only and restores registry state.
+No benchmark, migration, Quest claim/UI/bootstrap or whole-f30 acceptance implied.
