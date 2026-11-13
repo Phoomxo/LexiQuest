@@ -22,7 +22,12 @@ Development work follows the [LexiQuest Agentic Development Life Cycle](docs/dev
 
 ### Running Flutter Tests
 
+The LiteRT tests run inference on a real MobileNet model. Run the preparation
+script from the project root on a fresh checkout or after `flutter clean`.
+It verifies the model's size and SHA-256 and reuses a verified local copy.
+
 ```powershell
+./tool/cli/prepare-field-model.ps1
 flutter test
 ```
 

@@ -101,6 +101,10 @@ jobs:
       - name: Flutter static analysis
         run: flutter analyze
 
+      - name: Prepare the verified MobileNet fixture for LiteRT tests
+        shell: pwsh
+        run: ./tool/cli/prepare-field-model.ps1
+
       - name: Flutter unit and widget tests
         run: flutter test --reporter compact
 
