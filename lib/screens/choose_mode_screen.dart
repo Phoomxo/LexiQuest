@@ -40,6 +40,10 @@ class ChooseModeScreen extends StatefulWidget {
 
 class _ChooseModeScreenState extends State<ChooseModeScreen> {
   Future<ProgressSnapshot>? _load;
+  ProgressLoader? _loader;
+
+  ProgressLoader? get _currentLoader =>
+      widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
 
   LearningUseCases? get _learning =>
       widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
@@ -52,21 +56,29 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _load ??= _loadProgress();
+    if (_load == null || _currentLoader != _loader) {
+      _load = _loadProgress();
+    }
   }
 
   @override
   void didUpdateWidget(covariant ChooseModeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) _refresh();
+    if (oldWidget.loader != widget.loader ||
+        (widget.isActive && !oldWidget.isActive)) {
+      _load = _loadProgress();
+    }
   }
 
   Future<ProgressSnapshot> _loadProgress() {
-    final loader =
-        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
-    return loader == null
-        ? Future.error(StateError('progress dependency unavailable'))
+    final loader = _loader = _currentLoader;
+    final next = loader == null
+        ? Future<ProgressSnapshot>.error(
+            StateError('progress dependency unavailable'),
+          )
         : Future<ProgressSnapshot>.sync(loader);
+    next.ignore();
+    return next;
   }
 
   void _refresh() {
@@ -179,6 +191,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (progress.nextDueCategoryName
+                              case final categoryName?) ...[
+                            Text(
+                              'จากชุด $categoryName',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           if (nextWord != null) ...[
                             Text(
                               'ลองนึกความหมายก่อนเปิดคำแปล',
@@ -230,7 +250,18 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           const SizedBox(height: 24),
           Text('ฝึกเพิ่มเติม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          ..._activities(),
+          FutureBuilder<ProgressSnapshot>(
+            future: _load,
+            builder: (_, snapshot) => Column(
+              children: _activities(
+                progress:
+                    snapshot.connectionState == ConnectionState.done &&
+                        !snapshot.hasError
+                    ? snapshot.data
+                    : null,
+              ),
+            ),
+          ),
           TextButton(
             onPressed: () => _push(
               context,
@@ -252,13 +283,24 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     );
   }
 
-  List<Widget> _activities({bool all = false}) {
+  List<Widget> _activities({bool all = false, ProgressSnapshot? progress}) {
     final canQuiz = _features.isVisible(FieldFeature.quiz);
     final canReview = _features.isVisible(FieldFeature.srs);
     final canWeakness = _features.isVisible(FieldFeature.weakness);
     final canReading = _features.isVisible(FieldFeature.reading);
     final canViewProgress = _features.isVisible(FieldFeature.mastery);
     return [
+      if (!all &&
+          canQuiz &&
+          _features.isVisible(FieldFeature.vocabulary) &&
+          (progress?.vocabularyWordCount ?? 0) > 0 &&
+          (progress?.dueReviewCount ?? 0) > 0)
+        _LearningTile(
+          icon: Icons.menu_book_outlined,
+          title: 'ฝึกจากชุดคำ',
+          subtitle: 'เลือกชุดคำศัพท์ของคุณแล้วเริ่มฝึก',
+          onTap: _openLibrary,
+        ),
       if (all && canQuiz) ...[
         _LearningTile(
           icon: Icons.quiz_outlined,
@@ -303,10 +345,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             ),
           ),
         ),
-      if (canWeakness)
+      if (canWeakness && (all || progress?.weaknesses.isNotEmpty == true))
         _LearningTile(
           icon: Icons.healing_outlined,
-          title: 'ฝึกจุดอ่อน',
+          title: 'ฝึกคำที่ตอบผิด',
           subtitle: 'ฝึกคำที่เคยตอบผิดได้โดยไม่ต้องรอวันทบทวน',
           onTap: () => _push(
             context,

@@ -53,6 +53,21 @@ class _DialogVocabularyRepository extends Fake implements VocabularyRepository {
   ) => Stream.value(const []);
 
   @override
+  Stream<List<domain_vocabulary.VocabularyCategorySummary>> watchLibrary(
+    String ownerId,
+  ) => watchCategories(ownerId).map(
+    (categories) => categories
+        .map(
+          (category) => domain_vocabulary.VocabularyCategorySummary(
+            category: category,
+            wordCount: 0,
+            previewSpellings: const [],
+          ),
+        )
+        .toList(),
+  );
+
+  @override
   Future<domain_vocabulary.VocabularyCategory> createCategory(
     domain_vocabulary.VocabularyCategory category,
   ) async {
@@ -73,6 +88,21 @@ class _DialogVocabularyRepository extends Fake implements VocabularyRepository {
 
 class _RetryVocabularyRepository extends Fake implements VocabularyRepository {
   var watchCalls = 0;
+
+  @override
+  Stream<List<domain_vocabulary.VocabularyCategorySummary>> watchLibrary(
+    String ownerId,
+  ) => watchCategories(ownerId).map(
+    (categories) => categories
+        .map(
+          (category) => domain_vocabulary.VocabularyCategorySummary(
+            category: category,
+            wordCount: 0,
+            previewSpellings: const [],
+          ),
+        )
+        .toList(),
+  );
 
   @override
   Stream<List<domain_vocabulary.VocabularyCategory>> watchCategories(
@@ -412,7 +442,7 @@ void main() {
       await pumpUntilFound(tester, find.text('Travel'));
 
       expect(find.text('Travel'), findsOneWidget);
-      expect(find.byTooltip('ลบหมวดหมู่ Travel'), findsOneWidget);
+      expect(find.byTooltip('ตัวเลือกชุด Travel'), findsOneWidget);
       await tester.tap(find.text('Travel'));
       await pumpUntilFound(tester, find.byKey(const ValueKey('add-word')));
       await finishRouteTransition(tester);

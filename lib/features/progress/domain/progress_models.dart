@@ -80,6 +80,7 @@ final class ProgressSnapshot {
     required this.recommendations,
     this.vocabularyWordCount = 0,
     this.nextDueSpelling,
+    this.nextDueCategoryName,
     this.recentSessions = const [],
     this.achievements = const [],
     this.algorithmVersion = 1,
@@ -97,6 +98,7 @@ final class ProgressSnapshot {
   final int dueReviewCount;
   final int vocabularyWordCount;
   final String? nextDueSpelling;
+  final String? nextDueCategoryName;
   final List<SessionHistoryEntry> recentSessions;
   final int masteredWordCount;
   final int achievementCount;
@@ -118,6 +120,8 @@ final class SessionHistoryEntry {
     required this.startedAtUtc,
     required this.completedAtUtc,
     this.mistakes = const [],
+    this.categoryId,
+    this.categoryName,
   });
 
   final String ownerId;
@@ -126,4 +130,6 @@ final class SessionHistoryEntry {
   final DateTime startedAtUtc;
   final DateTime completedAtUtc;
   final List<QuizWord> mistakes;
+  final String? categoryId;
+  final String? categoryName;
 }

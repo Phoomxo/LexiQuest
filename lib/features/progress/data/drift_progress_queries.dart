@@ -61,8 +61,9 @@ final class DriftProgressQueries {
     final dueWords = await database
         .customSelect(
           '''
-      SELECT w.spelling FROM srs_states s
+      SELECT w.spelling, c.name AS category_name FROM srs_states s
       INNER JOIN vocabulary_words w ON w.id = s.word_id AND w.owner_id = s.owner_id
+      LEFT JOIN vocabulary_categories c ON c.id = w.category_id AND c.owner_id = w.owner_id
       WHERE s.owner_id = ? AND w.is_deleted = 0 AND s.due_at_utc_ms <= ?
       ORDER BY s.due_at_utc_ms ASC, w.id ASC
       ''',
@@ -70,7 +71,11 @@ final class DriftProgressQueries {
             Variable<String>(ownerId),
             Variable<int>(nowUtc.millisecondsSinceEpoch),
           ],
-          readsFrom: {database.srsStates, database.vocabularyWords},
+          readsFrom: {
+            database.srsStates,
+            database.vocabularyWords,
+            database.vocabularyCategories,
+          },
         )
         .get();
     final masteredCountExpression = database.srsStates.id.count();
@@ -110,6 +115,9 @@ final class DriftProgressQueries {
       dueReviewCount: dueWords.length,
       vocabularyWordCount: wordRow.read(wordCount) ?? 0,
       nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
+      nextDueCategoryName: dueWords.firstOrNull?.readNullable<String>(
+        'category_name',
+      ),
       recentSessions: await _loadRecentSessions(ownerId),
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
@@ -155,20 +163,24 @@ final class DriftProgressQueries {
   }
 
   Future<List<SessionHistoryEntry>> _loadRecentSessions(String ownerId) async {
-    final rows =
-        await (database.select(database.learningSessions)
-              ..where(
-                (row) =>
-                    row.ownerId.equals(ownerId) &
-                    row.state.equals('completed') &
-                    row.endedAtUtcMs.isNotNull(),
-              )
-              ..orderBy([
-                (row) => OrderingTerm.desc(row.endedAtUtcMs),
-                (row) => OrderingTerm.desc(row.id),
-              ])
-              ..limit(20))
-            .get();
+    final rows = await database
+        .customSelect(
+          '''
+      $_historyProjection
+      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      GROUP BY s.id
+      ORDER BY s.ended_at_utc_ms DESC, s.id DESC
+      LIMIT 20
+      ''',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {
+            database.learningSessions,
+            database.answerAttempts,
+            database.vocabularyWords,
+            database.vocabularyCategories,
+          },
+        )
+        .get();
     return rows.map(_historyEntry).toList(growable: false);
   }
 
@@ -176,17 +188,64 @@ final class DriftProgressQueries {
     required String ownerId,
     required String sessionId,
   }) async {
-    final row =
-        await (database.select(database.learningSessions)..where(
-              (row) =>
-                  row.ownerId.equals(ownerId) &
-                  row.id.equals(sessionId) &
-                  row.state.equals('completed') &
-                  row.endedAtUtcMs.isNotNull(),
-            ))
-            .getSingleOrNull();
+    final row = await database
+        .customSelect(
+          '''
+      $_historyProjection
+      WHERE s.owner_id = ? AND s.id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      GROUP BY s.id
+      ''',
+          variables: [Variable<String>(ownerId), Variable<String>(sessionId)],
+          readsFrom: {
+            database.learningSessions,
+            database.answerAttempts,
+            database.vocabularyWords,
+            database.vocabularyCategories,
+          },
+        )
+        .getSingleOrNull();
     if (row == null) return null;
-    final mistakes = await database
+    return _historyEntry(
+      row,
+      mistakes: await _loadSessionMistakes(ownerId, sessionId),
+    );
+  }
+
+  Future<SessionHistoryEntry?> loadLatestSessionForCategory({
+    required String ownerId,
+    required String categoryId,
+  }) async {
+    final row = await database
+        .customSelect(
+          '''
+      $_historyProjection
+      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      GROUP BY s.id
+      HAVING COUNT(DISTINCT c.id) = 1 AND COUNT(c.id) = COUNT(a.id) AND MIN(c.id) = ?
+      ORDER BY s.ended_at_utc_ms DESC, s.id DESC
+      LIMIT 1
+      ''',
+          variables: [Variable<String>(ownerId), Variable<String>(categoryId)],
+          readsFrom: {
+            database.learningSessions,
+            database.answerAttempts,
+            database.vocabularyWords,
+            database.vocabularyCategories,
+          },
+        )
+        .getSingleOrNull();
+    if (row == null) return null;
+    return _historyEntry(
+      row,
+      mistakes: await _loadSessionMistakes(ownerId, row.read<String>('id')),
+    );
+  }
+
+  Future<List<QuizWord>> _loadSessionMistakes(
+    String ownerId,
+    String sessionId,
+  ) async {
+    final rows = await database
         .customSelect(
           '''
       SELECT DISTINCT w.id, w.category_id, w.spelling, w.meaning, w.part_of_speech
@@ -199,26 +258,24 @@ final class DriftProgressQueries {
           readsFrom: {database.answerAttempts, database.vocabularyWords},
         )
         .get();
-    return _historyEntry(
-      row,
-      mistakes: mistakes
-          .map(
-            (word) => QuizWord(
-              id: word.read<String>('id'),
-              categoryId: word.read<String>('category_id'),
-              spelling: word.read<String>('spelling'),
-              meaning: word.read<String>('meaning'),
-              partOfSpeech: word.read<String>('part_of_speech'),
-            ),
-          )
-          .toList(growable: false),
-    );
+    return rows
+        .map(
+          (word) => QuizWord(
+            id: word.read<String>('id'),
+            categoryId: word.read<String>('category_id'),
+            spelling: word.read<String>('spelling'),
+            meaning: word.read<String>('meaning'),
+            partOfSpeech: word.read<String>('part_of_speech'),
+          ),
+        )
+        .toList(growable: false);
   }
 
   SessionHistoryEntry _historyEntry(
-    LearningSession row, {
+    QueryRow projected, {
     List<QuizWord> mistakes = const [],
   }) {
+    final row = database.learningSessions.map(projected.data);
     final total = row.correctCount + row.wrongCount;
     return SessionHistoryEntry(
       ownerId: row.ownerId,
@@ -241,8 +298,24 @@ final class DriftProgressQueries {
         isUtc: true,
       ),
       mistakes: mistakes,
+      categoryId: projected.readNullable<String>('linked_category_id'),
+      categoryName: projected.readNullable<String>('linked_category_name'),
     );
   }
+
+  static const _historyProjection = '''
+      SELECT s.*,
+        CASE WHEN COUNT(DISTINCT c.id) = 1 AND COUNT(c.id) = COUNT(a.id)
+          THEN MIN(c.id) END AS linked_category_id,
+        CASE WHEN COUNT(DISTINCT c.id) = 1 AND COUNT(c.id) = COUNT(a.id)
+          THEN MIN(c.name) END AS linked_category_name
+      FROM learning_sessions s
+      LEFT JOIN answer_attempts a ON a.session_id = s.id
+      LEFT JOIN vocabulary_words w
+        ON w.id = a.word_id AND w.owner_id = a.owner_id AND a.owner_id = s.owner_id
+      LEFT JOIN vocabulary_categories c
+        ON c.id = w.category_id AND c.owner_id = w.owner_id
+      ''';
 
   Future<List<WeaknessEvidence>> _loadWeaknesses(String ownerId) async {
     final rows = await database

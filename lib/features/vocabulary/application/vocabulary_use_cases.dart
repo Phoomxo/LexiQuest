@@ -73,6 +73,18 @@ final class VocabularyUseCases {
     ).asyncExpand((owner) => vocabulary.watchCategories(owner.id));
   }
 
+  Stream<List<VocabularyCategorySummary>> watchLibrary() => Stream.fromFuture(
+    owners.getOrCreateActiveOwner(),
+  ).asyncExpand((owner) => vocabulary.watchLibrary(owner.id));
+
+  Stream<List<VocabularyWord>> searchWords(String query) {
+    final normalized = normalizeVocabularyText(query);
+    if (normalized.isEmpty) return Stream.value(const []);
+    return Stream.fromFuture(
+      owners.getOrCreateActiveOwner(),
+    ).asyncExpand((owner) => vocabulary.searchWords(owner.id, normalized));
+  }
+
   Stream<List<VocabularyWord>> watchWords(String categoryId) {
     final canonicalCategoryId = _required(
       categoryId,

@@ -28,9 +28,9 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 | Card | Write owner and boundary | Acceptance | Status |
 | --- | --- | --- | --- |
 | S1 | Root owns shell, practice home, and progress read projection. Test agent owns shell/home tests. Independent critic owns no production files. | Four Thai tabs, actual due preview/count, distinct new/empty/error states, library entry, contextual return, feature gating, large text. | Executing |
-| S2 | Assign after S1 checks. Library and selected-set navigation. | Search, add/import, preserve selected set and filters, reopen persisted words. | Pending |
-| S3 | Assign after S2 fixtures. Learning and progress. | Real answers, feedback, result context, durable and idempotent outcomes. | Pending |
-| S4 | Assign after destination contract. Camera/audio/AI. | Explicit confirmation into selected set, failure recovery, known-object device evidence. | Pending |
+| S2 | `s1_tests` owns library summaries, search, destination selection and set UI. | Search, add/import, preserve selected set and filters, reopen persisted words. | Executing; async owner/scope review corrections pending |
+| S3 | `ground_routes` owns progress category context and latest-set result; root integrates learning evidence. | Real answers, feedback, result context, durable and idempotent outcomes. | Executing; selected-set SQLite regression passed on previous source, new projection checks pending |
+| S4 | `ground_routes` owns editable manual correction from camera results and its tests. | Explicit confirmation into selected set, failure recovery, known-object device evidence. | Executing; real captures recorded, correction GREEN/device retry pending; known-object accuracy not checked |
 | S5 | Account/device/data boundaries. | Owner isolation, export/deletion, offline learning, research default-off. | Pending |
 | S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Pending |
 | S7 | All writers paused for integration. | Current-SHA regression, 48/44/64 disposition, Android APK/hash/CI, independent runtime critique. | Pending |

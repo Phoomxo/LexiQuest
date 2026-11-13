@@ -190,6 +190,16 @@ void main() {
               .hitTestable(),
           findsOneWidget,
         );
+        final historyRow = find.byKey(
+          const ValueKey('history-session:synthetic-session'),
+        );
+        expect(
+          find.descendant(
+            of: historyRow,
+            matching: find.textContaining('Synthetic'),
+          ),
+          findsOneWidget,
+        );
         await tester.tap(
           find.byKey(const ValueKey('history-session:synthetic-session')),
         );
@@ -204,6 +214,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('50%'), findsOneWidget);
+        expect(find.text('Synthetic'), findsOneWidget);
         expect(
           find.text('ฝึกคำที่ผิด (1)'),
           hiddenFeature == null ? findsOneWidget : findsNothing,

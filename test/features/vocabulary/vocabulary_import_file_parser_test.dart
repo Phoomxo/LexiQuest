@@ -42,6 +42,26 @@ void main() {
     expect(preview.rows.single.status, VocabularyImportPreviewStatus.ready);
   });
 
+  test('Android DocumentsUI CSV MIME previews the actual Thai fixture', () {
+    final selectedBytes = bytes(
+      'word,meaning,partOfSpeech\r\n'
+      'station,สถานี,noun\r\n'
+      'ticket,ตั๋ว,noun\r\n',
+    );
+    expect(selectedBytes, hasLength(83));
+    final preview = parseVocabularyImportFile(
+      fileName: 'FigCraft-A-20261114.csv',
+      mimeType: 'text/comma-separated-values',
+      bytes: selectedBytes,
+    );
+
+    expect(preview.readyCount, 2);
+    expect(preview.needsEditCount, 0);
+    expect(preview.duplicateCount, 0);
+    expect(preview.rows.map((row) => row.word), ['station', 'ticket']);
+    expect(preview.rows.map((row) => row.meaning), ['สถานี', 'ตั๋ว']);
+  });
+
   test('preview separates invalid and duplicate rows', () {
     final preview = parseVocabularyImportFile(
       fileName: 'travel.csv',

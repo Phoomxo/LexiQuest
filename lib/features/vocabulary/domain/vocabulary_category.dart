@@ -1,3 +1,15 @@
+final class VocabularyCategorySummary {
+  const VocabularyCategorySummary({
+    required this.category,
+    required this.wordCount,
+    required this.previewSpellings,
+  });
+
+  final VocabularyCategory category;
+  final int wordCount;
+  final List<String> previewSpellings;
+}
+
 final class VocabularyCategory {
   const VocabularyCategory({
     required this.id,

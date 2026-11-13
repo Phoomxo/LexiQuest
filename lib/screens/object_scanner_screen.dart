@@ -9,12 +9,14 @@ import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'device_permission_center_screen.dart';
+import 'add_vocab_screen.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
   const ObjectScannerScreen({
@@ -46,9 +48,11 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _modelUnavailable = false;
   bool _accepted = false;
   bool _saving = false;
+  bool _editingManual = false;
   String? _expectedOwnerId;
   String? _error;
   CameraFailureCode? _initializationFailure;
+  CameraFailureCode? _captureFailure;
   ObjectScanResult? _result;
   List<ModelBenchmarkResult> _benchmarks = const [];
   ModelCancellation? _cancellation;
@@ -127,7 +131,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   Future<void> _capture() async {
     final scanner = _scanner;
-    if (scanner == null || _capturing || _saving) return;
+    if (scanner == null || _capturing || _saving || _editingManual) return;
     final cancellation = ModelCancellation();
     _cancellation = cancellation;
     setState(() {
@@ -135,6 +139,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       _accepted = false;
       _error = null;
       _result = null;
+      _captureFailure = null;
     });
     try {
       final result = await scanner.captureAndClassify(
@@ -142,7 +147,12 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       );
       if (mounted) setState(() => _result = result);
     } on CameraPracticeException catch (error) {
-      if (mounted) setState(() => _error = _cameraFailureText(error.code));
+      if (mounted) {
+        setState(() {
+          _error = _cameraFailureText(error.code);
+          _captureFailure = error.code;
+        });
+      }
     } finally {
       if (mounted) setState(() => _capturing = false);
       _cancellation = null;
@@ -215,6 +225,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         result == null ||
         result.vocabulary == null ||
         _saving ||
+        _editingManual ||
         _accepted) {
       return;
     }
@@ -269,6 +280,138 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     }
   }
 
+  Future<void> _correctManually() async {
+    if (_editingManual || _saving || _capturing) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = dependencies?.vocabulary;
+    final scanner = _scanner;
+    final result = _result;
+    final categoryId = widget.targetCategoryId;
+    final ownerId = _expectedOwnerId;
+    if (dependencies == null ||
+        vocabulary == null ||
+        scanner == null ||
+        categoryId == null ||
+        ownerId == null ||
+        (result == null &&
+            _captureFailure != CameraFailureCode.noConfidentMatch)) {
+      return;
+    }
+    setState(() {
+      _editingManual = true;
+      _error = null;
+    });
+    try {
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      await scanner.pause();
+      try {
+        await _voice.stop();
+      } catch (_) {
+        // Audio failure must not prevent a manual word correction.
+      }
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (!mounted) return;
+      final draft = CreateWordCommand(
+        categoryId: categoryId,
+        spelling:
+            result?.vocabulary?.englishWord ?? result?.primary.label ?? '',
+        meaning: '',
+        partOfSpeech: '',
+        source: 'object-scanner:manualCorrection',
+      );
+      final saved = await AppNavigator.pushPage<VocabularyWord>(
+        context,
+        AppPage<VocabularyWord>(
+          name: 'vocabulary/camera-manual-correction',
+          builder: (_) => AddWordScreen(
+            categoryId: categoryId,
+            categoryName: widget.targetCategoryName,
+            vocabulary: vocabulary,
+            expectedOwnerId: ownerId,
+            initialDraft: draft,
+          ),
+        ),
+      );
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (saved != null) {
+        if (saved.categoryId != categoryId || saved.ownerId != ownerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        if (!mounted) return;
+        setState(() {
+          _accepted = true;
+          _editingManual = false;
+        });
+        Navigator.of(context).pop<VocabularyWord>(saved);
+        return;
+      }
+      await scanner.resume();
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (mounted) setState(() {});
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () => _error = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'เปิดหน้ากรอกคำหรือกลับไปใช้กล้องไม่สำเร็จ กรุณาลองอีกครั้ง',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _editingManual = false);
+    }
+  }
+
+  Future<void> _requireManualContext(
+    AppDependencies dependencies,
+    ObjectScanResult? result,
+    String categoryId,
+    String ownerId,
+    ObjectScannerController scanner,
+  ) async {
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), dependencies) &&
+        identical(_result, result) &&
+        identical(_scanner, scanner) &&
+        widget.targetCategoryId == categoryId &&
+        _expectedOwnerId == ownerId;
+    final owners = dependencies.localOwners;
+    if (!current() || owners == null) throw const VocabularyNotFoundFailure();
+    final owner = await owners.getOrCreateActiveOwner();
+    if (!current() || owner.id != ownerId) {
+      throw const VocabularyNotFoundFailure();
+    }
+  }
+
   Future<void> _speak(String text) async {
     try {
       await _voice.speak(
@@ -292,6 +435,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final scanner = _scanner;
     if (scanner == null) return;
     if (state == AppLifecycleState.resumed) {
+      if (_editingManual) return;
       scanner
           .resume()
           .then((_) {
@@ -326,8 +470,16 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Widget build(BuildContext context) {
     final scanner = _scanner;
     final result = _result;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final canCorrectManually =
+        widget.targetCategoryId != null &&
+        _expectedOwnerId != null &&
+        dependencies?.localOwners != null &&
+        dependencies?.vocabulary != null &&
+        (result != null ||
+            _captureFailure == CameraFailureCode.noConfidentMatch);
     return PopScope(
-      canPop: !_saving,
+      canPop: !_saving && !_editingManual,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -372,7 +524,11 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   key: const ValueKey<String>('object-scanner-capture-button'),
-                  onPressed: scanner?.isReady == true && !_capturing && !_saving
+                  onPressed:
+                      scanner?.isReady == true &&
+                          !_capturing &&
+                          !_saving &&
+                          !_editingManual
                       ? _capture
                       : null,
                   icon: _capturing
@@ -394,7 +550,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                     key: const ValueKey<String>(
                       'object-scanner-benchmark-model',
                     ),
-                    onPressed: _benchmarking || _capturing || _saving
+                    onPressed:
+                        _benchmarking || _capturing || _saving || _editingManual
                         ? null
                         : _benchmarkModel,
                     icon: _benchmarking
@@ -508,6 +665,20 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                               .label,
                     ),
                     onAccept: result.vocabulary == null ? null : _accept,
+                  ),
+                ],
+                if (canCorrectManually) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'ผลสแกนยังไม่ยืนยันชื่อวัตถุ คุณกรอกคำและคำแปลเองก่อนบันทึกได้',
+                  ),
+                  OutlinedButton.icon(
+                    key: const ValueKey('object-scanner-manual-correction'),
+                    onPressed: _editingManual || _saving
+                        ? null
+                        : _correctManually,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('กรอกคำเอง'),
                   ),
                 ],
               ],

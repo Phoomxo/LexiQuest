@@ -11,11 +11,17 @@ class AddWordScreen extends StatefulWidget {
     required this.categoryId,
     this.vocabulary,
     this.word,
-  });
+    this.initialDraft,
+    this.expectedOwnerId,
+    this.categoryName,
+  }) : assert(word == null || initialDraft == null);
 
   final String categoryId;
   final VocabularyUseCases? vocabulary;
   final VocabularyWord? word;
+  final CreateWordCommand? initialDraft;
+  final String? expectedOwnerId;
+  final String? categoryName;
 
   @override
   State<AddWordScreen> createState() => _AddWordScreenState();
@@ -25,6 +31,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _wordController;
   late final TextEditingController _meaningController;
   late final TextEditingController _partOfSpeechController;
+  AppDependencies? _draftDependencies;
+  bool _draftDependenciesCaptured = false;
   bool _saving = false;
   String? _wordError;
   String? _meaningError;
@@ -34,11 +42,24 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void initState() {
     super.initState();
-    _wordController = TextEditingController(text: widget.word?.spelling);
-    _meaningController = TextEditingController(text: widget.word?.meaning);
-    _partOfSpeechController = TextEditingController(
-      text: widget.word?.partOfSpeech,
+    _wordController = TextEditingController(
+      text: widget.word?.spelling ?? widget.initialDraft?.spelling,
     );
+    _meaningController = TextEditingController(
+      text: widget.word?.meaning ?? widget.initialDraft?.meaning,
+    );
+    _partOfSpeechController = TextEditingController(
+      text: widget.word?.partOfSpeech ?? widget.initialDraft?.partOfSpeech,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.initialDraft != null && !_draftDependenciesCaptured) {
+      _draftDependencies = AppDependenciesScope.maybeOf(context);
+      _draftDependenciesCaptured = true;
+    }
   }
 
   @override
@@ -57,11 +78,25 @@ class _AddWordScreenState extends State<AddWordScreen> {
       canPop: !_saving,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.word == null ? 'เพิ่มคำศัพท์' : 'แก้ไขคำศัพท์'),
+          title: Text(
+            widget.initialDraft != null
+                ? 'ตรวจคำจากภาพ'
+                : widget.word == null
+                ? 'เพิ่มคำศัพท์'
+                : 'แก้ไขคำศัพท์',
+          ),
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (widget.initialDraft != null) ...[
+              if (widget.categoryName != null) ...[
+                Text('เก็บในชุด ${widget.categoryName}'),
+                const SizedBox(height: 8),
+              ],
+              const Text('ผลสแกนยังไม่ยืนยัน ตรวจชื่อและกรอกคำแปลเอง'),
+              const SizedBox(height: 16),
+            ],
             TextField(
               key: const ValueKey('word-field'),
               controller: _wordController,
@@ -184,15 +219,24 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return;
     }
     setState(() => _saving = true);
+    final draft = widget.initialDraft;
+    final expectedOwnerId = widget.expectedOwnerId;
     try {
+      VocabularyWord? created;
       if (widget.word == null) {
-        await useCases.createWord(
+        if (draft != null) {
+          await _requireDraftContext(useCases, draft, expectedOwnerId);
+        }
+        created = await useCases.createWord(
           CreateWordCommand(
             categoryId: widget.categoryId,
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
+            cefrLevel: draft?.cefrLevel,
+            source: draft?.source ?? 'manual',
           ),
+          expectedOwnerId: draft == null ? null : expectedOwnerId,
         );
       } else {
         await useCases.updateWord(
@@ -207,7 +251,24 @@ class _AddWordScreenState extends State<AddWordScreen> {
           ),
         );
       }
-      if (mounted) Navigator.pop(context);
+      if (draft != null) {
+        await _requireDraftContext(useCases, draft, expectedOwnerId);
+        if (created == null ||
+            created.ownerId != expectedOwnerId ||
+            created.categoryId != draft.categoryId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        if (mounted) Navigator.pop<VocabularyWord>(context, created);
+      } else if (mounted) {
+        Navigator.pop(context);
+      }
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () =>
+              _formError = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
     } on InvalidVocabularyFailure catch (error) {
       if (mounted) _showInvalidField(error.field);
     } on DuplicateVocabularyFailure {
@@ -220,6 +281,37 @@ class _AddWordScreenState extends State<AddWordScreen> {
       if (mounted) setState(() => _formError = 'บันทึกคำศัพท์ไม่สำเร็จ');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _requireDraftContext(
+    VocabularyUseCases useCases,
+    CreateWordCommand draft,
+    String? expectedOwnerId,
+  ) async {
+    if (!mounted ||
+        !_draftDependenciesCaptured ||
+        expectedOwnerId == null ||
+        !identical(AppDependenciesScope.maybeOf(context), _draftDependencies) ||
+        !identical(widget.initialDraft, draft) ||
+        widget.expectedOwnerId != expectedOwnerId ||
+        widget.categoryId != draft.categoryId) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final dependencies = _draftDependencies;
+    final currentVocabulary = dependencies?.vocabulary;
+    if (currentVocabulary != null && !identical(currentVocabulary, useCases)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final owner = await (dependencies?.localOwners ?? useCases.owners)
+        .getOrCreateActiveOwner();
+    if (!mounted ||
+        owner.id != expectedOwnerId ||
+        !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
+        !identical(widget.initialDraft, draft) ||
+        widget.categoryId != draft.categoryId ||
+        widget.expectedOwnerId != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
     }
   }
 

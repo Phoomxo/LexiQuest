@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
@@ -8,6 +10,119 @@ import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 
 void main() {
+  testWidgets('active home replaces progress without retaining the old owner', (
+    tester,
+  ) async {
+    final ownerB = Completer<ProgressSnapshot>();
+    var ownerBReads = 0;
+    Future<ProgressSnapshot> loadA() async => snapshot(
+      due: 1,
+      nextDueSpelling: 'private-a',
+      nextDueCategoryName: 'Owner A',
+    );
+    Future<ProgressSnapshot> loadB() {
+      ownerBReads++;
+      return ownerB.future;
+    }
+
+    Widget home(ProgressLoader loader) =>
+        MaterialApp(home: ChooseModeScreen(loader: loader));
+    await tester.pumpWidget(home(loadA));
+    await tester.pumpAndSettle();
+    expect(find.text('private-a'), findsOneWidget);
+    await tester.pumpWidget(home(loadB));
+    await tester.pump();
+    expect(ownerBReads, 1);
+    expect(find.text('private-a'), findsNothing);
+    expect(find.text('จากชุด Owner A'), findsNothing);
+    expect(find.text('ฝึกคำที่ตอบผิด'), findsNothing);
+    ownerB.complete(snapshot(empty: true));
+    await tester.pumpAndSettle();
+    expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsOneWidget);
+  });
+
+  testWidgets('late progress from the old owner cannot replace the new owner', (
+    tester,
+  ) async {
+    final ownerA = Completer<ProgressSnapshot>();
+    Future<ProgressSnapshot> loadA() => ownerA.future;
+    Future<ProgressSnapshot> loadB() async => snapshot(empty: true);
+    Widget home(ProgressLoader loader) =>
+        MaterialApp(home: ChooseModeScreen(loader: loader));
+    await tester.pumpWidget(home(loadA));
+    await tester.pumpWidget(home(loadB));
+    await tester.pump();
+    expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsOneWidget);
+    ownerA.complete(snapshot(due: 1, nextDueSpelling: 'private-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('private-a'), findsNothing);
+    expect(find.text('เพิ่มคำศัพท์เพื่อเริ่มฝึก'), findsOneWidget);
+  });
+
+  testWidgets('refresh hides activities from the previous progress read', (
+    tester,
+  ) async {
+    final refreshed = Completer<ProgressSnapshot>();
+    var reads = 0;
+    Future<ProgressSnapshot> load() =>
+        reads++ == 0 ? Future.value(snapshot()) : refreshed.future;
+    Widget home(bool active) => MaterialApp(
+      home: ChooseModeScreen(loader: load, isActive: active),
+    );
+    await tester.pumpWidget(home(true));
+    await tester.pumpAndSettle();
+    expect(find.text('ฝึกคำที่ตอบผิด'), findsOneWidget);
+    await tester.pumpWidget(home(false));
+    await tester.pumpWidget(home(true));
+    await tester.pump();
+    expect(find.text('ฝึกคำที่ตอบผิด'), findsNothing);
+    refreshed.complete(snapshot(empty: true));
+    await tester.pumpAndSettle();
+    expect(find.text('ฝึกคำที่ตอบผิด'), findsNothing);
+  });
+
+  testWidgets('home offers set practice and omits errors without evidence', (
+    tester,
+  ) async {
+    var openedLibrary = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          loader: () async => snapshot(empty: true, words: 3, due: 1),
+          onOpenLibrary: () => openedLibrary = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ฝึกคำที่ตอบผิด'), findsNothing);
+    expect(find.text('ฝึกจุดอ่อน'), findsNothing);
+    final action = find.text('ฝึกจากชุดคำ');
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    expect(openedLibrary, isTrue);
+  });
+
+  testWidgets(
+    'due preview identifies its actual set without an invented example',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChooseModeScreen(
+            loader: () async => snapshot(
+              due: 1,
+              nextDueSpelling: 'platform',
+              nextDueCategoryName: 'การเดินทาง',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('จากชุด การเดินทาง'), findsOneWidget);
+      expect(find.text('Meet me on platform two.'), findsNothing);
+      expect(find.text('ชานชาลา'), findsNothing);
+    },
+  );
+
   testWidgets('hub prioritizes due review and displays real queue counts', (
     tester,
   ) async {
@@ -45,8 +160,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('ทบทวนครบแล้ว'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('ฝึกจุดอ่อน'), 200);
-      await tester.tap(find.text('ฝึกจุดอ่อน'));
+      await tester.scrollUntilVisible(find.text('ฝึกคำที่ตอบผิด'), 200);
+      await tester.tap(find.text('ฝึกคำที่ตอบผิด'));
       await tester.pumpAndSettle();
       expect(find.byType(WeaknessClinicScreen), findsOneWidget);
       due = 2;
@@ -256,6 +371,7 @@ ProgressSnapshot snapshot({
   bool empty = false,
   int? words,
   String? nextDueSpelling,
+  String? nextDueCategoryName,
 }) => ProgressSnapshot(
   sampleSize: empty ? 0 : 3,
   correctCount: empty ? 0 : 1,
@@ -267,6 +383,7 @@ ProgressSnapshot snapshot({
   dueReviewCount: due,
   vocabularyWordCount: words ?? (empty ? 0 : 2),
   nextDueSpelling: nextDueSpelling,
+  nextDueCategoryName: nextDueCategoryName,
   masteredWordCount: 0,
   achievementCount: 0,
   gameLevel: 1,

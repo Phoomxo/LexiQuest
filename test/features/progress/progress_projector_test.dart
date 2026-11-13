@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 
@@ -103,6 +105,227 @@ void main() {
     return result;
   }
 
+  Future<void> addSecondCategory() async {
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-b',
+            ownerId: 'owner-1',
+            name: 'Kitchen',
+            normalizedName: 'kitchen',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-b',
+            ownerId: 'owner-1',
+            categoryId: 'category-b',
+            spelling: 'plate',
+            normalizedSpelling: 'plate',
+            meaning: 'จาน',
+            normalizedMeaning: 'จาน',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+  }
+
+  Future<void> completeCategorySession(
+    String id,
+    List<(String, bool)> answers,
+    int minute,
+  ) async {
+    final start = DateTime.utc(2026, 7, 30, 10, minute);
+    await learning.startSession(
+      LearningSessionDraft(
+        id: id,
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: start,
+        appVersion: 'test',
+        buildId: 'test',
+      ),
+    );
+    for (var index = 0; index < answers.length; index++) {
+      await learning.recordAnswer(
+        RecordAnswerCommand(
+          id: '$id:attempt:$index',
+          ownerId: 'owner-1',
+          sessionId: id,
+          wordId: answers[index].$1,
+          promptMode: 'meaningChoice',
+          isCorrect: answers[index].$2,
+          responseTimeMs: 500,
+          attemptNumber: index + 1,
+          occurredAtUtc: start.add(Duration(seconds: index)),
+        ),
+      );
+    }
+    await learning.finishSession(
+      ownerId: 'owner-1',
+      sessionId: id,
+      endedAtUtc: start.add(const Duration(minutes: 1)),
+    );
+  }
+
+  test(
+    'category results keep A and B scores linked to their own saved ids',
+    () async {
+      await addSecondCategory();
+      await completeCategorySession('session-a', [('word-1', false)], 0);
+      await completeCategorySession('session-b', [('word-b', true)], 2);
+      final useCases = ProgressUseCases(
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unused',
+          nowUtc: () => DateTime.utc(2026, 7, 30),
+        ),
+        queries: progress,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      );
+      final before = await _databaseSnapshot(database);
+      final resultA = await useCases.loadLatestSessionForCategory('category-1');
+      final resultB = await useCases.loadLatestSessionForCategory('category-b');
+      expect(resultA!.summary.id, 'session-a');
+      expect(resultA.summary.score, 0);
+      expect(resultA.categoryId, 'category-1');
+      expect(resultA.categoryName, 'Travel');
+      expect(resultB!.summary.id, 'session-b');
+      expect(resultB.summary.score, 100);
+      expect(resultB.categoryId, 'category-b');
+      expect(resultB.categoryName, 'Kitchen');
+      final snapshot = await load();
+      expect(snapshot.recentSessions.map((entry) => entry.categoryName), [
+        'Kitchen',
+        'Travel',
+      ]);
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'category result lookup does not lose A behind twenty newer B rounds',
+    () async {
+      await addSecondCategory();
+      await completeCategorySession('old-a', [('word-1', false)], 0);
+      for (var index = 0; index < 21; index++) {
+        await completeCategorySession('new-b-$index', [
+          ('word-b', true),
+        ], index + 2);
+      }
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(20));
+      expect(
+        snapshot.recentSessions.every(
+          (entry) => entry.categoryId == 'category-b',
+        ),
+        isTrue,
+      );
+      final before = await _databaseSnapshot(database);
+      final result = await progress.loadLatestSessionForCategory(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+      );
+      expect(result!.summary.id, 'old-a');
+      expect(result.summary.score, 0);
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test('mixed and empty rounds have no invented category context', () async {
+    await addSecondCategory();
+    await completeCategorySession('single-a', [('word-1', true)], 0);
+    await completeCategorySession('mixed', [
+      ('word-1', false),
+      ('word-b', true),
+    ], 2);
+    await completeCategorySession('empty', [], 4);
+    for (final id in ['mixed', 'empty']) {
+      final result = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: id,
+      );
+      expect(result!.categoryId, isNull);
+      expect(result.categoryName, isNull);
+    }
+    final latestA = await progress.loadLatestSessionForCategory(
+      ownerId: 'owner-1',
+      categoryId: 'category-1',
+    );
+    expect(latestA!.summary.id, 'single-a');
+    expect(
+      await progress.loadLatestSessionForCategory(
+        ownerId: 'other-owner',
+        categoryId: 'category-1',
+      ),
+      isNull,
+    );
+    expect(
+      await progress.loadLatestSessionForCategory(
+        ownerId: 'owner-1',
+        categoryId: 'missing-category',
+      ),
+      isNull,
+    );
+  });
+
+  test(
+    'category context uses the current owner-matched name without rewriting a result',
+    () async {
+      await completeCategorySession('saved-a', [('word-1', false)], 0);
+      await database.customStatement(
+        'UPDATE vocabulary_categories SET name = ? WHERE id = ?',
+        ['Travel renamed', 'category-1'],
+      );
+      final before = await _databaseSnapshot(database);
+      final renamed = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'saved-a',
+      );
+      expect(renamed!.categoryName, 'Travel renamed');
+      expect(renamed.summary.score, 0);
+      expect(await _databaseSnapshot(database), before);
+
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+          );
+      await database.customStatement(
+        'UPDATE vocabulary_categories SET owner_id = ? WHERE id = ?',
+        ['owner-2', 'category-1'],
+      );
+      final mismatched = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'saved-a',
+      );
+      expect(mismatched!.categoryId, isNull);
+      expect(mismatched.categoryName, isNull);
+      expect(mismatched.summary.wrongCount, 1);
+      expect(
+        await progress.loadLatestSessionForCategory(
+          ownerId: 'owner-1',
+          categoryId: 'category-1',
+        ),
+        isNull,
+      );
+      await database.customStatement(
+        'UPDATE srs_states SET due_at_utc_ms = 1 WHERE word_id = ?',
+        ['word-1'],
+      );
+      final due = await load();
+      expect(due.dueReviewCount, 1);
+      expect(due.nextDueSpelling, 'station');
+      expect(due.nextDueCategoryName, isNull);
+    },
+  );
+
   test(
     'empty evidence returns sample size zero without invented scores',
     () async {
@@ -136,6 +359,7 @@ void main() {
     final due = await load();
     expect(due.dueReviewCount, 1);
     expect(due.nextDueSpelling, 'station');
+    expect(due.nextDueCategoryName, 'Travel');
     expect((await load('another-owner')).vocabularyWordCount, 0);
     expect((await load('another-owner')).nextDueSpelling, isNull);
 

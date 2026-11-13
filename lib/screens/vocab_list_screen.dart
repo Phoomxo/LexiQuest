@@ -4,6 +4,8 @@ import '../config/m3_theme.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/progress/application/progress_use_cases.dart';
+import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
@@ -13,6 +15,7 @@ import 'add_vocab_screen.dart';
 import '../navigation/app_routes.dart';
 import 'object_scanner_screen.dart';
 import 'quiz_screen.dart';
+import 'score_screen.dart';
 import 'source_practice_screen.dart';
 
 enum _AddWordMethod { manual, camera, file }
@@ -24,23 +27,38 @@ class VocabListScreen extends StatefulWidget {
     required this.categoryName,
     this.vocabulary,
     this.importer,
+    this.startAdding = false,
+    this.initialQuery = '',
   });
 
   final String categoryId;
   final String categoryName;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? importer;
+  final bool startAdding;
+  final String initialQuery;
 
   @override
   State<VocabListScreen> createState() => _VocabListScreenState();
 }
 
 class _VocabListScreenState extends State<VocabListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  String _query = '';
+  late final TextEditingController _searchController;
+  late String _query;
   VocabularyUseCases? _vocabulary;
   String? _categoryId;
   Stream<List<VocabularyWord>>? _words;
+  ProgressUseCases? _progress;
+  Future<SessionHistoryEntry?>? _latest;
+  bool _addStarted = false;
+  bool _openingLatest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.initialQuery);
+    _query = normalizeVocabularyText(widget.initialQuery);
+  }
 
   @override
   void dispose() {
@@ -58,10 +76,21 @@ class _VocabListScreenState extends State<VocabListScreen> {
     final features =
         dependencies?.fieldFeatures ??
         const BuildFieldFeatureRegistry.allEnabled();
-    if (!identical(useCases, _vocabulary) || _categoryId != widget.categoryId) {
+    if (!identical(useCases, _vocabulary) ||
+        _categoryId != widget.categoryId ||
+        !identical(_progress, dependencies?.progress)) {
       _vocabulary = useCases;
       _categoryId = widget.categoryId;
       _words = useCases?.watchWords(widget.categoryId);
+      _progress = dependencies?.progress;
+      _latest = _progress?.loadLatestSessionForCategory(widget.categoryId);
+      _latest?.ignore();
+    }
+    if (widget.startAdding && !_addStarted && useCases != null) {
+      _addStarted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showAddWordOptions(context, useCases, importer, features);
+      });
     }
     final canPracticeSource =
         useCases != null &&
@@ -79,6 +108,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
         child: useCases == null
             ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
             : StreamBuilder<List<VocabularyWord>>(
+                key: ValueKey((useCases, widget.categoryId)),
                 stream: _words,
                 builder: (context, snapshot) {
                   final allWords = snapshot.data ?? const <VocabularyWord>[];
@@ -103,6 +133,17 @@ class _VocabListScreenState extends State<VocabListScreen> {
                               SearchBar(
                                 controller: _searchController,
                                 hintText: 'ค้นหาคำศัพท์',
+                                elevation: const WidgetStatePropertyAll(0),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                    ),
+                                  ),
+                                ),
                                 leading: const Icon(Icons.search),
                                 onChanged: (value) => setState(
                                   () => _query = normalizeVocabularyText(value),
@@ -114,17 +155,21 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                   onPressed:
                                       snapshot.hasError || allWords.isEmpty
                                       ? null
-                                      : () => AppNavigator.pushPage<void>(
-                                          context,
-                                          AppPage<void>(
-                                            name: 'learning/category-quiz',
-                                            builder: (_) => QuizScreen(
-                                              categoryId: widget.categoryId,
-                                              categoryName: widget.categoryName,
-                                              learning: learning,
+                                      : () async {
+                                          await AppNavigator.pushPage<void>(
+                                            context,
+                                            AppPage<void>(
+                                              name: 'learning/category-quiz',
+                                              builder: (_) => QuizScreen(
+                                                categoryId: widget.categoryId,
+                                                categoryName:
+                                                    widget.categoryName,
+                                                learning: learning,
+                                              ),
                                             ),
-                                          ),
-                                        ),
+                                          );
+                                          _refreshLatest();
+                                        },
                                   icon: const Icon(Icons.play_arrow),
                                   label: const Text('ฝึกจากชุดนี้'),
                                 ),
@@ -150,6 +195,77 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 icon: const Icon(Icons.add),
                                 label: const Text('เพิ่มคำ'),
                               ),
+                              if (_latest != null &&
+                                  features.isVisible(FieldFeature.mastery))
+                                FutureBuilder<SessionHistoryEntry?>(
+                                  key: ValueKey((_progress, widget.categoryId)),
+                                  future: _latest,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState !=
+                                        ConnectionState.done) {
+                                      return const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: LinearProgressIndicator(
+                                          semanticsLabel:
+                                              'กำลังอ่านผลล่าสุดของชุดนี้',
+                                        ),
+                                      );
+                                    }
+                                    if (snapshot.hasError) {
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Semantics(
+                                            liveRegion: true,
+                                            child: const Text(
+                                              'อ่านผลล่าสุดไม่สำเร็จ',
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: _refreshLatest,
+                                            child: const Text(
+                                              'ลองอ่านผลอีกครั้ง',
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    final entry = snapshot.data;
+                                    if (entry == null) {
+                                      return const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          'ยังไม่มีผลการฝึกที่บันทึกสำหรับชุดนี้',
+                                        ),
+                                      );
+                                    }
+                                    final summary = entry.summary;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            'ผลล่าสุด · ${summary.score}% · ตอบถูก ${summary.correctCount} จาก ${summary.correctCount + summary.wrongCount}',
+                                          ),
+                                          TextButton.icon(
+                                            onPressed: _openingLatest
+                                                ? null
+                                                : _openLatestResult,
+                                            icon: const Icon(Icons.history),
+                                            label: const Text('ดูผลล่าสุด'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                               if (canPracticeSource) ...[
                                 const SizedBox(height: 8),
                                 Wrap(
@@ -264,6 +380,62 @@ class _VocabListScreenState extends State<VocabListScreen> {
               ),
       ),
     );
+  }
+
+  void _refreshLatest() {
+    if (mounted) {
+      setState(() {
+        _latest = _progress?.loadLatestSessionForCategory(widget.categoryId);
+        _latest?.ignore();
+      });
+    }
+  }
+
+  Future<void> _openLatestResult() async {
+    final progress = _progress;
+    final categoryId = widget.categoryId;
+    if (progress == null || _openingLatest) return;
+    setState(() => _openingLatest = true);
+    try {
+      final entry = await progress.loadLatestSessionForCategory(categoryId);
+      if (!mounted) return;
+      if (!identical(
+            progress,
+            AppDependenciesScope.maybeOf(context)?.progress,
+          ) ||
+          widget.categoryId != categoryId ||
+          (entry != null && entry.categoryId != categoryId)) {
+        throw StateError('latest result context changed');
+      }
+      if (entry == null) {
+        _refreshLatest();
+        return;
+      }
+      final summary = entry.summary;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/category-latest-score',
+          builder: (_) => ScoreScreen(
+            correctAnswers: summary.correctCount,
+            wrongAnswers: summary.wrongCount,
+            score: summary.score,
+            sessionId: summary.id,
+            categoryName: entry.categoryName ?? widget.categoryName,
+            mistakes: entry.mistakes,
+            returnLabel: 'กลับไปที่ชุดคำ',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('อ่านผลล่าสุดไม่สำเร็จ กรุณาลองใหม่')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingLatest = false);
+    }
   }
 
   Future<void> _showAddWordOptions(

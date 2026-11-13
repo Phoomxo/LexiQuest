@@ -110,6 +110,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
             wrongAnswers: entry.summary.wrongCount,
             score: entry.summary.score,
             sessionId: entry.summary.id,
+            categoryName: entry.categoryName,
             returnLabel: 'กลับไปดูประวัติ',
             mistakes: entry.mistakes,
             onPracticeMistakes:
@@ -156,6 +157,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
           name: 'progress/session/${entry.summary.id}/practice',
           builder: (_) => QuizScreen(
             wordIds: entry.mistakes.map((word) => word.id).toList(),
+            categoryName: entry.categoryName,
             learning: learning,
             featureRegistry: _features,
           ),
@@ -390,6 +392,7 @@ class _DashboardBody extends StatelessWidget {
               _ => 'รอบฝึก',
             }),
             subtitle: Text(
+              '${entry.categoryName == null ? '' : '${entry.categoryName} · '}'
               'ถูก ${entry.summary.correctCount} จาก ${entry.summary.correctCount + entry.summary.wrongCount} ข้อ · '
               '${MaterialLocalizations.of(context).formatShortDate(entry.completedAtUtc.toLocal())} '
               '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(entry.completedAtUtc.toLocal()))}',

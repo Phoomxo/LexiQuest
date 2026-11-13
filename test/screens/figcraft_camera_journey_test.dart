@@ -25,6 +25,7 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
@@ -35,225 +36,268 @@ const _setA = 'ชุด A เป้าหมายของกล้อง';
 const _setB = 'ชุด B เก็บข้อมูลเดิม';
 
 void main() {
-  testWidgets(
-    'camera confirmation stays in selected A through practice and SQLite reopen',
-    (tester) async {
-      tester.view
-        ..devicePixelRatio = 1
-        ..physicalSize = const Size(390, 844);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      messenger.setMockMethodCallHandler(
-        const MethodChannel('flutter_tts'),
-        (call) async => 1,
-      );
-      Directory? directory;
-      late File file;
-      late _Journey fixture;
-      var databaseOpen = false;
-      late String categoryA;
-      late String categoryB;
-      late String ticketId;
-      late List<Map<String, dynamic>> originalB;
-      try {
-        await tester.runAsync(() async {
-          directory = await Directory.systemTemp.createTemp(
-            'lexiquest-synthetic-camera-',
-          );
-          file = File('${directory!.path}/journey.sqlite');
-          fixture = _Journey.open(file);
-          databaseOpen = true;
-          final vocabulary = fixture.dependencies.vocabulary!;
-          categoryA = (await vocabulary.createCategory(_setA)).id;
-          categoryB = (await vocabulary.createCategory(_setB)).id;
-          ticketId = (await vocabulary.createWord(
-            CreateWordCommand(
-              categoryId: categoryA,
-              spelling: 'ticket',
-              meaning: 'ตั๋ว',
-              partOfSpeech: 'noun',
-            ),
-          )).id;
-          await vocabulary.createWord(
-            CreateWordCommand(
-              categoryId: categoryB,
-              spelling: 'banana',
-              meaning: 'กล้วย',
-              partOfSpeech: 'noun',
-            ),
-          );
-          originalB =
-              (await (fixture.database.select(
-                    fixture.database.vocabularyWords,
-                  )..where((word) => word.categoryId.equals(categoryB))).get())
-                  .map((word) => word.toJson())
-                  .toList();
-        });
-        await _openLibrary(tester, fixture.dependencies);
-        await _pumpUntil(tester, find.text(_setA));
-        expect(find.text(_setB), findsOneWidget);
-        await tester.tap(find.text(_setA));
-        await _pumpUntil(tester, find.text('ticket'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey('add-word')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('ถ่ายภาพ'));
-        await _pumpUntil(
-          tester,
-          find.byKey(const ValueKey('synthetic-camera-preview')),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('เก็บในชุด $_setA'), findsOneWidget);
-        await tester.ensureVisible(
-          find.byKey(const ValueKey('object-scanner-capture-button')),
-        );
-        await tester.tap(
-          find.byKey(const ValueKey('object-scanner-capture-button')),
-        );
-        await _pumpUntil(tester, find.text('apple'));
-        await tester.pumpAndSettle();
-        expect(find.byType(ObjectScannerScreen), findsOneWidget);
-        expect(
-          await tester.runAsync(
-            () =>
-                fixture.database.select(fixture.database.vocabularyWords).get(),
-          ),
-          hasLength(2),
-          reason: 'a camera proposal must not write before confirmation',
-        );
-        await tester.ensureVisible(find.text('เพิ่มเข้าคลัง'));
-        await tester.tap(find.text('เพิ่มเข้าคลัง'));
-        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
-        await tester.pumpAndSettle();
-        expect(find.byType(ObjectScannerScreen), findsNothing);
-        expect(fixture.scanner.acceptedCategoryId, categoryA);
-        expect(find.text(_setA), findsOneWidget);
-        expect(find.text('apple'), findsOneWidget);
-        expect(find.text('banana'), findsNothing);
-        await tester.tap(find.text('ฝึกจากชุดนี้'));
-        const meanings = {'apple': 'แอปเปิล', 'ticket': 'ตั๋ว'};
-        final practiced = <String>{};
-        for (var index = 0; index < 2; index++) {
-          final prompt = find.descendant(
-            of: find.byType(QuizScreen),
-            matching: find.byWidgetPredicate(
-              (widget) => widget is Text && meanings.containsKey(widget.data),
-            ),
-          );
-          await _pumpUntil(tester, prompt);
-          await tester.pumpAndSettle();
-          final spelling = tester.widget<Text>(prompt).data!;
-          expect(practiced.add(spelling), isTrue);
-          expect(find.text('banana'), findsNothing);
-          final answer = find.widgetWithText(FilledButton, meanings[spelling]!);
-          await tester.ensureVisible(answer);
-          await tester.tap(answer);
-          final next = index == 0 ? 'คำถามถัดไป' : 'ดูผลการเรียน';
-          await _pumpUntil(tester, find.text(next));
-          await tester.ensureVisible(find.text(next));
-          await tester.tap(find.text(next));
-        }
-        expect(practiced, {'apple', 'ticket'});
-        await _pumpUntil(tester, find.byType(ScoreScreen));
-        await tester.pumpAndSettle();
-        expect(find.text(_setA), findsOneWidget);
-        expect(find.text('100%'), findsOneWidget);
-        final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
-        final sessionId = score.sessionId;
-        expect(sessionId, isNotNull);
-        expect(score.correctAnswers, 2);
-        await tester.ensureVisible(find.text('กลับไปที่ชุดคำ'));
-        await tester.tap(find.text('กลับไปที่ชุดคำ'));
-        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
-        await tester.pumpAndSettle();
-        expect(find.text(_setA), findsOneWidget);
-        expect(find.text('apple'), findsOneWidget);
-
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.runAsync(fixture.database.close);
-        databaseOpen = false;
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.runAsync(() async {
-          fixture = _Journey.open(file);
-          databaseOpen = true;
-          final categories = await fixture.database
-              .select(fixture.database.vocabularyCategories)
-              .get();
-          expect(categories.map((category) => category.id).toSet(), {
-            categoryA,
-            categoryB,
-          });
-          final words = await fixture.database
-              .select(fixture.database.vocabularyWords)
-              .get();
-          final scanned = words.singleWhere((word) => word.spelling == 'apple');
-          expect(scanned.categoryId, categoryA);
-          expect(scanned.source, 'object-scanner:synthetic-known-object@1');
-          expect(
-            words.where((word) => word.categoryId == categoryA),
-            hasLength(2),
-          );
-          expect(
-            words
-                .where((word) => word.categoryId == categoryB)
-                .map((word) => word.toJson())
-                .toList(),
-            originalB,
-          );
-          final attempts = await fixture.database
-              .select(fixture.database.answerAttempts)
-              .get();
-          expect(attempts, hasLength(2));
-          expect(attempts.map((answer) => answer.wordId).toSet(), {
-            ticketId,
-            scanned.id,
-          });
-          expect(attempts.map((answer) => answer.sessionId).toSet(), {
-            sessionId,
-          });
-          final progress = await fixture.dependencies.progress!.load();
-          expect(progress.recentSessions.single.summary.id, sessionId);
-          expect(progress.recentSessions.single.summary.score, 100);
-          expect(progress.recentSessions.single.summary.state, 'completed');
-        });
-        await _openLibrary(tester, fixture.dependencies);
-        await _pumpUntil(tester, find.text(_setA));
-        expect(find.text(_setB), findsOneWidget);
-        await tester.tap(find.text(_setA));
-        await _pumpUntil(tester, find.text('apple'));
-        await tester.pumpAndSettle();
-        expect(find.text('ticket'), findsOneWidget);
-        expect(find.text('banana'), findsNothing);
-        expect(tester.takeException(), isNull);
-      } finally {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump(const Duration(milliseconds: 1));
-        if (databaseOpen) {
-          await tester.runAsync(fixture.database.close);
-        }
-        await tester.pump(const Duration(milliseconds: 1));
-        if (directory != null) {
-          final temporaryRoot = Directory.systemTemp.resolveSymbolicLinksSync();
-          final target = directory!.resolveSymbolicLinksSync();
-          expect(
-            target.startsWith(
-              '$temporaryRoot${Platform.pathSeparator}lexiquest-synthetic-camera-',
-            ),
-            isTrue,
-          );
-          await tester.runAsync(() => directory!.delete(recursive: true));
-        }
+  for (final manualCorrection in [false, true]) {
+    final savedSpelling = manualCorrection ? 'orange' : 'apple';
+    final savedMeaning = manualCorrection ? 'ส้ม' : 'แอปเปิล';
+    testWidgets(
+      'camera ${manualCorrection ? 'manual correction' : 'confirmation'} stays in selected A through practice and SQLite reopen',
+      (tester) async {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(390, 844);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
         messenger.setMockMethodCallHandler(
           const MethodChannel('flutter_tts'),
-          null,
+          (call) async => 1,
         );
-      }
-    },
-    timeout: const Timeout(Duration(seconds: 45)),
-  );
+        Directory? directory;
+        late File file;
+        late _Journey fixture;
+        var databaseOpen = false;
+        late String categoryA;
+        late String categoryB;
+        late String ticketId;
+        late List<Map<String, dynamic>> originalB;
+        try {
+          await tester.runAsync(() async {
+            directory = await Directory.systemTemp.createTemp(
+              'lexiquest-synthetic-camera-',
+            );
+            file = File('${directory!.path}/journey.sqlite');
+            fixture = _Journey.open(file);
+            databaseOpen = true;
+            final vocabulary = fixture.dependencies.vocabulary!;
+            categoryA = (await vocabulary.createCategory(_setA)).id;
+            categoryB = (await vocabulary.createCategory(_setB)).id;
+            ticketId = (await vocabulary.createWord(
+              CreateWordCommand(
+                categoryId: categoryA,
+                spelling: 'ticket',
+                meaning: 'ตั๋ว',
+                partOfSpeech: 'noun',
+              ),
+            )).id;
+            await vocabulary.createWord(
+              CreateWordCommand(
+                categoryId: categoryB,
+                spelling: 'banana',
+                meaning: 'กล้วย',
+                partOfSpeech: 'noun',
+              ),
+            );
+            originalB =
+                (await (fixture.database.select(
+                          fixture.database.vocabularyWords,
+                        )..where((word) => word.categoryId.equals(categoryB)))
+                        .get())
+                    .map((word) => word.toJson())
+                    .toList();
+          });
+          await _openLibrary(tester, fixture.dependencies);
+          await _pumpUntil(tester, find.text(_setA));
+          expect(find.text(_setB), findsOneWidget);
+          await tester.tap(find.text(_setA));
+          await _pumpUntil(tester, find.text('ticket'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const ValueKey('add-word')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('ถ่ายภาพ'));
+          await _pumpUntil(
+            tester,
+            find.byKey(const ValueKey('synthetic-camera-preview')),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('เก็บในชุด $_setA'), findsOneWidget);
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          );
+          await tester.tap(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          );
+          await _pumpUntil(tester, find.text('apple'));
+          await tester.pumpAndSettle();
+          expect(find.byType(ObjectScannerScreen), findsOneWidget);
+          expect(
+            await tester.runAsync(
+              () => fixture.database
+                  .select(fixture.database.vocabularyWords)
+                  .get(),
+            ),
+            hasLength(2),
+            reason: 'a camera proposal must not write before confirmation',
+          );
+          if (manualCorrection) {
+            await tester.scrollUntilVisible(find.text('กรอกคำเอง'), 200);
+            await tester.tap(find.text('กรอกคำเอง'));
+            await _pumpUntil(tester, find.byType(AddWordScreen));
+            await tester.pumpAndSettle();
+            expect(find.text('เก็บในชุด $_setA'), findsOneWidget);
+            await tester.enterText(
+              find.byKey(const ValueKey('word-field')),
+              savedSpelling,
+            );
+            await tester.enterText(
+              find.byKey(const ValueKey('meaning-field')),
+              savedMeaning,
+            );
+            await tester.enterText(
+              find.byKey(const ValueKey('part-of-speech-field')),
+              'noun',
+            );
+            await tester.ensureVisible(find.byKey(const ValueKey('save-word')));
+            await tester.tap(find.byKey(const ValueKey('save-word')));
+          } else {
+            await tester.ensureVisible(find.text('เพิ่มเข้าคลัง'));
+            await tester.tap(find.text('เพิ่มเข้าคลัง'));
+          }
+          await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+          await tester.pumpAndSettle();
+          expect(find.byType(ObjectScannerScreen), findsNothing);
+          expect(
+            fixture.scanner.acceptedCategoryId,
+            manualCorrection ? null : categoryA,
+          );
+          expect(find.text(_setA), findsOneWidget);
+          expect(find.text(savedSpelling), findsOneWidget);
+          expect(find.text('banana'), findsNothing);
+          await tester.tap(find.text('ฝึกจากชุดนี้'));
+          final meanings = {savedSpelling: savedMeaning, 'ticket': 'ตั๋ว'};
+          final practiced = <String>{};
+          for (var index = 0; index < 2; index++) {
+            final prompt = find.descendant(
+              of: find.byType(QuizScreen),
+              matching: find.byWidgetPredicate(
+                (widget) => widget is Text && meanings.containsKey(widget.data),
+              ),
+            );
+            await _pumpUntil(tester, prompt);
+            await tester.pumpAndSettle();
+            final spelling = tester.widget<Text>(prompt).data!;
+            expect(practiced.add(spelling), isTrue);
+            expect(find.text('banana'), findsNothing);
+            final answer = find.widgetWithText(
+              FilledButton,
+              meanings[spelling]!,
+            );
+            await tester.ensureVisible(answer);
+            await tester.tap(answer);
+            final next = index == 0 ? 'คำถามถัดไป' : 'ดูผลการเรียน';
+            await _pumpUntil(tester, find.text(next));
+            await tester.ensureVisible(find.text(next));
+            await tester.tap(find.text(next));
+          }
+          expect(practiced, {savedSpelling, 'ticket'});
+          await _pumpUntil(tester, find.byType(ScoreScreen));
+          await tester.pumpAndSettle();
+          expect(find.text(_setA), findsOneWidget);
+          expect(find.text('100%'), findsOneWidget);
+          final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+          final sessionId = score.sessionId;
+          expect(sessionId, isNotNull);
+          expect(score.correctAnswers, 2);
+          await tester.ensureVisible(find.text('กลับไปที่ชุดคำ'));
+          await tester.tap(find.text('กลับไปที่ชุดคำ'));
+          await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+          await tester.pumpAndSettle();
+          expect(find.text(_setA), findsOneWidget);
+          expect(find.text(savedSpelling), findsOneWidget);
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 1));
+          await tester.runAsync(fixture.database.close);
+          databaseOpen = false;
+          await tester.pump(const Duration(milliseconds: 1));
+          await tester.runAsync(() async {
+            fixture = _Journey.open(file);
+            databaseOpen = true;
+            final categories = await fixture.database
+                .select(fixture.database.vocabularyCategories)
+                .get();
+            expect(categories.map((category) => category.id).toSet(), {
+              categoryA,
+              categoryB,
+            });
+            final words = await fixture.database
+                .select(fixture.database.vocabularyWords)
+                .get();
+            final scanned = words.singleWhere(
+              (word) => word.spelling == savedSpelling,
+            );
+            expect(scanned.categoryId, categoryA);
+            expect(scanned.meaning, savedMeaning);
+            expect(
+              scanned.source,
+              manualCorrection
+                  ? 'object-scanner:manualCorrection'
+                  : 'object-scanner:synthetic-known-object@1',
+            );
+            expect(
+              words.where((word) => word.categoryId == categoryA),
+              hasLength(2),
+            );
+            expect(
+              words
+                  .where((word) => word.categoryId == categoryB)
+                  .map((word) => word.toJson())
+                  .toList(),
+              originalB,
+            );
+            final attempts = await fixture.database
+                .select(fixture.database.answerAttempts)
+                .get();
+            expect(attempts, hasLength(2));
+            expect(attempts.map((answer) => answer.wordId).toSet(), {
+              ticketId,
+              scanned.id,
+            });
+            expect(attempts.map((answer) => answer.sessionId).toSet(), {
+              sessionId,
+            });
+            final progress = await fixture.dependencies.progress!.load();
+            expect(progress.recentSessions.single.summary.id, sessionId);
+            expect(progress.recentSessions.single.summary.score, 100);
+            expect(progress.recentSessions.single.summary.state, 'completed');
+          });
+          await _openLibrary(tester, fixture.dependencies);
+          await _pumpUntil(tester, find.text(_setA));
+          expect(find.text(_setB), findsOneWidget);
+          await tester.tap(find.text(_setA));
+          await _pumpUntil(tester, find.text(savedSpelling));
+          await tester.pumpAndSettle();
+          expect(find.text('ticket'), findsOneWidget);
+          expect(find.text('banana'), findsNothing);
+          expect(tester.takeException(), isNull);
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 1));
+          if (databaseOpen) {
+            await tester.runAsync(fixture.database.close);
+          }
+          await tester.pump(const Duration(milliseconds: 1));
+          if (directory != null) {
+            final temporaryRoot = Directory.systemTemp
+                .resolveSymbolicLinksSync();
+            final target = directory!.resolveSymbolicLinksSync();
+            expect(
+              target.startsWith(
+                '$temporaryRoot${Platform.pathSeparator}lexiquest-synthetic-camera-',
+              ),
+              isTrue,
+            );
+            await tester.runAsync(() => directory!.delete(recursive: true));
+          }
+          messenger.setMockMethodCallHandler(
+            const MethodChannel('flutter_tts'),
+            null,
+          );
+        }
+      },
+      timeout: const Timeout(Duration(seconds: 45)),
+    );
+  }
 }
 
 final class _Journey {

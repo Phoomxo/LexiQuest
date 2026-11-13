@@ -77,6 +77,25 @@ void main() {
     }
   });
 
+  test('dark text actions remain readable against their surfaces', () {
+    for (final theme in [
+      M3Theme.darkTheme,
+      M3Theme.darkThemeFor(
+        themeId: 'theme_ocean',
+        wallpaperId: 'wallpaper_focus',
+      ),
+    ]) {
+      expect(
+        _contrast(theme.colorScheme.primary, theme.scaffoldBackgroundColor),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(theme.colorScheme.primary, theme.colorScheme.surface),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
   test('interactive button themes retain a 48dp minimum touch target', () {
     for (final style in <ButtonStyle?>[
       M3Theme.lightTheme.filledButtonTheme.style,

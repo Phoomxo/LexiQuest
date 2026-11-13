@@ -4,6 +4,13 @@ import 'vocabulary_word.dart';
 abstract interface class VocabularyRepository {
   Stream<List<VocabularyCategory>> watchCategories(String ownerId);
 
+  Stream<List<VocabularyCategorySummary>> watchLibrary(String ownerId);
+
+  Stream<List<VocabularyWord>> searchWords(
+    String ownerId,
+    String normalizedQuery,
+  );
+
   Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId);
 
   Future<VocabularyCategory> createCategory(VocabularyCategory category);
