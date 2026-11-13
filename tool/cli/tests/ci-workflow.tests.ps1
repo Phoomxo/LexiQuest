@@ -70,7 +70,9 @@ function Invoke-TriggerTests {
     param([string]$Text)
     Assert-RegexMatches $Text '\bpull_request\b' 'workflow triggers on pull_request'
     Assert-RegexMatches $Text '\bpush\b' 'workflow triggers on push'
-    Assert-RegexMatches $Text '\bmain\b' 'push target includes the main branch'
+    $pushBranches = [regex]::Match($Text, '(?m)^  push:\n    branches: \[([^\]\n]+)\]').Groups[1].Value.Split(',').Trim()
+    Assert-True ($pushBranches -ccontains 'main') 'push target includes the main branch'
+    Assert-True ($pushBranches -ccontains 'codex/current-code-20261113') 'push target includes the current code branch'
 }
 
 function Invoke-PermissionTests {
