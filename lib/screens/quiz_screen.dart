@@ -16,12 +16,14 @@ class QuizScreen extends StatefulWidget {
   const QuizScreen({
     super.key,
     this.categoryId,
+    this.categoryName,
     this.learning,
     this.wordIds,
     this.selectionMode = QuizWordSelectionMode.weakness,
   });
 
   final String? categoryId;
+  final String? categoryName;
   final LearningUseCases? learning;
   final List<String>? wordIds;
   final QuizWordSelectionMode selectionMode;
@@ -130,6 +132,13 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.categoryName != null) ...[
+              Text(
+                widget.categoryName!,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+            ],
             Text(
               'คำถาม ${_index + 1} จาก ${session.questions.length}',
               style: Theme.of(context).textTheme.labelLarge,
@@ -359,6 +368,11 @@ class _QuizScreenState extends State<QuizScreen> {
             correctAnswers: summary.correctCount,
             wrongAnswers: summary.wrongCount,
             score: summary.score,
+            categoryName: widget.categoryName,
+            sessionId: summary.id,
+            returnLabel: widget.categoryName == null
+                ? 'กลับไปเลือกกิจกรรม'
+                : 'กลับไปที่ชุดคำ',
             mistakes: List.unmodifiable(_mistakes),
             onPracticeMistakes: _mistakes.isEmpty
                 ? null
@@ -386,6 +400,7 @@ class _QuizScreenState extends State<QuizScreen> {
           name: 'learning/mistake-practice',
           builder: (_) => QuizScreen(
             wordIds: _mistakes.map((word) => word.id).toSet().toList(),
+            categoryName: widget.categoryName,
             learning: _learning,
           ),
         ),

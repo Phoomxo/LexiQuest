@@ -6,6 +6,12 @@ Flutter baseline `e05e8a6c`. Design baseline `21b34eaa` in the design-reset work
 
 ## Outcome and authority
 
+The active continuous Goal includes all S1–S7 work below. Completing the first card does not complete the Goal.
+
+The first milestone is two visible comparison images, one for practice home and one for the library. Each pairs the pinned FigCraft render with the current Flutter Android render in the same state and proportions. Record source SHA, device model, real device versus emulator, synthetic data state, Thai typography/diacritics, spacing, button behavior, and independent Impeccable findings.
+
+For the first Android journey, start in selected set A with a distinct set B also present. Capture an actual photo, confirm its proposed word into A, practice from A to a persisted result, and return to A. Verify A's name/ID, the added word, and the linked session result. Restart the app and read both the same word and result. Preserve the before/result/after screens or a video. Add a regression check against returning to B. An unavailable real device leaves only that evidence pending while emulator and local work continue.
+
 Implement S1 through S7 in dependency order. Preserve the denominators of 48 screens, 44 features, and 64 work packages. A screen opening does not prove its feature works. Engineering acceptance, release readiness, research authority, and publication remain separate. No merge, deployment, real enrollment, or real research upload is authorized.
 
 The end-to-end predicate is app → library → camera → confirm → practice the selected set → result → return to that set → restart and read the saved data. Use synthetic records and existing owners, use cases, repositories, and reward authorities.
@@ -42,3 +48,13 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 The focused shell/home/progress check passes 41 tests. This includes a real Drift-memory due review that writes one answer and completes one session, then returns to the same shell. The library shortcut retains the existing tab and scroll position. The independent source reviewer found no blocking issue in the five production files. The Windows large-text render was inspected before its golden was updated.
 
 This is not whole-S1 acceptance. The separate practice menu, explicit library-mutation refresh case, Android runtime images, 200% device checks, and TalkBack observation remain open. Linux font rendering must be inspected from CI. The first baseline test run overlapped test-file edits and is not used as a clean baseline result.
+
+## Core journey milestone source
+
+The practice menu now has its own route. The library retains set/word search context and offers a single add-word menu. Camera confirmation receives the selected category and expected owner, returns the saved word to that category, and prevents duplicate confirmation while saving. Quiz results retain the selected set name and session ID. Due review opens its persisted result before returning. Progress reads the latest 20 completed sessions and re-reads a selected session by current owner before displaying it.
+
+The current source passes 136 focused tests and `flutter analyze lib`. A further nine-test run passes the complete synthetic camera → confirmation → quiz → result → set-A return → SQLite close/reopen regression, large-Thai-text layout, and accessibility smoke checks. In that regression the camera/model boundary is synthetic; persistence, scanner acceptance, vocabulary, and learning use the real authorities. Set B's entire word record remains unchanged.
+
+These are local engineering results. Android capture, process restart, known-object camera evidence, device 200%, TalkBack, final full regression, and current-head CI remain pending. The first PR run on `67a68518` passed formatting, analysis, Firestore, and Supabase checks but failed an old home-label assertion and the Linux home golden. The assertion is updated in this source; inspect the new Linux render before updating its golden.
+
+The installed vivo APK certificate SHA-256 matches the configured release key. Its versionCode is 26. The active source and original checkout both declare database schema 10. The existing APK was copied to `build/android-baseline/` for local evidence. No app data was cleared or uninstalled. Signing configuration is ignored and must never be staged.

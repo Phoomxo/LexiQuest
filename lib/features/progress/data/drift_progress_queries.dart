@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../learning/domain/learning_models.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -109,6 +110,7 @@ final class DriftProgressQueries {
       dueReviewCount: dueWords.length,
       vocabularyWordCount: wordRow.read(wordCount) ?? 0,
       nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
+      recentSessions: await _loadRecentSessions(ownerId),
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
       gameLevel: (totalXp ~/ 20) + 1,
@@ -149,6 +151,96 @@ final class DriftProgressQueries {
               attempts.last.occurredAtUtcMs,
               isUtc: true,
             ),
+    );
+  }
+
+  Future<List<SessionHistoryEntry>> _loadRecentSessions(String ownerId) async {
+    final rows =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.state.equals('completed') &
+                    row.endedAtUtcMs.isNotNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.endedAtUtcMs),
+                (row) => OrderingTerm.desc(row.id),
+              ])
+              ..limit(20))
+            .get();
+    return rows.map(_historyEntry).toList(growable: false);
+  }
+
+  Future<SessionHistoryEntry?> loadSession({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    final row =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.id.equals(sessionId) &
+                  row.state.equals('completed') &
+                  row.endedAtUtcMs.isNotNull(),
+            ))
+            .getSingleOrNull();
+    if (row == null) return null;
+    final mistakes = await database
+        .customSelect(
+          '''
+      SELECT DISTINCT w.id, w.category_id, w.spelling, w.meaning, w.part_of_speech
+      FROM answer_attempts a
+      INNER JOIN vocabulary_words w ON w.id = a.word_id AND w.owner_id = a.owner_id
+      WHERE a.owner_id = ? AND a.session_id = ? AND a.is_correct = 0 AND w.is_deleted = 0
+      ORDER BY w.spelling ASC, w.id ASC
+      ''',
+          variables: [Variable<String>(ownerId), Variable<String>(sessionId)],
+          readsFrom: {database.answerAttempts, database.vocabularyWords},
+        )
+        .get();
+    return _historyEntry(
+      row,
+      mistakes: mistakes
+          .map(
+            (word) => QuizWord(
+              id: word.read<String>('id'),
+              categoryId: word.read<String>('category_id'),
+              spelling: word.read<String>('spelling'),
+              meaning: word.read<String>('meaning'),
+              partOfSpeech: word.read<String>('part_of_speech'),
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+
+  SessionHistoryEntry _historyEntry(
+    LearningSession row, {
+    List<QuizWord> mistakes = const [],
+  }) {
+    final total = row.correctCount + row.wrongCount;
+    return SessionHistoryEntry(
+      ownerId: row.ownerId,
+      summary: LearningSessionSummary(
+        id: row.id,
+        state: row.state,
+        correctCount: row.correctCount,
+        wrongCount: row.wrongCount,
+        score:
+            row.score ??
+            (total == 0 ? 0 : (row.correctCount * 100 / total).round()),
+      ),
+      activityType: row.activityType,
+      startedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        row.startedAtUtcMs,
+        isUtc: true,
+      ),
+      completedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        row.endedAtUtcMs!,
+        isUtc: true,
+      ),
+      mistakes: mistakes,
     );
   }
 

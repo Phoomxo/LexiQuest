@@ -57,10 +57,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   List<_NavigationEntry> _buildEntries(FieldFeatureRegistry features) {
+    final showPractice =
+        features.isVisible(FieldFeature.quiz) ||
+        features.isVisible(FieldFeature.srs) ||
+        features.isVisible(FieldFeature.reading);
+    final showLibrary = features.isVisible(FieldFeature.vocabulary);
+    final progressIndex = (showPractice ? 1 : 0) + (showLibrary ? 1 : 0);
     return [
-      if (features.isVisible(FieldFeature.quiz) ||
-          features.isVisible(FieldFeature.srs) ||
-          features.isVisible(FieldFeature.reading))
+      if (showPractice)
         _NavigationEntry(
           screen: ChooseModeScreen(
             featureRegistry: features,
@@ -72,7 +76,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           selectedIcon: Icons.school,
           label: 'ฝึกภาษา',
         ),
-      if (features.isVisible(FieldFeature.vocabulary))
+      if (showLibrary)
         _NavigationEntry(
           screen: CategoriesPage(onOpenMenu: _openDrawer),
           icon: Icons.menu_book_outlined,
@@ -84,6 +88,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           screen: MasteryDashboardScreen(
             featureRegistry: features,
             onOpenMenu: _openDrawer,
+            isActive: _currentIndex == progressIndex,
           ),
           icon: Icons.analytics_outlined,
           selectedIcon: Icons.analytics,

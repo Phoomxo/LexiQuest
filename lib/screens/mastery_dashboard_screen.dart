@@ -10,6 +10,8 @@ import '../widgets/adaptive_content_pane.dart';
 import 'achievements_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
+import 'quiz_screen.dart';
+import 'score_screen.dart';
 
 typedef ProgressLoader = Future<ProgressSnapshot> Function();
 
@@ -19,11 +21,13 @@ class MasteryDashboardScreen extends StatefulWidget {
     this.loader,
     this.featureRegistry,
     this.onOpenMenu,
+    this.isActive = true,
   });
 
   final ProgressLoader? loader;
   final FieldFeatureRegistry? featureRegistry;
   final VoidCallback? onOpenMenu;
+  final bool isActive;
 
   @override
   State<MasteryDashboardScreen> createState() => _MasteryDashboardScreenState();
@@ -32,9 +36,16 @@ class MasteryDashboardScreen extends StatefulWidget {
 class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   Future<ProgressSnapshot>? _load;
   ProgressLoader? _loader;
+  String? _openingSessionId;
+  bool _practicingHistory = false;
 
   ProgressLoader? get _currentLoader =>
       widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+
+  FieldFeatureRegistry get _features =>
+      widget.featureRegistry ??
+      AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
+      const BuildFieldFeatureRegistry.allEnabled();
 
   @override
   void didChangeDependencies() {
@@ -47,7 +58,8 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   @override
   void didUpdateWidget(MasteryDashboardScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loader != widget.loader) {
+    if (oldWidget.loader != widget.loader ||
+        (!oldWidget.isActive && widget.isActive)) {
       _load = _loadProgress();
     }
   }
@@ -72,12 +84,98 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
     });
   }
 
+  Future<void> _openSession(String sessionId) async {
+    if (_openingSessionId != null) return;
+    final progress = AppDependenciesScope.maybeOf(context)?.progress;
+    setState(() => _openingSessionId = sessionId);
+    try {
+      if (progress == null) throw StateError('progress unavailable');
+      final entry = await progress.loadSession(sessionId);
+      if (!mounted) return;
+      if (entry == null ||
+          progress != AppDependenciesScope.maybeOf(context)?.progress) {
+        throw StateError('saved session unavailable');
+      }
+      final learning = AppDependenciesScope.maybeOf(context)?.learning;
+      final features = _features;
+      final canRepair =
+          features.isVisible(FieldFeature.weakness) &&
+          features.isVisible(FieldFeature.quiz);
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'progress/session/$sessionId',
+          builder: (scoreContext) => ScoreScreen(
+            correctAnswers: entry.summary.correctCount,
+            wrongAnswers: entry.summary.wrongCount,
+            score: entry.summary.score,
+            sessionId: entry.summary.id,
+            returnLabel: 'กลับไปดูประวัติ',
+            mistakes: entry.mistakes,
+            onPracticeMistakes:
+                !canRepair || learning == null || entry.mistakes.isEmpty
+                ? null
+                : () => _practiceHistoryMistakes(scoreContext, entry),
+          ),
+        ),
+      );
+      if (mounted) _refresh();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เปิดผลรอบเดิมไม่สำเร็จ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingSessionId = null);
+    }
+  }
+
+  Future<void> _practiceHistoryMistakes(
+    BuildContext scoreContext,
+    SessionHistoryEntry entry,
+  ) async {
+    if (_practicingHistory) return;
+    _practicingHistory = true;
+    try {
+      final features = _features;
+      if (!features.isVisible(FieldFeature.weakness) ||
+          !features.isVisible(FieldFeature.quiz)) {
+        throw StateError('history repair unavailable');
+      }
+      final learning = AppDependenciesScope.maybeOf(scoreContext)?.learning;
+      if (learning == null) throw StateError('learning unavailable');
+      final owner = await learning.owners.getOrCreateActiveOwner();
+      if (!scoreContext.mounted) return;
+      if (owner.id != entry.ownerId) throw StateError('learning owner changed');
+      await AppNavigator.pushPage<void>(
+        scoreContext,
+        AppPage<void>(
+          name: 'progress/session/${entry.summary.id}/practice',
+          builder: (_) => QuizScreen(
+            wordIds: entry.mistakes.map((word) => word.id).toList(),
+            learning: learning,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (scoreContext.mounted) {
+        ScaffoldMessenger.of(scoreContext).showSnackBar(
+          const SnackBar(
+            content: Text('เริ่มฝึกคำที่ผิดไม่สำเร็จ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+    } finally {
+      _practicingHistory = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final features =
-        widget.featureRegistry ??
-        AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
-        const BuildFieldFeatureRegistry.allEnabled();
+    final features = _features;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -126,12 +224,17 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
                     );
                   }
                   final progress = snapshot.data!;
-                  if (progress.sampleSize == 0) {
+                  if (progress.sampleSize == 0 &&
+                      progress.recentSessions.isEmpty) {
                     return const _DashboardMessage(
                       'ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ',
                     );
                   }
-                  return _DashboardBody(progress);
+                  return _DashboardBody(
+                    progress,
+                    onOpenSession: _openSession,
+                    openingSessionId: _openingSessionId,
+                  );
                 },
               ),
             ),
@@ -212,9 +315,15 @@ class _ProgressActions extends StatelessWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody(this.progress);
+  const _DashboardBody(
+    this.progress, {
+    required this.onOpenSession,
+    required this.openingSessionId,
+  });
 
   final ProgressSnapshot progress;
+  final ValueChanged<String> onOpenSession;
+  final String? openingSessionId;
 
   @override
   Widget build(BuildContext context) {
@@ -261,6 +370,41 @@ class _DashboardBody extends StatelessWidget {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        const SizedBox(height: 24),
+        Text('ประวัติการฝึก', style: Theme.of(context).textTheme.titleLarge),
+        if (progress.recentSessions.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('ยังไม่มีรอบฝึกที่จบแล้ว'),
+          ),
+        for (final entry in progress.recentSessions)
+          ListTile(
+            key: ValueKey('history-session:${entry.summary.id}'),
+            title: Text(switch (entry.activityType) {
+              'quiz' => 'เลือกความหมาย',
+              'srsReview' => 'ทบทวนด้วยบัตรคำ',
+              'weaknessPractice' => 'ฝึกคำที่ผิด',
+              'sourcePractice' => 'ฝึกจากเนื้อหา',
+              'associativeReading' => 'อ่านและนึกคำ',
+              _ => 'รอบฝึก',
+            }),
+            subtitle: Text(
+              'ถูก ${entry.summary.correctCount} จาก ${entry.summary.correctCount + entry.summary.wrongCount} ข้อ · '
+              '${MaterialLocalizations.of(context).formatShortDate(entry.completedAtUtc.toLocal())} '
+              '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(entry.completedAtUtc.toLocal()))}',
+            ),
+            trailing: openingSessionId == entry.summary.id
+                ? const SizedBox.square(
+                    dimension: 24,
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'กำลังเปิดผลรอบเดิม',
+                    ),
+                  )
+                : Text('${entry.summary.score}%'),
+            onTap: openingSessionId == null
+                ? () => onOpenSession(entry.summary.id)
+                : null,
+          ),
       ],
     );
   }

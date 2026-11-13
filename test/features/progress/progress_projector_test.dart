@@ -149,6 +149,95 @@ void main() {
     expect(deleted.nextDueSpelling, isNull);
   });
 
+  test(
+    'history and saved detail contain only completed owner sessions',
+    () async {
+      await startSession();
+      await record('meaningChoice', false);
+      await learning.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-owner-1',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 11),
+      );
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'pending-owner-1',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 12),
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+          );
+      await startSession('owner-2');
+      await learning.finishSession(
+        ownerId: 'owner-2',
+        sessionId: 'session-owner-2',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 11, 30),
+      );
+
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(1));
+      expect(snapshot.recentSessions.single.summary.id, 'session-owner-1');
+      final before = await _databaseSnapshot(database);
+      final detail = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-owner-1',
+      );
+      expect(detail!.summary.correctCount, 0);
+      expect(detail.summary.wrongCount, 1);
+      expect(detail.summary.score, 0);
+      expect(detail.mistakes.single.id, 'word-1');
+      expect(
+        await progress.loadSession(
+          ownerId: 'owner-1',
+          sessionId: 'session-owner-2',
+        ),
+        isNull,
+      );
+      expect(
+        await progress.loadSession(
+          ownerId: 'owner-1',
+          sessionId: 'pending-owner-1',
+        ),
+        isNull,
+      );
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'history keeps the latest twenty completed sessions in stable order',
+    () async {
+      for (var index = 0; index < 22; index++) {
+        await learning.startSession(
+          LearningSessionDraft(
+            id: 'history-$index',
+            ownerId: 'owner-1',
+            activityType: 'quiz',
+            startedAtUtc: DateTime.utc(2026, 7, 30, 10, index),
+            appVersion: 'test',
+            buildId: 'test',
+          ),
+        );
+        await learning.finishSession(
+          ownerId: 'owner-1',
+          sessionId: 'history-$index',
+          endedAtUtc: DateTime.utc(2026, 7, 30, 11, index),
+        );
+      }
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(20));
+      expect(snapshot.recentSessions.first.summary.id, 'history-21');
+      expect(snapshot.recentSessions.last.summary.id, 'history-2');
+    },
+  );
+
   test('mixed attempts derive accuracy points weakness and streak', () async {
     await learning.startSession(
       LearningSessionDraft(

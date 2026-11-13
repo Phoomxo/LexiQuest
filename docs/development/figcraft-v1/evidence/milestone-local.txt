@@ -1,0 +1,11 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart
+00:00 +0: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:01 +1: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:01 +2: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:01 +3: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:01 +4: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:01 +5: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:02 +6: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:02 +7: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:02 +8: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_camera_journey_test.dart: camera confirmation stays in selected A through practice and SQLite reopen
+00:03 +9: All tests passed!

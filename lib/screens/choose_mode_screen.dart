@@ -80,11 +80,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canQuiz = _features.isVisible(FieldFeature.quiz);
     final canReview = _features.isVisible(FieldFeature.srs);
-    final canWeakness = _features.isVisible(FieldFeature.weakness);
     final canReading = _features.isVisible(FieldFeature.reading);
-    final canViewProgress = _features.isVisible(FieldFeature.mastery);
     final width = MediaQuery.sizeOf(context).width;
     final horizontalPadding = width < 360
         ? 16.0
@@ -172,33 +169,45 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (hasDue) ...[
-                    if (nextWord != null) ...[
-                      Text(
-                        'ลองนึกความหมายก่อนเปิดคำแปล',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                  if (hasDue)
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        nextWord,
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (nextWord != null) ...[
+                            Text(
+                              'ลองนึกความหมายก่อนเปิดคำแปล',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              nextWord,
+                              style: Theme.of(context).textTheme.headlineLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          FilledButton.icon(
+                            onPressed: () => _push(
+                              context,
+                              SrsFlashcardsScreen(learning: _learning),
+                            ),
+                            icon: const Icon(Icons.event_repeat_outlined),
+                            label: Text(
+                              nextWord == null
+                                  ? 'ทบทวน ${progress.dueReviewCount} คำ'
+                                  : 'ทบทวนคำนี้',
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    FilledButton.icon(
-                      onPressed: () => _push(
-                        context,
-                        SrsFlashcardsScreen(learning: _learning),
-                      ),
-                      icon: const Icon(Icons.event_repeat_outlined),
-                      label: Text(
-                        nextWord == null
-                            ? 'ทบทวน ${progress.dueReviewCount} คำ'
-                            : 'ทบทวนคำนี้',
-                      ),
-                    ),
-                  ] else if (canLibrary) ...[
+                    )
+                  else if (canLibrary) ...[
                     Text(
                       progress.vocabularyWordCount == 0
                           ? 'เก็บคำที่อยากใช้ แล้วนำคำในชุดนั้นมาฝึก'
@@ -221,65 +230,91 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           const SizedBox(height: 24),
           Text('ฝึกเพิ่มเติม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          if (canQuiz) ...[
-            _LearningTile(
-              icon: Icons.quiz_outlined,
-              title: 'ฝึกคำศัพท์',
-              subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
-              onTap: () => _push(context, QuizScreen(learning: _learning)),
-            ),
-            _LearningTile(
-              icon: Icons.category_outlined,
-              title: 'ฝึกตามหมวดหมู่',
-              subtitle: 'เลือกจากหมวดหมู่ที่บันทึกในเครื่อง',
-              onTap: () => _openCategoryQuiz(context),
-            ),
-          ],
-          if (canReview)
-            _LearningTile(
-              icon: Icons.event_repeat_outlined,
-              title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
-              subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
-              onTap: () =>
-                  _push(context, SrsFlashcardsScreen(learning: _learning)),
-            ),
-          if (canReading)
-            _LearningTile(
-              icon: Icons.menu_book_outlined,
-              title: 'อ่านเรื่องสั้นและจำคำศัพท์',
-              subtitle: 'อ่าน ทบทวนจากความจำ และแต่งประโยคด้วยคำเป้าหมาย',
-              onTap: () => _openReading(context),
-            ),
-          if (canViewProgress)
-            _LearningTile(
-              icon: Icons.analytics_outlined,
-              title: 'ภาพรวมการเรียน',
-              subtitle: 'ดูความก้าวหน้าจากคำตอบที่บันทึกไว้',
-              onTap: () => _push(
-                context,
-                MasteryDashboardScreen(
-                  loader: widget.loader,
-                  featureRegistry: _features,
+          ..._activities(),
+          TextButton(
+            onPressed: () => _push(
+              context,
+              Scaffold(
+                appBar: AppBar(
+                  toolbarHeight: M3Theme.appBarToolbarHeight(context),
+                  title: M3Theme.appBarTitle(context, 'เลือกวิธีฝึก'),
+                ),
+                body: ListView(
+                  padding: EdgeInsets.all(horizontalPadding),
+                  children: _activities(all: true),
                 ),
               ),
             ),
-          if (canWeakness)
-            _LearningTile(
-              icon: Icons.healing_outlined,
-              title: 'ฝึกจุดอ่อน',
-              subtitle: 'ฝึกคำที่เคยตอบผิดได้โดยไม่ต้องรอวันทบทวน',
-              onTap: () => _push(
-                context,
-                WeaknessClinicScreen(
-                  loader: widget.loader,
-                  learning: _learning,
-                  featureRegistry: _features,
-                ),
-              ),
-            ),
+            child: const Text('ดูแบบฝึกทั้งหมด'),
+          ),
         ],
       ),
     );
+  }
+
+  List<Widget> _activities({bool all = false}) {
+    final canQuiz = _features.isVisible(FieldFeature.quiz);
+    final canReview = _features.isVisible(FieldFeature.srs);
+    final canWeakness = _features.isVisible(FieldFeature.weakness);
+    final canReading = _features.isVisible(FieldFeature.reading);
+    final canViewProgress = _features.isVisible(FieldFeature.mastery);
+    return [
+      if (all && canQuiz) ...[
+        _LearningTile(
+          icon: Icons.quiz_outlined,
+          title: 'ฝึกคำศัพท์',
+          subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
+          onTap: () => _push(context, QuizScreen(learning: _learning)),
+        ),
+        _LearningTile(
+          icon: Icons.category_outlined,
+          title: 'ฝึกตามหมวดหมู่',
+          subtitle: 'เลือกจากหมวดหมู่ที่บันทึกในเครื่อง',
+          onTap: () => _openCategoryQuiz(context),
+        ),
+      ],
+      if (all && canReview)
+        _LearningTile(
+          icon: Icons.event_repeat_outlined,
+          title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
+          subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
+          onTap: () => _push(context, SrsFlashcardsScreen(learning: _learning)),
+        ),
+      if (canReading)
+        _LearningTile(
+          icon: Icons.menu_book_outlined,
+          title: 'อ่านเรื่องสั้นและจำคำศัพท์',
+          subtitle: 'อ่าน ทบทวนจากความจำ และแต่งประโยคด้วยคำเป้าหมาย',
+          onTap: () => _openReading(context),
+        ),
+      if (all && canViewProgress)
+        _LearningTile(
+          icon: Icons.analytics_outlined,
+          title: 'ภาพรวมการเรียน',
+          subtitle: 'ดูความก้าวหน้าจากคำตอบที่บันทึกไว้',
+          onTap: () => _push(
+            context,
+            MasteryDashboardScreen(
+              loader: widget.loader,
+              featureRegistry: _features,
+            ),
+          ),
+        ),
+      if (canWeakness)
+        _LearningTile(
+          icon: Icons.healing_outlined,
+          title: 'ฝึกจุดอ่อน',
+          subtitle: 'ฝึกคำที่เคยตอบผิดได้โดยไม่ต้องรอวันทบทวน',
+          onTap: () => _push(
+            context,
+            WeaknessClinicScreen(
+              loader: widget.loader,
+              learning: _learning,
+              featureRegistry: _features,
+            ),
+          ),
+        ),
+    ];
   }
 
   void _openLibrary() {
@@ -376,15 +411,18 @@ class _LearningTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        minVerticalPadding: 16,
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
+    return Column(
+      children: [
+        ListTile(
+          minVerticalPadding: 16,
+          leading: Icon(icon),
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: onTap,
+        ),
+        const Divider(height: 1),
+      ],
     );
   }
 }

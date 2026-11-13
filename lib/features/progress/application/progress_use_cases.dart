@@ -23,4 +23,15 @@ final class ProgressUseCases {
     }
     return queries.load(ownerId: owner.id, nowUtc: now);
   }
+
+  Future<SessionHistoryEntry?> loadSession(String sessionId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final entry = await queries.loadSession(
+      ownerId: owner.id,
+      sessionId: sessionId,
+    );
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('progress owner changed');
+    return entry;
+  }
 }

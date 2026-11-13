@@ -12,6 +12,9 @@ class ScoreScreen extends StatelessWidget {
     this.selectedCategoryId,
     this.mistakes = const [],
     this.onPracticeMistakes,
+    this.categoryName,
+    this.sessionId,
+    this.returnLabel = 'กลับไปเลือกกิจกรรม',
   });
 
   final int correctAnswers;
@@ -19,6 +22,9 @@ class ScoreScreen extends StatelessWidget {
   final int? score;
   final List<QuizWord> mistakes;
   final VoidCallback? onPracticeMistakes;
+  final String? categoryName;
+  final String? sessionId;
+  final String returnLabel;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -30,6 +36,7 @@ class ScoreScreen extends StatelessWidget {
     final resolvedScore =
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return Scaffold(
+      key: sessionId == null ? null : ValueKey('score-session:$sessionId'),
       appBar: AppBar(title: const Text('ผลการเรียน')),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
@@ -39,6 +46,13 @@ class ScoreScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (categoryName != null) ...[
+                  Text(
+                    categoryName!,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   '$resolvedScore%',
                   style: Theme.of(context).textTheme.displayMedium,
@@ -83,7 +97,7 @@ class ScoreScreen extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('กลับไปเลือกกิจกรรม'),
+                  label: Text(returnLabel),
                 ),
               ],
             ),

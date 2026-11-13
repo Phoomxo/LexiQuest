@@ -11,6 +11,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -41,6 +42,67 @@ void main() {
 
   setUp(() {
     // SharedPreferences mock removed — SrsService dependency eliminated (Phase 0 W14-15).
+  });
+
+  testWidgets('due review shows its persisted score before returning home', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final owners = DriftLocalOwnerRepository(
+      db,
+      generateId: () => 'due-score',
+      nowUtc: () => DateTime.utc(2026, 11, 13),
+    );
+    var sequence = 0;
+    final learning = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(db),
+      generateId: () => 'due-${++sequence}',
+      nowUtc: () => DateTime.utc(2026, 11, 13, 12),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    await tester.runAsync(() => _seedDueWords(db, owners, ['apple']));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SrsFlashcardsScreen(
+                  learning: learning,
+                  voice: VoiceUseCases(FakeVoiceProvider()),
+                ),
+              ),
+            ),
+            child: const Text('หน้าเริ่มฝึก'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('หน้าเริ่มฝึก'));
+    await _pumpUntil(tester, find.text('apple'));
+    await tester.tap(find.text('ดูคำแปล'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('จำได้แล้ว'));
+    await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+    await tester.tap(find.text('จบการทบทวน'));
+    await _pumpUntil(tester, find.byType(ScoreScreen));
+
+    final sessions = await tester.runAsync(
+      () => db.select(db.learningSessions).get(),
+    );
+    expect(sessions!.single.state, 'completed');
+    expect(sessions.single.correctCount, 1);
+    expect(find.text('100%'), findsOneWidget);
+    await tester.tap(find.text('กลับไปเลือกกิจกรรม'));
+    await tester.pumpAndSettle();
+    expect(find.text('หน้าเริ่มฝึก'), findsOneWidget);
+    expect(find.byType(SrsFlashcardsScreen), findsNothing);
+    expect(
+      (await tester.runAsync(() => db.select(db.answerAttempts).get()))!,
+      hasLength(1),
+    );
   });
 
   testWidgets(
@@ -516,7 +578,7 @@ void main() {
         await _pumpUntil(tester, find.text('บันทึกแล้ว'));
         expect(find.text('2/2'), findsOneWidget);
         await tester.tap(find.text('จบการทบทวน'));
-        await _pumpUntil(tester, find.text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว'));
+        await _pumpUntil(tester, find.byType(ScoreScreen));
         expect(failing.commands.last.id, isNot(first.id));
         expect(
           await tester.runAsync(() => db.select(db.answerAttempts).get()),
@@ -584,7 +646,7 @@ void main() {
         await tester.pump(const Duration(seconds: 5));
         await tester.pumpAndSettle();
         await tester.tap(find.text('จบการทบทวน'));
-        await _pumpUntil(tester, find.text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว'));
+        await _pumpUntil(tester, find.byType(ScoreScreen));
         expect(failing.commands, hasLength(1));
         expect(failing.commands.last.id, failing.commands.first.id);
         expect(

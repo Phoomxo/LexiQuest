@@ -1,18 +1,185 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_benchmark.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
 import 'package:vocab_learning_app/services/object_vocabulary_database.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  Future<void> openSelectedSetScanner(
+    WidgetTester tester,
+    _FakeScanner scanner,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                final word = await Navigator.of(context).push<VocabularyWord>(
+                  MaterialPageRoute<VocabularyWord>(
+                    builder: (_) => ObjectScannerScreen(
+                      scanner: scanner,
+                      voice: VoiceUseCases(_FakeVoice()),
+                      targetCategoryId: 'category:travel',
+                      targetCategoryName: 'ชุดทดสอบ',
+                    ),
+                  ),
+                );
+                if (context.mounted && word != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('กลับชุด ${word.categoryId}')),
+                  );
+                }
+              },
+              child: const Text('ถ่ายภาพเพิ่มคำในชุด'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('ถ่ายภาพเพิ่มคำในชุด'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('selected-set confirmation returns the saved word to its set', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner();
+    await openSelectedSetScanner(tester, scanner);
+
+    expect(find.text('เก็บในชุด ชุดทดสอบ'), findsOneWidget);
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+
+    expect(scanner.acceptedCategoryId, 'category:travel');
+    expect(scanner.acceptCalls, 1);
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+    expect(find.byType(ObjectScannerScreen), findsNothing);
+  });
+
+  testWidgets('pending confirmation blocks repeated taps capture and Back', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()..pendingAccept = Completer<void>();
+    await openSelectedSetScanner(tester, scanner);
+    final confirm = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'เพิ่มเข้าคลัง'),
+    );
+    confirm.onPressed!();
+    confirm.onPressed!();
+    await tester.pump();
+
+    expect(scanner.acceptCalls, 1);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.pageBack();
+    await tester.pump();
+    expect(find.byType(ObjectScannerScreen), findsOneWidget);
+
+    scanner.pendingAccept!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+  });
+
+  testWidgets('failed confirmation keeps the proposal for a safe retry', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()
+      ..acceptFailure = StateError('synthetic save failure');
+    await openSelectedSetScanner(tester, scanner);
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('apple'), findsOneWidget);
+    expect(
+      find.text('บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง'),
+      findsOneWidget,
+    );
+    expect(find.text('บันทึกแล้ว'), findsNothing);
+    scanner.acceptFailure = null;
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+    expect(scanner.acceptCalls, 2);
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+  });
+
+  for (final selectedSet in [false, true]) {
+    testWidgets(
+      'owner switch stops confirmation before the scanner writes $selectedSet',
+      (tester) async {
+        final scanner = _FakeScanner();
+        final owners = _MutableOwners();
+        await tester.binding.setSurfaceSize(const Size(800, 1200));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: AppDependencies(
+              runtimeStatus: const AppRuntimeStatus(
+                localData: RuntimeAvailability.ready,
+                firebase: RuntimeAvailability.unavailable,
+                supabase: RuntimeAvailability.unavailable,
+                backends: RuntimeAvailability.unavailable,
+              ),
+              config: null,
+              guestSessionService: _UnusedGuestSession(),
+              localOwners: owners,
+            ),
+            child: MaterialApp(
+              home: ObjectScannerScreen(
+                scanner: scanner,
+                voice: VoiceUseCases(_FakeVoice()),
+                targetCategoryId: selectedSet ? 'category:travel' : null,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('object-scanner-capture-button')),
+        );
+        await tester.pumpAndSettle();
+        owners.ownerId = 'owner:other';
+
+        await tester.tap(find.text('เพิ่มเข้าคลัง'));
+        await tester.pumpAndSettle();
+
+        expect(scanner.acceptCalls, 0);
+        expect(
+          find.text('บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่'),
+          findsOneWidget,
+        );
+        expect(find.text('บันทึกแล้ว'), findsNothing);
+      },
+    );
+  }
+
   testWidgets('captures real adapter result and persists accepted vocabulary', (
     tester,
   ) async {
@@ -360,16 +527,27 @@ final class _FakeScanner implements ObjectScannerController {
   int resumeCalls = 0;
   int benchmarkCalls = 0;
   int initializeCalls = 0;
+  String? acceptedCategoryId;
+  Completer<void>? pendingAccept;
+  Object? acceptFailure;
   @override
   bool isReady = false;
 
   @override
-  Future<VocabularyWord> accept(ObjectScanResult result) async {
+  Future<VocabularyWord> accept(
+    ObjectScanResult result, {
+    String? categoryId,
+    String? expectedOwnerId,
+  }) async {
     acceptCalls += 1;
+    acceptedCategoryId = categoryId;
+    await pendingAccept?.future;
+    final failure = acceptFailure;
+    if (failure != null) throw failure;
     return VocabularyWord(
       id: 'word:apple',
       ownerId: 'owner:1',
-      categoryId: 'category:food',
+      categoryId: categoryId ?? 'category:food',
       spelling: 'apple',
       normalizedSpelling: 'apple',
       meaning: 'แอปเปิล',
@@ -485,6 +663,16 @@ final class _FakeScanner implements ObjectScannerController {
     isReady = true;
   }
 }
+
+final class _MutableOwners extends Fake implements LocalOwnerRepository {
+  String ownerId = 'owner:1';
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async =>
+      LocalOwner(id: ownerId, createdAtUtc: DateTime.utc(2026, 11, 13));
+}
+
+final class _UnusedGuestSession extends Fake implements GuestSessionService {}
 
 final class _FakeVoice implements VoiceProvider {
   @override

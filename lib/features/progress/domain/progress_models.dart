@@ -1,3 +1,5 @@
+import '../../learning/domain/learning_models.dart';
+
 final class SkillEvidence {
   const SkillEvidence({
     required this.key,
@@ -78,6 +80,7 @@ final class ProgressSnapshot {
     required this.recommendations,
     this.vocabularyWordCount = 0,
     this.nextDueSpelling,
+    this.recentSessions = const [],
     this.achievements = const [],
     this.algorithmVersion = 1,
     this.averageResponseTimeMs,
@@ -94,6 +97,7 @@ final class ProgressSnapshot {
   final int dueReviewCount;
   final int vocabularyWordCount;
   final String? nextDueSpelling;
+  final List<SessionHistoryEntry> recentSessions;
   final int masteredWordCount;
   final int achievementCount;
   final int gameLevel;
@@ -104,4 +108,22 @@ final class ProgressSnapshot {
   final int algorithmVersion;
   final double? averageResponseTimeMs;
   final DateTime? latestEvidenceAtUtc;
+}
+
+final class SessionHistoryEntry {
+  const SessionHistoryEntry({
+    required this.ownerId,
+    required this.summary,
+    required this.activityType,
+    required this.startedAtUtc,
+    required this.completedAtUtc,
+    this.mistakes = const [],
+  });
+
+  final String ownerId;
+  final LearningSessionSummary summary;
+  final String activityType;
+  final DateTime startedAtUtc;
+  final DateTime completedAtUtc;
+  final List<QuizWord> mistakes;
 }

@@ -20,7 +20,16 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  var _retryEpoch = 0;
+  final _searchController = TextEditingController();
+  String _query = '';
+  VocabularyUseCases? _vocabulary;
+  Stream<List<VocabularyCategory>>? _categories;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   VocabularyUseCases? _useCases(BuildContext context) =>
       widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
@@ -28,6 +37,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   @override
   Widget build(BuildContext context) {
     final useCases = _useCases(context);
+    if (!identical(useCases, _vocabulary)) {
+      _vocabulary = useCases;
+      _categories = useCases?.watchCategories();
+    }
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -46,66 +59,105 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: AdaptiveContentPane(
         child: useCases == null
             ? const _LocalDataUnavailable()
-            : StreamBuilder<List<VocabularyCategory>>(
-                key: ValueKey<int>(_retryEpoch),
-                stream: useCases.watchCategories(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return _FailureState(
-                      onRetry: () => setState(() => _retryEpoch++),
-                    );
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'กำลังโหลดหมวดหมู่',
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: SearchBar(
+                      key: const ValueKey('category-search'),
+                      controller: _searchController,
+                      hintText: 'ค้นหาชุดคำศัพท์',
+                      leading: const Icon(Icons.search),
+                      onChanged: (value) => setState(
+                        () => _query = normalizeVocabularyText(value),
                       ),
-                    );
-                  }
-                  final categories = snapshot.data!;
-                  if (categories.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: categories.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.folder_outlined),
-                          title: Text(category.name),
-                          subtitle: const Text('แตะเพื่อดูคำศัพท์'),
-                          trailing: IconButton(
-                            tooltip: 'ลบหมวดหมู่ ${category.name}',
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () =>
-                                _confirmDelete(context, useCases, category),
-                          ),
-                          onTap: () {
-                            AppNavigator.pushPage<void>(
-                              context,
-                              AppPage<void>(
-                                name: 'vocabulary/category',
-                                builder: (_) => VocabListScreen(
-                                  categoryId: category.id,
-                                  categoryName: category.name,
-                                  vocabulary: useCases,
-                                ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'ชุดคำของฉัน',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Expanded(
+                    child: StreamBuilder<List<VocabularyCategory>>(
+                      stream: _categories,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return _FailureState(
+                            onRetry: () => setState(
+                              () => _categories = useCases.watchCategories(),
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                            ),
+                          );
+                        }
+                        if (snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        }
+                        final categories = snapshot.data!
+                            .where(
+                              (category) =>
+                                  category.normalizedName.contains(_query),
+                            )
+                            .toList(growable: false);
+                        if (categories.isEmpty) {
+                          return const Center(
+                            child: Text('ไม่พบชุดคำศัพท์ที่ค้นหา'),
+                          );
+                        }
+                        return ListView.separated(
+                          key: const PageStorageKey('vocabulary-categories'),
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 96),
+                          itemCount: categories.length,
+                          separatorBuilder: (_, _) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final category = categories[index];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
                               ),
+                              leading: const Icon(Icons.folder_outlined),
+                              title: Text(category.name),
+                              subtitle: const Text('แตะเพื่อดูคำศัพท์'),
+                              trailing: IconButton(
+                                tooltip: 'ลบหมวดหมู่ ${category.name}',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () =>
+                                    _confirmDelete(context, useCases, category),
+                              ),
+                              onTap: () {
+                                AppNavigator.pushPage<void>(
+                                  context,
+                                  AppPage<void>(
+                                    name: 'vocabulary/category',
+                                    builder: (_) => VocabListScreen(
+                                      categoryId: category.id,
+                                      categoryName: category.name,
+                                      vocabulary: useCases,
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
       ),
       floatingActionButton: useCases == null
@@ -115,7 +167,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               heroTag: 'categories-add',
               onPressed: () => _showAddCategory(context, useCases),
               icon: const Icon(Icons.add),
-              label: const Text('เพิ่มหมวดหมู่'),
+              label: const Text('เพิ่มชุดคำศัพท์'),
             ),
     );
   }

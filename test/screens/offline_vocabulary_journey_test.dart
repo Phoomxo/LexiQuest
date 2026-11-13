@@ -418,19 +418,12 @@ void main() {
       await finishRouteTransition(tester);
       expect(find.byKey(const ValueKey('source-practice')), findsOneWidget);
       expect(find.text('ฝึกจากไฟล์'), findsOneWidget);
-      expect(find.text('นำเข้าคำศัพท์'), findsOneWidget);
-      expect(find.text('เพิ่มคำศัพท์'), findsOneWidget);
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byKey(const ValueKey('import-words')), findsNothing);
+      expect(find.text('เพิ่มคำ'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsNothing);
       expect(
         find.ancestor(
           of: find.byKey(const ValueKey('source-practice')),
-          matching: find.byType(Wrap),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.ancestor(
-          of: find.byKey(const ValueKey('import-words')),
           matching: find.byType(Wrap),
         ),
         findsOneWidget,
@@ -442,6 +435,9 @@ void main() {
       await finishRouteTransition(tester);
 
       await tester.tap(find.byKey(const ValueKey('add-word')).last);
+      await pumpUntilFound(tester, find.text('พิมพ์คำศัพท์'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('พิมพ์คำศัพท์'));
       await pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
       await finishRouteTransition(tester);
       await tester.enterText(

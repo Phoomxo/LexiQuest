@@ -8,6 +8,8 @@ import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
+import '../navigation/app_routes.dart';
+import 'score_screen.dart';
 
 class SrsFlashcardsScreen extends StatefulWidget {
   const SrsFlashcardsScreen({
@@ -243,6 +245,23 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
     if (!mounted) return;
     setState(() => _saving = false);
+    final completedSummary = summary;
+    if (!_isSourcePractice && completedSummary != null) {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/review-score',
+          builder: (_) => ScoreScreen(
+            correctAnswers: completedSummary.correctCount,
+            wrongAnswers: completedSummary.wrongCount,
+            score: completedSummary.score,
+            sessionId: completedSummary.id,
+          ),
+        ),
+      );
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

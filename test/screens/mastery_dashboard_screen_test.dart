@@ -12,16 +12,19 @@ import 'package:vocab_learning_app/data/local/app_database.dart'
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -81,6 +84,138 @@ void main() {
 
     expect(find.textContaining('คำนวณจาก 0 คำตอบ'), findsOneWidget);
   });
+
+  testWidgets('activating the progress tab refreshes its saved evidence', (
+    tester,
+  ) async {
+    var current = _snapshot;
+    Future<ProgressSnapshot> loader() async => current;
+    Widget app(bool active) => MaterialApp(
+      home: MasteryDashboardScreen(loader: loader, isActive: active),
+    );
+    await tester.pumpWidget(app(false));
+    await tester.pumpAndSettle();
+    current = _xpSnapshot;
+    await tester.pumpWidget(app(true));
+    await tester.pumpAndSettle();
+    _expectMetric('คะแนนประสบการณ์', '208');
+  });
+
+  for (final hiddenFeature in [
+    null,
+    FieldFeature.quiz,
+    FieldFeature.weakness,
+  ]) {
+    testWidgets(
+      'history opens its saved result and respects repair gate $hiddenFeature',
+      (tester) async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        await _seedProgress(db);
+        final learning = DriftLearningRepository(db);
+        await learning.recordAnswer(
+          RecordAnswerCommand(
+            id: 'synthetic-wrong',
+            ownerId: 'b',
+            sessionId: 'synthetic-session',
+            wordId: 'synthetic-word',
+            promptMode: 'meaningChoice',
+            isCorrect: false,
+            responseTimeMs: 500,
+            attemptNumber: 2,
+            occurredAtUtc: DateTime.utc(2026, 10, 23, 11),
+          ),
+        );
+        await learning.finishSession(
+          ownerId: 'b',
+          sessionId: 'synthetic-session',
+          endedAtUtc: DateTime.utc(2026, 10, 23, 12),
+        );
+        final dependencies = AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _NoGuest(),
+          learning: LearningUseCases(
+            owners: _Owners('b'),
+            repository: learning,
+            generateId: () => 'history-repair',
+            nowUtc: () => DateTime.utc(2026, 10, 23, 13),
+            buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+          ),
+          progress: ProgressUseCases(
+            owners: _Owners('b'),
+            queries: DriftProgressQueries(db),
+            nowUtc: () => DateTime.utc(2026, 10, 23, 13),
+          ),
+        );
+        final before = await _databaseSnapshot(db);
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: MasteryDashboardScreen(
+                featureRegistry: BuildFieldFeatureRegistry({
+                  FieldFeature.quiz: hiddenFeature == FieldFeature.quiz
+                      ? FieldFeatureState.hidden
+                      : FieldFeatureState.enabled,
+                  FieldFeature.weakness: hiddenFeature == FieldFeature.weakness
+                      ? FieldFeatureState.hidden
+                      : FieldFeatureState.enabled,
+                }),
+              ),
+            ),
+          ),
+        );
+        await _waitFor(
+          tester,
+          () => find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
+        );
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('history-session:synthetic-session')),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('history-session:synthetic-session')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find
+              .byKey(const ValueKey('history-session:synthetic-session'))
+              .hitTestable(),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('history-session:synthetic-session')),
+        );
+        await _waitFor(
+          tester,
+          () => find.byType(ScoreScreen).evaluate().isNotEmpty,
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('score-session:synthetic-session')),
+          findsOneWidget,
+        );
+        expect(find.text('50%'), findsOneWidget);
+        expect(
+          find.text('ฝึกคำที่ผิด (1)'),
+          hiddenFeature == null ? findsOneWidget : findsNothing,
+        );
+        expect(find.text('กลับไปดูประวัติ'), findsOneWidget);
+        await tester.tap(find.text('กลับไปดูประวัติ'));
+        await tester.pumpAndSettle();
+        expect(find.byType(MasteryDashboardScreen), findsOneWidget);
+        expect(await _databaseSnapshot(db), before);
+      },
+    );
+  }
 
   testWidgets('progress exposes weakness achievements and theme store', (
     tester,

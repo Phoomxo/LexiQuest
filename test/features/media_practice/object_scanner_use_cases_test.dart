@@ -19,8 +19,146 @@ import 'package:vocab_learning_app/features/media_practice/domain/media_practice
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_failure.dart';
 
 void main() {
+  Future<
+    ({
+      AppDatabase database,
+      DriftLocalOwnerRepository owners,
+      VocabularyUseCases vocabulary,
+      ObjectScannerUseCases scanner,
+    })
+  >
+  selectedSetFixture() async {
+    final directory = await Directory.systemTemp.createTemp('scanner-set-');
+    addTearDown(() => directory.delete(recursive: true));
+    final modelBytes = utf8.encode('verified-test-model');
+    final modelFile = File('${directory.path}/model.tflite');
+    await modelFile.writeAsBytes(modelBytes);
+    final manifest = _manifest(modelBytes);
+    final models = _ModelRepository(_activeRecord(manifest, modelFile.path));
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    var id = 0;
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'owner-${id++}',
+      nowUtc: () => DateTime.utc(2026, 11, 13),
+    );
+    final vocabulary = VocabularyUseCases(
+      owners: owners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'id-${id++}',
+      nowUtc: () => DateTime.utc(2026, 11, 13),
+    );
+    final scanner = ObjectScannerUseCases(
+      camera: _FakeCamera(),
+      deviceModels: DeviceModelUseCases(
+        manifest: manifest,
+        repository: models,
+        downloadManager: _uncalledManager(models, directory),
+        openRuntime:
+            ({required path, required manifest, required delegate}) async =>
+                _FakeRuntime(),
+      ),
+      vocabulary: vocabulary,
+      preprocessor: _FakePreprocessor(),
+    );
+    await scanner.initialize();
+    return (
+      database: database,
+      owners: owners,
+      vocabulary: vocabulary,
+      scanner: scanner,
+    );
+  }
+
+  test(
+    'selected-set acceptance preserves destination and deduplicates',
+    () async {
+      final fixture = await selectedSetFixture();
+      final category = await fixture.vocabulary.createCategory(
+        'Synthetic travel',
+      );
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      final word = await fixture.scanner.accept(
+        result,
+        categoryId: category.id,
+        expectedOwnerId: owner.id,
+      );
+      final duplicate = await fixture.scanner.accept(
+        result,
+        categoryId: category.id,
+        expectedOwnerId: owner.id,
+      );
+
+      expect(word.categoryId, category.id);
+      expect(duplicate.id, word.id);
+      expect(await fixture.vocabulary.watchCategories().first, hasLength(1));
+      expect(
+        await fixture.vocabulary.watchWords(category.id).first,
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'owner switch before confirmation writes no words or new category',
+    () async {
+      final fixture = await selectedSetFixture();
+      final category = await fixture.vocabulary.createCategory(
+        'Synthetic travel',
+      );
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      await fixture.database.customStatement(
+        'UPDATE local_owners SET is_active = 0',
+      );
+      final nextOwner = await fixture.owners.getOrCreateActiveOwner();
+      expect(nextOwner.id, isNot(owner.id));
+
+      await expectLater(
+        fixture.scanner.accept(
+          result,
+          categoryId: category.id,
+          expectedOwnerId: owner.id,
+        ),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+      expect(
+        await fixture.database.select(fixture.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database
+            .select(fixture.database.vocabularyCategories)
+            .get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test('missing selected set fails without creating a replacement', () async {
+    final fixture = await selectedSetFixture();
+    final owner = await fixture.owners.getOrCreateActiveOwner();
+    final result = await fixture.scanner.captureAndClassify();
+    await expectLater(
+      fixture.scanner.accept(
+        result,
+        categoryId: 'category:missing',
+        expectedOwnerId: owner.id,
+      ),
+      throwsA(isA<VocabularyNotFoundFailure>()),
+    );
+    expect(await fixture.vocabulary.watchCategories().first, isEmpty);
+    expect(
+      await fixture.database.select(fixture.database.vocabularyWords).get(),
+      isEmpty,
+    );
+  });
+
   test('denied camera permission stops before initialization', () async {
     final camera = _FakeCamera()
       ..permission = MediaPermissionState.permanentlyDenied;

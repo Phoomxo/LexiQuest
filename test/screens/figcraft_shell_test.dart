@@ -112,7 +112,14 @@ void main() {
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       1,
     );
-    await tester.scrollUntilVisible(find.text('ชุดสังเคราะห์ 20'), 300);
+    await tester.scrollUntilVisible(
+      find.text('ชุดสังเคราะห์ 20'),
+      300,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('vocabulary-categories')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(NavigationDestination).at(0));
@@ -171,6 +178,9 @@ void main() {
     await tester.tap(find.text('จำได้แล้ว'));
     await _pumpUntil(tester, find.text('บันทึกแล้ว'));
     await tester.tap(find.text('จบการทบทวน'));
+    await _pumpUntil(tester, find.text('กลับไปเลือกกิจกรรม'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('กลับไปเลือกกิจกรรม'));
     await _pumpUntil(tester, find.text('ทบทวนครบแล้ว'));
     await tester.pumpAndSettle();
 

@@ -17,9 +17,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ทบทวน 3 คำ'), findsOneWidget);
     expect(find.text('ถึงเวลาทบทวน 3 คำ'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('ดูแบบฝึกทั้งหมด'), 200);
+    await tester.tap(find.text('ดูแบบฝึกทั้งหมด'));
+    await tester.pumpAndSettle();
+    expect(find.text('เลือกวิธีฝึก'), findsOneWidget);
     expect(find.text('ฝึกคำศัพท์'), findsOneWidget);
     expect(find.text('ฝึกคำแปล แล้วดูคำที่ควรทบทวน'), findsOneWidget);
-    expect(find.text('ฝึกจากคลังคำศัพท์'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('เลือกวิธีฝึก'), findsNothing);
   });
 
   testWidgets(
@@ -212,6 +218,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('ดูแบบฝึกทั้งหมด'), 200);
+    await tester.tap(find.text('ดูแบบฝึกทั้งหมด'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('ภาพรวมการเรียน'), 200);
     await tester.tap(find.text('ภาพรวมการเรียน'));
     await tester.pumpAndSettle();
     expect(find.byType(MasteryDashboardScreen), findsOneWidget);
@@ -235,6 +245,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('ดูแบบฝึกทั้งหมด'));
+    await tester.pumpAndSettle();
     expect(find.text('ดูความก้าวหน้าจากคำตอบที่บันทึกไว้'), findsOneWidget);
   });
 }

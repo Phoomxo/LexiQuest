@@ -81,6 +81,49 @@ void main() {
 
   tearDown(() => database.close());
 
+  testWidgets('selected set name and return context survive the saved result', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QuizScreen(
+                    categoryId: 'category-1',
+                    categoryName: 'ชุดการเดินทาง',
+                    learning: learning,
+                  ),
+                ),
+              ),
+              child: const Text('เปิดชุดเดิม'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('เปิดชุดเดิม'));
+    await _pumpUntilFound(tester, find.text('station'));
+    expect(find.text('ชุดการเดินทาง'), findsOneWidget);
+    await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+    await tester.tap(find.text('ดูผลการเรียน'));
+    await _pumpUntilFound(tester, find.byType(ScoreScreen));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ชุดการเดินทาง'), findsOneWidget);
+    expect(find.text('กลับไปที่ชุดคำ'), findsOneWidget);
+    await tester.tap(find.text('กลับไปที่ชุดคำ'));
+    await tester.pumpAndSettle();
+    expect(find.text('เปิดชุดเดิม'), findsOneWidget);
+    expect(find.byType(QuizScreen), findsNothing);
+    final saved = await database.select(database.learningSessions).getSingle();
+    expect(saved.state, 'completed');
+    expect(saved.correctCount, 1);
+  });
+
   testWidgets('associative reading persists recall, cue, and completion', (
     tester,
   ) async {
@@ -802,8 +845,11 @@ void main() {
           ),
         ),
       );
-      await _pumpUntilFound(tester, find.text('เริ่มฝึกคำศัพท์'));
-      await tester.tap(find.text('เริ่มฝึกคำศัพท์'));
+      await _pumpUntilFound(tester, find.text('ทบทวนครบแล้ว'));
+      await tester.ensureVisible(find.text('ดูแบบฝึกทั้งหมด'));
+      await tester.tap(find.text('ดูแบบฝึกทั้งหมด'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ฝึกคำศัพท์'));
       await _pumpUntilFound(tester, find.text('station'));
       await tester.tap(find.text('ตั๋ว'));
       await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
@@ -840,13 +886,24 @@ void main() {
       await _pumpUntilFound(tester, find.text('100%'));
       await tester.pumpAndSettle();
       await tester.pageBack();
-      await _pumpUntilFound(tester, find.text('วันนี้อยากฝึกอะไร'));
-      await _pumpUntilFound(tester, find.text('คำที่ควรฝึก 1 คำ'));
-      expect(hubLoads, 2);
+      await _pumpUntilFound(tester, find.text('เลือกวิธีฝึก'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await _pumpUntilFound(tester, find.text('ทบทวนครบแล้ว'));
+      expect(find.text('ฝึกภาษา'), findsOneWidget);
+      expect(hubLoads, 3);
       expect(
         await database.select(database.answerAttempts).get(),
         hasLength(3),
       );
+      final completed = await database.select(database.learningSessions).get();
+      expect(completed, hasLength(2));
+      expect(
+        completed.every((session) => session.state == 'completed'),
+        isTrue,
+      );
+      expect(completed.first.score, 50);
+      expect(completed.last.score, 100);
     },
   );
 }
