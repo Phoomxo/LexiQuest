@@ -1,12 +1,12 @@
 # Continuous execution checkpoint
 
-Updated 2026-11-14, approximately 05:25 Bangkok. Running work, not a pause or completion.
+Updated 2026-11-14, approximately 05:53 Bangkok. Running work, not a pause or completion.
 
 ## Authority and source
 
 - Worktree: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
 - Branch: codex/figcraft-flutter-prototype
-- Verified UI integration parent: 069ab0156190d6f89d28c0b4df7450f0abb39b98. Root is committing/pushing the verified UI slice; inspect actual Git HEAD before any build.
+- Verified and pushed UI integration: 196d4e22b3e4365fba22d36198cb07762d95b981. A Linux-golden-only correction is being committed; Android production sources remain identical. Inspect actual Git HEAD before any build.
 - Draft PR: https://github.com/Phoomxo/LexiQuest/pull/16, base codex/current-code-20261113.
 - The active continuous Goal includes the Android camera/set-A milestone and all approved S1–S7 work. Keep the denominators 48 screens / 44 features / 64 packages. Do not close the Goal after one card.
 - No merge, deployment, publication, real enrollment/upload, app data clearing, destructive cleanup or Codex Security workflows. Preserve generated plugin line-ending churn and ignored signing configuration. Use only the task worktree for edits.
@@ -21,9 +21,9 @@ Updated 2026-11-14, approximately 05:25 Bangkok. Running work, not a pause or co
 ## Active writers and next executable steps
 
 - All production/test writers are frozen. Root owns integration and native builds. S6 candidate-a (gpt-6-astra) and candidate-b (gpt-6.1-sol) may write only isolated build/architect-s6 text sketches; these are outside verified compile inputs. Do not start S6 implementation/migration before synthesis and the UI build snapshot are closed.
-- Current source reviews are accepted. Do not repeat full tests unless a relevant source/test/input changes or a new failure justifies it; the next step is final staged diff, commit/push and native build.
+- Current source reviews are accepted. Do not repeat full Windows tests for the Linux-only expected-image correction. CI43520187537 passed1901 and failed only Home/Quiz Linux goldens; actual artifacts were opened by root and independent reviewer before copying. See evidence/p2-s3-linux.txt. New-head CI remains required.
 - Commit/push only intended source/tests/goldens and evidence. Update this checkpoint, decisions, execution board and PR body around the verified result. Follow CI on that exact PR head; inspect actual Linux image artifacts before updating Linux goldens.
-- Build/archive new Android artifacts only from a committed source. Current installed APKs remain v28 from 08ce39bc. Capture the P2 home/library comparisons and relevant native regression on the new source, with hash/device/data-state metadata. Do not call Windows widget renders native evidence.
+- Both v29 APK builds from196d4e22 completed and are archived under build/figcraft-196d4e22. Release arm64 SHA256450d2dc340219da11dde06581982046737dcccda91a26629fdbf437e13eeda7f; debugx64 SHA2561beac9aa0f3b760ac5e0db9e68e5056dca83b6c3cc98687e4d42b7bf9f34d2a4. Cloud-sync define is false. Vivo install-r returned Success and version29 is verified; library still shows A3/B0. Emulator update session1837 is still running; reconcile before retry. Native P2 capture is in progress, not yet accepted.
 - Continue remaining S3/S5/S6/S7 work and reconcile every ledger row. Static ledgers are a cache at67a68518, not current acceptance evidence. No separate Pair Matching task is authorized.
 
 ## Accepted local cards in the dirty UI slice

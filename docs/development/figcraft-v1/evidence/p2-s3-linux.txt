@@ -1,0 +1,30 @@
+Linux expected-image correction, 2026-11-14.
+
+Source: 196d4e22b3e4365fba22d36198cb07762d95b981.
+GitHub Actions run: https://github.com/Phoomxo/LexiQuest/actions/runs/43520187537
+Artifact: flutter-golden-diffs, id14082484576, 358010 bytes.
+
+CI passed formatting, static analysis and policy checks. Flutter tests finished
+1901 passed / two failed: the old Linux Home and Quiz feedback expected images.
+The inspected actual 360x800 renders show the large Thai Home content and Quiz
+feedback/next action. Root opened both actual testImage PNGs before copying them
+byte-for-byte to the corresponding Linux goldens. Windows/design renders were
+not used. No assertion, production code or other expected image changed.
+
+learning_hub_large_text.png SHA256:
+d6dbd3abcbd88d3b511c7af7c6dded86b4aa411761380268dd9f88e612bf6351
+quiz_feedback_large_text.png SHA256:
+241bd1522bdd363bc77e396dea1b52558a4eb451c616198d3bd32e7b95cd2797
+
+The Home image is the initial scroll viewport, not a claim that all activities
+fit without scrolling. Current-head CI must verify the correction and subsequent
+backend/build jobs. Local1903 evidence belongs to the prior Windows snapshot;
+this correction changes only two Linux expected-image inputs and documentation.
+Android v29 APK production sources remain identical to196d4e22.
+
+Independent read-only reviewer native_p2_review opened both actual renders and
+their previous masters, then checked current fixtures/source. Accepted: Thai
+diacritics and primary actions are not clipped or overlapping. Quiz's two-word
+fixture correctly shows question1of2/next, replacing the old one-word/end state.
+The fixture's default Material purple is not the production FigCraft palette.
+Review changed no source and ran no Flutter/ADB commands.
