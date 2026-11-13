@@ -437,6 +437,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       'ยังไม่มีโมเดลที่ตรวจสอบแล้ว กรุณาดาวน์โหลดโมเดลเมื่อออนไลน์',
     CameraFailureCode.cancelled => 'ยกเลิกการสแกนแล้ว',
     CameraFailureCode.invalidImage => 'รูปภาพนี้ไม่สามารถนำมาวิเคราะห์ได้',
+    CameraFailureCode.noConfidentMatch =>
+      'ยังระบุวัตถุไม่ได้ ลองเพิ่มแสงและถ่ายวัตถุทีละชิ้น',
     CameraFailureCode.captureFailed => 'ถ่ายภาพหรือวิเคราะห์ไม่สำเร็จ',
     CameraFailureCode.unavailable ||
     CameraFailureCode.initializationFailed => 'กล้องไม่พร้อมใช้งานบนอุปกรณ์นี้',

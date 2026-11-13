@@ -208,9 +208,9 @@ void main() {
     expect(result.vocabulary?.englishWord, 'apple');
   });
 
-  test('reports an unusable inference as an invalid image', () async {
+  test('reports no match for uncertain predictions', () async {
     final directory = await Directory.systemTemp.createTemp(
-      'scanner-invalid-image-',
+      'scanner-no-match-',
     );
     addTearDown(() => directory.delete(recursive: true));
     final modelBytes = utf8.encode('verified-test-model');
@@ -247,7 +247,7 @@ void main() {
         isA<CameraPracticeException>().having(
           (error) => error.code,
           'code',
-          CameraFailureCode.invalidImage,
+          CameraFailureCode.noConfidentMatch,
         ),
       ),
     );

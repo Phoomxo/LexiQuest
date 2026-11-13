@@ -174,7 +174,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
           )
           .toList(growable: false);
       if (usable.isEmpty) {
-        throw const CameraPracticeException(CameraFailureCode.invalidImage);
+        throw const CameraPracticeException(CameraFailureCode.noConfidentMatch);
       }
       ScannedVocabulary? mapped;
       ModelClassification? matchedClassification;

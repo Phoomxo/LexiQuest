@@ -125,7 +125,7 @@ void main() {
     expect(scanner.isReady, isTrue);
   });
 
-  testWidgets('clears stale result before a failed new capture', (
+  testWidgets('clears stale results and retries an uncertain scan', (
     tester,
   ) async {
     final scanner = _FakeScanner();
@@ -156,6 +156,28 @@ void main() {
 
     expect(find.text('apple'), findsNothing);
     expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+    expect(find.text('ถ่ายภาพหรือวิเคราะห์ไม่สำเร็จ'), findsOneWidget);
+
+    scanner.captureFailure = const CameraPracticeException(
+      CameraFailureCode.noConfidentMatch,
+    );
+    final capture = find.byKey(const ValueKey('object-scanner-capture-button'));
+    await tester.tap(capture);
+    await tester.pumpAndSettle();
+
+    final guidance = find.text(
+      'ยังระบุวัตถุไม่ได้ ลองเพิ่มแสงและถ่ายวัตถุทีละชิ้น',
+    );
+    expect(guidance, findsOneWidget);
+    expect(find.text('รูปภาพนี้ไม่สามารถนำมาวิเคราะห์ได้'), findsNothing);
+    expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+
+    scanner.captureFailure = null;
+    await tester.tap(capture);
+    await tester.pumpAndSettle();
+    expect(guidance, findsNothing);
+    expect(find.text('apple'), findsOneWidget);
+    expect(find.text('เพิ่มเข้าคลัง'), findsOneWidget);
   });
 
   testWidgets('releases and restores camera across app lifecycle', (
