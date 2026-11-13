@@ -1,6 +1,6 @@
 # Continuous execution checkpoint
 
-Updated 2026-11-14, approximately 05:53 Bangkok. Running work, not a pause or completion.
+Updated 2026-11-14, approximately 06:01 Bangkok. Running work, not a pause or completion.
 
 ## Authority and source
 
@@ -21,9 +21,10 @@ Updated 2026-11-14, approximately 05:53 Bangkok. Running work, not a pause or co
 ## Active writers and next executable steps
 
 - All production/test writers are frozen. Root owns integration and native builds. S6 candidate-a (gpt-6-astra) and candidate-b (gpt-6.1-sol) may write only isolated build/architect-s6 text sketches; these are outside verified compile inputs. Do not start S6 implementation/migration before synthesis and the UI build snapshot are closed.
-- Current source reviews are accepted. Do not repeat full Windows tests for the Linux-only expected-image correction. CI43520187537 passed1901 and failed only Home/Quiz Linux goldens; actual artifacts were opened by root and independent reviewer before copying. See evidence/p2-s3-linux.txt. New-head CI remains required.
+- Current source reviews are accepted. Linux-only expected-image correction bbb63b7c is pushed. Do not repeat full Windows tests for it. CI43520187537 passed1901 and failed only Home/Quiz Linux goldens; actual artifacts were opened by root and independent reviewer before copying. See evidence/p2-s3-linux.txt. Current-head run43522858276 has reached Flutter tests; final CI remains required.
 - Commit/push only intended source/tests/goldens and evidence. Update this checkpoint, decisions, execution board and PR body around the verified result. Follow CI on that exact PR head; inspect actual Linux image artifacts before updating Linux goldens.
-- Both v29 APK builds from196d4e22 completed and are archived under build/figcraft-196d4e22. Release arm64 SHA256450d2dc340219da11dde06581982046737dcccda91a26629fdbf437e13eeda7f; debugx64 SHA2561beac9aa0f3b760ac5e0db9e68e5056dca83b6c3cc98687e4d42b7bf9f34d2a4. Cloud-sync define is false. Vivo install-r returned Success and version29 is verified; library still shows A3/B0. Emulator update session1837 is still running; reconcile before retry. Native P2 capture is in progress, not yet accepted.
+- Both v29 APK builds from196d4e22 completed and are archived under build/figcraft-196d4e22. See evidence/v29-builds.txt for hashes/flags. Vivo's actual installed APK hash matches the archive. A3/latest67 and B0 survived update and offline cold restart. Root and independent reviewer accepted the captured dark100/200% Home/Library/Score states, not TalkBack. evidence/vivo-196d4e22 has28 validated raw files,14 PNG/XML pairs, including the preupdate baseline. Four A hierarchies before/after/update/offline/restoration have identical hashes. Font/Wi-Fi/keyboard/accessibility settings are restored. No new answer/word/camera operation in this retest.
+- Emulator install-r session1837, task-owned client PID26488, has no acknowledgement/log output. Last readonly get-state returns device; shell ps times out and host instance18 remains running. Do not duplicate install, kill a possible package transaction, reboot, clear or reseed to force progress. Stop affected writes and continue independent work; inspect/reconcile actual version/install state when responsive. New P2 comparison images remain pending on that path.
 - Continue remaining S3/S5/S6/S7 work and reconcile every ledger row. Static ledgers are a cache at67a68518, not current acceptance evidence. No separate Pair Matching task is authorized.
 
 ## Accepted local cards in the dirty UI slice

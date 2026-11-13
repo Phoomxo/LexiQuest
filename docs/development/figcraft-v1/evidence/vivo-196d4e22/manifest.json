@@ -1,0 +1,178 @@
+{
+  "source_sha": "196d4e22b3e4365fba22d36198cb07762d95b981",
+  "apk_sha256": "450d2dc340219da11dde06581982046737dcccda91a26629fdbf437e13eeda7f",
+  "installed_apk_hash_matches_archive": true,
+  "version_code": 29,
+  "device": {
+    "label": "vivo-usb-test",
+    "model": "vivo V2041",
+    "android": "13",
+    "pixels": [
+      1080,
+      2408
+    ],
+    "density_dpi": 440
+  },
+  "new_answers_or_words_this_run": 0,
+  "camera_this_run": false,
+  "known_object_accuracy": "not_checked",
+  "offline_restart": {
+    "wifi": 0,
+    "mobile_data": 0,
+    "a_words": 3,
+    "a_correct": 2,
+    "a_attempts": 3,
+    "a_score_percent": 67,
+    "b_words_in_library": 0
+  },
+  "restored": {
+    "font_scale": "1.0",
+    "wifi": 1,
+    "mobile_data": 0,
+    "accessibility_enabled": 0,
+    "accessibility_services": "null",
+    "keyboard": "Gboard"
+  },
+  "files": [
+    {
+      "path": "00-before-update.png",
+      "bytes": 107244,
+      "sha256": "7dff1de6977c1e4a688bb0ec62aebb85a21c86db11a96b449f90ce82e12be8c8"
+    },
+    {
+      "path": "00-before-update.xml",
+      "bytes": 9219,
+      "sha256": "934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85"
+    },
+    {
+      "path": "01-after-update.png",
+      "bytes": 150433,
+      "sha256": "bbfa31cb57cbb53468f37dc95ad249d36852397f295e0fe2a6c560943db3ee31"
+    },
+    {
+      "path": "01-after-update.xml",
+      "bytes": 10308,
+      "sha256": "8eca5f859e7acf664ee8badf9dd190ee188820f50da49267ddb7edc2052bd2c8"
+    },
+    {
+      "path": "02-library.png",
+      "bytes": 161099,
+      "sha256": "3cc0538f65ed05f59765a6944aae4eecaa447c43885658913f7914f4d7aa1a67"
+    },
+    {
+      "path": "02-library.xml",
+      "bytes": 11115,
+      "sha256": "8f46dd03d02aa3217c104a71d9abdbd296d0264d4418f485d51f148af6553847"
+    },
+    {
+      "path": "03-set-a.png",
+      "bytes": 107234,
+      "sha256": "8cf50e9dfb95f30edf99501f012b467d33bdc7f69c594d9fe79c0e7bfe13e7b4"
+    },
+    {
+      "path": "03-set-a.xml",
+      "bytes": 9219,
+      "sha256": "934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85"
+    },
+    {
+      "path": "04-saved-result.png",
+      "bytes": 105259,
+      "sha256": "feae0231ee7ddee11d387a7b1b130116ef2b3d1278b36b9cb982ca3f02f9558c"
+    },
+    {
+      "path": "04-saved-result.xml",
+      "bytes": 7105,
+      "sha256": "a5376ac91b4dcb66f5642c4735c3156fb7ad677af9247c9a233f0d8a7faa0583"
+    },
+    {
+      "path": "05-set-b.png",
+      "bytes": 97268,
+      "sha256": "05cc07984b59a0ba813657e71aacb6266b7f942e098a23c2f5fb6cfceb08d95d"
+    },
+    {
+      "path": "05-set-b.xml",
+      "bytes": 7581,
+      "sha256": "02208dc833e0cf70d333f8d21ba56aab04d6c9bdb44477f226c1492c296429b7"
+    },
+    {
+      "path": "06-library-dark-200.png",
+      "bytes": 155946,
+      "sha256": "23b1ae311c240cc984134d52fdc2b68fe25bf70dd4f7928c91f0ec65a0d330ed"
+    },
+    {
+      "path": "06-library-dark-200.xml",
+      "bytes": 8938,
+      "sha256": "c426d6f13aec1c8e6cba188b923d99f466a36c1f8b9f606b4712867397c78653"
+    },
+    {
+      "path": "07-home-dark-200.png",
+      "bytes": 159935,
+      "sha256": "e9fa2f59e8a6da56d09f8c92087a7be348a99dcaffd86a04ad8466fee4b783c9"
+    },
+    {
+      "path": "07-home-dark-200.xml",
+      "bytes": 9145,
+      "sha256": "02fdbdeb9931b7b4ad9a6586f500c6cd8cf9c9e85c136015e7902cd35c2363ee"
+    },
+    {
+      "path": "08-home-dark-200-scrolled.png",
+      "bytes": 166958,
+      "sha256": "55420faec89fa5e0a5d229d0e385ed71e6192f6c10b6edcb7a832c8eaf695864"
+    },
+    {
+      "path": "08-home-dark-200-scrolled.xml",
+      "bytes": 8512,
+      "sha256": "988d76f7be2a9c8fc2b842dfd959cd3bee28e304cd0aca0690f7dd894b09cd9b"
+    },
+    {
+      "path": "09-library-offline-restart.png",
+      "bytes": 160146,
+      "sha256": "80e943e6d1353dde5868ba4e0150961d7fb1e9db2ccfcffb9780ff97578c1f10"
+    },
+    {
+      "path": "09-library-offline-restart.xml",
+      "bytes": 11115,
+      "sha256": "8f46dd03d02aa3217c104a71d9abdbd296d0264d4418f485d51f148af6553847"
+    },
+    {
+      "path": "10-set-a-offline-restart.png",
+      "bytes": 105752,
+      "sha256": "f7a730c53f7a7e6168d6e054976eedcab03f22f75a101f99e3c60ef7fa7d14d8"
+    },
+    {
+      "path": "10-set-a-offline-restart.xml",
+      "bytes": 9219,
+      "sha256": "934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85"
+    },
+    {
+      "path": "11-saved-score-dark-200.png",
+      "bytes": 158670,
+      "sha256": "6ee33b55e30eafbdb64e10d8a389ea3e3b05eca2ad22d5b2b9579de61b22a18e"
+    },
+    {
+      "path": "11-saved-score-dark-200.xml",
+      "bytes": 7115,
+      "sha256": "4b529dd16f14728683c6be24da9e321b6333c9fc6ab7602c3c37124b18916908"
+    },
+    {
+      "path": "12-saved-score-dark-200-scrolled.png",
+      "bytes": 159560,
+      "sha256": "dc405f2f198040528a04b226c97f593c895eccba32f28f084438a90ba41de9ba"
+    },
+    {
+      "path": "12-saved-score-dark-200-scrolled.xml",
+      "bytes": 7115,
+      "sha256": "1d78f5ce2dab2a46d9e0eed2b61995a294689f2e667f5ae80025e6ad53ed5e6d"
+    },
+    {
+      "path": "13-restored-set-a.png",
+      "bytes": 107074,
+      "sha256": "3f5575b92cf8ff888b8f86598214e6590f56a036b9d2b88ab3dd9f08ed980d0a"
+    },
+    {
+      "path": "13-restored-set-a.xml",
+      "bytes": 9219,
+      "sha256": "934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85"
+    }
+  ]
+}
