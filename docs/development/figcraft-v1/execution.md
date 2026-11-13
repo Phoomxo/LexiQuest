@@ -31,7 +31,7 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 | S2 | `s1_tests` owns library summaries, search, destination selection and set UI. | Search, add/import, preserve selected set and filters, reopen persisted words. | Executing; async owner/scope review corrections pending |
 | S3 | `ground_routes` owns progress category context and latest-set result; root integrates learning evidence. | Real answers, feedback, result context, durable and idempotent outcomes. | Executing; selected-set SQLite regression passed on previous source, new projection checks pending |
 | S4 | `ground_routes` owns editable manual correction from camera results and its tests. | Explicit confirmation into selected set, failure recovery, known-object device evidence. | Executing; real captures recorded, correction GREEN/device retry pending; known-object accuracy not checked |
-| S5 | Account/device/data boundaries. | Owner isolation, export/deletion, offline learning, research default-off. | Pending |
+| S5 | `s1_tests` owns Settings/Profile; `ground_routes` owns progress/export/account boundary cases; root integrates. | Owner isolation, export/deletion, offline learning, research default-off. | Executing; stale-scope REDs reproduced and fixes await final focused GREEN/review |
 | S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | Pending |
 | S7 | All writers paused for integration. | Current-SHA regression, 48/44/64 disposition, Android APK/hash/CI, independent runtime critique. | Pending |
 
@@ -60,3 +60,11 @@ These are local engineering results. Android capture, process restart, known-obj
 The installed vivo APK certificate SHA-256 matches the configured release key. Its versionCode is 26. The active source and original checkout both declare database schema 10. The existing APK was copied to `build/android-baseline/` for local evidence. No app data was cleared or uninstalled. Signing configuration is ignored and must never be staged.
 
 The independent milestone reviewer found two boundary defects after the first source commit. Both were reproduced before correction. Live quiz results now respect the quiz/weakness repair gate and preserve the registry in child routes. Scanner confirmation pins the expected owner through category and word creation, rejecting a changed owner before calling the repository. Synthetic lookup races verify that the second owner receives no category, word, or outbox write. The corrected boundary suite passes 101 tests and full `flutter analyze --no-pub` reports no issues. The reviewer accepted both corrections. Native evidence is still pending.
+
+## Corrected native milestone at 08ce39bc
+
+The corrected source passed all 1,821 local Flutter tests and clean full analysis. Signed v28 updated vivo with existing sets preserved. Actual photo capture returned no confident proposal; the tester entered synthetic mug/แก้ว/noun in the camera correction form and explicitly saved into A. Practice included mug, produced 67% (2/3), returned to A, then read the same words and result after offline process restart. B remained empty. See `evidence/vivo-08ce39bc/README.md` and its manifest. This demonstrates manual camera workflow and persistence, without claiming model recognition accuracy or a native session UUID.
+
+Corrected FigCraft/Android comparison images for home/library were captured on the same source and shown in the chat. Emulator verification found the exact synthetic reference state without reseeding. The independent native critique is being completed separately; S1–S4 source/native core evidence does not close every advanced, accessibility or service criterion in those cards. All S5–S7 work and every 48/44/64 row remain tracked.
+
+CI on `08ce39bc` passed formatting, analysis and Firestore/Supabase checks but failed only the old Linux home golden. The actual Linux render and diff were opened before updating the expected image. Its source is the CI artifact from run `43486122536`, not a recreated Windows or design image. New-head CI remains required.
