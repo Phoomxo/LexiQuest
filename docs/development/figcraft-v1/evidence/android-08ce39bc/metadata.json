@@ -1,0 +1,99 @@
+{
+  "source_sha": "08ce39bcca697d903ec79ca15c52d9ac66b0d391",
+  "branch": "codex/figcraft-flutter-prototype",
+  "recorded_utc": "2026-11-13T19:28:36.730258+00:00",
+  "application_id": "com.lexiquest.app",
+  "apk": {
+    "path": "build/figcraft-08ce39bc/lexiquest-08ce39bc-v28-x64-debug.apk",
+    "sha256": "25b76cb6e177616c42c7855d103d612bdd009ad62bca7e69beef38a69c8c7528",
+    "installed_sha256_observed": "25b76cb6e177616c42c7855d103d612bdd009ad62bca7e69beef38a69c8c7528",
+    "installed_base_path": "/data/app/com.lexiquest.app-RleekdJIjyTZYLyiehnKaQ==/base.apk",
+    "version_code": 28,
+    "version_name": "1.0.0",
+    "variant": "x64 debug",
+    "install": "adb -s emulator-5590 install -r --no-streaming; Success; no clear/uninstall"
+  },
+  "device": {
+    "serial": "emulator-5590",
+    "kind": "emulator",
+    "model": "BVL-AN16",
+    "android": "9",
+    "ldplayer_version": "9.5.17.0",
+    "instance_index": 18
+  },
+  "capture_geometry": {
+    "raw_pixels": [
+      624,
+      1350
+    ],
+    "density_dpi": 256,
+    "logical_dp": [
+      390,
+      843.75
+    ],
+    "comparison_display": [
+      390,
+      844
+    ],
+    "font_scales": [
+      1.0,
+      2.0
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "comparison_theme": "light",
+    "initial_observed_font_scale": "1.0",
+    "initial_night_mode": "no",
+    "initial_physical_pixels": [
+      1280,
+      720
+    ],
+    "initial_physical_density_dpi": 240
+  },
+  "fixture": {
+    "seed": "tool/figcraft/emulator-reference.sql",
+    "seed_rerun": false,
+    "verification": "read-only native SQLite before and after UI checks",
+    "categories": {
+      "การเดินทาง": 3,
+      "ของใช้ในครัว": 0
+    },
+    "words": [
+      "station",
+      "platform",
+      "ticket"
+    ],
+    "source_for_all_words": "synthetic:figcraft-reference",
+    "due_word": "platform",
+    "due_at_utc_ms": 1,
+    "research_consents": 0,
+    "learning_sessions": 0,
+    "answer_attempts": 0,
+    "outbox_operations": 0
+  },
+  "restored_settings": {
+    "size": "Physical size: 1280x720",
+    "density": "Physical density: 240",
+    "font_scale": "null",
+    "night_mode": "Night mode: no",
+    "enabled_accessibility_services": "null",
+    "accessibility_enabled": "0"
+  },
+  "recovery": {
+    "symptom": "Activity Manager dump timeout; system_server zombie after package install",
+    "actions": [
+      "adb reboot emulator-5590",
+      "LDPlayer CLI reboot --index 18"
+    ],
+    "result": "same instance and data recovered; boot_completed=1; v28 confirmed after restart",
+    "other_devices": "vivo and instances 17/19 not operated"
+  },
+  "limits": [
+    "known-object accuracy not tested",
+    "TalkBack not enabled or tested in this run",
+    "no quiz/answer/save/import/delete/account/research operation during this run",
+    "native UI evidence is for source 08ce39bc only"
+  ]
+}

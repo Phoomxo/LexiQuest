@@ -63,6 +63,7 @@ class _SettingScreenState extends State<SettingScreen> {
   int _syncStatusGeneration = 0;
   bool _busy = false;
   bool _syncBusy = false;
+  int _syncRequestGeneration = 0;
   String? _syncStatus;
   DeviceModelUseCases? _deviceModels;
   FieldFeatureRegistry _fieldFeatures =
@@ -77,17 +78,43 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindDependencies();
+  }
+
+  @override
+  void didUpdateWidget(SettingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  AccountUseCases? get _currentAccount =>
+      widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
+
+  AccountDeletionUseCases? get _currentDeletion =>
+      widget.accountDeletion ??
+      AppDependenciesScope.maybeOf(context)?.accountDeletion;
+
+  bool _isCurrentAccount(AccountUseCases account, String uid) =>
+      mounted &&
+      identical(_currentAccount, account) &&
+      account.currentSession?.uid == uid;
+
+  void _bindDependencies() {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    _account ??= widget.account ?? dependencies?.account;
-    _accountDeletion ??=
-        widget.accountDeletion ?? dependencies?.accountDeletion;
+    _account = widget.account ?? dependencies?.account;
+    _accountDeletion = widget.accountDeletion ?? dependencies?.accountDeletion;
     final researchConsent =
         widget.researchConsent ?? dependencies?.researchConsent;
     if (!identical(_researchConsent, researchConsent)) {
       _researchConsent = researchConsent;
       _researchStatus = researchConsent?.load();
     }
-    _syncTrigger ??= dependencies?.syncTrigger;
+    if (!identical(_syncTrigger, dependencies?.syncTrigger)) {
+      _syncTrigger = dependencies?.syncTrigger;
+      _syncRequestGeneration++;
+      _syncBusy = false;
+      _syncStatus = null;
+    }
     _replaceSyncStatusSource(dependencies?.syncStatus);
     _fieldFeatures =
         widget.featureRegistry ??
@@ -221,6 +248,15 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _changePassword() async {
+    final account = _currentAccount;
+    final session = account?.currentSession;
+    if (account == null ||
+        session == null ||
+        session.isAnonymous ||
+        _busy ||
+        _syncBusy) {
+      return;
+    }
     var currentPassword = '';
     var newPassword = '';
     String? currentPasswordError;
@@ -298,9 +334,8 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
     );
     if (submitted != true || !mounted) return;
-    final account = _account;
-    if (account == null) {
-      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
+    if (!_isCurrentAccount(account, session.uid)) {
+      _show('บัญชีเปลี่ยนแล้ว กรุณาเปิดการตั้งค่าอีกครั้ง');
       return;
     }
     setState(() => _busy = true);
@@ -309,9 +344,11 @@ class _SettingScreenState extends State<SettingScreen> {
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
-      if (mounted) _show('เปลี่ยนรหัสผ่านแล้ว');
+      if (_isCurrentAccount(account, session.uid)) {
+        _show('เปลี่ยนรหัสผ่านแล้ว');
+      }
     } on AccountException catch (error) {
-      if (mounted) {
+      if (_isCurrentAccount(account, session.uid)) {
         _show(
           error.code == AccountFailureCode.requiresRecentLogin
               ? 'กรุณาเข้าสู่ระบบใหม่ก่อนเปลี่ยนรหัสผ่าน'
@@ -335,15 +372,22 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _logout() async {
-    final account = _account;
-    if (account == null || _busy || _syncBusy) return;
+    final account = _currentAccount;
+    if (account == null ||
+        account.currentSession?.isAnonymous != false ||
+        _busy ||
+        _syncBusy) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       await account.signOutToLocalGuest();
-      if (!mounted) return;
+      if (!mounted || !identical(_currentAccount, account)) return;
       await AppNavigator.resetTo<void>(context, AppRoute.login);
     } on AccountException {
-      if (mounted) _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+      if (mounted && identical(_currentAccount, account)) {
+        _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -358,6 +402,11 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _withdrawResearchConsent(String expectedOwnerId) async {
     final consent = _researchConsent;
     if (consent == null || _busy || _syncBusy) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), dependencies) &&
+        identical(_researchConsent, consent);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -380,7 +429,7 @@ class _SettingScreenState extends State<SettingScreen> {
         ],
       ),
     );
-    if (!mounted) return;
+    if (!current()) return;
     if (confirmed != true) {
       setState(() {
         _researchStatus = consent.load();
@@ -392,7 +441,7 @@ class _SettingScreenState extends State<SettingScreen> {
       final withdrawn = await consent.withdraw(
         expectedOwnerId: expectedOwnerId,
       );
-      if (mounted) {
+      if (current()) {
         setState(() {
           _researchStatus = consent.load();
         });
@@ -401,7 +450,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       }
     } catch (_) {
-      if (mounted) {
+      if (current()) {
         setState(() {
           _researchStatus = consent.load();
         });
@@ -414,6 +463,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
   Future<void> _runSync() async {
     final trigger = _syncTrigger;
+    final generation = _syncRequestGeneration;
     if (trigger == null || _syncBusy) return;
     setState(() {
       _syncBusy = true;
@@ -429,7 +479,11 @@ class _SettingScreenState extends State<SettingScreen> {
           'ตรวจสอบการซิงก์ออนไลน์ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ '
           'โปรดลองใหม่ภายหลัง';
     }
-    if (!mounted) return;
+    if (!mounted ||
+        generation != _syncRequestGeneration ||
+        !identical(trigger, _syncTrigger)) {
+      return;
+    }
     setState(() {
       _syncBusy = false;
       _syncStatus = status;
@@ -487,6 +541,24 @@ class _SettingScreenState extends State<SettingScreen> {
     AppNavigator.pushPage<void>(
       context,
       AppPage<void>(name: name, builder: (_) => page),
+    );
+  }
+
+  void _openAccountDeletion(
+    AccountDeletionUseCases deletion,
+    AccountUseCases? account,
+    String? uid,
+  ) {
+    if (account == null ||
+        uid == null ||
+        !_isCurrentAccount(account, uid) ||
+        !identical(_currentDeletion, deletion)) {
+      _show('บัญชีเปลี่ยนแล้ว กรุณาเปิดการตั้งค่าอีกครั้ง');
+      return;
+    }
+    _openSettingsPage(
+      'account/delete',
+      AccountDeletionScreen(useCases: deletion),
     );
   }
 
@@ -640,6 +712,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final account = _account;
     final session = _account?.currentSession;
     final isRegistered = session != null && !session.isAnonymous;
     return Scaffold(
@@ -862,9 +935,10 @@ class _SettingScreenState extends State<SettingScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _busy || _syncBusy
                       ? null
-                      : () => _openSettingsPage(
-                          'account/delete',
-                          AccountDeletionScreen(useCases: deletion),
+                      : () => _openAccountDeletion(
+                          deletion,
+                          account,
+                          session.uid,
                         ),
                 ),
             ],

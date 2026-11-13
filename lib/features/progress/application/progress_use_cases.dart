@@ -21,7 +21,10 @@ final class ProgressUseCases {
     if (!now.isUtc) {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
-    return queries.load(ownerId: owner.id, nowUtc: now);
+    final snapshot = await queries.load(ownerId: owner.id, nowUtc: now);
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('progress owner changed');
+    return snapshot;
   }
 
   Future<SessionHistoryEntry?> loadSession(String sessionId) async {

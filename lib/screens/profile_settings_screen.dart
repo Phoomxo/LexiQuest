@@ -29,6 +29,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<ProgressSnapshot>? _load;
   ProfileProgressLoader? _loader;
   AccountUseCases? _account;
+  String? _accountUid;
+
+  AccountUseCases? get _currentAccount =>
+      widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
 
   ProfileProgressLoader? get _currentLoader =>
       widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
@@ -36,9 +40,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _account ??=
-        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
-    if (_load == null || _currentLoader != _loader) {
+    _bindSources();
+  }
+
+  void _bindSources() {
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    final accountChanged = !identical(_account, account) || _accountUid != uid;
+    _account = account;
+    _accountUid = uid;
+    if (_load == null || _currentLoader != _loader || accountChanged) {
       _load = _loadProgress();
     }
   }
@@ -46,7 +57,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didUpdateWidget(ProfileSettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loader != widget.loader) _load = _loadProgress();
+    _bindSources();
   }
 
   Future<ProgressSnapshot> _loadProgress() {
@@ -69,11 +80,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   Future<void> _editName() async {
-    final account = _account;
-    if (account == null) return;
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    if (account == null || uid == null) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => _EditDisplayNameDialog(account: account),
+      builder: (_) => _EditDisplayNameDialog(
+        account: account,
+        isCurrent: () =>
+            mounted &&
+            identical(_currentAccount, account) &&
+            account.currentSession?.uid == uid,
+      ),
     );
     if (mounted) setState(() {});
   }
@@ -100,6 +118,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
         child: FutureBuilder<ProgressSnapshot>(
+          key: ValueKey((_account, _accountUid, _loader)),
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -188,9 +207,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 }
 
 class _EditDisplayNameDialog extends StatefulWidget {
-  const _EditDisplayNameDialog({required this.account});
+  const _EditDisplayNameDialog({
+    required this.account,
+    required this.isCurrent,
+  });
 
   final AccountUseCases account;
+  final bool Function() isCurrent;
 
   @override
   State<_EditDisplayNameDialog> createState() => _EditDisplayNameDialogState();
@@ -205,13 +228,23 @@ class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
 
   Future<void> _save() async {
     if (_busy) return;
+    if (!widget.isCurrent()) {
+      setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await widget.account.updateDisplayName(_name.text);
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        if (widget.isCurrent()) {
+          Navigator.pop(context);
+        } else {
+          setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+        }
+      }
     } on AccountException catch (error) {
       if (mounted) {
         setState(
