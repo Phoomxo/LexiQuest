@@ -21,6 +21,8 @@ import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 
+import 'screen_golden.dart';
+
 void main() {
   setUpAll(() async {
     await (FontLoader('NotoSansThai')
@@ -650,7 +652,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/quiz_feedback_large_text.png'),
+      matchesGoldenFile(screenGolden('quiz_feedback_large_text.png')),
     );
     await tester.scrollUntilVisible(find.text('ดูผลการเรียน'), 150);
     expect(find.text('ดูผลการเรียน').hitTestable(), findsOneWidget);

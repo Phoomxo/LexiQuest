@@ -165,6 +165,54 @@ void main() {
     );
   });
 
+  test('a busy contender can retry after the active manager cancels', () async {
+    final bytes = utf8.encode('cancel-then-retry');
+    final manifest = _manifestFor(bytes);
+    final held = _CancellationAwareSource();
+    final retry = _MemoryRangeSource(bytes);
+    ModelDownloadManager manager(ModelByteSource source) =>
+        ModelDownloadManager(
+          repository: repository,
+          source: source,
+          verifier: _RecordingVerifier(),
+          modelDirectory: () async => directory,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+          lockTimeout: Duration.zero,
+        );
+    final first = manager(held);
+    final second = manager(retry);
+    final cancelled = expectLater(
+      first.downloadAndActivate(manifest),
+      throwsA(
+        isA<ModelLifecycleException>().having(
+          (error) => error.code,
+          'code',
+          ModelFailureCode.cancelled,
+        ),
+      ),
+    );
+    await held.started.future;
+    try {
+      await expectLater(
+        second.downloadAndActivate(manifest),
+        throwsA(
+          isA<ModelLifecycleException>().having(
+            (error) => error.code,
+            'code',
+            ModelFailureCode.busy,
+          ),
+        ),
+      );
+      expect(retry.requestedStarts, isEmpty);
+    } finally {
+      await first.dispose();
+      await cancelled;
+    }
+    final result = await second.downloadAndActivate(manifest);
+    expect(result.state, ModelDownloadState.active);
+    expect(repository.activations, 1);
+  });
+
   test('recovers a verified final file after a pre-activation crash', () async {
     final bytes = utf8.encode('already-renamed-model');
     final manifest = _manifestFor(bytes);

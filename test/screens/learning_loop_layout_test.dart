@@ -7,6 +7,8 @@ import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 
+import 'screen_golden.dart';
+
 void main() {
   setUpAll(() async {
     await (FontLoader(
@@ -49,7 +51,7 @@ void main() {
     expect(find.text('ทบทวน 3 คำ').hitTestable(), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/learning_hub_large_text.png'),
+      matchesGoldenFile(screenGolden('learning_hub_large_text.png')),
     );
     await tester.scrollUntilVisible(find.text('ฝึกจุดอ่อน'), 200);
     expect(tester.takeException(), isNull);
@@ -62,7 +64,7 @@ void main() {
     expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/weakness_large_text.png'),
+      matchesGoldenFile(screenGolden('weakness_large_text.png')),
     );
   });
 
@@ -88,7 +90,7 @@ void main() {
     );
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/score_large_text.png'),
+      matchesGoldenFile(screenGolden('score_large_text.png')),
     );
     await tester.scrollUntilVisible(find.text('ฝึกคำที่ผิด (1)'), 200);
     expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);

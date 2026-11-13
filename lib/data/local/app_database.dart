@@ -1,5 +1,9 @@
 import 'package:drift/drift.dart';
+// Drift marks its wire protocol experimental. Its public exception API is stable.
+// ignore: experimental_member_use
+import 'package:drift/remote.dart' show DriftRemoteException;
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:sqlite3/common.dart' show SqlError, SqliteException;
 
 import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
@@ -15,10 +19,13 @@ import 'tables/vocabulary_tables.dart';
 
 part 'app_database.g.dart';
 
+const _writerWait = Duration(seconds: 5);
+const _writerRetryDelay = Duration(milliseconds: 25);
+
 final _productionNativeOptions = DriftNativeOptions(
   setup: (database) {
     database.execute('PRAGMA foreign_keys = ON');
-    database.execute('PRAGMA busy_timeout = 5000');
+    database.execute('PRAGMA busy_timeout = ${_writerWait.inMilliseconds}');
     database.execute('PRAGMA journal_mode = WAL');
   },
 );
@@ -64,6 +71,35 @@ final class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 10;
+
+  @override
+  Future<T> transaction<T>(
+    Future<T> Function() action, {
+    bool requireNew = false,
+  }) async {
+    final elapsed = Stopwatch()..start();
+    var actionStarted = false;
+    while (true) {
+      try {
+        return await super.transaction(() {
+          actionStarted = true;
+          return action();
+        }, requireNew: requireNew);
+      } catch (error) {
+        final cause = error is DriftRemoteException ? error.remoteCause : error;
+        // SQLite can report BUSY immediately when acquiring the writer.
+        // Once Drift has entered the callback, replay could repeat side effects.
+        if (actionStarted ||
+            cause is! SqliteException ||
+            cause.resultCode != SqlError.SQLITE_BUSY ||
+            cause.causingStatement != 'BEGIN IMMEDIATE' ||
+            elapsed.elapsed + _writerRetryDelay >= _writerWait) {
+          rethrow;
+        }
+        await Future<void>.delayed(_writerRetryDelay);
+      }
+    }
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

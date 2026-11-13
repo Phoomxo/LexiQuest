@@ -39,6 +39,10 @@ abstract interface class ModelFileVerifier {
 }
 
 final class ModelDownloadManager {
+  // POSIX file locks are process-scoped, so managers in this isolate also
+  // reserve the path before opening any handle to the lock file.
+  static final _heldLockPaths = <String>{};
+
   ModelDownloadManager({
     required this.repository,
     required this.source,
@@ -109,49 +113,64 @@ final class ModelDownloadManager {
     await directory.create(recursive: true);
     final separator = Platform.pathSeparator;
     final lockFile = File(
-      '${directory.path}$separator${manifest.fileStem}.lock',
+      '${await directory.resolveSymbolicLinks()}$separator${manifest.fileStem}.lock',
     );
-    final lock = await _acquireLock(lockFile, cancellation);
+    final elapsed = Stopwatch()..start();
+    while (!_heldLockPaths.add(lockFile.path)) {
+      await _waitForLock(elapsed, cancellation);
+    }
     try {
-      return await _performDownloadAndActivateLocked(
-        manifest,
-        directory,
-        cancellation,
-      );
-    } finally {
+      final lock = await _acquireLock(lockFile, cancellation, elapsed);
       try {
-        lock.unlockSync();
+        return await _performDownloadAndActivateLocked(
+          manifest,
+          directory,
+          cancellation,
+        );
       } finally {
+        // Closing the handle releases its OS lock.
         await lock.close();
       }
+    } finally {
+      _heldLockPaths.remove(lockFile.path);
     }
   }
 
   Future<RandomAccessFile> _acquireLock(
     File file,
     ModelCancellation cancellation,
+    Stopwatch elapsed,
   ) async {
     final handle = await file.open(mode: FileMode.append);
-    final elapsed = Stopwatch()..start();
-    while (true) {
-      if (cancellation.isCancelled || _disposed) {
-        await handle.close();
-        throw const ModelLifecycleException(ModelFailureCode.cancelled);
-      }
-      try {
-        handle.lockSync(FileLock.exclusive);
-        return handle;
-      } on FileSystemException {
-        if (elapsed.elapsed >= lockTimeout) {
-          await handle.close();
-          throw const ModelLifecycleException(ModelFailureCode.busy);
+    try {
+      while (true) {
+        if (cancellation.isCancelled || _disposed) {
+          throw const ModelLifecycleException(ModelFailureCode.cancelled);
         }
-        await Future.any<void>([
-          Future<void>.delayed(lockRetryDelay),
-          cancellation.whenCancelled,
-        ]);
+        try {
+          handle.lockSync(FileLock.exclusive);
+          return handle;
+        } on FileSystemException {
+          await _waitForLock(elapsed, cancellation);
+        }
       }
+    } catch (_) {
+      await handle.close();
+      rethrow;
     }
+  }
+
+  Future<void> _waitForLock(Stopwatch elapsed, ModelCancellation cancellation) {
+    if (cancellation.isCancelled || _disposed) {
+      throw const ModelLifecycleException(ModelFailureCode.cancelled);
+    }
+    if (elapsed.elapsed >= lockTimeout) {
+      throw const ModelLifecycleException(ModelFailureCode.busy);
+    }
+    return Future.any<void>([
+      Future<void>.delayed(lockRetryDelay),
+      cancellation.whenCancelled,
+    ]);
   }
 
   Future<ModelDownloadRecord> _performDownloadAndActivateLocked(

@@ -52,7 +52,8 @@ void main() {
         final writerStarted = Completer<void>();
         heldWrite = first.transaction(() async {
           await first.customUpdate(
-            'UPDATE local_owners SET account_state = account_state WHERE id = ?',
+            'UPDATE local_owners SET created_at_utc_ms = created_at_utc_ms + 1 '
+            'WHERE id = ?',
             variables: [drift.Variable<String>(seededOwner.id)],
           );
           writerStarted.complete();
@@ -101,6 +102,10 @@ void main() {
 
         expect(readError, isNull);
         expect(restoredOwner?.id, seededOwner.id);
+        expect(
+          restoredOwner?.createdAtUtc,
+          seededOwner.createdAtUtc.add(const Duration(milliseconds: 1)),
+        );
         expect(await _pragmaValue<String>(second, 'journal_mode'), 'wal');
         expect(await _pragmaValue<int>(second, 'busy_timeout'), 5000);
       } finally {
