@@ -2,13 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../config/m3_theme.dart';
 import '../features/device_model/application/model_benchmark.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
+import '../widgets/adaptive_content_pane.dart';
+import 'device_permission_center_screen.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
   const ObjectScannerScreen({super.key, this.scanner, this.voice});
@@ -32,6 +36,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _modelUnavailable = false;
   bool _accepted = false;
   String? _error;
+  CameraFailureCode? _initializationFailure;
   ObjectScanResult? _result;
   List<ModelBenchmarkResult> _benchmarks = const [];
   ModelCancellation? _cancellation;
@@ -64,12 +69,20 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       }
       return;
     }
+    if (mounted) {
+      setState(() {
+        _initializing = true;
+        _error = null;
+        _initializationFailure = null;
+      });
+    }
     try {
       await scanner.initialize();
       if (mounted) {
         setState(() {
           _initializing = false;
           _error = null;
+          _initializationFailure = null;
         });
       }
     } on CameraPracticeException catch (error) {
@@ -77,6 +90,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         setState(() {
           _initializing = false;
           _modelUnavailable = error.code == CameraFailureCode.modelUnavailable;
+          _initializationFailure = error.code;
           _error = _cameraFailureText(error.code);
         });
       }
@@ -238,114 +252,177 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final scanner = _scanner;
     final result = _result;
     return Scaffold(
-      appBar: AppBar(title: const Text('สแกนวัตถุเป็นคำศัพท์')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            AspectRatio(
-              aspectRatio: 4 / 3,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: _initializing
-                      ? const Center(child: CircularProgressIndicator())
-                      : scanner?.isReady ?? false
-                      ? scanner!.buildPreview()
-                      : const Center(
-                          child: Icon(Icons.no_photography_outlined, size: 64),
-                        ),
-                ),
-              ),
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'สแกนวัตถุ'),
+      ),
+      body: AdaptiveContentPane(
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.all(
+              MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
             ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              key: const ValueKey<String>('object-scanner-capture-button'),
-              onPressed: scanner?.isReady == true && !_capturing
-                  ? _capture
-                  : null,
-              icon: _capturing
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.camera_alt_outlined),
-              label: Text(
-                _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
-              ),
-            ),
-            if (scanner?.isReady == true) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                key: const ValueKey<String>('object-scanner-benchmark-model'),
-                onPressed: _benchmarking || _capturing ? null : _benchmarkModel,
-                icon: _benchmarking
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.speed_outlined),
-                label: Text(
-                  _benchmarking
-                      ? 'กำลังทดสอบ CPU/XNNPACK...'
-                      : 'ทดสอบประสิทธิภาพ CPU/XNNPACK',
-                ),
-              ),
-            ],
-            if (_benchmarks.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Card(
-                key: const ValueKey<String>('object-scanner-benchmark-result'),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
-                      for (final result in _benchmarks)
-                        Text(_benchmarkSummary(result)),
-                    ],
+            children: [
+              AspectRatio(
+                aspectRatio: 4 / 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ColoredBox(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: _initializing
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              semanticsLabel: 'กำลังเปิดกล้อง',
+                            ),
+                          )
+                        : scanner?.isReady ?? false
+                        ? scanner!.buildPreview()
+                        : const Center(
+                            child: Icon(
+                              Icons.no_photography_outlined,
+                              size: 64,
+                            ),
+                          ),
                   ),
                 ),
               ),
-            ],
-            if (_modelUnavailable) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                key: const ValueKey<String>('object-scanner-download-model'),
-                onPressed: _downloading
-                    ? () => _cancellation?.cancel()
-                    : _downloadModel,
-                icon: Icon(_downloading ? Icons.stop : Icons.download),
-                label: Text(
-                  _downloading
-                      ? 'ยกเลิกดาวน์โหลด'
-                      : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
-                ),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                key: const ValueKey<String>('object-scanner-error'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            if (result != null) ...[
               const SizedBox(height: 16),
-              _ResultCard(
-                result: result,
-                accepted: _accepted,
-                onSpeak: () => _speak(
-                  result.vocabulary?.englishWord ??
-                      (result.matchedClassification ?? result.primary).label,
+              FilledButton.icon(
+                key: const ValueKey<String>('object-scanner-capture-button'),
+                onPressed: scanner?.isReady == true && !_capturing
+                    ? _capture
+                    : null,
+                icon: _capturing
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          semanticsLabel: 'กำลังวิเคราะห์ภาพ',
+                        ),
+                      )
+                    : const Icon(Icons.camera_alt_outlined),
+                label: Text(
+                  _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
                 ),
-                onAccept: result.vocabulary == null ? null : _accept,
               ),
+              if (scanner?.isReady == true) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('object-scanner-benchmark-model'),
+                  onPressed: _benchmarking || _capturing
+                      ? null
+                      : _benchmarkModel,
+                  icon: _benchmarking
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            semanticsLabel: 'กำลังทดสอบประสิทธิภาพโมเดล',
+                          ),
+                        )
+                      : const Icon(Icons.speed_outlined),
+                  label: Text(
+                    _benchmarking
+                        ? 'กำลังทดสอบประสิทธิภาพ…'
+                        : 'ทดสอบประสิทธิภาพบนเครื่องนี้',
+                  ),
+                ),
+              ],
+              if (_benchmarks.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Card(
+                  key: const ValueKey<String>(
+                    'object-scanner-benchmark-result',
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
+                        for (final result in _benchmarks)
+                          Text(_benchmarkSummary(result)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (_modelUnavailable) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('object-scanner-download-model'),
+                  onPressed: _downloading
+                      ? () => _cancellation?.cancel()
+                      : _downloadModel,
+                  icon: Icon(_downloading ? Icons.stop : Icons.download),
+                  label: Text(
+                    _downloading
+                        ? 'ยกเลิกดาวน์โหลด'
+                        : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
+                  ),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    key: const ValueKey<String>('object-scanner-error'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+                if (scanner != null &&
+                    scanner.isReady != true &&
+                    !_modelUnavailable) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: const ValueKey<String>('object-scanner-retry-camera'),
+                    onPressed:
+                        _initializationFailure ==
+                            CameraFailureCode.permissionPermanentlyDenied
+                        ? () => AppNavigator.pushPage<void>(
+                            context,
+                            AppPage<void>(
+                              name: 'settings/device-permissions',
+                              builder: (_) =>
+                                  const DevicePermissionCenterScreen(),
+                            ),
+                          )
+                        : _initialize,
+                    icon: Icon(
+                      _initializationFailure ==
+                              CameraFailureCode.permissionPermanentlyDenied
+                          ? Icons.settings_outlined
+                          : Icons.refresh,
+                    ),
+                    label: Text(
+                      _initializationFailure ==
+                              CameraFailureCode.permissionPermanentlyDenied
+                          ? 'เปิดศูนย์สิทธิ์อุปกรณ์'
+                          : 'ลองเปิดกล้องอีกครั้ง',
+                    ),
+                  ),
+                ],
+              ],
+              if (result != null) ...[
+                const SizedBox(height: 16),
+                _ResultCard(
+                  result: result,
+                  accepted: _accepted,
+                  onSpeak: () => _speak(
+                    result.vocabulary?.englishWord ??
+                        (result.matchedClassification ?? result.primary).label,
+                  ),
+                  onAccept: result.vocabulary == null ? null : _accept,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -371,8 +448,14 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final peakMb = (result.peakWorkingSetBytes / (1024 * 1024)).toStringAsFixed(
       1,
     );
-    return '${result.delegate.name.toUpperCase()} n=${result.sampleSize} '
-        'median=$medianMs ms p90=$p90Ms ms peakRSS=$peakMb MB';
+    final mode = result.delegate == ModelDelegate.cpu
+        ? 'โหมดมาตรฐาน'
+        : 'โหมดเร่งความเร็ว';
+    return '$mode · '
+        'ทดสอบ ${result.sampleSize} ครั้ง · '
+        'เวลากลาง $medianMs มิลลิวินาที · '
+        '90% ไม่เกิน $p90Ms มิลลิวินาที · '
+        'หน่วยความจำสูงสุด $peakMb MB';
   }
 }
 
@@ -414,7 +497,7 @@ final class _ResultCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text('ความมั่นใจจากโมเดล: $confidence%'),
             Text(
-              'โมเดล ${result.modelId} รุ่น ${result.modelVersion}',
+              'ผลจากโมเดลสแกนวัตถุในอุปกรณ์',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             if (vocabulary == null) ...[
@@ -424,14 +507,15 @@ final class _ResultCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: onSpeak,
                   icon: const Icon(Icons.volume_up_outlined),
                   label: const Text('ฟังเสียง'),
                 ),
-                const SizedBox(width: 8),
                 if (onAccept != null)
                   FilledButton.icon(
                     onPressed: accepted ? null : onAccept,

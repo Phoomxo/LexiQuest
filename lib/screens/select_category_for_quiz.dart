@@ -1,33 +1,51 @@
 import 'package:flutter/material.dart';
 
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../runtime/app_dependencies.dart';
 
-class SelectCategoryForQuiz extends StatelessWidget {
-  const SelectCategoryForQuiz({super.key});
+class SelectCategoryForQuiz extends StatefulWidget {
+  const SelectCategoryForQuiz({super.key, this.vocabulary});
+
+  final VocabularyUseCases? vocabulary;
+
+  @override
+  State<SelectCategoryForQuiz> createState() => _SelectCategoryForQuizState();
+}
+
+class _SelectCategoryForQuizState extends State<SelectCategoryForQuiz> {
+  var _retryEpoch = 0;
 
   @override
   Widget build(BuildContext context) {
-    final vocabulary = AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final vocabulary =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกหมวดหมู่')),
       body: vocabulary == null
           ? const _CategoryMessage('ไม่สามารถเปิดคลังคำศัพท์ในเครื่องได้')
           : StreamBuilder<List<VocabularyCategory>>(
+              key: ValueKey<int>(_retryEpoch),
               stream: vocabulary.watchCategories(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const _CategoryMessage(
-                    'อ่านหมวดหมู่ไม่สำเร็จ กรุณาลองใหม่',
+                  return _CategoryFailure(
+                    onRetry: () => setState(() => _retryEpoch++),
                   );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                    ),
+                  );
                 }
                 final categories = snapshot.data!;
                 if (categories.isEmpty) {
-                  return const _CategoryMessage(
-                    'ยังไม่มีหมวดหมู่ เพิ่มคำศัพท์ก่อนเริ่ม Quiz',
+                  return _CategoryMessage(
+                    'ยังไม่มีหมวดหมู่ เพิ่มคำศัพท์จากแท็บคำศัพท์ก่อนเริ่มแบบทดสอบ',
+                    actionLabel: 'กลับไปหน้าเรียน',
+                    onAction: () => Navigator.maybePop(context),
                   );
                 }
                 return ListView.separated(
@@ -52,17 +70,57 @@ class SelectCategoryForQuiz extends StatelessWidget {
   }
 }
 
-class _CategoryMessage extends StatelessWidget {
-  const _CategoryMessage(this.message);
+class _CategoryFailure extends StatelessWidget {
+  const _CategoryFailure({required this.onRetry});
 
-  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                'อ่านหมวดหมู่ไม่สำเร็จ กรุณาลองใหม่',
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryMessage extends StatelessWidget {
+  const _CategoryMessage(this.message, {this.actionLabel, this.onAction});
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
       ),
     );
   }

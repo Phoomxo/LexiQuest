@@ -18,6 +18,7 @@ class OTPScreen extends StatefulWidget {
 class _OTPScreenState extends State<OTPScreen> {
   AccountUseCases? _account;
   bool _busy = false;
+  String? _busyLabel;
 
   @override
   void didChangeDependencies() {
@@ -32,7 +33,10 @@ class _OTPScreenState extends State<OTPScreen> {
       _show('ระบบยืนยันอีเมลไม่พร้อมใช้งาน');
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyLabel = 'กำลังตรวจสอบการยืนยันอีเมล';
+    });
     try {
       final session = await account.refreshVerification();
       if (!mounted) return;
@@ -44,21 +48,38 @@ class _OTPScreenState extends State<OTPScreen> {
     } on AccountException {
       if (mounted) _show('ตรวจสอบสถานะยืนยันอีเมลไม่สำเร็จ');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _busyLabel = null;
+        });
+      }
     }
   }
 
   Future<void> _resend() async {
     final account = _account;
-    if (account == null || _busy) return;
-    setState(() => _busy = true);
+    if (_busy) return;
+    if (account == null) {
+      _show('ระบบยืนยันอีเมลไม่พร้อมใช้งาน');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _busyLabel = 'กำลังส่งอีเมลยืนยันใหม่';
+    });
     try {
       await account.resendVerification();
       if (mounted) _show('ส่งอีเมลยืนยันอีกครั้งแล้ว');
     } on AccountException {
       if (mounted) _show('ส่งอีเมลยืนยันไม่สำเร็จ');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _busyLabel = null;
+        });
+      }
     }
   }
 
@@ -80,7 +101,8 @@ class _OTPScreenState extends State<OTPScreen> {
               const Icon(Icons.mark_email_unread_outlined, size: 72),
               const SizedBox(height: 16),
               Text(
-                'ส่งลิงก์ยืนยันไปที่\n${widget.email}',
+                'ตรวจอีเมลยืนยันที่\n${widget.email}\n'
+                'หากยังไม่พบ ให้กดส่งอีเมลยืนยันใหม่',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -101,7 +123,8 @@ class _OTPScreenState extends State<OTPScreen> {
                   child: const Text('ส่งอีเมลยืนยันใหม่'),
                 ),
               ),
-              if (_busy) const CircularProgressIndicator(),
+              if (_busyLabel != null)
+                CircularProgressIndicator(semanticsLabel: _busyLabel),
             ],
           ),
         ),

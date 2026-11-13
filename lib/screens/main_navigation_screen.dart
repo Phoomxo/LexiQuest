@@ -5,7 +5,6 @@ import '../runtime/app_runtime_status.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../navigation/app_routes.dart';
-import 'achievements_screen.dart';
 import 'ai_tutor_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
@@ -18,7 +17,6 @@ import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
-import 'weakness_clinic_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({
@@ -60,45 +58,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   List<_NavigationEntry> _buildEntries(FieldFeatureRegistry features) {
     return [
-      if (features.isVisible(FieldFeature.vocabulary))
-        _NavigationEntry(
-          screen: CategoriesPage(),
-          icon: Icons.menu_book_outlined,
-          selectedIcon: Icons.menu_book,
-          label: 'คลังคำศัพท์',
-        ),
       if (features.isVisible(FieldFeature.quiz) ||
           features.isVisible(FieldFeature.srs) ||
           features.isVisible(FieldFeature.reading))
-        const _NavigationEntry(
-          screen: ChooseModeScreen(),
+        _NavigationEntry(
+          screen: ChooseModeScreen(
+            featureRegistry: features,
+            onOpenMenu: _openDrawer,
+          ),
           icon: Icons.school_outlined,
           selectedIcon: Icons.school,
-          label: 'เรียนรู้',
+          label: 'เรียน',
+        ),
+      if (features.isVisible(FieldFeature.vocabulary))
+        _NavigationEntry(
+          screen: CategoriesPage(onOpenMenu: _openDrawer),
+          icon: Icons.menu_book_outlined,
+          selectedIcon: Icons.menu_book,
+          label: 'คำศัพท์',
         ),
       if (features.isVisible(FieldFeature.mastery))
-        const _NavigationEntry(
-          screen: MasteryDashboardScreen(),
+        _NavigationEntry(
+          screen: MasteryDashboardScreen(
+            featureRegistry: features,
+            onOpenMenu: _openDrawer,
+          ),
           icon: Icons.analytics_outlined,
           selectedIcon: Icons.analytics,
-          label: 'สถิติ',
+          label: 'ก้าวหน้า',
         ),
-      if (features.isVisible(FieldFeature.weakness))
-        const _NavigationEntry(
-          screen: WeaknessClinicScreen(),
-          icon: Icons.healing_outlined,
-          selectedIcon: Icons.healing,
-          label: 'จุดอ่อน',
-        ),
-      if (features.isVisible(FieldFeature.achievements))
-        const _NavigationEntry(
-          screen: AchievementsScreen(),
-          icon: Icons.emoji_events_outlined,
-          selectedIcon: Icons.emoji_events,
-          label: 'รางวัล',
-        ),
-      const _NavigationEntry(
-        screen: ProfileSettingsScreen(),
+      _NavigationEntry(
+        screen: ProfileSettingsScreen(onOpenMenu: _openDrawer),
         icon: Icons.person_outlined,
         selectedIcon: Icons.person,
         label: 'โปรไฟล์',
@@ -116,9 +106,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final unavailable = <String>[
-      if (status.firebase != RuntimeAvailability.ready) 'Firebase',
-      if (status.supabase != RuntimeAvailability.ready) 'Supabase',
-      if (status.backends != RuntimeAvailability.ready) 'AI/Voice',
+      if (status.firebase != RuntimeAvailability.ready) 'ระบบบัญชี',
+      if (status.supabase != RuntimeAvailability.ready) 'ระบบข้อมูลออนไลน์',
+      if (status.backends != RuntimeAvailability.ready)
+        'ผู้ช่วย AI และระบบเสียง',
     ];
     return '${unavailable.join(' · ')} ยังไม่พร้อม — การเรียนในเครื่องยังใช้ได้';
   }
@@ -126,7 +117,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   String _buildIdentity(BuildContext context) {
     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
     if (buildInfo == null) return '';
-    return '${buildInfo.version} · ${buildInfo.buildId}';
+    return 'เวอร์ชัน ${buildInfo.version}';
   }
 
   void _pushDestination(String name, Widget destination) {
@@ -137,152 +128,265 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
+  void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
+
   @override
   Widget build(BuildContext context) {
     final features = _fieldFeatures(context);
-    return Scaffold(
-      key: _scaffoldKey,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [for (final entry in _entries) entry.screen],
-      ),
-      floatingActionButton: FloatingActionButton.small(
-        key: const ValueKey<String>('legacy-drawer-button'),
-        heroTag: 'main-navigation-drawer',
-        tooltip: 'เปิดเมนูเพิ่มเติม',
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        child: const Icon(Icons.menu),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      drawer: Drawer(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showNavigation = _entries.length >= 2;
+        final useRail =
+            showNavigation &&
+            constraints.maxWidth >= 600 &&
+            constraints.maxHeight >= 480;
+        final content = IndexedStack(
+          index: _currentIndex,
+          children: [for (final entry in _entries) entry.screen],
+        );
+
+        return Scaffold(
+          key: _scaffoldKey,
+          body: Stack(
             children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.deepPurple),
-                child: Text(
-                  'LexiQuest',
-                  style: TextStyle(color: Colors.white, fontSize: 22),
-                ),
-              ),
-              if (features.isVisible(FieldFeature.vocabulary))
-                ListTile(
-                  leading: const Icon(Icons.menu_book),
-                  title: const Text('คลังคำศัพท์'),
-                  onTap: () {
-                    _scaffoldKey.currentState?.closeDrawer();
-                    setState(() {
-                      _currentIndex = 0;
-                    });
-                  },
-                ),
-              if (features.isVisible(FieldFeature.shop))
-                ListTile(
-                  leading: const Icon(Icons.shopping_bag),
-                  title: const Text('ร้านค้า'),
-                  onTap: () =>
-                      _pushDestination('rewards/shop', const ShopPage()),
-                ),
-              if (features.isVisible(FieldFeature.objectScanner))
-                ListTile(
-                  leading: const Icon(Icons.document_scanner_outlined),
-                  title: const Text('สแกนวัตถุ'),
-                  onTap: () => _pushDestination(
-                    'practice/object-scanner',
-                    const ObjectScannerScreen(),
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 1200,
+                    minHeight: constraints.maxHeight,
                   ),
-                ),
-              if (features.isVisible(FieldFeature.speechPractice))
-                ListTile(
-                  leading: const Icon(Icons.mic_none),
-                  title: const Text('ฝึกพูดตามเสียง'),
-                  onTap: () => _pushDestination(
-                    'practice/shadowing',
-                    const ShadowingChallengeScreen(),
+                  child: Row(
+                    children: [
+                      if (useRail) ...[
+                        SafeArea(
+                          child: NavigationRail(
+                            selectedIndex: _currentIndex,
+                            onDestinationSelected: _selectDestination,
+                            labelType: NavigationRailLabelType.all,
+                            destinations: [
+                              for (final entry in _entries)
+                                NavigationRailDestination(
+                                  icon: Icon(entry.icon),
+                                  selectedIcon: Icon(entry.selectedIcon),
+                                  label: Text(entry.label),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const VerticalDivider(width: 1),
+                      ],
+                      Expanded(child: content),
+                    ],
                   ),
-                ),
-              if (features.isVisible(FieldFeature.ghostDuel))
-                ListTile(
-                  leading: const Icon(Icons.sports_esports_outlined),
-                  title: const Text('ดวลกับสถิติเดิม'),
-                  onTap: () => _pushDestination(
-                    'learning/ghost-duel',
-                    const GhostShadowDuelScreen(),
-                  ),
-                ),
-              if (features.isVisible(FieldFeature.aiTutor)) ...[
-                ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
-                  title: const Text('AI Tutor'),
-                  onTap: () =>
-                      _pushDestination('gemini/tutor', const AiTutorScreen()),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.key_outlined),
-                  title: const Text('ตั้งค่า Gemini BYOK'),
-                  onTap: () => _pushDestination(
-                    'gemini/settings',
-                    const GeminiSettingsScreen(),
-                  ),
-                ),
-              ],
-              if (features.isVisible(FieldFeature.export))
-                ListTile(
-                  leading: const Icon(Icons.file_download_outlined),
-                  title: const Text('ส่งออกข้อมูล'),
-                  onTap: () => _pushDestination(
-                    'export/center',
-                    const ExportCenterScreen(),
-                  ),
-                ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('ตั้งค่า'),
-                onTap: () =>
-                    _pushDestination('settings', const SettingScreen()),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Text(
-                  _runtimeStatusSummary(context),
-                  key: const ValueKey<String>('runtime-status-summary'),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Text(
-                  _buildIdentity(context),
-                  key: const ValueKey<String>('build-identity'),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          for (final entry in _entries)
-            NavigationDestination(
-              icon: Icon(entry.icon),
-              selectedIcon: Icon(entry.selectedIcon),
-              label: entry.label,
+          drawer: Drawer(
+            child: SafeArea(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  DrawerHeader(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'LexiQuest',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (features.isVisible(FieldFeature.vocabulary))
+                    ListTile(
+                      leading: const Icon(Icons.menu_book),
+                      title: const Text('คำศัพท์'),
+                      onTap: () {
+                        _scaffoldKey.currentState?.closeDrawer();
+                        setState(() {
+                          _currentIndex = _entries.indexWhere(
+                            (entry) => entry.screen is CategoriesPage,
+                          );
+                        });
+                      },
+                    ),
+                  if (features.isVisible(FieldFeature.shop))
+                    ListTile(
+                      leading: const Icon(Icons.shopping_bag),
+                      title: const Text('ร้านค้ารางวัล'),
+                      onTap: () =>
+                          _pushDestination('rewards/shop', const ShopPage()),
+                    ),
+                  if (features.isVisible(FieldFeature.objectScanner))
+                    _featureTile(
+                      features: features,
+                      feature: FieldFeature.objectScanner,
+                      icon: Icons.document_scanner_outlined,
+                      title: 'สแกนวัตถุ',
+                      limitedReason:
+                          'ต้องอนุญาตกล้อง และอาจต้องดาวน์โหลดโมเดลก่อนใช้งาน',
+                      onTap: () => _pushDestination(
+                        'practice/object-scanner',
+                        const ObjectScannerScreen(),
+                      ),
+                      onSetup: () => _pushDestination(
+                        'practice/object-scanner',
+                        const ObjectScannerScreen(),
+                      ),
+                    ),
+                  if (features.isVisible(FieldFeature.speechPractice))
+                    _featureTile(
+                      features: features,
+                      feature: FieldFeature.speechPractice,
+                      icon: Icons.mic_none,
+                      title: 'ฝึกพูดตามเสียง',
+                      limitedReason:
+                          'ต้องอนุญาตไมโครโฟน และใช้ระบบรู้จำเสียงของอุปกรณ์',
+                      onTap: () => _pushDestination(
+                        'practice/shadowing',
+                        const ShadowingChallengeScreen(),
+                      ),
+                      onSetup: () => _pushDestination(
+                        'practice/shadowing',
+                        const ShadowingChallengeScreen(),
+                      ),
+                    ),
+                  if (features.isVisible(FieldFeature.ghostDuel))
+                    ListTile(
+                      leading: const Icon(Icons.sports_esports_outlined),
+                      title: const Text('ดวลกับสถิติเดิม'),
+                      onTap: () => _pushDestination(
+                        'learning/ghost-duel',
+                        const GhostShadowDuelScreen(),
+                      ),
+                    ),
+                  if (features.isVisible(FieldFeature.aiTutor)) ...[
+                    _featureTile(
+                      features: features,
+                      feature: FieldFeature.aiTutor,
+                      icon: Icons.chat_bubble_outline,
+                      title: 'ผู้ช่วยฝึกภาษาอังกฤษ',
+                      limitedReason:
+                          'ต้องเชื่อมต่อผู้ช่วย AI และยินยอมก่อนใช้งาน',
+                      onTap: () => _pushDestination(
+                        'gemini/tutor',
+                        const AiTutorScreen(),
+                      ),
+                      onSetup: () => _pushDestination(
+                        'gemini/settings',
+                        const GeminiSettingsScreen(),
+                      ),
+                      setupLabel: 'เชื่อมต่อผู้ช่วย AI',
+                    ),
+                  ],
+                  if (features.isVisible(FieldFeature.export))
+                    ListTile(
+                      leading: const Icon(Icons.file_download_outlined),
+                      title: const Text('ส่งออกข้อมูล'),
+                      onTap: () => _pushDestination(
+                        'export/center',
+                        const ExportCenterScreen(),
+                      ),
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: const Text('ตั้งค่า'),
+                    onTap: () =>
+                        _pushDestination('settings', const SettingScreen()),
+                  ),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      _runtimeStatusSummary(context),
+                      key: const ValueKey<String>('runtime-status-summary'),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      _buildIdentity(context),
+                      key: const ValueKey<String>('build-identity'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-        ],
-      ),
+          ),
+          bottomNavigationBar: useRail || !showNavigation
+              ? null
+              : NavigationBar(
+                  selectedIndex: _currentIndex,
+                  onDestinationSelected: _selectDestination,
+                  destinations: [
+                    for (final entry in _entries)
+                      NavigationDestination(
+                        icon: Icon(entry.icon),
+                        selectedIcon: Icon(entry.selectedIcon),
+                        label: entry.label,
+                      ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  void _selectDestination(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  Widget _featureTile({
+    required FieldFeatureRegistry features,
+    required FieldFeature feature,
+    required IconData icon,
+    required String title,
+    required String limitedReason,
+    required VoidCallback onTap,
+    required VoidCallback onSetup,
+    String setupLabel = 'เตรียมใช้',
+  }) {
+    final limited = features.stateOf(feature) == FieldFeatureState.limited;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          minVerticalPadding: limited ? 12 : null,
+          leading: Icon(icon),
+          title: Text(title),
+          subtitle: limited ? Text('ทดลองใช้ · $limitedReason') : null,
+          isThreeLine: limited,
+          onTap: onTap,
+        ),
+        if (limited)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: 72,
+              end: 16,
+              bottom: 4,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(onPressed: onSetup, child: Text(setupLabel)),
+            ),
+          ),
+      ],
     );
   }
 }

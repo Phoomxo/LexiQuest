@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
@@ -12,12 +13,14 @@ class SrsFlashcardsScreen extends StatefulWidget {
   const SrsFlashcardsScreen({
     super.key,
     this.wordList,
+    this.sourceWordIds,
     this.voice,
     this.learning,
-  });
+  }) : assert(wordList == null || sourceWordIds == null);
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
   final List<Map<String, String>>? wordList;
+  final List<String>? sourceWordIds;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
 
@@ -38,8 +41,17 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   bool _isFlipped = false;
   bool _saving = false;
   DateTime? _questionStartedAt;
+  String? _attemptId;
+  DateTime? _submittedAtUtc;
+  int? _responseTimeMs;
+  bool? _submittedRating;
+  bool _saved = false;
+  int _correctCount = 0;
+  final Set<String> _mistakeWordIds = {};
+  bool _resultContextValid = true;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
+  bool get _isSourcePractice => widget.sourceWordIds != null;
 
   @override
   void initState() {
@@ -51,6 +63,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       duration: const Duration(milliseconds: 400),
     );
     _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(covariant SrsFlashcardsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.learning, widget.learning) ||
+        !listEquals(oldWidget.sourceWordIds, widget.sourceWordIds)) {
+      _resultContextValid = false;
+    }
   }
 
   @override
@@ -67,6 +88,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           ? Future<QuizSession>.error(
               StateError('local learning dependency unavailable'),
             )
+          : _isSourcePractice
+          ? learning.startSourcePracticeForWords(wordIds: widget.sourceWordIds!)
           : learning.startDueReview();
     }
     _load!.then((session) {
@@ -74,7 +97,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _session = session;
       _questionStartedAt = DateTime.now();
       _playAudio();
-    });
+    }, onError: (_) {});
   }
 
   QuizSession _compatibilitySession(List<Map<String, String>> rows) {
@@ -123,6 +146,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   void _flipCard() {
+    if (_saving || _saved || _attemptId != null) return;
     if (_isFlipped) {
       _controller.reverse();
     } else {
@@ -132,28 +156,45 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _rateItem(bool isCorrect) async {
-    if (_saving) return;
+    if (_saving ||
+        _saved ||
+        (_submittedRating != null && _submittedRating != isCorrect)) {
+      return;
+    }
     setState(() => _saving = true);
+    _submittedRating ??= isCorrect;
     try {
       if (_isCompatibilityDeck) {
         // Legacy compatibility deck — SrsService removed (Phase 0 Week 14-15).
         // SharedPreferences-backed SRS recording is deprecated; no-op here.
         // SRS state for real words is tracked via LearningUseCases + Drift.
       } else {
-        final elapsed = DateTime.now().difference(
-          _questionStartedAt ?? DateTime.now(),
-        );
+        _submittedAtUtc ??= DateTime.now().toUtc();
+        _responseTimeMs ??= DateTime.now()
+            .difference(_questionStartedAt ?? DateTime.now())
+            .inMilliseconds;
+        _attemptId ??= 'attempt:srs:${_session!.id}:$_currentIndex';
         await _learning!.recordAnswer(
           sessionId: _session!.id,
           wordId: _currentQuestion.word.id,
           promptMode: 'srsRecall',
-          isCorrect: isCorrect,
-          responseTimeMs: elapsed.inMilliseconds,
+          isCorrect: _submittedRating!,
+          responseTimeMs: _responseTimeMs,
           attemptNumber: _currentIndex + 1,
+          attemptId: _attemptId,
+          occurredAtUtc: _submittedAtUtc,
         );
       }
       if (!mounted) return;
-      await _nextCard();
+      setState(() {
+        if (_submittedRating!) {
+          _correctCount++;
+        } else {
+          _mistakeWordIds.add(_currentQuestion.word.id);
+        }
+        _saved = true;
+        _saving = false;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -166,6 +207,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _nextCard() async {
+    if (!_saved || _saving) return;
+    setState(() => _saving = true);
     if (_currentIndex < _session!.questions.length - 1) {
       if (_isFlipped) _controller.reverse();
       setState(() {
@@ -173,19 +216,64 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _currentIndex++;
         _saving = false;
         _questionStartedAt = DateTime.now();
+        _attemptId = null;
+        _submittedAtUtc = null;
+        _responseTimeMs = null;
+        _submittedRating = null;
+        _saved = false;
       });
       await _playAudio();
       return;
     }
-    if (!_isCompatibilityDeck) {
-      await _learning!.finishSession(_session!.id);
+    LearningSessionSummary? summary;
+    try {
+      if (!_isCompatibilityDeck) {
+        summary = await _learning!.finishSession(_session!.id);
+        if (!_isValidSummary(summary)) {
+          throw StateError('invalid flashcards summary');
+        }
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ปิดการทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง')),
+      );
+      return;
     }
     if (!mounted) return;
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว')),
+      SnackBar(
+        content: Text(
+          _isSourcePractice
+              ? 'ฝึกบัตรคำจากเนื้อหานี้ครบแล้ว'
+              : 'ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว',
+        ),
+      ),
     );
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(
+      _isSourcePractice && summary != null && _resultContextValid
+          ? LearningSessionResult(
+              summary: summary,
+              mistakeWordIds: _mistakeWordIds,
+            )
+          : null,
+    );
+  }
+
+  bool _isValidSummary(LearningSessionSummary summary) {
+    final session = _session;
+    if (!_resultContextValid || session == null) return false;
+    final total = session.questions.length;
+    final wrong = total - _correctCount;
+    final score = total == 0 ? 0 : ((_correctCount * 100) / total).round();
+    return summary.id == session.id &&
+        summary.state == 'completed' &&
+        summary.correctCount == _correctCount &&
+        summary.wrongCount == wrong &&
+        summary.score == score &&
+        _mistakeWordIds.length == wrong;
   }
 
   @override
@@ -199,7 +287,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ทบทวน SRS')),
+      appBar: AppBar(
+        title: Text(
+          _isSourcePractice ? 'บัตรคำจากเนื้อหานี้' : 'ทบทวนคำที่ถึงกำหนด',
+        ),
+      ),
       body: FutureBuilder<QuizSession>(
         future: _load,
         builder: (context, snapshot) {
@@ -207,10 +299,18 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
             return const _SrsMessage('เปิดข้อมูลทบทวนในเครื่องไม่สำเร็จ');
           }
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: 'กำลังเตรียมคำศัพท์สำหรับทบทวน',
+              ),
+            );
           }
           if (snapshot.data!.isEmpty) {
-            return const _SrsMessage('ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน');
+            return _SrsMessage(
+              _isSourcePractice
+                  ? 'ไม่พบคำศัพท์จากแหล่งเรียนสำหรับฝึก'
+                  : 'ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน',
+            );
           }
           _session ??= snapshot.data;
           return _buildCard();
@@ -221,18 +321,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Widget _buildCard() {
     final word = _currentQuestion.word;
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          Text(
-            '${_currentIndex + 1}/${_session!.questions.length}',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: _saving ? null : _flipCard,
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${_currentIndex + 1}/${_session!.questions.length}',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _saving || _saved || _attemptId != null ? null : _flipCard,
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -244,7 +345,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                       ..rotateY(angle),
                     alignment: Alignment.center,
                     child: Card(
-                      child: SizedBox.expand(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 280),
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: front
@@ -261,31 +363,78 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                 },
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          if (_saving)
-            const LinearProgressIndicator()
-          else if (_isFlipped)
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _rateItem(false),
-                    child: const Text('จำไม่ได้ (Again)'),
-                  ),
+            const SizedBox(height: 20),
+            if (_saving)
+              const LinearProgressIndicator(
+                semanticsLabel: 'กำลังบันทึกผลทบทวน',
+              ),
+            if (_saved) ...[
+              Semantics(
+                liveRegion: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _isCompatibilityDeck
+                          ? 'ชุดตัวอย่างนี้ไม่บันทึกผล'
+                          : 'บันทึกแล้ว',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'ผลที่คุณเลือก: ${_submittedRating! ? 'จำได้แล้ว' : 'จำไม่ได้'}',
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => _rateItem(true),
-                    child: const Text('จำได้แล้ว (Good)'),
-                  ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _saving ? null : _nextCard,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
                 ),
-              ],
-            )
-          else
-            const Text('แตะการ์ดเพื่อดูคำแปล'),
-        ],
+                child: Text(
+                  _currentIndex == _session!.questions.length - 1
+                      ? _isSourcePractice
+                            ? 'จบการฝึก'
+                            : 'จบการทบทวน'
+                      : 'คำถัดไป',
+                ),
+              ),
+            ] else if (!_saving && _isFlipped)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  OutlinedButton(
+                    onPressed: _submittedRating == true
+                        ? null
+                        : () => _rateItem(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    child: const Text('ยังจำไม่ได้'),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _submittedRating == false
+                        ? null
+                        : () => _rateItem(true),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    child: const Text('จำได้แล้ว'),
+                  ),
+                ],
+              )
+            else if (!_saving)
+              TextButton(
+                onPressed: _flipCard,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text('ดูคำแปล'),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -332,7 +481,10 @@ class _SrsMessage extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+        child: Semantics(
+          liveRegion: true,
+          child: Text(message, textAlign: TextAlign.center),
+        ),
       ),
     );
   }

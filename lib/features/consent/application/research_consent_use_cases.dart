@@ -18,20 +18,31 @@ final class ResearchConsentUseCases {
 
   Future<ResearchConsentStatus> load() async {
     final owner = await owners.getOrCreateActiveOwner();
-    return repository.load(ownerId: owner.id, version: currentVersion);
+    final status = await repository.load(
+      ownerId: owner.id,
+      version: currentVersion,
+    );
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (status.ownerId != owner.id || currentOwner.id != owner.id) {
+      throw StateError('active owner changed while loading research consent');
+    }
+    return status;
   }
 
-  Future<void> accept() => _decide(true);
+  Future<bool> accept({String? expectedOwnerId}) =>
+      _decide(true, expectedOwnerId: expectedOwnerId);
 
-  Future<void> withdraw() => _decide(false);
+  Future<bool> withdraw({String? expectedOwnerId}) =>
+      _decide(false, expectedOwnerId: expectedOwnerId);
 
-  Future<void> _decide(bool accepted) async {
+  Future<bool> _decide(bool accepted, {String? expectedOwnerId}) async {
     final now = nowUtc();
     if (!now.isUtc) {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
     final owner = await owners.getOrCreateActiveOwner();
-    await repository.decide(
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) return false;
+    return repository.decide(
       ownerId: owner.id,
       version: currentVersion,
       accepted: accepted,

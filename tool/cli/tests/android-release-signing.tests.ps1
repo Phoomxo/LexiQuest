@@ -189,6 +189,14 @@ if (
     Assert-True ($androidClient.Count -eq 1) `
         'google-services contains exactly one LexiQuest Android client'
     if ($androidClient.Count -eq 1) {
+        $oauthClientTypes = @(
+            $androidClient[0].oauth_client |
+                ForEach-Object { [int]$_.client_type }
+        )
+        Assert-True ($oauthClientTypes -contains 1) `
+            'LexiQuest Android OAuth client is present'
+        Assert-True ($oauthClientTypes -contains 3) `
+            'LexiQuest Web OAuth client is present for Google Sign-In'
         $configuredAppId = [string]$androidClient[0].client_info.mobilesdk_app_id
         $firebaseSha = [System.IO.File]::ReadAllText($firebaseShaPath)
         $appCheck = [System.IO.File]::ReadAllText($appCheckPath)

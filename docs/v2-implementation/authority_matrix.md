@@ -4,6 +4,8 @@
 **Status:** ACTIVE — binding from this date forward  
 **Auditor:** Architecture Team
 
+**2026-10-20 bounded amendment:** [C-COIN-LOCAL-1](001-local-coin-authority-amendment.md) resolves C1 for local accounting. The original finding counts below are historical; other findings are not re-audited by this change.
+
 ---
 
 ## Critical Findings Summary
@@ -32,9 +34,9 @@
 | 9 | `SrsStates` | `features/learning/data/drift_learning_projection_rebuilder.dart` | Migration cascade: `drift_owner_upgrade_repository.dart` | LOW | Keep — projection pattern is correct |
 | 10 | `ReadingProgressEntries` | `features/learning/data/drift_learning_projection_rebuilder.dart` | None | LOW | Keep — sole writer |
 | 11 | `ReadingEvents` | `features/learning/data/drift_learning_repository.dart` | Sync-in: `drift_sync_store.dart` | MEDIUM | Keep |
-| 12 | `PointsLedgerEntries` | **⚠️ CONFLICT** | **BOTH** `drift_learning_projection_rebuilder.dart` AND `drift_reward_projection_rebuilder.dart` delete+insert | **CRITICAL** | **MUST RESOLVE before V2**: assign sole authority, decide whether this is XP or Coins ledger |
+| 12 | `PointsLedgerEntries` | `drift_learning_projection_rebuilder.dart` (XP) | Existing owner lifecycle only; reward code reads legacy provenance, never writes/deletes XP | LOW | C1 locally resolved by Amendment001; retain and exclude historical rewardPurchase from XP reads |
 | 13 | `AchievementUnlocks` | `features/learning/data/drift_learning_repository.dart` | Rebuild: `drift_learning_projection_rebuilder.dart` | LOW | Keep — repository writes event-time, rebuilder is restore path |
-| 14 | `RewardTransactions` | `features/rewards/data/drift_reward_repository.dart` | Sync-in: `drift_sync_store.dart` | MEDIUM | Keep — coins ledger. Freeze as spendable-coins authority |
+| 14 | `RewardTransactions` | rewards repository (purchase/equip) and provenance materializer (derived credits) | Sync-in: purchase/equip only; derived credits never outboxed | MEDIUM | Sole local coin ledger; shared effective fold, source-bound +1/carry, neutral credit catalog0; Amendment001 |
 | 15 | `OwnedRewardItems` | `features/rewards/data/drift_reward_projection_rebuilder.dart` | None | LOW | Keep — projection only |
 | 16 | `EquippedRewardItems` | `features/rewards/data/drift_reward_projection_rebuilder.dart` | None | LOW | Keep — projection only |
 | 17 | `OutboxOperations` | `features/sync/data/drift_sync_store.dart` (lifecycle mgmt) | Writers: learning, rewards, identity, vocabulary repositories (append-only) | MEDIUM | Keep — outbox pattern is intentional multi-writer; sync store owns lifecycle |
@@ -91,6 +93,8 @@
 
 ### CONFLICT C1: PointsLedgerEntries — Dual Authority (CRITICAL)
 
+**Disposition (C-COIN-LOCAL-1):** locally resolved by [Amendment001](001-local-coin-authority-amendment.md). The problem/resolution forecast below is historical. Current reward rebuilding never writes/deletes XP, and coin reads/admission/rebuild/export share the RewardTransactions effective fold. No schema reservation/rename or raw evidence rewrite was performed. Same-DB downgrade to the previous mixed-ledger client is unsupported; opaque carry remains local-only.
+
 **Problem:**  
 Two separate rebuilders write to the same table with incompatible semantics:
 
@@ -110,7 +114,7 @@ drift_reward_projection_rebuilder.dart:47-49
 3. OR: rename `PointsLedgerEntries` to `XpLedgerEntries` in schema v7 migration
 4. Decision must be documented in `semantic_contract.md` before either rebuilder is modified
 
-**Gate:** No V2 code writes to `PointsLedgerEntries` without explicit `entryType = 'xp'` semantic
+**Current gate (Amendment001):** only learning-derived XP writes (`quizCorrect` in this checkout) may create PointsLedgerEntries. Rewards may read legacy provenance but never write/delete XP; historical rewardPurchase rows remain excluded from XP reads.
 
 ---
 

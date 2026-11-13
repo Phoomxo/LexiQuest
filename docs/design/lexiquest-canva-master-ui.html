@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiQuest Master UI Revision 3</title>
+  <style>
+    @font-face {
+      font-family: "Noto Sans Thai";
+      src: url("../../assets/fonts/NotoSansThai-Variable.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+    }
+    :root {
+      --ink: #1d2238;
+      --muted: #5b6275;
+      --primary: #5046e5;
+      --primary-soft: #edebff;
+      --teal: #0d766e;
+      --teal-soft: #d9f2ee;
+      --amber: #d98516;
+      --amber-soft: #fff1d6;
+      --error: #ba1a1a;
+      --error-soft: #ffdad6;
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --line: #dde1ea;
+      --dark: #111522;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+    }
+    * { box-sizing: border-box; }
+    @page { size: 20in 11.25in; margin: 0; }
+    @media print {
+      body { background: white; }
+      .page { break-after: page; page-break-after: always; }
+      .page:last-child { break-after: auto; page-break-after: auto; }
+    }
+    body { margin: 0; font-family: "Noto Sans Thai", "Leelawadee UI", Arial, sans-serif; font-feature-settings: "kern" 1; color: var(--ink); background: #d9dce5; }
+    .page {
+      width: 1920px; height: 1080px; overflow: hidden; position: relative;
+      background: var(--bg); padding: 48px 64px; page-break-after: always;
+    }
+    .page.dark { background: var(--dark); color: #f5f1ff; }
+    .eyebrow { display: block; color: var(--primary); font-size: 14px; line-height: 1.35; font-weight: 800; letter-spacing: .02em; margin-bottom: 8px; }
+    .dark .eyebrow { color: #bdb6ff; }
+    h1 { font-size: 70px; line-height: 1.12; margin: 8px 0 24px; letter-spacing: 0; font-weight: 800; }
+    h2 { font-size: 40px; line-height: 1.22; margin: 0; letter-spacing: 0; font-weight: 800; }
+    h3 { font-size: 24px; line-height: 1.35; margin: 0 0 12px; font-weight: 700; }
+    p { font-size: 22px; line-height: 1.62; margin: 0; color: var(--muted); }
+    .dark p { color: #c8c2db; }
+    .split { display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; gap: 18px; height: 100%; min-height: 0; align-items: stretch; }
+    .split::after { content: "Layout basis · REA: Duolingo + Astra AI + AllTCAS · LexiQuest repository truth"; display: block; border-top: 1px solid var(--line); padding-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.35; font-weight: 650; }
+    .intro { align-self: start; max-width: none; display: grid; grid-template-columns: minmax(520px,.9fr) minmax(620px,1.4fr); grid-template-rows: auto auto; column-gap: 56px; align-items: start; }
+    .intro .eyebrow { grid-column: 1; }
+    .intro h2 { grid-column: 1; grid-row: 2; }
+    .intro p { grid-column: 2; grid-row: 1 / span 2; align-self: end; font-size: 19px; line-height: 1.55; max-width: 900px; }
+    .intro ul { grid-column: 2; grid-row: 1 / span 2; padding-left: 24px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.58; }
+    .dark .intro ul { color: #c8c2db; }
+    .phones { display: flex; gap: 28px; justify-content: center; align-items: center; min-height: 0; }
+    .phones.four { gap: 22px; }
+    .phone-wrap { text-align: center; }
+    .caption { margin-top: 12px; font-size: 16px; line-height: 1.35; font-weight: 700; color: var(--ink); }
+    .dark .caption { color: #f5f1ff; }
+    .phone {
+      width: 328px; height: 728px; border-radius: 40px; background: #1a1d28;
+      padding: 8px; border: 1px solid #080a0f; box-shadow: 0 8px 18px rgba(17, 21, 34, .12); position: relative;
+    }
+    .phones.four .phone { width: 292px; height: 662px; }
+    .screen {
+      height: 100%; border-radius: 32px; background: var(--surface); overflow: hidden;
+      position: relative; text-align: left; color: var(--ink); padding: 24px 20px 82px;
+    }
+    .screen.tint { background: var(--bg); }
+    .status { font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; margin: 0 4px 18px; color: #454b5c; }
+    .appbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-bottom: 20px; }
+    .appbar .title { flex: 1; font-size: 19px; line-height: 1.35; font-weight: 700; }
+    .back, .round-icon { width: 44px; height: 44px; border-radius: 14px; border: 1px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 700; background: white; }
+    .back { font-size: 0; }
+    .back::before { content: ""; width: 10px; height: 10px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-left: 4px; }
+    .search-icon, .more-icon, .save-icon, .settings-icon, .play-icon, .upload-icon, .check-icon, .award-icon, .chevron { font-size: 0; position: relative; }
+    .search-icon::before { content: ""; width: 13px; height: 13px; border: 2px solid currentColor; border-radius: 50%; transform: translate(-2px,-2px); }
+    .search-icon::after { content: ""; position: absolute; width: 8px; height: 2px; border-radius: 1px; background: currentColor; transform: translate(8px,8px) rotate(45deg); }
+    .more-icon::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; box-shadow: 0 -7px 0 currentColor, 0 7px 0 currentColor; }
+    .save-icon::before { content: ""; width: 13px; height: 17px; border: 2px solid currentColor; border-radius: 2px 2px 4px 4px; clip-path: polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
+    .settings-icon::before { content: ""; width: 18px; height: 14px; background: linear-gradient(currentColor,currentColor) 0 1px/18px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 6px/18px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 11px/18px 2px no-repeat; }
+    .settings-icon::after { content: ""; position: absolute; width: 5px; height: 5px; border: 2px solid currentColor; border-radius: 50%; transform: translate(-3px,-6px); box-shadow: 8px 5px 0 -2px white, -4px 10px 0 -2px white; }
+    .play-icon::before { content: ""; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-left: 13px solid currentColor; margin-left: 3px; }
+    .upload-icon::before { content: ""; width: 16px; height: 16px; border-left: 2px solid currentColor; border-top: 2px solid currentColor; transform: rotate(45deg) translate(2px,2px); }
+    .check-icon::before, .node.done::before { content: ""; display:inline-block; width: 13px; height: 7px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg) translate(1px,-1px); }
+    .award-icon::before { content: ""; width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; box-shadow: 0 8px 0 -5px currentColor; }
+    .chevron { display:inline-block; width: 18px; height: 18px; }
+    .chevron::before { content: ""; position:absolute; width: 8px; height: 8px; border-right: 2px solid currentColor; border-top: 2px solid currentColor; transform: rotate(45deg); top:4px; left:2px; }
+    .greeting { font-size: 23px; font-weight: 800; line-height: 1.38; }
+    .sub { font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+    .section-label { font-size: 13.5px; font-weight: 700; margin: 20px 0 8px; color: #454b5c; }
+    .hero { background: linear-gradient(140deg, var(--primary), #6f66ed); color: white; border-radius: 20px; padding: 20px; margin-top: 16px; }
+    .hero.teal { background: linear-gradient(140deg, #147e70, var(--teal)); }
+    .hero.amber { background: linear-gradient(140deg, #9c6810, var(--amber)); color: #2b220f; }
+    .hero-title { font-size: 19px; line-height: 1.4; font-weight: 800; }
+    .hero .sub { color: rgba(255,255,255,.82); }
+    .card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin: 10px 0; }
+    .card.soft { background: var(--primary-soft); border-color: #d8cffd; }
+    .card.teal { background: var(--teal-soft); border-color: #b9e5db; }
+    .card.amber { background: var(--amber-soft); border-color: #f7d98e; }
+    .card.error { background: var(--error-soft); border-color: #f3aca5; }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .icon { width: 38px; height: 38px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; font-weight: 900; }
+    .icon.teal { background: var(--teal-soft); color: #0f6e61; }
+    .icon.amber { background: var(--amber-soft); color: #8b5d0c; }
+    .label { font-size: 14.5px; line-height: 1.42; font-weight: 700; }
+    .value { font-size: 13px; line-height: 1.48; color: var(--muted); }
+    .btn { min-height: 48px; border-radius: 14px; padding: 12px 18px; display: grid; place-items: center; background: var(--primary); color: white; font-size: 14.5px; font-weight: 700; margin-top: 16px; }
+    .btn.secondary { background: var(--primary-soft); color: var(--primary); }
+    .btn.outline { background: white; color: var(--ink); border: 1px solid var(--line); }
+    .btn.teal { background: var(--teal); }
+    .input { min-height: 48px; border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin: 10px 0; font-size: 14px; line-height: 1.45; color: var(--muted); background: white; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 10px; padding: 6px 9px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; margin: 3px 3px 3px 0; }
+    .chip.teal { background: var(--teal-soft); color: #0d7162; }
+    .chip.amber { background: var(--amber-soft); color: #8b5d0c; }
+    .chip.gray { background: #efedf4; color: #696374; }
+    .progress { height: 6px; border-radius: 3px; background: #e3e5ec; overflow: hidden; margin: 10px 0; }
+    .progress > span { display: block; height: 100%; border-radius: 4px; background: var(--primary); }
+    .metric { font-size: 32px; font-weight: 800; letter-spacing: 0; }
+    .word { text-align: center; font-size: 36px; font-weight: 800; margin: 30px 0 4px; }
+    .pos { text-align: center; color: var(--muted); margin-bottom: 22px; }
+    .choice { min-height: 48px; border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; margin: 10px 0; font-size: 14px; font-weight: 700; background: white; }
+    .choice.correct { border: 2px solid var(--teal); background: var(--teal-soft); }
+    .choice.correct::before { content: ""; display:inline-block; width: 10px; height: 6px; margin: 0 8px 2px 2px; border-left: 2px solid var(--teal); border-bottom: 2px solid var(--teal); transform: rotate(-45deg); }
+    .choice.wrong { border: 2px solid var(--error); background: var(--error-soft); }
+    .feedback { position: absolute; left: 12px; right: 12px; bottom: 76px; border-radius: 18px; padding: 16px; background: var(--teal-soft); border: 1px solid #a9ded1; box-shadow: 0 8px 20px rgba(0,0,0,.08); }
+    .feedback.error { background: var(--error-soft); border-color: #f0aaa4; }
+    .bottomnav { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: white; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4,1fr); padding: 8px 6px; }
+    .navitem { text-align: center; color: #646b7d; font-size: 11.5px; line-height: 1.35; font-weight: 700; }
+    .navitem::before { content: ""; display: block; width: 20px; height: 18px; margin: 0 auto 4px; border: 2px solid currentColor; border-radius: 6px; }
+    .navitem.active { color: var(--primary); }
+    .navitem.active::before { background: var(--primary-soft); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tile { min-height: 80px; border-radius: 16px; background: white; border: 1px solid var(--line); padding: 12px; }
+    .tile b { display: block; font-size: 14px; line-height: 1.4; margin-bottom: 4px; }
+    .tile span { font-size: 12px; color: var(--muted); }
+    .tile.night { background: #141225; color: white; }
+    .tile.night span { color: #f0ebfa; }
+    .fab { position: absolute; right: 18px; bottom: 92px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary); color: white; display: grid; place-items: center; font-size: 0; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,.18); }
+    .fab::before, .fab::after { content:""; position:absolute; width:18px; height:2px; border-radius:1px; background:white; }
+    .fab::after { transform:rotate(90deg); }
+    .switch { width: 42px; height: 24px; border-radius: 12px; background: #d3cfda; padding: 3px; }
+    .switch::after { content:""; display:block; width:18px; height:18px; border-radius:9px; background:white; }
+    .switch.on { background: var(--primary); }
+    .switch.on::after { margin-left:18px; }
+    .avatar { width: 64px; height: 64px; border-radius: 20px; background: var(--primary-soft); border: 2px solid white; display: grid; place-items: center; color: var(--primary); font-size: 24px; font-weight: 800; }
+    .center { text-align: center; }
+    .divider { height: 1px; background: var(--line); margin: 13px 0; }
+    .chart { height: 105px; display: flex; align-items: end; gap: 8px; padding: 10px 6px 0; }
+    .bar { flex: 1; background: var(--teal); border-radius: 6px 6px 2px 2px; min-height: 12px; }
+    .path { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    .node { width: 36px; height: 36px; border-radius: 18px; border: 2px solid var(--line); background: white; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+    .node.done { border-color: var(--teal); background: var(--teal-soft); color: #0b675a; font-size:0; }
+    .node.now { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 0 0 6px var(--primary-soft); }
+    .line { flex: 1; height: 4px; background: var(--line); }
+    .line.done { background: var(--teal); }
+    .dialog { margin: 48px 8px 0; border-radius: 20px; background: white; border: 1px solid var(--line); padding: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.12); }
+    .camera { height: 360px; border-radius: 22px; background: linear-gradient(145deg,#222534,#4e5767); position: relative; color: white; display: grid; place-items: center; }
+    .focus-box { width: 180px; height: 180px; border: 3px solid var(--amber); border-radius: 18px; display: grid; place-items: center; font-size: 14px; }
+    .wave { height: 78px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .wave i { display:block; width:5px; border-radius:3px; background:var(--primary); }
+    .bubble { max-width: 88%; padding: 12px 14px; border-radius: 16px; margin: 10px 0; background: #eff1f5; font-size: 13px; line-height: 1.5; }
+    .bubble.me { margin-left: auto; background: var(--primary); color: white; }
+    .token-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 34px; }
+    .token { border-radius: 18px; padding: 22px; min-height: 150px; background: white; border: 1px solid var(--line); }
+    .token-title { color: var(--ink); font-size: 24px; font-weight: 800; margin: 0 0 10px; }
+    .dark .token { color: var(--ink); }
+    .dark .token p { color: var(--muted); }
+    .swatch { height: 60px; border-radius: 14px; margin-bottom: 13px; }
+    .coverage { display:grid; grid-template-columns: repeat(4,1fr); gap:14px; margin-top:24px; }
+    .coverage .card { height: 175px; margin:0; }
+    ::selection { background: var(--primary-soft); color: var(--ink); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .coverage ul { margin:8px 0 0; padding-left:18px; font-size:15px; line-height:1.4; color:var(--muted); }
+    .rail { width: 132px; background: #eff0f6; border-radius: 20px; padding: 16px 12px; display:flex; flex-direction:column; gap:12px; }
+    .rail .r { border-radius: 12px; padding: 12px 8px; text-align:center; font-size:13px; font-weight:700; color:var(--muted); }
+    .rail .r.active { background: var(--primary-soft); color:var(--primary); }
+    .permission { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:11px 0; border-bottom:1px solid var(--line); }
+    .badge { padding:5px 8px; border-radius:10px; background:var(--teal-soft); color:#0c6b5e; font-weight:700; font-size:12px; }
+    .badge.limited { background:var(--amber-soft); color:#81580d; }
+    .badge.hidden { background:#efedf3; color:#5f5969; }
+    .tiny { font-size:12px; color:var(--muted); }
+    .research-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:28px; }
+    .research-source { min-height:510px; border-radius:24px; padding:30px; background:white; border:1px solid var(--line); display:flex; flex-direction:column; }
+    .research-source h3 { font-size:27px; margin-bottom:8px; }
+    .research-source p { font-size:17px; line-height:1.55; }
+    .research-source .flowline { margin-top:auto; padding-top:22px; display:flex; flex-wrap:wrap; gap:8px; }
+    .research-source .flowline span { padding:8px 10px; border-radius:10px; background:var(--primary-soft); color:var(--primary); font-size:13px; font-weight:800; }
+    .research-source.astra { background:#141522; color:white; border-color:#2b2e43; }
+    .research-source.astra p { color:#c9ccda; }
+    .research-source.astra .flowline span { background:#292b42; color:#f7dc5a; }
+    .research-source .takeaway { margin-top:28px; padding-top:22px; border-top:1px solid var(--line); font-size:16px; line-height:1.55; color:var(--muted); }
+    .research-source .takeaway b { display:block; margin-bottom:6px; color:var(--ink); }
+    .research-source.astra .takeaway { border-top-color:#34374d; color:#c9ccda; }
+    .research-source.astra .takeaway b { color:white; }
+    .layout-rule { display:grid; grid-template-columns:1.1fr 1.5fr; gap:28px; align-items:center; margin-top:24px; border-radius:22px; background:var(--primary); color:white; padding:24px 28px; }
+    .layout-rule b { font-size:24px; }
+    .layout-rule span { font-size:17px; line-height:1.5; color:#eeeaff; }
+  </style>
+</head>
+<body>
+
+<section class="page dark" data-document-role="page" data-label="Cover and visual system">
+  <div class="eyebrow">LexiQuest · Complete UI System · Revision 3</div>
+  <h1>เส้นทางเรียนที่สงบ<br>และมีเป้าหมาย</h1>
+  <p style="max-width:900px">Master design สำหรับทุกหน้า ทุกเมนู ทุกฟีเจอร์ และการตั้งค่า<br>Android-first · Material 3 · Thai-first accessibility</p>
+  <div class="token-row">
+    <div class="token"><div class="swatch" style="background:#5046e5"></div><div class="token-title">Primary</div><p>#5046E5</p></div>
+    <div class="token"><div class="swatch" style="background:#0d766e"></div><div class="token-title">Mastery</div><p>#0D766E</p></div>
+    <div class="token"><div class="swatch" style="background:#d98516"></div><div class="token-title">Momentum</div><p>#D98516</p></div>
+    <div class="token"><div class="swatch" style="background:#f5f6fa;border:1px solid #dde1ea"></div><div class="token-title">Surface</div><p>#F5F6FA</p></div>
+    <div class="token"><div class="swatch" style="background:#1d2238"></div><div class="token-title">Ink</div><p>#1D2238</p></div>
+  </div>
+  <div style="position:absolute;right:85px;top:78px;border:1px solid #4a445c;border-radius:26px;padding:18px 22px;color:#d9d3eb">Noto Sans Thai · 48dp touch · Light/Dark · Reduce Motion</div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Evidence-led layout grammar">
+  <div class="eyebrow">Research synthesis · REA observed evidence</div>
+  <h2>ใช้จังหวะงานจริงกำหนดเลย์เอาต์</h2>
+  <p style="margin-top:10px;max-width:1280px">สามผลิตภัณฑ์ให้บทเรียนเดียวกัน: เริ่มจากบริบท แสดงงานถัดไปหนึ่งอย่าง แล้วให้ feedback ในหน้าที่ผู้เรียนกำลังทำ</p>
+  <div class="research-grid">
+    <div class="research-source">
+      <h3>Duolingo</h3><p>เส้นทางและ Resume มาก่อนเมนู ช่วยให้กลับมาเรียนต่อโดยไม่ต้องเลือกใหม่ทุกครั้ง</p>
+      <div class="takeaway"><b>ใช้กับ LexiQuest</b>วาง “แผนวันนี้” และตำแหน่งในเส้นทางเหนือรายการโหมด ลดการ์ดที่มีน้ำหนักเท่ากัน</div>
+      <div class="flowline"><span>Path</span><span>Resume</span><span>One task</span><span>Feedback</span></div>
+    </div>
+    <div class="research-source astra">
+      <h3>Astra AI</h3><p>รับโน้ต วันสอบ และเป้าหมายก่อนสร้างแผน; onboarding ถามทีละเรื่องพร้อม progress ที่มองเห็นได้</p>
+      <div class="takeaway"><b>ใช้กับ LexiQuest</b>ให้ผู้เรียนเลือกบริบทจากคลังคำ/บทอ่านก่อนคุยกับ AI และเปิดเผยตัวเลือกทีละขั้น</div>
+      <div class="flowline"><span>Source</span><span>Plan</span><span>Practice</span><span>Mock exam</span></div>
+    </div>
+    <div class="research-source">
+      <h3>AllTCAS</h3><p>catalog ช่วยเลือกชุดงาน ส่วนหน้าฝึกยึดคำถามหนึ่งข้อและ action ด้านล่างก่อนเข้าสู่เฉลย</p>
+      <div class="takeaway"><b>ใช้กับ LexiQuest</b>แยกหน้าค้นหาชุดออกจากหน้าฝึก และให้ action/feedback อยู่ตำแหน่งเดิมตลอด session</div>
+      <div class="flowline"><span>Catalog</span><span>Setup</span><span>Question</span><span>Review</span></div>
+    </div>
+  </div>
+  <div class="layout-rule"><b>LexiQuest rhythm</b><span>บริบท → งานถัดไป → ลงมือ → ผลตอบกลับที่บันทึกแล้ว → ขั้นถัดไป · Board ratio: header 16% / screens 78% / evidence 6%</span></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="App shell navigation and access">
+  <div class="split">
+    <div class="intro">
+      <div class="eyebrow">01 · App shell</div><h2>นำทางด้วย 4 จุดหมาย</h2>
+      <p>เรียน · คลังคำ · ความก้าวหน้า · โปรไฟล์</p>
+      <ul><li>โทรศัพท์ใช้ NavigationBar</li><li>จอใหญ่เปลี่ยนเป็น NavigationRail</li><li>ฟีเจอร์ limited มีป้ายสถานะ</li><li>การเรียนในเครื่องยังใช้ได้เมื่อ cloud ไม่พร้อม</li></ul>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="status"><span>10:30</span><span>● ● 88%</span></div><div class="appbar"><div class="greeting">วันนี้พร้อมไปต่อไหม</div><div class="round-icon">LQ</div></div><div class="hero"><div class="hero-title">แผนวันนี้</div><div class="sub">ทบทวน 3 คำ · ซ่อมจุดอ่อน 1 คำ</div><div class="btn" style="background:white;color:#5b4bdb">เริ่มทบทวน 3 คำ</div></div><div class="section-label">เส้นทางของคุณ</div><div class="card"><div class="between"><b>A2 · การเดินทาง</b><span class="chip teal">38%</span></div><div class="progress"><span style="width:38%"></span></div><div class="tiny">ถัดไป: คำศัพท์สถานีและการเดินทาง</div></div><div class="bottomnav"><div class="navitem active">เรียน</div><div class="navitem">คลังคำ</div><div class="navitem">ก้าวหน้า</div><div class="navitem">โปรไฟล์</div></div></div></div><div class="caption">Compact navigation</div></div>
+      <div class="phone-wrap"><div style="width:650px;height:520px;border-radius:32px;background:white;border:1px solid var(--line);display:flex;padding:24px;box-shadow:0 8px 18px rgba(17,21,34,.10)"><div class="rail"><div class="r active">เรียน</div><div class="r">คลังคำ</div><div class="r">ก้าวหน้า</div><div class="r">โปรไฟล์</div></div><div style="padding:22px 28px;flex:1"><div class="greeting">แผนการเรียนวันนี้</div><div class="hero" style="margin-top:24px"><div class="hero-title">ทบทวน 3 คำ</div><div class="sub">ประมาณ 4 นาที</div><div class="btn" style="background:white;color:#5b4bdb;width:220px">เริ่มเรียน</div></div><div class="grid2" style="margin-top:18px"><div class="tile"><b>คิว SRS</b><span>3 คำถึงกำหนด</span></div><div class="tile"><b>จุดที่ควรฝึก</b><span>1 คำจาก 12 คำตอบ</span></div></div></div></div><div class="caption">Expanded navigation rail</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Authentication and account recovery">
+  <div class="split"><div class="intro"><div class="eyebrow">02 · Account</div><h2>เข้าใช้งานโดยไม่ขวางการเรียน</h2><p>Guest-first, อัปเกรดบัญชีภายหลัง และสื่อสถานะอีเมลให้ชัดเจน</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="status"><span>10:30</span><span>88%</span></div><div class="center"><div class="avatar" style="margin:40px auto 14px">LQ</div><div class="greeting">ยินดีต้อนรับกลับ</div><div class="sub">เรียนต่อจากข้อมูลในเครื่องได้ทันที</div></div><div class="input">อีเมล</div><div class="input">รหัสผ่าน</div><div class="btn">เข้าสู่ระบบ</div><div class="btn secondary">เรียนแบบ Guest</div><div class="center tiny" style="margin-top:18px">ยังไม่มีบัญชี? สร้างบัญชี</div></div></div><div class="caption">Login</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">สร้างบัญชี</div><span></span></div><div class="input">ชื่อที่ใช้ในแอป</div><div class="input">อีเมล</div><div class="input">รหัสผ่านอย่างน้อย 8 ตัว</div><div class="input">ยืนยันรหัสผ่าน</div><div class="card soft"><div class="tiny">ข้อมูลการเรียน Guest จะย้ายเข้าบัญชีนี้หลังยืนยันสำเร็จ</div></div><div class="btn">สร้างบัญชี</div><div class="tiny center" style="margin-top:14px">การเข้าร่วมงานวิจัยเป็นทางเลือกและตั้งค่าแยกต่างหาก</div></div></div><div class="caption">Register</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ยืนยันรหัส</div><span></span></div><div class="center"><div class="icon" style="margin:45px auto 16px;width:58px;height:58px;border-radius:20px">OTP</div><div class="greeting">ตรวจอีเมลของคุณ</div><div class="sub">กรอกรหัส 6 หลักที่ส่งไปยัง p•••@mail.com</div></div><div class="input center" style="font-size:26px;letter-spacing:12px">2 8 4 1 9 6</div><div class="btn">ยืนยัน</div><div class="btn outline">ส่งรหัสอีกครั้ง 00:42</div></div></div><div class="caption">OTP</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">จัดการอีเมล</div><span></span></div><div class="card teal center" style="margin-top:55px"><div class="metric check-icon" style="color:#0b6c5f"></div><div class="label">ยืนยันอีเมลแล้ว</div><div class="value">บัญชีพร้อม sync เมื่อ cloud พร้อม</div></div><div class="card"><div class="label">ลิงก์หมดอายุ?</div><div class="value">ขอลิงก์ใหม่ได้โดยไม่กระทบข้อมูลในเครื่อง</div></div><div class="btn">ไปหน้าหลัก</div></div></div><div class="caption">จัดการอีเมล</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Vocabulary library">
+  <div class="split"><div class="intro"><div class="eyebrow">03 · Vocabulary</div><h2>คลังคำคือฐานข้อมูลของผู้เรียน</h2><p>หมวด ค้นหา รายละเอียดคำ และ action ที่พาไปฝึกต่อ</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="title">คลังคำศัพท์</div><div class="round-icon search-icon"></div></div><div class="card soft"><div class="between"><div><div class="label">ทั้งหมด 126 คำ</div><div class="value">12 หมวด · อัปเดตล่าสุดวันนี้</div></div><span class="chip">เพิ่มคำ</span></div></div><div class="section-label">หมวดของฉัน</div><div class="grid2"><div class="tile"><b>การเดินทาง</b><span>24 คำ · ถึงกำหนด 3</span></div><div class="tile"><b>มหาวิทยาลัย</b><span>18 คำ · จุดอ่อน 2</span></div><div class="tile"><b>งานและอาชีพ</b><span>31 คำ</span></div><div class="tile"><b>ชีวิตประจำวัน</b><span>53 คำ</span></div></div><div class="fab">+</div><div class="bottomnav"><div class="navitem">เรียน</div><div class="navitem active">คลังคำ</div><div class="navitem">ก้าวหน้า</div><div class="navitem">โปรไฟล์</div></div></div></div><div class="caption">หมวดคำศัพท์</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">การเดินทาง</div><div class="round-icon more-icon"></div></div><div class="input">ค้นหาในหมวดนี้</div><div class="between"><span class="chip teal">24 คำ</span><span class="chip gray">เรียง: ล่าสุด</span></div><div class="card"><div class="between"><div><div class="label">station</div><div class="value">สถานี · noun</div></div><span class="chip amber">ทบทวนวันนี้</span></div></div><div class="card"><div class="label">journey</div><div class="value">การเดินทาง · noun</div></div><div class="card"><div class="label">destination</div><div class="value">จุดหมายปลายทาง · noun</div></div><div class="fab">+</div></div></div><div class="caption">รายการคำศัพท์</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">station</div><div class="round-icon save-icon"></div></div><div class="center"><div class="word">station</div><div class="pos">/ˈsteɪ.ʃən/ · noun</div><span class="chip">A2</span><span class="chip teal">การเดินทาง</span></div><div class="card"><div class="label">ความหมาย</div><div class="value">สถานีรถไฟและจุดจอดรับส่งผู้โดยสาร</div></div><div class="card"><div class="label">ตัวอย่าง</div><div class="value">Meet me at the train station.</div></div><div class="card amber"><div class="label">ความจำของคุณ</div><div class="value">ตอบผิด 2/3 ครั้ง · ทบทวนวันนี้</div></div><div class="btn">ฝึกคำนี้</div></div></div><div class="caption">รายละเอียดคำ</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ค้นหาคำศัพท์</div><span></span></div><div class="input">พิมพ์คำหรือความหมาย...</div><div class="section-label">ผลลัพธ์</div><div class="card"><div class="row"><div class="icon">S</div><div><div class="label">station</div><div class="value">สถานี · การเดินทาง</div></div></div></div><div class="card"><div class="row"><div class="icon teal">S</div><div><div class="label">stationery</div><div class="value">เครื่องเขียน · งานและการเรียน</div></div></div></div><div class="section-label">ตัวกรอง</div><span class="chip">ระดับ A2</span><span class="chip gray">ทุกหมวด</span><span class="chip gray">มีตัวอย่าง</span></div></div><div class="caption">Search & filter</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Add edit and import vocabulary">
+  <div class="split"><div class="intro"><div class="eyebrow">04 · Vocabulary input</div><h2>เพิ่มคำได้เร็วและตรวจสอบได้</h2><p>รองรับคำเดียว หลายคำ และนำเข้า โดยแสดงข้อผิดพลาดก่อนบันทึก</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เพิ่มคำศัพท์</div><span></span></div><div class="input">คำศัพท์ภาษาอังกฤษ</div><div class="input">ความหมายภาษาไทย</div><div class="input">ชนิดคำ</div><div class="input">หมวดหมู่</div><div class="input">ประโยคตัวอย่าง (ไม่บังคับ)</div><div class="card soft"><div class="tiny">คำซ้ำจะไม่ถูกบันทึกเพิ่ม และข้อมูลเดิมไม่ถูกเขียนทับโดยไม่แจ้ง</div></div><div class="btn">บันทึกคำศัพท์</div></div></div><div class="caption">Add word</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เพิ่มหลายคำ</div><span class="chip">3 แถว</span></div><div class="card"><div class="label">station</div><div class="value">สถานี · noun</div></div><div class="card"><div class="label">journey</div><div class="value">การเดินทาง · noun</div></div><div class="card error"><div class="label">traveling</div><div class="value" style="color:var(--error)">กรุณาเพิ่มความหมาย</div></div><div class="btn secondary">+ เพิ่มแถว</div><div class="btn">ตรวจสอบและบันทึก 2 คำ</div></div></div><div class="caption">Batch add</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">นำเข้าคลังคำ</div><span></span></div><div class="dialog" style="margin-top:20px;text-align:center"><div class="icon upload-icon" style="margin:auto;width:58px;height:58px"></div><div class="label" style="margin-top:12px">เลือกไฟล์ CSV</div><div class="value">รองรับ word, meaning, part_of_speech, category</div><div class="btn secondary">เลือกไฟล์</div></div><div class="section-label">ขั้นตอน</div><div class="card"><div class="label">1 · ตรวจรูปแบบ</div><div class="value">แสดงแถวผิดพลาดก่อนนำเข้า</div></div><div class="card"><div class="label">2 · จัดการคำซ้ำ</div><div class="value">ข้าม / รวม / ยกเลิก</div></div></div></div><div class="caption">นำเข้าสมุดคำ</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ตรวจสอบก่อนนำเข้า</div><span></span></div><div class="hero teal"><div class="hero-title">พร้อมนำเข้า 48 คำ</div><div class="sub">ข้ามคำซ้ำ 3 · ต้องแก้ 2 แถว</div></div><div class="card"><div class="between"><div><div class="label">คำใหม่</div><div class="value">48 รายการ</div></div><span class="badge">พร้อม</span></div></div><div class="card amber"><div class="between"><div><div class="label">คำซ้ำ</div><div class="value">station, travel, ticket</div></div><span class="badge limited">ข้าม</span></div></div><div class="card error"><div class="label">แถว 21–22</div><div class="value">ไม่มีความหมายภาษาไทย</div></div><div class="btn">นำเข้า 48 คำ</div><div class="btn outline">กลับไปแก้ไฟล์</div></div></div><div class="caption">Import review</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Learning hub and mode selection">
+  <div class="split"><div class="intro"><div class="eyebrow">05 · Learning home</div><h2>เห็นก้าวถัดไปก่อนเห็นเมนู</h2><p>คำแนะนำจากคิวจริงนำหน้า ส่วนกิจกรรมอื่นอยู่ในลำดับรอง</p></div>
+  <div class="phones">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="status"><span>10:30</span><span>88%</span></div><div class="appbar"><div><div class="greeting">วันนี้พร้อมไปต่อไหม</div><div class="sub">Momentum 4 วัน · เป้าหมาย 2/3</div></div><div class="round-icon">LQ</div></div><div class="hero"><div class="hero-title">แผนวันนี้</div><div class="sub">ทบทวน 3 คำ · ซ่อมจุดอ่อน 1 คำ</div><div class="btn" style="background:white;color:var(--primary)">เริ่มทบทวน 3 คำ</div></div><div class="section-label">เส้นทางของคุณ</div><div class="card"><div class="between"><b>A2 · การเดินทาง</b><span class="chip teal">38%</span></div><div class="path"><div class="node done"></div><div class="line done"></div><div class="node now">3</div><div class="line"></div><div class="node">4</div></div><div class="tiny">ถัดไป: คำศัพท์สถานีและการเดินทาง</div></div><div class="card"><div class="between"><div><div class="label">กิจกรรมอื่น</div><div class="value">Quiz · Flashcards · อ่านเรื่องสั้น</div></div><span class="chevron"></span></div></div><div class="bottomnav"><div class="navitem active">เรียน</div><div class="navitem">คลังคำ</div><div class="navitem">ก้าวหน้า</div><div class="navitem">โปรไฟล์</div></div></div></div><div class="caption">ศูนย์การเรียน</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เลือกกิจกรรม</div><span></span></div><div class="card soft"><div class="row"><div class="icon">Q</div><div><div class="label">Quiz จากคลังคำ</div><div class="value">ฝึกคำแปลและดูคำที่ควรทบทวน</div></div></div></div><div class="card"><div class="row"><div class="icon">#</div><div><div class="label">Quiz ตามหมวด</div><div class="value">เลือกหัวข้อจากคำในเครื่อง</div></div></div></div><div class="card"><div class="row"><div class="icon teal">S</div><div><div class="label">ทบทวน SRS</div><div class="value">คำที่ถึงกำหนด 3 คำ</div></div></div></div><div class="card"><div class="row"><div class="icon amber">W</div><div><div class="label">ฝึกจุดอ่อน</div><div class="value">คำที่เคยตอบผิด 1 คำ</div></div></div></div><div class="card"><div class="row"><div class="icon">R</div><div><div class="label">Supported Reading</div><div class="value">อ่านตามระดับ CEFR</div></div></div></div></div></div><div class="caption">Mode selector</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เลือกหมวด Quiz</div><span></span></div><div class="input">ค้นหาหมวด...</div><div class="card soft"><div class="between"><div><div class="label">การเดินทาง</div><div class="value">24 คำ</div></div><span class="chip teal">แนะนำ</span></div></div><div class="card"><div class="between"><div><div class="label">มหาวิทยาลัย</div><div class="value">18 คำ</div></div><span class="chevron"></span></div></div><div class="card"><div class="between"><div><div class="label">งานและอาชีพ</div><div class="value">31 คำ</div></div><span class="chevron"></span></div></div><div class="card"><div class="between"><div><div class="label">ชีวิตประจำวัน</div><div class="value">53 คำ</div></div><span class="chevron"></span></div></div><div class="card amber"><div class="label">หมวดที่ควรทบทวน</div><div class="value">การเดินทางมีคำถึงกำหนดมากที่สุด</div></div></div></div><div class="caption">เลือกหมวด Quiz</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Quiz SRS and score">
+  <div class="split"><div class="intro"><div class="eyebrow">06 · Core practice</div><h2>ฝึก → บันทึก → Feedback → ทำต่อ</h2><p>ทุก action ใช้ learning authority เดิมและไม่สร้างคำตอบหรือรางวัลซ้ำ</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">Quiz ตามหมวด</div><span class="chip gray">3 / 10</span></div><div class="progress"><span style="width:30%"></span></div><div class="word">station</div><div class="pos">noun</div><div class="choice">สถานี</div><div class="choice">ร้านค้า</div><div class="choice">การเดินทาง</div><div class="choice">อาคาร</div></div></div><div class="caption">Quiz</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">Quiz ตามหมวด</div><span class="chip gray">3 / 10</span></div><div class="progress"><span style="width:30%"></span></div><div class="word">station</div><div class="pos">noun</div><div class="choice correct">สถานี</div><div class="choice">ร้านค้า</div><div class="choice">การเดินทาง</div><div class="feedback"><div class="label" style="color:#0b6b5e">ถูกต้อง · บันทึกแล้ว</div><div class="value">station = สถานี</div><div class="tiny">บริบทจะแสดงเมื่อมีข้อมูลจริง</div><div class="btn teal">ข้อต่อไป</div></div></div></div><div class="caption">Feedback ที่คงอยู่</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ทบทวนคำศัพท์</div><span class="chip amber">3 คำ</span></div><div class="center"><div class="sub">ถึงกำหนดวันนี้</div><div class="word" style="margin-top:70px">journey</div><div class="pos">แตะเพื่อดูความหมาย</div></div><div class="card" style="height:150px;display:grid;place-items:center"><div class="tiny">ตัวอย่างและคำใบ้ยังไม่เปลี่ยน mastery จนกว่าจะตอบ</div></div><div class="grid2"><div class="btn outline">ยังไม่จำ</div><div class="btn teal">จำได้</div></div></div></div><div class="caption">SRS flashcard</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ผลการเรียน</div><span></span></div><div class="center"><div class="sub">ทำรอบนี้เสร็จแล้ว</div><div class="metric" style="font-size:56px;margin-top:8px">8/10</div><span class="chip teal">ถูก 8</span><span class="chip amber">ฝึกต่อ 2</span></div><div class="section-label">คำที่ควรฝึก</div><span class="chip">station</span><span class="chip">journey</span><div class="hero teal"><div class="hero-title">ก้าวต่อไป</div><div class="sub">ฝึก 2 คำนี้อีกหนึ่งรอบ</div></div><div class="btn">ฝึก 2 คำนี้ต่อ</div><div class="btn outline">กลับสู่แผนวันนี้</div></div></div><div class="caption">Score & next step</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Progress weakness and achievements">
+  <div class="split"><div class="intro"><div class="eyebrow">07 · Progress</div><h2>ตอบสามคำถามของผู้เรียน</h2><p>ฉันอยู่ตรงไหน · อะไรดีขึ้น · ควรทำอะไรต่อ</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="title">ความก้าวหน้า</div><div class="round-icon">i</div></div><div class="hero teal"><div class="sub">ภาพรวม 7 วัน</div><div class="hero-title" style="font-size:34px">72% mastery</div><div class="sub">จากหลักฐาน 42 คำตอบ</div></div><div class="section-label">แนวโน้ม</div><div class="card"><div class="chart"><div class="bar" style="height:38%"></div><div class="bar" style="height:54%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:72%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:76%"></div></div></div><div class="card amber"><div class="label">ควรทำต่อ</div><div class="value">ซ่อมจุดอ่อน 6 คำ · ประมาณ 5 นาที</div></div><div class="bottomnav"><div class="navitem">เรียน</div><div class="navitem">คลังคำ</div><div class="navitem active">ก้าวหน้า</div><div class="navitem">โปรไฟล์</div></div></div></div><div class="caption">Mastery dashboard</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">จุดที่ควรฝึก</div><span class="chip gray">6 คำ</span></div><div class="sub">จากคำตอบล่าสุด 42 รายการ</div><div class="card soft"><div class="between"><div><div class="label">1 · station</div><div class="value">สถานีรถไฟและจุดรับส่ง</div></div><span class="chip amber">ผิด 2/3</span></div></div><div class="card"><div class="between"><div><div class="label">2 · journey</div><div class="value">การเดินทาง</div></div><span class="chip gray">ผิด 1/2</span></div></div><div class="card"><div class="between"><div><div class="label">3 · destination</div><div class="value">จุดหมาย</div></div><span class="chip gray">ผิด 2/5</span></div></div><div class="btn">ฝึกชุดที่แนะนำ 6 คำ</div><div class="btn outline">ทบทวนคำที่ถึงกำหนด</div></div></div><div class="caption">Weakness Clinic</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ความสำเร็จ</div><span></span></div><div class="card amber"><div class="between"><div><div class="label">คะแนนสะสม</div><div class="value">หลักฐาน 42 รายการ</div></div><div class="metric">320</div></div></div><div class="card teal"><div class="row"><div class="icon teal check-icon"></div><div><div class="label">เรียนจบเซสชันแรก</div><div class="value">ปลดล็อก 12 ต.ค. · มีหลักฐานรองรับ</div></div></div></div><div class="card"><div class="row"><div class="icon amber award-icon"></div><div><div class="label">ตอบถูกครบทั้งเซสชัน</div><div class="value">ยังไม่ปลดล็อก · ต้องใช้หลักฐานจริง</div></div></div></div><div class="card"><div class="label">Momentum 4 วัน</div><div class="value">หยุดหนึ่งวันได้โดยไม่เสีย mastery</div></div></div></div><div class="caption">ความสำเร็จ</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">รายละเอียดหลักฐาน</div><span></span></div><div class="card"><div class="label">คำตอบทั้งหมด</div><div class="metric">42</div><div class="value">ช่วง 7 วันล่าสุด</div></div><div class="card"><div class="label">เวลาตอบเฉลี่ย</div><div class="metric">4.8s</div><div class="value">ไม่ใช้เป็น mastery เพียงตัวเดียว</div></div><div class="card soft"><div class="label">อัลกอริทึม</div><div class="value">projection v1 · rebuild ได้จาก evidence</div></div><div class="tiny">XP, streak, purchase และเวลาเปิดแอปไม่เพิ่ม mastery</div></div></div><div class="caption">Evidence details</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Curriculum path and CEFR">
+  <div class="split"><div class="intro"><div class="eyebrow">08 · Curriculum</div><h2>เส้นทางจากข้อมูลจริง</h2><p>Node, prerequisite และ unlock อ้างอิง curriculum revision กับ mastery confidence</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เส้นทางการเรียน</div><span class="chip">A2</span></div><div class="hero"><div class="hero-title">การเดินทางและสถานที่</div><div class="sub">ผ่านแล้ว 3 จาก 8 บท</div><div class="progress"><span style="width:38%;background:white"></span></div></div><div class="card teal"><div class="row"><div class="node done"></div><div><div class="label">คำศัพท์พื้นฐาน</div><div class="value">ผ่านจากหลักฐาน 24 รายการ</div></div></div></div><div class="card soft"><div class="row"><div class="node now">3</div><div><div class="label">สถานีและการเดินทาง</div><div class="value">กำลังเรียน · 4/10 คำ</div></div></div></div><div class="card"><div class="row"><div class="node">4</div><div><div class="label">ถามทาง</div><div class="value">ปลดล็อกเมื่อ mastery ≥ 70%</div></div></div></div></div></div><div class="caption">เส้นทางการเรียน</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เลือกระดับ CEFR</div><span></span></div><div class="grid2"><div class="tile" style="background:var(--teal-soft)"><b>A1</b><span>คำพื้นฐาน · พร้อมเรียน</span></div><div class="tile" style="background:var(--primary-soft)"><b>A2</b><span>ระดับปัจจุบัน</span></div><div class="tile"><b>B1</b><span>วัดระดับก่อนเปิด</span></div><div class="tile"><b>B2</b><span>ยังไม่พร้อม</span></div><div class="tile"><b>C1</b><span>ยังไม่พร้อม</span></div><div class="tile"><b>C2</b><span>ยังไม่พร้อม</span></div></div><div class="card amber"><div class="label">ไม่แน่ใจระดับ?</div><div class="value">ทำแบบวัดระดับ 12 ข้อ ใช้เวลาประมาณ 5 นาที</div><div class="btn secondary">เริ่มวัดระดับ</div></div></div></div><div class="caption">CEFR selection</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">วัดระดับ CEFR</div><span class="chip gray">5 / 12</span></div><div class="progress"><span style="width:42%"></span></div><div class="section-label">เลือกประโยคที่มีความหมายใกล้ที่สุด</div><div class="card soft"><div class="label">The train has already departed.</div></div><div class="choice">รถไฟยังไม่มาถึง</div><div class="choice">รถไฟออกไปแล้ว</div><div class="choice">รถไฟกำลังจอด</div><div class="choice">รถไฟมาถึงตรงเวลา</div><div class="tiny">ผลใช้จัดเส้นทางแนะนำ ไม่ใช่ใบรับรอง</div></div></div><div class="caption">Diagnostic test</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ผลวัดระดับ</div><span></span></div><div class="center"><div class="sub">ระดับแนะนำ</div><div class="metric" style="font-size:68px;color:var(--primary)">A2</div><div class="value">จากคำตอบ 12 ข้อ · confidence 78%</div></div><div class="hero teal"><div class="hero-title">เส้นทางที่เหมาะกับคุณ</div><div class="sub">เริ่มบท “การเดินทางและสถานที่”</div></div><div class="btn">ใช้เส้นทาง A2</div><div class="btn outline">เลือกเอง</div><div class="tiny center">บันทึก revision ของแบบทดสอบและนโยบายการแนะนำ</div></div></div><div class="caption">CEFR result</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Reading and associative learning">
+  <div class="split"><div class="intro"><div class="eyebrow">09 · Reading</div><h2>คำศัพท์อยู่ในบริบท</h2><p>การเปิดคำใบ้ไม่เท่ากับตอบถูก และ progress ผูกกับเอกสาร revision</p></div>
+  <div class="phones">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">บทอ่าน A2</div><div class="round-icon">Aa</div></div><div class="hero teal"><div class="hero-title">A Morning at the Station</div><div class="sub">A2 · 380 คำ · ประมาณ 4 นาที</div></div><div class="card"><div class="label">คำเป้าหมาย 8 คำ</div><span class="chip">station</span><span class="chip">platform</span><span class="chip">ticket</span><span class="chip">journey</span></div><div class="section-label">ก่อนอ่าน</div><div class="value">ลองเดาความหมายจากบริบท แตะคำที่ขีดเส้นใต้เพื่อดูคำใบ้</div><div class="btn">เริ่มอ่าน</div></div></div><div class="caption">Article entry</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">A Morning at the Station</div><span class="chip gray">2 / 6</span></div><div class="progress"><span style="width:33%"></span></div><p style="font-size:16px;color:var(--ink);line-height:1.75">Mina arrived at the <span style="color:var(--primary);text-decoration:underline;font-weight:900">station</span> early. She checked the platform number and held her ticket carefully. The journey would take two hours.</p><div class="card soft"><div class="label">station</div><div class="value">แตะเพื่อเปิดคำใบ้ · ยังไม่เพิ่ม mastery</div></div><div class="btn secondary">ทำความเข้าใจแล้ว</div><div class="btn outline">บันทึกตำแหน่งและออก</div></div></div><div class="caption">CEFR article reader</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เชื่อมโยงความจำ</div><span class="chip">station</span></div><div class="center"><div class="word" style="margin-top:22px">station</div><div class="pos">สถานี</div></div><div class="card"><div class="label">ภาพหรือเหตุการณ์ที่นึกถึง</div><div class="value">“จุดนัดพบก่อนขึ้นรถไฟ”</div></div><div class="card amber"><div class="label">Recall prompt</div><div class="value">อีก 10 วินาที ลองพูดความหมายโดยไม่ดูคำใบ้</div></div><div class="input">พิมพ์ association ของคุณ...</div><div class="btn">บันทึกและทดสอบความจำ</div></div></div><div class="caption">Associative session</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Word and sentence games">
+  <div class="split"><div class="intro"><div class="eyebrow">10 · Practice games</div><h2>เกมสั้นที่ยังรักษาหลักฐานการเรียน</h2><p>แต่ละโหมดมีโจทย์เดียวชัดเจนและจบด้วย feedback แบบเดียวกับ Quiz</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เรียงตัวอักษร</div><span class="chip gray">2 / 8</span></div><div class="sub center">สร้างคำที่แปลว่า “สถานี”</div><div class="word">_ _ _ _ _ _ _</div><div class="grid2" style="margin-top:20px"><div class="btn outline">S</div><div class="btn outline">T</div><div class="btn outline">A</div><div class="btn outline">T</div><div class="btn outline">I</div><div class="btn outline">O</div><div class="btn outline">N</div><div class="btn secondary">ล้าง</div></div><div class="btn" style="margin-top:10px">ตรวจคำตอบ</div></div></div><div class="caption">Word scramble</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เรียงประโยค</div><span class="chip gray">3 / 6</span></div><div class="sub">จัดคำให้เป็นประโยคที่ถูกต้อง</div><div class="card soft" style="min-height:120px"><span class="chip">She</span><span class="chip">at</span><span class="chip">waits</span><span class="chip">station</span><span class="chip">the</span></div><div class="section-label">คำที่เหลือ</div><span class="chip gray">every</span><span class="chip gray">morning</span><span class="chip gray">.</span><div class="btn">ตรวจประโยค</div></div></div><div class="caption">Sentence scramble</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">เติมคำในช่องว่าง</div><span class="chip gray">4 / 10</span></div><div class="section-label">เลือกคำที่เหมาะสม</div><div class="card soft" style="font-size:19px;line-height:1.6">She waits at the ____ every morning.</div><div class="choice correct">station</div><div class="choice">ticket</div><div class="choice">journey</div><div class="choice">destination</div><div class="feedback"><div class="label" style="color:#0b6b5e">ถูกต้อง</div><div class="value">station ใช้กับสถานที่รอรถไฟ</div><div class="btn teal">ข้อต่อไป</div></div></div></div><div class="caption">Fill in the blanks</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เขียนตามคำบอก</div><span class="chip gray">1 / 6</span></div><div class="center"><div class="icon play-icon" style="margin:50px auto 16px;width:74px;height:74px;border-radius:37px"></div><div class="label">ฟังคำศัพท์</div><div class="value">เล่นซ้ำได้อีก 2 ครั้ง</div></div><div class="input" style="margin-top:40px">พิมพ์คำที่ได้ยิน...</div><div class="btn">ตรวจคำตอบ</div><div class="btn outline">ฟังช้าลง</div></div></div><div class="caption">เขียนตามคำบอก</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Challenges duel and results">
+  <div class="split"><div class="intro"><div class="eyebrow">11 · Challenges</div><h2>ความท้าทายโดยไม่ปิดกั้นการเรียน</h2><p>คะแนนคือ engagement signal; mastery ยังอ้างอิงคำตอบและ transfer evidence</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">Boss Battle</div><span class="chip amber">ด่าน 3</span></div><div class="hero amber"><div class="hero-title">Transit Guardian</div><div class="sub">พิชิตคำศัพท์การเดินทาง 10 คำ</div><div class="progress"><span style="width:65%;background:#4d390d"></span></div></div><div class="word">platform</div><div class="choice">ชานชาลา</div><div class="choice">ตั๋ว</div><div class="choice">สัมภาระ</div><div class="btn">ยืนยันคำตอบ</div><div class="tiny center">ตอบผิดยังเรียนต่อได้และได้รับคำใบ้</div></div></div><div class="caption">Boss battle</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ดวลกับสถิติเดิม</div><span class="chip">รอบ 2</span></div><div class="grid2"><div class="card soft center"><div class="tiny">วันนี้</div><div class="metric">4.2s</div></div><div class="card center"><div class="tiny">สถิติเดิม</div><div class="metric">5.1s</div></div></div><div class="section-label">คำถัดไป</div><div class="word" style="margin:16px 0 4px">destination</div><div class="choice" style="margin:6px 0">จุดหมายปลายทาง</div><div class="choice" style="margin:6px 0">สถานีต้นทาง</div><div class="choice" style="margin:6px 0">การจองตั๋ว</div><div class="btn" style="margin-top:10px">ตอบ</div><div class="tiny center">เปรียบเทียบกับตนเอง ไม่จัดอันดับสาธารณะ</div></div></div><div class="caption">Ghost duel</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ผลความท้าทาย</div><span></span></div><div class="center"><div class="metric" style="font-size:60px;color:var(--teal)">9/10</div><div class="sub">เร็วขึ้น 0.7 วินาทีต่อคำ</div></div><div class="card teal"><div class="label">Transfer evidence</div><div class="value">ใช้คำในประโยคถูกต้อง 3/4 ครั้ง</div></div><div class="card amber"><div class="label">รับ 20 engagement XP</div><div class="value">ไม่เปลี่ยน mastery หรือปลดล็อกบทโดยตรง</div></div><div class="btn">ฝึกคำที่ผิด 1 คำ</div><div class="btn outline">กลับสู่เส้นทาง</div></div></div><div class="caption">Result screen</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ตัวช่วย</div><span></span></div><div class="card soft"><div class="row"><div class="icon">1</div><div><div class="label">ดูชนิดคำ</div><div class="value">ไม่หักสิทธิ์การเรียน</div></div></div></div><div class="card"><div class="row"><div class="icon teal">2</div><div><div class="label">ตัดตัวเลือกหนึ่งข้อ</div><div class="value">บันทึกว่าใช้ hint ใน evidence</div></div></div></div><div class="card"><div class="row"><div class="icon amber">3</div><div><div class="label">ดูประโยคตัวอย่าง</div><div class="value">แสดงเฉพาะเนื้อหาที่มีอยู่จริง</div></div></div></div><div class="tiny">Hint budget ให้การสนับสนุนโดยไม่ใช้ hearts ปิดกั้นการเรียน</div></div></div><div class="caption">Non-blocking support</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Voice audio and pronunciation">
+  <div class="split"><div class="intro"><div class="eyebrow">12 · Voice & audio</div><h2>ฟัง พูด และออกเสียงอย่างโปร่งใส</h2><p>แสดงสถานะไมค์ การประมวลผล และข้อจำกัดของผลประเมิน</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ฝึกพูด</div><span class="chip gray">1 / 5</span></div><div class="center"><div class="word">station</div><div class="pos">แตะไมค์แล้วพูดตาม</div><div class="icon" style="margin:24px auto;width:88px;height:88px;border-radius:44px;font-size:30px">MIC</div></div><div class="wave"><i style="height:20px"></i><i style="height:45px"></i><i style="height:65px"></i><i style="height:36px"></i><i style="height:54px"></i><i style="height:24px"></i></div><div class="card soft"><div class="label">กำลังฟัง...</div><div class="value">เสียงจะถูกประมวลผลตาม provider ที่ตั้งค่า</div></div><div class="btn outline">ยกเลิก</div></div></div><div class="caption">Speak to text</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">Shadowing</div><span class="chip">A2</span></div><div class="card soft"><div class="label">ฟังแล้วพูดตาม</div><div class="value">“The next train leaves from platform four.”</div><div class="btn secondary">ฟังต้นแบบ</div></div><div class="section-label">การออกเสียงของคุณ</div><div class="wave"><i style="height:18px"></i><i style="height:38px"></i><i style="height:61px"></i><i style="height:49px"></i><i style="height:28px"></i><i style="height:53px"></i></div><div class="card teal"><div class="between"><div><div class="label">จังหวะและความชัด</div><div class="value">ใช้เป็นคำแนะนำระหว่างฝึก ไม่ใช่การรับรองผล</div></div><div class="metric">78</div></div></div><div class="btn">ลองอีกครั้ง</div></div></div><div class="caption">ฝึกพูดตามต้นแบบ</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">สำรวจการออกเสียง</div><span></span></div><div class="center"><div class="word">/steɪʃən/</div><div class="pos">station</div></div><div class="card"><div class="label">แบ่งเสียง</div><div class="value">stay · shuhn</div></div><div class="card"><div class="label">ตำแหน่งเน้นเสียง</div><div class="value">พยางค์แรก · STA-tion</div></div><div class="card amber"><div class="label">จุดที่มักสับสน</div><div class="value">เสียง /ʃ/ ไม่ใช่ /s/</div></div><div class="btn">ฟังและพูดตาม</div></div></div><div class="caption">Phonetic explorer</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">เพลย์ลิสต์ฝึกฟัง</div><span class="round-icon more-icon"></span></div><div class="hero"><div class="hero-title">ทบทวนระหว่างเดินทาง</div><div class="sub">12 คำ · 6 นาที · พร้อมใช้ออฟไลน์</div><div class="btn" style="background:white;color:var(--primary)">เล่นทั้งหมด</div></div><div class="section-label">คิวเสียง</div><div class="card"><div class="between"><div><div class="label">station</div><div class="value">คำ · ความหมาย · ตัวอย่าง</div></div><span>2:10</span></div></div><div class="card"><div class="between"><div><div class="label">journey</div><div class="value">คำ · ความหมาย · ตัวอย่าง</div></div><span>1:45</span></div></div><div class="card"><div class="between"><div><div class="label">destination</div><div class="value">คำ · ความหมาย · ตัวอย่าง</div></div><span>2:05</span></div></div></div></div><div class="caption">เพลย์ลิสต์ฝึกฟัง</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Camera object scanner and permissions">
+  <div class="split"><div class="intro"><div class="eyebrow">13 · Camera practice</div><h2>สแกนวัตถุโดยให้ผู้ใช้ควบคุม</h2><p>ขอสิทธิ์เมื่อเริ่มใช้ แสดงการประมวลผลบนอุปกรณ์ และให้ตรวจคำก่อนบันทึก</p></div>
+  <div class="phones">
+    <div class="phone-wrap"><div class="phone"><div class="screen" style="background:#161925;color:white"><div class="status" style="color:white"><span>10:30</span><span>88%</span></div><div class="appbar"><div class="back" style="border-color:#666">‹</div><div class="title">สแกนวัตถุ</div><div class="round-icon" style="border-color:#666">?</div></div><div class="camera"><div class="focus-box">วางวัตถุในกรอบ</div></div><div class="btn" style="background:white;color:var(--ink)">ถ่ายภาพเพื่อวิเคราะห์</div><div class="tiny center" style="color:#cfd4df">ภาพไม่ถูกเก็บเป็นข้อมูลวิจัยโดยปริยาย</div></div></div><div class="caption">Object scanner</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ผลการสแกน</div><span class="chip amber">82%</span></div><div class="hero teal"><div class="hero-title">ticket machine</div><div class="sub">เครื่องจำหน่ายตั๋ว</div></div><div class="card"><div class="label">คำแนะนำ</div><div class="value">ตรวจคำและความหมายก่อนเพิ่มเข้าคลัง</div></div><div class="input">ticket machine</div><div class="input">เครื่องจำหน่ายตั๋ว</div><div class="input">หมวด: การเดินทาง</div><div class="btn">เพิ่มเข้าคลังคำ</div><div class="btn outline">สแกนใหม่</div></div></div><div class="caption">Scanner result</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="dialog"><div class="icon" style="margin:auto;width:58px;height:58px">CAM</div><div class="greeting center" style="margin-top:12px">อนุญาตให้ใช้กล้อง</div><div class="value center" style="margin-top:8px">ใช้เพื่อสแกนวัตถุเมื่อคุณเปิดฟีเจอร์นี้เท่านั้น</div><div class="btn">ดำเนินการต่อ</div><div class="btn outline">ไว้ภายหลัง</div></div><div class="card soft" style="margin-top:22px"><div class="label">เมื่อสิทธิ์ถูกปิดถาวร</div><div class="value">อธิบายวิธีเปิดจากการตั้งค่าระบบ โดยไม่วนขอซ้ำ</div></div></div></div><div class="caption">Permission rationale</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="AI tutor and provider settings">
+  <div class="split"><div class="intro"><div class="eyebrow">14 · AI tutor</div><h2>AI เป็นตัวช่วยที่มีขอบเขต</h2><p>BYOK, consent, quota, offline และคำเตือนคุณภาพมองเห็นได้ก่อนส่งข้อมูล</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">AI Tutor</div><div class="round-icon">i</div></div><div class="card soft"><div class="between"><div><div class="label">บริบท: การเดินทาง</div><div class="value">ใช้ 8 คำจากคลังของคุณ</div></div><span class="chip">เปลี่ยน</span></div></div><div class="card amber"><div class="tiny">AI อาจตอบผิด โปรดตรวจคำศัพท์สำคัญกับแหล่งที่เชื่อถือได้</div></div><div class="bubble me">ช่วยฝึกใช้คำว่า journey</div><div class="bubble">ลองเติมคำในประโยค แล้วฉันจะอธิบายทีละขั้น: “The long ____ taught me patience.”</div><div style="position:absolute;left:14px;right:14px;bottom:18px"><div class="row"><div class="round-icon">ไมค์</div><div class="input" style="flex:1;margin:0">พิมพ์ภาษาอังกฤษ...</div><div class="round-icon" style="background:var(--primary);color:white">ส่ง</div></div></div></div></div><div class="caption">บริบท → สนทนา → ตรวจคำตอบ</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ตั้งค่า Gemini</div><span class="badge limited">Limited</span></div><div class="card"><div class="label">API key ของคุณ</div><div class="value">เก็บใน secure storage ของอุปกรณ์</div><div class="input">••••••••••••••••</div><div class="btn secondary">ทดสอบการเชื่อมต่อ</div></div><div class="permission"><span>ยินยอมส่งข้อความไป Gemini</span><div class="switch on"></div></div><div class="permission"><span>อนุญาตใช้บริบทคำศัพท์</span><div class="switch"></div></div><div class="card amber"><div class="label">เพดานใช้งาน</div><div class="value">20 คำขอต่อวัน · แจ้งก่อนเต็ม</div></div><div class="btn">บันทึกการตั้งค่า</div></div></div><div class="caption">Gemini BYOK settings</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">AI ไม่พร้อมใช้งาน</div><span></span></div><div class="dialog"><div class="icon amber" style="margin:auto;width:58px;height:58px">!</div><div class="greeting center" style="margin-top:12px">ยังไม่มี API key</div><div class="value center">เพิ่ม key ในการตั้งค่า หรือเรียนต่อด้วยโหมดในเครื่อง</div><div class="btn">เปิดการตั้งค่า</div><div class="btn outline">กลับไปเรียนแบบออฟไลน์</div></div></div></div><div class="caption">Missing key state</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">AI quota</div><span></span></div><div class="hero amber"><div class="hero-title">ใช้ไป 18 / 20 คำขอ</div><div class="sub">รีเซ็ตพรุ่งนี้ 00:00</div><div class="progress"><span style="width:90%;background:#4d390d"></span></div></div><div class="card"><div class="label">เมื่อเต็ม</div><div class="value">ปิดเฉพาะ AI Tutor การเรียน Quiz, SRS และ Reading ยังทำงาน</div></div><div class="btn outline">ไปที่ Quiz</div><div class="tiny center">ไม่ส่งข้อความซ้ำอัตโนมัติเมื่อ timeout หรือ provider ล้มเหลว</div></div></div><div class="caption">Quota & fallback</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Rewards shop avatar and appearance">
+  <div class="split"><div class="intro"><div class="eyebrow">15 · Rewards</div><h2>รางวัลตกแต่ง ไม่ซื้อ mastery</h2><p>ทุก grant และ purchase ใช้ reward ledger เดิมและมี idempotency key</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ร้านค้ารางวัล</div><span class="chip amber">320</span></div><div class="card"><div class="between"><div><div class="label">ธีม Violet Night</div><div class="value">ธีม · 120 คะแนน</div></div><div class="btn" style="margin:0;min-height:40px">ซื้อ</div></div></div><div class="card"><div class="between"><div><div class="label">ฉาก Station Dawn</div><div class="value">Wallpaper · เป็นเจ้าของแล้ว</div></div><span class="badge">ใช้งาน</span></div></div><div class="card"><div class="between"><div><div class="label">หมวกนักเดินทาง</div><div class="value">Headgear · 80 คะแนน</div></div><div class="btn secondary" style="margin:0;min-height:40px">ซื้อ</div></div></div><div class="card amber"><div class="tiny">รางวัลไม่ปลดล็อกบทเรียน ไม่ซื้อ mastery และไม่เปลี่ยน certification</div></div></div></div><div class="caption">Reward shop</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">แต่งตัวโปรไฟล์</div><span></span></div><div class="center"><div class="avatar" style="margin:20px auto;width:130px;height:130px;border-radius:65px;font-size:40px">LQ</div><div class="label">ชุดนักเดินทาง</div></div><div class="section-label">หมวก</div><div class="grid2"><div class="tile" style="border:2px solid var(--primary)"><b>นักเดินทาง</b><span>กำลังใช้</span></div><div class="tile"><b>คลาสสิก</b><span>เป็นเจ้าของ</span></div></div><div class="section-label">อุปกรณ์</div><div class="grid2"><div class="tile"><b>สมุดคำศัพท์</b><span>เป็นเจ้าของ</span></div><div class="tile"><b>เข็มทิศ</b><span>120 คะแนน</span></div></div></div></div><div class="caption">Avatar equipment</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">พื้นหลัง</div><span></span></div><div class="grid2"><div class="tile" style="height:145px;background:linear-gradient(145deg,#d7d0ff,#f7f5fc);border:3px solid var(--primary)"><b>Calm Violet</b><span>กำลังใช้</span></div><div class="tile" style="height:145px;background:linear-gradient(145deg,#bfe9df,#f7f5fc)"><b>Morning Teal</b><span>เป็นเจ้าของ</span></div><div class="tile" style="height:145px;background:linear-gradient(145deg,#fee3a0,#f7f5fc)"><b>Station Dawn</b><span>เป็นเจ้าของ</span></div><div class="tile night" style="height:145px"><b>Night Study</b><span>100 คะแนน</span></div></div><div class="btn">ใช้งานพื้นหลังนี้</div></div></div><div class="caption">Wallpaper</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ยืนยันการซื้อ</div><span></span></div><div class="dialog"><div class="icon amber" style="margin:auto;width:58px;height:58px">120</div><div class="greeting center" style="margin-top:12px">ซื้อธีม Violet Night?</div><div class="value center">คงเหลือหลังซื้อ 200 คะแนน</div><div class="card soft"><div class="tiny">รายการตกแต่งเท่านั้น ไม่กระทบผลการเรียน</div></div><div class="btn">ยืนยันการซื้อ</div><div class="btn outline">ยกเลิก</div></div></div></div><div class="caption">Purchase dialog</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Profile and general settings">
+  <div class="split"><div class="intro"><div class="eyebrow">16 · Profile</div><h2>บัญชี สถานะ และเครื่องมือส่วนตัว</h2><p>แยกข้อมูลโปรไฟล์ออกจากการตั้งค่าบริการและความยินยอม</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="title">โปรไฟล์</div><div class="round-icon settings-icon"></div></div><div class="center"><div class="avatar" style="margin:6px auto">P</div><div class="label">phet@example.com</div><div class="value">บัญชียืนยันแล้ว · ซิงค์พร้อม</div></div><div class="grid2" style="margin-top:18px"><div class="tile"><b>320</b><span>คะแนนสะสม</span></div><div class="tile"><b>4 วัน</b><span>Momentum</span></div><div class="tile"><b>126</b><span>คำในคลัง</span></div><div class="tile"><b>72%</b><span>Mastery</span></div></div><div class="section-label">จัดการ</div><div class="card"><div class="between"><span class="label">ตั้งค่า</span><span class="chevron"></span></div></div><div class="card"><div class="between"><span class="label">ส่งออกข้อมูล</span><span class="chevron"></span></div></div><div class="bottomnav"><div class="navitem">เรียน</div><div class="navitem">คลังคำ</div><div class="navitem">ก้าวหน้า</div><div class="navitem active">โปรไฟล์</div></div></div></div><div class="caption">โปรไฟล์</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ตั้งค่า</div><span></span></div><div class="card"><div class="row"><div class="icon">P</div><div><div class="label">phet@example.com</div><div class="value">ยืนยันอีเมลแล้ว</div></div></div></div><div class="permission"><span>Cloud sync</span><span class="badge">พร้อม</span></div><div class="permission"><span>ความยินยอมงานวิจัย</span><span class="badge limited">ยังไม่ยินยอม</span></div><div class="permission"><span>Gemini BYOK</span><span class="badge limited">Limited</span></div><div class="permission"><span>เสียงและไมโครโฟน</span><span class="chevron"></span></div><div class="permission"><span>ธีมและการแสดงผล</span><span class="chevron"></span></div><div class="permission"><span>การช่วยการเข้าถึง</span><span class="chevron"></span></div><div class="btn outline">ออกจากระบบ</div></div></div><div class="caption">หน้าหลักการตั้งค่า</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="dialog"><div class="greeting">เปลี่ยนรหัสผ่าน</div><div class="input">รหัสผ่านปัจจุบัน</div><div class="input">รหัสผ่านใหม่อย่างน้อย 8 ตัว</div><div class="card amber"><div class="tiny">อาจต้องเข้าสู่ระบบใหม่หาก session เก่าเกินไป</div></div><div class="btn">บันทึก</div><div class="btn outline">ยกเลิก</div></div></div></div><div class="caption">Change password</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ธีมและการแสดงผล</div><span></span></div><div class="permission"><span>ใช้ธีมตามระบบ</span><div class="switch on"></div></div><div class="permission"><span>Dynamic color</span><div class="switch"></div></div><div class="section-label">ขนาดเนื้อหา</div><span class="chip gray">มาตรฐาน</span><span class="chip">ใหญ่</span><span class="chip gray">ใหญ่มาก</span><div class="section-label">ตัวอย่าง</div><div class="card soft"><div class="greeting">วันนี้พร้อมไปต่อไหม</div><div class="value">ทบทวน 3 คำ · ประมาณ 4 นาที</div></div><div class="permission"><span>ลดการเคลื่อนไหว</span><div class="switch"></div></div><div class="btn">บันทึกการแสดงผล</div></div></div><div class="caption">Appearance settings</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Privacy consent export and research">
+  <div class="split"><div class="intro"><div class="eyebrow">17 · Data controls</div><h2>ผู้ใช้ควบคุมข้อมูลของตน</h2><p>งานวิจัยปิดไว้โดยปริยาย ส่งออกได้ และการถอนความยินยอมไม่ปิดกั้นการเรียน</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">ความยินยอมงานวิจัย</div><span></span></div><div class="card soft"><div class="label">สถานะ: ยังไม่ยินยอม</div><div class="value">ไม่มี research row, event, outbox หรือ upload</div></div><div class="section-label">หากเลือกเข้าร่วม</div><div class="card"><div class="value">• แสดงวัตถุประสงค์และ protocol revision<br>• ระบุข้อมูลที่เก็บและระยะเวลา<br>• ถอนความยินยอมได้ตลอดเวลา<br>• การเรียนทั่วไปยังใช้ได้</div></div><div class="btn">อ่านรายละเอียดและยินยอม</div><div class="btn outline">เรียนต่อโดยไม่เข้าร่วม</div></div></div><div class="caption">Research consent</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">ส่งออกข้อมูล</div><span></span></div><div class="section-label">รูปแบบไฟล์</div><span class="chip">CSV</span><span class="chip gray">PDF</span><span class="chip gray">Anki</span><span class="chip gray">Research</span><div class="section-label">เลือกข้อมูล</div><div class="permission"><span>คลังคำศัพท์</span><div class="switch on"></div></div><div class="permission"><span>ประวัติคำตอบ</span><div class="switch on"></div></div><div class="permission"><span>ประวัติการอ่าน</span><div class="switch on"></div></div><div class="card soft"><div class="tiny">ไฟล์ไม่รวม API key, token หรือข้อมูลลับ</div></div><div class="btn">สร้างและบันทึกไฟล์</div></div></div><div class="caption">Export center</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="back">‹</div><div class="title">กำลังส่งออก</div><span></span></div><div class="dialog center"><div class="metric" style="color:var(--primary)">64%</div><div class="progress"><span style="width:64%"></span></div><div class="value">กำลังสร้างไฟล์จากข้อมูลในเครื่อง</div><div class="btn outline">ยกเลิก</div></div><div class="card amber"><div class="tiny">ยกเลิกแล้วล้างไฟล์ชั่วคราว ไม่ส่งข้อมูลไปบริการภายนอก</div></div></div></div><div class="caption">Export progress</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="appbar"><div class="back">‹</div><div class="title">Research dashboard</div><span class="badge limited">Internal</span></div><div class="card"><div class="label">Participants</div><div class="metric">0</div><div class="value">real enrollment ปิดไว้</div></div><div class="card"><div class="label">Synthetic sessions</div><div class="metric">24</div><div class="value">emulator fixtures เท่านั้น</div></div><div class="card soft"><div class="label">Protocol status</div><div class="value">engineering interface ready · rollout not authorized</div></div><div class="tiny">ไม่แสดงเป็นเมนูผู้เรียนทั่วไปและไม่อ้างผล efficacy</div></div></div><div class="caption">Thesis / research chart</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="System states and accessibility">
+  <div class="split"><div class="intro"><div class="eyebrow">18 · States</div><h2>ทุกหน้ามีทางไปต่อ</h2><p>Loading, empty, error, offline, permission และ destructive confirmation ใช้ภาษาระบบเดียวกัน</p></div>
+  <div class="phones four">
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="appbar"><div class="title">กำลังเตรียมบทเรียน</div><span></span></div><div class="card" style="height:92px;background:#efedf4"></div><div class="card" style="height:150px;background:#efedf4"></div><div class="grid2"><div class="tile" style="background:#efedf4"></div><div class="tile" style="background:#efedf4"></div></div><div class="tiny center" style="margin-top:20px">Skeleton รักษาตำแหน่ง layout และมี semantics label</div></div></div><div class="caption">Loading</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="dialog center"><div class="icon" style="margin:auto;width:58px;height:58px">0</div><div class="greeting" style="margin-top:14px">ยังไม่มีคำศัพท์</div><div class="value">เพิ่มคำแรกเพื่อเริ่ม Quiz และการทบทวน</div><div class="btn">เพิ่มคำศัพท์</div><div class="btn outline">นำเข้าจากไฟล์</div></div></div></div><div class="caption">Empty</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen tint"><div class="dialog center"><div class="icon" style="margin:auto;width:58px;height:58px;background:var(--error-soft);color:var(--error)">!</div><div class="greeting" style="margin-top:14px">อ่านข้อมูลไม่สำเร็จ</div><div class="value">ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง</div><div class="btn">ลองใหม่</div><div class="btn outline">กลับหน้าหลัก</div></div></div></div><div class="caption">Error & retry</div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="card amber"><div class="between"><div><div class="label">ออฟไลน์</div><div class="value">Quiz, SRS และคลังคำยังใช้ได้</div></div><span class="badge limited">Local</span></div></div><div class="section-label">บริการที่พักไว้</div><div class="permission"><span>Cloud sync</span><span class="badge hidden">รอเชื่อมต่อ</span></div><div class="permission"><span>AI Tutor</span><span class="badge hidden">ออฟไลน์</span></div><div class="permission"><span>Voice provider</span><span class="badge limited">ใช้เสียงในเครื่อง</span></div><div class="btn">เรียนต่อแบบออฟไลน์</div></div></div><div class="caption">Offline</div></div>
+  </div></div>
+</section>
+
+<section class="page" data-document-role="page" data-label="Feature access and settings matrix">
+  <div class="eyebrow">19 · Feature access matrix</div><h2>ทุกฟีเจอร์มีสถานะ เจ้าของ และทางออก</h2>
+  <div class="coverage">
+    <div class="card"><h3>Enabled · Core</h3><ul><li>คลังคำ / หมวด / นำเข้า</li><li>Quiz / SRS / Weakness</li><li>Reading / Mastery</li><li>Achievements / Export</li></ul></div>
+    <div class="card"><h3>Limited · Explicit entry</h3><ul><li>Object scanner + Camera</li><li>Speech / Shadowing + Mic</li><li>AI Tutor + BYOK/Consent</li><li>Research dashboard · Internal</li></ul></div>
+    <div class="card"><h3>Hidden until ready</h3><ul><li>Curriculum path without data</li><li>Co-op / Multiplayer</li><li>Public league</li><li>Notes / notification automation</li></ul></div>
+    <div class="card"><h3>Never inferred</h3><ul><li>Research participation</li><li>Mastery from XP/streak</li><li>Certification from practice</li><li>Cloud upload without authority</li></ul></div>
+    <div class="card"><h3>Account settings</h3><ul><li>Guest / verified account</li><li>Change password / sign out</li><li>Cloud state / local fallback</li><li>Email action / OTP</li></ul></div>
+    <div class="card"><h3>Learning settings</h3><ul><li>Theme / large text / motion</li><li>Audio / TTS / speed</li><li>Mic and camera rationale</li><li>Reminder policy when approved</li></ul></div>
+    <div class="card"><h3>Data settings</h3><ul><li>Research consent / withdraw</li><li>Export CSV/PDF/Anki</li><li>Owner isolation / delete</li><li>Sync status / retry</li></ul></div>
+    <div class="card"><h3>AI settings</h3><ul><li>Secure API key</li><li>Provider consent</li><li>Quota / timeout / offline</li><li>Clear fallback to local learning</li></ul></div>
+  </div>
+  <div style="position:absolute;left:78px;right:78px;bottom:60px;padding:20px 26px;border-radius:20px;background:var(--primary);color:white;font-size:22px;font-weight:900">กฎเดียวกันทุกหน้า: Primary action หนึ่งจุด · touch ≥ 48dp · สีไม่ใช่สัญญาณเดียว · system Back ทำงาน · ไม่มี feature เปิดก่อน authority พร้อม</div>
+</section>
+
+<section class="page dark" data-document-role="page" data-label="Coverage index">
+  <div class="eyebrow">20 · Coverage index</div><h2>หน้าจอที่ครอบคลุมใน Master UI</h2>
+  <div class="coverage" style="grid-template-columns:repeat(5,1fr)">
+    <div class="token"><h3>Account</h3><p>Login<br>Register<br>OTP<br>Email Action</p></div>
+    <div class="token"><h3>Vocabulary</h3><p>Categories<br>Vocab List<br>Add Word<br>Batch Add<br>Wordbook Import</p></div>
+    <div class="token"><h3>Learning Core</h3><p>Choose Mode<br>Category Select<br>Quiz<br>SRS<br>Score<br>Result</p></div>
+    <div class="token"><h3>Progress</h3><p>Mastery Dashboard<br>Weakness Clinic<br>Achievements<br>Evidence Details</p></div>
+    <div class="token"><h3>Curriculum</h3><p>World Map<br>CEFR Selection<br>Diagnostic Test<br>CEFR Result</p></div>
+    <div class="token"><h3>Reading</h3><p>Article Entry<br>Article Reader<br>Associative Reading<br>Association Dialog</p></div>
+    <div class="token"><h3>Practice Games</h3><p>Word Scramble<br>Sentence Scramble<br>Fill Blanks<br>Dictation</p></div>
+    <div class="token"><h3>Challenges</h3><p>Boss Battle<br>Ghost Duel<br>Hint Support<br>Challenge Result</p></div>
+    <div class="token"><h3>Voice & Media</h3><p>Speak to Text<br>Shadowing<br>Phonetic Explorer<br>Audio Playlist</p></div>
+    <div class="token"><h3>AI & Vision</h3><p>AI Tutor<br>Gemini Settings<br>Quota/Fallback<br>Object Scanner</p></div>
+    <div class="token"><h3>Rewards</h3><p>Shop<br>Avatar Equipment<br>Wallpaper<br>Purchase Dialog</p></div>
+    <div class="token"><h3>Profile</h3><p>Profile<br>General Settings<br>Password<br>Appearance</p></div>
+    <div class="token"><h3>Data</h3><p>Research Consent<br>Export Center<br>Export Progress<br>Thesis Chart</p></div>
+    <div class="token"><h3>System States</h3><p>Loading<br>Empty<br>Error/Retry<br>Offline<br>Permission</p></div>
+    <div class="token"><h3>Responsive</h3><p>Phone Navigation<br>Tablet Rail<br>Light/Dark<br>Large Text<br>Reduce Motion</p></div>
+  </div>
+  <p style="position:absolute;bottom:48px;left:78px;color:#bdb6d2">Source: LexiQuest repository + REA Duolingo/Astra AI/AllTCAS synthesis · Revision 3 · production behavior still requires Flutter implementation and device verification</p>
+</section>
+
+</body>
+</html>

@@ -27,10 +27,16 @@ final class DriftProgressQueries {
         .whereType<int>()
         .toList(growable: false);
     final pointsExpression = database.pointsLedgerEntries.amount.sum();
+    // Legacy purchase debits still fund the shop, but never spend learning XP.
     final pointsRow =
         await (database.selectOnly(database.pointsLedgerEntries)
               ..addColumns([pointsExpression])
-              ..where(database.pointsLedgerEntries.ownerId.equals(ownerId)))
+              ..where(
+                database.pointsLedgerEntries.ownerId.equals(ownerId) &
+                    database.pointsLedgerEntries.entryType
+                        .equals('rewardPurchase')
+                        .not(),
+              ))
             .getSingle();
     final totalXp = pointsRow.read(pointsExpression) ?? 0;
     final completedCount = database.learningSessions.id.count();
@@ -185,13 +191,17 @@ final class DriftProgressQueries {
 
   List<SkillEvidence> _skills(List<AnswerAttempt> attempts) {
     const definitions = <(String, String, Set<String>)>[
-      ('listening', 'Listening', {'listening', 'dictation'}),
-      ('pronunciation', 'Pronunciation', {'pronunciation', 'shadowing'}),
-      ('spelling', 'Spelling', {'spelling', 'dictation'}),
+      ('listening', 'การฟัง', {'listening', 'dictation'}),
+      (
+        'pronunciation',
+        'การพูด (ความตรงของข้อความ)',
+        {'pronunciation', 'shadowing', 'pronunciationTranscript'},
+      ),
+      ('spelling', 'การสะกดคำ', {'spelling', 'dictation', 'ghostSpelling'}),
       (
         'retention',
-        'Retention',
-        {'meaningChoice', 'srsRecall', 'activeRecall'},
+        'การจำและเรียกคืน',
+        {'meaningChoice', 'srsRecall', 'activeRecall', 'associativeRecall'},
       ),
     ];
     return definitions

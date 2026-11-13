@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Protocol
 
 from fastapi import HTTPException, status
@@ -40,6 +41,7 @@ class AuthenticatedUser:
     """Identity established from a verified Firebase ID token."""
 
     uid: str
+    authenticated_at_utc: datetime | None = None
 
 
 class TokenVerifier(Protocol):
@@ -107,7 +109,17 @@ class FirebaseTokenVerifier:
         uid = claims.get("uid")
         if not isinstance(uid, str) or not uid:
             raise _unauthenticated()
-        return AuthenticatedUser(uid=uid)
+        auth_time = claims.get("auth_time")
+        authenticated_at_utc = None
+        if isinstance(auth_time, (int, float)) and not isinstance(auth_time, bool):
+            try:
+                authenticated_at_utc = datetime.fromtimestamp(auth_time, UTC)
+            except (OverflowError, OSError, ValueError):
+                pass
+        return AuthenticatedUser(
+            uid=uid,
+            authenticated_at_utc=authenticated_at_utc,
+        )
 
 
 def _ensure_default_firebase_app() -> None:

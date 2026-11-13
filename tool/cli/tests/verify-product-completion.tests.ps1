@@ -13,11 +13,13 @@ foreach ($needle in @(
     'dart format --output=none --set-exit-if-changed',
     'flutter analyze',
     'test/features/account',
+    'test/features/account_deletion',
     'test/features/consent',
     'test/features/export',
     'test/features/rewards',
     'test/features/sync',
     'test/features/progress',
+    'test/features/research',
     'test/architecture',
     'test/screens/accessibility_smoke_test.dart',
     'npm run test:auth',
@@ -91,11 +93,59 @@ $manifest = Get-Content -LiteralPath (
 foreach ($needle in @(
     'android:autoVerify="true"',
     'android:host="vocab-learning-app-219ef.firebaseapp.com"',
-    'android:pathPrefix="/auth/action"'
+    'android:pathPrefix="/__/auth/links"'
 )) {
     if (-not $manifest.Contains($needle)) {
         Write-Error "Android email action App Link is missing: $needle"
     }
+}
+
+$emailActionFixturePath = Join-Path $repoRoot `
+    'test/fixtures/email_action_links.json'
+if (-not (Test-Path -LiteralPath $emailActionFixturePath -PathType Leaf)) {
+    Write-Error 'The deterministic email-action link fixture is missing.'
+}
+$emailActionFixture = Get-Content -LiteralPath $emailActionFixturePath `
+    -Raw -Encoding utf8 | ConvertFrom-Json
+if ($emailActionFixture.schemaVersion -ne 1) {
+    Write-Error 'Unsupported email-action link fixture schema.'
+}
+$expectedAccepted = @(
+    'flattened-legacy',
+    'hosting-wrapper',
+    'internal-relative'
+)
+$expectedRejected = @(
+    'absolute-internal-path',
+    'double-encoded-inner-link',
+    'duplicate-action-code',
+    'http-wrapper',
+    'invalid-link-does-not-fall-back',
+    'missing-action-code',
+    'unsafe-continue-url',
+    'unsafe-flattened-continue-url',
+    'untrusted-inner-host',
+    'untrusted-wrapper-host',
+    'userinfo-host-confusion',
+    'wrong-inner-path'
+)
+$actualAccepted = @($emailActionFixture.accepted.id | Sort-Object)
+$actualRejected = @($emailActionFixture.rejected.id | Sort-Object)
+if (Compare-Object $expectedAccepted $actualAccepted) {
+    Write-Error 'Email-action accepted fixtures do not match the contract.'
+}
+if (Compare-Object $expectedRejected $actualRejected) {
+    Write-Error 'Email-action rejected fixtures do not match the contract.'
+}
+if (@($emailActionFixture.accepted + $emailActionFixture.rejected |
+        Where-Object { [string]::IsNullOrWhiteSpace($_.url) }).Count -ne 0) {
+    Write-Error 'Every email-action fixture must contain a URL.'
+}
+$emailActionTests = Get-Content -LiteralPath (
+    Join-Path $repoRoot 'test/features/account/account_use_cases_test.dart'
+) -Raw -Encoding utf8
+if (-not $emailActionTests.Contains('test/fixtures/email_action_links.json')) {
+    Write-Error 'Account tests must execute the email-action link fixture.'
 }
 
 $operations = Get-Content -LiteralPath (

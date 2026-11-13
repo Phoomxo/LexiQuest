@@ -131,6 +131,120 @@ void main() {
   );
 
   test(
+    'unsupported legacy outbox is quarantined while valid work syncs once',
+    () async {
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-b',
+              firebaseUid: const Value('firebase-b'),
+              accountState: const Value('firebaseBound'),
+              createdAtUtcMs: nowUtc.millisecondsSinceEpoch,
+              isActive: const Value(false),
+            ),
+          );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'legacy:time-segment:1:upsert',
+              ownerId: 'owner-a',
+              entityType: 'learningTimeSegment',
+              entityId: 'legacy:time-segment:1',
+              operationKind: 'upsert',
+              createdAtUtcMs: 0,
+            ),
+          );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'legacy:other-owner:1:upsert',
+              ownerId: 'owner-b',
+              entityType: 'learningTimeSegment',
+              entityId: 'legacy:other-owner:1',
+              operationKind: 'upsert',
+              createdAtUtcMs: 0,
+            ),
+          );
+      await _seedCategoryOperation(database);
+
+      final firstResult = await engine().run();
+      final legacyAfterFirstRun =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals('legacy:time-segment:1:upsert'),
+              ))
+              .getSingle();
+      final validAfterFirstRun =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals('category:travel:1:upsert'),
+              ))
+              .getSingle();
+      final status = await store.watchCurrentOwnerSyncStatus().firstWhere(
+        (snapshot) => snapshot != null,
+      );
+
+      final secondResult = await engine().run();
+      final legacyAfterSecondRun =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals('legacy:time-segment:1:upsert'),
+              ))
+              .getSingle();
+      final otherOwnerOperation =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals('legacy:other-owner:1:upsert'),
+              ))
+              .getSingle();
+
+      expect(firstResult.status, SyncRunStatus.completed);
+      expect(firstResult.pushed, 1);
+      expect(validAfterFirstRun.state, 'acknowledged');
+      expect(gateway.appliedOperationIds, {'category:travel:1:upsert'});
+      expect(legacyAfterFirstRun.state, 'permanentFailure');
+      expect(legacyAfterFirstRun.failureCode, 'invalidPayload');
+      expect(legacyAfterFirstRun.leaseToken, isNull);
+      expect(legacyAfterFirstRun.leaseExpiresAtUtcMs, isNull);
+      expect(legacyAfterFirstRun.acknowledgedAtUtcMs, isNull);
+      expect(legacyAfterFirstRun.entityType, 'learningTimeSegment');
+      expect(status!.permanentFailure, 1);
+      expect(status.ownerId, 'owner-a');
+      expect(otherOwnerOperation.state, 'pending');
+      expect(otherOwnerOperation.attemptCount, 0);
+      expect(secondResult.status, SyncRunStatus.completed);
+      expect(secondResult.pushed, 0);
+      expect(legacyAfterSecondRun.attemptCount, 1);
+      expect(gateway.pushCalls, 1);
+    },
+  );
+
+  test('missing backing row still fails without quarantining work', () async {
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          OutboxOperationsCompanion.insert(
+            operationId: 'category:missing:1:upsert',
+            ownerId: 'owner-a',
+            entityType: 'category',
+            entityId: 'category:missing',
+            operationKind: 'upsert',
+            createdAtUtcMs: 0,
+          ),
+        );
+
+    await expectLater(engine().run(), throwsA(isA<StateError>()));
+    final operation = await database
+        .select(database.outboxOperations)
+        .getSingle();
+
+    expect(operation.state, 'pending');
+    expect(operation.attemptCount, 0);
+    expect(operation.failureCode, isNull);
+    expect(operation.leaseToken, isNull);
+    expect(operation.leaseExpiresAtUtcMs, isNull);
+  });
+
+  test(
     'a new process retries permission failures once after cloud recovery',
     () async {
       await _seedCategoryOperation(database);

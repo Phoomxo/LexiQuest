@@ -4,6 +4,7 @@ abstract interface class LearningRepository {
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,
     String? categoryId,
+    Iterable<String>? wordIds,
     required int limit,
   });
 

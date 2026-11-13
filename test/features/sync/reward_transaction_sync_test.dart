@@ -56,6 +56,204 @@ void main() {
 
   tearDown(() => database.close());
 
+  test(
+    'attempt pull commits learning when optional coin materialization conflicts',
+    () async {
+      await database
+          .into(database.rewardTransactions)
+          .insert(
+            RewardTransactionsCompanion.insert(
+              id: 'coin:legacy:learning-points',
+              ownerId: 'owner-1',
+              idempotencyKey: 'creditLegacyCarryV1:learning-points',
+              transactionType: 'creditLegacyCarryV1',
+              amount: 999,
+              catalogVersion: 0,
+              occurredAtUtcMs: 1,
+            ),
+          );
+      final attempt = SyncEntity(
+        collection: SyncCollection.attempts,
+        entityId: 'optional-reward-attempt',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: now,
+        serverUpdatedAtUtc: now,
+        payload: {
+          'sessionId': 'session',
+          'wordId': 'word-1',
+          'promptMode': 'meaningChoice',
+          'isCorrect': true,
+          'responseTimeMs': 100,
+          'attemptNumber': 1,
+          'occurredAtUtcMs': now.millisecondsSinceEpoch,
+          'providerProvenance': null,
+        },
+      );
+      await expectLater(
+        syncStore.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.attempts,
+          page: _page(attempt),
+        ),
+        completes,
+      );
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(await database.select(database.srsStates).get(), hasLength(1));
+      expect(
+        await database.select(database.rewardTransactions).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'accidental local credit outbox is quarantined while purchase still claims',
+    () async {
+      final rewards = DriftRewardRepository(database);
+      await rewards.purchase(
+        ownerId: 'owner-1',
+        item: RewardCatalog.byId('theme_ocean')!,
+        idempotencyKey: 'buy',
+        transactionId: 'buy',
+        occurredAtUtc: now,
+      );
+      final credit =
+          await (database.select(database.rewardTransactions)
+                ..where((r) => r.transactionType.equals('creditLegacyCarryV1')))
+              .getSingle();
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'accidental-credit',
+              ownerId: 'owner-1',
+              entityType: 'rewardTransaction',
+              entityId: credit.id,
+              operationKind: 'upsert',
+              createdAtUtcMs: 0,
+            ),
+          );
+      final claims = await syncStore.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-1',
+        limit: 10,
+        leaseToken: 'lease',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      );
+      expect(claims, hasLength(1));
+      expect(claims.single.mutation.entityId, 'buy');
+      final rejected = await (database.select(
+        database.outboxOperations,
+      )..where((r) => r.operationId.equals('accidental-credit'))).getSingle();
+      expect(rejected.state, 'permanentFailure');
+      expect(rejected.failureCode, 'invalidPayload');
+    },
+  );
+
+  for (final type in [
+    'creditQuizCorrectV1',
+    'creditLegacyCarryV1',
+    'futureRewardType',
+  ]) {
+    test(
+      'remote $type mint is quarantined without poisoning the pull cursor',
+      () async {
+        await expectLater(
+          syncStore.applyPullPage(
+            ownerId: 'owner-1',
+            collection: SyncCollection.rewardTransactions,
+            page: _page(
+              _rewardEntity(
+                id: 'remote-credit',
+                idempotencyKey: 'remote-credit',
+                transactionType: type,
+                amount: 200,
+                occurredAt: now,
+              ),
+            ),
+          ),
+          completes,
+        );
+        expect(
+          await database.select(database.rewardTransactions).get(),
+          isEmpty,
+        );
+        final conflicts = await database.select(database.syncConflicts).get();
+        expect(conflicts, hasLength(1));
+        expect(conflicts.single.outcome, 'quarantined');
+        final checkpoint = await syncStore.readCheckpoint(
+          'owner-1',
+          SyncCollection.rewardTransactions,
+        );
+        expect(checkpoint!.documentId, 'remote-credit');
+      },
+    );
+  }
+
+  test(
+    'a remote credit echo cannot alter a local credit or block a valid purchase',
+    () async {
+      final rewards = DriftRewardRepository(database);
+      await rewards.load('owner-1');
+      final credit = await database
+          .select(database.rewardTransactions)
+          .getSingle();
+      final unsupported = _rewardEntity(
+        id: credit.id,
+        idempotencyKey: credit.idempotencyKey,
+        transactionType: credit.transactionType,
+        amount: credit.amount,
+        occurredAt: now,
+      );
+      final valid = _rewardEntity(
+        id: 'valid-next',
+        idempotencyKey: 'valid-next',
+        transactionType: 'purchase',
+        amount: -80,
+        occurredAt: now.add(const Duration(seconds: 1)),
+      );
+      final page = PullPage(
+        changes: [unsupported, valid],
+        nextCursor: SyncCursor(
+          serverUpdatedAtUtc: valid.serverUpdatedAtUtc,
+          documentId: valid.entityId,
+        ),
+        hasMore: false,
+      );
+      await syncStore.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.rewardTransactions,
+        page: page,
+      );
+      await syncStore.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.rewardTransactions,
+        page: page,
+      );
+      expect((await rewards.load('owner-1')).balance, 120);
+      expect(
+        (await syncStore.readCheckpoint(
+          'owner-1',
+          SyncCollection.rewardTransactions,
+        ))!.documentId,
+        'valid-next',
+      );
+      expect(
+        (await (database.select(
+          database.rewardTransactions,
+        )..where((r) => r.id.equals(credit.id))).getSingle()).toJson(),
+        credit.toJson(),
+      );
+      expect(await database.select(database.syncConflicts).get(), hasLength(1));
+    },
+  );
+
   test('local reward outbox reconstructs immutable catalog evidence', () async {
     await DriftRewardRepository(database).purchase(
       ownerId: 'owner-1',
@@ -149,7 +347,9 @@ void main() {
     expect(account.balance, 120);
     expect(account.ownedItemIds, {'theme_ocean'});
     expect(
-      await database.select(database.rewardTransactions).get(),
+      await (database.select(
+        database.rewardTransactions,
+      )..where((r) => r.transactionType.equals('purchase'))).get(),
       hasLength(2),
     );
   });

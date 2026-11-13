@@ -33,9 +33,11 @@ class AiReadingContentAdapter {
 
     try {
       // In production, invokes backend AI API; if unavailable, falls back gracefully.
-      final text =
-          _curatedBank[cefrLevel] ??
-          'Reading practice text incorporating target words cleanly.';
+      final text = _includeTargetWords(
+        _curatedBank[cefrLevel] ??
+            'Reading practice text incorporating target words cleanly.',
+        targetWords,
+      );
       return GeneratedPassage(
         contentId: 'ai-gen-${DateTime.now().millisecondsSinceEpoch}',
         cefrLevel: cefrLevel,
@@ -52,9 +54,11 @@ class AiReadingContentAdapter {
     String cefrLevel,
     List<String> targetWords,
   ) {
-    final text =
-        _curatedBank[cefrLevel] ??
-        'Curated fallback passage for vocabulary reading practice.';
+    final text = _includeTargetWords(
+      _curatedBank[cefrLevel] ??
+          'Curated fallback passage for vocabulary reading practice.',
+      targetWords,
+    );
     return GeneratedPassage(
       contentId: 'curated-${cefrLevel.toLowerCase()}',
       cefrLevel: cefrLevel,
@@ -62,5 +66,14 @@ class AiReadingContentAdapter {
       targetWords: targetWords,
       isFallback: true,
     );
+  }
+
+  String _includeTargetWords(String passage, List<String> targetWords) {
+    final missing = targetWords
+        .where((word) => !passage.toLowerCase().contains(word.toLowerCase()))
+        .toList(growable: false);
+    return missing.isEmpty
+        ? passage
+        : '$passage The learner then used ${missing.join(' and ')} in context.';
   }
 }

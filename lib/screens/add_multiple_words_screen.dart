@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_import_file_parser.dart';
+import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_import.dart';
 import '../runtime/app_dependencies.dart';
 
@@ -10,89 +13,359 @@ class AddMultipleWordsScreen extends StatefulWidget {
     required this.categoryId,
     required this.categoryName,
     this.importer,
+    this.vocabulary,
+    this.filePicker,
   });
 
   final String categoryId;
   final String categoryName;
   final ImportVocabulary? importer;
+  final VocabularyUseCases? vocabulary;
+  final VocabularyImportFilePicker? filePicker;
 
   @override
   State<AddMultipleWordsScreen> createState() => _AddMultipleWordsScreenState();
 }
 
 class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
-  final TextEditingController _rowsController = TextEditingController();
-  bool _saving = false;
+  VocabularyImportPreview? _preview;
+  List<Map<String, String>> _existingRows = const [];
+  String? _error;
+  bool _working = false;
   bool _cancelled = false;
 
   @override
   void dispose() {
     _cancelled = true;
-    _rowsController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final importer =
-        widget.importer ??
-        AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final importer = widget.importer ?? dependencies?.vocabularyImporter;
+    final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
+    final filePicker =
+        widget.filePicker ?? dependencies?.vocabularyImportFilePicker;
+    final preview = _preview;
     return Scaffold(
       appBar: AppBar(title: Text('นำเข้าคำศัพท์ · ${widget.categoryName}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ'),
+          const Text(
+            'เลือกไฟล์ CSV หรือ JSON จากเครื่อง '
+            'ตรวจรายการก่อนยืนยันนำเข้า',
+          ),
           const SizedBox(height: 12),
-          TextField(
-            key: const ValueKey('import-rows-field'),
-            controller: _rowsController,
-            minLines: 8,
-            maxLines: 16,
-            decoration: const InputDecoration(
-              hintText: 'station,สถานี,noun\ntravel,เดินทาง,verb',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            key: const ValueKey('import-words'),
-            onPressed: _saving || importer == null
+          OutlinedButton.icon(
+            key: const ValueKey('choose-import-file'),
+            onPressed: _working || filePicker == null
                 ? null
-                : () => _import(importer),
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.file_upload_outlined),
-            label: const Text('นำเข้า'),
+                : () => _pickFile(vocabulary, filePicker),
+            icon: const Icon(Icons.folder_open_outlined),
+            label: Text(preview == null ? 'เลือกไฟล์' : 'เลือกไฟล์ใหม่'),
           ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _error!,
+                key: const ValueKey('import-file-error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+          if (preview != null) ...[
+            const SizedBox(height: 20),
+            Text(
+              'ผ่าน ${preview.readyCount} · '
+              'ต้องแก้ ${preview.needsEditCount} · '
+              'ซ้ำ ${preview.duplicateCount}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final row in preview.rows) _previewRow(row),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    key: const ValueKey('cancel-import-preview'),
+                    onPressed: _working ? null : _cancelPreview,
+                    child: const Text('ยกเลิก'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    key: const ValueKey('confirm-import'),
+                    onPressed:
+                        _working ||
+                            importer == null ||
+                            preview.needsEditCount > 0
+                        ? null
+                        : () => _import(importer),
+                    icon: _working
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              semanticsLabel: 'กำลังนำเข้าคำศัพท์',
+                            ),
+                          )
+                        : const Icon(Icons.file_upload_outlined),
+                    label: const Text('ยืนยันนำเข้า'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Future<void> _import(ImportVocabulary importer) async {
+  Widget _previewRow(VocabularyImportPreviewRow row) {
+    final status = switch (row.status) {
+      VocabularyImportPreviewStatus.ready => 'พร้อมนำเข้า',
+      VocabularyImportPreviewStatus.needsEdit => 'ต้องแก้ไข',
+      VocabularyImportPreviewStatus.duplicate => 'ซ้ำ',
+    };
+    return Semantics(
+      container: true,
+      label: 'แถว ${row.rowNumber} สถานะ $status',
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(row.word.isEmpty ? 'ยังไม่มีคำศัพท์' : row.word),
+        subtitle: Text(
+          '${row.meaning.isEmpty ? 'ยังไม่มีความหมาย' : row.meaning} · $status',
+        ),
+        trailing: IconButton(
+          key: ValueKey('edit-import-row-${row.rowNumber}'),
+          tooltip: 'แก้ไขแถว ${row.rowNumber}',
+          onPressed: _working ? null : () => _editRow(row),
+          icon: const Icon(Icons.edit_outlined),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFile(
+    VocabularyUseCases? vocabulary,
+    VocabularyImportFilePicker filePicker,
+  ) async {
     setState(() {
-      _saving = true;
+      _working = true;
+      _error = null;
+    });
+    try {
+      final file = await filePicker();
+      if (file == null) return;
+      if (!mounted) return;
+      setState(() {
+        _preview = null;
+        _existingRows = const [];
+      });
+      final words = vocabulary == null
+          ? const <Map<String, String>>[]
+          : (await vocabulary.watchWords(widget.categoryId).first)
+                .map(
+                  (word) => {
+                    'word': word.spelling,
+                    'meaning': word.meaning,
+                    'partOfSpeech': word.partOfSpeech,
+                  },
+                )
+                .toList(growable: false);
+      final preview = parseVocabularyImportFile(
+        fileName: file.name,
+        mimeType: file.mimeType,
+        bytes: file.bytes,
+        existingRows: words,
+      );
+      if (!mounted) return;
+      setState(() {
+        _existingRows = words;
+        _preview = preview;
+      });
+    } on VocabularyImportFileFailure catch (error) {
+      if (mounted) {
+        setState(() {
+          _preview = null;
+          _existingRows = const [];
+          _error = _failureMessage(error.code);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _preview = null;
+          _existingRows = const [];
+          _error = 'อ่านไฟล์ไม่สำเร็จ';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _editRow(VocabularyImportPreviewRow row) async {
+    var word = row.word;
+    var meaning = row.meaning;
+    var partOfSpeech = row.partOfSpeech;
+    String? wordError;
+    String? meaningError;
+    String? partOfSpeechError;
+    final edited = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          void submit() {
+            final nextWordError = _importFieldError(
+              word,
+              emptyMessage: 'กรอกคำศัพท์',
+              maxLength: maxSpellingLength,
+            );
+            final nextMeaningError = _importFieldError(
+              meaning,
+              emptyMessage: 'กรอกความหมาย',
+              maxLength: maxMeaningLength,
+            );
+            final nextPartOfSpeechError = _importFieldError(
+              partOfSpeech,
+              emptyMessage: 'กรอกชนิดของคำ',
+              maxLength: maxPartOfSpeechLength,
+            );
+            setDialogState(() {
+              wordError = nextWordError;
+              meaningError = nextMeaningError;
+              partOfSpeechError = nextPartOfSpeechError;
+            });
+            if (nextWordError != null ||
+                nextMeaningError != null ||
+                nextPartOfSpeechError != null) {
+              return;
+            }
+            Navigator.pop(dialogContext, {
+              'word': word,
+              'meaning': meaning,
+              'partOfSpeech': partOfSpeech,
+            });
+          }
+
+          return AlertDialog(
+            title: Text('แก้ไขแถว ${row.rowNumber}'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    key: const ValueKey('edit-import-word'),
+                    initialValue: word,
+                    maxLength: maxSpellingLength,
+                    textInputAction: TextInputAction.next,
+                    onChanged: (value) {
+                      word = value;
+                      if (wordError != null) {
+                        setDialogState(() => wordError = null);
+                      }
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'คำศัพท์',
+                      errorText: wordError,
+                    ),
+                  ),
+                  TextFormField(
+                    key: const ValueKey('edit-import-meaning'),
+                    initialValue: meaning,
+                    maxLength: maxMeaningLength,
+                    textInputAction: TextInputAction.next,
+                    onChanged: (value) {
+                      meaning = value;
+                      if (meaningError != null) {
+                        setDialogState(() => meaningError = null);
+                      }
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'ความหมาย',
+                      errorText: meaningError,
+                    ),
+                  ),
+                  TextFormField(
+                    key: const ValueKey('edit-import-part-of-speech'),
+                    initialValue: partOfSpeech,
+                    maxLength: maxPartOfSpeechLength,
+                    textInputAction: TextInputAction.done,
+                    onChanged: (value) {
+                      partOfSpeech = value;
+                      if (partOfSpeechError != null) {
+                        setDialogState(() => partOfSpeechError = null);
+                      }
+                    },
+                    onFieldSubmitted: (_) => submit(),
+                    decoration: InputDecoration(
+                      labelText: 'ชนิดของคำ',
+                      errorText: partOfSpeechError,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('ยกเลิก'),
+              ),
+              FilledButton(
+                key: const ValueKey('save-import-row'),
+                onPressed: submit,
+                child: const Text('บันทึก'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (edited == null || !mounted) return;
+    final preview = _preview;
+    if (preview == null) return;
+    final rows = preview.rows
+        .map((candidate) {
+          return candidate.rowNumber == row.rowNumber
+              ? edited
+              : candidate.toMap();
+        })
+        .toList(growable: false);
+    setState(() {
+      _preview = VocabularyImportPreview(
+        sourceName: preview.sourceName,
+        rows: reviewVocabularyImportRows(rows, existingRows: _existingRows),
+      );
+    });
+  }
+
+  void _cancelPreview() {
+    setState(() {
+      _preview = null;
+      _existingRows = const [];
+      _error = null;
+    });
+  }
+
+  Future<void> _import(ImportVocabulary importer) async {
+    final preview = _preview;
+    if (preview == null || preview.needsEditCount > 0) return;
+    setState(() {
+      _working = true;
       _cancelled = false;
     });
     try {
-      final rows = <Map<String, String>>[];
-      for (final line in _rowsController.text.split(RegExp(r'\r?\n'))) {
-        if (line.trim().isEmpty) continue;
-        final columns = line.split(',');
-        rows.add({
-          'word': columns.isNotEmpty ? columns[0] : '',
-          'meaning': columns.length > 1 ? columns[1] : '',
-          'partOfSpeech': columns.length > 2 ? columns[2] : '',
-        });
-      }
       final result = await importer(
         categoryId: widget.categoryId,
-        rows: rows,
-        sourceName: 'manual-import',
+        rows: preview.rows.map((row) => row.toMap()).toList(growable: false),
+        sourceName: preview.sourceName,
         isCancelled: () => _cancelled,
       );
       if (!mounted) return;
@@ -118,7 +391,29 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
         ).showSnackBar(const SnackBar(content: Text('นำเข้าคำศัพท์ไม่สำเร็จ')));
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) setState(() => _working = false);
     }
   }
 }
+
+String? _importFieldError(
+  String value, {
+  required String emptyMessage,
+  required int maxLength,
+}) {
+  final canonical = value.trim();
+  if (canonical.isEmpty) return emptyMessage;
+  if (canonical.length > maxLength) {
+    return 'กรอกข้อมูลไม่เกิน $maxLength ตัวอักษร';
+  }
+  return null;
+}
+
+String _failureMessage(String code) => switch (code) {
+  'emptyFile' => 'ไฟล์ว่าง',
+  'fileTooLarge' => 'ไฟล์ใหญ่เกิน 1 MB',
+  'tooManyRows' => 'ไฟล์มีเกิน 500 รายการ',
+  'unsupportedType' => 'รองรับเฉพาะไฟล์ CSV และ JSON',
+  'invalidEncoding' => 'ไฟล์ต้องเป็น UTF-8',
+  _ => 'รูปแบบไฟล์ไม่ถูกต้อง',
+};

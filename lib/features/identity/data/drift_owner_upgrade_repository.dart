@@ -527,7 +527,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       final rows = await _database
           .customSelect(
             'SELECT id${specification.hasSoftDelete ? ', is_deleted' : ''} '
-            'FROM ${specification.table} WHERE owner_id = ? ORDER BY id',
+            'FROM ${specification.table} WHERE owner_id = ? '
+            '${specification.entityType == 'rewardTransaction' ? "AND transaction_type IN ('purchase', 'equip') " : ''}'
+            'ORDER BY id',
             variables: [Variable<String>(ownerId)],
           )
           .get();

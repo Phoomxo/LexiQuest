@@ -26,7 +26,7 @@
 
 ---
 
-## Phase -1 Reservations (v7–v9)
+## Recorded Reservations and Migrations (v7–v10)
 
 ### v7 — EventEnvelopeV2 Storage
 **Reserved:** 2026-08-04  
@@ -134,12 +134,18 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 ## Phase 0+ (v11+)
 
+Current implemented schema is **v10**, matching `AppDatabase.schemaVersion` and
+the deployed Associative Learning Persistence entry above. The former future-v10
+placeholder was superseded by that recorded migration and must not be reused.
+The next reservable version is **v11**; this reconciliation reserves no version
+and adds no schema or migration code.
+
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
-| v10 | Phase 0 | First production V2 migration. Exact tables TBD after Phase -1 gate. | 🔮 Future |
-| v11+ | Phase 0+ | TBD | 🔮 Future |
+| v11+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** v10 cannot be planned until Phase -1 completion report is signed (D5.1).
+> **Rule:** Do not reuse v10. Reserve the next available version, starting at v11,
+> through a separate approved entry before writing migration code.
 
 ---
 
@@ -147,7 +153,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 | Conflict | Description | Resolution |
 |----------|-------------|-----------|
-| None yet | — | — |
+| Duplicate future v10 | A legacy future placeholder conflicted with the recorded deployed v10 Associative Learning migration. | Resolved 2026-10-21: retained current/deployed v10; removed the obsolete future row; v11+ remains unreserved. |
 
 ---
 
@@ -156,6 +162,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
+| 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
 
 ---
 

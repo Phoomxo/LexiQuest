@@ -20,19 +20,30 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
 
   @override
   Future<void> saveAssociation(AssociationRecord record) async {
-    await _database
-        .into(_database.associationRecords)
-        .insert(
-          db.AssociationRecordsCompanion.insert(
-            id: record.associationId,
-            ownerId: record.ownerId,
-            wordKey: record.wordKey,
-            type: record.type,
-            content: record.content,
-            createdAtUtcMs: record.createdAtUtc.millisecondsSinceEpoch,
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
+    await _database.transaction(() async {
+      final activeOwner =
+          await (_database.select(_database.localOwners)..where(
+                (row) =>
+                    row.id.equals(record.ownerId) & row.isActive.equals(true),
+              ))
+              .getSingleOrNull();
+      if (activeOwner == null) {
+        throw StateError('association owner is no longer active');
+      }
+      await _database
+          .into(_database.associationRecords)
+          .insert(
+            db.AssociationRecordsCompanion.insert(
+              id: record.associationId,
+              ownerId: record.ownerId,
+              wordKey: record.wordKey,
+              type: record.type,
+              content: record.content,
+              createdAtUtcMs: record.createdAtUtc.millisecondsSinceEpoch,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+    });
   }
 
   @override

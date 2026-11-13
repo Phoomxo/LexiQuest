@@ -15,7 +15,7 @@ class _FakeGuestSessionService implements GuestSessionService {
   }
 }
 
-const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+const _drawerButtonKey = ValueKey<String>('shell-drawer-button');
 
 AppDependencies _dependencies({bool ready = true}) {
   final availability = ready
@@ -34,6 +34,10 @@ AppDependencies _dependencies({bool ready = true}) {
 }
 
 Future<void> _pumpHome(WidgetTester tester, {bool ready = true}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(393, 876);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(MyApp(dependencies: _dependencies(ready: ready)));
   await tester.pump();
   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
@@ -72,11 +76,9 @@ void main() {
         .toList();
 
     expect(destinations.map((destination) => destination.label), <String>[
-      'คลังคำศัพท์',
-      'เรียนรู้',
-      'สถิติ',
-      'จุดอ่อน',
-      'รางวัล',
+      'เรียน',
+      'คำศัพท์',
+      'ก้าวหน้า',
       'โปรไฟล์',
     ]);
   });
@@ -95,7 +97,7 @@ void main() {
       matching: find.byType(NavigationDestination),
     );
 
-    for (var index = 0; index < 6; index++) {
+    for (var index = 0; index < 4; index++) {
       await tester.tap(destinations.at(index));
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.widget<IndexedStack>(stackFinder).index, index);
@@ -108,8 +110,8 @@ void main() {
     await _pumpHome(tester, ready: false);
     await _openDrawer(tester);
 
-    expect(find.text('คลังคำศัพท์'), findsWidgets);
-    expect(find.text('ร้านค้า'), findsOneWidget);
+    expect(find.text('คำศัพท์'), findsWidgets);
+    expect(find.text('ร้านค้ารางวัล'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey<String>('runtime-status-summary')),
@@ -131,7 +133,7 @@ void main() {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('คลังคำศัพท์').last);
+    await tester.tap(find.text('คำศัพท์').last);
     await tester.pumpAndSettle();
 
     expect(find.byType(CategoriesPage), findsOneWidget);

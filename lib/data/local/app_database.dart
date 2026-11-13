@@ -15,6 +15,14 @@ import 'tables/vocabulary_tables.dart';
 
 part 'app_database.g.dart';
 
+final _productionNativeOptions = DriftNativeOptions(
+  setup: (database) {
+    database.execute('PRAGMA foreign_keys = ON');
+    database.execute('PRAGMA busy_timeout = 5000');
+    database.execute('PRAGMA journal_mode = WAL');
+  },
+);
+
 @DriftDatabase(
   tables: [
     LocalOwners,
@@ -51,7 +59,8 @@ part 'app_database.g.dart';
 final class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
-  AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
+  AppDatabase.production()
+    : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
   int get schemaVersion => 10;

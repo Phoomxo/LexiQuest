@@ -5,7 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../identity/domain/local_owner_repository.dart';
+import '../../research/domain/research_operation_authorizer.dart';
 import '../../consent/application/research_consent_use_cases.dart';
+import '../../consent/domain/research_consent.dart';
+import '../../rewards/domain/reward_ledger.dart';
 import '../data/drift_export_reader.dart';
 import '../domain/export_contracts.dart';
 
@@ -20,16 +23,28 @@ final class ExportUseCases {
     required this.nowUtc,
     required this.loadThaiFont,
     required this.researchConsent,
+    this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
   });
 
   final LocalOwnerRepository owners;
-  final DriftExportReader reader;
+  final ExportReader reader;
   final ExportArtifactStore store;
   final ExportUtcNow nowUtc;
   final ExportFontLoader loadThaiFont;
   final ResearchConsentUseCases researchConsent;
+  final ResearchOperationAuthorizer researchAuthorizer;
 
   Future<ExportArtifact> prepare({
+    required ExportFormat format,
+    required ExportSelection selection,
+    required ExportCancellation cancellation,
+  }) async => (await _prepare(
+    format: format,
+    selection: selection,
+    cancellation: cancellation,
+  )).artifact;
+
+  Future<({ExportArtifact artifact, String ownerId})> _prepare({
     required ExportFormat format,
     required ExportSelection selection,
     required ExportCancellation cancellation,
@@ -37,19 +52,33 @@ final class ExportUseCases {
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }
-    if (format == ExportFormat.researchJson &&
-        !(await researchConsent.load()).accepted) {
-      throw const ExportException(ExportFailureCode.consentRequired);
+    if (selection.includeRewards &&
+        (format == ExportFormat.researchJson || format == ExportFormat.anki)) {
+      throw const ExportException(ExportFailureCode.unavailable);
     }
     cancellation.throwIfCancelled();
-    final owner = await owners.getOrCreateActiveOwner();
-    final data = await reader.load(
-      ownerId: owner.id,
+    late final String ownerId;
+    if (format == ExportFormat.researchJson) {
+      final consent = await _loadResearchConsent();
+      cancellation.throwIfCancelled();
+      if (!consent.accepted) {
+        throw const ExportException(ExportFailureCode.consentRequired);
+      }
+      ownerId = consent.ownerId;
+      await _requireResearchAuthorization(ownerId, cancellation);
+    } else {
+      ownerId = await _loadActiveOwnerId();
+    }
+    cancellation.throwIfCancelled();
+    final data = await _loadData(
+      ownerId: ownerId,
       vocabulary: selection.includeVocabulary,
       attempts: selection.includeAttempts,
       reading: selection.includeReading,
+      rewards: selection.includeRewards,
     );
     cancellation.throwIfCancelled();
+    await _requireCurrentScope(ownerId, format, cancellation);
     if (data.recordCount == 0) {
       throw const ExportException(ExportFailureCode.noData);
     }
@@ -61,7 +90,8 @@ final class ExportUseCases {
       ExportFormat.pdf => await _pdf(data, generatedAt, cancellation),
     };
     cancellation.throwIfCancelled();
-    return ExportArtifact(
+    await _requireCurrentScope(ownerId, format, cancellation);
+    final artifact = ExportArtifact(
       format: format,
       suggestedFileName: _fileName(format, generatedAt),
       mimeType: switch (format) {
@@ -72,7 +102,7 @@ final class ExportUseCases {
       },
       bytes: bytes,
       recordCount: data.recordCount,
-      schemaVersion: 1,
+      schemaVersion: data.rewards == null ? 1 : 2,
       algorithmVersion: 1,
       generatedAtUtc: generatedAt,
       timeZone: 'UTC',
@@ -83,6 +113,7 @@ final class ExportUseCases {
         'raw microphone audio',
       ],
     );
+    return (artifact: artifact, ownerId: ownerId);
   }
 
   Future<ExportSaveResult> export({
@@ -90,20 +121,122 @@ final class ExportUseCases {
     required ExportSelection selection,
     required ExportCancellation cancellation,
   }) async {
-    final artifact = await prepare(
+    final prepared = await _prepare(
       format: format,
       selection: selection,
       cancellation: cancellation,
     );
     cancellation.throwIfCancelled();
-    return store.save(artifact, cancellation: cancellation);
+    return store.save(
+      prepared.artifact,
+      cancellation: cancellation,
+      revalidateBeforeWrite: () => _requireCurrentScope(
+        prepared.ownerId,
+        prepared.artifact.format,
+        cancellation,
+      ),
+    );
+  }
+
+  Future<void> _requireCurrentScope(
+    String ownerId,
+    ExportFormat format,
+    ExportCancellation cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    if (format == ExportFormat.researchJson) {
+      final consent = await _loadResearchConsent();
+      cancellation.throwIfCancelled();
+      if (consent.ownerId != ownerId) {
+        throw const ExportException(ExportFailureCode.cancelled);
+      }
+      if (!consent.accepted) {
+        throw const ExportException(ExportFailureCode.consentRequired);
+      }
+      await _requireResearchAuthorization(ownerId, cancellation);
+    } else if (await _loadActiveOwnerId() != ownerId) {
+      throw const ExportException(ExportFailureCode.cancelled);
+    }
+    cancellation.throwIfCancelled();
+  }
+
+  Future<ResearchConsentStatus> _loadResearchConsent() async {
+    try {
+      return await researchConsent.load();
+    } on ExportException {
+      rethrow;
+    } catch (error) {
+      if (error is StateError &&
+          error.message ==
+              'active owner changed while loading research consent') {
+        throw ExportException(ExportFailureCode.cancelled, error);
+      }
+      throw ExportException(ExportFailureCode.unavailable, error);
+    }
+  }
+
+  Future<void> _requireResearchAuthorization(
+    String ownerId,
+    ExportCancellation cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    try {
+      if (!await researchAuthorizer.authorize(
+        ownerId: ownerId,
+        operation: ResearchOperation.export,
+      )) {
+        throw const ExportException(ExportFailureCode.unavailable);
+      }
+    } on ExportException {
+      rethrow;
+    } catch (_) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
+    cancellation.throwIfCancelled();
+  }
+
+  Future<String> _loadActiveOwnerId() async {
+    try {
+      return (await owners.getOrCreateActiveOwner()).id;
+    } on ExportException {
+      rethrow;
+    } catch (error) {
+      throw ExportException(ExportFailureCode.unavailable, error);
+    }
+  }
+
+  Future<ExportDataSet> _loadData({
+    required String ownerId,
+    required bool vocabulary,
+    required bool attempts,
+    required bool reading,
+    required bool rewards,
+  }) async {
+    try {
+      return await reader.load(
+        ownerId: ownerId,
+        vocabulary: vocabulary,
+        attempts: attempts,
+        reading: reading,
+        rewards: rewards,
+      );
+    } on ExportException {
+      rethrow;
+    } catch (error) {
+      throw ExportException(ExportFailureCode.unavailable, error);
+    }
   }
 
   Uint8List _csv(ExportDataSet data, DateTime generatedAt) {
     final out = StringBuffer()
-      ..writeln('# LexiQuest export schema=1 algorithm=1 timezone=UTC')
+      ..writeln(
+        '# LexiQuest export schema=${data.rewards == null ? 1 : 2} algorithm=1 timezone=UTC',
+      )
       ..writeln('# generated_at=${generatedAt.toIso8601String()}')
       ..writeln('# sample_size=${data.recordCount}')
+      ..write(
+        data.rewards == null ? '' : '# coin_balance=${data.rewards!.balance}\n',
+      )
       ..writeln(
         'record_type,evidence_id,subject,prompt_mode,is_correct,response_time_ms,occurred_at_utc,detail',
       );
@@ -146,6 +279,25 @@ final class ExportUseCases {
           '',
           row.updatedAtUtc.toIso8601String(),
           'position=${row.lastPosition}',
+        ]),
+      );
+    }
+    for (final effect
+        in data.rewards?.effects ?? const <RewardLedgerEffect>[]) {
+      final entry = effect.entry;
+      out.writeln(
+        _csvRow([
+          'reward',
+          entry.id,
+          entry.itemId ?? entry.type,
+          '',
+          '',
+          '',
+          DateTime.fromMillisecondsSinceEpoch(
+            entry.occurredAtUtcMs,
+            isUtc: true,
+          ).toIso8601String(),
+          jsonEncode(_rewardAuditDetails(effect)),
         ]),
       );
     }
@@ -229,7 +381,14 @@ final class ExportUseCases {
     DateTime generatedAt,
     ExportCancellation cancellation,
   ) async {
-    final fontData = await loadThaiFont();
+    late final ByteData fontData;
+    try {
+      fontData = await loadThaiFont();
+    } on ExportException {
+      rethrow;
+    } catch (error) {
+      throw ExportException(ExportFailureCode.unavailable, error);
+    }
     cancellation.throwIfCancelled();
     final font = pw.Font.ttf(fontData);
     final document = pw.Document();
@@ -240,7 +399,7 @@ final class ExportUseCases {
           pw.Header(level: 0, text: 'LexiQuest รายงานข้อมูลการเรียน'),
           pw.Text('สร้างเมื่อ: ${generatedAt.toIso8601String()}'),
           pw.Text('เขตเวลา: UTC'),
-          pw.Text('Schema v1 · Algorithm v1'),
+          pw.Text('Schema v${data.rewards == null ? 1 : 2} · Algorithm v1'),
           pw.Text('จำนวนข้อมูลทั้งหมด: ${data.recordCount}'),
           pw.SizedBox(height: 12),
           pw.Header(level: 1, text: 'คำศัพท์ (${data.vocabulary.length})'),
@@ -269,6 +428,11 @@ final class ExportUseCases {
                 'ตำแหน่ง ${row.lastPosition} · '
                 '${row.isCompleted ? 'อ่านจบ' : 'กำลังอ่าน'}',
               ),
+          if (data.rewards != null) ...[
+            pw.Header(level: 1, text: 'Coins (${data.rewards!.balance})'),
+            for (final effect in data.rewards!.effects)
+              pw.Text(jsonEncode(_rewardAuditDetails(effect))),
+          ],
           pw.SizedBox(height: 12),
           pw.Text(
             'ไม่รวม: API key, token ยืนยันตัวตน, ข้อมูลระบุตัวบุคคลโดยตรง และเสียงดิบ',
@@ -278,6 +442,18 @@ final class ExportUseCases {
     );
     return document.save();
   }
+
+  Map<String, Object?> _rewardAuditDetails(RewardLedgerEffect effect) => {
+    'evidenceId': effect.entry.id,
+    'transactionType': effect.entry.type,
+    'itemId': effect.entry.itemId,
+    'occurredAtUtcMs': effect.entry.occurredAtUtcMs,
+    'rawAmount': effect.entry.amount,
+    'effectiveAmount': effect.effectiveAmount,
+    'status': effect.status.name,
+    'localOnly': effect.entry.localOnly,
+    'sourceEventId': effect.entry.sourceEventId,
+  };
 
   String _csvRow(List<String> cells) => cells
       .map((cell) => _spreadsheetSafe(cell))

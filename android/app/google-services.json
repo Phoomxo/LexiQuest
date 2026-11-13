@@ -12,7 +12,12 @@
           "package_name": "com.example.vocab_learning_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "145034183638-oehj1hf45ude9s8ddscaqcv0qc7ocg95.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAl2g3NcdURDucF1W5Jms-90kcrKUbqNt4"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "145034183638-oehj1hf45ude9s8ddscaqcv0qc7ocg95.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -31,7 +41,28 @@
           "package_name": "com.lexiquest.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "145034183638-g1jslshq8f1hav68pv5r7btafa6qlmj4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lexiquest.app",
+            "certificate_hash": "7ab86e48961a9fb56749139d4ffe978fd3b4365b"
+          }
+        },
+        {
+          "client_id": "145034183638-v3666143v9q8hn3lmr00n3n1qp6ebo1l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lexiquest.app",
+            "certificate_hash": "aa42f095c10f92714ae105d231e4ae132dc2c46c"
+          }
+        },
+        {
+          "client_id": "145034183638-oehj1hf45ude9s8ddscaqcv0qc7ocg95.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAl2g3NcdURDucF1W5Jms-90kcrKUbqNt4"
@@ -39,7 +70,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "145034183638-oehj1hf45ude9s8ddscaqcv0qc7ocg95.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
