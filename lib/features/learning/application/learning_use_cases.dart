@@ -1,7 +1,6 @@
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
-import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
@@ -9,13 +8,6 @@ import '../domain/learning_repository.dart';
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
-
-/// Receives a [EventEnvelopeV2] produced from every recorded answer.
-///
-/// Used by callers (e.g. [AppDependencies]) to forward learning events into
-/// the quest pipeline when [Feature.questV2] is enabled.  Errors from the
-/// sink are swallowed — the sink must never break production.
-typedef QuestEventSink = Future<void> Function(EventEnvelopeV2 event);
 
 /// Called after every successful `recordAnswer` so that [StreakUseCases] can
 /// log the learning day and update streak counters.
@@ -34,7 +26,6 @@ final class LearningUseCases {
     this.onLocalMutation,
     this.shadowOrchestrator,
     this.eventAdapter,
-    this.questEventSink,
     this.streakEventSink,
   });
 
@@ -50,15 +41,8 @@ final class LearningUseCases {
   final ShadowRewardOrchestrator? shadowOrchestrator;
 
   /// Required when [shadowOrchestrator] is non-null; adapts V1 commands to
-  /// [EventEnvelopeV2] for shadow processing.
+  /// a V2 event for shadow processing.
   final EventV1ToV2Adapter? eventAdapter;
-
-  /// Quest pipeline hook — when non-null, the V2 event from each answer is
-  /// forwarded to [QuestUseCases.processEvent] (or a compatible consumer).
-  ///
-  /// Wired at the [AppDependencies] composition root when
-  /// `Feature.questV2` is enabled.  Errors are swallowed.
-  final QuestEventSink? questEventSink;
 
   /// Streak pipeline hook — when non-null, called after every successful
   /// answer so that [StreakUseCases.recordLearningDay] can update counters.
@@ -262,33 +246,6 @@ final class LearningUseCases {
         await shadow.processShadow(v2Event);
       } catch (_) {
         // Intentionally swallowed — shadow mode must never break production.
-      }
-    }
-
-    // Quest pipeline hook — forward answer event to quest use cases.
-    // Uses the same V2 event produced for shadow mode when available;
-    // builds a fresh event otherwise.  Errors are swallowed.
-    final questSink = questEventSink;
-    if (questSink != null) {
-      try {
-        final questEvent = adapter?.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: recordedAt,
-          providerProvenance: providerProvenance,
-          appVersion: buildInfo.version,
-          buildId: buildInfo.buildId,
-        );
-        if (questEvent != null) {
-          await questSink(questEvent);
-        }
-      } catch (_) {
-        // Intentionally swallowed — quest hook must never break production.
       }
     }
 

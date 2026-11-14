@@ -39,6 +39,20 @@ final class RewardUseCases implements RewardShopOperations {
   final RewardUtcNow nowUtc;
   final void Function()? onLocalMutation;
 
+  Future<QuestClaimResult> claimQuest({
+    required String expectedOwnerId,
+    required String instanceId,
+  }) async {
+    final ownerId = await _requireActiveOwner(expectedOwnerId);
+    final result = await repository.claimQuest(
+      expectedOwnerId: ownerId,
+      instanceId: instanceId,
+    );
+    await _requireActiveOwner(ownerId);
+    if (!result.replayed) onLocalMutation?.call();
+    return result;
+  }
+
   Future<RewardAccount> load() async {
     return (await loadSession()).account;
   }

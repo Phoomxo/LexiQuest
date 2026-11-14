@@ -98,6 +98,105 @@ void main() {
     },
   );
 
+  test(
+    'preview is read-only and matches the eventual durable UTC default',
+    () async {
+      final first = await repository.previewCalendarRuleAt(
+        ownerId: 'owner-a',
+        occurredAtUtcMs: _createdMs,
+      );
+      final again = await repository.previewCalendarRuleAt(
+        ownerId: 'owner-a',
+        occurredAtUtcMs: _createdMs + 1,
+      );
+      expect(_value(first), _value(again));
+      expect(_value(first), (
+        'calendar:utc-default:owner-a',
+        'owner-a',
+        'UTC',
+        bundledTzdbRevision,
+        _createdMs * 1000,
+        null,
+      ));
+      expect(await _epochs(database), isEmpty);
+      final durable = await repository.calendarRuleAt(
+        ownerId: 'owner-a',
+        occurredAtUtcMs: _createdMs,
+      );
+      expect(_value(durable), _value(first));
+      final rows = await _epochs(database);
+      expect(rows, hasLength(1));
+      expect(
+        _value(
+          await repository.previewCalendarRuleAt(
+            ownerId: 'owner-a',
+            occurredAtUtcMs: _createdMs,
+          ),
+        ),
+        _value(durable),
+      );
+      expect(await _epochs(database), rows);
+    },
+  );
+
+  test(
+    'preview respects signed microsecond bounds without changing epochs',
+    () async {
+      const boundaryUs = _createdMs * 1000 + 1500;
+      await _epoch(database, id: 'before-preview', expiresUs: boundaryUs);
+      await _epoch(
+        database,
+        id: 'after-preview',
+        effectiveUs: boundaryUs,
+        iana: 'Asia/Bangkok',
+      );
+      final before = await _epochs(database);
+      expect(
+        (await repository.previewCalendarRuleAt(
+          ownerId: 'owner-a',
+          occurredAtUtcMs: 1001,
+        )).ruleId,
+        'before-preview',
+      );
+      expect(
+        (await repository.previewCalendarRuleAt(
+          ownerId: 'owner-a',
+          occurredAtUtcMs: 1002,
+        )).ruleId,
+        'after-preview',
+      );
+      expect(await _epochs(database), before);
+    },
+  );
+
+  test(
+    'preview rejects conflicting virtual identity and invalid times',
+    () async {
+      await _epoch(
+        database,
+        id: 'calendar:utc-default:owner-a',
+        owner: 'owner-b',
+        selected: false,
+      );
+      final before = await _epochs(database);
+      await expectLater(
+        repository.previewCalendarRuleAt(
+          ownerId: 'owner-a',
+          occurredAtUtcMs: 1020,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        repository.previewCalendarRuleAt(
+          ownerId: 'owner-a',
+          occurredAtUtcMs: -1,
+        ),
+        throwsA(isA<Object>()),
+      );
+      expect(await _epochs(database), before);
+    },
+  );
+
   test('concurrent default requests converge to one rule', () async {
     final rules = await Future.wait([
       repository.calendarRuleAt(
@@ -275,6 +374,14 @@ void main() {
         }
         final before = await _epochs(database);
         await expectLater(
+          repository.previewCalendarRuleAt(
+            ownerId: 'owner-a',
+            occurredAtUtcMs: 1020,
+          ),
+          throwsStateError,
+        );
+        expect(await _epochs(database), before);
+        await expectLater(
           repository.calendarRuleAt(ownerId: 'owner-a', occurredAtUtcMs: 1020),
           throwsStateError,
         );
@@ -316,6 +423,13 @@ void main() {
   );
 
   test('unknown owner cannot acquire a rule', () async {
+    await expectLater(
+      repository.previewCalendarRuleAt(
+        ownerId: 'missing-owner',
+        occurredAtUtcMs: 1020,
+      ),
+      throwsStateError,
+    );
     await expectLater(
       repository.calendarRuleAt(
         ownerId: 'missing-owner',

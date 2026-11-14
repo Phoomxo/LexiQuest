@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../quest/data/drift_quest_progress_reader.dart';
+import '../../quest/data/drift_quest_repository.dart';
 import '../domain/learning_models.dart';
 import '../domain/srs_policy.dart';
 
@@ -8,10 +10,64 @@ final class DriftLearningProjectionRebuilder {
   const DriftLearningProjectionRebuilder(
     this.database, {
     this.srsPolicy = const BinarySm2SrsPolicy(),
+    this.questCatalog,
   });
 
   final db.AppDatabase database;
   final SrsPolicy srsPolicy;
+  final TrustedQuestAnswerCatalog? questCatalog;
+
+  Future<void> rebuildQuestXp(String ownerId) => database.transaction(() async {
+    final receipts = await DriftQuestProgressReader(
+      database,
+      catalog: questCatalog,
+    ).validatedReceipts(ownerId: ownerId);
+    for (final receipt in receipts) {
+      final id = 'points:quest:${receipt.id}';
+      final key = 'quest-claim:${receipt.id}';
+      final conflictingSource =
+          await (database.select(database.pointsLedgerEntries)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.entryType.equals('questClaimXpV1') &
+                      row.sourceEventId.equals(receipt.id) &
+                      (row.id.equals(id).not() |
+                          row.idempotencyKey.equals(key).not()),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (conflictingSource != null) {
+        throw StateError('Conflicting immutable Quest XP provenance');
+      }
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
+            db.PointsLedgerEntriesCompanion.insert(
+              id: id,
+              ownerId: ownerId,
+              idempotencyKey: key,
+              entryType: 'questClaimXpV1',
+              amount: receipt.xpAmount,
+              sourceEventId: Value(receipt.id),
+              occurredAtUtcMs: receipt.issuedAtUtcMs,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+      final row = await (database.select(
+        database.pointsLedgerEntries,
+      )..where((row) => row.id.equals(id))).getSingleOrNull();
+      if (row == null ||
+          row.ownerId != ownerId ||
+          row.idempotencyKey != key ||
+          row.entryType != 'questClaimXpV1' ||
+          row.amount != receipt.xpAmount ||
+          row.sourceEventId != receipt.id ||
+          row.occurredAtUtcMs != receipt.issuedAtUtcMs) {
+        throw StateError('Conflicting immutable Quest XP provenance');
+      }
+    }
+  });
 
   Future<SrsSnapshot> rebuildWord({
     required String ownerId,

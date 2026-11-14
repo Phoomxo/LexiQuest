@@ -1,4 +1,5 @@
 import '../../learning/domain/learning_models.dart';
+import '../../quest/domain/quest_progress_models.dart';
 
 final class SkillEvidence {
   const SkillEvidence({
@@ -86,7 +87,14 @@ final class ProgressSnapshot {
     this.algorithmVersion = 1,
     this.averageResponseTimeMs,
     this.latestEvidenceAtUtc,
-  });
+    this.ownerId,
+    this.asOfUtc,
+    this.quests,
+  }) : assert(quests == null || (ownerId != null && asOfUtc != null));
+
+  final String? ownerId;
+  final DateTime? asOfUtc;
+  final QuestSummary? quests;
 
   final int sampleSize;
   final int correctCount;

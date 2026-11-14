@@ -16,7 +16,6 @@ import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
-import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
@@ -70,7 +69,6 @@ final class AppDependencies {
     this.devicePermissions,
     this.speechPractice,
     this.voice,
-    this.quest,
     this.streak,
     this.associativeLearning,
     this.disposeResources,
@@ -111,10 +109,6 @@ final class AppDependencies {
   final DevicePermissionAccess? devicePermissions;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
-
-  /// V2 Quest pipeline — wired when [Feature.questV2] is enabled.
-  /// Null when the feature flag is off (hidden state).
-  final QuestUseCases? quest;
 
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;

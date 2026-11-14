@@ -1,7 +1,6 @@
 import '../../learning/domain/answer_motivation_evidence.dart';
 import '../../motivation/domain/timezone_policy.dart';
 import '../domain/quest_models.dart';
-import 'quest_use_cases.dart';
 
 final class QuestCatalogRevision {
   const QuestCatalogRevision({
@@ -15,15 +14,7 @@ final class QuestCatalogRevision {
 
 /// Built-in quest catalog for LexiQuest V2.
 ///
-/// Contains standard daily and weekly quests that are seeded at application
-/// startup via [QuestUseCases.startQuest].  All quests are idempotent —
-/// calling [QuestUseCases.startQuest] for an already-active quest is a no-op.
-///
-/// **Catalog version:** [version] must be incremented whenever objectives,
-/// rewards, or titles change.  The [QuestUseCases] will
-/// [QuestRepository.upsertDefinition] the new version on the next startup,
-/// and the active instance will continue to completion before the new
-/// definition takes effect.
+/// Contains the authored daily and weekly answer Quest definitions.
 abstract final class QuestCatalogProvider {
   static const int version = 1;
 
@@ -142,19 +133,5 @@ abstract final class QuestCatalogProvider {
       'occurrencePolicy': 'civil-segments-v1',
       'activeFromUtcMs': revision.activeFromUtcMs,
     });
-  }
-
-  // ── Startup helper ─────────────────────────────────────────────────────────
-
-  /// Seed all built-in quests for the current owner and expire stale
-  /// instances.
-  ///
-  /// Safe to call on every app launch — [QuestUseCases.startQuest] is
-  /// idempotent (returns null when the quest is already active).
-  static Future<void> seedOnStartup(QuestUseCases quest) async {
-    await quest.expireStale();
-    for (final def in allQuests) {
-      await quest.startQuest(def);
-    }
   }
 }

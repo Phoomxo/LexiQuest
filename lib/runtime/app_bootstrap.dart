@@ -51,6 +51,7 @@ import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/quest/data/drift_quest_repository.dart';
+import '../features/quest/data/drift_quest_progress_reader.dart';
 import '../features/research/domain/research_operation_authorizer.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
@@ -344,7 +345,13 @@ final class AppBootstrap {
     );
     final progress = ProgressUseCases(
       owners: localOwners,
-      queries: DriftProgressQueries(database),
+      queries: DriftProgressQueries(
+        database,
+        questReader: questVisible()
+            ? DriftQuestProgressReader(database, catalog: answerCatalog)
+            : null,
+        questVisible: questVisible,
+      ),
       nowUtc: () => DateTime.now().toUtc(),
     );
     final researchConsent = ResearchConsentUseCases(
@@ -354,7 +361,12 @@ final class AppBootstrap {
     );
     final rewards = RewardUseCases(
       owners: localOwners,
-      repository: DriftRewardRepository(database),
+      repository: DriftRewardRepository(
+        database,
+        questCatalog: answerCatalog,
+        questVisible: questVisible,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,

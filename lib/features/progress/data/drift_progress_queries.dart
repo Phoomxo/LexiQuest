@@ -2,12 +2,20 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_models.dart';
+import '../../quest/data/drift_quest_progress_reader.dart';
+import '../../quest/domain/quest_progress_models.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
-  const DriftProgressQueries(this.database);
+  const DriftProgressQueries(
+    this.database, {
+    this.questReader,
+    this.questVisible,
+  });
 
   final AppDatabase database;
+  final DriftQuestProgressReader? questReader;
+  final bool Function()? questVisible;
 
   Future<ProgressSnapshot> load({
     required String ownerId,
@@ -16,150 +24,176 @@ final class DriftProgressQueries {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
-    final attempts =
-        await (database.select(database.answerAttempts)
-              ..where((row) => row.ownerId.equals(ownerId))
-              ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]))
-            .get();
-    final correctCount = attempts.where((row) => row.isCorrect).length;
-    final wrongCount = attempts.length - correctCount;
-    final responseTimes = attempts
-        .map((row) => row.responseTimeMs)
-        .whereType<int>()
-        .toList(growable: false);
-    final pointsExpression = database.pointsLedgerEntries.amount.sum();
-    // Legacy purchase debits still fund the shop, but never spend learning XP.
-    final pointsRow =
-        await (database.selectOnly(database.pointsLedgerEntries)
-              ..addColumns([pointsExpression])
-              ..where(
-                database.pointsLedgerEntries.ownerId.equals(ownerId) &
-                    database.pointsLedgerEntries.entryType
-                        .equals('rewardPurchase')
-                        .not(),
-              ))
-            .getSingle();
-    final totalXp = pointsRow.read(pointsExpression) ?? 0;
-    final completedCount = database.learningSessions.id.count();
-    final completedRow =
-        await (database.selectOnly(database.learningSessions)
-              ..addColumns([completedCount])
-              ..where(
-                database.learningSessions.ownerId.equals(ownerId) &
-                    database.learningSessions.state.equals('completed'),
-              ))
-            .getSingle();
-    final wordCount = database.vocabularyWords.id.count();
-    final wordRow =
-        await (database.selectOnly(database.vocabularyWords)
-              ..addColumns([wordCount])
-              ..where(
-                database.vocabularyWords.ownerId.equals(ownerId) &
-                    database.vocabularyWords.isDeleted.equals(false),
-              ))
-            .getSingle();
-    final dueWords = await database
-        .customSelect(
-          '''
+    return database.transaction(() async {
+      final attempts =
+          await (database.select(database.answerAttempts)
+                ..where((row) => row.ownerId.equals(ownerId))
+                ..orderBy([
+                  (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+                  (row) => OrderingTerm.asc(row.id),
+                ]))
+              .get();
+      final correctCount = attempts.where((row) => row.isCorrect).length;
+      final wrongCount = attempts.length - correctCount;
+      final responseTimes = attempts
+          .map((row) => row.responseTimeMs)
+          .whereType<int>()
+          .toList(growable: false);
+      final pointsExpression = database.pointsLedgerEntries.amount.sum();
+      // Legacy purchase debits still fund the shop, but never spend learning XP.
+      final pointsRow =
+          await (database.selectOnly(database.pointsLedgerEntries)
+                ..addColumns([pointsExpression])
+                ..where(
+                  database.pointsLedgerEntries.ownerId.equals(ownerId) &
+                      database.pointsLedgerEntries.entryType
+                          .equals('rewardPurchase')
+                          .not(),
+                ))
+              .getSingle();
+      final totalXp = pointsRow.read(pointsExpression) ?? 0;
+      final completedCount = database.learningSessions.id.count();
+      final completedRow =
+          await (database.selectOnly(database.learningSessions)
+                ..addColumns([completedCount])
+                ..where(
+                  database.learningSessions.ownerId.equals(ownerId) &
+                      database.learningSessions.state.equals('completed'),
+                ))
+              .getSingle();
+      final wordCount = database.vocabularyWords.id.count();
+      final wordRow =
+          await (database.selectOnly(database.vocabularyWords)
+                ..addColumns([wordCount])
+                ..where(
+                  database.vocabularyWords.ownerId.equals(ownerId) &
+                      database.vocabularyWords.isDeleted.equals(false),
+                ))
+              .getSingle();
+      final dueWords = await database
+          .customSelect(
+            '''
       SELECT w.spelling, c.name AS category_name FROM srs_states s
       INNER JOIN vocabulary_words w ON w.id = s.word_id AND w.owner_id = s.owner_id
       LEFT JOIN vocabulary_categories c ON c.id = w.category_id AND c.owner_id = w.owner_id
       WHERE s.owner_id = ? AND w.is_deleted = 0 AND s.due_at_utc_ms <= ?
       ORDER BY s.due_at_utc_ms ASC, w.id ASC
       ''',
-          variables: [
-            Variable<String>(ownerId),
-            Variable<int>(nowUtc.millisecondsSinceEpoch),
-          ],
-          readsFrom: {
-            database.srsStates,
-            database.vocabularyWords,
-            database.vocabularyCategories,
-          },
-        )
-        .get();
-    final masteredCountExpression = database.srsStates.id.count();
-    final masteredRow =
-        await (database.selectOnly(database.srsStates)
-              ..addColumns([masteredCountExpression])
-              ..where(
-                database.srsStates.ownerId.equals(ownerId) &
-                    database.srsStates.repetitions.isBiggerOrEqualValue(4) &
-                    database.srsStates.intervalDays.isBiggerOrEqualValue(14),
-              ))
-            .getSingle();
-    final achievementCountExpression = database.achievementUnlocks.id.count();
-    final achievementRow =
-        await (database.selectOnly(database.achievementUnlocks)
-              ..addColumns([achievementCountExpression])
-              ..where(database.achievementUnlocks.ownerId.equals(ownerId)))
-            .getSingle();
-    final achievementRows =
-        await (database.select(database.achievementUnlocks)
-              ..where((row) => row.ownerId.equals(ownerId))
-              ..orderBy([(row) => OrderingTerm.asc(row.unlockedAtUtcMs)]))
-            .get();
-
-    final weaknesses = await _loadWeaknesses(ownerId);
-    return ProgressSnapshot(
-      sampleSize: attempts.length,
-      correctCount: correctCount,
-      wrongCount: wrongCount,
-      accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
-      totalXp: totalXp,
-      completedSessions: completedRow.read(completedCount) ?? 0,
-      streakDays: _streakDays(
-        attempts.map((row) => row.occurredAtUtcMs),
-        nowUtc,
-      ),
-      dueReviewCount: dueWords.length,
-      vocabularyWordCount: wordRow.read(wordCount) ?? 0,
-      nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
-      nextDueCategoryName: dueWords.firstOrNull?.readNullable<String>(
-        'category_name',
-      ),
-      recentSessions: await _loadRecentSessions(ownerId),
-      masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
-      achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
-      gameLevel: (totalXp ~/ 20) + 1,
-      skills: _skills(attempts),
-      weaknesses: weaknesses,
-      recommendations: weaknesses
-          .take(5)
-          .map(
-            (item) => LearningRecommendation(
-              wordId: item.wordId,
-              title: 'ทบทวนคำว่า ${item.spelling}',
-              reason:
-                  'ตอบผิด ${item.incorrectCount} จาก ${item.sampleSize} ครั้ง',
-              sampleSize: item.sampleSize,
-            ),
+            variables: [
+              Variable<String>(ownerId),
+              Variable<int>(nowUtc.millisecondsSinceEpoch),
+            ],
+            readsFrom: {
+              database.srsStates,
+              database.vocabularyWords,
+              database.vocabularyCategories,
+            },
           )
-          .toList(growable: false),
-      achievements: achievementRows
-          .map(
-            (row) => AchievementEvidence(
-              id: row.achievementId,
-              definitionVersion: row.definitionVersion,
-              sourceEventId: row.sourceEventId,
-              unlockedAtUtc: DateTime.fromMillisecondsSinceEpoch(
-                row.unlockedAtUtcMs,
+          .get();
+      final masteredCountExpression = database.srsStates.id.count();
+      final masteredRow =
+          await (database.selectOnly(database.srsStates)
+                ..addColumns([masteredCountExpression])
+                ..where(
+                  database.srsStates.ownerId.equals(ownerId) &
+                      database.srsStates.repetitions.isBiggerOrEqualValue(4) &
+                      database.srsStates.intervalDays.isBiggerOrEqualValue(14),
+                ))
+              .getSingle();
+      final achievementCountExpression = database.achievementUnlocks.id.count();
+      final achievementRow =
+          await (database.selectOnly(database.achievementUnlocks)
+                ..addColumns([achievementCountExpression])
+                ..where(database.achievementUnlocks.ownerId.equals(ownerId)))
+              .getSingle();
+      final achievementRows =
+          await (database.select(database.achievementUnlocks)
+                ..where((row) => row.ownerId.equals(ownerId))
+                ..orderBy([(row) => OrderingTerm.asc(row.unlockedAtUtcMs)]))
+              .get();
+
+      final weaknesses = await _loadWeaknesses(ownerId);
+      QuestSummary? quests;
+      try {
+        if (questVisible?.call() ?? questReader != null) {
+          quests =
+              await questReader?.load(ownerId: ownerId, asOfUtc: nowUtc) ??
+              QuestSummary(
+                current: const [],
+                history: const [],
+                issues: const [QuestProgressIssue.unavailableCatalog],
+              );
+        }
+      } on Object {
+        quests = QuestSummary(
+          current: const [],
+          history: const [],
+          issues: const [QuestProgressIssue.unavailableEvidence],
+        );
+      }
+      return ProgressSnapshot(
+        ownerId: ownerId,
+        asOfUtc: nowUtc,
+        quests: quests,
+        sampleSize: attempts.length,
+        correctCount: correctCount,
+        wrongCount: wrongCount,
+        accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
+        totalXp: totalXp,
+        completedSessions: completedRow.read(completedCount) ?? 0,
+        streakDays: _streakDays(
+          attempts.map((row) => row.occurredAtUtcMs),
+          nowUtc,
+        ),
+        dueReviewCount: dueWords.length,
+        vocabularyWordCount: wordRow.read(wordCount) ?? 0,
+        nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
+        nextDueCategoryName: dueWords.firstOrNull?.readNullable<String>(
+          'category_name',
+        ),
+        recentSessions: await _loadRecentSessions(ownerId),
+        masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
+        achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
+        gameLevel: (totalXp ~/ 20) + 1,
+        skills: _skills(attempts),
+        weaknesses: weaknesses,
+        recommendations: weaknesses
+            .take(5)
+            .map(
+              (item) => LearningRecommendation(
+                wordId: item.wordId,
+                title: 'ทบทวนคำว่า ${item.spelling}',
+                reason:
+                    'ตอบผิด ${item.incorrectCount} จาก ${item.sampleSize} ครั้ง',
+                sampleSize: item.sampleSize,
+              ),
+            )
+            .toList(growable: false),
+        achievements: achievementRows
+            .map(
+              (row) => AchievementEvidence(
+                id: row.achievementId,
+                definitionVersion: row.definitionVersion,
+                sourceEventId: row.sourceEventId,
+                unlockedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  row.unlockedAtUtcMs,
+                  isUtc: true,
+                ),
+              ),
+            )
+            .toList(growable: false),
+        algorithmVersion: 1,
+        averageResponseTimeMs: responseTimes.isEmpty
+            ? null
+            : responseTimes.reduce((a, b) => a + b) / responseTimes.length,
+        latestEvidenceAtUtc: attempts.isEmpty
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(
+                attempts.last.occurredAtUtcMs,
                 isUtc: true,
               ),
-            ),
-          )
-          .toList(growable: false),
-      algorithmVersion: 1,
-      averageResponseTimeMs: responseTimes.isEmpty
-          ? null
-          : responseTimes.reduce((a, b) => a + b) / responseTimes.length,
-      latestEvidenceAtUtc: attempts.isEmpty
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(
-              attempts.last.occurredAtUtcMs,
-              isUtc: true,
-            ),
-    );
+      );
+    });
   }
 
   Future<List<SessionHistoryEntry>> _loadRecentSessions(String ownerId) async {

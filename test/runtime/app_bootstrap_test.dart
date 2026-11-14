@@ -19,6 +19,8 @@ import 'package:vocab_learning_app/features/research/domain/research_operation_a
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_progress_models.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
@@ -87,6 +89,7 @@ void main() {
         expect(identical(dependencies.fieldFeatures, fieldFeatures), isTrue);
         await _recordOriginalBootstrapAnswer(dependencies);
         expect(factories, 0);
+        expect((await dependencies.progress!.load()).quests, isNull);
         final database = dependencies.database!;
         expect(
           (await database.select(database.answerAttempts).get())
@@ -167,6 +170,47 @@ void main() {
       expect(await database.select(database.questInstances).get(), isEmpty);
       expect(await database.select(database.questClaimReceipts).get(), isEmpty);
       expect(await database.select(database.eventsV2).get(), isEmpty);
+
+      for (var number = 2; number <= 5; number++) {
+        await dependencies.learning!.recordAnswer(
+          sessionId: answer.sessionId,
+          wordId: answer.wordId,
+          promptMode: answer.promptMode,
+          isCorrect: true,
+          responseTimeMs: 100,
+          attemptNumber: number,
+        );
+      }
+      final beforeClaim = await dependencies.progress!.load();
+      final daily = beforeClaim.quests!.current.singleWhere(
+        (card) => card.cadence == QuestType.daily,
+      );
+      expect(beforeClaim.ownerId, answer.ownerId);
+      expect(beforeClaim.totalXp, 5);
+      expect(daily.state, QuestProgressState.completedUnclaimed);
+      final receipt = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: beforeClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((receipt.xpAmount, receipt.replayed), (50, false));
+      final afterClaim = await dependencies.progress!.load();
+      expect(afterClaim.totalXp, 55);
+      expect(
+        afterClaim.quests!.current
+            .singleWhere((card) => card.cadence == QuestType.daily)
+            .state,
+        QuestProgressState.claimed,
+      );
+      expect((await dependencies.rewards!.load()).balance, 5);
+      final replay = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: afterClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((replay.receiptId, replay.replayed), (receipt.receiptId, true));
+      expect((await dependencies.progress!.load()).totalXp, 55);
+      expect(factories, 1);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.researchConsents).get(), isEmpty);
     },
   );
 
@@ -207,6 +251,12 @@ void main() {
       );
       expect(await database.select(database.questInstances).get(), isEmpty);
       expect(await database.select(database.eventsV2).get(), isEmpty);
+      final progress = await dependencies.progress!.load();
+      expect(progress.totalXp, 1);
+      expect(
+        progress.quests!.issues,
+        contains(QuestProgressIssue.unavailableCatalog),
+      );
     },
   );
 
