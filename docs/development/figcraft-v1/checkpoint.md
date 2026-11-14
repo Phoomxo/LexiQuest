@@ -1,5 +1,17 @@
 # Continuous execution checkpoint
 
+## S4 Shadowing with Android microphone denial
+
+- Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`,
+  branch `codex/figcraft-flutter-prototype`. Offline debug APK `da0d7e19`
+  showed the real OS microphone prompt and visible denial at system font 2.0.
+  The no-mic route kept the sentence and returned to the speaking screen
+  then the original hub. Four SQLite counts matched before and after.
+- The focused regression captured Android's permission lifecycle.
+  Windows Flutter 40 and static analysis passed. Review disposition is
+  partial for the screen and related f41/P6.4 checks. Next check the granted
+  mic and unavailable service on signed hardware. [Evidence](evidence/s4-shadowing-no-mic.txt).
+
 ## S7 Offline quiz resume, bookmarks and sync retry
 
 - Exact debug APK `c439d1ec` resumed A at question 2 after force stop.

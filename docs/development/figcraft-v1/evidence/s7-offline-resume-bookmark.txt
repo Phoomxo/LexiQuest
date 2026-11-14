@@ -98,3 +98,10 @@ head predates the lost-ACK restart test listed above.
 CI console SHA-256:
 2143b42b03ba4b225cd3a6f2edf41ed59a761d3432bc5cf9e15882c1d71d8639
 https://github.com/Phoomxo/LexiQuest/actions/runs/43643096040
+
+GitHub CI 43644811662 at 0d23214f15cff1b3070e953395c4f6aa95da7d91
+includes the lost-ACK test and passed Flutter 2,380, CPU backend 267,
+Firestore, Supabase, analysis and Android debug build.
+Captured CI console SHA-256:
+7e483c2c5a494e7cd49dda808ea4dc2925f0d0c951f549161f52c8b81f9977fa
+https://github.com/Phoomxo/LexiQuest/actions/runs/43644811662
