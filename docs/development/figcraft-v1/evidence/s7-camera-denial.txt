@@ -1,0 +1,35 @@
+Camera permission path observed after vivo v33
+
+Source f4915750cd9d3b164726921a41161da6681f49b9, Android 13 vivo V2041:
+A > Add Word > Camera > deny. Android immediately displayed a second
+permission dialog before the scanner's failure text. A second denial
+reached the scanner, whose resume error replaced the explicit reason.
+The system Back action returned to A with all four words and 75%.
+No photo, vocabulary change or answer was recorded in this check.
+
+The Android permission dialog changes the app lifecycle before the
+initializer completes. The scanner must not resume while its own
+initializer is in flight. It should also retain denial until explicit
+retry. Source correction 04d2a19962a3501ba5d1ec676ca26b8ec97e1fe0.
+
+RED real behavior contract in object_scanner_screen_test.dart:
+resumeCalls expected 0, observed 1. Log SHA256
+1aaf2aa3268a2a0689b5b3e325d0d657c908b49f04ac9badc3e8847f836f3a78.
+GREEN object scanner screen, camera-to-A journey and media practice:
+71 tests passed. Log SHA256
+82b5f1559a40c137056bee7b2878a2811c8ba56e22059537afe19cc80e0b05b2.
+Flutter analyze --no-pub: no issues. Log SHA256
+1476d2a7bfbf575dba50d745cf91a337cda49e0bac4947960343802116f3feec.
+
+Signed arm64 v34 built from source 04d2a19962a3501ba5d1ec676ca26b8ec97e1fe0,
+APK SHA256 5c1d7bd0a515d9586d88ff0380dce170bc6a978beb2e21c73bf6309668f9c05d.
+Installed with the same signer, versionCode 34, unchanged firstInstallTime
+and verified installed base hash. Cloud sync false and research deny-all.
+One Android deny tap now reaches the explicit failure text and the manual
+retry button. No second permission dialog. Android Back returns to A with
+four words and the 75% score. The app's test permission remains denied.
+
+Raw denial hierarchy SHA256
+4c3d560d08b9774042ea71f1105be601811cffe2e209b0859bd528250e18556c.
+Return-to-A XML SHA256
+64671d063d5b1064fe83cfb9544549e4c871fcd8f652e1b5fc1b03f20dd61a76.

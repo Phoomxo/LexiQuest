@@ -1,0 +1,32 @@
+Score accessibility delta from the vivo v32 review
+
+Observation source: 189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9.
+The signed device artifact's historical result row contains the word and
+the selected answer in the semantic label. Its correctness is visible
+only through the leading icon.
+
+The source correction is f4915750cd9d3b164726921a41161da6681f49b9.
+The icon's Thai semantics now identifies a correct or incorrect stored
+answer. It follows the same immutable result as the visual icon.
+No change to the history, owner, score or retry model.
+
+Focused RED: the existing semantics contained no matching row for
+the stored incorrect answer. Raw log SHA256
+9d1013353b2a8b9fd34a860fe076504f3d731a25450f5bd188b6ec3154241281.
+Focused GREEN: score_scope, durable_quiz_journey and learning_loop_layout,
+16 tests passed. Raw log SHA256
+8a82de5007ee6950354239490ce008cab0eda2b6896c287eaa7f187e94b546be.
+Flutter analyze --no-pub: no issues. Log SHA256
+968e52fb43b20f84a78511caa411cc84ed1b80c8ca1bd447a8836d00528260eb.
+
+Signed arm64 APK v33 installed over v32 on the V2041, Android 13.
+APK SHA256 fcfd536fc54b9952fb97288b9305301b1ea1357d3ba117c8e9eb28b744462279.
+Installed base matches, same signer and firstInstallTime. A4/B0 and 75%
+retained. Reopened Android hierarchy actually exposed ป้ายตอบถูก for
+notebook and ป้ายตอบผิด for station, with the same selected text for both.
+System Back returned to A. Raw v33 XML SHA256
+1c336197e124ce235f3ac5d16ba6cbf2afb83aafe10534aa8a0eb422048a9b1b.
+An A set landscape capture (2408×1080) kept the same context, action
+and 75% result; the system rotation preference was restored.
+
+The spoken TalkBack journey must be observed independently of XML.

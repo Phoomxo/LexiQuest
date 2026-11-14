@@ -2,6 +2,30 @@
 
 ## Current S7 study persistence and Android schema reconciliation
 
+- v26 bridge production revision `189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9`.
+  [Exact-head CI](evidence/ci-189fd79d.txt) passed Flutter2268/backend267,
+  Firestore/Supabase and Android debug build. Signed vivo v32 built, installed
+  and read back with the original signer and APK hash
+  `e8e04089e4e2bc821be18bec2714065fe0ff29f66dfc6a01314d6e53d6fa2154`.
+  [Device evidence](evidence/vivo-189fd79d.md) confirms retained A3/B0 and 67%
+  after update/reopen, Q2 restart, and actual photo plus manual notebook save,
+  A4/B0 and new 75% after offline reopen. 200% Score Back was tapped.
+- Independent native review found absent correct/incorrect labels on old
+  answer semantics. A minimal Score patch passed 16 targeted tests including
+  the new failing-then-passing semantics check, plus clean analysis. Current
+  vivo v32 still identifies the earlier source and spoken TalkBack remains unverified.
+- Delivery follow-ups preserve the same stored data. v33 source f4915750 exposes
+  the stored correct/wrong labels in real Android XML. Native v33 also exposed a
+  duplicate camera permission dialog. v34 source 04d2a199 fixes it with 71
+  focused cases and clean analysis. Signed v34 hash
+  `5c1d7bd0a515d9586d88ff0380dce170bc6a978beb2e21c73bf6309668f9c05d`
+  matches installed base. One denial reaches the explicit retry affordance
+  and Back returns to A4/B0 with 75%. See [Score](evidence/s7-score-semantics.txt)
+  and [camera denial](evidence/s7-camera-denial.txt).
+- Per-ID registers and the [pre-Beta report](pre-beta-readiness.md) record
+  15 missing screen routes and 5 incomplete features, evidence limits,
+  dependency advisories, service/UAT dependencies and next steps.
+
 - The owner added the [nine pre-Beta completion criteria](execution.md#pre-beta-completion-criteria-for-this-goal) to this Goal. Sequence remains v12 → per-ID 48/44/64 audit → pre-Beta verification and one linked report. Continue on the same worktree/branch/draft PR16. Goal tools expose status updates only, so this plan and checkpoint carry the added criteria.
 
 - Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`, branch `codex/figcraft-flutter-prototype`, draft PR16 OPEN/DRAFT at pushed head `4d8fbca664bafc420e28a8e303085f30d53a4e07`, exact body verified. [CI43597933619](https://github.com/Phoomxo/LexiQuest/actions/runs/43597933619) ended with 2,240 Flutter passes and one Linux Quiz image mismatch. Root and a reviewer inspected the actual Linux image and corrected its baseline. [Exact revised-head CI](evidence/ci-4d8fbca6.txt) passed 2,241 Flutter and 247 backend cases, policy tests and Android debug build.
