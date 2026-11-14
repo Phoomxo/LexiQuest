@@ -20,12 +20,14 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.voice,
     this.speechPractice,
     this.learning,
+    this.returnLabel,
   });
 
   final String? referenceSentence;
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
+  final String? returnLabel;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -257,6 +259,43 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     super.dispose();
   }
 
+  Future<void> _openSilentPractice(String reference) async {
+    final route = ModalRoute.of(context);
+    if (_starting || _listening || route?.isCurrent != true) return;
+    await _voice.stop().then<void>((_) {}, onError: (Object _) {});
+    if (!mounted || route?.isCurrent != true) return;
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'practice/shadowing/no-mic',
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            toolbarHeight: M3Theme.appBarToolbarHeight(context),
+            title: M3Theme.appBarTitle(context, 'ฝึกโดยไม่ใช้ไมค์'),
+          ),
+          body: AdaptiveContentPane(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Text(
+                  reference,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 12),
+                const Text('ลองอ่านประโยคออกเสียงด้วยตัวเอง'),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: const Text('กลับไปฝึกพูด'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final assessment = _assessment;
@@ -369,6 +408,18 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                   ),
                 ],
               ],
+              if (reference != null)
+                OutlinedButton(
+                  onPressed: _listening || _starting
+                      ? null
+                      : () => _openSilentPractice(reference),
+                  child: const Text('ฝึกโดยไม่ใช้ไมค์'),
+                ),
+              if (widget.returnLabel case final label?)
+                TextButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(label),
+                ),
             ],
           ),
         ),

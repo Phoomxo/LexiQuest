@@ -12,6 +12,7 @@ import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'phonetic_explorer_screen.dart';
 import 'select_category_for_quiz.dart';
+import 'shadowing_challenge_screen.dart';
 import 'vocab_list_screen.dart';
 
 enum _SetActivity { playlist, dictation }
@@ -163,6 +164,28 @@ class _ListeningPracticeMenuScreenState
                         : () => _chooseSet(_SetActivity.dictation),
                   ),
                 ],
+                ListTile(
+                  leading: const Icon(Icons.mic_none_outlined),
+                  title: const Text('พูดตามประโยค'),
+                  subtitle: const Text('ฟังต้นแบบแล้วลองพูดตาม'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _selectingSet
+                      ? null
+                      : () => AppNavigator.pushPage<void>(
+                          context,
+                          AppPage<void>(
+                            name: 'practice/shadowing',
+                            builder: (context) => ShadowingChallengeScreen(
+                              referenceSentence:
+                                  'Which platform does the train leave from?',
+                              voice: AppDependenciesScope.maybeOf(
+                                context,
+                              )?.voice,
+                              returnLabel: 'กลับไปเลือกแบบฝึกฟัง',
+                            ),
+                          ),
+                        ),
+                ),
                 ListTile(
                   leading: const Icon(Icons.record_voice_over_outlined),
                   title: const Text('ฝึกเสียงทีละคำ'),
