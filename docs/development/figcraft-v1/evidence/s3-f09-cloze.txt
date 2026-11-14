@@ -1,0 +1,43 @@
+F09 authored contextual cloze and large-text return
+
+Source f0574ce914509d9229c0a2ccc7636783e84eed53. Design source
+21b34eaa:docs/design/2026-11-13-design-reset/learn_frames.py:157-171.
+Synthetic Windows Flutter at 390x844, 200% text and in-memory SQLite.
+
+From Score with a stored wrong platform answer, select the sentence repair,
+choose ticket, read the hint and try again. Choose platform and see the
+completed sentence, then return to the real /home practice tab. The original
+score still has one wrong answer and 0%; the new round keeps both attempts.
+From the normal activities list choose typed cloze and the Travel set. Enter
+ticket, dismiss the keyboard, pause via lifecycle and resume. The draft
+survives in that mounted route. Submit, retry with platform number and finish.
+The history reader resolves both incorrect and correct typed answers.
+
+The authored platform sense requires a matching same-set ticket. Choice and
+typed preserve an immutable authored snapshot in the existing quiz storage.
+Choice responses retain their v1 bytes and typed uses explicit v2 text.
+Schema stays at v26. XP/SRS still use the admitted practice answer.
+Typed text stays in local answer evidence and is absent from sync payload
+and event adaptation. Existing round lookup precedes catalog resolution,
+concurrent starts return one session, and foreign or stale owners cannot use
+the parent. Independent source review accepted the scoped changes.
+
+RED SHA-256 (codec, authored policy, repair authority, shell rendering):
+8af6290db46b4f87afc24110b865e0b876db9f31c90fc6d6fe1ab641a60a1ae8
+97ac6ec4658590183a8ef15bf54757797f2f792f48d2a7db80238adf1ed5e2ed
+588ae9d86247307839539f60ce6554d43fca09f3ff8b7488f05f98597c20157a
+10cd7619bfa06f4f4c37806c2e5dcc6a153da28013fc11a8278c8ebf03a1eedc
+
+161 focused cases passed in build/s3-f09-focused.txt, covering quiz/codec,
+learning repository and progress, sync, profile, camera and shell.
+SHA-256 0a5a51ba5239ec64429874fccd272e843b7e86f63a408886020de8a6a1fe153d.
+After the final mounted guard and legacy title correction, four targeted
+200%/owner/cloze cases passed on this source. build/s3-f09-narrow-200pct-final.txt
+SHA-256 fc792c87584f36eda2f20c462c0f9e49deb09e855b1e8ca28c53af90da005d19.
+Analysis exit 0, no issues. All 22 changed Dart files formatted.
+build/s3-f09-analyze.txt SHA-256
+0df12914122e74d086d93c38371834fdb4f41baae2472224404311dad63662ec.
+
+Word Scramble's existing full-sentence ordering uses a distinct title.
+Native keyboard, TalkBack, physical-device large text, and unsubmitted
+draft survival across process death remain unverified.

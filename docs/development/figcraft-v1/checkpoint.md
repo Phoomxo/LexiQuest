@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S3 Authored contextual cloze
+
+- Source `f0574ce914509d9229c0a2ccc7636783e84eed53`. F09 works from stored
+  wrong answers and normal practice with choice and typed modes. Score
+  is preserved, the new round is owner-bound and concurrent starts converge.
+  [Focused 161, final 200% 4 and analysis](evidence/s3-f09-cloze.txt).
+- [Exact f16 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43615563503)
+  passed at `fd371a14` with Flutter 2,289, backend CPU 267, Firestore,
+  Supabase and Android debug build. Raw CI log SHA-256
+  `5cfc6f5ac859e117cb9e0286f8c6745d942f3936e39449788a620b9be4774d0c`.
+- Next unit is f27 reminder opt-in and cancellation from the study plan.
+  Verify the existing due predicate, Android permission and scheduler
+  boundary first. f09 requires delivery APK and physical accessibility
+  checks. Native camera recognition remains `not_checked`.
+
 ## S3 Category quiz setup
 
 - Source `a30abdbc63e5c44f89339b971445b288fe674ec6`. F16 setup now
@@ -11,11 +26,6 @@
   passed Flutter 2,272, CPU backend 267, Firestore/Supabase and Android debug
   build at `e2b550d0`. Build log SHA-256
   `cd9b27591b4e92df9dfcfaeca017d3288712fe876bee8fe559039073b0ad331d`.
-- Next executable unit is f09 contextual cloze using authored sentences and
-  the existing learning authority. Begin at normal practice and wrong-word
-  repair entry. Check the exact approved contextual selection and typed
-  acceptance before changing persisted contracts. Verify f16 exact-head CI
-  when terminal; native voice and TalkBack remain separate.
 
 ## S2 Library level selection
 
