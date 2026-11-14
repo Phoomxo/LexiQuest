@@ -63,3 +63,10 @@ Raw native UI captures in build/playlist-android-evidence/:
 Audible timing, physical TalkBack, native 200% and signed APKs need
 separate verification. The listening hub has no microphone entry in
 this unit. The sentence-speaking, source and mic-denial origins are open.
+
+Exact playlist PR head 7ea0e33a5e6b20da4aba159c22df428a45dd232f passed
+GitHub CI 43635040561. Flutter 2,365, backend CPU 267, Firestore and Supabase
+checks, static analysis, and Android debug APK all passed.
+Raw CI log SHA-256:
+7acb5dbc36f4df77614f35f07dc7b125a6616cd200357091edfb2b2484570b22.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43635040561

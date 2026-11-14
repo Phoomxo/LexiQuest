@@ -1,0 +1,58 @@
+S6 authored spelling stage and round result
+
+Source 2c85bf196da6751a3875e1529a3712e665d0a008.
+FigCraft 21b34eaa, finish_routes_a.py:50–73,303–308,
+finish_routes_b.py spelling_result, and detached-a.md boss row.
+
+Practice → ดูแบบฝึกทั้งหมด → เกมฝึกคำ → ด่านสะกดคำ.
+The round checks ephemeral, meticulous, and sustainable in order.
+A typo keeps the current answer and checked words. Leaving requires a
+confirmation. Choosing to stay preserves the round and starting again
+after confirming leave begins with the first word. The result lists the
+three checked words. Last-word review restores the same result and both
+game and Practice actions return to the captured origin. Results are local
+to the round. The test confirms zero changes across seven learning and
+reward tables, including XP and coins.
+
+Windows focused Flutter: 21 passed, including the source route at 390×844
+and 200% text and the existing Word/Sentence Scramble journey.
+RED reached Word Games and failed at the missing spelling tile.
+build/s6-boss-entry-red.txt SHA-256:
+c7e0bfe7b2ee461e48d6bf84fd200a796874234934ba4acc12a57c2f7531f0ce
+build/s6-boss-focused-final.txt SHA-256:
+5d7127526f2bd0948b8eb0a277a616c2e9f18b49e8f139af30ce72683b3495f3
+Independent review accepted the error, exit, origin and storage behavior.
+
+Flutter analyze and Android x86_64 debug build passed in the detached
+worktree at the exact source commit. Cloud sync was disabled.
+APK build/boss-android-evidence/lexiquest-boss-2c85bf19-api35-x64.apk SHA-256:
+be77b6b0a6912a75de3733afb5ae1a026ceb43a37fb6ab7760bc1c9cfb406d41
+Android build log SHA-256:
+04ff405b65555f0c96f4e7a2fac6bc29a6be5afd0c1235c7cdddcef9c9c94ae9
+
+Android API 35 x86_64, isolated offline emulator-5592, 1080×1920,
+default font scale, synthetic guest declined research. Installed base
+hash equals host APK. The first install could only push the package
+because Android had lost the Package Manager service. Rebooting the same
+emulator restored the service and the streamed install passed.
+
+Actual route reached the three authored words. The submitted typo
+phemral displayed the expected correction and remained in the input.
+After the first correct word, Android Back showed the leave confirmation.
+Playing on kept word 2 and the recorded count of 1. The final result listed
+all three words. Last-word review showed the example in English and Thai.
+Returning to the result matched its earlier UI capture byte for byte.
+Choose another game returned to the original Word Games menu.
+
+Raw captures in build/boss-android-evidence/ (SHA-256):
+boss-first.txt 86c41866cfc1576f298883c772a54a6f46c4df07c3bf15a45ea267c365a9123a
+boss-typo.txt 93f9f1c6f4e641841335624da2620a5b7898f7b484ca5938b281790839c2a065
+boss-edit.txt 278b7dd2cfb395be87d9d2add3fd533113340f6d49c5bc25928e49b795525a1c
+boss-exit-confirm.txt 67c407759b7560ed666581157ce52bd4fa02895bc53b86090e3f1f6dee2c7dbe
+boss-exit-cancel.txt 4c55008cbc8c0933c000cae6dd05e26121dfd6121146f94af33cc5928b18028e
+boss-result.txt / boss-review-return.txt
+  a59132ca0fa4ede628a394910a90a9e07757c21bbb989270fd0914d737233578
+boss-review.txt 653e158a8948e4aa00aef353b7090bdaefd3dd8731e87bf7c2bf8000ee083361
+boss-games-return.txt d32f53ea541f70ed041d0c5decef1643afa291be45400db7a41806689a2360a6
+
+Native 200%, audible TalkBack and signed APK verification remain open.

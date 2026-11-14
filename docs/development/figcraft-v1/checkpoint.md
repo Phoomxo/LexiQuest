@@ -1,5 +1,31 @@
 # Continuous execution checkpoint
 
+## S5/S6 Synthetic chart and owned appearance
+
+- Source `6af5a5f430614cc99e9e4fc128c7e42bc901cc2c`. The chart's three
+  production entries and return routes use a static sample. The collection
+  and appearance settings use owned rewards for preview and confirmed equip.
+  The standard wallpaper persists through the existing appearance authority.
+- Windows focused 246 and account/entry 103 (overlapping), Firestore emulator
+  34, clean integration analysis, and independent review.
+  [Evidence](evidence/s5-s6-appearance-chart.txt).
+- The 48-screen list now has a source candidate for every entry. To check off
+  rows, complete native observations at current source. The next executable
+  step is to verify the integrated APK and run the full current-head CI.
+
+## S6 Authored spelling stage
+
+- Source `2c85bf196da6751a3875e1529a3712e665d0a008` opens from the ordinary
+  Word Games menu. Corrections preserve the in-round state and the result
+  reflects three checked answers. The round creates no learning or reward
+  transactions. Windows 21, analysis and independent review passed.
+- Android offline API 35 confirmed typo retry, Back and stay, three correct
+  words, last-word review, identical result on return and the original game
+  menu. Host and installed debug APK SHA-256 match.
+  [Result and APK evidence](evidence/s6-boss-spelling.txt).
+- Native 200%, audible TalkBack and the signed APK remain open. Physical
+  known-object accuracy stays `not_checked` per the device session.
+
 ## S4 Listening hub and playlist
 
 - Source `718ba6f02f5481351c04277199dbccf539039f34` links the actual
@@ -10,10 +36,11 @@
   both playlist entries, playback completion for two real stored words,
   same set restoration, and Home interruption on word 2. The verified
   APK matches the installed base. [Evidence](evidence/s4-listening-playlist.txt).
-- Screens 48 now 5 fail and 43 unverified. Next S6 slice grounds the
-  authored spelling path at `boss_battle_screen` / `result_screen`.
-  Preserve earned rewards, active owner, prior scores and the separate
-  Pair Matching dependency. Native audio and spoken TalkBack remain open.
+- [Exact playlist CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43635040561)
+  passed at `7ea0e33a` with Flutter 2,365, CPU backend 267, both policies,
+  analysis and Android debug build.
+- At this checkpoint the screen register had 5 fail and 43 unverified.
+  Native audio and spoken TalkBack remain open.
 
 ## S4 Saved-word detail, IPA and Dictation
 

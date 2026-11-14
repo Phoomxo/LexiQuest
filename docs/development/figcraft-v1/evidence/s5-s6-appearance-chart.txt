@@ -1,0 +1,43 @@
+S5/S6 synthetic chart and owned appearance
+
+Source 6af5a5f430614cc99e9e4fc128c7e42bc901cc2c.
+FigCraft 21b34eaa, account_frames.py Account/Data and Appearance,
+finish_routes_a.py:27–47,296–302, finish_routes_b.py:150–190,248–269,
+detached-a.md appearance and detached-b.md sample chart.
+
+Profile → Collection → Owned Decorations, Settings → Appearance → Practice
+Wallpaper, and owned Shop item details share the active owner's reward
+authority. Preview and cancellation preserve balance, ownership and journal.
+Confirmation equips once. Wallpaper applies to the existing appearance
+projection and Settings label, persists on reopen, and has an explicit
+standard selection. Standard is built-in, with a zero-value equip record
+and no purchase or ownership grant. Ingress, egress and Firestore enforce
+the item slot and transaction type. Distinct mounted dependency scopes
+cannot hand the previous repository to a new equipment screen.
+
+Profile → Personal Data, Practice History, and Settings → Research and
+Learning open the same synthetic sample with exact return context. The
+sample uses one fixture for correct answers, percentages and response
+times. Source details identify that fixture. Opening these routes does
+not read learner data or start/submit research. The existing export and
+deletion authorities remain separate. A deletion confirmation checks
+its opening Firebase UID before export or any deletion operation. No
+account-deletion service or research enrollment was enabled.
+
+Windows focused behavior and architecture Flutter 246 passed, including
+390×844 at 200%, transaction/readback, owner switch and the chart's actual
+three origins. The follow-on account, Profile, Settings and chart-entry
+suite passed Flutter 103 with the UID check. These suites overlap.
+`build/s5-s6-appearance-chart-attest.txt` SHA-256:
+b332e41b5d34a5f6901a03a499f79f315f0e903b9101b2d7c4471d186de4e922
+`build/s5-account-confirmation.txt` SHA-256:
+b494e641b4668faf83eee21f7026e4df80381d888cce271868646dea49089a61
+Integrated Flutter analyze: no issues. Log SHA-256:
+2469eef80b119a80847b34ba1bb187b74dea29b07eeb49434226add15c51978d
+Firestore local emulator 34 passed. `build/s6-appearance-firestore.txt`
+SHA-256 dc8298e07152e8ca30da3adbd4d27d1e94fc7b66ca98c075c34b40feb493e70a
+Independent review accepted the source behavior with scope/freshness fixes.
+
+Platform verification remains open for the integrated Android candidate,
+native 200%, audible TalkBack, and the signed APK. No real learner data,
+camera recognition or research efficacy was evaluated in this unit.
