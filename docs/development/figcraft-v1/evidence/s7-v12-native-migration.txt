@@ -1,0 +1,38 @@
+Native v12 update, 2026-11-14
+
+Source a194d01a3561ee702db84aa20bdc3280cc7c6b74. Android v30, arm64, 65,987,809 bytes.
+APK SHA256 7183a4a2f9e5b6695aa8b7e19d0640a2eff9bb3c1a752f938900c6ce774cb7b9.
+VersionCode 30, package com.lexiquest.app, minSdk26, targetSdk36.
+Signer cert SHA256 e1b00e17896bfb73fe0dc42429768b966465213d49a8a5165de06688cc8fdc1f.
+Source verification found no Android or Flutter production input changes.
+Explicit cloud sync false, existing deny-all research authority.
+
+Vivo V2041 Android 13: install -r --no-streaming succeeded and pulled base APK
+matched the archive SHA256. firstInstallTime remained 2026-10-26 08:57:19.
+Before the update the visible synthetic A set had mug, station, ticket and
+original latest result 67% (2/3). The v30 launcher timed out. Its scoped Flutter
+error was Unsupported legacy Quest parent shape (AppDatabase._rebuildQuestPeriods).
+The upgrade is transactional. No uninstall, clear, private DB copy or manual
+data mutation occurred. Access to the release package with run-as was denied.
+Raw local artifact folder: build/figcraft-a194d01a/.
+Raw install log SHA256 43495c5bed25fff65893b44f0439ddc353b51c0870e80815cfc44942b526829e.
+
+The archived v26 APK SHA256
+a53ca3c00b4ad0f413dffe8a9b4b446a138fb5cd4534a2efd5e5caa6af28a3d4
+matches the Cycle 12 release evidence for 00d6c8ea8be9f54acaad15a4ed8ce818bec5461a,
+whose AppDatabase declares v25 and includes a twelve-column Quest parent plus
+other owner/research scopes. v27–v29 source declares v10. Drift 2.34.3 calls
+onUpgrade on any version difference. The v10 handler creates missing tables
+and otherwise leaves an existing higher-version table layout in place before
+Drift changes user_version. A fresh v10 fixture has different Quest DDL.
+The exact APK lineage explains the guard failure independently of the clean
+v11→v12 tests. Direct device schema inspection has not been performed.
+
+Linux CI 43597933619 passed format, analysis and policy steps and ran 2,241
+Flutter cases, one Quiz large-text expected-image mismatch (28.12%).
+Artifact flutter-golden-diffs ID14115600673. Root and an independent reviewer
+opened the actual 360x800 Linux render. Thai text, prompt, feedback and Next
+fit after the added pause action. Linux expected PNG now matches that CI
+image, SHA256 56aad49316aa273f098a6ec7baF02eb696318c9aa93c5fc74043a76b2e62ae9f.
+Windows retains its own image. Current-head CI and a usable v12 Android build
+need separate evidence.
