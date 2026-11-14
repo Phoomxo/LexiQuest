@@ -55,4 +55,15 @@ boss-result.txt / boss-review-return.txt
 boss-review.txt 653e158a8948e4aa00aef353b7090bdaefd3dd8731e87bf7c2bf8000ee083361
 boss-games-return.txt d32f53ea541f70ed041d0c5decef1643afa291be45400db7a41806689a2360a6
 
-Native 200%, audible TalkBack and signed APK verification remain open.
+Native follow-up: the exact offline APK
+c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767
+at application source `6be1671f` showed all three questions, keyboard input,
+result, bilingual last-word review and return to Word Games at Android
+font scale 2.0. The result before and after review matched byte for byte.
+boss-large-menu.txt 00707878fc9c3ad9ada7cc489ead45b7b45a374d633ef73a8e7e69f8d31f9f66
+boss-large-sustainable.txt / boss-large-result-return.txt
+  24950d2515418e17b4602c113ac6eb1a686bf7c86cd2fbec223be65b84eb7a9d
+boss-large-review.txt 2066c992022ab5029503c30b7c44c842cf9637cbd3f760b5fe559f23413325fb
+boss-large-games.txt 01f7a9900970af9538036e36ba6042f62c6ddea9db93f8ce40dc21b52fbab711
+
+Audible TalkBack and signed APK verification remain open.

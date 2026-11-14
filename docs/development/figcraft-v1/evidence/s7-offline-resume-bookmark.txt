@@ -1,0 +1,100 @@
+S7 Current-source offline resume and bookmark
+
+Source 6be1671f763d8af2cad6f73f74b4b2290aeaca67, identical application,
+policy and test inputs at Draft PR head 447f920d8c347649a153cb50c17d51a48ce1ff7e.
+Installed and host offline x86_64 APK SHA-256:
+c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767
+Android API 35 emulator-5592, airplane mode, synthetic local guest. Device
+font scale 1.0. Earlier signed vivo results retain their own source and APK.
+
+Library A (Cloze-Synthetic) held three words. B (Wordbook-Synthetic) held
+two unrelated words. The learner bookmarked mug through A's word menu,
+filtered to saved words, opened a new Quiz from A, answered platform, and
+advanced to question 2. Pause returned to A. Before force stop, SQLite
+showed one acknowledged answer, cursor slot 1 and one bookmarked word.
+The app's old process exited, and the same APK opened cold. B had no saved
+words or displayed learning result. A again showed mug alone in its saved
+filter. Practice from A opened the paused round on question 2 of 3. After
+the remaining answers, Score showed 100% and returned to the same filtered
+A. SQLite confirmed the original paused session ID and exactly three
+distinct answer rows, with no duplicate attempt. Removing A's bookmark
+emptied the saved filter. All Words still showed mug and the 100% result,
+and the database retained A3/B2 with zero bookmarks in either set.
+
+Library search for mug displayed A as its origin. Tapping that row opened
+A with the mug filter intact. Android Back restored the Library search.
+At system font scale 2.0, the same search opened A and returned with
+the query intact. Android restored the keyboard on return and it was
+dismissed before verifying the matching result again.
+
+Flutter Windows 173 focused cases passed on the draft head. The set
+includes Drift bookmark owner isolation, alternate-set resume guards, local
+consent lifecycle, real-DB decline with no events or outbox, and default-off
+export authority. Native SQLite confirmed consent and event tables empty.
+The CI policy check is separate from tests of the local consent use case.
+No participant collection/upload or external deployment was tested.
+
+Raw captures in build/boss-android-evidence/, SHA-256:
+resume-09-db-before.txt 3e3dfe95ccb96d374f08fe0be8fb4c64c64f9b5b4686ff496e9ea61766663cc3
+resume-10-start.txt 7b545b93ffd93ddde917187b345e3421d04b206a91b899e8e1dc0dbb8237cf5f
+resume-13-b-saved.txt 01b8106cae440e982d60f40a5181073bd8c9d8bd8df616a1c4b1d7e131a181a4
+resume-14-a-saved.txt and resume-21-a-return.txt
+  3c94ab552f4bdc45ab5f1a0819f1bb8a1ff79a2dea27c452cf4d2a3869b28210
+resume-15-entry.txt ca98fd4fd33035f7d060715472543e5dd9518c95f2cb3adbabb30b779b575ef0
+resume-22-db-complete.txt d181ee1843676455eea7c771665bd4362238806029bf0a1e17d55a4268e878b1
+resume-23-unbookmark.txt fa773dde776bbb982a0adecbefa665685a96d24eb2f459e998af61fe5a6443e3
+resume-25-unbookmark-db.txt 931a4f73fc97b8258a9e7fdf73be0bdd943334e0fb31789ab3180975dd55c7a2
+current-library-search-set.txt a9dda21886a5458579e991c16b68ac6cd16d23ffc33708bdd7f7b35a89fa666c
+current-library-search-return.txt 85d011dca46004765a1485370b6b284bfc9021946f72f70c7b4442969d21ef5c
+large-library-native-search.txt and large-library-native-back-dismissed-ime.txt
+  1957a684543e614a5dedb77269ad5b98e66bc5a506d870c0ffcc017b09fcac28
+large-library-native-set.txt 303f23af6d50ce0ee63ff6c0bb6cfe22a6447e3f00388b2f10b53792a6b01a8d
+build/s7-resume-bookmark-research-default-off.txt
+  8894cd8e7eb08486ff1e89316d3a5b3b35aa3def82a88d4a4529e5a82ca491a0
+
+Native live-owner switch, audible TalkBack and current signed hardware
+remain outside these Android guest observations.
+
+Cold-start follow-up on the same debug APK and emulator used five process
+force stops, one-second spacing before each Android launch, and a semantic
+guest-button check after `am start -W`. Cold launch does not mean Android
+itself or its filesystem caches restarted. Host had 12 logical CPUs.
+The AVD saw 4 CPUs and initial 1-minute load average 0.28. All five launches
+reported COLD and the expected guest action, with no timeout or ANR dialog
+in the first accessibility hierarchy. Android Activity TotalTime median
+was 8,056 ms and ranged 7,500–9,006 ms. Time from launch request to the first
+successful UI hierarchy probe was 10,925 ms median and ranged 10,468–12,116
+ms, including ADB and hierarchy extraction. The p50 does not measure time
+to a usable guest session. This small emulator-only sample did not reproduce
+the earlier ANR or identify its cause. No matched signed-device baseline.
+build/boss-android-evidence/cold-start-447f920d.json SHA-256:
+abf5e64dbd75a679a94a577ea5b3bd918a7b0df2b77578152e733c9c4d8f8d19
+
+Sync and Settings focused Windows 83 passed. The new
+`test/features/sync/sync_restart_ack_test.dart` closes and reopens the
+file-backed SQLite DB after a synthetic authorized gateway accepts the word
+but loses the ACK. The store retains the original operation ID, payload
+and retry time. The retry receives the first receipt, acknowledges the same
+operation, and updates the word revision. The fake gateway applies the word
+once, and a third engine run performs no push. No real online round trip or
+cross-device deployment was exercised.
+build/s7-sync-restart-ack.txt SHA-256:
+e69ec257e10e364aa53f9a8a4c112d15f21927a1b9cb928aea9194c2bd217b32
+
+Native Settings showed 35 pending local operations and zero retries or
+conflicts. Explicit Check Sync showed the disabled cloud policy and kept
+the same pending count. SQLite matched `pending|35` with zero research
+consent and event rows. Conflict and online retry evidence comes from
+Flutter with synthetic ports. This does not verify the deployed transport.
+offline-queue-cards.txt fd651b566cd577d2190a24e89eb5904f5da0156bd155a604abec7329a76aa441
+offline-queue-check.txt 5b80387390c8a0d886d90f13ba0f57213e1615324ce3d035564825aced4d68a7
+offline-queue-db.txt 635ddbe6025bb96cc7f7213e26611008410f8a1a3c75815a43f329bd67c957e4
+Analysis clean, SHA-256:
+6b743e6ce4d9287486dcd3fb11c5c15d18eb8d42e8131b671a3a9576243288fe
+
+GitHub CI 43643096040 at 447f920d passed Flutter 2,379, CPU backend 267,
+Firestore, Supabase, analysis and Android debug build. This exact prior
+head predates the lost-ACK restart test listed above.
+CI console SHA-256:
+2143b42b03ba4b225cd3a6f2edf41ed59a761d3432bc5cf9e15882c1d71d8639
+https://github.com/Phoomxo/LexiQuest/actions/runs/43643096040

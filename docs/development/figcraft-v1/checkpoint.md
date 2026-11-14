@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S7 Offline quiz resume, bookmarks and sync retry
+
+- Exact debug APK `c439d1ec` resumed A at question 2 after force stop.
+  SQLite confirmed the same completed session with three distinct answers.
+  B had no bookmark or result from A. The mug bookmark survived reopening
+  and removal left the word and score. Library search restored the prior
+  query on Back. [Evidence](evidence/s7-offline-resume-bookmark.txt).
+- Focused Windows 173 verified resume, bookmark, local consent and
+  default-off behavior. Another 83 verified Settings/Sync, including a
+  real SQLite reopen after a lost synthetic remote ACK. Analysis clean.
+- Five additional debug emulator cold starts reached the guest action.
+  The earlier recovered ANR still needs a matched signed-device baseline.
+  Follow up on live transport, audible TalkBack and remaining catalogue
+  items without enabling research or touching the vivo fixture.
+
 ## S7 Current-source offline core journey
 
 - On the corrected debug APK, Android API 35 added synthetic `mug` only
