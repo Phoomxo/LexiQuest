@@ -42,6 +42,34 @@ Static analysis passed. Build logs SHA-256:
 9a10be47f7e960dc0e3d38c15a3ea63ea368bbd9a95594a35ed62d5beae94649
 6a7de1a8fb35c97b482e73831209fe582fa0fec0ba23d2902f103d43ae1588b6
 
+Score repair was then opened through a real parent Quiz on Android.
+Android Back returned to the byte-identical original 50% result. Reopen
+restored the finished answer and explicit Practice committed the child
+with two attempts, then the old parent Quiz popped the new /home route.
+The debug screenshot showed Navigator `_history.isNotEmpty`. The fix
+only lets Quiz pop its own current route after the Score future returns.
+The integration fixture now drives Library → Quiz → Score → repair.
+It reproduced the same assertion before the fix and passed after it.
+Source 6be1671f763d8af2cad6f73f74b4b2290aeaca67, focused Flutter 50,
+and static analysis clean. Raw SHA-256:
+Android failure screenshot 27acc1262de7929196a363ae9df1cad0673fe8960e73925afede6048719e5b3b
+Android original Score and Back 99e06ce3115e8cc4c445259a8e116afc52ae148dc39c1714fa28c2f6eecb8471
+Android child and parent SQLite cfb9beb6bf14e48122125f02779fd6957d10290703b0185fa368d68a939666df
+Flutter RED 3543387042d4f151a7e4c020dd78c430a3773eb83434c378a5836a307f591a92
+Flutter final 53d804d98b9b8dee2aa3cdad2683b9d833cc48d087c45bfc45e4ca85febfbf0b
+Analysis 4d984467870a3944bebc1533f5ce1f33493b729e862b9eb2fbefaa444c0309b5
+
+Corrected APK c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767
+matched the installed offline API 35 base. The native Library Quiz result
+remained 50%. Its repair accepted ticket as wrong and platform as correct,
+then returned to the mounted Practice screen. SQLite readback showed both
+separate 50% results and no research consent or event envelopes.
+Typed history now says `ครั้งก่อนพิมพ์` for both saved inputs.
+Build log SHA-256 f59add8083399d19eccfa2450018cc355eb15a210315f41be37ba69c894fec2d
+Native return SHA-256 bcd92a41459e137a4399d2ab1d1316bf69af9ba3b625f675f16e62a88a34a71e
+Native typed history SHA-256 817f318e08c2145fa8f0ad937d7c0fefbb5296eaa69302b4cfbc872c6af1172e
+SQLite aggregate readback SHA-256 a4b6d69999446cec84e676e41e617e71ddf35808998a9e559b08115a4507dbc0
+
 Original implementation evidence follows.
 
 Source f0574ce914509d9229c0a2ccc7636783e84eed53. Design source

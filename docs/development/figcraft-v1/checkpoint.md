@@ -9,9 +9,14 @@
   [Android and focused evidence](evidence/s3-f09-cloze.txt).
 - [CI 43638623614](https://github.com/Phoomxo/LexiQuest/actions/runs/43638623614)
   passed Flutter 2,379, CPU backend 267, Firestore, Supabase and Android.
+- Android Score repair exposed an old Quiz continuation that popped the new
+  Practice page. Source `6be1671f` fixes the route guard. Flutter 50 and
+  analysis passed, and offline APK `c439d1ec` replayed the route from Library
+  at system font scale 2.0, preserved the two 50% results and read the new
+  typed history label. The installed base matched the APK SHA-256.
 - User declined staging a known object on vivo. That physical check remains
-  `not_checked`. Resume with the original Score repair origin on Android,
-  current-build core journey and signed/native accessibility checks.
+  `not_checked`. Resume with the current-build core journey and signed/native
+  accessibility checks. The task-owned Android emulator is `emulator-5592`.
 
 ## S5/S6 Synthetic chart and owned appearance
 
