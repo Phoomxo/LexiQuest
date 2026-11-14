@@ -1,6 +1,40 @@
 # Continuous execution checkpoint
 
-Updated 2026-11-14, approximately 06:45 Bangkok. Running work, not a pause or completion.
+Updated 2026-11-14, approximately 08:39 Bangkok. Running work, not a pause or completion.
+
+## Accepted local S6-C at08:39
+
+- Final Flutter1946PASS, full analysis clean,26 Dart files formatted unchanged; full AI API107PASS with warnings-as-errors. All544 declared inputs identical before/after (f62db8b73908d2ab37785350734426dee4aaedb6347f7c569b7f1a27247204fc). Session49622 consumed exit0; Flutter queue clear. See evidence/s6-c-persistence.txt and s6-c-inputs.tsv.
+- Migration/index, owner merge, journal and schema-gate reviews accepted. Exact real-v10 preservation/rollback, new-target continuity, alias/provenance rejection,32local-export/26cloud-delete, old/future version rejection and local-only metadata cases are included in the final run. Claims/stamp validation/streak asset folding are still unwired.
+- Root is staging only intended S6-C/schema/backend/tests/fixtures/evidence/helper/doc changes, then committing/pushing together with local S6-B. Remote PR16 remains e6019de0 until push; its CI1905 success is earlier evidence, not this source's CI. Preserve seven platform generated EOL files and test/screens/failures.
+- D1 grounding/matrix complete; candidate-b froze build/architect-s6/d1-implementation-card.md100lines, SHA256badbef8e5fb4ae4f6a442b1f3219e16a44fb6066fb3cb525bc0e0a56c8cd891e. Next read the complete card/current code, wire original-answer evidence with cheap REDs and existing public APIs; no another design/approval cycle. Keep hidden gates lazy and learning independent of optional Quest failure.
+- Native/user limits unchanged: known-object camera test unavailable/not_checked; emulator1837 install acknowledgement uncertain; no duplicate install/reboot/kill/data clear. No merge/deploy/real research/upload/live deletion. Continuous Goal and remaining S1–S7/48/44/64 remain open.
+
+All entries below are historical; this live entry takes precedence.
+
+## Historical integration state at08:28
+
+- All implementation writers are frozen. S6-C source is uncommitted schema11, based on e432fa05. Remote PR16/e6019de0 CI43528611142 remains successful1905; see evidence/ci-e6019de0.txt. No merge/deploy or new native install occurred.
+- Independent reviews accepted final migration/index provenance rejection, owner merge and journal recovery. Actual REDs proved missing constraints/new table trust, wrong SQL literal indexes, target-without-streak continuity, mismatched alias rollback and completed-journal cleanup. The fixes retain original data/receipts/assets and use existing authorities. S6-D stamp/claim/asset folding is still unwired and not certified.
+- Focused current checks: persistence/lifecycle/sync/rewards145; identity/account/screen44; final schema/policy/history86; full AI API107 with warnings-as-errors. Exact-version guard sensitivity observed both schema10/12+current32 fail under the old predicate, then restored identical production hash. No weakened assertions or real deletion/upload.
+- First frozen full regression ended1944pass/2fail, solely obsolete source-pattern schema tests. Preserved build/s6-c-full-regression-stale-schema.txt;544 before/after declared inputs identical (aa429f552056e19d97d2f7949fb79378fe032739fe9d78335c3a2807b75f4030). Those two tests now inspect real current SQLite; historical audit/schema6 and real/sparse upgrades remain. Independent review accepted; focused86 passed. Full final regression/analysis is the next serialized command; do not treat first-run1944 as full acceptance.
+- Flutter session35014 consumed exit0; queue clear before final check. Root owns the queue. Backend final log build/s6-c-ai-api-final.txt107PASS. After final verification, attest current hashes, inspect/stage only intended files, commit/push S6-C, update draftPR/readCI, then proceed to S6-D1 original-answer metadata. Do not complete the continuous Goal at this card.
+- Known-object camera accuracy remains not_checked following the user's unavailable response. Vivo v29 retained evidence remains valid narrowly. Emulator session1837/client26488 still has no install acknowledgement; root polled original session without duplicate writes. Leave uncertain transaction and unrelated VMs/data intact.
+
+The08:08 entry and all later text below are historical; this live entry takes precedence.
+
+## Historical live state at08:08
+
+- Local committed HEAD e432fa0574d209de9086c329775bf1b85716b558 (S6-B); remote PR16 head e6019de044a5a27f40136ff1f331f064cf3abd9a (S6-A). CI43528611142 completed SUCCESS on that remote head: Flutter1905, analysis/policies, Voice55/AI83/LM75 and Android debug build. This does not verify dirty schema11.
+- S6-C is uncommitted, version11 reserved before implementation. Normal Drift code generation completed. Real frozen v10 fixture, 40 migration/history/data-local checks, account-deletion43, sync12 and full AI API107 passed their focused snapshots. Local answer metadata is omitted from sync output and ignored on incoming replay; opaque synthetic tests do not prove the future stamp validator.
+- Independent migration review found two additional P1 hypotheses: preexisting new-table names may bypass constraints/provenance, and wrong-definition same-name indexes may bypass unique indexes. Four real-v10 tests are added; root is running build/s6-c-schema-spoof-red.txt in session80587. Do not alter migration inputs until that session terminates. Previous session84511 completed43GREEN and was consumed.
+- Actual owner merge RED: one wrapper passes/two synthetic merge cases fail. Existing selected-calendar uniqueness collides and conflicting Quest XP provenance was accepted. Candidate-a writes ONLY drift_owner_upgrade_repository.dart; tests/schema are frozen for that writer. Root owns all Flutter/Drift/Gradle commands.
+- Actual journal RED after import correction:24pass/twofail, completed receipt remained in preferences. Root reused the existing saveLocalReceipt cleanup path in both resume branches, preserving typed error handling; account-deletion43 now passes. Guard sensitivity counterfactual remains pending.
+- Current dirty write set: AppDatabase/generated/three table files, owner scope/repository, account export/deletion contracts/adapters/usecases, schema-aware backend receipt model/tests, migration/owner/lifecycle/sync fixtures/tests, ledger/plan/checkpoint/evidence. Preserve unrelated seven platform generated line-ending files and test/screens/failures; do not stage them.
+- Vivo v29 evidence remains accepted narrowly; user is unavailable to arrange a known camera object, so accuracy remains not_checked without another request. Emulator install session1837/client26488 still has uncertain acknowledgement; no reinstall/reboot/kill/clear/reseed is authorized by that uncertainty. Existing UI capture path exhausted its bounded recovery.
+- Next: consume schema RED, fix/review spoofed schema/index detection, validate owner merge and journal sensitivity, freeze writers, then current-source scoped analysis/full integration/evidence before committing S6-C. Continue S6-D and remaining S1–S7/48/44/64 afterward. No Goal completion, merge, deploy or real research authority is implied.
+
+Earlier entries below are historical snapshots; the live state above takes precedence.
 
 ## Latest verified unit at06:45
 

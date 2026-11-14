@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports schema version 10', () async {
+    test('fresh database reports schema version 11', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,8 +68,8 @@ void main() {
           .getSingle();
       expect(
         version,
-        10,
-        reason: 'schema v10 deployed (includes associative tables)',
+        11,
+        reason: 'fresh databases use the current local schema',
       );
     });
 
@@ -144,7 +144,7 @@ void main() {
     // ── Unique constraint ────────────────────────────────────────────────────
 
     test(
-      'unique(owner_id, quest_id) prevents duplicate active instances',
+      'current schema retains both legacy histories for the same quest',
       () async {
         final now = DateTime.now().toUtc();
         await db.customInsert(
@@ -178,23 +178,27 @@ void main() {
               ),
             );
 
-        // Second insert with same (owner_id, quest_id) must fail.
-        expect(
-          () => db
-              .into(db.questInstances)
-              .insert(
-                QuestInstancesCompanion.insert(
-                  instanceId: 'inst-dup-2',
-                  questId: 'q-dup',
-                  ownerId: 'owner-dup',
-                  catalogVersion: 1,
-                  assignedAtUtcMs: now.millisecondsSinceEpoch,
-                  state: 'active',
-                ),
+        // Lifetime uniqueness is pinned separately by the frozen v10 fixture.
+        await db
+            .into(db.questInstances)
+            .insert(
+              QuestInstancesCompanion.insert(
+                instanceId: 'inst-dup-2',
+                questId: 'q-dup',
+                ownerId: 'owner-dup',
+                catalogVersion: 1,
+                assignedAtUtcMs: now.millisecondsSinceEpoch,
+                state: 'active',
               ),
-          throwsA(anything),
-          reason: 'unique(owner_id, quest_id) must prevent duplicate instances',
-        );
+            );
+        final histories = await db.select(db.questInstances).get();
+        expect(histories.map((row) => row.instanceId).toSet(), {
+          'inst-dup-1',
+          'inst-dup-2',
+        });
+        expect(histories.every((row) => row.recordKind == 'legacy'), isTrue);
+        expect(await db.select(db.questClaimReceipts).get(), isEmpty);
+        expect(await db.select(db.pointsLedgerEntries).get(), isEmpty);
       },
     );
 

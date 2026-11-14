@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
@@ -446,6 +449,12 @@ Future<void> _seedOwners(AppDatabase database) async {
   );
 }
 
+const _insertLegacyAnswer =
+    'INSERT INTO answer_attempts '
+    '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+    'response_time_ms, attempt_number, occurred_at_utc_ms, provider_provenance) '
+    'VALUES ';
+
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
@@ -479,7 +488,7 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "$_insertLegacyAnswer"
     "('attempt-1', 'guest-owner', 'session-1', 'word-1', 'meaning', 1, 100, 1, 15, NULL)",
   );
   await database.customInsert(
@@ -573,8 +582,47 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await database.customInsert(
     "INSERT INTO quest_instances "
     "(instance_id, quest_id, owner_id, catalog_version, "
-    "assigned_at_utc_ms, state) VALUES "
-    "('inst-seed-1', 'q-seed-1', 'guest-owner', 1, 20, 'active')",
+    "assigned_at_utc_ms, state, completed_at_utc_ms, expired_at_utc_ms) VALUES "
+    "('inst-seed-1', 'q-seed-1', 'guest-owner', 1, 20, 'active', NULL, NULL)",
+  );
+  await database.customInsert(
+    "INSERT INTO owner_calendar_epochs "
+    "(rule_id, owner_id, origin_owner_id, effective_utc_us, iana_id, "
+    "tzdb_revision, is_selected) VALUES "
+    "('rule-seed', 'guest-owner', 'guest-owner', 0, 'UTC', 'synthetic', 1)",
+  );
+  const definition =
+      '{"cadence":"daily","criteria":{"correct":true},"target":1,"xpAmount":10}';
+  final digest = sha256.convert(utf8.encode(definition)).toString();
+  await database.customStatement(
+    'INSERT INTO quest_definition_revisions '
+    '(quest_id, catalog_version, definition_digest, canonical_definition) '
+    "VALUES ('q-seed-1', 1, ?, ?)",
+    [digest, definition],
+  );
+  await database.customStatement(
+    'INSERT INTO quest_instances '
+    '(instance_id, quest_id, owner_id, catalog_version, assigned_at_utc_ms, '
+    'state, completed_at_utc_ms, origin_owner_id, period_key, calendar_rule_id, '
+    'civil_label, segments_json, definition_digest, record_kind) VALUES '
+    "('inst-paid', 'q-seed-1', 'guest-owner', 1, 0, 'completed', 15, "
+    "'guest-owner', 'guest-owner:rule-seed:daily:1970-01-01:q-seed-1', "
+    "'rule-seed', '1970-01-01', '[[0,86400000000]]', ?, 'canonical')",
+    [digest],
+  );
+  await database.customStatement(
+    'INSERT INTO quest_claim_receipts '
+    '(id, owner_id, origin_owner_id, instance_id, issued_at_utc_ms, '
+    'completed_at_utc_ms, xp_amount, evidence_json) VALUES '
+    "('receipt-seed', 'guest-owner', 'guest-owner', 'inst-paid', 16, 15, 10, ?)",
+    ['["attempt-1"]'],
+  );
+  await database.customInsert(
+    'INSERT INTO points_ledger_entries '
+    '(id, owner_id, idempotency_key, entry_type, amount, source_event_id, '
+    'occurred_at_utc_ms) VALUES '
+    "('xp-seed', 'guest-owner', 'quest-claim:receipt-seed', 'questClaimXpV1', "
+    "10, 'receipt-seed', 16)",
   );
   // Phase 1 D7.2 — streak state and learning day log (owner-scoped).
   await database.customInsert(
@@ -587,6 +635,17 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "INSERT INTO learning_day_log "
     "(id, owner_id, learning_day, first_session_at_utc_ms) VALUES "
     "('day:guest-owner:2026-08-04', 'guest-owner', '2026-08-04', 20)",
+  );
+  await database.customInsert(
+    'INSERT INTO streak_baselines '
+    '(origin_owner_id, owner_id, cutoff_utc_ms, current_streak_days, '
+    'longest_streak_days, freeze_count, updated_at_utc_ms, controls_continuity) '
+    "VALUES ('guest-owner', 'guest-owner', 20, 1, 1, 0, 20, 1)",
+  );
+  await database.customInsert(
+    'INSERT INTO streak_token_adjustments '
+    '(id, owner_id, origin_owner_id, command_id, occurred_at_utc_ms, kind, delta) '
+    "VALUES ('token-seed', 'guest-owner', 'guest-owner', 'grant-seed', 21, 'grant', 1)",
   );
   // Phase 2 D8.3 — associative learning data (owner-scoped).
   await database.customInsert(
@@ -634,7 +693,7 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
     "('session-guest', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, 1, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "$_insertLegacyAnswer"
     "('attempt-guest', 'guest-owner', 'session-guest', 'word-guest', "
     "'meaning', 1, 10, 1, 2, NULL)",
   );
@@ -653,7 +712,7 @@ Future<void> _seedProjectionCollisionGraph(AppDatabase database) async {
     "('session-target', 'account-owner', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "$_insertLegacyAnswer"
     "('attempt-target', 'account-owner', 'session-target', 'word-target', "
     "'meaning', 1, 10, 1, 1, NULL)",
   );

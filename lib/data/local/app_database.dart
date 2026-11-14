@@ -55,10 +55,15 @@ final _productionNativeOptions = DriftNativeOptions(
     ModelDownloads,
     EventsV2,
     QuestDefinitions,
+    OwnerCalendarEpochs,
+    QuestDefinitionRevisions,
     QuestInstances,
     QuestObjectiveProgress,
+    QuestClaimReceipts,
     StreakStates,
     LearningDayLog,
+    StreakBaselines,
+    StreakTokenAdjustments,
     AssociationRecords,
     AssociativeMemoryStates,
   ],
@@ -70,7 +75,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   Future<T> transaction<T>(
@@ -105,116 +110,306 @@ final class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
-      await _createMissingTables(migrator);
-      if (from < 2) {
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_categories',
-          vocabularyCategories,
-          vocabularyCategories.cloudRevision,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_categories',
-          vocabularyCategories,
-          vocabularyCategories.lastAcknowledgedAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_categories',
-          vocabularyCategories,
-          vocabularyCategories.serverUpdatedAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_words',
-          vocabularyWords,
-          vocabularyWords.cloudRevision,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_words',
-          vocabularyWords,
-          vocabularyWords.lastAcknowledgedAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'vocabulary_words',
-          vocabularyWords,
-          vocabularyWords.serverUpdatedAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'outbox_operations',
-          outboxOperations,
-          outboxOperations.leaseToken,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'outbox_operations',
-          outboxOperations,
-          outboxOperations.leaseExpiresAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'outbox_operations',
-          outboxOperations,
-          outboxOperations.lastAttemptAtUtcMs,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'sync_conflicts',
-          syncConflicts,
-          syncConflicts.localSnapshotJson,
-        );
-        await _addColumnIfMissing(
-          migrator,
-          'sync_conflicts',
-          syncConflicts,
-          syncConflicts.cloudSnapshotJson,
-        );
+      await customStatement('PRAGMA foreign_keys = ON');
+      final enforcement = await customSelect('PRAGMA foreign_keys').getSingle();
+      if (enforcement.read<int>('foreign_keys') != 1) {
+        throw StateError('Migration requires foreign-key enforcement');
       }
-      if (from < 3) {
-        await _createLearningIndexes();
-      }
-      if (from < 4) {
-        await _addColumnIfMissing(
-          migrator,
-          'reading_events',
-          readingEvents,
-          readingEvents.documentRevision,
-        );
-      }
-      if (from < 5) {
-        await _addColumnIfMissing(
-          migrator,
-          'model_downloads',
-          modelDownloads,
-          modelDownloads.failureCode,
-        );
-      }
-      if (from < 6) {
+      await transaction(() async {
+        if (from < 11) {
+          final unexpected = await customSelect(
+            "SELECT name FROM sqlite_master WHERE lower(name) IN ("
+            "'owner_calendar_epochs','quest_definition_revisions',"
+            "'quest_claim_receipts','streak_baselines','streak_token_adjustments')",
+          ).get();
+          if (unexpected.isNotEmpty) {
+            throw StateError('Unexpected schema 11 objects in legacy database');
+          }
+        }
+        final questParentExisted = await _tableExists('quest_instances');
         await _createMissingTables(migrator);
-      }
-      if (from < 7) {
-        await _createMissingTables(migrator);
-      }
-      if (from < 8) {
-        await _createMissingTables(migrator);
-      }
-      if (from < 9) {
-        await _createMissingTables(migrator);
-      }
-      if (from < 10) {
-        await _createMissingTables(migrator);
-      }
+        if (from < 2) {
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_categories',
+            vocabularyCategories,
+            vocabularyCategories.cloudRevision,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_categories',
+            vocabularyCategories,
+            vocabularyCategories.lastAcknowledgedAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_categories',
+            vocabularyCategories,
+            vocabularyCategories.serverUpdatedAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_words',
+            vocabularyWords,
+            vocabularyWords.cloudRevision,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_words',
+            vocabularyWords,
+            vocabularyWords.lastAcknowledgedAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'vocabulary_words',
+            vocabularyWords,
+            vocabularyWords.serverUpdatedAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'outbox_operations',
+            outboxOperations,
+            outboxOperations.leaseToken,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'outbox_operations',
+            outboxOperations,
+            outboxOperations.leaseExpiresAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'outbox_operations',
+            outboxOperations,
+            outboxOperations.lastAttemptAtUtcMs,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'sync_conflicts',
+            syncConflicts,
+            syncConflicts.localSnapshotJson,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'sync_conflicts',
+            syncConflicts,
+            syncConflicts.cloudSnapshotJson,
+          );
+        }
+        if (from < 3) {
+          await _createLearningIndexes();
+        }
+        if (from < 4) {
+          await _addColumnIfMissing(
+            migrator,
+            'reading_events',
+            readingEvents,
+            readingEvents.documentRevision,
+          );
+        }
+        if (from < 5) {
+          await _addColumnIfMissing(
+            migrator,
+            'model_downloads',
+            modelDownloads,
+            modelDownloads.failureCode,
+          );
+        }
+        if (from < 11) {
+          await _addColumnIfMissing(
+            migrator,
+            'answer_attempts',
+            answerAttempts,
+            answerAttempts.calendarEvidence,
+          );
+          await _addColumnIfMissing(
+            migrator,
+            'answer_attempts',
+            answerAttempts,
+            answerAttempts.questIntent,
+          );
+          await _rebuildQuestPeriods(
+            migrator,
+            createdCurrentParent: !questParentExisted,
+          );
+          if (!await _tableExists('quest_claim_receipts')) {
+            await migrator.createTable(questClaimReceipts);
+          }
+          if (!await _tableExists('streak_baselines')) {
+            await migrator.createTable(streakBaselines);
+          }
+          if (!await _tableExists('streak_token_adjustments')) {
+            await migrator.createTable(streakTokenAdjustments);
+          }
+          await _sealStreakBaselines();
+          await _createS6Indexes();
+          if ((await customSelect(
+            'PRAGMA foreign_key_check',
+          ).get()).isNotEmpty) {
+            throw StateError('Schema 11 foreign-key validation failed');
+          }
+          // Publish with the validated DDL so a beforeOpen failure cannot replay it.
+          await customStatement('PRAGMA user_version = 11');
+        }
+      });
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
       await _createEventIndexes();
+      await _createS6Indexes();
     },
   );
+
+  Future<void> _rebuildQuestPeriods(
+    Migrator migrator, {
+    required bool createdCurrentParent,
+  }) async {
+    if (createdCurrentParent) return;
+    const parent = 'quest_instances';
+    const child = 'quest_objective_progress';
+    const parentFields =
+        'instance_id,quest_id,owner_id,catalog_version,'
+        'assigned_at_utc_ms,state,completed_at_utc_ms,expired_at_utc_ms';
+    const childFields =
+        'id,instance_id,objective_id,current_count,'
+        'target_count,source_event_ids_json';
+    final fields = (await customSelect(
+      'PRAGMA table_info($parent)',
+    ).get()).map((row) => row.read<String>('name')).toSet();
+    var lifetimeUnique = false;
+    for (final index in await customSelect(
+      'PRAGMA index_list($parent)',
+    ).get()) {
+      if (index.read<int>('unique') != 1) continue;
+      final name = index.read<String>('name').replaceAll('"', '""');
+      final columns = (await customSelect(
+        'PRAGMA index_info("$name")',
+      ).get()).map((row) => row.readNullable<String>('name')).toSet();
+      if (columns.length == 2 &&
+          columns.containsAll({'owner_id', 'quest_id'})) {
+        lifetimeUnique = true;
+      }
+    }
+    if (!lifetimeUnique ||
+        fields.length != 8 ||
+        !fields.containsAll(parentFields.split(','))) {
+      throw StateError('Unsupported legacy Quest parent shape');
+    }
+    final objectiveFields = (await customSelect(
+      'PRAGMA table_info($child)',
+    ).get()).map((row) => row.read<String>('name')).toSet();
+    if (objectiveFields.length != 6 ||
+        !objectiveFields.containsAll(childFields.split(','))) {
+      throw StateError('Unsupported legacy Quest objective shape');
+    }
+    final objects = await customSelect(
+      "SELECT name FROM sqlite_master WHERE sql IS NOT NULL AND "
+      "((tbl_name IN ('$parent','$child') AND type IN ('index','trigger')) "
+      "OR (type='view' AND (lower(sql) LIKE '%$parent%' OR lower(sql) LIKE '%$child%')))",
+    ).get();
+    if (objects.isNotEmpty) {
+      throw StateError('Unsupported legacy Quest dependent object');
+    }
+    for (final table in await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table'",
+    ).get()) {
+      final name = table.read<String>('name');
+      final quoted = name.replaceAll('"', '""');
+      for (final fk in await customSelect(
+        'PRAGMA foreign_key_list("$quoted")',
+      ).get()) {
+        final target = fk.read<String>('table').toLowerCase();
+        if ((target == parent && name != child) || target == child) {
+          throw StateError('Unsupported legacy Quest dependent table');
+        }
+      }
+    }
+    await customStatement(
+      'CREATE TEMP TABLE _s6_quest_parent AS SELECT $parentFields FROM $parent',
+    );
+    await customStatement(
+      'CREATE TEMP TABLE _s6_quest_child AS SELECT $childFields FROM $child',
+    );
+    await customStatement('DROP TABLE $child');
+    await customStatement('DROP TABLE $parent');
+    await migrator.createTable(questInstances);
+    await migrator.createTable(questObjectiveProgress);
+    await customStatement(
+      'INSERT INTO $parent ($parentFields) SELECT $parentFields FROM _s6_quest_parent',
+    );
+    await customStatement(
+      'INSERT INTO $child ($childFields) SELECT $childFields FROM _s6_quest_child',
+    );
+    for (final (table, staged, columns) in [
+      (parent, '_s6_quest_parent', parentFields),
+      (child, '_s6_quest_child', childFields),
+    ]) {
+      final before = await customSelect(
+        'SELECT COUNT(*) AS n FROM $staged',
+      ).getSingle();
+      final after = await customSelect(
+        'SELECT COUNT(*) AS n FROM $table',
+      ).getSingle();
+      final missing = await customSelect(
+        'SELECT $columns FROM $staged EXCEPT SELECT $columns FROM $table LIMIT 1',
+      ).get();
+      final extra = await customSelect(
+        'SELECT $columns FROM $table EXCEPT SELECT $columns FROM $staged LIMIT 1',
+      ).get();
+      if (before.read<int>('n') != after.read<int>('n') ||
+          missing.isNotEmpty ||
+          extra.isNotEmpty) {
+        throw StateError('Legacy Quest data conservation failed');
+      }
+    }
+    await customStatement('DROP TABLE _s6_quest_child');
+    await customStatement('DROP TABLE _s6_quest_parent');
+  }
+
+  Future<void> _sealStreakBaselines() async {
+    await customStatement(
+      'INSERT INTO streak_baselines (origin_owner_id,owner_id,cutoff_utc_ms,'
+      'current_streak_days,longest_streak_days,freeze_count,last_learned_at_utc_ms,'
+      'updated_at_utc_ms,controls_continuity) SELECT owner_id,owner_id,?,'
+      'current_streak_days,longest_streak_days,freeze_count,last_learned_at_utc_ms,'
+      'updated_at_utc_ms,1 FROM streak_states s WHERE NOT EXISTS '
+      '(SELECT 1 FROM streak_baselines b WHERE b.origin_owner_id=s.owner_id)',
+      [DateTime.now().toUtc().millisecondsSinceEpoch],
+    );
+    final conflicts = await customSelect(
+      'SELECT 1 FROM streak_states s JOIN streak_baselines b ON b.origin_owner_id=s.owner_id '
+      'WHERE b.owner_id IS NOT s.owner_id OR b.current_streak_days IS NOT s.current_streak_days '
+      'OR b.longest_streak_days IS NOT s.longest_streak_days OR b.freeze_count IS NOT s.freeze_count '
+      'OR b.last_learned_at_utc_ms IS NOT s.last_learned_at_utc_ms OR b.updated_at_utc_ms IS NOT s.updated_at_utc_ms LIMIT 1',
+    ).get();
+    if (conflicts.isNotEmpty) {
+      throw StateError('Legacy Streak baseline conflict');
+    }
+  }
+
+  Future<void> _createS6Indexes() async {
+    for (final sql in const [
+      'CREATE INDEX IF NOT EXISTS idx_learning_attempts_owner_time_id ON answer_attempts(owner_id,occurred_at_utc_ms,id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_selected_owner_effective ON owner_calendar_epochs(owner_id,effective_utc_us) WHERE is_selected=1',
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_quest_canonical_owner_period ON quest_instances(owner_id,period_key) WHERE record_kind='canonical'",
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_continuity_owner ON streak_baselines(owner_id) WHERE controls_continuity=1',
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_auto_protection_origin_day ON streak_token_adjustments(origin_owner_id,protected_day) WHERE kind='autoProtect'",
+    ]) {
+      final name = sql.split(' IF NOT EXISTS ')[1].split(' ')[0];
+      final existing = await customSelect(
+        'SELECT type,sql FROM sqlite_master WHERE name = ? COLLATE NOCASE',
+        variables: [Variable<String>(name)],
+      ).getSingleOrNull();
+      if (existing != null &&
+          (existing.read<String>('type') != 'index' ||
+              existing.readNullable<String>('sql')?.trim() !=
+                  sql.replaceFirst(' IF NOT EXISTS', '').trim())) {
+        throw StateError('Unexpected definition for index $name');
+      }
+      await customStatement(sql);
+    }
+  }
 
   Future<void> _createEventIndexes() async {
     final tables = await customSelect(
@@ -328,6 +523,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('quest_definitions')) {
       await migrator.createTable(questDefinitions);
+    }
+    if (!await _tableExists('owner_calendar_epochs')) {
+      await migrator.createTable(ownerCalendarEpochs);
+    }
+    if (!await _tableExists('quest_definition_revisions')) {
+      await migrator.createTable(questDefinitionRevisions);
     }
     if (!await _tableExists('quest_instances')) {
       await migrator.createTable(questInstances);

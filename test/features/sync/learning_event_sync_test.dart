@@ -65,6 +65,122 @@ void main() {
   });
 
   test(
+    'current attempt snapshot keeps local calendar and quest metadata off sync',
+    () async {
+      final learning = DriftLearningRepository(database);
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'session-private',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: now,
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await learning.recordAnswer(
+        RecordAnswerCommand(
+          id: 'attempt-private',
+          ownerId: 'owner-1',
+          sessionId: 'session-private',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 250,
+          attemptNumber: 1,
+          occurredAtUtc: now,
+        ),
+      );
+      await (database.update(
+        database.answerAttempts,
+      )..where((row) => row.id.equals('attempt-private'))).write(
+        const AnswerAttemptsCompanion(
+          calendarEvidence: Value('{"synthetic":"local-calendar"}'),
+          questIntent: Value('{"synthetic":"local-quest"}'),
+        ),
+      );
+
+      final claim = (await store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-1',
+        limit: 10,
+        leaseToken: 'lease-private',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      )).firstWhere((c) => c.mutation.collection == SyncCollection.attempts);
+      final stored = await database.select(database.answerAttempts).getSingle();
+      expect(stored.calendarEvidence, '{"synthetic":"local-calendar"}');
+      expect(stored.questIntent, '{"synthetic":"local-quest"}');
+      expect(claim.mutation.payload['wordId'], 'word-1');
+      for (final key in [
+        'calendarEvidence',
+        'questIntent',
+        'calendar_evidence',
+        'quest_intent',
+      ]) {
+        expect(claim.mutation.payload, isNot(contains(key)));
+      }
+      await _expectNoMotivationOrResearchWrites(database);
+    },
+  );
+
+  test(
+    'remote metadata is discarded and replay preserves local metadata',
+    () async {
+      final original = _attemptEntity(
+        id: 'attempt-untrusted',
+        sessionId: 'session-untrusted',
+        occurredAt: now,
+      );
+      final untrusted = SyncEntity(
+        collection: original.collection,
+        entityId: original.entityId,
+        revision: original.revision,
+        isDeleted: original.isDeleted,
+        payloadVersion: original.payloadVersion,
+        clientUpdatedAtUtc: original.clientUpdatedAtUtc,
+        serverUpdatedAtUtc: original.serverUpdatedAtUtc,
+        payload: <String, Object?>{
+          ...original.payload,
+          'calendarEvidence': '{"synthetic":"untrusted"}',
+          'questIntent': '{"synthetic":"untrusted"}',
+          'calendar_evidence': '{"synthetic":"untrusted"}',
+          'quest_intent': '{"synthetic":"untrusted"}',
+        },
+      );
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(untrusted),
+      );
+      var attempt = await database.select(database.answerAttempts).getSingle();
+      expect(attempt.isCorrect, isTrue);
+      expect(attempt.calendarEvidence, isNull);
+      expect(attempt.questIntent, isNull);
+
+      await (database.update(
+        database.answerAttempts,
+      )..where((row) => row.id.equals(original.entityId))).write(
+        const AnswerAttemptsCompanion(
+          calendarEvidence: Value('{"synthetic":"original-calendar"}'),
+          questIntent: Value('{"synthetic":"original-quest"}'),
+        ),
+      );
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(original),
+      );
+      attempt = await database.select(database.answerAttempts).getSingle();
+      expect(attempt.calendarEvidence, '{"synthetic":"original-calendar"}');
+      expect(attempt.questIntent, '{"synthetic":"original-quest"}');
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+      await _expectNoMotivationOrResearchWrites(database);
+    },
+  );
+
+  test(
     'pulled attempt is set-union idempotent and rebuilds projections',
     () async {
       final entity = SyncEntity(
@@ -402,6 +518,22 @@ void main() {
       acknowledgement.acknowledgedAtUtc.millisecondsSinceEpoch,
     );
   });
+}
+
+Future<void> _expectNoMotivationOrResearchWrites(AppDatabase database) async {
+  expect(await database.select(database.questClaimReceipts).get(), isEmpty);
+  expect(
+    await database.select(database.questDefinitionRevisions).get(),
+    isEmpty,
+  );
+  expect(await database.select(database.questInstances).get(), isEmpty);
+  expect(await database.select(database.eventsV2).get(), isEmpty);
+  expect(await database.select(database.researchConsents).get(), isEmpty);
+  final outbox = await database.select(database.outboxOperations).get();
+  expect(
+    outbox.every((row) => {'attempt', 'srsState'}.contains(row.entityType)),
+    isTrue,
+  );
 }
 
 SyncEntity _attemptEntity({

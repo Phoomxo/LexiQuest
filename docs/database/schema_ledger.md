@@ -132,19 +132,52 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 ---
 
-## Phase 0+ (v11+)
+### v11 — Local calendar evidence and recurring Quest claims
+**Reserved:** 2026-11-14
+**Branch:** codex/figcraft-flutter-prototype
+**PR:** [16](https://github.com/Phoomxo/LexiQuest/pull/16)
+**Owner:** Root integration; disjoint table/test writers under S6-C
+**Status:** 🔒 RESERVED — locally implemented/verified in S6-C (Flutter1946, AI107, analysis/reviews); no rollout
 
-Current implemented schema is **v10**, matching `AppDatabase.schemaVersion` and
-the deployed Associative Learning Persistence entry above. The former future-v10
+**Planned tables/columns:**
+- Nullable `answer_attempts.calendar_evidence` and `quest_intent`, preserving old rows.
+- New `owner_calendar_epochs`, `quest_definition_revisions` (shared),
+  `quest_claim_receipts`, `streak_baselines`, `streak_token_adjustments`.
+- Quest instance origin/period/calendar/segments/digest/alias/kind fields,
+  exact revision FK and canonical period uniqueness replacing lifetime uniqueness.
+- Owner/time/ID query index; existing indexes and original EventEnvelopeV2 schema unchanged.
+
+**Migration safety and coverage:**
+Frozen actual v10 SQL fixture and focused RED precede migration code. Stage and
+restore parent/objective data with FK enforcement inside one write transaction;
+compare original data/IDs/JSON and publish version last. Preserve legacy balances,
+freeze assets and unverifiable history; generate no claims or research events.
+Four new owner scopes require migration, merge, full local export and deletion;
+shared definitions remain public/retained. Calendar/claim authority stays local,
+with local-only sync metadata handling and schema-aware export/backend contracts.
+Real-file reopen/rollback/current-create parity and historical upgrades are required.
+Same-database downgrade to old clients is unsupported; never reset live data.
+
+The concrete write set and checks are in
+`docs/development/figcraft-v1/s6-persistence-plan.md`. Existing approved S1–S7
+implementation authority covers this local card; release and real-data authority
+remain separate. AppDatabase is still v10 at reservation time.
+
+---
+
+## Phase 0+ (v12+)
+
+Current local implementation is **v11**, matching `AppDatabase.schemaVersion`,
+with S6-C integration checks still in progress and no rollout. The last deployed
+entry remains **v10** Associative Learning Persistence. The former future-v10
 placeholder was superseded by that recorded migration and must not be reused.
-The next reservable version is **v11**; this reconciliation reserves no version
-and adds no schema or migration code.
+Version **v11** is reserved above for S6-C. The next reservable version is **v12**.
 
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
-| v11+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v12+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10. Reserve the next available version, starting at v11,
+> **Rule:** Do not reuse v10 or v11. Reserve the next available version, starting at v12,
 > through a separate approved entry before writing migration code.
 
 ---
@@ -163,6 +196,7 @@ and adds no schema or migration code.
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
+| 2026-11-14 | Reserved v11 for S6-C after actual v10 fixture and focused RED; new local calendar/Quest/streak data requires lifecycle and policy coverage before acceptance. No rollout. | Root integration |
 
 ---
 

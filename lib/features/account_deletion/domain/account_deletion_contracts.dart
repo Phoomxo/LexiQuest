@@ -1,10 +1,18 @@
 import '../../identity/domain/owner_upgrade.dart';
 
+const int currentFullAccountExportSchemaVersion = 11;
+
+const Set<String> publicFullAccountExportScopes = <String>{
+  'quest_definitions',
+  'quest_definition_revisions',
+};
+
 const Set<String> requiredFullAccountExportScopes = <String>{
   ...ownerUpgradeInventory,
   'vocabulary_import_rows',
   'quest_objective_progress',
   'local_owners',
+  ...publicFullAccountExportScopes,
 };
 
 enum AccountDeletionFailureCode {

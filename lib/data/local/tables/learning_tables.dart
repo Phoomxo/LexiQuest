@@ -32,6 +32,8 @@ class AnswerAttempts extends Table {
   IntColumn get attemptNumber => integer()();
   IntColumn get occurredAtUtcMs => integer()();
   TextColumn get providerProvenance => text().nullable()();
+  TextColumn get calendarEvidence => text().nullable()();
+  TextColumn get questIntent => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

@@ -1,17 +1,6 @@
 import 'package:drift/drift.dart';
 import 'identity_tables.dart';
 
-/// Drift tables for the Motivation domain (streaks, learning-day log).
-///
-/// Schema v9 — added in Phase 1 D7.2.
-///
-/// Two tables:
-///   - [StreakStates]    — one row per owner, mutable streak counters
-///   - [LearningDayLog] — immutable append-only log; one row per
-///                         (owner, local learning-day string)
-
-// ─── StreakStates ────────────────────────────────────────────────────────────
-
 /// Current streak state for a learner.
 ///
 /// One row per owner.  Updated by [StreakUseCases.recordLearningDay] after
@@ -68,5 +57,72 @@ class LearningDayLog extends Table {
   @override
   List<Set<Column>> get uniqueKeys => [
     {ownerId, learningDay},
+  ];
+}
+
+/// A learner-selected calendar rule and its interval of authority.
+class OwnerCalendarEpochs extends Table {
+  TextColumn get ruleId => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get originOwnerId => text()();
+  IntColumn get effectiveUtcUs => integer()();
+  IntColumn get expiresUtcUs => integer().nullable()();
+  TextColumn get ianaId => text()();
+  TextColumn get tzdbRevision => text()();
+  BoolColumn get isSelected => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {ruleId};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {originOwnerId, effectiveUtcUs},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (expires_utc_us IS NULL OR expires_utc_us > effective_utc_us)',
+  ];
+}
+
+/// Raw v10 streak state sealed at migration, including any legacy anomalies.
+class StreakBaselines extends Table {
+  TextColumn get originOwnerId => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  IntColumn get cutoffUtcMs => integer()();
+  IntColumn get currentStreakDays => integer()();
+  IntColumn get longestStreakDays => integer()();
+  IntColumn get freezeCount => integer()();
+  IntColumn get lastLearnedAtUtcMs => integer().nullable()();
+  IntColumn get updatedAtUtcMs => integer()();
+  BoolColumn get controlsContinuity => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {originOwnerId};
+}
+
+class StreakTokenAdjustments extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get originOwnerId => text()();
+  TextColumn get commandId => text()();
+  IntColumn get occurredAtUtcMs => integer()();
+  TextColumn get kind => text()();
+  IntColumn get delta => integer()();
+  TextColumn get protectedDay => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {originOwnerId, commandId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK ((kind = 'grant' AND delta > 0 AND protected_day IS NULL) "
+        "OR (kind = 'manualDebit' AND delta = -1 AND protected_day IS NULL) "
+        "OR (kind = 'autoProtect' AND delta = -1 AND COALESCE(protected_day, '') <> ''))",
   ];
 }

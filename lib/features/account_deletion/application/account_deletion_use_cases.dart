@@ -163,6 +163,7 @@ final class AccountDeletionUseCases {
       );
     } else if (entry.localReceipt case final completed?) {
       _validateLocal(completed, cloudReceipt.ownerId, cloudReceipt);
+      await _saveLocalReceipt(cloudReceipt, completed);
       return completed;
     }
     return _deleteLocalAndJournal(
@@ -198,6 +199,7 @@ final class AccountDeletionUseCases {
     final completed = entry.localReceipt;
     if (completed != null) {
       _validateLocal(completed, cloudReceipt.ownerId, cloudReceipt);
+      await _saveLocalReceipt(cloudReceipt, completed);
       return completed;
     }
 
@@ -267,7 +269,7 @@ final class AccountDeletionUseCases {
         receipt.artifactId.trim().isEmpty ||
         !RegExp(r'^[A-Fa-f0-9]{64}$').hasMatch(receipt.artifactSha256) ||
         receipt.bytesWritten <= 0 ||
-        receipt.schemaVersion <= 0 ||
+        receipt.schemaVersion != currentFullAccountExportSchemaVersion ||
         receipt.coveredScopes.length !=
             requiredFullAccountExportScopes.length ||
         !receipt.coveredScopes.containsAll(requiredFullAccountExportScopes) ||
@@ -357,6 +359,14 @@ final class AccountDeletionUseCases {
       ownerId: ownerId,
       cloudReceipt: cloudReceipt,
     );
+    await _saveLocalReceipt(cloudReceipt, localReceipt);
+    return localReceipt;
+  }
+
+  Future<void> _saveLocalReceipt(
+    CloudDeletionReceipt cloudReceipt,
+    LocalDeletionReceipt localReceipt,
+  ) async {
     try {
       await journal.saveLocalReceipt(
         cloudReceipt: cloudReceipt,
@@ -371,7 +381,6 @@ final class AccountDeletionUseCases {
         cloudReceipt: cloudReceipt,
       );
     }
-    return localReceipt;
   }
 
   Future<void> _saveCloudReceipt(CloudDeletionReceipt receipt) async {

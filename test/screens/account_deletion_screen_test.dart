@@ -181,7 +181,7 @@ final class _Exporter implements FullAccountExporter {
       artifactId: 'artifact-1',
       artifactSha256: 'a' * 64,
       bytesWritten: 10,
-      schemaVersion: 10,
+      schemaVersion: currentFullAccountExportSchemaVersion,
       coveredScopes: requiredFullAccountExportScopes,
       completedAtUtc: DateTime.utc(2026, 10, 24, 11, 59),
     );

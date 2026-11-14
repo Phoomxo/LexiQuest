@@ -129,7 +129,7 @@ FullAccountExportReceipt _export(DateTime now) => FullAccountExportReceipt(
   artifactId: 'artifact-1',
   artifactSha256: 'a' * 64,
   bytesWritten: 10,
-  schemaVersion: 10,
+  schemaVersion: currentFullAccountExportSchemaVersion,
   coveredScopes: requiredFullAccountExportScopes,
   completedAtUtc: now,
 );
