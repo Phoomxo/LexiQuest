@@ -51,3 +51,4 @@ accessibility disabled. แอปอยู่ชุด A กับผล 75%. XM
 - [A4/B0 หลังเปิดออฟไลน์](vivo-189fd79d/31-offline-library-after-new-round.png) · [ผลเดิมหลังเปิดออฟไลน์](vivo-189fd79d/33-offline-new-score.png)
 - [ปุ่มกลับหลังเลื่อน 200%](vivo-189fd79d/37b-dark-200-score-end-1.png) · [คลังธีมสว่าง 200%](vivo-189fd79d/40-light-200-library.png) · [SHA-256 ของ PNG/XML](vivo-189fd79d/SHA256SUMS.txt)
 - [สถานะถูก/ผิดใน XML ของ v33](vivo-189fd79d/v33-score-correctness.xml) · [หน้าหลังปฏิเสธกล้องหนึ่งครั้งบน v34](vivo-189fd79d/v34-camera-denied.png)
+- [ตรวจคำสังเคราะห์ก่อนบันทึกบน v34](vivo-189fd79d/v34-26-delivery-reviewed-word.png) · [ผล 80% หลังเปิดออฟไลน์](vivo-189fd79d/v34-35-delivery-offline-score.png) · [A5 และ B0](vivo-189fd79d/v34-33-delivery-offline-library.png)

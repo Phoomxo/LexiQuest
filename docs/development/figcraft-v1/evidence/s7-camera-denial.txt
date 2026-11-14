@@ -46,3 +46,19 @@ enabled Capture. Back retained A. Reopening Score on v34 yielded the same
 v33 corrected hierarchy (SHA256 1c336197e124ce235f3ac5d16ba6cbf2afb83aafe10534aa8a0eb422048a9b1b).
 Restored the camera to no permission with the prior one-time flag still
 recorded. Cold launch then returned to A4/75% with the same final XML.
+
+Repeated the complete delivery journey on the same signed v34:
+A4 > Add > camera > one-time grant > actual photo > no confident result >
+reviewed synthetic pencil / writing tool / noun > Save once in A >
+five distinct Quiz words, four correct and one wrong > 80% > Back to A.
+After process-cold restart with Wi-Fi and mobile data off, A had five
+words including pencil and the saved 80% result. B still had zero words.
+Score reopened with the five historical answer rows. Android Back
+returned A, Wi-Fi restored to 1 and no camera permission remained granted.
+The test does not identify a real object or measure model accuracy.
+
+Actual hashes in build/figcraft-04d2a199:
+30-delivery-score.xml 1ad09afe2b3e8094d775138457245866bd98c48d55795854c9ea8abb8e31b222
+33-delivery-offline-library.xml 4650bff281fde1fbdd8aa69fdc585019d7c2e861c2599fdf1b5f841df0a70baa
+35-delivery-offline-score.xml 893772fdbae4b4dadb2792af71033cbea94d53bbcad118b245372093b6016a22
+36-delivery-final-a.xml a4f8a673a1c62bcef8294e121dbbdc569fc3829f7411e08cbcb2db2310930f01

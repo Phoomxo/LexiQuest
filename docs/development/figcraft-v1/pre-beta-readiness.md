@@ -18,6 +18,8 @@ Windows และ Linux CI ของ source นี้ผ่าน Flutter 2,268 
 ทดสอบป้ายถูก/ผิดจาก Android hierarchy บน v33 และการปฏิเสธกล้องหนึ่งครั้งบน
 v34 แล้ว ทั้งสองครั้งกลับมาชุด A ที่มี 4 คำและผล 75%. v34 ยังตรวจว่า bookmark
 อยู่หลังเปิดใหม่ออฟไลน์ และเอาออกจากรายการได้โดยเก็บคำเดิมไว้ใน A.
+ทำเส้นทางหลักซ้ำบน v34 ด้วยคำสังเคราะห์ `pencil` และผล 80% (4/5).
+หลังเปิดออฟไลน์ A ยังมีทั้งคำใหม่และผลรอบนั้น ส่วน B ยังว่าง.
 [Score semantics](evidence/s7-score-semantics.txt) ·
 [ผลตรวจสิทธิ์กล้อง](evidence/s7-camera-denial.txt)
 
@@ -49,7 +51,7 @@ v34 แล้ว ทั้งสองครั้งกลับมาชุด
 | 5 Backend และ API | CPU suites ตรวจ bearer, owner scope, request length, timeout/retry, safe errors และ readiness แบบ local. Auth และ deletion ใช้ fixture สังเคราะห์ | ผู้ดูแล staging ตรวจ provider, App Check, quotas, budget alerts, kill switch และหลาย replica ในโครงการที่อนุญาต. Readiness ของ AI ตรวจ configuration |
 | 6 Performance และ load | vivo v32 เปิด process-cold 5 รอบ Activity median 606 ms ช่วง 524–621 ms ทุกครั้งพบ Home และ Library A4/B0. PSS Home 141,421–147,543 KiB และ Library 125,826–129,843 KiB. API test ภายในโปรเซสมี 600 requests ที่ concurrency 1/2/4 และไม่มี error | ทีม performance เก็บ first interactive frame, รายการใหญ่, memory แบบหลายช่วงและ latency จริงใน staging. Library 2,394–2,912 ms รวม ADB และรอ UI dump. ขาด baseline อุปกรณ์/ข้อมูลเดียวกัน จึงยังเทียบ budget ไม่ได้ |
 | 7 Analytics | ตรวจ EventEnvelopeV2, consent และ no-research tests ในแอป รวมการพัก outbox ของข้อมูลเดิม. ทดสอบสังเคราะห์ในเครื่อง | ผู้ดูแล staging ต้องยืนยัน synthetic events ถึง dashboard ให้ถูก dataset และ alert ทำงานก่อนนับ operational analytics ว่าพร้อม. การทดลองผลวิจัยต้องมี authority ต่างหาก |
-| 8 Functional, automated และ acceptance | Flutter Windows/CI, backend CPU, policy และ APK v32 ผ่านการตรวจตามหลักฐานแนบ. ถ่ายจริงแล้วกรอกเองและยืนยัน notebook, ฝึกได้ 75%, กลับ A, เปิดใหม่ออฟไลน์ B0. รอบที่พักไว้กลับข้อ 2 | ความแม่นยำของกล้องเป็น `not_checked`. UAT ยังไม่มีผู้ใช้สังเกตจริง. ใช้โจทย์ด้านล่างเมื่อผู้ประสานงานจัดรอบได้ |
+| 8 Functional, automated และ acceptance | v32 พักแล้วกลับข้อ 2 หลังเริ่มโปรเซสใหม่. ทดสอบถ่ายจริง ใช้ฟอร์มกรอกเอง และฝึกถึงผลบน v32 และ v34. ล่าสุด A มี pencil และผล 80% หลังเปิดออฟไลน์ ส่วน B ว่าง | ความแม่นยำของกล้องเป็น `not_checked`. UAT ยังไม่มีผู้ใช้สังเกตจริง. ใช้โจทย์ด้านล่างเมื่อผู้ประสานงานจัดรอบได้ |
 | 9 CI/CD, environments และ release | APK ลงนามด้วยใบรับรองเดิมและแฮชติดตั้งตรง. exact-head CI ผูกกับหลักฐานแต่ละรุ่น. สัญญา field-release ผ่าน 68 และ signing ผ่าน 56. Cloud sync ปิดใน APK และ Research deny-all | ผู้ดูแล release ต้องทดสอบ package/feedback/stop-switch ใน staging ที่ได้รับอนุญาต. v31 กู้ได้หลัง v30 ล้มก่อน commit. ห้ามนำคู่มือย้อน v7 มาใช้กับฐานที่ย้าย v26 สำเร็จแล้ว |
 
 [แผนตรวจรับ](execution.md#pre-beta-completion-criteria-for-this-goal) ·

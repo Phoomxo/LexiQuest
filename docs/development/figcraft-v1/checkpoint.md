@@ -20,7 +20,9 @@
   focused cases and clean analysis. Signed v34 hash
   `5c1d7bd0a515d9586d88ff0380dce170bc6a978beb2e21c73bf6309668f9c05d`
   matches installed base. One denial reaches the explicit retry affordance
-  and Back returns to A4/B0 with 75%. See [Score](evidence/s7-score-semantics.txt)
+  and Back returns to A4/B0 with 75%. Repeated the complete camera/manual route
+  on v34 with synthetic pencil and new score 80% (4/5). Offline reopen retained
+  A5 and its result, B0. See [Score](evidence/s7-score-semantics.txt)
   and [camera denial](evidence/s7-camera-denial.txt).
 - Per-ID registers and the [pre-Beta report](pre-beta-readiness.md) record
   15 missing screen routes and 5 incomplete features, evidence limits,
