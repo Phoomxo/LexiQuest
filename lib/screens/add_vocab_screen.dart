@@ -237,21 +237,8 @@ class _AddWordScreenState extends State<AddWordScreen> {
     final expectedOwnerId = word?.ownerId ?? widget.expectedOwnerId;
     final bound = draft != null || word != null || expectedOwnerId != null;
     try {
-      VocabularyWord? created;
       if (bound) await _requireWriteContext(useCases, expectedOwnerId);
-      if (word == null) {
-        created = await useCases.createWord(
-          CreateWordCommand(
-            categoryId: widget.categoryId,
-            spelling: _wordController.text,
-            meaning: _meaningController.text,
-            partOfSpeech: _partOfSpeechController.text,
-            cefrLevel: draft?.cefrLevel,
-            source: draft?.source ?? 'manual',
-          ),
-          expectedOwnerId: expectedOwnerId,
-        );
-      } else {
+      if (word != null) {
         await useCases.updateWord(
           UpdateWordCommand(
             id: word.id,
@@ -262,21 +249,36 @@ class _AddWordScreenState extends State<AddWordScreen> {
             cefrLevel: word.cefrLevel,
             source: word.source,
           ),
+          expectedOwnerId: expectedOwnerId,
         );
+        // The guarded detail route already observes the committed revision.
+        if (mounted && ModalRoute.isCurrentOf(context) == true) {
+          Navigator.pop(context);
+        }
+        return;
       }
+      final created = await useCases.createWord(
+        CreateWordCommand(
+          categoryId: widget.categoryId,
+          spelling: _wordController.text,
+          meaning: _meaningController.text,
+          partOfSpeech: _partOfSpeechController.text,
+          cefrLevel: draft?.cefrLevel,
+          source: draft?.source ?? 'manual',
+        ),
+        expectedOwnerId: expectedOwnerId,
+      );
       if (bound) {
         await _requireWriteContext(useCases, expectedOwnerId);
-        if (word == null &&
-            (created == null ||
-                created.ownerId != expectedOwnerId ||
-                created.categoryId != _writeCategoryId)) {
+        if (created.ownerId != expectedOwnerId ||
+            created.categoryId != _writeCategoryId) {
           throw const VocabularyNotFoundFailure();
         }
       }
       if (draft != null) {
         if (mounted) Navigator.pop<VocabularyWord>(context, created);
       } else if (mounted) {
-        if (created != null) widget.onCreated?.call(created);
+        widget.onCreated?.call(created);
         Navigator.pop(context);
       }
     } on VocabularyNotFoundFailure {
@@ -301,6 +303,17 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
   }
 
+  bool _matchesOriginalWord() {
+    final original = _writeWord;
+    final current = widget.word;
+    if (original == null || current == null) return original == current;
+    return current.id == original.id &&
+        current.ownerId == original.ownerId &&
+        current.categoryId == original.categoryId &&
+        current.localRevision == original.localRevision &&
+        !current.isDeleted;
+  }
+
   Future<void> _requireWriteContext(
     VocabularyUseCases useCases,
     String? expectedOwnerId,
@@ -311,7 +324,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
         !identical(AppDependenciesScope.maybeOf(context), _writeDependencies) ||
         _writeOwnerId != expectedOwnerId ||
         !identical(widget.initialDraft, _writeDraft) ||
-        !identical(widget.word, _writeWord) ||
+        !_matchesOriginalWord() ||
         (widget.expectedOwnerId != null &&
             widget.expectedOwnerId != expectedOwnerId) ||
         widget.categoryId != _writeCategoryId ||
@@ -329,7 +342,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
         owner.id != expectedOwnerId ||
         !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
         !identical(widget.initialDraft, _writeDraft) ||
-        !identical(widget.word, _writeWord) ||
+        !_matchesOriginalWord() ||
         widget.categoryId != _writeCategoryId ||
         (widget.expectedOwnerId != null &&
             widget.expectedOwnerId != expectedOwnerId)) {

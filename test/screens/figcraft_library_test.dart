@@ -34,6 +34,7 @@ import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/smart_audio_playlist_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
+import 'package:vocab_learning_app/screens/vocabulary_word_detail_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -81,6 +82,8 @@ void main() {
   late AppDatabase database;
   late AppDependencies dependencies;
   late VocabularyUseCases vocabulary;
+  late _DelayedOwners vocabularyOwners;
+  VoidCallback? onVocabularyMutation;
   late VocabularyImportFilePicker pickImportFile;
   late _LibraryVoice voice;
   var nextId = 0;
@@ -93,6 +96,7 @@ void main() {
       ),
     );
     nextId = 0;
+    onVocabularyMutation = null;
     pickImportFile = () async => null;
     voice = _LibraryVoice();
     final now = DateTime.utc(2026, 11, 13);
@@ -101,11 +105,13 @@ void main() {
       generateId: () => 'synthetic-library-owner',
       nowUtc: () => now,
     );
+    vocabularyOwners = _DelayedOwners(owners);
     vocabulary = VocabularyUseCases(
-      owners: owners,
+      owners: vocabularyOwners,
       vocabulary: DriftVocabularyRepository(database),
       generateId: () => 'synthetic-${++nextId}',
       nowUtc: () => now,
+      onLocalMutation: () => onVocabularyMutation?.call(),
     );
     dependencies = AppDependencies(
       runtimeStatus: const AppRuntimeStatus(
@@ -507,6 +513,83 @@ void main() {
       expect(find.text('station'), findsNothing);
       expect(tester.takeException(), isNull);
     } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('editing a library word returns to its updated detail', (
+    tester,
+  ) async {
+    final committed = Completer<void>();
+    final ownerRead = Completer<void>();
+    const editedSpelling = 'railway station';
+    const staleWarning = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่';
+    try {
+      await pumpLibrary(tester);
+      final original = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.spelling.equals('station'))).getSingle(),
+      ))!;
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _tapLabel(tester, 'station', settle: false);
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
+      final wordField = find.byKey(const ValueKey('word-field'));
+      await _pumpUntil(tester, wordField);
+      await tester.enterText(wordField, editedSpelling);
+      await tester.enterText(
+        find.byKey(const ValueKey('meaning-field')),
+        'สถานีรถไฟ',
+      );
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      onVocabularyMutation = () {
+        vocabularyOwners.gate = ownerRead;
+        committed.complete();
+      };
+      await tester.tap(save);
+      await _withFrames(tester, () => committed.future);
+      final editedDetail = find.descendant(
+        of: find.byType(VocabularyWordDetailScreen, skipOffstage: false),
+        matching: find.text(editedSpelling, skipOffstage: false),
+        skipOffstage: false,
+      );
+      await _pumpUntil(tester, editedDetail);
+
+      await tester.runAsync(() async {
+        final saved = await (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(original.id))).getSingle();
+        expect(saved.ownerId, original.ownerId);
+        expect(saved.categoryId, original.categoryId);
+        expect(saved.localRevision, 2);
+        expect(saved.spelling, editedSpelling);
+        expect(saved.meaning, 'สถานีรถไฟ');
+        final wordWrites = await (database.select(
+          database.outboxOperations,
+        )..where((row) => row.entityId.equals(original.id))).get();
+        expect(
+          wordWrites.map((row) => row.operationId),
+          unorderedEquals(['word:${original.id}:1', 'word:${original.id}:2']),
+        );
+      });
+      ownerRead.complete();
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == 'กลับชุดคำ' || widget.data == staleWarning),
+        ),
+      );
+      expect(find.text(staleWarning), findsNothing);
+      expect(wordField, findsNothing);
+      expect(find.text(editedSpelling), findsOneWidget);
+      expect(find.text('สถานีรถไฟ'), findsOneWidget);
+    } finally {
+      onVocabularyMutation = null;
+      vocabularyOwners.gate = null;
+      if (!ownerRead.isCompleted) ownerRead.complete();
       await disposeLibrary(tester);
     }
   });

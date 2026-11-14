@@ -234,8 +234,14 @@ final class VocabularyUseCases {
     return created;
   }
 
-  Future<VocabularyWord> updateWord(UpdateWordCommand command) async {
+  Future<VocabularyWord> updateWord(
+    UpdateWordCommand command, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final now = _currentUtc();
     final updated = await vocabulary.updateWord(
       _wordFromInput(
