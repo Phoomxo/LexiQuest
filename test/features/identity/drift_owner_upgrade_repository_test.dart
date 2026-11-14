@@ -8,6 +8,8 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 
 void main() {
   late AppDatabase database;
@@ -28,6 +30,161 @@ void main() {
   tearDown(() async {
     await database.close();
   });
+
+  test('merge duplicate earned badge leaves no dangling pending sync operation', () async {
+    await _seedEveryOwnerScopedTable(database);
+    await database.customInsert(
+      "INSERT INTO achievement_unlocks VALUES ('guest-first', 'guest-owner', 'first_answer', 1, 'guest-source', 13)",
+    );
+    await database.customInsert(
+      "INSERT INTO achievement_unlocks VALUES ('target-first', 'account-owner', 'first_answer', 1, 'target-source', 7)",
+    );
+    await database.customInsert(
+      "INSERT INTO outbox_operations (operation_id,owner_id,entity_type,entity_id,operation_kind,state,created_at_utc_ms) VALUES ('guest-badge-pending','guest-owner','achievementUnlock','guest-first','upsert','pending',13)",
+    );
+    await database.customInsert(
+      "INSERT INTO outbox_operations (operation_id,owner_id,entity_type,entity_id,operation_kind,state,created_at_utc_ms,acknowledged_at_utc_ms) VALUES ('target-badge-ack','account-owner','achievementUnlock','target-first','upsert','acknowledged',7,8)",
+    );
+    await database.customInsert(
+      "INSERT INTO outbox_operations (operation_id,owner_id,entity_type,entity_id,operation_kind,state,attempt_count,last_attempt_at_utc_ms,created_at_utc_ms,acknowledged_at_utc_ms) VALUES ('guest-badge-ack','guest-owner','achievementUnlock','guest-first','upsert','acknowledged',2,15,13,16)",
+    );
+    final targetBefore = await (database.select(
+      database.achievementUnlocks,
+    )..where((r) => r.id.equals('target-first'))).getSingle();
+    final ackBefore = await (database.select(
+      database.outboxOperations,
+    )..where((r) => r.operationId.equals('target-badge-ack'))).getSingle();
+    final guestAckBefore = await (database.select(
+      database.outboxOperations,
+    )..where((r) => r.operationId.equals('guest-badge-ack'))).getSingle();
+    await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+    await repository.upgrade(
+      activeOwnerId: 'account-owner',
+      firebaseUid: 'firebase-user',
+    );
+    expect(
+      await (database.select(
+        database.achievementUnlocks,
+      )..where((r) => r.id.equals('target-first'))).getSingle(),
+      targetBefore,
+    );
+    expect(
+      await (database.select(
+        database.outboxOperations,
+      )..where((r) => r.operationId.equals('target-badge-ack'))).getSingle(),
+      ackBefore,
+    );
+    expect(
+      await (database.select(
+        database.outboxOperations,
+      )..where((r) => r.operationId.equals('guest-badge-ack'))).getSingle(),
+      guestAckBefore.copyWith(ownerId: 'account-owner'),
+    );
+    final dangling = await database
+        .customSelect(
+          "SELECT o.operation_id FROM outbox_operations o WHERE o.owner_id = 'account-owner' AND o.entity_type = 'achievementUnlock' AND o.state IN ('pending','retryWaiting','inFlight','blockedAuth') AND NOT EXISTS (SELECT 1 FROM achievement_unlocks a WHERE a.owner_id = o.owner_id AND a.id = o.entity_id)",
+        )
+        .get();
+    expect(dangling, isEmpty);
+    final claims = await DriftSyncStore(database).claimPending(
+      ownerId: 'account-owner',
+      firebaseUid: 'firebase-user',
+      limit: 50,
+      leaseToken: 'synthetic-badge-lease',
+      leaseDuration: const Duration(minutes: 5),
+      nowUtc: DateTime.utc(2026, 7, 30, 13),
+    );
+    expect(
+      claims.where((c) => c.mutation.operationId == 'target-badge-ack'),
+      isEmpty,
+    );
+    expect(
+      claims.where((c) => c.mutation.operationId == 'guest-badge-ack'),
+      isEmpty,
+    );
+    expect(claims.where((c) => c.mutation.entityId == 'guest-first'), isEmpty);
+    for (final claim in claims.where(
+      (c) => c.mutation.collection == SyncCollection.achievementUnlocks,
+    )) {
+      final row =
+          await (database.select(database.achievementUnlocks)..where(
+                (a) =>
+                    a.id.equals(claim.mutation.entityId) &
+                    a.ownerId.equals('account-owner'),
+              ))
+              .getSingle();
+      expect(claim.mutation.payload, {
+        'achievementId': row.achievementId,
+        'definitionVersion': row.definitionVersion,
+        'sourceEventId': row.sourceEventId,
+        'unlockedAtUtcMs': row.unlockedAtUtcMs,
+      });
+    }
+  });
+
+  test(
+    'merge rebuild preserves retained achievement identity and legacy versions',
+    () async {
+      await _seedEveryOwnerScopedTable(database);
+      await database.customInsert(
+        "INSERT INTO achievement_unlocks VALUES ('accepted-target', 'account-owner', 'first_answer', 1, 'accepted-source', 7)",
+      );
+      await database.customInsert(
+        "INSERT INTO achievement_unlocks VALUES ('older-version', 'account-owner', 'first_answer', 2, 'older-source', 8)",
+      );
+      await database.customInsert(
+        "INSERT INTO achievement_unlocks VALUES ('unknown-legacy', 'account-owner', 'legacy_unknown', 1, 'legacy-source', 9)",
+      );
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      final rows = await (database.select(
+        database.achievementUnlocks,
+      )..where((r) => r.ownerId.equals('account-owner'))).get();
+      final snapshot = {
+        for (final row in rows)
+          row.id: (
+            row.achievementId,
+            row.definitionVersion,
+            row.sourceEventId,
+            row.unlockedAtUtcMs,
+          ),
+      };
+      expect(snapshot['accepted-target'], (
+        'first_answer',
+        1,
+        'accepted-source',
+        7,
+      ));
+      expect(snapshot['older-version'], ('first_answer', 2, 'older-source', 8));
+      expect(snapshot['unknown-legacy'], (
+        'legacy_unknown',
+        1,
+        'legacy-source',
+        9,
+      ));
+      await repository.upgrade(
+        activeOwnerId: 'account-owner',
+        firebaseUid: 'firebase-user',
+      );
+      final replay = await (database.select(
+        database.achievementUnlocks,
+      )..where((r) => r.ownerId.equals('account-owner'))).get();
+      expect({
+        for (final row in replay)
+          row.id: (
+            row.achievementId,
+            row.definitionVersion,
+            row.sourceEventId,
+            row.unlockedAtUtcMs,
+          ),
+      }, snapshot);
+    },
+  );
 
   test(
     'local credits keep stable identities through rehome without reward outbox',

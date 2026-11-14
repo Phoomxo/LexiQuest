@@ -712,6 +712,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           targetSnapshot: <String, Object?>{'id': targetEntityId},
           resolvedAt: resolvedAt,
         );
+        if (specification.table == 'achievement_unlocks') {
+          await _retireDuplicateOutbox(sourceId, 'achievementUnlock', guestId);
+        }
         await _database.customUpdate(
           'DELETE FROM ${specification.table} WHERE id = ?',
           variables: [Variable<String>(guestId)],
@@ -921,7 +924,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           (row) =>
               row.ownerId.equals(ownerId) &
               row.entityType.equals(entityType) &
-              row.entityId.equals(entityId),
+              row.entityId.equals(entityId) &
+              row.state.isIn(const [
+                'pending',
+                'retryWaiting',
+                'inFlight',
+                'blockedAuth',
+                'permanentFailure',
+              ]),
         ))
         .write(
           const db.OutboxOperationsCompanion(

@@ -1,17 +1,24 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show BooleanExpressionOperators;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart'
     as quest;
+import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart'
+    as sync;
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 
 void main() {
   late AppDatabase database;
@@ -597,6 +604,527 @@ void main() {
     );
   });
 
+  group('immutable achievement evidence', () {
+    final start = DateTime.utc(2026, 11, 14, 8);
+    DateTime minute(int n) => start.add(Duration(minutes: n));
+
+    Future<void> startRound(DriftLearningRepository repo, String id, int n) =>
+        repo.startSession(
+          LearningSessionDraft(
+            id: id,
+            ownerId: 'owner-1',
+            activityType: 'quiz',
+            startedAtUtc: minute(n),
+            appVersion: 'test',
+            buildId: 'synthetic',
+          ),
+        );
+
+    RecordAnswerCommand answer(
+      String id,
+      String round,
+      int n,
+      int number, {
+      bool correct = true,
+    }) => RecordAnswerCommand(
+      id: id,
+      ownerId: 'owner-1',
+      sessionId: round,
+      wordId: 'word-1',
+      promptMode: 'meaningChoice',
+      isCorrect: correct,
+      responseTimeMs: 200,
+      attemptNumber: number,
+      occurredAtUtc: minute(n),
+    );
+
+    Future<LearningSessionSummary> finish(
+      DriftLearningRepository repo,
+      String id,
+      int n,
+    ) => repo.finishSession(
+      ownerId: 'owner-1',
+      sessionId: id,
+      endedAtUtc: minute(n),
+    );
+
+    Future<List<Map<String, Object?>>> badgeOps(AppDatabase db) async =>
+        (await db
+                .customSelect(
+                  "SELECT * FROM outbox_operations WHERE entity_type='achievementUnlock' "
+                  'ORDER BY operation_id',
+                )
+                .get())
+            .map((row) => row.data)
+            .toList();
+
+    Future<void> expectRewards(AppDatabase db, Set<String> answerIds) async {
+      final xp = await db.select(db.pointsLedgerEntries).get();
+      final coins = await db.select(db.rewardTransactions).get();
+      expect(
+        xp.map((e) => (e.entryType, e.amount, e.sourceEventId)),
+        unorderedEquals(answerIds.map((id) => ('quizCorrect', 1, id))),
+      );
+      expect(
+        coins.map((e) => (e.transactionType, e.amount, e.sourceEventId)),
+        unorderedEquals(answerIds.map((id) => ('creditQuizCorrectV1', 1, id))),
+      );
+    }
+
+    test(
+      'finishing an empty round grants no achievement or currency',
+      () async {
+        await startRound(repository, 'empty', 0);
+        final result = await finish(repository, 'empty', 1);
+        expect(
+          (result.state, result.correctCount, result.wrongCount),
+          ('completed', 0, 0),
+        );
+        await finish(repository, 'empty', 2);
+        await DriftLearningProjectionRebuilder(
+          database,
+        ).rebuildAchievements('owner-1');
+        expect(
+          await database.select(database.achievementUnlocks).get(),
+          isEmpty,
+        );
+        expect(await badgeOps(database), isEmpty);
+        await expectRewards(database, {});
+      },
+    );
+
+    test(
+      'five badges use original facts and rounds once, including intentional retries',
+      () async {
+        await startRound(repository, 'mixed', 5);
+        await repository.recordAnswer(
+          answer('wrong', 'mixed', 6, 1, correct: false),
+        );
+        final retry = answer('retry', 'mixed', 7, 2);
+        await repository.recordAnswer(retry);
+        final mixed = await finish(repository, 'mixed', 8);
+        expect((mixed.wrongCount, mixed.correctCount), (1, 1));
+        expect(
+          (await database.select(database.achievementUnlocks).get()).map(
+            (r) => r.achievementId,
+          ),
+          unorderedEquals(['first_answer', 'first_correct', 'first_session']),
+        );
+        await startRound(repository, 'perfect', 9);
+        final earnedAnswers = {'retry'};
+        for (var i = 1; i <= 9; i++) {
+          final command = answer('correct-$i', 'perfect', 9 + i, i);
+          await repository.recordAnswer(command);
+          earnedAnswers.add(command.id);
+        }
+        await finish(repository, 'perfect', 19);
+        final earned = await database.select(database.achievementUnlocks).get();
+        expect(
+          earned.map(
+            (r) => (
+              r.achievementId,
+              r.definitionVersion,
+              r.sourceEventId,
+              r.unlockedAtUtcMs,
+            ),
+          ),
+          unorderedEquals([
+            ('first_answer', 1, 'wrong', minute(6).millisecondsSinceEpoch),
+            ('first_correct', 1, 'retry', minute(7).millisecondsSinceEpoch),
+            ('ten_correct', 1, 'correct-9', minute(18).millisecondsSinceEpoch),
+            ('first_session', 1, 'mixed', minute(8).millisecondsSinceEpoch),
+            (
+              'perfect_session',
+              1,
+              'perfect',
+              minute(19).millisecondsSinceEpoch,
+            ),
+          ]),
+        );
+        final operations = await badgeOps(database);
+        expect(
+          operations.map((op) => op['entity_id']),
+          unorderedEquals(earned.map((r) => r.id)),
+        );
+        await expectRewards(database, earnedAnswers);
+
+        await startRound(repository, 'late-arrival', 0);
+        final lateAnswer = answer('early-correct', 'late-arrival', 1, 1);
+        await repository.recordAnswer(lateAnswer);
+        earnedAnswers.add(lateAnswer.id);
+        expect((await repository.recordAnswer(retry)).inserted, isFalse);
+        await finish(repository, 'perfect', 30);
+        await DriftLearningProjectionRebuilder(
+          database,
+        ).rebuildAchievements('owner-1');
+        await DriftProgressQueries(
+          database,
+        ).load(ownerId: 'owner-1', nowUtc: minute(31));
+        expect(
+          await database.select(database.achievementUnlocks).get(),
+          unorderedEquals(earned),
+        );
+        expect(await badgeOps(database), operations);
+        await expectRewards(database, earnedAnswers);
+      },
+    );
+
+    for (final canonicalOperation in [true, false]) {
+      test(
+        'retired achievement delivery identity survives reopen with canonicalOperation=$canonicalOperation',
+        () async {
+          const retiredId = 'achievement:owner-1:first_answer:1';
+          final oldOperationId = canonicalOperation
+              ? 'achievementUnlock:$retiredId:1'
+              : 'opaque-delivered-operation';
+          final file = await _temporaryBadgeFile();
+          final command = answer('first-wrong', 'round', 4, 1, correct: false);
+          late OutboxOperation acknowledgement;
+          late AchievementUnlock issued;
+          final writer = AppDatabase(NativeDatabase(file));
+          try {
+            await seedVocabulary(writer);
+            // Post-merge history: the retained legacy badge has a different
+            // physical ID. Delivery history for its removed duplicate survives.
+            await writer
+                .into(writer.achievementUnlocks)
+                .insert(
+                  AchievementUnlocksCompanion.insert(
+                    id: 'target-legacy',
+                    ownerId: 'owner-1',
+                    achievementId: 'legacy_unknown',
+                    definitionVersion: 1,
+                    sourceEventId: 'legacy-source',
+                    unlockedAtUtcMs: minute(0).millisecondsSinceEpoch,
+                  ),
+                );
+            await writer.customStatement(
+              'INSERT INTO outbox_operations '
+              '(operation_id, owner_id, entity_type, entity_id, operation_kind, state, '
+              'attempt_count, last_attempt_at_utc_ms, created_at_utc_ms, acknowledged_at_utc_ms) '
+              "VALUES (?, 'owner-1', 'achievementUnlock', ?, 'upsert', 'acknowledged', 2, ?, ?, ?)",
+              [
+                oldOperationId,
+                retiredId,
+                minute(1).millisecondsSinceEpoch,
+                minute(0).millisecondsSinceEpoch,
+                minute(2).millisecondsSinceEpoch,
+              ],
+            );
+            acknowledgement = await writer
+                .select(writer.outboxOperations)
+                .getSingle();
+            final repo = DriftLearningRepository(writer);
+            await startRound(repo, 'round', 3);
+            expect((await repo.recordAnswer(command)).inserted, isTrue);
+            issued =
+                await (writer.select(writer.achievementUnlocks)
+                      ..where((r) => r.achievementId.equals('first_answer')))
+                    .getSingle();
+          } finally {
+            await writer.close();
+          }
+
+          final reopened = AppDatabase(NativeDatabase(file));
+          try {
+            expect(
+              (await DriftLearningRepository(
+                reopened,
+              ).recordAnswer(command)).inserted,
+              isFalse,
+            );
+            final grants = await reopened
+                .select(reopened.achievementUnlocks)
+                .get();
+            expect(
+              grants.map((r) => r.achievementId),
+              unorderedEquals(['first_answer', 'legacy_unknown']),
+            );
+            expect(
+              grants.singleWhere((r) => r.achievementId == 'first_answer'),
+              issued,
+            );
+            final fact = await reopened
+                .select(reopened.answerAttempts)
+                .getSingle();
+            expect((fact.id, fact.isCorrect), (command.id, false));
+            await expectRewards(reopened, {});
+            final store = DriftSyncStore(reopened);
+            final claimed = await store.claimPending(
+              ownerId: 'owner-1',
+              firebaseUid: 'synthetic-user',
+              limit: 20,
+              leaseToken: 'synthetic-lease',
+              leaseDuration: const Duration(minutes: 1),
+              nowUtc: minute(5),
+            );
+            final fresh = claimed
+                .map((c) => c.mutation)
+                .where(
+                  (m) => m.collection == sync.SyncCollection.achievementUnlocks,
+                );
+            expect(
+              fresh,
+              hasLength(1),
+              reason: 'the old ACK cannot deliver this new grant',
+            );
+            expect(
+              issued.id,
+              isNot(retiredId),
+              reason: 'an acknowledged entity ID denotes its original award',
+            );
+            expect(fresh.single.entityId, issued.id);
+            expect(
+              fresh.single.operationId,
+              isNot(acknowledgement.operationId),
+            );
+            expect(fresh.single.payload, {
+              'achievementId': 'first_answer',
+              'definitionVersion': 1,
+              'sourceEventId': command.id,
+              'unlockedAtUtcMs': command.occurredAtUtc.millisecondsSinceEpoch,
+            });
+            final ops = await (reopened.select(
+              reopened.outboxOperations,
+            )..where((op) => op.entityType.equals('achievementUnlock'))).get();
+            expect(
+              ops.map((op) => op.operationId),
+              unorderedEquals([oldOperationId, fresh.single.operationId]),
+            );
+            expect(
+              ops.singleWhere((op) => op.operationId == oldOperationId),
+              acknowledgement,
+            );
+          } finally {
+            await reopened.close();
+          }
+        },
+      );
+    }
+
+    for (final (legacyKey, legacyVersion) in [
+      ('legacy_unknown', 1),
+      ('first_answer', 7),
+    ]) {
+      test(
+        'opaque achievement ID collision with $legacyKey v$legacyVersion survives replay and reopen',
+        () async {
+          const occupiedId = 'achievement:owner-1:first_answer:1';
+          final file = await _temporaryBadgeFile();
+          final command = answer('first-local', 'quiz', 4, 1);
+          final writer = AppDatabase(NativeDatabase(file));
+          late AchievementUnlock retained;
+          late AchievementUnlock issued;
+          try {
+            await seedVocabulary(writer);
+            final archived = sync.SyncEntity(
+              collection: sync.SyncCollection.achievementUnlocks,
+              entityId: occupiedId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: minute(1),
+              serverUpdatedAtUtc: minute(2),
+              payload: {
+                'achievementId': legacyKey,
+                'definitionVersion': legacyVersion,
+                'sourceEventId': 'archived-source',
+                'unlockedAtUtcMs': minute(1).millisecondsSinceEpoch,
+              },
+            );
+            await DriftSyncStore(writer).applyPullPage(
+              ownerId: 'owner-1',
+              collection: archived.collection,
+              page: PullPage(
+                changes: [archived],
+                nextCursor: sync.SyncCursor(
+                  serverUpdatedAtUtc: archived.serverUpdatedAtUtc,
+                  documentId: occupiedId,
+                ),
+                hasMore: false,
+              ),
+            );
+            retained = await writer
+                .select(writer.achievementUnlocks)
+                .getSingle();
+            final repo = DriftLearningRepository(writer);
+            await startRound(repo, 'quiz', 3);
+            expect((await repo.recordAnswer(command)).inserted, isTrue);
+            issued =
+                await (writer.select(writer.achievementUnlocks)..where(
+                      (r) =>
+                          r.achievementId.equals('first_answer') &
+                          r.definitionVersion.equals(1),
+                    ))
+                    .getSingle();
+            expect(issued.id, isNot(occupiedId));
+            expect(
+              (issued.sourceEventId, issued.unlockedAtUtcMs),
+              (command.id, command.occurredAtUtc.millisecondsSinceEpoch),
+            );
+          } finally {
+            await writer.close();
+          }
+
+          final reopened = AppDatabase(NativeDatabase(file));
+          try {
+            final repo = DriftLearningRepository(reopened);
+            expect((await repo.recordAnswer(command)).inserted, isFalse);
+            final rows = await reopened
+                .select(reopened.achievementUnlocks)
+                .get();
+            expect(rows, hasLength(3));
+            expect(rows, containsAll([retained, issued]));
+            final firstCorrect = rows.singleWhere(
+              (r) =>
+                  r.achievementId == 'first_correct' &&
+                  r.definitionVersion == 1,
+            );
+            expect(
+              (await reopened.select(reopened.answerAttempts).getSingle()).id,
+              command.id,
+            );
+            await expectRewards(reopened, {command.id});
+            final operations = await badgeOps(reopened);
+            expect(
+              operations.map((op) => op['entity_id']),
+              unorderedEquals([issued.id, firstCorrect.id]),
+            );
+            final claimed = await DriftSyncStore(reopened).claimPending(
+              ownerId: 'owner-1',
+              firebaseUid: 'synthetic-user',
+              limit: 20,
+              leaseToken: 'synthetic-lease',
+              leaseDuration: const Duration(minutes: 1),
+              nowUtc: minute(5),
+            );
+            final mutation = claimed
+                .map((op) => op.mutation)
+                .singleWhere(
+                  (m) =>
+                      m.collection == sync.SyncCollection.achievementUnlocks &&
+                      m.entityId == issued.id,
+                );
+            expect(mutation.payload, {
+              'achievementId': 'first_answer',
+              'definitionVersion': 1,
+              'sourceEventId': command.id,
+              'unlockedAtUtcMs': command.occurredAtUtc.millisecondsSinceEpoch,
+            });
+          } finally {
+            await reopened.close();
+          }
+        },
+      );
+    }
+
+    test(
+      'legacy unlock IDs, sources, dates and pending or acknowledged operations survive reopen',
+      () async {
+        final dir = await Directory.systemTemp.createTemp(
+          'lexiquest-badge-history-',
+        );
+        final originalDir = await dir.resolveSymbolicLinks();
+        final file = File('${dir.path}/badges.sqlite');
+        final correctIds = {for (var i = 1; i <= 10; i++) 'local-$i'};
+        final lateAnswer = answer('late-earlier', 'local', 1, 11);
+        late List<AchievementUnlock> history;
+        late List<Map<String, Object?>> operations;
+        try {
+          final writer = AppDatabase(NativeDatabase(file));
+          try {
+            await seedVocabulary(writer);
+            for (final key in [
+              'first_answer',
+              'first_correct',
+              'ten_correct',
+              'first_session',
+              'perfect_session',
+              'archived_custom',
+            ]) {
+              await writer
+                  .into(writer.achievementUnlocks)
+                  .insert(
+                    AchievementUnlocksCompanion.insert(
+                      id: 'legacy-$key',
+                      ownerId: 'owner-1',
+                      achievementId: key,
+                      definitionVersion: 1,
+                      sourceEventId: 'original-$key',
+                      unlockedAtUtcMs: minute(50).millisecondsSinceEpoch,
+                    ),
+                  );
+            }
+            // Persist historical operation identities for both sync states. The
+            // wire payload comes from the referenced immutable unlock row.
+            for (final key in [
+              'first_answer',
+              'first_correct',
+              'ten_correct',
+            ]) {
+              final acknowledged = key == 'first_correct';
+              await writer.customStatement(
+                'INSERT INTO outbox_operations (operation_id,owner_id,entity_type,entity_id,'
+                'operation_kind,state,created_at_utc_ms,acknowledged_at_utc_ms) '
+                "VALUES (?,'owner-1','achievementUnlock',?,'upsert',?,?,?)",
+                [
+                  'op-$key',
+                  'legacy-$key',
+                  acknowledged ? 'acknowledged' : 'pending',
+                  minute(50).millisecondsSinceEpoch,
+                  acknowledged ? minute(52).millisecondsSinceEpoch : null,
+                ],
+              );
+            }
+            history = await writer.select(writer.achievementUnlocks).get();
+            operations = await badgeOps(writer);
+            final repo = DriftLearningRepository(writer);
+            await startRound(repo, 'local', 0);
+            for (var i = 1; i <= 10; i++) {
+              await repo.recordAnswer(answer('local-$i', 'local', 10 + i, i));
+            }
+            await repo.recordAnswer(lateAnswer);
+            await finish(repo, 'local', 25);
+          } finally {
+            await writer.close();
+          }
+          final reopened = AppDatabase(NativeDatabase(file));
+          try {
+            final repo = DriftLearningRepository(reopened);
+            expect((await repo.recordAnswer(lateAnswer)).inserted, isFalse);
+            await finish(repo, 'local', 60);
+            await DriftLearningProjectionRebuilder(
+              reopened,
+            ).rebuildAchievements('owner-1');
+            await DriftProgressQueries(
+              reopened,
+            ).load(ownerId: 'owner-1', nowUtc: minute(61));
+            expect(
+              await reopened.select(reopened.achievementUnlocks).get(),
+              unorderedEquals(history),
+            );
+            expect(await badgeOps(reopened), operations);
+            await expectRewards(reopened, {...correctIds, lateAnswer.id});
+          } finally {
+            await reopened.close();
+          }
+        } finally {
+          final resolved = Directory(await dir.resolveSymbolicLinks());
+          expect(resolved.path, originalDir);
+          expect(
+            resolved.parent.path,
+            await Directory.systemTemp.resolveSymbolicLinks(),
+          );
+          expect(
+            resolved.uri.pathSegments.where((s) => s.isNotEmpty).last,
+            startsWith('lexiquest-badge-history-'),
+          );
+          await resolved.delete(recursive: true);
+        }
+      },
+    );
+  });
+
   test('quiz words come from active local vocabulary for the owner', () async {
     final words = await repository.listQuizWords(
       ownerId: 'owner-1',
@@ -796,8 +1324,8 @@ void main() {
       final firstAnswer = await (database.select(
         database.achievementUnlocks,
       )..where((row) => row.achievementId.equals('first_answer'))).getSingle();
-      expect(firstAnswer.sourceEventId, 'attempt-earlier');
-      expect(firstAnswer.unlockedAtUtcMs, earlier.millisecondsSinceEpoch);
+      expect(firstAnswer.sourceEventId, 'attempt-later');
+      expect(firstAnswer.unlockedAtUtcMs, later.millisecondsSinceEpoch);
     },
   );
 
@@ -1012,6 +1540,25 @@ void main() {
     );
     expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
+}
+
+Future<File> _temporaryBadgeFile() async {
+  final dir = await Directory.systemTemp.createTemp('lexiquest-opaque-badge-');
+  final originalDir = await dir.resolveSymbolicLinks();
+  addTearDown(() async {
+    final resolved = Directory(await dir.resolveSymbolicLinks());
+    expect(resolved.path, originalDir);
+    expect(
+      resolved.parent.path,
+      await Directory.systemTemp.resolveSymbolicLinks(),
+    );
+    expect(
+      resolved.uri.pathSegments.where((s) => s.isNotEmpty).last,
+      startsWith('lexiquest-opaque-badge-'),
+    );
+    await resolved.delete(recursive: true);
+  });
+  return File('${dir.path}/badges.sqlite');
 }
 
 Future<void> _start(DriftLearningRepository repo, DateTime at) =>

@@ -372,21 +372,8 @@ final class DriftLearningRepository implements LearningRepository {
             score: Value(score),
           ),
         );
-        await _unlockAchievement(
-          ownerId: ownerId,
-          achievementId: 'first_session',
-          sourceEventId: sessionId,
-          unlockedAtUtc: endedAtUtc,
-        );
-        if (total > 0 && row.wrongCount == 0) {
-          await _unlockAchievement(
-            ownerId: ownerId,
-            achievementId: 'perfect_session',
-            sourceEventId: sessionId,
-            unlockedAtUtc: endedAtUtc,
-          );
-        }
       }
+      await projections.rebuildAchievements(ownerId);
       return LearningSessionSummary(
         id: row.id,
         state: 'completed',
@@ -506,37 +493,6 @@ final class DriftLearningRepository implements LearningRepository {
         documentRevision: command.documentRevision,
       );
     });
-  }
-
-  Future<void> _unlockAchievement({
-    required String ownerId,
-    required String achievementId,
-    required String sourceEventId,
-    required DateTime unlockedAtUtc,
-  }) async {
-    const definitionVersion = 1;
-    final achievementId_ =
-        'achievement:$ownerId:$achievementId:$definitionVersion';
-    await database
-        .into(database.achievementUnlocks)
-        .insert(
-          db.AchievementUnlocksCompanion.insert(
-            id: achievementId_,
-            ownerId: ownerId,
-            achievementId: achievementId,
-            definitionVersion: definitionVersion,
-            sourceEventId: sourceEventId,
-            unlockedAtUtcMs: unlockedAtUtc.millisecondsSinceEpoch,
-          ),
-          mode: InsertMode.insertOrIgnore,
-        );
-    // Outbox hook — sync achievement unlock to Firestore (Phase 0 Week 12-13).
-    await _appendImmutableOutbox(
-      ownerId: ownerId,
-      entityType: 'achievementUnlock',
-      entityId: achievementId_,
-      occurredAtUtc: unlockedAtUtc,
-    );
   }
 
   Future<void> _appendImmutableOutbox({

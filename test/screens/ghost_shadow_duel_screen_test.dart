@@ -101,10 +101,7 @@ void main() {
               .get();
           expect(coins, hasLength(1));
           expect(coins.single.amount, 1);
-          expect(
-            await fixture.db.select(fixture.db.outboxOperations).get(),
-            hasLength(2),
-          );
+          await _expectCorrectAnswerOutbox(fixture, first);
           expect(fixture.repository.finishCalls, 0);
           expect(
             (await fixture.db.select(fixture.db.learningSessions).getSingle())
@@ -179,10 +176,11 @@ void main() {
       );
       answerGate.complete();
       await _until(tester, find.text('จบรอบและบันทึกผล'));
-      final outbox =
-          (await fixture.db.select(fixture.db.outboxOperations).get())
-              .map((r) => r.toJson())
-              .toList();
+      final command = fixture.repository.commands.single;
+      final outbox = {
+        for (final row in await _expectCorrectAnswerOutbox(fixture, command))
+          row.operationId: row.toJson(),
+      };
       final srs = (await fixture.db.select(fixture.db.srsStates).getSingle())
           .toJson();
       final finishGate = fixture.repository.finishGate = Completer<void>();
@@ -198,15 +196,48 @@ void main() {
       final afterFinish = await fixture.db
           .select(fixture.db.outboxOperations)
           .get();
+      expect({
+        for (final row in afterFinish)
+          if (outbox.containsKey(row.operationId))
+            row.operationId: row.toJson(),
+      }, outbox);
+      final sessionUnlocks =
+          (await fixture.db.select(fixture.db.achievementUnlocks).get())
+              .where(
+                (row) =>
+                    row.achievementId == 'first_session' ||
+                    row.achievementId == 'perfect_session',
+              )
+              .toList();
       expect(
-        afterFinish
-            .where((r) => r.entityType != 'achievementUnlock')
-            .map((r) => r.toJson()),
-        outbox,
+        sessionUnlocks.map(
+          (row) => (
+            row.ownerId,
+            row.achievementId,
+            row.definitionVersion,
+            row.sourceEventId,
+          ),
+        ),
+        unorderedEquals([
+          (command.ownerId, 'first_session', 1, command.sessionId),
+          (command.ownerId, 'perfect_session', 1, command.sessionId),
+        ]),
       );
       expect(
-        afterFinish.where((r) => r.entityType == 'achievementUnlock'),
-        hasLength(2),
+        afterFinish
+            .where((row) => !outbox.containsKey(row.operationId))
+            .map(
+              (row) => (
+                row.ownerId,
+                row.entityType,
+                row.entityId,
+                row.operationKind,
+              ),
+            ),
+        unorderedEquals([
+          for (final row in sessionUnlocks)
+            (command.ownerId, 'achievementUnlock', row.id, 'upsert'),
+        ]),
       );
       expect(
         (await fixture.db.select(fixture.db.srsStates).getSingle()).toJson(),
@@ -572,6 +603,37 @@ void main() {
       });
     }
   });
+}
+
+Future<List<OutboxOperation>> _expectCorrectAnswerOutbox(
+  _Fixture fixture,
+  RecordAnswerCommand command,
+) async {
+  final unlocks = await fixture.db.select(fixture.db.achievementUnlocks).get();
+  expect(
+    unlocks.map(
+      (row) => (
+        row.ownerId,
+        row.achievementId,
+        row.definitionVersion,
+        row.sourceEventId,
+      ),
+    ),
+    unorderedEquals([
+      (command.ownerId, 'first_answer', 1, command.id),
+      (command.ownerId, 'first_correct', 1, command.id),
+    ]),
+  );
+  final operations = await fixture.db.select(fixture.db.outboxOperations).get();
+  expect(
+    operations.map((row) => (row.ownerId, row.entityType, row.entityId)),
+    unorderedEquals([
+      (command.ownerId, 'attempt', command.id),
+      (command.ownerId, 'srsState', command.wordId),
+      for (final row in unlocks) (command.ownerId, 'achievementUnlock', row.id),
+    ]),
+  );
+  return operations;
 }
 
 Future<void> _open(

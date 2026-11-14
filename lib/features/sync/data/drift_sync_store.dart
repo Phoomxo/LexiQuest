@@ -1069,7 +1069,7 @@ final class DriftSyncStore implements SyncStatusSource {
         ownerId: ownerId,
         sessionId: existing.sessionId,
       );
-      await projections.rebuildAchievements(ownerId);
+      await projections.rebuildAchievements(ownerId, enqueueNewUnlocks: false);
       await _rebuildOptionalRewards(ownerId);
       return;
     }
@@ -1141,7 +1141,7 @@ final class DriftSyncStore implements SyncStatusSource {
         );
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
-    await projections.rebuildAchievements(ownerId);
+    await projections.rebuildAchievements(ownerId, enqueueNewUnlocks: false);
     await _rebuildOptionalRewards(ownerId);
   }
 
@@ -1378,12 +1378,13 @@ final class DriftSyncStore implements SyncStatusSource {
     SyncEntity entity,
   ) async {
     _requireImmutableEntity(entity, SyncCollection.achievementUnlocks);
-    final existing =
-        await (database.select(database.achievementUnlocks)..where(
-              (r) => r.id.equals(entity.entityId) & r.ownerId.equals(ownerId),
-            ))
-            .getSingleOrNull();
+    final existing = await (database.select(
+      database.achievementUnlocks,
+    )..where((row) => row.id.equals(entity.entityId))).getSingleOrNull();
     if (existing != null) {
+      if (existing.ownerId != ownerId) {
+        throw const InvalidSyncPayloadFailure();
+      }
       await _handleExistingImmutable(
         ownerId: ownerId,
         entity: entity,
@@ -1396,6 +1397,24 @@ final class DriftSyncStore implements SyncStatusSource {
     final definitionVersion = _requiredInt(payload, 'definitionVersion');
     final sourceEventId = _requiredString(payload, 'sourceEventId');
     final unlockedAtUtcMs = _requiredInt(payload, 'unlockedAtUtcMs');
+    final logicalUnlock =
+        await (database.select(database.achievementUnlocks)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.achievementId.equals(achievementId) &
+                  row.definitionVersion.equals(definitionVersion),
+            ))
+            .getSingleOrNull();
+    if (logicalUnlock != null) {
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _achievementUnlockPayload(logicalUnlock),
+        conflictId:
+            'conflict:logical-achievement:${jsonEncode([ownerId, entity.entityId, entity.revision])}',
+      );
+      return;
+    }
 
     await database
         .into(database.achievementUnlocks)
@@ -1416,6 +1435,7 @@ final class DriftSyncStore implements SyncStatusSource {
     required String ownerId,
     required SyncEntity entity,
     required Map<String, Object?> localPayload,
+    String? conflictId,
   }) async {
     if (_jsonEquivalent(localPayload, entity.payload)) {
       await _resolvePendingImmutableOutbox(
@@ -1430,6 +1450,7 @@ final class DriftSyncStore implements SyncStatusSource {
       entity: entity,
       localPayload: localPayload,
       resolvedAtUtc: entity.serverUpdatedAtUtc,
+      conflictId: conflictId,
     );
   }
 

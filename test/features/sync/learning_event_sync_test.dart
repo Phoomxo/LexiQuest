@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -236,9 +236,20 @@ void main() {
       }
       final outbox = await database.select(database.outboxOperations).get();
       expect(outbox.map((row) => row.operationId).toSet(), outboxIds);
+      expect(outbox.map((row) => row.entityType).toSet(), {
+        'attempt',
+        'srsState',
+        'achievementUnlock',
+      });
       expect(
-        outbox.map((row) => row.entityType),
-        everyElement(isIn({'attempt', 'srsState'})),
+        outbox
+            .where((row) => row.entityType == 'achievementUnlock')
+            .map((row) => row.entityId)
+            .toSet(),
+        {
+          'achievement:owner-1:first_answer:1',
+          'achievement:owner-1:first_correct:1',
+        },
       );
     },
   );
@@ -299,7 +310,7 @@ void main() {
       ]) {
         expect(claim.mutation.payload, isNot(contains(key)));
       }
-      await _expectNoMotivationOrResearchWrites(database);
+      await _expectNoMotivationOrResearchWrites(database, localBadges: true);
     },
   );
 
@@ -412,6 +423,41 @@ void main() {
       );
     },
   );
+
+  test('inbound completed learning round rebuilds badges without echo', () async {
+    await database.customInsert(
+      "INSERT INTO learning_sessions (id,owner_id,activity_type,state,started_at_utc_ms,ended_at_utc_ms,app_version,build_id) "
+      "VALUES ('remote-completed','owner-1','quiz','completed',?,?, 'test','test')",
+      variables: [
+        Variable(now.millisecondsSinceEpoch - 1000),
+        Variable(now.millisecondsSinceEpoch + 1000),
+      ],
+    );
+    final attempt = _attemptEntity(
+      id: 'remote-completed-answer',
+      sessionId: 'remote-completed',
+      occurredAt: now,
+    );
+    await store.applyPullPage(
+      ownerId: 'owner-1',
+      collection: SyncCollection.attempts,
+      page: _page(attempt),
+    );
+    await store.applyPullPage(
+      ownerId: 'owner-1',
+      collection: SyncCollection.attempts,
+      page: _page(attempt),
+    );
+    final badges = await database.select(database.achievementUnlocks).get();
+    expect(badges.map((row) => row.achievementId).toSet(), {
+      'first_answer',
+      'first_correct',
+      'first_session',
+      'perfect_session',
+    });
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
+    await _expectNoMotivationOrResearchWrites(database);
+  });
 
   test(
     'historical attempt remains valid after its word is soft deleted',
@@ -699,7 +745,10 @@ void main() {
   });
 }
 
-Future<void> _expectNoMotivationOrResearchWrites(AppDatabase database) async {
+Future<void> _expectNoMotivationOrResearchWrites(
+  AppDatabase database, {
+  bool localBadges = false,
+}) async {
   expect(await database.select(database.questClaimReceipts).get(), isEmpty);
   expect(
     await database.select(database.questDefinitionRevisions).get(),
@@ -709,8 +758,27 @@ Future<void> _expectNoMotivationOrResearchWrites(AppDatabase database) async {
   expect(await database.select(database.eventsV2).get(), isEmpty);
   expect(await database.select(database.researchConsents).get(), isEmpty);
   final outbox = await database.select(database.outboxOperations).get();
+  final badges = outbox
+      .where((row) => row.entityType == 'achievementUnlock')
+      .map((row) => row.entityId)
+      .toSet();
   expect(
-    outbox.every((row) => {'attempt', 'srsState'}.contains(row.entityType)),
+    badges,
+    localBadges
+        ? {
+            'achievement:owner-1:first_answer:1',
+            'achievement:owner-1:first_correct:1',
+          }
+        : isEmpty,
+  );
+  expect(
+    outbox.every(
+      (row) => {
+        'attempt',
+        'srsState',
+        if (localBadges) 'achievementUnlock',
+      }.contains(row.entityType),
+    ),
     isTrue,
   );
 }

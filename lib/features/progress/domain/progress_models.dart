@@ -50,6 +50,29 @@ final class LearningRecommendation {
   final int sampleSize;
 }
 
+const Map<String, ({String title, String condition})> achievementV1Metadata = {
+  'first_answer': (
+    title: 'บันทึกคำตอบครั้งแรก',
+    condition: 'บันทึกคำตอบอย่างน้อย 1 ครั้ง',
+  ),
+  'first_correct': (
+    title: 'ตอบถูกครั้งแรก',
+    condition: 'บันทึกคำตอบถูกอย่างน้อย 1 ครั้ง',
+  ),
+  'ten_correct': (
+    title: 'ตอบถูกครบ 10 ครั้ง',
+    condition: 'บันทึกคำตอบถูกอย่างน้อย 10 ครั้ง',
+  ),
+  'first_session': (
+    title: 'เรียนจบรอบแรก',
+    condition: 'เรียนจบรอบที่มีคำตอบอย่างน้อย 1 ครั้ง',
+  ),
+  'perfect_session': (
+    title: 'ตอบถูกครบทั้งรอบ',
+    condition: 'เรียนจบรอบที่มีคำตอบอย่างน้อย 1 ครั้ง และไม่มีคำตอบผิด',
+  ),
+};
+
 final class AchievementEvidence {
   const AchievementEvidence({
     required this.id,

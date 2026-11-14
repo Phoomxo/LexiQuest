@@ -122,12 +122,10 @@ void main() {
             throwsStateError,
           );
         }
-        expect(
-          (await database.select(database.answerAttempts).get())
-              .single
-              .questIntent,
-          isNull,
-        );
+        final answer = await database
+            .select(database.answerAttempts)
+            .getSingle();
+        expect(answer.questIntent, isNull);
         for (final table in [
           'quest_definition_revisions',
           'quest_instances',
@@ -149,9 +147,33 @@ void main() {
           await database.select(database.pointsLedgerEntries).get(),
           hasLength(1),
         );
+        final awards = await database.select(database.achievementUnlocks).get();
         expect(
-          await database.select(database.outboxOperations).get(),
-          hasLength(2),
+          awards.map(
+            (row) => (
+              row.ownerId,
+              row.achievementId,
+              row.definitionVersion,
+              row.sourceEventId,
+            ),
+          ),
+          unorderedEquals([
+            (owner.id, 'first_answer', 1, answer.id),
+            (owner.id, 'first_correct', 1, answer.id),
+          ]),
+        );
+        final outbox = await database.select(database.outboxOperations).get();
+        expect(
+          outbox.map(
+            (row) =>
+                (row.ownerId, row.entityType, row.entityId, row.operationKind),
+          ),
+          unorderedEquals([
+            (owner.id, 'attempt', answer.id, 'upsert'),
+            (owner.id, 'srsState', answer.wordId, 'upsert'),
+            for (final award in awards)
+              (owner.id, 'achievementUnlock', award.id, 'upsert'),
+          ]),
         );
         final lateMutation = dependencies.learning!.onLocalMutation!;
         final lastRevision = updates.value;
