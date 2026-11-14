@@ -3,12 +3,18 @@
 ## S4 Typed practice from the permission center
 
 - Settings shows an authored spelling exercise when the microphone
-  lacks permission. At 200% text the widget journey stays silent through
-  typing, correction and retry, then returns to the same permission center.
-  Both registry gates preserve the diagnostic status while hiding practice.
+  is unavailable or permission prevents its use. At 200% text the widget
+  journey stays silent through typing, correction and retry, then returns
+  to the same permission center. Both registry gates preserve the
+  diagnostic status while hiding practice.
 - Windows 81 focused tests passed after the CI-discovered IPA scroll
-  issue. The Android debug build succeeded. Native installation, current
-  signed hardware and TalkBack are pending.
+  issue. Windows full Flutter passed 2,384 at draft head `e4d032ad`.
+  GitHub CI on that head passed Flutter 2,384, backend CPU 267, Firestore,
+  Supabase, analysis and Android debug build.
+  The Android debug build and installed hash matched. Two Android
+  starts ended before a usable window, with initialization timeout and ANR.
+  Next compare the candidate and known-launch build on a healthy isolated
+  AVD session. Current signed hardware and TalkBack are pending.
   [Evidence](evidence/s4-settings-typed.txt).
 
 ## S5 Research permit expiry during validation
