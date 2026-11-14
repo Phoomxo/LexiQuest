@@ -3,8 +3,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
@@ -68,6 +70,449 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final activity in ['weakness', 'source']) {
+    Future<QuizSession> targeted(
+      QuizPromptKind kind,
+      List<String> ids, {
+      int limit = 20,
+      String? owner,
+    }) => activity == 'weakness'
+        ? useCases.startWeaknessPractice(
+            wordIds: ids,
+            kind: kind,
+            limit: limit,
+            expectedOwnerId: owner,
+          )
+        : useCases.startSourcePracticeForWords(
+            wordIds: ids,
+            kind: kind,
+            limit: limit,
+            expectedOwnerId: owner,
+          );
+
+    test(
+      '$activity retains reverse kind and target while drawing real options',
+      () async {
+        final session = await targeted(QuizPromptKind.spellingChoice, [
+          'word-3',
+        ]);
+        final q = session.questions.single;
+        expect(q.word.id, 'word-3');
+        expect(q.kind, QuizPromptKind.spellingChoice);
+        expect(q.promptText, 'ชานชาลา');
+        expect(q.correctAnswer, 'platform');
+        expect(q.optionWords!['ticket']!.id, 'word-2');
+      },
+    );
+
+    test(
+      '$activity retains definition kind for the requested target only',
+      () async {
+        final session = await targeted(QuizPromptKind.definitionChoice, [
+          'word-3',
+        ]);
+        final q = session.questions.single;
+        expect(q.word.id, 'word-3');
+        expect(q.kind, QuizPromptKind.definitionChoice);
+        expect(q.optionWords!['ticket']!.id, 'word-2');
+        expect(q.correctAnswer, 'platform');
+      },
+    );
+
+    test(
+      '$activity rejects unsupported target without creating a session',
+      () async {
+        final session = await targeted(QuizPromptKind.definitionChoice, [
+          'word-2',
+        ]);
+        expect(session.isEmpty, isTrue);
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+      },
+    );
+
+    test(
+      '$activity definition never substitutes a different category target',
+      () async {
+        await database
+            .into(database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: 'category-2',
+                ownerId: 'local:guest',
+                name: 'Other',
+                normalizedName: 'other',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        for (final row in const [
+          ('other-p', 'platform', 'ชานชาลา'),
+          ('other-t', 'ticket', 'ตั๋ว'),
+        ]) {
+          await database
+              .into(database.vocabularyWords)
+              .insert(
+                VocabularyWordsCompanion.insert(
+                  id: row.$1,
+                  ownerId: 'local:guest',
+                  categoryId: 'category-2',
+                  spelling: row.$2,
+                  normalizedSpelling: row.$2,
+                  meaning: row.$3,
+                  normalizedMeaning: row.$3,
+                  partOfSpeech: 'noun',
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+        }
+        final session = await targeted(QuizPromptKind.definitionChoice, [
+          'word-3',
+        ], limit: 1);
+        expect(session.questions.single.word.id, 'word-3');
+        expect(session.questions.single.optionWords!['ticket']!.id, 'word-2');
+      },
+    );
+
+    test(
+      '$activity considers requested eligible target beyond first 100 before limiting',
+      () async {
+        for (var i = 0; i < 101; i++) {
+          await database
+              .into(database.vocabularyWords)
+              .insert(
+                VocabularyWordsCompanion.insert(
+                  id: 'a-$i',
+                  ownerId: 'local:guest',
+                  categoryId: 'category-1',
+                  spelling: 'synthetic$i',
+                  normalizedSpelling: 'synthetic$i',
+                  meaning: 'คำสังเคราะห์ $i',
+                  normalizedMeaning: 'คำสังเคราะห์ $i',
+                  partOfSpeech: 'noun',
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+        }
+        final ids = [for (var i = 0; i < 101; i++) 'a-$i', 'word-3'];
+        final session = await targeted(
+          QuizPromptKind.definitionChoice,
+          ids,
+          limit: 1,
+        );
+        expect(session.questions.single.word.id, 'word-3');
+        expect(session.questions.single.kind, QuizPromptKind.definitionChoice);
+      },
+    );
+  }
+
+  test(
+    'reverse quiz rejects a same-meaning collision beyond its first 100 rows',
+    () async {
+      for (var i = 0; i < 96; i++) {
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: 'zz-$i',
+                ownerId: 'local:guest',
+                categoryId: 'category-1',
+                spelling: 'extra$i',
+                normalizedSpelling: 'extra$i',
+                meaning: 'คำ $i',
+                normalizedMeaning: 'คำ $i',
+                partOfSpeech: 'noun',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+      }
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'zzz-conflict',
+              ownerId: 'local:guest',
+              categoryId: 'category-1',
+              spelling: 'depot',
+              normalizedSpelling: 'depot',
+              meaning: 'สถานี',
+              normalizedMeaning: 'สถานี',
+              partOfSpeech: 'noun',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      final quiz = await useCases.startQuiz(
+        categoryId: 'category-1',
+        kind: QuizPromptKind.spellingChoice,
+        limit: 1,
+      );
+      expect(quiz.questions.single.word.id, 'word-2');
+    },
+  );
+
+  test(
+    'definition without category never hides a late same-category sense collision',
+    () async {
+      for (var i = 0; i < 50; i++) {
+        final category = 'synthetic-cat-$i';
+        await database
+            .into(database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: category,
+                ownerId: 'local:guest',
+                name: category,
+                normalizedName: category,
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        for (final pair in [('platform', 'ชานชาลา'), ('ticket', 'ตั๋ว')]) {
+          await database
+              .into(database.vocabularyWords)
+              .insert(
+                VocabularyWordsCompanion.insert(
+                  id: 'a-$i-${pair.$1}',
+                  ownerId: 'local:guest',
+                  categoryId: category,
+                  spelling: pair.$1,
+                  normalizedSpelling: pair.$1,
+                  meaning: pair.$2,
+                  normalizedMeaning: pair.$2,
+                  partOfSpeech: 'noun',
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+        }
+      }
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'z-conflict',
+              ownerId: 'local:guest',
+              categoryId: 'synthetic-cat-0',
+              spelling: 'platform',
+              normalizedSpelling: 'platform',
+              meaning: 'เวที',
+              normalizedMeaning: 'เวที',
+              partOfSpeech: 'noun',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      final quiz = await useCases.startQuiz(
+        kind: QuizPromptKind.definitionChoice,
+        limit: 1,
+      );
+      expect(quiz.questions.single.word.categoryId, isNot('synthetic-cat-0'));
+    },
+  );
+
+  test(
+    'reverse quiz keeps real word IDs and asks for English from Thai',
+    () async {
+      final session = await useCases.startQuiz(
+        categoryId: 'category-1',
+        kind: QuizPromptKind.spellingChoice,
+        limit: 4,
+      );
+      expect(session.questions, hasLength(4));
+      for (final question in session.questions) {
+        expect(question.kind, QuizPromptKind.spellingChoice);
+        expect(question.promptText, question.word.meaning);
+        expect(question.correctAnswer, question.word.spelling);
+        expect(question.options, contains(question.word.spelling));
+        expect(
+          question.optionWords?[question.correctAnswer]?.id,
+          question.word.id,
+        );
+      }
+    },
+  );
+
+  test(
+    'definition quiz binds the approved travel sense to the actual word',
+    () async {
+      final session = await useCases.startQuiz(
+        categoryId: 'category-1',
+        kind: QuizPromptKind.definitionChoice,
+        limit: 1,
+      );
+      final question = session.questions.single;
+      expect(question.kind, QuizPromptKind.definitionChoice);
+      expect(question.word.id, 'word-3');
+      expect(
+        question.promptText,
+        'The place at a train station where you wait to get on a train.',
+      );
+      expect(question.correctAnswer, 'platform');
+      expect(question.options.toSet(), {'platform', 'ticket'});
+      expect(question.optionWords?['ticket']?.id, 'word-2');
+    },
+  );
+
+  test(
+    'unsupported definition sense creates no dangling learning session',
+    () async {
+      await (database.update(
+        database.vocabularyWords,
+      )..where((w) => w.id.equals('word-3'))).write(
+        const VocabularyWordsCompanion(
+          meaning: Value('เวที'),
+          normalizedMeaning: Value('เวที'),
+        ),
+      );
+      final session = await useCases.startQuiz(
+        categoryId: 'category-1',
+        kind: QuizPromptKind.definitionChoice,
+      );
+      expect(session.isEmpty, isTrue);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+    },
+  );
+
+  test(
+    'definition pair beyond 100 unrelated rows remains eligible before target limit',
+    () async {
+      for (var i = 0; i < 101; i++) {
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: 'a-$i',
+                ownerId: 'local:guest',
+                categoryId: 'category-1',
+                spelling: 'synthetic$i',
+                normalizedSpelling: 'synthetic$i',
+                meaning: 'คำสังเคราะห์ $i',
+                normalizedMeaning: 'คำสังเคราะห์ $i',
+                partOfSpeech: 'noun',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+      }
+      final session = await useCases.startQuiz(
+        categoryId: 'category-1',
+        kind: QuizPromptKind.definitionChoice,
+        limit: 1,
+      );
+      expect(session.questions.single.word.id, 'word-3');
+      expect(session.questions.single.options.toSet(), {'platform', 'ticket'});
+    },
+  );
+
+  Future<void> mergeGuestIntoOtherOwner() async {
+    await database
+        .into(database.localOwners)
+        .insert(
+          LocalOwnersCompanion.insert(
+            id: 'local:target',
+            firebaseUid: const Value('synthetic-target-uid'),
+            accountState: const Value('firebaseBound'),
+            isActive: const Value(false),
+            createdAtUtcMs: 1,
+          ),
+        );
+    final result =
+        await DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => now,
+          generateConflictId: () => 'synthetic-conflict-${++nextId}',
+          generateOwnerId: () => 'synthetic-owner-${++nextId}',
+        ).upgrade(
+          activeOwnerId: 'local:guest',
+          firebaseUid: 'synthetic-target-uid',
+        );
+    expect(result.targetOwnerId, 'local:target');
+    expect(
+      (await database.select(database.vocabularyWords).get()).every(
+        (w) => w.ownerId == 'local:target',
+      ),
+      isTrue,
+    );
+  }
+
+  test('weakness original owner is fenced after target IDs rehome', () async {
+    await mergeGuestIntoOtherOwner();
+    await expectLater(
+      useCases.startWeaknessPractice(
+        wordIds: ['word-3'],
+        kind: QuizPromptKind.spellingChoice,
+        expectedOwnerId: 'local:guest',
+      ),
+      throwsStateError,
+    );
+    expect(await database.select(database.learningSessions).get(), isEmpty);
+  });
+
+  for (final activity in ['quiz', 'due', 'source']) {
+    test(
+      '$activity rejects its original owner after IDs rehome during upgrade',
+      () async {
+        await mergeGuestIntoOtherOwner();
+        final load = switch (activity) {
+          'quiz' => useCases.startQuiz(expectedOwnerId: 'local:guest'),
+          'due' => useCases.startDueReview(expectedOwnerId: 'local:guest'),
+          _ => useCases.startSourcePracticeForWords(
+            wordIds: ['word-1'],
+            expectedOwnerId: 'local:guest',
+          ),
+        };
+        await expectLater(load, throwsStateError);
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+      },
+    );
+  }
+
+  test(
+    'a stale answer cannot become the new owners answer after rehome',
+    () async {
+      final session = await useCases.startQuiz(limit: 1);
+      await mergeGuestIntoOtherOwner();
+      await expectLater(
+        useCases.recordAnswer(
+          sessionId: session.id,
+          wordId: session.questions.single.word.id,
+          promptMode: 'srsRecall',
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: 1,
+          expectedOwnerId: 'local:guest',
+        ),
+        throwsStateError,
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.srsStates).get(), isEmpty);
+    },
+  );
+
+  test(
+    'a stale finish cannot complete the new owners rehomed session',
+    () async {
+      final session = await useCases.startQuiz(limit: 1);
+      await mergeGuestIntoOtherOwner();
+      await expectLater(
+        useCases.finishSession(session.id, expectedOwnerId: 'local:guest'),
+        throwsStateError,
+      );
+      expect(
+        (await database.select(database.learningSessions).getSingle()).state,
+        'active',
+      );
+      expect(await database.select(database.achievementUnlocks).get(), isEmpty);
+    },
+  );
 
   test(
     'quiz option formula counts distinct meanings rather than word rows',

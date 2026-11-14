@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,9 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
 import '../navigation/app_routes.dart';
@@ -18,6 +22,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.sourceWordIds,
     this.voice,
     this.learning,
+    this.expectedOwnerId,
   }) : assert(wordList == null || sourceWordIds == null);
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
@@ -25,6 +30,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
   final List<String>? sourceWordIds;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
+  final String? expectedOwnerId;
 
   @override
   State<SrsFlashcardsScreen> createState() => _SrsFlashcardsScreenState();
@@ -48,9 +54,18 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   int? _responseTimeMs;
   bool? _submittedRating;
   bool _saved = false;
+  bool _saveFailureShown = false;
   int _correctCount = 0;
   final Set<String> _mistakeWordIds = {};
   bool _resultContextValid = true;
+  LearningUseCases? _scopedLearning;
+  List<String>? _loadedWordIds;
+  String? _ownerId;
+  int _generation = 0;
+  bool _contextUnavailable = false;
+  bool _companionVisible = false;
+  bool _companionSkipped = false;
+  bool _companionBusy = false;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
   bool get _isSourcePractice => widget.sourceWordIds != null;
@@ -71,15 +86,33 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   void didUpdateWidget(covariant SrsFlashcardsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.learning, widget.learning) ||
-        !listEquals(oldWidget.sourceWordIds, widget.sourceWordIds)) {
-      _resultContextValid = false;
+        !listEquals(oldWidget.sourceWordIds, widget.sourceWordIds) ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+      _invalidateContext(rebuild: false);
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_load != null) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (_load != null) {
+      if (!identical(_scopedLearning, dependencies?.learning) ||
+          !identical(_learning, widget.learning ?? dependencies?.learning) ||
+          !_srsAvailable()) {
+        _invalidateContext(rebuild: false);
+      }
+      return;
+    }
+    _scopedLearning = dependencies?.learning;
+    _loadedWordIds = widget.sourceWordIds == null
+        ? null
+        : List.unmodifiable(widget.sourceWordIds!);
+    if (!_srsAvailable()) {
+      _invalidateContext(rebuild: false);
+      return;
+    }
+    final generation = _generation;
     if (_isCompatibilityDeck) {
       _load = Future.value(_compatibilitySession(widget.wordList!));
     } else {
@@ -90,16 +123,116 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           ? Future<QuizSession>.error(
               StateError('local learning dependency unavailable'),
             )
-          : _isSourcePractice
-          ? learning.startSourcePracticeForWords(wordIds: widget.sourceWordIds!)
-          : learning.startDueReview();
+          : _startReview(learning, generation);
     }
     _load!.then((session) {
-      if (!mounted || session.isEmpty) return;
+      if (!mounted ||
+          generation != _generation ||
+          _contextUnavailable ||
+          session.isEmpty) {
+        return;
+      }
       _session = session;
       _questionStartedAt = DateTime.now();
       _playAudio();
     }, onError: (_) {});
+  }
+
+  bool _srsAvailable() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    return (dependencies?.features ??
+                const BuildFeatureRegistry.fieldDefaults())
+            .isVisible(Feature.srs) &&
+        (dependencies?.fieldFeatures ??
+                const BuildFieldFeatureRegistry.fieldDefaults())
+            .isVisible(FieldFeature.srs);
+  }
+
+  bool _sourcesCurrent(LearningUseCases learning, int generation) {
+    if (!mounted ||
+        _contextUnavailable ||
+        !_resultContextValid ||
+        generation != _generation) {
+      return false;
+    }
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    return identical(_learning, learning) &&
+        identical(widget.learning ?? dependencies?.learning, learning) &&
+        identical(_scopedLearning, dependencies?.learning) &&
+        listEquals(_loadedWordIds, widget.sourceWordIds) &&
+        _srsAvailable();
+  }
+
+  void _invalidateContext({bool rebuild = true}) {
+    if (!mounted || _contextUnavailable) return;
+    void invalidate() {
+      _generation++;
+      _contextUnavailable = true;
+      _resultContextValid = false;
+      _companionVisible = false;
+      _companionBusy = false;
+      _saving = false;
+    }
+
+    if (rebuild) {
+      setState(invalidate);
+    } else {
+      invalidate();
+    }
+    unawaited(_voiceProvider.stop().catchError((Object _) {}));
+  }
+
+  Future<bool> _validateContext(
+    LearningUseCases learning,
+    int generation,
+  ) async {
+    if (!_sourcesCurrent(learning, generation)) {
+      _invalidateContext();
+      return false;
+    }
+    final owner = await learning.owners.getOrCreateActiveOwner();
+    if (!_sourcesCurrent(learning, generation) || owner.id != _ownerId) {
+      _invalidateContext();
+      return false;
+    }
+    return true;
+  }
+
+  Future<QuizSession> _startReview(
+    LearningUseCases learning,
+    int generation,
+  ) async {
+    final owner = await learning.owners.getOrCreateActiveOwner();
+    if (!_sourcesCurrent(learning, generation) ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != owner.id)) {
+      _invalidateContext();
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    _ownerId = owner.id;
+    final requested = _loadedWordIds;
+    try {
+      final session = requested == null
+          ? await learning.startDueReview(expectedOwnerId: owner.id)
+          : await learning.startSourcePracticeForWords(
+              wordIds: requested,
+              expectedOwnerId: owner.id,
+            );
+      if (!await _validateContext(learning, generation)) {
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+      if (requested?.length == 1 &&
+          !session.isEmpty &&
+          (session.questions.length != 1 ||
+              session.questions.single.word.id != requested!.single)) {
+        _invalidateContext();
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+      return session;
+    } catch (_) {
+      await _validateContext(learning, generation);
+      rethrow;
+    }
   }
 
   QuizSession _compatibilitySession(List<Map<String, String>> rows) {
@@ -128,6 +261,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   QuizQuestion get _currentQuestion => _session!.questions[_currentIndex];
 
   Future<void> _playAudio() async {
+    if (_contextUnavailable || _session == null) return;
     final word = _currentQuestion.word.spelling;
     if (word.isEmpty) return;
     try {
@@ -148,7 +282,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   void _flipCard() {
-    if (_saving || _saved || _attemptId != null) return;
+    if (_contextUnavailable ||
+        _saving ||
+        _companionBusy ||
+        _saved ||
+        _attemptId != null) {
+      return;
+    }
     if (_isFlipped) {
       _controller.reverse();
     } else {
@@ -158,12 +298,16 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _rateItem(bool isCorrect) async {
-    if (_saving ||
+    if (_contextUnavailable ||
+        _companionBusy ||
+        _saving ||
         _saved ||
         (_submittedRating != null && _submittedRating != isCorrect)) {
       return;
     }
     setState(() => _saving = true);
+    final generation = _generation;
+    final learning = _learning;
     _submittedRating ??= isCorrect;
     try {
       if (_isCompatibilityDeck) {
@@ -171,12 +315,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         // SharedPreferences-backed SRS recording is deprecated; no-op here.
         // SRS state for real words is tracked via LearningUseCases + Drift.
       } else {
+        if (learning == null || !await _validateContext(learning, generation)) {
+          return;
+        }
         _submittedAtUtc ??= DateTime.now().toUtc();
         _responseTimeMs ??= DateTime.now()
             .difference(_questionStartedAt ?? DateTime.now())
             .inMilliseconds;
         _attemptId ??= 'attempt:srs:${_session!.id}:$_currentIndex';
-        await _learning!.recordAnswer(
+        await learning.recordAnswer(
           sessionId: _session!.id,
           wordId: _currentQuestion.word.id,
           promptMode: 'srsRecall',
@@ -185,9 +332,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           attemptNumber: _currentIndex + 1,
           attemptId: _attemptId,
           occurredAtUtc: _submittedAtUtc,
+          expectedOwnerId: _ownerId,
         );
+        if (!await _validateContext(learning, generation)) return;
       }
       if (!mounted) return;
+      if (_saveFailureShown) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        _saveFailureShown = false;
+      }
       setState(() {
         if (_submittedRating!) {
           _correctCount++;
@@ -198,8 +351,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _saving = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || _contextUnavailable || generation != _generation) return;
       setState(() => _saving = false);
+      _saveFailureShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
@@ -209,8 +363,20 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _nextCard() async {
-    if (!_saved || _saving) return;
+    if (_contextUnavailable || !_saved || _saving || _companionBusy) return;
     setState(() => _saving = true);
+    final generation = _generation;
+    final learning = _learning;
+    if (!_isCompatibilityDeck) {
+      try {
+        if (learning == null || !await _validateContext(learning, generation)) {
+          return;
+        }
+      } catch (_) {
+        _invalidateContext();
+        return;
+      }
+    }
     if (_currentIndex < _session!.questions.length - 1) {
       if (_isFlipped) _controller.reverse();
       setState(() {
@@ -223,6 +389,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _responseTimeMs = null;
         _submittedRating = null;
         _saved = false;
+        _companionVisible = false;
+        _companionSkipped = false;
       });
       await _playAudio();
       return;
@@ -230,13 +398,18 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     LearningSessionSummary? summary;
     try {
       if (!_isCompatibilityDeck) {
-        summary = await _learning!.finishSession(_session!.id);
+        final source = learning!;
+        summary = await source.finishSession(
+          _session!.id,
+          expectedOwnerId: _ownerId,
+        );
+        if (!await _validateContext(source, generation)) return;
         if (!_isValidSummary(summary)) {
           throw StateError('invalid flashcards summary');
         }
       }
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || _contextUnavailable || generation != _generation) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ปิดการทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง')),
@@ -295,8 +468,140 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _mistakeWordIds.length == wrong;
   }
 
+  bool get _canUseCompanion =>
+      !_isCompatibilityDeck &&
+      !_contextUnavailable &&
+      _resultContextValid &&
+      _ownerId != null &&
+      _saved &&
+      _submittedRating == false;
+
+  Future<void> _showCompanion() async {
+    final learning = _learning;
+    if (!_canUseCompanion || _companionBusy || _saving || learning == null) {
+      return;
+    }
+    final generation = _generation;
+    setState(() => _companionBusy = true);
+    try {
+      if (!await _validateContext(learning, generation)) return;
+      setState(() => _companionVisible = true);
+    } catch (_) {
+      if (!mounted || generation != _generation || _contextUnavailable) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เปิดคำใบ้ไม่ได้ โปรดลองอีกครั้ง')),
+      );
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _companionBusy = false);
+      }
+    }
+  }
+
+  Future<void> _retryCompanionRecall() async {
+    final learning = _learning;
+    final ownerId = _ownerId;
+    if (!_canUseCompanion ||
+        !_companionVisible ||
+        _companionBusy ||
+        _saving ||
+        learning == null ||
+        ownerId == null) {
+      return;
+    }
+    final generation = _generation;
+    final wordId = _currentQuestion.word.id;
+    setState(() => _companionBusy = true);
+    try {
+      if (!await _validateContext(learning, generation)) return;
+      if (!mounted) return;
+      await AppNavigator.pushPage<LearningSessionResult>(
+        context,
+        AppPage<LearningSessionResult>(
+          name: 'learning/companion-recall',
+          builder: (_) => SrsFlashcardsScreen(
+            sourceWordIds: [wordId],
+            expectedOwnerId: ownerId,
+            learning: learning,
+            voice: _voiceProvider,
+          ),
+        ),
+      );
+      if (!await _validateContext(learning, generation)) return;
+      setState(() {
+        _companionVisible = false;
+        _companionSkipped = true;
+      });
+    } catch (_) {
+      if (!mounted || generation != _generation || _contextUnavailable) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('เปิดรอบทบทวนคำเดิมไม่ได้ โปรดลองอีกครั้ง'),
+        ),
+      );
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _companionBusy = false);
+      }
+    }
+  }
+
+  Widget _companion(QuizWord word) {
+    if (!_companionVisible) {
+      return OutlinedButton.icon(
+        key: const ValueKey<String>('srs-companion-offer'),
+        onPressed: _companionBusy || _saving ? null : _showCompanion,
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+        icon: const Icon(Icons.lightbulb_outline),
+        label: const Text('ดูคำใบ้จากเพื่อนฝึก'),
+      );
+    }
+    return Container(
+      key: const ValueKey<String>('srs-companion-hint'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('เพื่อนฝึก', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text('ลองทบทวนคำว่า ${word.spelling}'),
+          if (word.partOfSpeech.isNotEmpty)
+            Text('ชนิดคำ: ${word.partOfSpeech}'),
+          Text('ความหมายที่เพิ่งทบทวน: ${word.meaning}'),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const ValueKey<String>('srs-companion-retry'),
+            onPressed: _companionBusy || _saving ? null : _retryCompanionRecall,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            icon: const Icon(Icons.replay),
+            label: const Text('ลองทบทวนคำนี้อีกครั้ง'),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            key: const ValueKey<String>('srs-companion-skip'),
+            onPressed: _companionBusy || _saving
+                ? null
+                : () => setState(() {
+                    _companionVisible = false;
+                    _companionSkipped = true;
+                  }),
+            style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            child: const Text('ข้ามคำใบ้'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _generation++;
     _controller.dispose();
     _voiceProvider.stop();
     _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
@@ -305,6 +610,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_contextUnavailable) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('ทบทวนคำศัพท์')),
+        body: const _SrsMessage(
+          'ผู้เรียนหรือข้อมูลการฝึกเปลี่ยนแล้ว โปรดกลับไปเริ่มรอบใหม่',
+          key: ValueKey<String>('srs-context-unavailable'),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -407,7 +721,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               ),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: _saving ? null : _nextCard,
+                onPressed: _saving || _companionBusy ? null : _nextCard,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                 ),
@@ -419,6 +733,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                       : 'คำถัดไป',
                 ),
               ),
+              if (_canUseCompanion && !_companionSkipped) ...[
+                const SizedBox(height: 12),
+                _companion(word),
+              ],
             ] else if (!_saving && _isFlipped)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -491,7 +809,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 }
 
 class _SrsMessage extends StatelessWidget {
-  const _SrsMessage(this.message);
+  const _SrsMessage(this.message, {super.key});
 
   final String message;
 

@@ -2545,13 +2545,17 @@ final class _SourceVoiceStartRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   }) => wordIds != null && selected != null
       ? Future.value(selected)
       : delegate.listQuizWords(
           ownerId: ownerId,
           categoryId: categoryId,
           wordIds: wordIds,
+          normalizedSpellings: normalizedSpellings,
+          normalizedMeanings: normalizedMeanings,
           limit: limit,
         );
   @override

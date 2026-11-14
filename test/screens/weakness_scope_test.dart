@@ -320,7 +320,9 @@ final class _LearningRepository extends Fake implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   }) async {
     calls++;
     return const [];

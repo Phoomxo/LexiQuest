@@ -1,11 +1,14 @@
 import 'learning_models.dart';
 
 abstract interface class LearningRepository {
+  /// A null limit reads the complete matching pool for prompt eligibility.
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   });
 
   Future<void> startSession(LearningSessionDraft session);

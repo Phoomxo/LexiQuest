@@ -28,6 +28,8 @@ class QuizScreen extends StatefulWidget {
     this.wordIds,
     this.featureRegistry,
     this.selectionMode = QuizWordSelectionMode.weakness,
+    this.promptKind = QuizPromptKind.meaningChoice,
+    this.expectedOwnerId,
   });
 
   final String? categoryId;
@@ -37,6 +39,8 @@ class QuizScreen extends StatefulWidget {
   final List<String>? wordIds;
   final FieldFeatureRegistry? featureRegistry;
   final QuizWordSelectionMode selectionMode;
+  final QuizPromptKind promptKind;
+  final String? expectedOwnerId;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -47,8 +51,10 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<QuizSession>? _load;
   QuizSession? _session;
   int _index = 0;
+  int _committedAnswers = 0;
   bool _answered = false;
   bool _saving = false;
+  bool _answerSaveFailed = false;
   String? _selected;
   DateTime? _questionStartedAt;
   final List<QuizWord> _mistakes = [];
@@ -64,6 +70,8 @@ class _QuizScreenState extends State<QuizScreen> {
   String? _categoryId;
   List<String>? _wordIds;
   QuizWordSelectionMode? _selectionMode;
+  QuizPromptKind? _promptKind;
+  String? _expectedOwnerId;
   int _generation = 0;
   bool _addingWords = false;
 
@@ -109,7 +117,9 @@ class _QuizScreenState extends State<QuizScreen> {
         identical(learning, _learning) &&
         widget.categoryId == _categoryId &&
         listEquals(widget.wordIds, _wordIds) &&
-        widget.selectionMode == _selectionMode) {
+        widget.selectionMode == _selectionMode &&
+        widget.promptKind == _promptKind &&
+        widget.expectedOwnerId == _expectedOwnerId) {
       return;
     }
     _dependencies = dependencies;
@@ -119,12 +129,16 @@ class _QuizScreenState extends State<QuizScreen> {
         ? null
         : List.unmodifiable(widget.wordIds!);
     _selectionMode = widget.selectionMode;
+    _promptKind = widget.promptKind;
+    _expectedOwnerId = widget.expectedOwnerId;
     final generation = ++_generation;
     _ownerId = null;
     _session = null;
     _index = 0;
+    _committedAnswers = 0;
     _answered = false;
     _saving = false;
+    _answerSaveFailed = false;
     _addingWords = false;
     _selected = null;
     _questionStartedAt = null;
@@ -146,7 +160,9 @@ class _QuizScreenState extends State<QuizScreen> {
       identical(_currentLearning, _learning) &&
       widget.categoryId == _categoryId &&
       listEquals(widget.wordIds, _wordIds) &&
-      widget.selectionMode == _selectionMode;
+      widget.selectionMode == _selectionMode &&
+      widget.promptKind == _promptKind &&
+      widget.expectedOwnerId == _expectedOwnerId;
 
   Future<QuizSession> _startSession(
     LearningUseCases? learning,
@@ -157,11 +173,26 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     final owner = await learning.owners.getOrCreateActiveOwner();
     if (!_current(generation)) throw StateError('quiz context changed');
+    if (_expectedOwnerId != null && owner.id != _expectedOwnerId) {
+      throw StateError('quiz owner changed');
+    }
     final session = _wordIds == null
-        ? await learning.startQuiz(categoryId: _categoryId)
+        ? await learning.startQuiz(
+            categoryId: _categoryId,
+            kind: widget.promptKind,
+            expectedOwnerId: owner.id,
+          )
         : _selectionMode == QuizWordSelectionMode.sourcePractice
-        ? await learning.startSourcePracticeForWords(wordIds: _wordIds!)
-        : await learning.startWeaknessPractice(wordIds: _wordIds!);
+        ? await learning.startSourcePracticeForWords(
+            wordIds: _wordIds!,
+            kind: widget.promptKind,
+            expectedOwnerId: owner.id,
+          )
+        : await learning.startWeaknessPractice(
+            wordIds: _wordIds!,
+            kind: widget.promptKind,
+            expectedOwnerId: owner.id,
+          );
     final currentOwner = await learning.owners.getOrCreateActiveOwner();
     if (!_current(generation) || currentOwner.id != owner.id) {
       throw StateError('quiz context changed');
@@ -281,9 +312,18 @@ class _QuizScreenState extends State<QuizScreen> {
             }
             final session = snapshot.data!;
             if (session.isEmpty) {
-              return const _QuizMessage(
+              return _QuizMessage(
                 icon: Icons.library_add_outlined,
-                message: 'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
+                message: switch (widget.promptKind) {
+                  QuizPromptKind.meaningChoice =>
+                    'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
+                  QuizPromptKind.spellingChoice =>
+                    'ยังไม่มีคำและความหมายที่แยกตัวเลือกได้ชัดเจน',
+                  QuizPromptKind.definitionChoice =>
+                    'ยังไม่มีคู่นิยามที่รองรับ\nโจทย์นี้ใช้ platform · ชานชาลา และ ticket · ตั๋ว ชนิดคำนามในชุดเดียวกัน',
+                },
+                actionLabel: _returnLabel,
+                onAction: () => Navigator.maybePop(context),
               );
             }
             if (!_hasChoiceContrast(session)) return _buildOneChoiceFallback();
@@ -383,10 +423,14 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('เลือกคำแปลที่ตรงกับคำศัพท์'),
+            Text(switch (question.kind) {
+              QuizPromptKind.meaningChoice => 'เลือกคำแปลที่ตรงกับคำศัพท์',
+              QuizPromptKind.spellingChoice => 'เลือกคำอังกฤษที่ตรงกับความหมาย',
+              QuizPromptKind.definitionChoice => 'โจทย์นิยามภาษาอังกฤษ',
+            }),
             const SizedBox(height: 12),
             Text(
-              question.word.spelling,
+              question.promptText,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
@@ -435,6 +479,11 @@ class _QuizScreenState extends State<QuizScreen> {
             const SizedBox(height: 16),
             if (_saving)
               const LinearProgressIndicator(semanticsLabel: 'กำลังบันทึกคำตอบ'),
+            if (_answerSaveFailed)
+              Semantics(
+                liveRegion: true,
+                child: const Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง'),
+              ),
             if (!_answered && !_saving && _attemptId != null)
               FilledButton.icon(
                 onPressed: () =>
@@ -459,13 +508,29 @@ class _QuizScreenState extends State<QuizScreen> {
                       'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
                     ),
                     Text(
-                      '${question.word.spelling} — ${question.correctAnswer}',
+                      '${question.word.spelling} — ${question.word.meaning}',
                     ),
+                    if (question.optionWords?[_selected]
+                        case final selectedWord?)
+                      if (_selected != question.correctAnswer)
+                        Text(
+                          '${selectedWord.spelling} — ${selectedWord.meaning}',
+                        ),
+                    if (question.optionExplanations?[_selected]
+                        case final explanation?)
+                      Text(explanation),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
             ],
+            if (_answered &&
+                question.kind != QuizPromptKind.meaningChoice &&
+                _selected != question.correctAnswer)
+              OutlinedButton(
+                onPressed: _saving ? null : _retryQuestion,
+                child: const Text('ลองข้อเดิม'),
+              ),
             if (_answered)
               FilledButton(
                 onPressed: _saving ? null : _next,
@@ -546,18 +611,23 @@ class _QuizScreenState extends State<QuizScreen> {
       await learning.recordAnswer(
         sessionId: session.id,
         wordId: question.word.id,
-        promptMode: 'meaningChoice',
+        promptMode: question.kind.name,
         isCorrect: correct,
         responseTimeMs: _responseTimeMs,
-        attemptNumber: _index + 1,
+        attemptNumber: _committedAnswers + 1,
         attemptId: _attemptId,
         occurredAtUtc: _submittedAtUtc,
+        expectedOwnerId: _ownerId,
       );
       if (!_current(generation)) return;
       setState(() {
         _answered = true;
         _saving = false;
-        if (!correct) _mistakes.add(question.word);
+        _answerSaveFailed = false;
+        _committedAnswers++;
+        if (!correct && !_mistakes.any((word) => word.id == question.word.id)) {
+          _mistakes.add(question.word);
+        }
       });
       try {
         if (correct) {
@@ -570,11 +640,25 @@ class _QuizScreenState extends State<QuizScreen> {
       }
     } catch (_) {
       if (!mounted || !_current(generation)) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
-      );
+      setState(() {
+        _saving = false;
+        _answerSaveFailed = true;
+      });
     }
+  }
+
+  void _retryQuestion() {
+    if (_saving || !_answered || !_current(_generation)) return;
+    setState(() {
+      _answered = false;
+      _selected = null;
+      _revealed = false;
+      _hintVisible = false;
+      _attemptId = null;
+      _submittedAtUtc = null;
+      _responseTimeMs = null;
+      _questionStartedAt = DateTime.now();
+    });
   }
 
   Future<void> _next() async {
@@ -598,7 +682,10 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     setState(() => _saving = true);
     try {
-      final summary = await learning.finishSession(session.id);
+      final summary = await learning.finishSession(
+        session.id,
+        expectedOwnerId: _ownerId,
+      );
       if (!mounted || !_current(generation)) return;
       final mistakes = List<QuizWord>.unmodifiable(_mistakes);
       final mistakeIds = List<String>.unmodifiable(
@@ -607,6 +694,8 @@ class _QuizScreenState extends State<QuizScreen> {
       final categoryId = widget.categoryId;
       final categoryName = widget.categoryName;
       final returnLabel = _returnLabel;
+      final promptKind = widget.promptKind;
+      final expectedOwnerId = _ownerId;
       final canPracticeMistakes = _canPracticeMistakes;
       await AppNavigator.pushPage<void>(
         context,
@@ -630,6 +719,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     categoryId: categoryId,
                     categoryName: categoryName,
                     returnLabel: returnLabel,
+                    promptKind: promptKind,
+                    expectedOwnerId: expectedOwnerId,
                   ),
           ),
         ),
@@ -652,6 +743,8 @@ class _QuizScreenState extends State<QuizScreen> {
     required String? categoryId,
     required String? categoryName,
     required String returnLabel,
+    required QuizPromptKind promptKind,
+    required String? expectedOwnerId,
   }) async {
     if (!_current(generation) ||
         _practicingMistakes ||
@@ -675,6 +768,8 @@ class _QuizScreenState extends State<QuizScreen> {
             returnLabel: returnLabel,
             learning: learning,
             featureRegistry: features,
+            promptKind: promptKind,
+            expectedOwnerId: expectedOwnerId,
           ),
         ),
       );

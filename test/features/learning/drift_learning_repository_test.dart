@@ -65,6 +65,76 @@ void main() {
 
   tearDown(() => database.close());
 
+  test('inactive learning owner cannot start a session', () async {
+    await database.customUpdate(
+      "UPDATE local_owners SET is_active=0 WHERE id='owner-1'",
+    );
+    await expectLater(
+      _start(repository, DateTime.utc(2026, 11, 14)),
+      throwsStateError,
+    );
+    expect(await database.select(database.learningSessions).get(), isEmpty);
+  });
+
+  test(
+    'inactive exact replay cannot repair projections after owner switch',
+    () async {
+      final at = DateTime.utc(2026, 11, 14);
+      await _start(repository, at);
+      final answer = _answer('synthetic-ack-retry', at);
+      await repository.recordAnswer(answer);
+      await database.delete(database.srsStates).go();
+      await database.customUpdate(
+        "UPDATE local_owners SET is_active=0 WHERE id='owner-1'",
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-2',
+              createdAtUtcMs: at.millisecondsSinceEpoch,
+            ),
+          );
+      await expectLater(repository.recordAnswer(answer), throwsStateError);
+      expect(await database.select(database.srsStates).get(), isEmpty);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'inactive learning owner cannot complete a session or unlock rewards',
+    () async {
+      final at = DateTime.utc(2026, 11, 14);
+      await _start(repository, at);
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      await database.customUpdate(
+        "UPDATE local_owners SET is_active=0 WHERE id='owner-1'",
+      );
+      await expectLater(
+        repository.finishSession(
+          ownerId: 'owner-1',
+          sessionId: session.id,
+          endedAtUtc: at,
+        ),
+        throwsStateError,
+      );
+      expect(
+        (await database.select(database.learningSessions).getSingle()).state,
+        'active',
+      );
+      expect(await database.select(database.achievementUnlocks).get(), isEmpty);
+    },
+  );
+
   group('original local answer motivation evidence', () {
     final at = DateTime.utc(2027, 1, 5, 10);
     late TrustedQuestAnswerCatalog catalog;

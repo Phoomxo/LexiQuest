@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,8 @@ import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 
 import 'screen_golden.dart';
 
@@ -100,7 +104,336 @@ void main() {
     );
   });
 
-  tearDown(() => database.close());
+  tearDown(() => database.close().timeout(const Duration(seconds: 30)));
+
+  Future<void> addDefinitionWord() => database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: 'definition-platform',
+          ownerId: 'local:guest',
+          categoryId: 'category-1',
+          spelling: 'platform',
+          normalizedSpelling: 'platform',
+          meaning: 'ชานชาลา',
+          normalizedMeaning: 'ชานชาลา',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      )
+      .then((_) {});
+
+  Future<void> openPromptMode(WidgetTester tester, QuizPromptKind kind) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => QuizScreen(
+                  learning: learning,
+                  categoryId: 'category-1',
+                  categoryName: 'Travel',
+                  promptKind: kind,
+                  expectedOwnerId: 'local:guest',
+                ),
+              ),
+            ),
+            child: const Text('เลือกรูปแบบโจทย์'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('เลือกรูปแบบโจทย์'));
+    await tester.pump();
+  }
+
+  Future<void> tapPrompt(WidgetTester tester, String text) async {
+    await tester.pump();
+    final target = find.text(text);
+    await tester.ensureVisible(target);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      target.hitTestable(),
+      findsOneWidget,
+      reason: 'the real control must accept a tap',
+    );
+    await tester.tap(target);
+    await tester.pump();
+  }
+
+  for (final mode in [
+    ('เลือกคำอังกฤษจากความหมายไทย', QuizPromptKind.spellingChoice),
+    ('อ่านนิยามแล้วหาคำ', QuizPromptKind.definitionChoice),
+  ]) {
+    testWidgets(
+      'prompt mode actual menu binds category and owner for ${mode.$2.name}',
+      (tester) async {
+        await tester.runAsync(addDefinitionWord);
+        final progress = (await tester.runAsync(
+          () => DriftProgressQueries(
+            database,
+          ).load(ownerId: 'local:guest', nowUtc: learning.nowUtc()),
+        ))!;
+        final vocabulary = VocabularyUseCases(
+          owners: learning.owners,
+          vocabulary: DriftVocabularyRepository(database),
+          generateId: () => 'unused-${++id}',
+          nowUtc: learning.nowUtc,
+        );
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: AppDependencies(
+              runtimeStatus: const AppRuntimeStatus(
+                localData: RuntimeAvailability.ready,
+                firebase: RuntimeAvailability.unavailable,
+                supabase: RuntimeAvailability.unavailable,
+                backends: RuntimeAvailability.unavailable,
+              ),
+              config: null,
+              guestSessionService: _UnusedGuestSession(),
+              database: database,
+              learning: learning,
+              localOwners: learning.owners,
+              vocabulary: vocabulary,
+            ),
+            child: MaterialApp(
+              home: ChooseModeScreen(loader: () async => progress),
+            ),
+          ),
+        );
+        await tapPrompt(tester, 'ดูแบบฝึกทั้งหมด');
+        await tapPrompt(tester, mode.$1);
+        await _pumpUntilFound(tester, find.text('Travel'));
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.learningSessions).get(),
+          ))!,
+          isEmpty,
+        );
+        await tapPrompt(tester, 'Travel');
+        await _pumpUntilFound(tester, find.byType(QuizScreen));
+        final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+        expect(
+          (screen.categoryId, screen.expectedOwnerId, screen.promptKind),
+          ('category-1', 'local:guest', mode.$2),
+        );
+        await _pumpUntilFound(
+          tester,
+          find.text(
+            mode.$2 == QuizPromptKind.spellingChoice
+                ? 'เลือกคำอังกฤษที่ตรงกับความหมาย'
+                : 'โจทย์นิยามภาษาอังกฤษ',
+          ),
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.answerAttempts).get(),
+          ))!,
+          isEmpty,
+        );
+        await tester.tap(
+          find
+              .descendant(
+                of: find.byType(QuizScreen),
+                matching: find.byType(BackButton),
+              )
+              .hitTestable(),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        await _pumpUntilFound(tester, find.text('เลือกวิธีฝึก'));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  }
+
+  testWidgets(
+    'prompt mode reverse keeps the same real word through wrong then intentional retry',
+    (tester) async {
+      await tester.runAsync(addDefinitionWord);
+      await openPromptMode(tester, QuizPromptKind.spellingChoice);
+      await _pumpUntilFound(
+        tester,
+        find.text('เลือกคำอังกฤษที่ตรงกับความหมาย'),
+      );
+      expect(find.text('ชานชาลา'), findsOneWidget);
+      await tapPrompt(tester, 'station');
+      await _pumpUntilFound(tester, find.text('ลองข้อเดิม'));
+      expect(find.text('station — สถานี'), findsOneWidget);
+      await tapPrompt(tester, 'ลองข้อเดิม');
+      await tapPrompt(tester, 'platform');
+      await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
+      final facts = (await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ))!;
+      expect(facts.map((r) => (r.wordId, r.promptMode, r.isCorrect)), [
+        ('definition-platform', 'spellingChoice', false),
+        ('definition-platform', 'spellingChoice', true),
+      ]);
+      expect(facts.map((r) => r.id).toSet(), hasLength(2));
+      expect(facts.map((r) => r.attemptNumber).toSet(), hasLength(2));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
+
+  testWidgets(
+    'prompt mode definition keeps Thai200percent feedback and retry reachable',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.runAsync(addDefinitionWord);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: M3Theme.lightTheme,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: RepaintBoundary(
+              key: const ValueKey('prompt-capture'),
+              child: QuizScreen(
+                learning: learning,
+                categoryId: 'category-1',
+                categoryName: 'Travel',
+                promptKind: QuizPromptKind.definitionChoice,
+                expectedOwnerId: 'local:guest',
+              ),
+            ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('โจทย์นิยามภาษาอังกฤษ'));
+        await tester.pump();
+        await _capturePrompt(tester, 's7-definition-200.png');
+        await tapPrompt(tester, 'ticket');
+        await _pumpUntilFound(tester, find.text('ลองข้อเดิม'));
+        await tester.ensureVisible(find.text('ลองข้อเดิม'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('ลองข้อเดิม').hitTestable(), findsOneWidget);
+        final button = find.ancestor(
+          of: find.text('ลองข้อเดิม'),
+          matching: find.byType(OutlinedButton),
+        );
+        expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+        await _capturePrompt(tester, 's7-definition-feedback-200.png');
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        semantics.dispose();
+      }
+    },
+  );
+
+  for (final afterCommit in [false, true]) {
+    testWidgets(
+      'prompt mode definition separates transport retry from a new answer afterCommit=$afterCommit',
+      (tester) async {
+        await tester.runAsync(addDefinitionWord);
+        final base = learning;
+        final repository = _FailOnceRepository(base.repository, afterCommit);
+        learning = LearningUseCases(
+          owners: base.owners,
+          repository: repository,
+          generateId: () => 'prompt-${++id}',
+          nowUtc: base.nowUtc,
+          buildInfo: base.buildInfo,
+        );
+        await openPromptMode(tester, QuizPromptKind.definitionChoice);
+        const definition =
+            'The place at a train station where you wait to get on a train.';
+        await _pumpUntilFound(tester, find.text(definition));
+        expect(find.text('โจทย์นิยามภาษาอังกฤษ'), findsOneWidget);
+        await tapPrompt(tester, 'ticket');
+        await _pumpUntilFound(tester, find.text('ลองบันทึกอีกครั้ง'));
+        expect(find.text('ลองข้อเดิม'), findsNothing);
+        await tapPrompt(tester, 'ลองบันทึกอีกครั้ง');
+        await _pumpUntilFound(tester, find.text('ลองข้อเดิม'));
+        expect(find.text('ticket — ตั๋ว'), findsOneWidget);
+        expect(find.text('หลักฐานที่ใช้โดยสาร'), findsOneWidget);
+        expect(
+          repository.commands.take(2).map((c) => c.id).toSet(),
+          hasLength(1),
+        );
+        await tapPrompt(tester, 'ลองข้อเดิม');
+        expect(find.text(definition), findsOneWidget);
+        await tapPrompt(tester, 'platform');
+        await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+        await tapPrompt(tester, 'ดูผลการเรียน');
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        final facts = (await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ))!;
+        expect(facts.map((r) => (r.wordId, r.promptMode, r.isCorrect)), [
+          ('definition-platform', 'definitionChoice', false),
+          ('definition-platform', 'definitionChoice', true),
+        ]);
+        final session = (await tester.runAsync(
+          () => database.select(database.learningSessions).getSingle(),
+        ))!;
+        expect(
+          (
+            session.correctCount,
+            session.wrongCount,
+            session.score,
+            session.state,
+          ),
+          (1, 1, 50, 'completed'),
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.pointsLedgerEntries).get(),
+          ))!.single.amount,
+          1,
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.rewardTransactions).get(),
+          ))!.single.amount,
+          1,
+        );
+        await tester.tap(
+          find
+              .descendant(
+                of: find.byType(ScoreScreen),
+                matching: find.byType(BackButton),
+              )
+              .hitTestable(),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        await _pumpUntilFound(tester, find.text('เลือกรูปแบบโจทย์'));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  }
+
+  testWidgets(
+    'prompt mode unsupported definition shows honest availability and creates no session',
+    (tester) async {
+      await openPromptMode(tester, QuizPromptKind.definitionChoice);
+      await _pumpUntilFound(
+        tester,
+        find.textContaining('ยังไม่มีคู่นิยามที่รองรับ'),
+      );
+      expect(
+        (await tester.runAsync(
+          () => database.select(database.learningSessions).get(),
+        ))!,
+        isEmpty,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
 
   for (final hiddenFeature in [FieldFeature.quiz, FieldFeature.weakness]) {
     testWidgets('live score hides repair when $hiddenFeature is hidden', (
@@ -1035,12 +1368,29 @@ void main() {
   );
 }
 
+Future<void> _capturePrompt(WidgetTester tester, String filename) async {
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.byKey(const ValueKey('prompt-capture')),
+  );
+  await tester.runAsync(() async {
+    final image = await boundary.toImage(pixelRatio: 1);
+    try {
+      final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+      await File('build/$filename').writeAsBytes(
+        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+      );
+    } finally {
+      image.dispose();
+    }
+  });
+}
+
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 50; attempt++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 10));
     if (finder.evaluate().isNotEmpty) return;
   }
   fail('Timed out waiting for $finder');
@@ -1082,11 +1432,15 @@ class _FailOnceRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   }) => delegate.listQuizWords(
     ownerId: ownerId,
     categoryId: categoryId,
     wordIds: wordIds,
+    normalizedSpellings: normalizedSpellings,
+    normalizedMeanings: normalizedMeanings,
     limit: limit,
   );
   @override

@@ -45,9 +45,11 @@ final class DriftLearningRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   }) async {
-    if (limit < 1 || limit > 100) {
+    if (limit != null && (limit < 1 || limit > 100)) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
     final query = database.select(database.vocabularyWords)
@@ -58,10 +60,16 @@ final class DriftLearningRepository implements LearningRepository {
             (categoryId == null
                 ? const Constant(true)
                 : row.categoryId.equals(categoryId)) &
-            (wordIds == null ? const Constant(true) : row.id.isIn(wordIds)),
+            (wordIds == null ? const Constant(true) : row.id.isIn(wordIds)) &
+            (normalizedSpellings == null && normalizedMeanings == null
+                ? const Constant(true)
+                : row.normalizedSpelling.isIn(normalizedSpellings ?? const []) |
+                      row.normalizedMeaning.isIn(
+                        normalizedMeanings ?? const [],
+                      )),
       )
-      ..orderBy([(row) => OrderingTerm.asc(row.id)])
-      ..limit(limit);
+      ..orderBy([(row) => OrderingTerm.asc(row.id)]);
+    if (limit != null) query.limit(limit);
     final rows = await query.get();
     return rows
         .map(
@@ -79,26 +87,30 @@ final class DriftLearningRepository implements LearningRepository {
   @override
   Future<void> startSession(LearningSessionDraft session) async {
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
-    await database
-        .into(database.learningSessions)
-        .insert(
-          db.LearningSessionsCompanion.insert(
-            id: _required(session.id, 'id'),
-            ownerId: _required(session.ownerId, 'ownerId'),
-            activityType: _required(session.activityType, 'activityType'),
-            state: 'active',
-            startedAtUtcMs: startedAt.millisecondsSinceEpoch,
-            appVersion: _required(session.appVersion, 'appVersion'),
-            buildId: _required(session.buildId, 'buildId'),
-          ),
-          mode: InsertMode.insertOrIgnore,
-        );
+    await database.transaction(() async {
+      await _requireActiveOwner(session.ownerId);
+      await database
+          .into(database.learningSessions)
+          .insert(
+            db.LearningSessionsCompanion.insert(
+              id: _required(session.id, 'id'),
+              ownerId: _required(session.ownerId, 'ownerId'),
+              activityType: _required(session.activityType, 'activityType'),
+              state: 'active',
+              startedAtUtcMs: startedAt.millisecondsSinceEpoch,
+              appVersion: _required(session.appVersion, 'appVersion'),
+              buildId: _required(session.buildId, 'buildId'),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    });
   }
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) {
     _validateAnswer(command);
     return database.transaction(() async {
+      await _requireActiveOwner(command.ownerId);
       final existing = await (database.select(
         database.answerAttempts,
       )..where((row) => row.id.equals(command.id))).getSingleOrNull();
@@ -119,7 +131,6 @@ final class DriftLearningRepository implements LearningRepository {
         return AnswerRecordResult(inserted: false, srs: srs);
       }
 
-      await _requireActiveOwner(command.ownerId);
       final session =
           await (database.select(database.learningSessions)..where(
                 (row) =>
@@ -340,6 +351,7 @@ final class DriftLearningRepository implements LearningRepository {
   }) {
     _requiredUtc(endedAtUtc, 'endedAtUtc');
     return database.transaction(() async {
+      await _requireActiveOwner(ownerId);
       final row =
           await (database.select(database.learningSessions)..where(
                 (candidate) =>

@@ -4,6 +4,7 @@ import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/quiz_prompt_policy.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -44,8 +45,18 @@ final class LearningUseCases {
   /// a V2 event for shadow processing.
   final EventV1ToV2Adapter? eventAdapter;
 
-  Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
-      _startVocabularySession(categoryId, limit, 'quiz');
+  Future<QuizSession> startQuiz({
+    String? categoryId,
+    int limit = 10,
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+  }) => _startVocabularySession(
+    categoryId,
+    limit,
+    'quiz',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+  );
 
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
@@ -63,15 +74,32 @@ final class LearningUseCases {
   Future<QuizSession> _startVocabularySession(
     String? categoryId,
     int limit,
-    String activityType,
-  ) async {
+    String activityType, {
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final words = await repository.listQuizWords(
       ownerId: owner.id,
       categoryId: _optionalId(categoryId, 'categoryId'),
+      limit: kind == QuizPromptKind.meaningChoice ? limit : null,
+      normalizedSpellings: kind == QuizPromptKind.definitionChoice
+          ? QuizPromptPolicy.definitionSpellings
+          : null,
+      normalizedMeanings: kind == QuizPromptKind.definitionChoice
+          ? QuizPromptPolicy.definitionMeanings
+          : null,
+    );
+    final questions = QuizPromptPolicy.build(
+      words: words,
+      kind: kind,
       limit: limit,
     );
-    if (words.isEmpty) {
+    if (questions.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final now = _now();
@@ -86,15 +114,15 @@ final class LearningUseCases {
         buildId: buildInfo.buildId,
       ),
     );
-    return QuizSession(
-      id: sessionId,
-      startedAtUtc: now,
-      questions: _questions(words),
-    );
+    return QuizSession(id: sessionId, startedAtUtc: now, questions: questions);
   }
 
-  Future<QuizSession> startDueReview({int limit = 20}) async {
+  Future<QuizSession> startDueReview({
+    int limit = 20,
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final now = _now();
     final words = await repository.listDueWords(
       ownerId: owner.id,
@@ -117,7 +145,11 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
-      questions: _questions(words),
+      questions: QuizPromptPolicy.build(
+        words: words,
+        kind: QuizPromptKind.meaningChoice,
+        limit: limit,
+      ),
       startedAtUtc: now,
     );
   }
@@ -125,7 +157,15 @@ final class LearningUseCases {
   Future<QuizSession> startWeaknessPractice({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'weaknessPractice');
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+  }) => _startWordPractice(
+    wordIds,
+    limit,
+    'weaknessPractice',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+  );
 
   Future<QuizSession> startGhostDuel({
     required Iterable<String> wordIds,
@@ -135,13 +175,23 @@ final class LearningUseCases {
   Future<QuizSession> startSourcePracticeForWords({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'sourcePractice');
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+  }) => _startWordPractice(
+    wordIds,
+    limit,
+    'sourcePractice',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+  );
 
   Future<QuizSession> _startWordPractice(
     Iterable<String> wordIds,
     int limit,
-    String activityType,
-  ) async {
+    String activityType, {
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+  }) async {
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
@@ -150,18 +200,44 @@ final class LearningUseCases {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final owner = await owners.getOrCreateActiveOwner();
-    final selected = await repository.listQuizWords(
-      ownerId: owner.id,
-      wordIds: requested,
-      limit: limit,
-    );
-    if (selected.isEmpty) {
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final List<QuizQuestion> questions;
+    if (kind != QuizPromptKind.meaningChoice) {
+      final words = await repository.listQuizWords(
+        ownerId: owner.id,
+        limit: null,
+        normalizedSpellings: kind == QuizPromptKind.definitionChoice
+            ? QuizPromptPolicy.definitionSpellings
+            : null,
+        normalizedMeanings: kind == QuizPromptKind.definitionChoice
+            ? QuizPromptPolicy.definitionMeanings
+            : null,
+      );
+      questions = QuizPromptPolicy.build(
+        words: words,
+        kind: kind,
+        limit: limit,
+        targetWordIds: requested,
+      );
+    } else {
+      final selected = await repository.listQuizWords(
+        ownerId: owner.id,
+        wordIds: requested,
+        limit: limit,
+      );
+      final optionWords = selected.isEmpty
+          ? const <QuizWord>[]
+          : await repository.listQuizWords(ownerId: owner.id, limit: 100);
+      questions = QuizPromptPolicy.build(
+        words: selected,
+        optionWords: optionWords,
+        kind: kind,
+        limit: limit,
+      );
+    }
+    if (questions.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
-    final optionWords = await repository.listQuizWords(
-      ownerId: owner.id,
-      limit: 100,
-    );
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
@@ -174,11 +250,7 @@ final class LearningUseCases {
         buildId: buildInfo.buildId,
       ),
     );
-    return QuizSession(
-      id: sessionId,
-      questions: _questions([...selected], optionWords: optionWords),
-      startedAtUtc: now,
-    );
+    return QuizSession(id: sessionId, questions: questions, startedAtUtc: now);
   }
 
   Future<AnswerRecordResult> recordAnswer({
@@ -191,6 +263,7 @@ final class LearningUseCases {
     String? providerProvenance,
     String? attemptId,
     DateTime? occurredAtUtc,
+    String? expectedOwnerId,
   }) async {
     if ((attemptId == null) != (occurredAtUtc == null)) {
       throw ArgumentError(
@@ -200,6 +273,7 @@ final class LearningUseCases {
     final recordedAt = occurredAtUtc ?? _now();
     if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final command = RecordAnswerCommand(
       id: attemptId == null
           ? 'attempt:${_nextId()}'
@@ -255,8 +329,12 @@ final class LearningUseCases {
     return result;
   }
 
-  Future<LearningSessionSummary> finishSession(String sessionId) async {
+  Future<LearningSessionSummary> finishSession(
+    String sessionId, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final result = await repository.finishSession(
       ownerId: owner.id,
       sessionId: _requiredId(sessionId, 'sessionId'),
@@ -264,6 +342,13 @@ final class LearningUseCases {
     );
     onLocalMutation?.call();
     return result;
+  }
+
+  void _requireExpectedOwner(String actualOwnerId, String? expectedOwnerId) {
+    if (expectedOwnerId != null &&
+        actualOwnerId != _requiredId(expectedOwnerId, 'expectedOwnerId')) {
+      throw StateError('learning owner is no longer active');
+    }
   }
 
   Future<ReadingProgressSnapshot?> loadReadingProgress({
@@ -303,33 +388,6 @@ final class LearningUseCases {
     );
     onLocalMutation?.call();
     return result;
-  }
-
-  List<QuizQuestion> _questions(
-    List<QuizWord> words, {
-    List<QuizWord> optionWords = const [],
-  }) {
-    final allMeanings = [
-      ...words,
-      ...optionWords,
-    ].map((word) => word.meaning).toSet().toList(growable: false)..sort();
-    return words
-        .map((word) {
-          final distractors = allMeanings
-              .where((meaning) => meaning != word.meaning)
-              .take(3)
-              .toList(growable: true);
-          final options = <String>[word.meaning, ...distractors];
-          final offset =
-              word.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
-              options.length;
-          final rotated = <String>[
-            ...options.skip(offset),
-            ...options.take(offset),
-          ];
-          return QuizQuestion(word: word, options: List.unmodifiable(rotated));
-        })
-        .toList(growable: false);
   }
 
   String _nextId() {

@@ -33,7 +33,7 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 | S4 | Existing scanner/manual-correction authority and its tests. | Explicit save into original set, recovery and separate accuracy evidence. | v28 actual-photo/manual journey accepted; known-object accuracy not_checked; other service criteria open |
 | S5 | Existing Settings/Profile/export/account boundaries. | Owner isolation, export/deletion, offline learning, research default-off. | Full-export adapter committed; new logout/freshness/scope subcards accepted; remaining catalogue/composition/release criteria open |
 | S6 | Existing motivation and advanced modes. | Single reward authority, honest availability, contextual return. | S6-A/B/C and D1/D2 accepted; D3 Streak/Settings and D4 Mastery/Profile locally accepted in full2089/analysis/review; other catalogue journeys remain |
-| S7 | Root integrates the frozen source. | Current-SHA regression, 48/44/64 disposition, APK/hash/CI and native critique. | Baseline04c19a93 full1903/CI/build accepted; vivo v29 observations accepted; new emulator P2 images, subsequent S6 integration and catalogue reconciliation pending |
+| S7 | Root integrates the frozen source and reconciles remaining catalogue journeys. | Current-SHA regression, 48/44/64 disposition, APK/hash/CI and native critique. | S6 source026be405 full2089/CI/build accepted; practice unit locally accepted in full2150/analysis/review; other catalogue journeys and final native/current APK still pending |
 
 ## Grounded constraints
 

@@ -1,20 +1,230 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+const _f33Offer = ValueKey<String>('srs-companion-offer');
+const _f33Hint = ValueKey<String>('srs-companion-hint');
+const _f33Retry = ValueKey<String>('srs-companion-retry');
+const _f33Skip = ValueKey<String>('srs-companion-skip');
+const _f33Unavailable = ValueKey<String>('srs-context-unavailable');
+
+Future<void> _tapF33(WidgetTester tester, Key key) async {
+  final button = find.byKey(key);
+  await tester.ensureVisible(button);
+  await tester.pumpAndSettle();
+  expect(button.hitTestable(), findsOneWidget);
+  expect(tester.widget<ButtonStyleButton>(button).onPressed, isNotNull);
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _missF33(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('ดูคำแปล'));
+  await tester.tap(find.text('ดูคำแปล'));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.text('ยังจำไม่ได้'));
+  await tester.tap(find.text('ยังจำไม่ได้'));
+  await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+  await _pumpUntil(tester, find.byKey(_f33Offer));
+}
+
+Future<void> _withF33(
+  WidgetTester tester,
+  Future<void> Function(_F33Fixture) body, {
+  bool? failAfterCommit,
+  Future<void>? acknowledgement,
+}) async {
+  final f = (await tester.runAsync(
+    () => _F33Fixture.create(
+      failAfterCommit: failAfterCommit,
+      acknowledgement: acknowledgement,
+    ),
+  ))!;
+  try {
+    await body(f);
+  } finally {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.runAsync(f.db.close);
+  }
+}
+
+Future<void> _openF33(
+  WidgetTester tester,
+  _F33Fixture f, {
+  LearningUseCases? scopedLearning,
+  bool waitForWord = true,
+  String? hidden,
+  double textScale = 1,
+}) async {
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: AppDependencies(
+        runtimeStatus: const AppRuntimeStatus(
+          localData: RuntimeAvailability.ready,
+          firebase: RuntimeAvailability.unavailable,
+          supabase: RuntimeAvailability.unavailable,
+          backends: RuntimeAvailability.unavailable,
+        ),
+        config: null,
+        guestSessionService: const _F33Guest(),
+        learning: scopedLearning ?? f.learning,
+        localOwners: f.owners,
+        features: BuildFeatureRegistry({
+          Feature.srs: hidden == 'feature'
+              ? FeatureState.hidden
+              : FeatureState.enabled,
+        }),
+        fieldFeatures: BuildFieldFeatureRegistry({
+          FieldFeature.srs: hidden == 'host'
+              ? FieldFeatureState.hidden
+              : FieldFeatureState.enabled,
+        }),
+      ),
+      child: MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SrsFlashcardsScreen(
+                  key: const ValueKey('f33-original-review'),
+                  learning: f.learning,
+                  expectedOwnerId: f.ownerId,
+                  voice: f.voice,
+                ),
+              ),
+            ),
+            child: const Text('เริ่ม f33 recall'),
+          ),
+        ),
+      ),
+    ),
+  );
+  if (find.byType(SrsFlashcardsScreen).evaluate().isEmpty) {
+    await tester.tap(find.text('เริ่ม f33 recall'));
+    await tester.pump();
+  }
+  if (waitForWord) await _pumpUntil(tester, find.text('apple'));
+}
+
+final class _F33Fixture {
+  _F33Fixture(
+    this.db,
+    this.owners,
+    this.ownerId,
+    this.learning,
+    this.alternativeLearning,
+    this.failing,
+    this.voice,
+  );
+  final AppDatabase db;
+  final DriftLocalOwnerRepository owners;
+  final String ownerId;
+  final LearningUseCases learning, alternativeLearning;
+  final _FailOnceRepository? failing;
+  final VoiceUseCases voice;
+
+  static Future<_F33Fixture> create({
+    bool? failAfterCommit,
+    Future<void>? acknowledgement,
+  }) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final owners = DriftLocalOwnerRepository(
+      db,
+      generateId: () => 'f33-a',
+      nowUtc: () => DateTime.utc(2026, 10, 20),
+    );
+    await _seedDueWords(db, owners, ['apple']);
+    final owner = await owners.getOrCreateActiveOwner();
+    await db.customStatement(
+      "INSERT INTO local_owners(id,firebase_uid,account_state,created_at_utc_ms,is_active) "
+      "VALUES ('f33-b','synthetic-f33-bound','firebaseBound',1,0)",
+    );
+    final delegate = DriftLearningRepository(db);
+    final failing = failAfterCommit == null && acknowledgement == null
+        ? null
+        : _FailOnceRepository(
+            delegate,
+            afterCommit: failAfterCommit ?? false,
+            acknowledgement: acknowledgement,
+          );
+    var sequence = 0;
+    LearningUseCases build(LearningRepository repo) => LearningUseCases(
+      owners: owners,
+      repository: repo,
+      generateId: () => 'f33-${++sequence}',
+      nowUtc: () => DateTime.now().toUtc(),
+      buildInfo: const AppBuildInfo(version: 'synthetic', buildId: 'f33'),
+    );
+    return _F33Fixture(
+      db,
+      owners,
+      owner.id,
+      build(failing ?? delegate),
+      build(delegate),
+      failing,
+      VoiceUseCases(FakeVoiceProvider()),
+    );
+  }
+
+  Future<String> rows() async {
+    final names = db.allTables.map((t) => t.actualTableName).toList()..sort();
+    return jsonEncode({
+      for (final name in names)
+        name: [
+          for (final r
+              in await db
+                  .customSelect('SELECT * FROM $name ORDER BY rowid')
+                  .get())
+            r.data,
+        ],
+    });
+  }
+
+  Future<void> rehomeToB() async {
+    var sequence = 0;
+    await DriftOwnerUpgradeRepository(
+      db,
+      nowUtc: () => DateTime.now().toUtc(),
+      generateConflictId: () => 'synthetic-f33-conflict-${sequence++}',
+      generateOwnerId: () => 'unused-f33-owner',
+    ).upgrade(activeOwnerId: ownerId, firebaseUid: 'synthetic-f33-bound');
+  }
+}
+
+final class _F33Guest implements GuestSessionService {
+  const _F33Guest();
+  @override
+  Future<GuestSessionResult> start() => throw UnimplementedError();
+}
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
@@ -42,6 +252,366 @@ void main() {
 
   setUp(() {
     // SharedPreferences mock removed — SrsService dependency eliminated (Phase 0 W14-15).
+  });
+
+  testWidgets(
+    'f33 a compatibility fixture cannot manufacture a durable-miss companion',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            wordList: const [
+              {
+                'word': 'apple',
+                'translation': 'meaning-apple',
+                'example': 'noun',
+              },
+            ],
+            voice: VoiceUseCases(FakeVoiceProvider()),
+          ),
+        ),
+      );
+      await _pumpUntil(tester, find.text('apple'));
+      await tester.tap(find.text('ดูคำแปล'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('ยังจำไม่ได้'));
+      await tester.tap(find.text('ยังจำไม่ได้'));
+      await _pumpUntil(tester, find.text('ชุดตัวอย่างนี้ไม่บันทึกผล'));
+      expect(find.byKey(_f33Offer), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'f33 even a committed miss waits for ACK before offering a companion',
+    (tester) async {
+      final acknowledgement = (await tester.runAsync(
+        () async => Completer<void>(),
+      ))!;
+      try {
+        await _withF33(tester, (f) async {
+          await _openF33(tester, f);
+          await tester.tap(find.text('ดูคำแปล'));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text('ยังจำไม่ได้'));
+          await tester.tap(find.text('ยังจำไม่ได้'));
+          await tester.pump();
+          for (var i = 0; i < 60 && !f.failing!.awaitingAcknowledgement; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump(const Duration(milliseconds: 10));
+          }
+          expect(f.failing!.awaitingAcknowledgement, isTrue);
+          final attempt = (await tester.runAsync(
+            () => f.db.select(f.db.answerAttempts).getSingle(),
+          ))!;
+          expect(attempt.isCorrect, isFalse);
+          expect(find.byKey(_f33Offer), findsNothing);
+          expect(find.text('บันทึกแล้ว'), findsNothing);
+          final before = (await tester.runAsync(f.rows))!;
+          acknowledgement.complete();
+          await _pumpUntil(tester, find.byKey(_f33Offer));
+          expect((await tester.runAsync(f.rows))!, before);
+        }, acknowledgement: acknowledgement.future);
+      } finally {
+        if (!acknowledgement.isCompleted) acknowledgement.complete();
+      }
+    },
+  );
+
+  testWidgets(
+    'f33 hint is opt-in after a durable miss and skip adds no evidence',
+    (tester) async {
+      await _withF33(tester, (f) async {
+        await _openF33(tester, f);
+        expect(find.byKey(_f33Offer), findsNothing);
+        await _missF33(tester);
+        final before = (await tester.runAsync(f.rows))!;
+        final original = (await tester.runAsync(
+          () => f.db.select(f.db.answerAttempts).getSingle(),
+        ))!;
+        expect(original.isCorrect, isFalse);
+        expect(find.byKey(_f33Hint), findsNothing);
+        await _tapF33(tester, _f33Offer);
+        await _pumpUntil(tester, find.byKey(_f33Hint));
+        expect(
+          find.descendant(
+            of: find.byKey(_f33Hint),
+            matching: find.textContaining('apple'),
+          ),
+          findsWidgets,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(_f33Hint),
+            matching: find.textContaining('noun'),
+          ),
+          findsWidgets,
+        );
+        expect((await tester.runAsync(f.rows))!, before);
+        await _tapF33(tester, _f33Skip);
+        expect(find.byKey(_f33Hint), findsNothing);
+        expect((await tester.runAsync(f.rows))!, before);
+        expect(
+          (await tester.runAsync(
+            () => f.db.select(f.db.pointsLedgerEntries).get(),
+          ))!,
+          isEmpty,
+        );
+        expect(
+          (await tester.runAsync(
+            () => f.db.select(f.db.rewardTransactions).get(),
+          ))!,
+          isEmpty,
+        );
+      });
+    },
+  );
+
+  testWidgets(
+    'f33 retries recall of the same word with a new attempt and preserves the original result',
+    (tester) async {
+      await _withF33(tester, (f) async {
+        await _openF33(tester, f);
+        await _missF33(tester);
+        final original = (await tester.runAsync(
+          () => f.db.select(f.db.answerAttempts).getSingle(),
+        ))!;
+        await _tapF33(tester, _f33Offer);
+        await _pumpUntil(tester, find.byKey(_f33Retry));
+        await _tapF33(tester, _f33Retry);
+        await _pumpUntil(tester, find.text('ดูคำแปล'));
+        final retry = tester.widget<SrsFlashcardsScreen>(
+          find.byType(SrsFlashcardsScreen),
+        );
+        expect(retry.sourceWordIds, ['apple']);
+        expect(retry.expectedOwnerId, f.ownerId);
+        expect(find.text('meaning-apple'), findsNothing);
+        expect(find.text('banana'), findsNothing);
+        await tester.tap(find.text('ดูคำแปล'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('จำได้แล้ว'));
+        await tester.tap(find.text('จำได้แล้ว'));
+        await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+        await tester.ensureVisible(find.text('จบการฝึก'));
+        await tester.tap(find.text('จบการฝึก'));
+        await _pumpUntil(tester, find.text('ผลที่คุณเลือก: จำไม่ได้'));
+        await tester.ensureVisible(find.text('จบการทบทวน'));
+        await tester.tap(find.text('จบการทบทวน'));
+        await _pumpUntil(tester, find.byType(ScoreScreen));
+        final attempts = (await tester.runAsync(
+          () => f.db.select(f.db.answerAttempts).get(),
+        ))!;
+        expect(attempts, hasLength(2));
+        expect(
+          attempts.singleWhere((a) => a.id == original.id).toJson(),
+          original.toJson(),
+        );
+        final corrected = attempts.singleWhere((a) => a.id != original.id);
+        expect(
+          (corrected.wordId, corrected.promptMode, corrected.isCorrect),
+          ('apple', 'srsRecall', true),
+        );
+        expect(corrected.sessionId, isNot(original.sessionId));
+        final sessions = (await tester.runAsync(
+          () => f.db.select(f.db.learningSessions).get(),
+        ))!;
+        final parent = sessions.singleWhere((s) => s.id == original.sessionId);
+        expect(
+          (parent.state, parent.correctCount, parent.wrongCount, parent.score),
+          ('completed', 0, 1, 0),
+        );
+        final child = sessions.singleWhere((s) => s.id == corrected.sessionId);
+        expect(
+          (
+            child.state,
+            child.activityType,
+            child.correctCount,
+            child.wrongCount,
+          ),
+          ('completed', 'sourcePractice', 1, 0),
+        );
+        final xp = (await tester.runAsync(
+          () => f.db.select(f.db.pointsLedgerEntries).get(),
+        ))!;
+        final coins = (await tester.runAsync(
+          () => f.db.select(f.db.rewardTransactions).get(),
+        ))!;
+        expect(xp, hasLength(1));
+        expect(
+          (xp.single.entryType, xp.single.amount, xp.single.sourceEventId),
+          ('quizCorrect', 1, corrected.id),
+        );
+        expect(coins, hasLength(1));
+        expect(
+          (
+            coins.single.transactionType,
+            coins.single.amount,
+            coins.single.sourceEventId,
+          ),
+          ('creditQuizCorrectV1', 1, corrected.id),
+        );
+        expect(
+          (await tester.runAsync(() => f.db.select(f.db.eventsV2).get()))!,
+          isEmpty,
+        );
+        expect(
+          (await tester.runAsync(
+            () => f.db.select(f.db.questClaimReceipts).get(),
+          ))!,
+          isEmpty,
+        );
+      });
+    },
+  );
+
+  for (final afterCommit in [false, true]) {
+    testWidgets(
+      'f33 failed miss or lost ACK exposes no hint before an acknowledged exact retry afterCommit=$afterCommit',
+      (tester) async {
+        await _withF33(tester, (f) async {
+          await _openF33(tester, f);
+          await tester.tap(find.text('ดูคำแปล'));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text('ยังจำไม่ได้'));
+          await tester.tap(find.text('ยังจำไม่ได้'));
+          await _pumpUntil(
+            tester,
+            find.text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
+          );
+          expect(find.byKey(_f33Offer), findsNothing);
+          final first = f.failing!.commands.single;
+          await tester.tap(find.text('ยังจำไม่ได้'));
+          await _pumpUntil(tester, find.byKey(_f33Offer));
+          final second = f.failing!.commands.last;
+          expect(
+            (
+              second.id,
+              second.sessionId,
+              second.wordId,
+              second.occurredAtUtc,
+              second.isCorrect,
+            ),
+            (first.id, first.sessionId, 'apple', first.occurredAtUtc, false),
+          );
+          final before = (await tester.runAsync(f.rows))!;
+          await _tapF33(tester, _f33Offer);
+          await _pumpUntil(tester, find.byKey(_f33Hint));
+          await _tapF33(tester, _f33Skip);
+          expect((await tester.runAsync(f.rows))!, before);
+          expect(
+            (await tester.runAsync(
+              () => f.db.select(f.db.answerAttempts).get(),
+            ))!,
+            hasLength(1),
+          );
+          expect(
+            (await tester.runAsync(
+              () => f.db.select(f.db.pointsLedgerEntries).get(),
+            ))!,
+            isEmpty,
+          );
+          expect(
+            (await tester.runAsync(
+              () => f.db.select(f.db.rewardTransactions).get(),
+            ))!,
+            isEmpty,
+          );
+        }, failAfterCommit: afterCommit);
+      },
+    );
+  }
+
+  for (final stage in ['before hint', 'before retry', 'before startup']) {
+    testWidgets('f33 stale A cannot use rehomed word IDs to start B $stage', (
+      tester,
+    ) async {
+      await _withF33(tester, (f) async {
+        if (stage != 'before startup') {
+          await _openF33(tester, f);
+          await _missF33(tester);
+          if (stage == 'before retry') {
+            await _tapF33(tester, _f33Offer);
+            await _pumpUntil(tester, find.byKey(_f33Hint));
+          }
+        }
+        await tester.runAsync(f.rehomeToB);
+        final before = (await tester.runAsync(f.rows))!;
+        if (stage == 'before startup') {
+          await _openF33(tester, f, waitForWord: false);
+        } else {
+          await _tapF33(tester, stage == 'before hint' ? _f33Offer : _f33Retry);
+        }
+        await _pumpUntil(tester, find.byKey(_f33Unavailable));
+        expect((await tester.runAsync(f.rows))!, before);
+        expect(find.byKey(_f33Retry), findsNothing);
+        expect(find.text('apple'), findsNothing);
+      });
+    });
+  }
+
+  testWidgets(
+    'f33 changing scoped learning invalidates even an explicit retained old learning dependency',
+    (tester) async {
+      await _withF33(tester, (f) async {
+        await _openF33(tester, f);
+        await _missF33(tester);
+        await _tapF33(tester, _f33Offer);
+        await _pumpUntil(tester, find.byKey(_f33Hint));
+        final before = (await tester.runAsync(f.rows))!;
+        await _openF33(
+          tester,
+          f,
+          scopedLearning: f.alternativeLearning,
+          waitForWord: false,
+        );
+        await _pumpUntil(tester, find.byKey(_f33Unavailable));
+        expect(find.byKey(_f33Retry), findsNothing);
+        expect((await tester.runAsync(f.rows))!, before);
+      });
+    },
+  );
+
+  for (final hidden in ['feature', 'host']) {
+    testWidgets('f33 hidden SRS $hidden creates no startup session', (
+      tester,
+    ) async {
+      await _withF33(tester, (f) async {
+        final before = (await tester.runAsync(f.rows))!;
+        await _openF33(tester, f, hidden: hidden, waitForWord: false);
+        await _pumpUntil(tester, find.byKey(_f33Unavailable));
+        expect((await tester.runAsync(f.rows))!, before);
+        expect(find.byKey(_f33Offer), findsNothing);
+      });
+    });
+  }
+
+  testWidgets('f33 factual hint and skip are reachable at Thai200percent', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    try {
+      await _withF33(tester, (f) async {
+        await _openF33(tester, f, textScale: 2);
+        await _missF33(tester);
+        await _tapF33(tester, _f33Offer);
+        await _pumpUntil(tester, find.byKey(_f33Hint));
+        await tester.ensureVisible(find.byKey(_f33Skip));
+        expect(find.byKey(_f33Skip).hitTestable(), findsOneWidget);
+        expect(
+          tester.getSize(find.byKey(_f33Skip)).height,
+          greaterThanOrEqualTo(48),
+        );
+        await _tapF33(tester, _f33Skip);
+        expect(tester.takeException(), isNull);
+      });
+    } finally {
+      semantics.dispose();
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    }
   });
 
   testWidgets('due review shows its persisted score before returning home', (
@@ -737,7 +1307,7 @@ Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 10));
     if (finder.evaluate().isNotEmpty) return;
   }
   fail('Timed out waiting for $finder');
@@ -844,6 +1414,7 @@ class _FailOnceRepository implements LearningRepository {
   final bool failOnListQuizWords;
   final Future<void>? acknowledgement;
   bool finishFailed = false;
+  bool awaitingAcknowledgement = false;
   final commands = <RecordAnswerCommand>[];
 
   @override
@@ -854,7 +1425,9 @@ class _FailOnceRepository implements LearningRepository {
       throw StateError('synthetic acknowledgement/storage failure');
     }
     final result = await delegate.recordAnswer(command);
+    awaitingAcknowledgement = acknowledgement != null;
     await acknowledgement;
+    awaitingAcknowledgement = false;
     return result;
   }
 
@@ -863,7 +1436,9 @@ class _FailOnceRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     Iterable<String>? wordIds,
-    required int limit,
+    Iterable<String>? normalizedSpellings,
+    Iterable<String>? normalizedMeanings,
+    required int? limit,
   }) {
     if (failOnListQuizWords) {
       return Future.error(StateError('synthetic source load failure'));
@@ -872,6 +1447,8 @@ class _FailOnceRepository implements LearningRepository {
       ownerId: ownerId,
       categoryId: categoryId,
       wordIds: wordIds,
+      normalizedSpellings: normalizedSpellings,
+      normalizedMeanings: normalizedMeanings,
       limit: limit,
     );
   }
