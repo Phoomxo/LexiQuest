@@ -1617,7 +1617,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           ),
         ),
       );
-      if (mounted && _current(generation)) Navigator.of(context).pop();
+      if (mounted &&
+          _current(generation) &&
+          ModalRoute.isCurrentOf(context) == true) {
+        Navigator.of(context).pop();
+      }
     } catch (_) {
       if (!mounted || !_current(generation)) return;
       setState(() => _saving = false);

@@ -300,25 +300,7 @@ void main() {
           progress: progress,
         );
         String? parentId;
-        if (!typed) {
-          parentId = await tester.runAsync(() async {
-            final parent = await learning.startQuiz(categoryId: 'category-1');
-            await learning.recordAnswer(
-              sessionId: parent.id,
-              wordId: 'definition-platform',
-              promptMode: 'meaningChoice',
-              isCorrect: false,
-              responseTimeMs: 100,
-              attemptNumber: 1,
-            );
-            await learning.finishSession(parent.id);
-            return parent.id;
-          });
-        }
         try {
-          final history = parentId == null
-              ? null
-              : (await tester.runAsync(() => progress.loadSession(parentId!)))!;
           await tester.pumpWidget(
             AppDependenciesScope(
               dependencies: dependencies,
@@ -332,13 +314,7 @@ void main() {
                 ),
                 home: typed
                     ? const ChooseModeScreen()
-                    : ScoreScreen(
-                        correctAnswers: history!.summary.correctCount,
-                        wrongAnswers: history.summary.wrongCount,
-                        mistakes: history.mistakes,
-                        expectedOwnerId: history.ownerId,
-                        sessionId: history.summary.id,
-                      ),
+                    : const MainNavigationScreen(initialIndex: 1),
               ),
             ),
           );
@@ -354,6 +330,23 @@ void main() {
             await _pumpUntilFound(tester, find.text('Travel'));
             await tapPrompt(tester, 'Travel');
           } else {
+            await _pumpUntilFound(tester, find.text('Travel'));
+            await tapPrompt(tester, 'Travel');
+            await _pumpUntilFound(tester, find.text('ฝึกจากชุดนี้'));
+            await tapPrompt(tester, 'ฝึกจากชุดนี้');
+            await _pumpUntilFound(tester, find.text('เริ่มฝึก'));
+            await tapPrompt(tester, 'เริ่มฝึก');
+            for (var index = 0; index < 3; index++) {
+              await _pumpUntilFound(tester, find.text('เฉลยคำตอบ'));
+              await tapPrompt(tester, 'เฉลยคำตอบ');
+              final next = index == 2 ? 'ดูผลการเรียน' : 'คำถามถัดไป';
+              await _pumpUntilFound(tester, find.text(next));
+              await tapPrompt(tester, next);
+            }
+            await _pumpUntilFound(tester, find.byType(ScoreScreen));
+            final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+            parentId = score.sessionId;
+            expect((score.correctAnswers, score.wrongAnswers), (0, 3));
             await _pumpUntilFound(tester, find.text('ลองเติมคำนี้ในประโยค'));
             await tapPrompt(tester, 'ลองเติมคำนี้ในประโยค');
           }
@@ -386,14 +379,22 @@ void main() {
             );
           } else {
             expect(find.text('รถไฟจอดอยู่ที่ชานชาลาสอง'), findsOneWidget);
-            await tapPrompt(tester, 'ticket');
+            final ticket = find.widgetWithText(FilledButton, 'ticket');
+            await tester.ensureVisible(ticket);
+            await tester.pumpAndSettle();
+            expect(ticket.hitTestable(), findsOneWidget);
+            await tester.tap(ticket.hitTestable());
             await _pumpUntilFound(tester, find.text('ticket — ตั๋ว'));
             await tapPrompt(tester, 'ลองตอบอีกครั้ง');
             await _pumpUntilFound(
               tester,
               find.widgetWithText(FilledButton, 'platform'),
             );
-            await tapPrompt(tester, 'platform');
+            final platform = find.widgetWithText(FilledButton, 'platform');
+            await tester.ensureVisible(platform);
+            await tester.pumpAndSettle();
+            expect(platform.hitTestable(), findsOneWidget);
+            await tester.tap(platform.hitTestable());
             await _pumpUntilFound(
               tester,
               find.text('The train is at platform two.'),
@@ -424,7 +425,7 @@ void main() {
               () => progress.loadSession(parentId!),
             ))!;
             expect(original.summary.score, 0);
-            expect(original.summary.wrongCount, 1);
+            expect(original.summary.wrongCount, 3);
           }
           expect(tester.takeException(), isNull);
         } finally {
