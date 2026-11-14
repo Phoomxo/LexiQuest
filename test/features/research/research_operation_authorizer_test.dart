@@ -241,6 +241,31 @@ void main() {
     expect(stateSource.calls, 0);
   });
 
+  test('denies a permit that expires during live state verification', () async {
+    final permit = _permit();
+    var currentTime = now;
+    final authorizer = SignedPermitResearchOperationAuthorizer(
+      permits: _PermitSource(permit),
+      states: _PermitStateSource(
+        _activeState,
+        onLoad: () {
+          currentTime = permit.expiresAtUtc;
+        },
+      ),
+      verifier: _SignatureVerifier(),
+      requirements: _requirements(),
+      nowUtc: () => currentTime,
+    );
+
+    expect(
+      await authorizer.authorize(
+        ownerId: 'owner-a',
+        operation: ResearchOperation.export,
+      ),
+      isFalse,
+    );
+  });
+
   test('authority dependency failures are fail closed', () async {
     for (final failurePoint in ['permit', 'signature', 'state']) {
       final permitSource = _PermitSource(_permit())
@@ -360,9 +385,10 @@ final class _PermitSource implements ResearchPermitSource {
 }
 
 final class _PermitStateSource implements ResearchPermitStateSource {
-  _PermitStateSource(this.state);
+  _PermitStateSource(this.state, {this.onLoad});
 
   ResearchPermitState? state;
+  final void Function()? onLoad;
   Object? failure;
   int calls = 0;
 
@@ -370,6 +396,7 @@ final class _PermitStateSource implements ResearchPermitStateSource {
   Future<ResearchPermitState?> loadState({required String permitId}) async {
     calls++;
     if (failure case final error?) throw error;
+    onLoad?.call();
     return state;
   }
 }

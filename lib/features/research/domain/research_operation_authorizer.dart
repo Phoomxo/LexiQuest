@@ -193,7 +193,8 @@ final class SignedPermitResearchOperationAuthorizer
       return state != null &&
           !state.revoked &&
           state.currentRevision > 0 &&
-          state.currentRevision == permit.revision;
+          state.currentRevision == permit.revision &&
+          _isCurrent(permit);
     } catch (_) {
       return false;
     }
@@ -204,7 +205,6 @@ final class SignedPermitResearchOperationAuthorizer
     String ownerId,
     ResearchOperation operation,
   ) {
-    final now = nowUtc().toUtc();
     final textValues = <String>[
       permit.permitId,
       permit.issuerId,
@@ -248,6 +248,11 @@ final class SignedPermitResearchOperationAuthorizer
         permit.instrumentRevision != requirements.instrumentRevision) {
       return false;
     }
+    return _isCurrent(permit);
+  }
+
+  bool _isCurrent(ResearchPermit permit) {
+    final now = nowUtc().toUtc();
     return permit.issuedAtUtc.isBefore(permit.expiresAtUtc) &&
         !permit.issuedAtUtc.isAfter(now) &&
         permit.expiresAtUtc.isAfter(now);
