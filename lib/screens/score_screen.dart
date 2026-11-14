@@ -175,6 +175,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
                           answer.isCorrect
                               ? Icons.check_circle_outline
                               : Icons.cancel_outlined,
+                          semanticLabel: answer.isCorrect ? 'ตอบถูก' : 'ตอบผิด',
                         ),
                         title: Text(answer.question.promptText),
                         subtitle: Text(

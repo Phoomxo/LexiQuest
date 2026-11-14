@@ -9,6 +9,69 @@ import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 void main() {
+  testWidgets('original answers expose correctness with the selected answer', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ScoreScreen(
+          correctAnswers: 1,
+          wrongAnswers: 1,
+          showOriginalHistory: true,
+          originalAnswers: [
+            (
+              question: QuizQuestion(
+                word: QuizWord(
+                  id: 'station',
+                  categoryId: 'travel',
+                  spelling: 'station',
+                  meaning: 'สถานี',
+                  partOfSpeech: 'noun',
+                ),
+                options: ['สถานี', 'ตั๋ว'],
+              ),
+              chosenAnswer: 'ตั๋ว',
+              isCorrect: false,
+            ),
+            (
+              question: QuizQuestion(
+                word: QuizWord(
+                  id: 'ticket',
+                  categoryId: 'travel',
+                  spelling: 'ticket',
+                  meaning: 'ตั๋ว',
+                  partOfSpeech: 'noun',
+                ),
+                options: ['สถานี', 'ตั๋ว'],
+              ),
+              chosenAnswer: 'ตั๋ว',
+              isCorrect: true,
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final (word, result) in [
+      ('station', 'ตอบผิด'),
+      ('ticket', 'ตอบถูก'),
+    ]) {
+      await tester.ensureVisible(find.text(word));
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(
+          RegExp(
+            '(?=.*$word)(?=.*$result)(?=.*ครั้งก่อนเลือก ตั๋ว)',
+            dotAll: true,
+          ),
+        ),
+        findsOneWidget,
+      );
+    }
+    semantics.dispose();
+  });
+
   for (final replacement in ['B', 'missing ports', 'removed']) {
     testWidgets('Score A artifacts disappear after Scope $replacement', (
       tester,
