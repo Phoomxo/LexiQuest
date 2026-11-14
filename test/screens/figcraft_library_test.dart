@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show DatabaseConnection, Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/import_vocabulary.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_import_file_picker.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
@@ -29,15 +32,34 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 final class _GuestSession extends Fake implements GuestSessionService {}
 
+const _bagItems = '''[
+  {"word":"pencil","meaning":"ดินสอ","partOfSpeech":"noun"},
+  {"word":"wallet","meaning":"กระเป๋าสตางค์","partOfSpeech":"noun"}
+''';
+
+VocabularyImportFile _jsonFile(String name, String content) =>
+    VocabularyImportFile(
+      name: name,
+      mimeType: 'application/json',
+      bytes: Uint8List.fromList(utf8.encode(content)),
+    );
+
 void main() {
   late AppDatabase database;
   late AppDependencies dependencies;
   late VocabularyUseCases vocabulary;
+  late VocabularyImportFilePicker pickImportFile;
   var nextId = 0;
 
   setUp(() {
-    database = AppDatabase(NativeDatabase.memory());
+    database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
     nextId = 0;
+    pickImportFile = () async => null;
     final now = DateTime.utc(2026, 11, 13);
     final owners = DriftLocalOwnerRepository(
       database,
@@ -79,7 +101,7 @@ void main() {
         generateId: () => 'synthetic-import-${++nextId}',
         nowUtc: () => now,
       ),
-      vocabularyImportFilePicker: () async => null,
+      vocabularyImportFilePicker: () => pickImportFile(),
     );
   });
 
@@ -156,7 +178,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
         expect(find.text('อาหาร'), findsNothing);
-        await tester.tap(find.text('การเดินทาง'));
+        await _tapLabel(tester, 'การเดินทาง');
         await _pumpUntil(tester, find.text('station'));
         await tester.pumpAndSettle();
         await tester.pageBack();
@@ -165,6 +187,11 @@ void main() {
         expect(find.text('อาหาร'), findsNothing);
 
         final search = find.byKey(const ValueKey('category-search'));
+        await tester.scrollUntilVisible(
+          search,
+          -160,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
         await tester.enterText(search, 'apple');
         await _pumpUntil(tester, find.text('ไม่พบคำหรือชุดที่ค้นหา'));
         expect(find.text('เลือกระดับภาษา · A2'), findsOneWidget);
@@ -644,6 +671,210 @@ void main() {
   }
 
   testWidgets(
+    'library corrects and practices a picked JSON file at 200% text',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.ensureVisible(search);
+        await tester.enterText(search, 'การเดิน');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'นำเข้าชุดคำ');
+
+        var picks = 0;
+        pickImportFile = () async =>
+            ++picks == 1 ? null : _jsonFile('ของที่เลือก.json', _bagItems);
+        await _tapLabel(tester, 'ฝึกจากรายการ JSON');
+        expect(picks, 1);
+        expect(find.text('ตรวจรายการจากไฟล์'), findsNothing);
+        await _tapLabel(tester, 'ฝึกจากรายการ JSON');
+        expect(picks, 2);
+        expect(find.text('ตรวจรายการจากไฟล์'), findsOneWidget);
+        final draft = find.byType(TextField);
+        expect(
+          tester.widget<TextField>(draft).controller!.text.trimRight(),
+          _bagItems.trimRight(),
+        );
+        await _tapLabel(tester, 'อ่านรายการคำ');
+        expect(find.text('ยังอ่านไฟล์นี้ไม่ได้'), findsOneWidget);
+        expect(find.text('คำที่ยังอยู่ในร่าง'), findsOneWidget);
+        await _tapLabel(tester, 'เติม ] ในร่าง');
+        final corrected = tester.widget<TextField>(draft).controller!.text;
+        expect(corrected.trimRight(), endsWith(']'));
+        expect(
+          corrected.trimRight().replaceFirst(RegExp(r'\]$'), '').trimRight(),
+          _bagItems.trimRight(),
+        );
+        await _tapLabel(tester, 'อ่านรายการคำ');
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('wallet'), findsOneWidget);
+
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('ดินสอ'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ดินสอ'), findsOneWidget);
+        await _tapLabel(tester, 'ลองนึกอีกครั้ง');
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('ดินสอ'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'จำได้แล้ว');
+        expect(find.text('wallet'), findsOneWidget);
+        expect(find.text('กระเป๋าสตางค์'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('กระเป๋าสตางค์'), findsOneWidget);
+        await _tapLabel(tester, 'จำได้แล้ว');
+        expect(find.text('ฝึกครบทั้งสองคำแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'ทบทวนอีกครั้ง');
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        expect(find.text('pencil'), findsOneWidget);
+        for (var card = 0; card < 2; card++) {
+          await _tapLabel(tester, 'เปิดคำแปล');
+          await _tapLabel(tester, 'จำได้แล้ว');
+        }
+        await _tapLabel(tester, 'กลับคลังคำ');
+        await _pumpUntil(tester, search);
+        expect(tester.widget<SearchBar>(search).controller!.text, 'การเดิน');
+        expect(find.text('อาหาร'), findsNothing);
+        await _tapLabel(tester, 'นำเข้าชุดคำ');
+        expect(find.text('ฝึกจากรายการ JSON'), findsOneWidget);
+        expect(find.text('พร้อมฝึก 2 คำ'), findsNothing);
+        expect(picks, 2);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('a pending JSON picker cannot show owner A data to owner B', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      final pending = Completer<VocabularyImportFile?>();
+      var pickerOpened = false;
+      pickImportFile = () {
+        pickerOpened = true;
+        return pending.future;
+      };
+      await _tapLabel(tester, 'นำเข้าชุดคำ');
+      final chooseFile = find.text('ฝึกจากรายการ JSON');
+      await tester.ensureVisible(chooseFile);
+      await tester.tap(chooseFile);
+      for (var frame = 0; frame < 50 && !pickerOpened; frame++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(pickerOpened, isTrue);
+
+      await _withFrames(tester, () async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      });
+      final beforeReturn = await _withFrames(
+        tester,
+        () => _localRecords(database),
+      );
+      pending.complete(_jsonFile('รายการส่วนตัว A.json', '$_bagItems]'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('รายการส่วนตัว A.json'), findsNothing);
+      expect(find.text('ตรวจรายการจากไฟล์'), findsNothing);
+      expect(find.text('พร้อมฝึก 2 คำ'), findsNothing);
+      if (find.byType(CategoriesPage).evaluate().isEmpty) {
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+      }
+      await _pumpUntil(tester, find.text('ชุดของบัญชี B'));
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(
+        await _withFrames(tester, () => _localRecords(database)),
+        beforeReturn,
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('library previews pasted table rows in the chosen set', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      final before = await tester.runAsync(() => _localRecords(database));
+      await _tapLabel(tester, 'นำเข้าชุดคำ');
+      await _tapLabel(tester, 'วางคำจากตาราง');
+      final sheet = find.byType(BottomSheet);
+      await _pumpUntil(tester, sheet);
+      final destination = find.descendant(
+        of: sheet,
+        matching: find.text('การเดินทาง'),
+      );
+      await tester.ensureVisible(destination);
+      await tester.pumpAndSettle();
+      await tester.tap(destination.hitTestable());
+      await tester.pumpAndSettle();
+      final pasted = find.byKey(const ValueKey('paste-import-csv'));
+      await _pumpUntil(tester, pasted);
+      await tester.ensureVisible(pasted);
+      await tester.enterText(
+        pasted,
+        'word,meaning,partOfSpeech\ncarriage,ตู้โดยสาร,noun',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await _tapLabel(tester, 'ตรวจคำจากตาราง');
+      await _pumpUntil(tester, find.text('ผ่าน 1 · ต้องแก้ 0 · ซ้ำ 0'));
+      await tester.scrollUntilVisible(
+        find.text('carriage'),
+        120,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
+      await _pumpUntil(tester, find.text('carriage'));
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('วางคำจากตาราง'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.text('การเดินทาง'));
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets(
     'one add menu preserves the set when file selection is cancelled',
     (tester) async {
       try {
@@ -657,11 +888,13 @@ void main() {
         expect(find.text('ถ่ายภาพ'), findsOneWidget);
         await tester.ensureVisible(find.byKey(const ValueKey('import-words')));
         await tester.tap(find.byKey(const ValueKey('import-words')));
+        await _tapLabel(tester, 'เพิ่มคำจากตารางเข้าคลัง');
         await _pumpUntil(tester, find.byType(AddMultipleWordsScreen));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const ValueKey('choose-import-file')));
         await tester.pumpAndSettle();
         await tester.pageBack();
+        await _tapLabel(tester, 'กลับคลังคำ');
         await _pumpUntil(tester, find.text('station'));
         await tester.pumpAndSettle();
         expect(find.text('การเดินทาง'), findsOneWidget);
@@ -711,6 +944,56 @@ void main() {
     },
   );
 }
+
+Future<void> _tapLabel(WidgetTester tester, String label) async {
+  final item = find.text(label);
+  await _pumpUntil(tester, item);
+  await tester.ensureVisible(item);
+  await tester.pumpAndSettle();
+  if (item.hitTestable().evaluate().isEmpty) {
+    final scrollable = find.byType(Scrollable).hitTestable();
+    await tester.scrollUntilVisible(
+      item.hitTestable(),
+      140,
+      scrollable: scrollable.last,
+    );
+  }
+  await tester.tap(item.hitTestable().first);
+  await tester.pumpAndSettle();
+}
+
+Future<T> _withFrames<T>(
+  WidgetTester tester,
+  Future<T> Function() action,
+) async {
+  var complete = false;
+  final future = action().whenComplete(() => complete = true);
+  unawaited(future.then<void>((_) {}, onError: (Object _) {}));
+  for (var frame = 0; frame < 80 && !complete; frame++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  expect(complete, isTrue, reason: 'local database operation must finish');
+  return future;
+}
+
+Future<List<Object>> _localRecords(AppDatabase database) async => [
+  await database.select(database.localOwners).get(),
+  await database.select(database.vocabularyCategories).get(),
+  await database.select(database.vocabularyWords).get(),
+  await database.select(database.vocabularyImports).get(),
+  await database.select(database.vocabularyImportRows).get(),
+  await database.select(database.learningSessions).get(),
+  await database.select(database.answerAttempts).get(),
+  await database.select(database.srsStates).get(),
+  await database.select(database.eventsV2).get(),
+  await database.select(database.readingEvents).get(),
+  await database.select(database.researchConsents).get(),
+  await database.select(database.rewardTransactions).get(),
+  await database.select(database.outboxOperations).get(),
+];
 
 final class _DelayedOwners extends Fake implements LocalOwnerRepository {
   _DelayedOwners(this.delegate);

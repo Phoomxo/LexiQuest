@@ -11,7 +11,9 @@ import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'add_multiple_words_screen.dart';
 import 'vocab_list_screen.dart';
+import 'wordbook_import_screen.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key, this.vocabulary, this.onOpenMenu});
@@ -113,6 +115,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       _matches = useCases == null ? null : _searchWords(useCases);
     }
     final libraryContext = _libraryContext;
+    final ownerId = _ownerId;
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
     final addWord = useCases == null
         ? null
@@ -240,6 +243,36 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               onPressed: () =>
                                   _setLevel(useCases, libraryContext, null),
                               child: const Text('ล้างตัวกรอง'),
+                            ),
+                          if (ownerId != null)
+                            OutlinedButton.icon(
+                              onPressed: () => AppNavigator.pushPage<void>(
+                                context,
+                                AppPage<void>(
+                                  name: 'vocabulary/import',
+                                  builder: (importContext) =>
+                                      WordbookImportScreen(
+                                        expectedOwnerId: ownerId,
+                                        onSaveToLibrary: () =>
+                                            _chooseDestination(
+                                              importContext,
+                                              useCases,
+                                              forImport: true,
+                                              expectedOwnerId: ownerId,
+                                            ),
+                                        onPasteToLibrary: () =>
+                                            _chooseDestination(
+                                              importContext,
+                                              useCases,
+                                              forImport: true,
+                                              pasteTable: true,
+                                              expectedOwnerId: ownerId,
+                                            ),
+                                      ),
+                                ),
+                              ),
+                              icon: const Icon(Icons.file_upload_outlined),
+                              label: const Text('นำเข้าชุดคำ'),
                             ),
                         ],
                       ),
@@ -586,63 +619,124 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   Future<void> _chooseDestination(
     BuildContext context,
-    VocabularyUseCases useCases,
-  ) async {
-    if (_choosingDestination) return;
+    VocabularyUseCases useCases, {
+    bool forImport = false,
+    bool pasteTable = false,
+    String? expectedOwnerId,
+  }) async {
+    if (_choosingDestination || !_isCurrent(useCases)) return;
+    final libraryContext = _libraryContext;
     setState(() => _choosingDestination = true);
     try {
+      if (expectedOwnerId != null) {
+        final activeOwner = await _dependencies?.readActiveOwnerId();
+        if (activeOwner != expectedOwnerId || !_isCurrent(useCases)) return;
+      }
       final owner = await useCases.owners.getOrCreateActiveOwner();
-      final categories = await useCases.watchCategories().first;
+      if (expectedOwnerId != null && expectedOwnerId != owner.id) return;
+      final categories = await useCases
+          .watchCategories(expectedOwnerId: owner.id)
+          .first;
       if (!context.mounted) return;
       await _requireDestinationContext(useCases, owner.id);
       if (!context.mounted) return;
+      if (forImport &&
+          (!identical(libraryContext, _libraryContext) ||
+              ModalRoute.isCurrentOf(context) != true)) {
+        return;
+      }
+      final importOwnerWrites = forImport
+          ? _dependencies?.watchLocalOwnerWrites()
+          : null;
       final category = await showModalBottomSheet<VocabularyCategory>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (sheetContext) => SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'เลือกชุดที่จะเพิ่มคำ',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                for (final category in categories)
-                  ListTile(
-                    title: Text(category.name),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.pop(sheetContext, category),
+        builder: (sheetContext) => StreamBuilder<void>(
+          stream: importOwnerWrites,
+          builder: (context, ownerWrites) {
+            if (ownerWrites.connectionState == ConnectionState.active ||
+                ownerWrites.hasError ||
+                (forImport &&
+                    (!identical(libraryContext, _libraryContext) ||
+                        owner.id != _ownerId))) {
+              return SafeArea(
+                child: ListTile(
+                  title: const Text(
+                    'ผู้ใช้เปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
                   ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final created = await _showAddCategory(
-                      sheetContext,
-                      useCases,
-                      expectedOwnerId: owner.id,
-                    );
-                    if (sheetContext.mounted && created != null) {
-                      Navigator.pop(sheetContext, created);
-                    }
-                  },
-                  icon: const Icon(Icons.create_new_folder_outlined),
-                  label: const Text('สร้างชุดคำศัพท์ใหม่'),
+                  onTap: () => Navigator.pop(sheetContext),
                 ),
-              ],
-            ),
-          ),
+              );
+            }
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      forImport
+                          ? 'เลือกชุดที่จะนำเข้าคำ'
+                          : 'เลือกชุดที่จะเพิ่มคำ',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    for (final category in categories)
+                      ListTile(
+                        title: Text(category.name),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.pop(sheetContext, category),
+                      ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final created = await _showAddCategory(
+                          sheetContext,
+                          useCases,
+                          expectedOwnerId: owner.id,
+                        );
+                        if (sheetContext.mounted && created != null) {
+                          Navigator.pop(sheetContext, created);
+                        }
+                      },
+                      icon: const Icon(Icons.create_new_folder_outlined),
+                      label: const Text('สร้างชุดคำศัพท์ใหม่'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       );
       if (category != null && context.mounted) {
         await _requireDestinationContext(useCases, owner.id);
         if (!context.mounted) return;
+        if (forImport &&
+            (!identical(libraryContext, _libraryContext) ||
+                ModalRoute.isCurrentOf(context) != true)) {
+          return;
+        }
         if (category.ownerId != owner.id) {
           throw StateError('destination owner changed');
         }
-        await _openCategory(context, useCases, category, startAdding: true);
+        if (forImport) {
+          await AppNavigator.pushPage<void>(
+            context,
+            AppPage<void>(
+              name: 'vocabulary/import/save',
+              builder: (_) => AddMultipleWordsScreen(
+                categoryId: category.id,
+                categoryName: category.name,
+                vocabulary: useCases,
+                pasteTable: pasteTable,
+                expectedOwnerId: owner.id,
+              ),
+            ),
+          );
+        } else {
+          await _openCategory(context, useCases, category, startAdding: true);
+        }
       }
     } catch (_) {
       if (context.mounted) {

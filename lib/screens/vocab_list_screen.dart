@@ -19,6 +19,7 @@ import 'object_scanner_screen.dart';
 import 'quiz_screen.dart';
 import 'score_screen.dart';
 import 'source_practice_screen.dart';
+import 'wordbook_import_screen.dart';
 
 enum _AddWordMethod { manual, camera, file }
 
@@ -756,15 +757,39 @@ class _VocabListScreenState extends State<VocabListScreen> {
         );
         return;
       case _AddWordMethod.file:
+        Future<void> saveToSet(
+          BuildContext importContext, {
+          bool pasteTable = false,
+        }) async {
+          if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+              !importContext.mounted ||
+              ModalRoute.isCurrentOf(importContext) != true) {
+            return;
+          }
+          await AppNavigator.pushPage<void>(
+            importContext,
+            AppPage<void>(
+              name: 'vocabulary/import/save',
+              builder: (_) => AddMultipleWordsScreen(
+                categoryId: category.id,
+                categoryName: category.name,
+                importer: importer,
+                vocabulary: category.vocabulary,
+                pasteTable: pasteTable,
+                expectedOwnerId: ownerId,
+              ),
+            ),
+          );
+        }
         await AppNavigator.pushPage<void>(
           context,
           AppPage<void>(
             name: 'vocabulary/import',
-            builder: (_) => AddMultipleWordsScreen(
-              categoryId: category.id,
-              categoryName: category.name,
-              importer: importer,
-              vocabulary: category.vocabulary,
+            builder: (importContext) => WordbookImportScreen(
+              expectedOwnerId: ownerId,
+              onSaveToLibrary: () => saveToSet(importContext),
+              onPasteToLibrary: () =>
+                  saveToSet(importContext, pasteTable: true),
             ),
           ),
         );

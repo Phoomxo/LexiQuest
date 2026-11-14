@@ -67,11 +67,12 @@ final class VocabularyUseCases {
   final VocabularyUtcNow nowUtc;
   final LocalMutationNotifier? onLocalMutation;
 
-  Stream<List<VocabularyCategory>> watchCategories() {
-    return Stream.fromFuture(
-      owners.getOrCreateActiveOwner(),
-    ).asyncExpand((owner) => vocabulary.watchCategories(owner.id));
-  }
+  Stream<List<VocabularyCategory>> watchCategories({String? expectedOwnerId}) =>
+      Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+        (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+            ? vocabulary.watchCategories(owner.id)
+            : Stream.value(const []),
+      );
 
   Stream<List<VocabularyCategorySummary>> watchLibrary({
     String? expectedOwnerId,
@@ -95,14 +96,19 @@ final class VocabularyUseCases {
     );
   }
 
-  Stream<List<VocabularyWord>> watchWords(String categoryId) {
+  Stream<List<VocabularyWord>> watchWords(
+    String categoryId, {
+    String? expectedOwnerId,
+  }) {
     final canonicalCategoryId = _required(
       categoryId,
       'categoryId',
       maxLength: 256,
     );
     return Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
-      (owner) => vocabulary.watchWords(owner.id, canonicalCategoryId),
+      (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+          ? vocabulary.watchWords(owner.id, canonicalCategoryId)
+          : Stream.value(const []),
     );
   }
 
