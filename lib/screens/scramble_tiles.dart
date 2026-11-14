@@ -44,10 +44,10 @@ class ScrambleTiles extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('${unit}ที่เรียงไว้', style: theme.textTheme.titleSmall),
+        Text('$unitที่เรียงไว้', style: theme.textTheme.titleSmall),
         const SizedBox(height: 8),
         if (order.isEmpty)
-          Text('เลือก${unit}จากด้านล่าง')
+          Text('เลือก$unitจากด้านล่าง')
         else
           Wrap(
             spacing: 8,
@@ -71,7 +71,7 @@ class ScrambleTiles extends StatelessWidget {
           ),
         if (!complete) ...[
           const SizedBox(height: 16),
-          Text('${unit}ที่เหลือ', style: theme.textTheme.titleSmall),
+          Text('$unitที่เหลือ', style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
