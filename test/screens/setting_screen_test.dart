@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart'
@@ -26,6 +27,8 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/media_practice/application/device_permission_access.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
@@ -38,6 +41,7 @@ import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
 import 'package:vocab_learning_app/screens/device_permission_center_screen.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/appearance_settings_screen.dart';
 import 'package:vocab_learning_app/screens/gemini_settings_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
@@ -1051,6 +1055,93 @@ void main() {
     expect(find.text('สิทธิ์กล้องและไมโครโฟน'), findsWidgets);
   });
 
+  testWidgets(
+    'permission center can practice spelling without requesting access',
+    (tester) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      const permissionChannel = MethodChannel(
+        'flutter.baseflow.com/permissions/methods',
+      );
+      final messenger = tester.binding.defaultBinaryMessenger;
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(permissionChannel, (call) async {
+        calls.add(call.method);
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(permissionChannel, null),
+      );
+      final permissions = _DeniedDevicePermissions();
+      await _pumpSettings(tester, devicePermissions: permissions, textScale: 2);
+
+      Future<void> reveal(Finder target) async {
+        if (target.evaluate().isEmpty) {
+          await tester.scrollUntilVisible(
+            target,
+            180,
+            scrollable: find.byType(Scrollable).hitTestable().last,
+          );
+        }
+        await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> tap(Finder target) async {
+        await reveal(target);
+        await tester.tap(target.hitTestable());
+        await tester.pumpAndSettle();
+      }
+
+      void expectNoAudioControls() {
+        expect(find.text('ฟังด้วยความเร็วปกติ'), findsNothing);
+        expect(find.text('ฟังช้าลง'), findsNothing);
+        expect(find.text('ลองฟังคำนี้อีกครั้ง'), findsNothing);
+      }
+
+      final center = find.byType(DevicePermissionCenterScreen);
+      await tap(
+        find.byKey(const ValueKey<String>('settings-permission-center')),
+      );
+      final initialCenter = tester.state(center);
+      expect(permissions.microphoneReads, greaterThan(0));
+      await tap(find.text('ลองตอบโดยไม่ใช้เสียง'));
+      expect(find.byType(DictationQuizScreen), findsOneWidget);
+      expect(find.text('สถานี'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('ลองเขียนคำ'));
+
+      Future<void> submit(String answer) async {
+        final field = find.byType(TextField);
+        await reveal(field);
+        await tester.enterText(field, answer);
+        await tap(find.text('ตรวจคำตอบ'));
+      }
+
+      expectNoAudioControls();
+      await submit('staton');
+      final hint = find.textContaining('ยังขาดตัว i');
+      await reveal(hint);
+      expect(hint.hitTestable(), findsOneWidget);
+      await tap(find.text('แก้คำตอบ'));
+      await submit('station');
+      expect(find.text('สะกดถูกแล้ว'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('ลองเขียนอีกครั้ง'));
+      expect(find.text('เขียนจากคำใบ้'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('กลับไปดูเครื่องมือ'));
+      expect(tester.state(center), same(initialCenter));
+      expect(permissions.settingsOpens, 0);
+      expect(calls, isNot(contains('requestPermissions')));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('device model reports absent, downloading, active and failed', (
     tester,
   ) async {
@@ -1225,6 +1316,7 @@ Future<void> _pumpSettings(
   SyncTrigger? syncTrigger,
   SyncStatusSource? syncStatus,
   DeviceModelUseCases? deviceModels,
+  DevicePermissionAccess? devicePermissions,
   StreakUseCases? streak,
   ValueListenable<int>? progressUpdates,
   FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
@@ -1249,6 +1341,7 @@ Future<void> _pumpSettings(
     syncTrigger: syncTrigger,
     syncStatus: syncStatus,
     deviceModels: deviceModels,
+    devicePermissions: devicePermissions,
     streak: streak,
     progressUpdates: progressUpdates,
     features: features,
@@ -1283,6 +1376,27 @@ Future<void> _pumpSettings(
     await tester.pumpAndSettle();
   } else {
     await tester.pump();
+  }
+}
+
+final class _DeniedDevicePermissions implements DevicePermissionAccess {
+  int microphoneReads = 0;
+  int settingsOpens = 0;
+
+  @override
+  Future<MediaPermissionState> cameraStatus() async =>
+      MediaPermissionState.denied;
+
+  @override
+  Future<MediaPermissionState> microphoneStatus() async {
+    microphoneReads++;
+    return MediaPermissionState.denied;
+  }
+
+  @override
+  Future<bool> openAndroidSettings() async {
+    settingsOpens++;
+    return true;
   }
 }
 

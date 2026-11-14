@@ -4,12 +4,22 @@ import 'package:flutter/material.dart';
 
 import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
+import 'dictation_quiz_screen.dart';
 
 class DevicePermissionCenterScreen extends StatefulWidget {
-  const DevicePermissionCenterScreen({super.key, this.permissionAccess});
+  const DevicePermissionCenterScreen({
+    super.key,
+    this.permissionAccess,
+    this.fieldFeatures,
+  });
 
   final DevicePermissionAccess? permissionAccess;
+  final FieldFeatureRegistry? fieldFeatures;
 
   @override
   State<DevicePermissionCenterScreen> createState() =>
@@ -148,8 +158,36 @@ class _DevicePermissionCenterScreenState
     super.dispose();
   }
 
+  void _openSilentPractice() {
+    if (ModalRoute.isCurrentOf(context) != true) return;
+    unawaited(
+      AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'settings/device-permissions/spelling',
+          builder: (_) => const DictationQuizScreen.withHint(
+            targetWord: 'station',
+            meaning: 'สถานี',
+            partOfSpeech: 'คำนาม',
+            returnLabel: 'กลับไปดูเครื่องมือ',
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final field =
+        widget.fieldFeatures ??
+        dependencies?.fieldFeatures ??
+        const BuildFieldFeatureRegistry.fieldDefaults();
+    final showPractice =
+        _microphone != null &&
+        _microphone != MediaPermissionState.granted &&
+        field.isVisible(FieldFeature.speechPractice) &&
+        (dependencies?.features.isVisible(Feature.speechPractice) ?? true);
     final showSettings =
         _camera == MediaPermissionState.permanentlyDenied ||
         _microphone == MediaPermissionState.permanentlyDenied;
@@ -159,8 +197,7 @@ class _DevicePermissionCenterScreenState
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'หน้านี้ตรวจสอบสถานะเท่านั้น '
-            'LexiQuest จะขอสิทธิ์เมื่อคุณเริ่มใช้กล้องหรือไมโครโฟน',
+            'ตรวจสถานะสิทธิ์ได้ที่นี่ LexiQuest จะขอสิทธิ์เมื่อคุณเริ่มใช้กล้องหรือไมโครโฟน',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 12),
@@ -176,6 +213,16 @@ class _DevicePermissionCenterScreenState
             title: 'ไมโครโฟน',
             state: _microphone,
           ),
+          if (showPractice) ...[
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _openSilentPractice,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: const Text('ลองตอบโดยไม่ใช้เสียง'),
+            ),
+          ],
           if (showSettings) ...[
             const SizedBox(height: 8),
             FilledButton.icon(

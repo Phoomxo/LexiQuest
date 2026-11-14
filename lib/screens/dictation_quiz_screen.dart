@@ -21,7 +21,19 @@ class DictationQuizScreen extends StatefulWidget {
     this.onReturn,
     this.autoPlay = true,
     this.voice,
-  });
+  }) : _startWithHint = false;
+
+  const DictationQuizScreen.withHint({
+    super.key,
+    required this.targetWord,
+    required this.meaning,
+    this.partOfSpeech,
+    this.returnLabel = 'กลับไปดูคำเดิม',
+  }) : categoryName = null,
+       onReturn = null,
+       autoPlay = false,
+       voice = null,
+       _startWithHint = true;
 
   final String targetWord;
   final String? meaning;
@@ -31,6 +43,7 @@ class DictationQuizScreen extends StatefulWidget {
   final VoidCallback? onReturn;
   final bool autoPlay;
   final VoiceUseCases? voice;
+  final bool _startWithHint;
 
   @override
   State<DictationQuizScreen> createState() => _DictationQuizScreenState();
@@ -60,6 +73,10 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget._startWithHint) {
+      _useHint = true;
+      _step = _Step.hint;
+    }
     if (widget.autoPlay) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_play(1));
@@ -141,10 +158,10 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
     setState(() {
       _audioUnavailable = false;
       _requestedSpeed = null;
-      _useHint = false;
+      _useHint = widget._startWithHint;
       _emptyAnswer = false;
       _submitted = '';
-      _step = _Step.listen;
+      _step = _useHint ? _Step.hint : _Step.listen;
     });
   }
 
@@ -254,7 +271,11 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: _restart,
-            child: const Text('ลองฟังคำนี้อีกครั้ง'),
+            child: Text(
+              widget._startWithHint
+                  ? 'ลองเขียนอีกครั้ง'
+                  : 'ลองฟังคำนี้อีกครั้ง',
+            ),
           ),
         ];
     }

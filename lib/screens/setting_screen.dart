@@ -1273,7 +1273,9 @@ class _SettingScreenState extends State<SettingScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _openSettingsPage(
                       'settings/device-permissions',
-                      const DevicePermissionCenterScreen(),
+                      DevicePermissionCenterScreen(
+                        fieldFeatures: widget.featureRegistry,
+                      ),
                     ),
                   ),
                   if (_fieldFeatures.isVisible(FieldFeature.speechPractice))
