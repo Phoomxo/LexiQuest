@@ -19,6 +19,7 @@ import 'object_scanner_screen.dart';
 import 'quiz_screen.dart';
 import 'score_screen.dart';
 import 'source_practice_screen.dart';
+import 'vocabulary_word_detail_screen.dart';
 import 'wordbook_import_screen.dart';
 
 enum _AddWordMethod { manual, camera, file }
@@ -556,11 +557,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 subtitle: Text(
                                   '${word.meaning} · ${word.partOfSpeech}',
                                 ),
-                                onTap: () => _openWordEditor(
-                                  context,
-                                  category,
-                                  word: word,
-                                ),
+                                onTap: () =>
+                                    _openWordDetail(context, category, word),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -742,7 +740,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
     if (!identical(importer, currentImporter)) return;
     switch (method) {
       case _AddWordMethod.manual:
-        await _openWordEditor(context, category, expectedOwnerId: ownerId);
+        await _openAddWord(context, category, expectedOwnerId: ownerId);
         return;
       case _AddWordMethod.camera:
         await AppNavigator.pushPage<VocabularyWord>(
@@ -797,28 +795,55 @@ class _VocabListScreenState extends State<VocabListScreen> {
     }
   }
 
-  Future<void> _openWordEditor(
+  Future<void> _openWordDetail(
     BuildContext context,
-    _CategoryContext category, {
-    VocabularyWord? word,
-    String? expectedOwnerId,
-  }) async {
-    if (word != null && word.categoryId != category.id) return;
-    final ownerId = await _currentOwner(
-      category,
-      expectedOwnerId: expectedOwnerId ?? word?.ownerId,
-    );
-    if (ownerId == null || !context.mounted) return;
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (word.categoryId != category.id) return;
+    final owner = await _currentOwner(category, expectedOwnerId: word.ownerId);
+    if (owner == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
     await AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
-        name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
+        name: 'vocabulary/word',
+        builder: (_) => VocabularyWordDetailScreen(
+          word: word,
+          categoryName: category.name,
+          vocabulary: category.vocabulary,
+          scope: category.dependencies,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openAddWord(
+    BuildContext context,
+    _CategoryContext category, {
+    required String expectedOwnerId,
+  }) async {
+    final ownerId = await _currentOwner(
+      category,
+      expectedOwnerId: expectedOwnerId,
+    );
+    if (ownerId == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/add',
         builder: (_) => AddWordScreen(
           categoryId: category.id,
           categoryName: category.name,
           vocabulary: category.vocabulary,
           expectedOwnerId: ownerId,
-          word: word,
         ),
       ),
     );

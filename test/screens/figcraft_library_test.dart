@@ -20,17 +20,47 @@ import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_im
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 final class _GuestSession extends Fake implements GuestSessionService {}
+
+final class _LibraryVoice implements VoiceProvider {
+  static const played = VoicePlaybackResult(
+    requestedEngine: VoiceEngine.nativeTts,
+    actualEngine: VoiceEngine.nativeTts,
+    usedFallback: false,
+    cacheHit: false,
+  );
+
+  final requests = <VoiceRequest>[];
+  Completer<VoicePlaybackResult>? pending;
+  int stops = 0;
+
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    requests.add(request);
+    final playback = pending;
+    return playback == null ? played : await playback.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+  }
+}
 
 const _bagItems = '''[
   {"word":"pencil","meaning":"ดินสอ","partOfSpeech":"noun"},
@@ -49,6 +79,7 @@ void main() {
   late AppDependencies dependencies;
   late VocabularyUseCases vocabulary;
   late VocabularyImportFilePicker pickImportFile;
+  late _LibraryVoice voice;
   var nextId = 0;
 
   setUp(() {
@@ -60,6 +91,7 @@ void main() {
     );
     nextId = 0;
     pickImportFile = () async => null;
+    voice = _LibraryVoice();
     final now = DateTime.utc(2026, 11, 13);
     final owners = DriftLocalOwnerRepository(
       database,
@@ -83,6 +115,7 @@ void main() {
       guestSessionService: _GuestSession(),
       database: database,
       vocabulary: vocabulary,
+      voice: VoiceUseCases(voice),
       progress: ProgressUseCases(
         owners: owners,
         queries: DriftProgressQueries(database),
@@ -223,6 +256,129 @@ void main() {
     },
   );
 
+  testWidgets(
+    'station opens its library detail and sound practice at 200% text',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2, travelContrast: true);
+        final before = await tester.runAsync(() => _localRecords(database));
+        await _tapLabel(tester, 'การเดินทาง');
+        final wordSearch = find.descendant(
+          of: find.byType(VocabListScreen),
+          matching: find.byType(SearchBar),
+        );
+        await _pumpUntil(tester, wordSearch);
+        await tester.ensureVisible(wordSearch);
+        await tester.enterText(wordSearch, 'stat');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'station');
+        await _pumpUntil(tester, find.text('แก้ไขคำ'));
+        expect(find.text('station'), findsWidgets);
+        expect(find.text('สถานี'), findsOneWidget);
+        expect(find.byKey(const ValueKey('word-field')), findsNothing);
+
+        await _tapLabel(tester, 'ฟังและฝึกพูด');
+        await _pumpUntil(tester, find.byType(PhoneticExplorerScreen));
+        await _tapLabel(tester, 'ลองเสียง /ʃ/ ในคำว่า she');
+        expect(voice.requests.last.text, 'she');
+        expect(voice.requests.last.speed, 0.8);
+        expect(voice.requests.last.mode, VoiceMode.practice);
+        await _tapLabel(tester, 'กลับไปดูคำเดิม');
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await _tapLabel(tester, 'ฝึกฟังแล้วเขียน');
+        await _pumpUntil(tester, find.byType(DictationQuizScreen));
+        await _tapLabel(tester, 'ฟังด้วยความเร็วปกติ');
+        expect(voice.requests.last.text, 'station');
+        expect(voice.requests.last.speed, 1);
+        await _tapLabel(tester, 'ฟังช้าลง');
+        expect(voice.requests.last.text, 'station');
+        expect(voice.requests.last.speed, 0.75);
+        await _tapLabel(tester, 'ลองเขียนคำที่ได้ยิน');
+        final answer = find.byType(TextField);
+        await _pumpUntil(tester, answer);
+        await tester.ensureVisible(answer);
+        await tester.enterText(answer, 'staton');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _tapLabel(tester, 'ตรวจคำตอบ');
+        expect(find.text('ยังขาดตัว i'), findsOneWidget);
+        await _tapLabel(tester, 'แก้คำตอบ');
+        expect(tester.widget<TextField>(answer).controller!.text, 'staton');
+        await tester.enterText(answer, 'station');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _tapLabel(tester, 'ตรวจคำตอบ');
+        expect(find.text('สะกดถูกแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูคำเดิม');
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await _pumpUntil(tester, wordSearch);
+        expect(tester.widget<SearchBar>(wordSearch).controller!.text, 'stat');
+        expect(find.text('ticket'), findsNothing);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('owner change stops pending audio and hides the old word', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      await _tapLabel(tester, 'การเดินทาง');
+      await _tapLabel(tester, 'station');
+      await _tapLabel(tester, 'ฝึกฟังแล้วเขียน');
+      final pending = voice.pending = Completer<VoicePlaybackResult>();
+      final listen = find.text('ฟังด้วยความเร็วปกติ');
+      await _pumpUntil(tester, listen);
+      await tester.ensureVisible(listen);
+      await tester.tap(listen);
+      await tester.pump();
+      expect(voice.requests.last.text, 'station');
+      final stopsBeforeSwitch = voice.stops;
+
+      await _withFrames(tester, () async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      });
+      final unavailable = find.text(
+        'คำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกคำใหม่',
+      );
+      await _pumpUntil(tester, unavailable);
+      expect(voice.stops, greaterThan(stopsBeforeSwitch));
+      pending.complete(_LibraryVoice.played);
+      await tester.pumpAndSettle();
+      expect(find.byType(DictationQuizScreen), findsNothing);
+      expect(find.text('station'), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, unavailable);
+      expect(find.text('สถานี'), findsNothing);
+      expect(find.text('แก้ไขคำ'), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
   testWidgets('set and word searches keep their context after returning', (
     tester,
   ) async {
@@ -242,9 +398,11 @@ void main() {
       await tester.enterText(wordSearch, 'stat');
       await tester.pumpAndSettle();
       await tester.tap(find.text('station'));
+      await _tapLabel(tester, 'แก้ไขคำ');
       await _pumpUntil(tester, find.byKey(const ValueKey('word-field')));
       await tester.pumpAndSettle();
       await tester.pageBack();
+      await _tapLabel(tester, 'กลับชุดคำ');
       await _pumpUntil(tester, find.text('station'));
       await tester.pumpAndSettle();
       expect(tester.widget<SearchBar>(wordSearch).controller!.text, 'stat');
