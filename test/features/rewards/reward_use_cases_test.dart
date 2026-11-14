@@ -387,6 +387,155 @@ void main() {
     expect(transactions.where((row) => row.ownerId == 'owner-b'), isEmpty);
   });
 
+  test('queued equip refuses an owner no longer active at the write', () async {
+    final switchStarted = Completer<void>();
+    final allowSwitchCommit = Completer<void>();
+    final equipAcceptedByApplication = Completer<void>();
+    final switching = database.transaction(() async {
+      await (database.update(database.localOwners)
+            ..where((row) => row.id.equals('local:owner')))
+          .write(const LocalOwnersCompanion(isActive: Value(false)));
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-b', createdAtUtcMs: 2),
+          );
+      switchStarted.complete();
+      await allowSwitchCommit.future;
+    });
+    await switchStarted.future;
+    final transitioningRewards = RewardUseCases(
+      owners: _SequencedOwnerRepository(['local:owner', 'owner-b']),
+      repository: DriftRewardRepository(database),
+      generateId: () {
+        equipAcceptedByApplication.complete();
+        return 'queued-equip';
+      },
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+    );
+    final equip = expectLater(
+      transitioningRewards.equip(
+        expectedOwnerId: 'local:owner',
+        itemId: 'theme_default',
+        idempotencyKey: 'old-owner-equip',
+      ),
+      throwsA(
+        isA<RewardException>().having(
+          (error) => error.code,
+          'code',
+          RewardFailureCode.ownerChanged,
+        ),
+      ),
+    );
+    await equipAcceptedByApplication.future;
+    allowSwitchCommit.complete();
+    await switching;
+    await equip;
+
+    expect(await database.select(database.rewardTransactions).get(), isEmpty);
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
+    expect(await database.select(database.equippedRewardItems).get(), isEmpty);
+  });
+
+  test(
+    'built-in wallpaper replaces focus without a purchase or debit',
+    () async {
+      const standard = 'wallpaper_default';
+      const focus = 'wallpaper_focus';
+      const owner = 'local:owner';
+      await rewards.purchase(
+        expectedOwnerId: owner,
+        itemId: focus,
+        catalogVersion: RewardCatalog.version,
+        idempotencyKey: 'buy-focus',
+      );
+      final focused = await rewards.equip(
+        expectedOwnerId: owner,
+        itemId: focus,
+        idempotencyKey: 'equip-focus',
+      );
+      expect(focused.account.equippedBySlot['wallpaper'], focus);
+
+      final standardRewards = RewardUseCases(
+        owners: owners,
+        repository: DriftRewardRepository(database),
+        generateId: () => 'standard-tx-${sequence++}',
+        nowUtc: () => DateTime.utc(2026, 7, 30, 13),
+      );
+      final reset = await standardRewards.equip(
+        expectedOwnerId: owner,
+        itemId: standard,
+        idempotencyKey: 'reset-wallpaper',
+      );
+      final replay = await standardRewards.equip(
+        expectedOwnerId: owner,
+        itemId: standard,
+        idempotencyKey: 'reset-wallpaper',
+      );
+      expect(reset.status, EquipStatus.equipped);
+      expect(replay.status, EquipStatus.replayed);
+      expect(replay.account.equippedBySlot['wallpaper'], standard);
+      expect(replay.account.balance, focused.account.balance);
+      expect(replay.account.ownedItemIds, {focus});
+
+      final actualStandard = await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.itemId.equals(standard))).getSingle();
+      expect(actualStandard.ownerId, owner);
+      expect(actualStandard.transactionType, 'equip');
+      expect(actualStandard.amount, 0);
+      final appearance = await standardRewards.watchAppearance().first;
+      expect(appearance.equippedBySlot['wallpaper'], standard);
+    },
+  );
+
+  test(
+    'built-in wallpaper cannot be purchased through either writer',
+    () async {
+      const standard = 'wallpaper_default';
+      const owner = 'local:owner';
+      await expectLater(
+        rewards.purchase(
+          expectedOwnerId: owner,
+          itemId: standard,
+          catalogVersion: RewardCatalog.version,
+          idempotencyKey: 'buy-standard',
+        ),
+        throwsA(isA<RewardException>()),
+      );
+      expect(
+        RewardCatalog.items.map((item) => item.id),
+        isNot(contains(standard)),
+      );
+      await expectLater(
+        rewards.repository.purchase(
+          ownerId: owner,
+          item: RewardCatalog.byId(standard)!,
+          idempotencyKey: 'buy-direct',
+          transactionId: 'buy-direct',
+          occurredAtUtc: DateTime.utc(2026, 7, 30),
+        ),
+        throwsA(isA<RewardException>()),
+      );
+      expect(await database.select(database.rewardTransactions).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
+
+  test('a raw default wallpaper purchase has no ownership effect', () async {
+    await database.customInsert(
+      "INSERT INTO reward_transactions "
+      "(id, owner_id, idempotency_key, transaction_type, amount, item_id, "
+      "catalog_version, occurred_at_utc_ms) "
+      "VALUES ('raw-default', 'local:owner', 'raw-default', 'purchase', "
+      "0, 'wallpaper_default', 1, 2)",
+    );
+    final account = await rewards.load();
+    expect(account.ownedItemIds, isEmpty);
+    expect(account.equippedBySlot, isEmpty);
+    expect(account.balance, 200);
+  });
+
   test(
     'loadSession rejects an owner snapshot that changed during load',
     () async {

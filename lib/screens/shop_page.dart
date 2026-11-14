@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/domain/reward_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import 'avatar_equipment_screen.dart';
+import 'select_wallpaper_screen.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key, this.rewards, this.generateIntentId});
@@ -215,6 +218,15 @@ class _ShopPageState extends State<ShopPage> {
   Future<void> _equip(RewardCatalogItem item, RewardSession session) async {
     final rewards = _rewards;
     if (rewards == null || _busyItems.contains(item.id)) return;
+    if (rewards is RewardUseCases && item.kind != RewardItemKind.theme) {
+      await _showDetail(
+        item: item,
+        owned: true,
+        equipped: session.account.equippedBySlot[item.slot] == item.id,
+        session: session,
+      );
+      return;
+    }
     final intent = _intentFor(
       _equipIntents,
       ownerId: session.ownerId,
@@ -295,15 +307,45 @@ class _ShopPageState extends State<ShopPage> {
     required RewardCatalogItem item,
     required bool owned,
     required bool equipped,
-    required Map<String, String> equippedBySlot,
-  }) {
+    required RewardSession session,
+  }) async {
+    final rewards = _rewards;
+    if (owned &&
+        rewards is RewardUseCases &&
+        item.kind != RewardItemKind.theme) {
+      if (ModalRoute.isCurrentOf(context) != true) return;
+      final scope = AppDependenciesScope.maybeOf(context);
+      if (widget.rewards == null && !identical(scope?.rewards, rewards)) return;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'rewards/owned-item',
+          builder: (_) => item.kind == RewardItemKind.wallpaper
+              ? SelectWallpaperScreen(
+                  rewards: rewards,
+                  initialItemId: item.id,
+                  expectedOwnerId: session.ownerId,
+                  returnLabel: 'กลับไปที่ร้านของตกแต่ง',
+                )
+              : AvatarEquipmentScreen(
+                  rewards: rewards,
+                  initialItemId: item.id,
+                  expectedOwnerId: session.ownerId,
+                  returnLabel: 'กลับไปที่ร้านของตกแต่ง',
+                ),
+        ),
+      );
+      if (mounted && identical(_rewards, rewards)) _reloadSession();
+      return;
+    }
+    final equippedBySlot = session.account.equippedBySlot;
     final previewThemeId = item.kind == RewardItemKind.theme
         ? item.id
         : equippedBySlot['theme'];
     final previewWallpaperId = item.kind == RewardItemKind.wallpaper
         ? item.id
         : equippedBySlot['wallpaper'];
-    return showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) => _CatalogDetailSheet(
@@ -476,7 +518,7 @@ class _ShopPageState extends State<ShopPage> {
                                     equipped:
                                         account.equippedBySlot[item.slot] ==
                                         item.id,
-                                    equippedBySlot: account.equippedBySlot,
+                                    session: session,
                                   ),
                                 ),
                               ),

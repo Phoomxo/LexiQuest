@@ -236,6 +236,9 @@ final class DriftRewardRepository {
     return _serialized(
       () => database.transaction(() async {
         _validateItem(item, occurredAtUtc);
+        if (!item.purchasable) {
+          throw const RewardException(RewardFailureCode.unknownItem);
+        }
         final replay =
             await (database.select(database.rewardTransactions)..where(
                   (row) =>
@@ -302,9 +305,18 @@ final class DriftRewardRepository {
     required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
+    bool requireActiveOwner = false,
   }) {
     return _serialized(
       () => database.transaction(() async {
+        if (requireActiveOwner) {
+          final active = await (database.select(
+            database.localOwners,
+          )..where((row) => row.isActive.equals(true))).get();
+          if (active.length != 1 || active.single.id != ownerId) {
+            throw const RewardException(RewardFailureCode.ownerChanged);
+          }
+        }
         _validateItem(item, occurredAtUtc);
         final replay =
             await (database.select(database.rewardTransactions)..where(
@@ -372,6 +384,7 @@ final class DriftRewardRepository {
     final canonical = RewardCatalog.byId(item.id);
     if (canonical == null ||
         canonical.price != item.price ||
+        canonical.purchasable != item.purchasable ||
         canonical.catalogVersion != item.catalogVersion ||
         canonical.slot != item.slot) {
       throw const RewardException(RewardFailureCode.staleCatalog);

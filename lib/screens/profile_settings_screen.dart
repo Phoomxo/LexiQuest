@@ -7,10 +7,15 @@ import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../features/motivation/domain/streak_policy.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'account_deletion_screen.dart';
+import 'achievements_screen.dart';
+import 'export_center_screen.dart';
+import 'thesis_chart_screen.dart';
 
 typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
 
@@ -121,6 +126,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (mounted) setState(() {});
   }
 
+  void _openPersonalData() => AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(name: 'account/data', builder: (_) => const _PersonalData()),
+  );
+
   @override
   Widget build(BuildContext context) {
     final session = _account?.currentSession;
@@ -160,6 +170,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       onPressed: _refresh,
                       child: const Text('ลองใหม่'),
                     ),
+                    TextButton(
+                      onPressed: _openPersonalData,
+                      child: const Text('ข้อมูลของฉัน'),
+                    ),
                   ],
                 ),
               );
@@ -176,6 +190,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             final learningDaysVisible =
                 (dependencies?.features.isVisible(Feature.mastery) ?? true) &&
                 (dependencies?.fieldFeatures.isVisible(FieldFeature.mastery) ??
+                    true);
+            final collectionVisible =
+                (dependencies?.features.isVisible(Feature.achievements) ??
+                    true) &&
+                (dependencies?.fieldFeatures.isVisible(
+                      FieldFeature.achievements,
+                    ) ??
                     true);
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -243,9 +264,114 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'),
                 ),
+                if (collectionVisible)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.emoji_events_outlined),
+                      title: const Text('ของสะสม'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'rewards/collection',
+                          builder: (_) => AchievementsScreen(
+                            loader: widget.loader,
+                            showCollection: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('ข้อมูลของฉัน'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openPersonalData,
+                  ),
+                ),
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonalData extends StatelessWidget {
+  const _PersonalData();
+
+  @override
+  Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final deletion = dependencies?.accountDeletion;
+    final session = dependencies?.account?.currentSession;
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'ข้อมูลของฉัน'),
+      ),
+      body: AdaptiveContentPane(
+        maxWidth: AdaptiveContentPane.formMaxWidth,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (dependencies?.exports != null &&
+                dependencies!.fieldFeatures.isVisible(FieldFeature.export))
+              ListTile(
+                leading: const Icon(Icons.file_download_outlined),
+                title: const Text('บันทึกสำเนาข้อมูล'),
+                subtitle: const Text('เลือกข้อมูลการเรียนที่ต้องการเก็บ'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'export/center',
+                    builder: (_) => const ExportCenterScreen(),
+                  ),
+                ),
+              ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart_outlined),
+              title: const Text('ข้อมูลสำหรับงานวิจัย'),
+              subtitle: const Text('ดูตัวอย่างการอ่านกราฟ'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => AppNavigator.pushPage<void>(
+                context,
+                AppPage<void>(
+                  name: 'research/sample-chart',
+                  builder: (_) => const ThesisChartScreen(
+                    returnLabel: 'กลับไปที่ข้อมูลของฉัน',
+                  ),
+                ),
+              ),
+            ),
+            if (deletion != null && session?.isAnonymous == false)
+              ListTile(
+                leading: Icon(
+                  Icons.delete_forever_outlined,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: const Text('ลบบัญชีและข้อมูล'),
+                subtitle: const Text('อ่านผลกระทบและขั้นตอนการลบ'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  final current = AppDependenciesScope.maybeOf(context);
+                  if (!identical(current?.accountDeletion, deletion) ||
+                      current?.account?.currentSession?.uid != session?.uid) {
+                    return;
+                  }
+                  AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'account/delete',
+                      builder: (_) => AccountDeletionScreen(useCases: deletion),
+                    ),
+                  );
+                },
+              ),
+          ],
         ),
       ),
     );

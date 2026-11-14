@@ -8,6 +8,7 @@ final class RewardCatalogItem {
     required this.name,
     required this.description,
     required this.price,
+    this.purchasable = true,
   });
 
   final String id;
@@ -16,6 +17,7 @@ final class RewardCatalogItem {
   final String name;
   final String description;
   final int price;
+  final bool purchasable;
 
   String get slot => switch (kind) {
     RewardItemKind.theme => 'theme',
@@ -29,6 +31,16 @@ final class RewardCatalogItem {
 
 abstract final class RewardCatalog {
   static const version = 1;
+
+  static const defaultWallpaper = RewardCatalogItem(
+    id: 'wallpaper_default',
+    catalogVersion: version,
+    kind: RewardItemKind.wallpaper,
+    name: 'พื้นหลังมาตรฐาน',
+    description: 'พื้นหลังเริ่มต้นของหน้าฝึก',
+    price: 0,
+    purchasable: false,
+  );
 
   static const items = <RewardCatalogItem>[
     RewardCatalogItem(
@@ -82,6 +94,7 @@ abstract final class RewardCatalog {
   ];
 
   static RewardCatalogItem? byId(String id) {
+    if (id == defaultWallpaper.id) return defaultWallpaper;
     for (final item in items) {
       if (item.id == id) return item;
     }

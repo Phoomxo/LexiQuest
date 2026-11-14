@@ -31,6 +31,7 @@ import 'device_permission_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'study_preferences_panel.dart';
+import 'thesis_chart_screen.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({
@@ -1218,6 +1219,16 @@ class _SettingScreenState extends State<SettingScreen> {
             Card(
               child: Column(
                 children: [
+                  ListTile(
+                    leading: const Icon(Icons.bar_chart_outlined),
+                    title: const Text('งานวิจัยและการเรียน'),
+                    subtitle: const Text('ดูกราฟจากข้อมูลสมมติ'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _openSettingsPage(
+                      'settings/research-information',
+                      const _ResearchInformation(),
+                    ),
+                  ),
                   if (_fieldFeatures.isVisible(FieldFeature.export))
                     _featureRow(
                       key: const ValueKey<String>('settings-feature-export'),
@@ -1312,6 +1323,39 @@ class _SettingScreenState extends State<SettingScreen> {
     );
     return PopScope(canPop: !_busy && !_calendarSaving, child: scaffold);
   }
+}
+
+class _ResearchInformation extends StatelessWidget {
+  const _ResearchInformation();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('งานวิจัยและการเรียน')),
+    body: AdaptiveContentPane(
+      maxWidth: AdaptiveContentPane.formMaxWidth,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text('เรียนได้ตามปกติโดยไม่ต้องเข้าร่วมวิจัย'),
+          ListTile(
+            leading: const Icon(Icons.bar_chart_outlined),
+            title: const Text('ดูกราฟตัวอย่าง'),
+            subtitle: const Text('ใช้ข้อมูลสมมติเท่านั้น'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => AppNavigator.pushPage<void>(
+              context,
+              AppPage<void>(
+                name: 'research/sample-chart',
+                builder: (_) => const ThesisChartScreen(
+                  returnLabel: 'กลับไปที่งานวิจัยและการเรียน',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 enum _LocalSyncStatusPhase { loading, available, unavailable }

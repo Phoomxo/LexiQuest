@@ -758,6 +758,11 @@ final class DriftSyncStore implements SyncStatusSource {
             transaction.transactionType != 'equip') {
           throw const InvalidSyncPayloadFailure();
         }
+        if (transaction.transactionType == 'purchase' &&
+            RewardCatalog.byId(transaction.itemId ?? '')?.purchasable ==
+                false) {
+          throw const InvalidSyncPayloadFailure();
+        }
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
@@ -1276,7 +1281,8 @@ final class DriftSyncStore implements SyncStatusSource {
         catalogVersion != RewardCatalog.version ||
         item.catalogVersion != catalogVersion ||
         item.slot != slot ||
-        (transactionType == 'purchase' && amount != -item.price) ||
+        (transactionType == 'purchase' &&
+            (!item.purchasable || amount != -item.price)) ||
         (transactionType == 'equip' && amount != 0) ||
         (transactionType != 'purchase' && transactionType != 'equip') ||
         occurredAtUtcMs < 0) {

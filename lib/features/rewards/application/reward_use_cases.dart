@@ -79,7 +79,7 @@ final class RewardUseCases implements RewardShopOperations {
     required String idempotencyKey,
   }) async {
     final item = RewardCatalog.byId(itemId);
-    if (item == null) {
+    if (item == null || !item.purchasable) {
       throw const RewardException(RewardFailureCode.unknownItem);
     }
     if (catalogVersion != RewardCatalog.version ||
@@ -124,6 +124,7 @@ final class RewardUseCases implements RewardShopOperations {
       idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
+      requireActiveOwner: true,
     );
     if (result.status == EquipStatus.equipped) onLocalMutation?.call();
     await _requireActiveOwner(ownerId);

@@ -3,15 +3,25 @@ import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'avatar_equipment_screen.dart';
+import 'shop_page.dart';
 
 typedef AchievementProgressLoader = Future<ProgressSnapshot> Function();
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({super.key, this.loader});
+  const AchievementsScreen({
+    super.key,
+    this.loader,
+    this.showCollection = false,
+  });
 
   final AchievementProgressLoader? loader;
+  final bool showCollection;
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
@@ -101,10 +111,19 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scope = AppDependenciesScope.maybeOf(context);
+    final canOpenDecorations =
+        widget.showCollection &&
+        scope?.rewards != null &&
+        (scope?.fieldFeatures.isVisible(FieldFeature.shop) ?? false) &&
+        (scope?.features.isVisible(Feature.shop) ?? false);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, 'ความสำเร็จ'),
+        title: M3Theme.appBarTitle(
+          context,
+          widget.showCollection ? 'ของสะสม' : 'ความสำเร็จ',
+        ),
       ),
       body: AdaptiveContentPane(
         child: FutureBuilder<ProgressSnapshot>(
@@ -151,6 +170,33 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                if (canOpenDecorations)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.checkroom_outlined),
+                      title: const Text('ของตกแต่งของฉัน'),
+                      subtitle: const Text('ดูของที่มีและที่กำลังใช้'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'rewards/equipment',
+                          builder: (_) => AvatarEquipmentScreen(
+                            expectedOwnerId: progress.ownerId,
+                            onOpenShop: (equipmentContext) async {
+                              await AppNavigator.pushPage<void>(
+                                equipmentContext,
+                                const AppPage<void>(
+                                  name: 'rewards/shop',
+                                  builder: _buildShop,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.toll_outlined),
@@ -239,3 +285,5 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       '${value.day.toString().padLeft(2, '0')}/'
       '${value.month.toString().padLeft(2, '0')}/${value.year}';
 }
+
+Widget _buildShop(BuildContext _) => const ShopPage();

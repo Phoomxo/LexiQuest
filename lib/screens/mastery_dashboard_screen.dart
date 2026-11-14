@@ -19,6 +19,7 @@ import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 import 'quiz_screen.dart';
 import 'score_screen.dart';
+import 'thesis_chart_screen.dart';
 
 typedef ProgressLoader = Future<ProgressSnapshot> Function();
 
@@ -355,8 +356,9 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
                       progress.recentSessions.isEmpty &&
                       progress.learningDays == null &&
                       progress.quests == null) {
-                    return const _DashboardMessage(
+                    return _DashboardMessage(
                       'ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ',
+                      extra: _sampleChartButton(context),
                     );
                   }
                   return _DashboardBody(
@@ -599,6 +601,7 @@ class _DashboardBody extends StatelessWidget {
                 ? () => onOpenSession(entry.summary.id)
                 : null,
           ),
+        _sampleChartButton(context),
       ],
     );
   }
@@ -912,11 +915,24 @@ class _SkillRow extends StatelessWidget {
   }
 }
 
+Widget _sampleChartButton(BuildContext context) => TextButton(
+  onPressed: () => AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(
+      name: 'research/sample-chart',
+      builder: (_) =>
+          const ThesisChartScreen(returnLabel: 'กลับไปที่ประวัติการฝึก'),
+    ),
+  ),
+  child: const Text('ดูตัวอย่างกราฟ'),
+);
+
 class _DashboardMessage extends StatelessWidget {
-  const _DashboardMessage(this.message, {this.onRetry});
+  const _DashboardMessage(this.message, {this.onRetry, this.extra});
 
   final String message;
   final VoidCallback? onRetry;
+  final Widget? extra;
 
   @override
   Widget build(BuildContext context) {
@@ -934,6 +950,7 @@ class _DashboardMessage extends StatelessWidget {
               const SizedBox(height: 8),
               OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
             ],
+            if (extra case final action?) action,
           ],
         ),
       ),
