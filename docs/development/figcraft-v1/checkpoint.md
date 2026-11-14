@@ -1,5 +1,21 @@
 # Continuous execution checkpoint
 
+## S5 Research permit expiry during validation
+
+- In source `841c66f9469e1f00895167b4233dc5dded52f75a`, the signed
+  authorizer rechecks time after signature and revocation state resolve.
+  A synthetic permit that expires during the state read returns false.
+  The default-deny production composition and paired assessment scope
+  are the same. Independent source review accepted the change.
+- Windows Flutter 94 passed across research, consent, export and bootstrap.
+  Captured SHA-256 in `build/` for `figcraft-permit-expiry-red.txt`
+  `547a31d8552ea78de28908c009e6558a1c1481c273caf45b26cae13608d253f8`,
+  `figcraft-permit-expiry-final.txt`
+  `376b0b1cee37e60216a03bb43cc6a4463cbd23e4a8544765290d6b66650972f8`,
+  and clean `figcraft-permit-expiry-analyze.txt`
+  `7bf36ac2c1cfa5e65fcbfc06603cd8f147ca880bf0d5f2dc2186c218d9353f58`.
+  Next verify synthetic owner and instrument linkage for f28/P3.6.
+
 ## S4 Shadowing with Android microphone denial
 
 - Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`,
