@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S2 Library level selection
+
+- Source `447e22f79f30413d57d3f7698e21407d403413e2` on
+  `codex/figcraft-flutter-prototype`. F01 now uses stored word levels in the
+  owner's Library. Independent source review accepted the scoped delta.
+  Windows focused 59, analysis and format passed.
+  [Reproduction and log hashes](evidence/s2-f01-level-filter.txt).
+- Retest on the next delivery APK by selecting A2, opening a set, returning
+  with its filter, checking C2 empty and clearing. Verify focus and speech
+  on TalkBack. Do not reuse the earlier v34 delivery hash for this change.
+- Next executable unit is f16 on the Quiz entry from Library/ChooseMode.
+  Freeze and test the effective question count, presentation and advisory
+  pacing. Preserve prior quiz plan decoding, owner fences and no writes on
+  cancel. No Flutter process remains from the f01 focused/analysis runs.
+
 ## Current S7 study persistence and Android schema reconciliation
 
 - v26 bridge production revision `189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9`.

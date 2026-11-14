@@ -1,0 +1,44 @@
+F01 Library level filter
+
+Source 447e22f79f30413d57d3f7698e21407d403413e2. Windows Flutter with an
+in-memory Drift database and synthetic owner fixtures. The normal route is
+MainNavigationScreen > Library > CategoriesPage. The widget test mounts
+CategoriesPage and opens the existing selected-set route.
+
+The test selects A2 from the real level picker at 390x844 and 200% text,
+observes one Travel set, opens it and checks the filter on Back. Food's
+A1 word is excluded from search under A2. C2 gives an empty state and
+clearing restores both sets. A real repository test places an eligible
+result past the unfiltered 50-result cap, adds the same level under a
+second owner, and verifies that deleting the last eligible word updates
+the set membership. Mixed sets are included when at least one active
+word has the selected stored level. Opening a result shows the whole set.
+
+Under the same AppDependencies, switching to owner B clears owner A's
+results, query and filter. The open picker and the retained A button
+cannot apply a filter to B. Opening the A route under B exposes neither
+the A title nor its words. Independent read-only review accepted f01.
+Existing Add destination and Delete confirmation overlays still need
+review for display of set names across account switches; their write
+guards reject a changed owner.
+
+RED: missing picker; old owner view after same-dependency switch; late
+button reopening a picker. All three assertions failed before their fixes.
+Raw SHA-256 values in that order:
+cf29dbad851e5419502c917a0f405e694c25dd627729faf5b2a3c3cfeec92449
+fb3dee1891f246f464b13625bfc902bd4e548a24c8db550973a4ad8194b4f65b
+0c182ef923ab8c22e42a8c88f749da064f9af81411dee87d1fe89de45aa0a021
+
+GREEN: flutter test --no-pub --reporter expanded for
+test/screens/figcraft_library_test.dart
+test/screens/figcraft_library_scope_test.dart
+test/screens/offline_vocabulary_journey_test.dart
+test/features/vocabulary/drift_vocabulary_repository_test.dart
+test/features/vocabulary/vocabulary_use_cases_test.dart
+59 passed, exit 0. build/s2-f01-current.txt SHA-256:
+78b58c4a09cbbb3bdd6b806f9de2dc7d3a1d47f5600fedc5d551a71ae479175b
+flutter analyze --no-pub found no issues; 9 changed files passed format.
+build/s2-f01-analyze.txt SHA-256:
+8ed2b2c9678c372ef30fd170f13c837adfe24d937d16d205e3d3a4bd4ba41f68
+
+Delivery APK and spoken TalkBack for this change remain unverified.
