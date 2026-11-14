@@ -122,10 +122,16 @@ void main() {
       expect(microphone.permissionRequests, 0);
       expect(voice.requests, isEmpty);
 
-      await _tap(
-        tester,
-        find.byKey(const ValueKey<String>('shadowing-listen-button')),
+      final microphoneButton = find.byKey(
+        const ValueKey<String>('shadowing-listen-button'),
       );
+      await _tap(tester, microphoneButton);
+      expect(microphone.permissionRequests, 1);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      microphone.permission.complete(MediaPermissionState.denied);
+      await tester.pumpAndSettle();
       final denied = find.text('ไม่ได้รับสิทธิ์ใช้ไมโครโฟน');
       await _reveal(tester, denied);
       expect(denied.hitTestable(), findsOneWidget);
@@ -192,6 +198,7 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 final class _UnusedGuestSession extends Fake implements GuestSessionService {}
 
 final class _DeniedMicrophone implements SpeechRecognitionGateway {
+  final permission = Completer<MediaPermissionState>();
   int permissionRequests = 0;
   int starts = 0;
 
@@ -201,7 +208,7 @@ final class _DeniedMicrophone implements SpeechRecognitionGateway {
   @override
   Future<MediaPermissionState> requestPermission() async {
     permissionRequests++;
-    return MediaPermissionState.denied;
+    return permission.future;
   }
 
   @override

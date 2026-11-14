@@ -227,7 +227,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
+    // Android's own permission prompt makes the app inactive during startup.
+    if ((state == AppLifecycleState.inactive && !_starting) ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
