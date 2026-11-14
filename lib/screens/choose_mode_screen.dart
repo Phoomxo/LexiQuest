@@ -13,6 +13,7 @@ import '../widgets/handwriting_scratchpad.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'categories_page.dart';
+import 'cefr_reading_menu_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
@@ -406,6 +407,30 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
           subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
           onTap: () => _push(context, SrsFlashcardsScreen(learning: _learning)),
+        ),
+      if (all &&
+          canReading &&
+          (AppDependenciesScope.maybeOf(
+                context,
+              )?.features.isVisible(Feature.reading) ??
+              true))
+        _LearningTile(
+          icon: Icons.library_books_outlined,
+          title: 'อ่านและแต่งประโยค',
+          subtitle: 'เลือกบัตรคำหรือบทอ่านตัวอย่างตามระดับ',
+          onTap: () {
+            final home = ModalRoute.of(context);
+            final navigator = Navigator.of(context);
+            _push(
+              context,
+              CefrReadingMenuScreen(
+                fieldFeatures: _features,
+                onReturnHome: () => navigator.popUntil(
+                  (route) => identical(route, home) || route.isFirst,
+                ),
+              ),
+            );
+          },
         ),
       if (canReading)
         _LearningTile(

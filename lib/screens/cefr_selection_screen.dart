@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
+import '../models/cefr_word.dart';
 import '../services/cefr_service.dart';
+import 'cefr_sample_card_screen.dart';
 import 'srs_flashcards_screen.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -8,8 +10,25 @@ import '../widgets/adaptive_content_pane.dart';
 class CefrSelectionScreen extends StatefulWidget {
   final CefrService? cefrService;
   final String? initialLevel;
+  final bool sampleDeck;
+  final String returnLabel;
 
-  const CefrSelectionScreen({super.key, this.cefrService, this.initialLevel});
+  const CefrSelectionScreen({
+    super.key,
+    this.cefrService,
+    this.initialLevel,
+    this.sampleDeck = false,
+    this.returnLabel = 'เลือกระดับอื่น',
+  });
+
+  static const samples = <String, ({String word, String topic})>{
+    'A1': (word: 'hello', topic: 'คำในชีวิตประจำวัน'),
+    'A2': (word: 'journey', topic: 'การเดินทาง'),
+    'B1': (word: 'achieve', topic: 'การทำงาน'),
+    'B2': (word: 'sustainable', topic: 'วิทยาศาสตร์'),
+    'C1': (word: 'meticulous', topic: 'การทำงาน'),
+    'C2': (word: 'ephemeral', topic: 'ปรัชญา'),
+  };
 
   @override
   State<CefrSelectionScreen> createState() => _CefrSelectionScreenState();
@@ -17,8 +36,9 @@ class CefrSelectionScreen extends StatefulWidget {
 
 class _CefrSelectionScreenState extends State<CefrSelectionScreen>
     with SingleTickerProviderStateMixin {
-  late final CefrService _cefrService;
+  late final CefrService _cefrService = widget.cefrService ?? CefrService();
   late final TabController _tabController;
+  final _sampleSearch = TextEditingController();
   String _selectedCategory = 'ALL';
   String _searchQuery = '';
 
@@ -59,7 +79,6 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
   @override
   void initState() {
     super.initState();
-    _cefrService = widget.cefrService ?? CefrService();
     final requestedIndex = _levels.indexOf(
       widget.initialLevel?.toUpperCase() ?? 'ALL',
     );
@@ -78,6 +97,7 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _sampleSearch.dispose();
     super.dispose();
   }
 
@@ -85,6 +105,7 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.sampleDeck) return _buildSampleDeck(context);
     final colors = Theme.of(context).colorScheme;
     final filteredWords = _cefrService.filter(
       level: _currentLevel,
@@ -291,5 +312,117 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildSampleDeck(BuildContext context) {
+    final level = widget.initialLevel?.toUpperCase();
+    final sample = CefrSelectionScreen.samples[level];
+    final word = CefrService.defaultCefrDatabase
+        .where((word) => word.cefrLevel == level && word.word == sample?.word)
+        .firstOrNull;
+    final query = _searchQuery.trim().toLowerCase();
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(
+          context,
+          sample == null ? 'ชุดคำตัวอย่าง' : 'คำศัพท์ระดับ $level',
+        ),
+      ),
+      body: AdaptiveContentPane(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              if (sample != null) ...[
+                Text(sample.topic, style: theme.textTheme.titleLarge),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _sampleSearch,
+                  textInputAction: TextInputAction.search,
+                  decoration: const InputDecoration(
+                    labelText: 'ค้นคำในชุดนี้',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: () {
+                        _sampleSearch.clear();
+                        FocusScope.of(context).unfocus();
+                        setState(() => _searchQuery = '');
+                      },
+                      child: const Text('ล้างคำค้น'),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+              ],
+              if (word != null &&
+                  sample != null &&
+                  (word.word.toLowerCase().contains(query) ||
+                      word.meaning.toLowerCase().contains(query))) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('คำในชุดตัวอย่าง'),
+                        Text(word.word, style: theme.textTheme.headlineSmall),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => _openSampleCard(word, sample.topic),
+                  child: const Text('เริ่มทบทวนคำนี้'),
+                ),
+              ] else
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    word == null
+                        ? 'ยังไม่มีบัตรตัวอย่างสำหรับระดับนี้'
+                        : 'ไม่พบคำในชุดนี้',
+                  ),
+                ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => Navigator.maybePop(context),
+                child: Text(widget.returnLabel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSampleCard(CefrWord word, String topic) async {
+    if (ModalRoute.isCurrentOf(context) != true) return;
+    FocusScope.of(context).unfocus();
+    final leaveDeck = await AppNavigator.pushPage<bool>(
+      context,
+      AppPage<bool>(
+        name: 'learning/cefr-sample-card',
+        builder: (_) => CefrSampleCardScreen(
+          word: word,
+          topic: topic,
+          returnLabel: widget.returnLabel,
+        ),
+      ),
+    );
+    if (leaveDeck == true &&
+        mounted &&
+        ModalRoute.isCurrentOf(context) == true) {
+      Navigator.maybePop(context);
+    }
   }
 }
