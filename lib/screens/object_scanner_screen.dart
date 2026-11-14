@@ -434,8 +434,10 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final scanner = _scanner;
     if (scanner == null) return;
+    // The OS permission dialog can pause and resume the app during initialization.
+    if (_initializing) return;
     if (state == AppLifecycleState.resumed) {
-      if (_editingManual) return;
+      if (_editingManual || _initializationFailure != null) return;
       scanner
           .resume()
           .then((_) {

@@ -896,6 +896,44 @@ void main() {
     expect(scanner.isReady, isTrue);
   });
 
+  testWidgets('permission dialog lifecycle does not reopen a denied camera', (
+    tester,
+  ) async {
+    final permissionReply = Completer<void>();
+    final scanner = _FakeScanner()
+      ..pendingInitialize = permissionReply
+      ..initializeFailure = const CameraPracticeException(
+        CameraFailureCode.permissionDenied,
+      );
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    permissionReply.complete();
+    await tester.pumpAndSettle();
+    expect(scanner.resumeCalls, 0);
+    expect(scanner.initializeCalls, 1);
+    expect(
+      find.text('ไม่ได้รับสิทธิ์ใช้กล้อง จึงยังสแกนวัตถุไม่ได้'),
+      findsOneWidget,
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(scanner.resumeCalls, 0);
+    expect(scanner.initializeCalls, 1);
+  });
+
   testWidgets('offers verified model download when no active model exists', (
     tester,
   ) async {
@@ -1044,6 +1082,7 @@ void main() {
 
 final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? initializeFailure;
+  Completer<void>? pendingInitialize;
   CameraPracticeException? captureFailure;
   int acceptCalls = 0;
   int pauseCalls = 0;
@@ -1172,6 +1211,7 @@ final class _FakeScanner implements ObjectScannerController {
   @override
   Future<void> initialize() async {
     initializeCalls += 1;
+    await pendingInitialize?.future;
     final failure = initializeFailure;
     if (failure != null) throw failure;
     isReady = true;
