@@ -1,5 +1,27 @@
 # Continuous execution checkpoint
 
+## S6 Word Games
+
+- Source `7b24919f4d6a1169fc81ea1fadb00e715f003bcd` connects Word and
+  Sentence Scramble from Practice using the selected owner's set.
+  Same-quiz scoring stores the submitted tile order. Sentence practice
+  returns to its game chooser, word result or cloze feedback.
+  [Source and test evidence](evidence/s6-p25-word-games.txt).
+- Word and sentence screens move from missing route to unverified.
+  Current Windows 436 regression, then 35 targeted after interpolation
+  lint correction, analysis and debug APK build passed. Installed base
+  matched the APK. Emulator verified exits and both saved orders via
+  Progress after a process restart.
+  Keep remaining S1–S7 evidence, the 48/44/64 registers, vivo v34 and
+  camera recognition `not_checked`. Next after native proof is grounding
+  the missing World Map and CEFR selection/placement paths.
+- Pinned CEFR next source is `21b34eaa:finish_routes_a.py:81–165` and
+  `detached-a.md:21`. Wire a reading menu from all activities, browse all
+  authored sample levels, try the five-question content suggestion, and
+  retain its result when leaving the suggested article. Keep existing
+  generated reading and avoid changing any learner proficiency or research
+  status. Source sample state stays separate from owner SRS.
+
 ## S6 Achievement card
 
 - Source `09aa32169827df43d8d8b28a3962c7aea03975d8`. F34 reads an actual
@@ -9,11 +31,13 @@
   match. Reopen retained the underlying streak and reset the draft to hidden.
   [Evidence, APK hash and reproduction](evidence/s6-f34-achievement-share.txt).
 - Windows focused 82, clean analysis and an independent source review.
+  CI 43623076800 found two screen architecture failures. Repair commit
+  `24830588` moved database and save adapter access into application
+  composition. Both architecture checks and all five f34 journeys passed
+  in the local 36-case rerun. Exact repair CI 43624564637 passed Flutter
+  2,312, CPU backend 267, policies, analysis and Android debug build.
   Signed delivery, vivo Sharesheet/Save and spoken TalkBack remain unverified.
-  The feature register is 3 accepted, 40 unverified and one waiting. Screen
-  routes remain open, including Word Scramble and Sentence Scramble in P2.5.
-  Continue with the normal Home activities entry, return context and real
-  scoring for those modes. Preserve all 48/44/64 rows and the existing vivo.
+  The feature register is 3 accepted, 40 unverified and one waiting.
 
 ## S6 Android study reminder
 

@@ -65,3 +65,18 @@ Signed delivery APK/vivo, TalkBack audio, native platform variants and an
 external app/recipient were not exercised. Card previews are available in
 Flutter; share and save actions are Android. Android handoff uses a
 bounded private cache with opportunistic pruning on later shares.
+
+CI follow-up: run 43623076800 on ff94c706 failed the two existing participant
+screen architecture checks at a direct Drift import. The five f34 journey
+tests passed in that run. Failed-step log SHA-256
+3b7ec49b287a6cc9deb00c62ec883053488826fdc5f3ceca5ccbb08c39bd8d18.
+Source 24830588170f99962cb97e87ca0cf985f298a590 composes the active-owner
+reads/writes and the same Android export destination contract at runtime.
+The architecture, card, planner and file picker suites passed 36 locally.
+build/s6-f34-boundary-recovery.txt SHA-256
+e592325ed4e7af20039218543291388dafc8d4247c8366b79f797918a5102349.
+Exact CI 43624564637 passed on 24830588 with Flutter 2,312, CPU backend
+267, analysis, Firestore, Supabase and Android debug APK build.
+build/s6-f34-repair-ci.txt SHA-256
+555f4e0eab3fb73a1c346153df844ee8da0cd08d51c1a2acffe206cdb47b4efe.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43624564637

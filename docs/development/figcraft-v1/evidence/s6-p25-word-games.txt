@@ -1,0 +1,91 @@
+P2.5 Word and Sentence Scramble
+
+Source 7b24919f4d6a1169fc81ea1fadb00e715f003bcd.
+Implementation e56beb74c6d74347801d502fb50816e26e64d426.
+FigCraft pin 21b34eaa, learn_frames.py:181–211 and finish_routes_b.py
+arrange_sentence. The normal entry is ฝึกภาษา → ดูแบบฝึกทั้งหมด →
+เกมฝึกคำ → choose type → choose the current owner's saved set.
+
+Windows Flutter synthetic owned ticket/ตั๋ว and platform/ชานชาลา fixtures.
+The journey at 390×844 and 200% text shows the Thai cue, both t tiles,
+wrong-order feedback, undo, resubmission and same-set result. Real SQLite
+history retained each wrong and correct order, the word and its mode.
+Both normal games showed one correct, one incorrect and 50% and returned
+to the same game chooser. Cancel before submit created no new attempt.
+The wrong-sense or unsupported-sentence set opens an explicit empty state
+without persisted evidence. The sentence link from spelling Score and
+from correct Cloze feedback both return to that exact originating result
+and keep the original answers. Readback after actual SQLite file close
+and reopen verified a separate repeated-t result and its 100% score.
+
+Quiz plan v4 pins the indexed deck and answer; response v3 preserves
+tile identity. Previous plans and answers still decode. The existing
+quiz transaction verifies owner, word revision, response and cursor,
+persists the assessment and updates the existing learning projections.
+Parent-dependent start checks the stored correct source feedback within
+its transaction. Schema stays v26. Unsubmitted drafts drop on route exit.
+Word spelling uses 2–24 ASCII English letters; Sentence uses pinned
+authored senses for ticket and platform. Repeated identical sentence
+tiles are covered in codec tests. The two installed authored sentences
+have distinct words. No additional scoring or reward authority was added.
+
+RED log build/s6-p25-red.txt SHA-256
+9b51ccfd2bbf6d2bc12d5b57dbe33f4f118ce84020be08c8db714b668727ad6c.
+It caught both the missing Home route and missing order model.
+Initial focused 23 passed after bounded widget-frame SQLite reads
+and route transition waits. build/s6-p25-focused-final.txt SHA-256
+9c7487a644012df8e9630ba17277d18a9c223bc8e309495720801b08df185114.
+Scoped regression 436 passed, covering architecture, learning,
+sync, progress, Score, prior cloze, both games, f34 and Source Practice.
+build/s6-p25-regression.txt SHA-256
+f65b94bb26e0096125cfa8a7f4dd1617ecc41ed5c886a8feca1e6d3e50501a0e.
+After removing three analyzer-reported redundant interpolation braces,
+reran architecture, the new game/repository tests and f34 on the final
+source. Flutter 35 passed, analysis no issues, and format unchanged.
+build/s6-p25-final-rerun.txt SHA-256
+a714a2403a89701c6eb8210b9dcc1356c7ce4668e99b3247b5c8df82b7169ac5.
+build/s6-p25-analyze-final.txt SHA-256
+0edeaf2fe5bf4284b02ce8ce7023c24cf1502b4ec5c85aaa2559c58c0977386f.
+
+Android API 35 x86_64, 1080×2280, task-owned emulator-5592, offline
+with no research consent. Imported a synthetic CSV containing ticket and
+platform into P25-Synthetic through the normal Library file picker.
+Built Flutter debug with --no-pub, android-x64 and
+LEXIQUEST_CLOUD_SYNC_ENABLED=false. Candidate and installed base APK SHA-256
+709a09bbed9affa59b47c486aa6b2d39d4518c49f482d21f2f2499aca8872cc6.
+build/s6-p25-android.txt SHA-256
+5af73cd50ccfe43fb89806fe16b97b3dedf96a54dec85e9002cf42e52ffc9f67.
+
+Native Word Scramble used both t tiles with distinct accessibility labels,
+stored tticke as incorrect, located the mismatch in slot 2, and accepted
+ticket on retry. Score showed one right, one wrong and 50%. Launched the
+authored ticket sentence from Score and Android Back returned to the same
+score. Before/after UI captures were byte-identical. Native UI raw
+observations are under build/p25-android-evidence/.
+Sentence Scramble from Games stored I have ticket. a as incorrect,
+identified slot 3, and allowed removing the latest tile before submitting
+I have a ticket. correctly. Score showed 50% and returned to Games.
+Correct platform Cloze opened the same authored sentence as indexed tiles.
+Android Back showed byte-identical correct Cloze feedback.
+After a process restart, Progress history showed separate Game modes at 50%.
+Both history pages displayed the actual incorrect and correct submitted
+orders and retained the P25-Synthetic set. App-level history Back
+returns to the Progress surface; restarting its list scroll is observed.
+
+Raw UI SHA-256 under build/p25-android-evidence:
+  imported.txt                    4114e0bd0b1dd4a7f4ebce656e8bf9dcd0a0d20205f0388a7f2d2b330720472e
+  word-entry.txt                   0ff6f6a37c6e254ae32b9300ca68f0497b0b6603de8cfc48d957822e0d4c7c14
+  word-wrong.txt                   1a73c9f3faa98e8ad20c6bb105882901197aa2c3aa50d290abcb57193982cb45
+  word-score.txt and score-return.txt
+                                   1377775bb3c4f95d9f988537b840909c87b13e6676eacf6013de074c85512378
+  sentence-wrong.txt               a7f497ce68b67774960e04c838726dec48bdd9d88863707d08304e622c8b157c
+  sentence-correct.txt             04d7193eb7cc7e69e3679f7fc7e0762b666ea1e93df01233bd3bcf73b357b224
+  sentence-score.txt               566d37e9d1ee5ea647b283fb9b20ddf049bbc4b67f9dc0e255a9efd63eb36258
+  cloze-correct.txt and cloze-return.txt
+                                   85ded2078a6d2944cd6e467ce4470cb9ce49dbcdef37026258e1230054bf5f2e
+  history-reopen.txt               badf6f75f45a4bb662fdf8a5460122e5f851b11d1b45cc24783246638d22a858
+  reopened-word-result.txt         79e8dd58e07ce4ddc2ec9f0517bc3c2b8fec1ec17b1f52e6f622937671d464d3
+  reopened-sentence-result.txt     47366af1d1f2b66a2de937a2a2e4218619af4f9c7376273a48842dfd57376443
+
+Physical delivery APK, TalkBack audio and repeated-word device input are
+pending. Device-local prototype evidence does not close other f13 modes.
