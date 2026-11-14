@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S6 Achievement card
+
+- Source `09aa32169827df43d8d8b28a3962c7aea03975d8`. F34 reads an actual
+  owner streak, hides its date initially, and returns to the daily Quest.
+  Offline API 35 selected a synthetic receiver, canceled the Android
+  chooser and save picker, and verified the saved and received PNG hashes
+  match. Reopen retained the underlying streak and reset the draft to hidden.
+  [Evidence, APK hash and reproduction](evidence/s6-f34-achievement-share.txt).
+- Windows focused 82, clean analysis and an independent source review.
+  Signed delivery, vivo Sharesheet/Save and spoken TalkBack remain unverified.
+  The feature register is 3 accepted, 40 unverified and one waiting. Screen
+  routes remain open, including Word Scramble and Sentence Scramble in P2.5.
+  Continue with the normal Home activities entry, return context and real
+  scoring for those modes. Preserve all 48/44/64 rows and the existing vivo.
+
 ## S6 Android study reminder
 
 - Source `77e7dcdffde8fd8aa6c9c46c5dccee5dcee9f552`. F27 Android opt-in,
@@ -9,9 +24,12 @@
   analysis, format and independent source review passed.
   [Commands, timestamps and artifact hash](evidence/s6-f27-study-reminder.txt).
 - Requiring signed delivery and physical accessibility keeps f27 unverified
-  in the release register. Next source unit f34 opens an owner-bound preview
-  from motivation, hides the date by default, and tests cancel/native share.
-  Keep the vivo v34 dataset and known-object recognition `not_checked`.
+  in the release register. Keep the vivo v34 dataset and known-object
+  recognition `not_checked`.
+- [Exact f27 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43620478717)
+  passed at `4def6931` with Flutter 2,307, CPU backend 267, Firestore,
+  Supabase, analysis and Android debug build. Raw log SHA-256
+  `809d644b388d0657fbbe5b562a568a53aa9fdfb16bbd2d9ab0d0eaeb271a5197`.
 - [Exact f09 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43617906629)
   passed at `7190be0f` with Flutter 2,302, CPU backend 267, Firestore,
   Supabase, analysis and Android debug build. Raw log SHA-256
