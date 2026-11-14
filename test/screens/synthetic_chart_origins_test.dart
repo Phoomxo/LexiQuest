@@ -51,6 +51,46 @@ void main() {
     expect(find.byType(ThesisChartScreen), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('research options compare the same two synthetic words at 200%', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await _pumpPage(tester, const SettingScreen());
+    await _tap(tester, 'งานวิจัยและการเรียน');
+    final options = _routeOf(tester, 'งานวิจัยและการเรียน');
+    await _tap(tester, 'เปรียบเทียบสองรอบ');
+    final comparison = _routeOf(tester, 'ก่อนและหลังฝึก');
+    await _reveal(tester, find.textContaining('ข้อมูลสมมติ').first);
+    expect(find.text('ก่อนฝึก'), findsOneWidget);
+    expect(find.text('หลังฝึก'), findsOneWidget);
+    expect(find.text('1 / 2'), findsOneWidget);
+    expect(find.text('2 / 2'), findsOneWidget);
+
+    await _tap(tester, 'ดูคำตอบที่ใช้เปรียบเทียบ');
+    expect(find.widgetWithText(AppBar, 'เทียบคำตอบรายคำ'), findsOneWidget);
+    expect(find.text('station · เลือกความหมาย'), findsOneWidget);
+    expect(find.text('หลังฝึก ตอบว่าสถานี'), findsOneWidget);
+    final corrected = find.text('หลังฝึก ตอบว่าชานชาลา');
+    await _reveal(tester, corrected);
+    expect(find.text('platform · เลือกความหมาย'), findsOneWidget);
+    expect(find.text('ก่อนฝึก ตอบว่าสถานี'), findsNWidgets(2));
+    expect(corrected.hitTestable(), findsOneWidget);
+
+    await _tap(tester, 'กลับไปดูผลเปรียบเทียบ');
+    expect(_routeOf(tester, 'ก่อนและหลังฝึก'), same(comparison));
+    expect(find.text('1 / 2'), findsOneWidget);
+    expect(find.text('2 / 2'), findsOneWidget);
+    await _tap(tester, 'กลับไปดูตัวเลือกงานวิจัย');
+    expect(_routeOf(tester, 'งานวิจัยและการเรียน'), same(options));
+    expect(find.text('เปรียบเทียบสองรอบ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _pumpPage(WidgetTester tester, Widget page) async {

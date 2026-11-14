@@ -30,6 +30,7 @@ import 'gemini_settings_screen.dart';
 import 'device_permission_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'shadowing_challenge_screen.dart';
+import 'synthetic_assessment_comparison_screen.dart';
 import 'study_preferences_panel.dart';
 import 'thesis_chart_screen.dart';
 
@@ -1353,6 +1354,22 @@ class _ResearchInformation extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.compare_arrows),
+            title: const Text('เปรียบเทียบสองรอบ'),
+            subtitle: const Text('ดูคำตอบก่อนและหลังฝึกจากข้อมูลสมมติ'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              if (ModalRoute.isCurrentOf(context) != true) return;
+              AppNavigator.pushPage<void>(
+                context,
+                AppPage<void>(
+                  name: 'research/synthetic-assessment',
+                  builder: (_) => const SyntheticAssessmentComparisonScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
