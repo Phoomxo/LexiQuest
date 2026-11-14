@@ -89,3 +89,8 @@ Raw UI SHA-256 under build/p25-android-evidence:
 
 Physical delivery APK, TalkBack audio and repeated-word device input are
 pending. Device-local prototype evidence does not close other f13 modes.
+
+Exact PR head b352ac0e12f96f28fe11e38903f680bccacab4ca, CI 43626663508,
+passed Flutter 2,322, CPU backend 267, Firestore and Supabase policies,
+analysis, and Android debug APK. Raw log SHA-256
+33c52163da737e3522f8b48ebe7032308dd3f9fe6bb7f35b083207c67064f90f.

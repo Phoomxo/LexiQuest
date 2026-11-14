@@ -1,5 +1,27 @@
 # Continuous execution checkpoint
 
+## S3/S6 CEFR samples and authored reading
+
+- Source `5f3119e8fb644fe3ffce60c2aef352ae937ab9af`. The recurring
+  Practice route opens A1–C2 sample decks and five questions that suggest
+  a deck and story. The authored A1 ticket and A2 station routes keep
+  the previous selection and question result. The station exercise
+  retains the authored sentence and offers the matching origin exit.
+- Windows Flutter 106 including 390×844 at 200%, clean analysis,
+  format and independent review. Android API 35 offline verified
+  A2/C2 navigation, A2 empty search, same deck and 1 / 1, exact tapped
+  station sentence, phonetic text, writing result and retained 2 / 5.
+  [APK and evidence](evidence/s3-s6-cefr-reading.txt).
+- Screens 48 now 9 fail and 39 unverified. Features 44 and work packages
+  64 retain their dispositions. Signed-device, spoken TalkBack and native
+  200% checks remain pending. Known-object accuracy stays `not_checked`.
+- Next S2 slice is `wordbook_import_screen` from Library, according to
+  `21b34eaa:finish_routes_b.py:270–301` and `detached-b.md:13`.
+  Reuse the existing native file picker and keep saved import confirmation.
+  Add preview and repair for the JSON practice draft and contextual exits.
+  Verify absence of durable learning or vocabulary changes and fence any
+  owner switch during file selection or practice.
+
 ## S6 Word Games
 
 - Source `7b24919f4d6a1169fc81ea1fadb00e715f003bcd` connects Word and
@@ -15,12 +37,10 @@
   Keep remaining S1–S7 evidence, the 48/44/64 registers, vivo v34 and
   camera recognition `not_checked`. Next after native proof is grounding
   the missing World Map and CEFR selection/placement paths.
-- Pinned CEFR next source is `21b34eaa:finish_routes_a.py:81–165` and
-  `detached-a.md:21`. Wire a reading menu from all activities, browse all
-  authored sample levels, try the five-question content suggestion, and
-  retain its result when leaving the suggested article. Keep existing
-  generated reading and avoid changing any learner proficiency or research
-  status. Source sample state stays separate from owner SRS.
+- [Exact Word Games CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43626663508)
+  passed at `b352ac0e` with Flutter 2,322, CPU backend 267, Firestore,
+  Supabase policies, analysis and Android debug build. Raw log SHA-256
+  `33c52163da737e3522f8b48ebe7032308dd3f9fe6bb7f35b083207c67064f90f`.
 
 ## S6 Achievement card
 

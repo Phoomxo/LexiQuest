@@ -1,0 +1,79 @@
+S3/S6 sample vocabulary and reading journeys
+
+Source 5f3119e8fb644fe3ffce60c2aef352ae937ab9af.
+FigCraft pin 21b34eaa, finish_routes_a.py:86–202, detached-a.md:21,
+and learn_frames.py:104–136. Practice → all activities → อ่านและแต่งประโยค
+opens the menu for level samples, five content-selection questions,
+and the authored A1 ticket and A2 station passages.
+
+Windows Flutter 106 passed, including architecture, first-study preference
+compatibility, Practice shell, Word Games, SRS, CEFR service and five
+screen files. The new journeys use 390×844 logical pixels at 200% text.
+The original RED first missed the reading tile. Later test changes now
+assert the same mounted and scrolled article after Back. Both platform
+occurrences show their matching sentence and translation. The reader has
+an inline phonetic fallback. The exercise retains the sentence, requires the
+target word, gives a retry on ticket, and can return to the reader,
+suggested lesson, or Practice Home. The diagnostic's five questions
+cover all score bands in tests and retain 2 / 5 after both suggestions.
+The A1 route shows the ticket reading and preserves 0 / 5.
+Drift readback from the synthetic guest verifies zero learning sessions,
+answers, SRS rows, answer events, reading events, consent, rewards and
+outbox operations for the sample journeys.
+
+build/s6-cefr-route-red.txt SHA-256
+8b7181fdfa59a2a88ffc4308dbb967896916ccc7956ff4f44776cd9ad1bdd168.
+build/s6-cefr-focused-final.txt SHA-256
+6c172e057751eae910d25dfc0f864792f9099ae1f32afef5b05078fd84f89923.
+build/s6-cefr-analyze.txt SHA-256
+854a840ac671322db176407cfa2568f92f0865ffea5b2e2be906c46428f5d270.
+Flutter analyze found no issues. All ten touched Dart files retained
+formatting, and the source diff passed git show --check.
+Independent review accepted exact sentence/voice dispatch, origin and
+Practice Home exits, and preservation of reading/vocabulary feature gates.
+The reader's on-device voice path uses the existing VoiceUseCases.
+
+Android API 35 x86_64, 1080×2280, isolated emulator-5592 at default text
+scale, Wi-Fi and mobile data off. Guest declined research enrollment.
+Built --debug --no-pub --target-platform android-x64 with
+--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=false. Build log SHA-256
+c41685c60fb25ee148e43a729ac33512784d8b9bef9d9c3d6e5701b5711f6d48.
+Candidate and installed base APK SHA-256 both
+308177247a24181c993665f68f715dbe257db8c443ee3448392f41360b1196c8.
+The initial launch hit an Android process attach timeout after update.
+The next launch displayed the login in 33 seconds, then the offline
+guest route worked. No reinstallation or data clear was needed.
+
+Native UI readback verified A2 journey, empty meticulous search, retry
+on the same card, 1 / 1 and return to the same A2 deck. The map opened
+C2 ephemeral and returned to the menu. Five answers gave 2 / 5 and
+recommended the A2 station story. Tapping the first platform showed
+Her friend is on platform two. and the phonetic fallback. The exercise
+showed ticket feedback before accepting platform and displaying
+I wait on platform two. The origin exit went to the suggestion and then
+to the original 2 / 5 result with byte-identical UI capture.
+
+Raw Android UI labels and bounds under build/cefr-android-evidence/:
+  a2-deck.txt and same-a2.txt
+    6b12520ac25fb89327d4354ea027ec505804472ed4c5fa9c71ba9fbdd66afbbd
+  empty-search.txt
+    e03a833c90d4fd792ef201892c684ee69a4e531283c8e3ad12fcf3856f1a991f
+  card-result.txt
+    58e6d8014338493c2e43086fab431af0cbb0176d66a36ec9815b4806eacee5e2
+  c2-deck.txt
+    2e778fdff21ae8d128cf86f08c969f4ea7b5b840c9d6caba7a443c9b16404bd7
+  diagnostic-result.txt and diagnostic-return.txt
+    753c33d383ebdb77da7210af2f31811589e2bc58f7437bb26aa6f4722d0d90f1
+  station-word.txt
+    e11d59f591af6399e6d8e27b57bef0fd2c1fc87c4dc5baaf51120eebab4b607c
+  station-retry.txt
+    aa6258a05da4970010e210df3923cc0290fef35b4472389db6f7bb249da2fc75
+  station-result.txt
+    5eeeff6e2e1b1966a04fd7edd9688dcd5164673752ada5bc52541118e166f5fc
+
+Review scope
+Result state stays in the live diagnostic route to guide content selection.
+Sample card ratings and station sentences remain in memory. The existing
+first-study reading and generated reading remain accessible. Full visual
+parity, Android speech audio, native 200% text, physical TalkBack and
+signed-device acceptance require evidence.
