@@ -21,6 +21,33 @@ final class ProgressUseCases {
     if (!now.isUtc) {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
-    return queries.load(ownerId: owner.id, nowUtc: now);
+    final snapshot = await queries.load(ownerId: owner.id, nowUtc: now);
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('progress owner changed');
+    return snapshot;
+  }
+
+  Future<SessionHistoryEntry?> loadSession(String sessionId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final entry = await queries.loadSession(
+      ownerId: owner.id,
+      sessionId: sessionId,
+    );
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('progress owner changed');
+    return entry;
+  }
+
+  Future<SessionHistoryEntry?> loadLatestSessionForCategory(
+    String categoryId,
+  ) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final entry = await queries.loadLatestSessionForCategory(
+      ownerId: owner.id,
+      categoryId: categoryId,
+    );
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('progress owner changed');
+    return entry;
   }
 }

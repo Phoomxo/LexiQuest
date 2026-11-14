@@ -31,6 +31,7 @@ abstract interface class OwnerUpgradeRepository {
   });
 }
 
+// Parents precede their dependents; local deletion reverses this order.
 const Set<String> ownerUpgradeInventory = <String>{
   'research_consents',
   'vocabulary_categories',
@@ -50,14 +51,22 @@ const Set<String> ownerUpgradeInventory = <String>{
   'sync_checkpoints',
   'sync_conflicts',
   'events_v2',
+  'owner_calendar_epochs',
   // Phase 0 Week 10-11 — quest instances are owner-scoped.
   // quest_objective_progress is excluded: it has no owner_id column and
   // cascades automatically when quest_instances rows are re-owned.
   'quest_instances',
+  'quest_claim_receipts',
   // Phase 1 D7.2 — streak state is owner-scoped.
   'streak_states',
   'learning_day_log',
+  'streak_baselines',
+  'streak_token_adjustments',
   // Phase 2 D8.3 — associative learning data is owner-scoped.
   'association_records',
   'associative_memory_states',
+  'local_content_reports',
+  'focus_sessions',
+  'learning_preferences',
+  'archived_v25_records',
 };

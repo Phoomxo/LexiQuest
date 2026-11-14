@@ -1,0 +1,14 @@
+Exact pushed-head CI for the Android historical schema bridge
+
+Source 189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9
+GitHub Actions run 43604169961, conclusion SUCCESS.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43604169961
+
+Flutter 2,268 passed. Dart formatting and static analysis passed.
+CLI contracts, Firestore policy emulator, Supabase reset/lint/security
+advisors/storage policy passed in the runner's isolated services.
+Voice 55, AI 137 and LM 75 passed. Android debug APK built.
+The Android debug APK step did not install or run the signed device artifact.
+
+Raw log build/s7-v26-ci-43604169961.txt SHA256
+3fff88998e64ec18dea98e674d423a5d3a13a9dea8317f797c11c788e4076e34.

@@ -12,6 +12,8 @@ import 'package:vocab_learning_app/features/device_model/application/model_downl
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_manifest.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as domain_owner;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/image_preprocessor.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
@@ -19,8 +21,230 @@ import 'package:vocab_learning_app/features/media_practice/domain/media_practice
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_failure.dart';
 
 void main() {
+  Future<
+    ({
+      AppDatabase database,
+      LocalOwnerRepository owners,
+      VocabularyUseCases vocabulary,
+      ObjectScannerUseCases scanner,
+    })
+  >
+  selectedSetFixture({
+    LocalOwnerRepository Function(DriftLocalOwnerRepository, AppDatabase)?
+    ownerBoundary,
+  }) async {
+    final directory = await Directory.systemTemp.createTemp('scanner-set-');
+    addTearDown(() => directory.delete(recursive: true));
+    final modelBytes = utf8.encode('verified-test-model');
+    final modelFile = File('${directory.path}/model.tflite');
+    await modelFile.writeAsBytes(modelBytes);
+    final manifest = _manifest(modelBytes);
+    final models = _ModelRepository(_activeRecord(manifest, modelFile.path));
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    var id = 0;
+    final persistentOwners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'owner-${id++}',
+      nowUtc: () => DateTime.utc(2026, 11, 13),
+    );
+    final owners =
+        ownerBoundary?.call(persistentOwners, database) ?? persistentOwners;
+    final vocabulary = VocabularyUseCases(
+      owners: owners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'id-${id++}',
+      nowUtc: () => DateTime.utc(2026, 11, 13),
+    );
+    final scanner = ObjectScannerUseCases(
+      camera: _FakeCamera(),
+      deviceModels: DeviceModelUseCases(
+        manifest: manifest,
+        repository: models,
+        downloadManager: _uncalledManager(models, directory),
+        openRuntime:
+            ({required path, required manifest, required delegate}) async =>
+                _FakeRuntime(),
+      ),
+      vocabulary: vocabulary,
+      preprocessor: _FakePreprocessor(),
+    );
+    await scanner.initialize();
+    return (
+      database: database,
+      owners: owners,
+      vocabulary: vocabulary,
+      scanner: scanner,
+    );
+  }
+
+  test(
+    'standalone confirmation rejects an owner switch inside category creation',
+    () async {
+      late _SwitchOwnerOnLookup owners;
+      final fixture = await selectedSetFixture(
+        ownerBoundary: (persistent, database) =>
+            owners = _SwitchOwnerOnLookup(persistent, database),
+      );
+      final owner = await owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      owners.switchOnLookup = owners.lookupCount + 4;
+
+      await expectLater(
+        fixture.scanner.accept(result, expectedOwnerId: owner.id),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+
+      expect(owners.switched, isTrue);
+      expect(
+        await fixture.database
+            .select(fixture.database.vocabularyCategories)
+            .get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database.select(fixture.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database.select(fixture.database.outboxOperations).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'selected-set confirmation rejects an owner switch inside word creation',
+    () async {
+      late _SwitchOwnerOnLookup owners;
+      final fixture = await selectedSetFixture(
+        ownerBoundary: (persistent, database) =>
+            owners = _SwitchOwnerOnLookup(persistent, database),
+      );
+      final category = await fixture.vocabulary.createCategory(
+        'Synthetic camera set',
+      );
+      final owner = await owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      final outboxBefore = await fixture.database
+          .select(fixture.database.outboxOperations)
+          .get();
+      owners.switchOnLookup = owners.lookupCount + 6;
+
+      await expectLater(
+        fixture.scanner.accept(
+          result,
+          categoryId: category.id,
+          expectedOwnerId: owner.id,
+        ),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+
+      expect(owners.switched, isTrue);
+      final categories = await fixture.database
+          .select(fixture.database.vocabularyCategories)
+          .get();
+      expect(categories, hasLength(1));
+      expect(categories.single.ownerId, owner.id);
+      expect(
+        await fixture.database.select(fixture.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database.select(fixture.database.outboxOperations).get(),
+        outboxBefore,
+      );
+    },
+  );
+
+  test(
+    'selected-set acceptance preserves destination and deduplicates',
+    () async {
+      final fixture = await selectedSetFixture();
+      final category = await fixture.vocabulary.createCategory(
+        'Synthetic travel',
+      );
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      final word = await fixture.scanner.accept(
+        result,
+        categoryId: category.id,
+        expectedOwnerId: owner.id,
+      );
+      final duplicate = await fixture.scanner.accept(
+        result,
+        categoryId: category.id,
+        expectedOwnerId: owner.id,
+      );
+
+      expect(word.categoryId, category.id);
+      expect(duplicate.id, word.id);
+      expect(await fixture.vocabulary.watchCategories().first, hasLength(1));
+      expect(
+        await fixture.vocabulary.watchWords(category.id).first,
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'owner switch before confirmation writes no words or new category',
+    () async {
+      final fixture = await selectedSetFixture();
+      final category = await fixture.vocabulary.createCategory(
+        'Synthetic travel',
+      );
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      final result = await fixture.scanner.captureAndClassify();
+      await fixture.database.customStatement(
+        'UPDATE local_owners SET is_active = 0',
+      );
+      final nextOwner = await fixture.owners.getOrCreateActiveOwner();
+      expect(nextOwner.id, isNot(owner.id));
+
+      await expectLater(
+        fixture.scanner.accept(
+          result,
+          categoryId: category.id,
+          expectedOwnerId: owner.id,
+        ),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+      expect(
+        await fixture.database.select(fixture.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database
+            .select(fixture.database.vocabularyCategories)
+            .get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test('missing selected set fails without creating a replacement', () async {
+    final fixture = await selectedSetFixture();
+    final owner = await fixture.owners.getOrCreateActiveOwner();
+    final result = await fixture.scanner.captureAndClassify();
+    await expectLater(
+      fixture.scanner.accept(
+        result,
+        categoryId: 'category:missing',
+        expectedOwnerId: owner.id,
+      ),
+      throwsA(isA<VocabularyNotFoundFailure>()),
+    );
+    expect(await fixture.vocabulary.watchCategories().first, isEmpty);
+    expect(
+      await fixture.database.select(fixture.database.vocabularyWords).get(),
+      isEmpty,
+    );
+  });
+
   test('denied camera permission stops before initialization', () async {
     final camera = _FakeCamera()
       ..permission = MediaPermissionState.permanentlyDenied;
@@ -252,6 +476,32 @@ void main() {
       ),
     );
   });
+}
+
+final class _SwitchOwnerOnLookup implements LocalOwnerRepository {
+  _SwitchOwnerOnLookup(this.persistent, this.database);
+
+  final DriftLocalOwnerRepository persistent;
+  final AppDatabase database;
+  var lookupCount = 0;
+  int? switchOnLookup;
+  var switched = false;
+
+  @override
+  Future<domain_owner.LocalOwner> getOrCreateActiveOwner() async {
+    lookupCount++;
+    if (lookupCount == switchOnLookup) {
+      switched = true;
+      await database.customStatement('UPDATE local_owners SET is_active = 0');
+    }
+    return persistent.getOrCreateActiveOwner();
+  }
+
+  @override
+  Future<domain_owner.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) => persistent.bindFirebaseUid(ownerId, firebaseUid);
 }
 
 ModelManifest _manifest(List<int> bytes) => ModelManifest(

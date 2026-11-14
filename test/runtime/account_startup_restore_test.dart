@@ -1,8 +1,16 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/account/application/account_use_cases.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
+import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
@@ -18,6 +26,241 @@ import 'package:vocab_learning_app/screens/register_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 void main() {
+  testWidgets(
+    'replacing a scope waits for an already-started SQLite settlement',
+    (tester) async {
+      final now = DateTime.utc(2026, 8, 4);
+      final barrier = _DuringStreakRead();
+      final calls = <String>[];
+      var oldDisposals = 0;
+      var newDisposals = 0;
+      Future<AppDependencies> scope(String id, {bool delayed = false}) async {
+        final executor = delayed
+            ? NativeDatabase.memory().interceptWith(barrier)
+            : NativeDatabase.memory();
+        final database = AppDatabase(executor);
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => id,
+          nowUtc: () => now,
+        );
+        final owner = await owners.getOrCreateActiveOwner();
+        await database.customStatement(
+          'INSERT INTO streak_baselines(origin_owner_id,owner_id,cutoff_utc_ms,current_streak_days,longest_streak_days,freeze_count,updated_at_utc_ms,controls_continuity) VALUES (?,?,1,0,0,2,1,1)',
+          [owner.id, owner.id],
+        );
+        return AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _Guest(),
+          database: database,
+          localOwners: owners,
+          streak: StreakUseCases(
+            owners: owners,
+            repository: DriftStreakRepository(database),
+            nowUtc: () => now,
+            onSettled: () => calls.add(id),
+          ),
+          disposeResources: () async {
+            if (delayed) {
+              oldDisposals++;
+            } else {
+              newDisposals++;
+            }
+            await database.close();
+          },
+        );
+      }
+
+      final old = (await tester.runAsync(() => scope('old-a', delayed: true)))!;
+      final next = (await tester.runAsync(() => scope('new-b')))!;
+      barrier.armed = true;
+      try {
+        await tester.pumpWidget(MyApp(dependencies: old));
+        for (var i = 0; i < 200 && !barrier.entered.isCompleted; i++) {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+        }
+        expect(
+          barrier.entered.isCompleted,
+          isTrue,
+          reason: 'the old SQLite settlement must reach the read barrier',
+        );
+        await tester.pumpWidget(MyApp(dependencies: next));
+        expect(
+          oldDisposals,
+          0,
+          reason: 'the active transaction still owns the old database',
+        );
+        barrier.release.complete();
+        for (
+          var i = 0;
+          i < 100 && (oldDisposals == 0 || !calls.contains('new-b'));
+          i++
+        ) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          await tester.pump();
+        }
+        expect(oldDisposals, 1);
+        expect(calls.where((id) => id == 'new-b'), hasLength(1));
+        final newState = (await tester.runAsync(
+          () => next.database!.select(next.database!.streakStates).getSingle(),
+        ))!;
+        final newOwner = (await tester.runAsync(
+          next.localOwners!.getOrCreateActiveOwner,
+        ))!;
+        expect((newState.ownerId, newState.freezeCount), (newOwner.id, 2));
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      } finally {
+        if (!barrier.release.isCompleted) barrier.release.complete();
+        await tester.pumpWidget(const SizedBox.shrink());
+        for (
+          var i = 0;
+          i < 100 &&
+              barrier.entered.isCompleted &&
+              !calls.contains('old-a') &&
+              oldDisposals == 0;
+          i++
+        ) {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+        }
+        final oldClosed = old.dispose();
+        final nextClosed = next.dispose();
+        for (var i = 0; i < 100; i++) {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          if (oldDisposals == 1 && newDisposals == 1) break;
+        }
+        await tester.runAsync(() async {
+          await oldClosed.timeout(const Duration(seconds: 5));
+          await nextClosed.timeout(const Duration(seconds: 5));
+        });
+      }
+    },
+  );
+
+  testWidgets(
+    'startup, resume and replacement recover the active streak once each',
+    (tester) async {
+      final now = DateTime.utc(2026, 8, 4);
+      final calls = <String>[];
+      final closed = <String>{};
+      Future<AppDependencies> scope(String id) async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => id,
+          nowUtc: () => now,
+        );
+        final owner = await owners.getOrCreateActiveOwner();
+        await database.customStatement(
+          'INSERT INTO streak_baselines(origin_owner_id,owner_id,cutoff_utc_ms,current_streak_days,longest_streak_days,freeze_count,updated_at_utc_ms,controls_continuity) VALUES (?,?,1,0,0,2,1,1)',
+          [owner.id, owner.id],
+        );
+        return AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _Guest(),
+          database: database,
+          localOwners: owners,
+          streak: StreakUseCases(
+            owners: owners,
+            repository: DriftStreakRepository(database),
+            nowUtc: () => now,
+            onSettled: () => calls.add(id),
+          ),
+          disposeResources: () async {
+            await database.close();
+            closed.add(id);
+          },
+        );
+      }
+
+      Future<void> finish(List<String> expected) async {
+        for (var i = 0; i < 40 && calls.length < expected.length; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          await tester.pump();
+        }
+        expect(calls, expected);
+      }
+
+      final first = (await tester.runAsync(() => scope('active-a')))!;
+      final second = (await tester.runAsync(() => scope('active-b')))!;
+      try {
+        await tester.pumpWidget(MyApp(dependencies: first));
+        await finish(['active-a']);
+        expect(
+          (await tester.runAsync(
+            () => first.database!
+                .select(first.database!.streakStates)
+                .getSingle(),
+          ))!.freezeCount,
+          2,
+        );
+        for (final state in [
+          AppLifecycleState.inactive,
+          AppLifecycleState.hidden,
+          AppLifecycleState.paused,
+          AppLifecycleState.hidden,
+          AppLifecycleState.inactive,
+          AppLifecycleState.resumed,
+        ]) {
+          tester.binding.handleAppLifecycleStateChanged(state);
+        }
+        await finish(['active-a', 'active-a']);
+        await tester.pumpWidget(MyApp(dependencies: first));
+        await tester.pumpWidget(MyApp(dependencies: second));
+        await finish(['active-a', 'active-a', 'active-b']);
+        expect(
+          (await tester.runAsync(
+            () => second.database!
+                .select(second.database!.streakStates)
+                .getSingle(),
+          ))!.ownerId,
+          (await tester.runAsync(
+            second.localOwners!.getOrCreateActiveOwner,
+          ))!.id,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        final firstClosed = first.dispose();
+        final secondClosed = second.dispose();
+        for (var i = 0; i < 100 && closed.length < 2; i++) {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+        }
+        await tester.runAsync(() async {
+          await firstClosed.timeout(const Duration(seconds: 5));
+          await secondClosed.timeout(const Duration(seconds: 5));
+        });
+      }
+    },
+  );
   for (final anonymous in [false, true]) {
     testWidgets(
       '${anonymous ? 'anonymous' : 'verified'} restored session opens Home once',
@@ -212,6 +455,28 @@ void main() {
       expect(gateway.mutations, 0);
     },
   );
+}
+
+final class _DuringStreakRead extends QueryInterceptor {
+  bool armed = false;
+  final entered = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    final rows = await executor.runSelect(statement, args);
+    if (armed &&
+        !entered.isCompleted &&
+        statement.toLowerCase().contains('answer_attempts')) {
+      entered.complete();
+      await release.future;
+    }
+    return rows;
+  }
 }
 
 AccountSession _session({bool anonymous = false, bool verified = true}) =>

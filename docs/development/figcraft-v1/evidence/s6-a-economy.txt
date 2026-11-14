@@ -1,0 +1,29 @@
+S6-A economy boundary, 2026-11-14, parent04c19a93.
+Only existing reward projection query and coin_authority_test.dart change.
+
+RED: build/s6-a-coin-red.txt, six passed/two failed. Quest XP50 made five
+quiz coins become55; an XP-only source consumed legacy source backing.
+Fix: exclude exact kind questClaimXpV1 in the positive legacy query BEFORE
+covered/source-backing subtraction. No new ledger, issuer, enum or reward API.
+
+GREEN: flutter test --no-pub --reporter expanded test/features/rewards
+44 passed, build/s6-a-rewards-final-green.txt.
+Scoped analysis: flutter analyze --no-pub lib/features/rewards test/features/rewards
+No issues, build/s6-a-rewards-final-analyze.txt. Formatting/diff checks passed.
+Independent source review by s6_cross_judge accepted the filter and backing fixture.
+
+Real Drift answers yield XP5/coins5; a synthetic locally issued XP-only row
+raises XP to55 while coins stay5 through read/rebuild/file close/reopen.
+Owner B's points/reward rows and balances stay unchanged. Existing legacy200XP
+minus80coin purchase remains120coins, raw history and equipment retained.
+This tests the economy boundary, not a production Quest claim or receipt.
+
+Windows source bytes SHA256:
+rebuilder04f5aac19825960eee3ca2b4676039f76d8156f7715835862db61eed3e6b8ad5
+test113266f0000914570f19e5f964edaf6906957cb220de5f80fedf8201c45a48fe
+GREEN log fb4a45e46a689856b36c53bad78bc55392e67fb76e0dc36fad864fe1dd91ac67
+Analysis log474ea0b77cc616e8adae816155504fed351bf517e9b58f34cb0788dfb62af050
+
+No schema/claim/UI wiring or whole-f29 acceptance. Calendar unit is a separate
+dirty reframe with an intentional St Johns RED; it is excluded from this commit.
+Full1903/current-CI success belongs to04c19a93 before S6-A, not this new delta.

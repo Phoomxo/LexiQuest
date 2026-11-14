@@ -53,7 +53,7 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile(screenGolden('learning_hub_large_text.png')),
     );
-    await tester.scrollUntilVisible(find.text('ฝึกจุดอ่อน'), 200);
+    await tester.scrollUntilVisible(find.text('ฝึกคำที่ตอบผิด'), 200);
     expect(tester.takeException(), isNull);
   });
 

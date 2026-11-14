@@ -61,14 +61,52 @@ final class DriftRewardProjectionRebuilder {
   Future<Map<String, RewardLedgerEntry>> _materializeCredits(
     String ownerId,
   ) async {
-    final attempts =
-        await (database.select(database.answerAttempts)..where(
-              (r) => r.ownerId.equals(ownerId) & r.isCorrect.equals(true),
+    final attempts = await (database.select(
+      database.answerAttempts,
+    )..where((r) => r.ownerId.equals(ownerId))).get();
+    final archivedEligibility = await database
+        .customSelect(
+          r'''
+      SELECT source_table,source_row_key,
+        json_extract(payload_json,'$._v25_reward_excluded') AS excluded
+      FROM archived_v25_records
+      WHERE owner_id=? AND source_table IN ('answer_attempts','points_ledger_entries')
+      ''',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.archivedV25Records},
+        )
+        .get();
+    final deniedAttempts = {
+      for (final row in archivedEligibility)
+        if (row.read<String>('source_table') == 'answer_attempts' &&
+            row.readNullable<int>('excluded') == 1)
+          row.read<String>('source_row_key'),
+    };
+    final oldLedger = {
+      for (final row in archivedEligibility)
+        if (row.read<String>('source_table') == 'points_ledger_entries')
+          row.read<String>('source_row_key'):
+              row.readNullable<int>('excluded') == 1,
+    };
+    final historicalIds = {
+      for (final a in attempts)
+        if (a.legacyEvidenceDisposition != null) a.id,
+    };
+    final issuedRows =
+        await (database.select(database.rewardTransactions)..where(
+              (r) =>
+                  r.ownerId.equals(ownerId) &
+                  r.transactionType.isIn([
+                    'creditQuizCorrectV1',
+                    'creditLegacyCarryV1',
+                  ]),
             ))
             .get();
-    final correct = {for (final a in attempts) a.id: a};
+    final issued = {for (final row in issuedRows) row.id: _entry(row)};
     final evidence = <String, RewardLedgerEntry>{};
-    for (final a in attempts) {
+    final retainedIds = <String>{};
+    for (final a in attempts.where((a) => a.isCorrect)) {
+      if (deniedAttempts.contains(a.id)) continue;
       final entry = RewardLedgerEntry(
         id: 'coin:quiz:${a.id}',
         ownerId: ownerId,
@@ -80,20 +118,36 @@ final class DriftRewardProjectionRebuilder {
         sourceEventId: a.id,
         occurredAtUtcMs: a.occurredAtUtcMs,
       );
+      if (a.legacyEvidenceDisposition != null) {
+        final retained = issued[entry.id];
+        if (retained == null) {
+          continue;
+        }
+        if (!retained.sameEvidence(entry)) {
+          throw StateError('reward credit provenance conflict');
+        }
+        retainedIds.add(entry.id);
+      }
       evidence[entry.id] = entry;
     }
+    final correct = {
+      for (final a in attempts)
+        if (a.isCorrect && !deniedAttempts.contains(a.id)) a.id: a,
+    };
     final legacy =
         await (database.select(database.pointsLedgerEntries)
               ..where(
                 (r) =>
                     r.ownerId.equals(ownerId) &
                     r.amount.isBiggerThanValue(0) &
-                    r.entryType.equals('rewardPurchase').not(),
+                    r.entryType.equals('rewardPurchase').not() &
+                    r.entryType.equals('questClaimXpV1').not(),
               )
               ..orderBy([(r) => OrderingTerm.asc(r.id)]))
             .get();
     final covered = <String>{};
     for (final row in legacy) {
+      if (oldLedger[row.id] ?? false) continue;
       final source = correct[row.sourceEventId];
       if (source != null &&
           row.amount == 1 &&
@@ -115,9 +169,23 @@ final class DriftRewardProjectionRebuilder {
         sourceEventId: row.id,
         occurredAtUtcMs: row.occurredAtUtcMs,
       );
+      if (oldLedger.containsKey(row.id) ||
+          historicalIds.contains(row.sourceEventId)) {
+        final retained = issued[entry.id];
+        if (retained == null) {
+          continue;
+        }
+        if (!retained.sameEvidence(entry)) {
+          throw StateError('reward credit provenance conflict');
+        }
+        retainedIds.add(entry.id);
+      }
       evidence[entry.id] = entry;
     }
     for (final entry in evidence.values) {
+      if (retainedIds.contains(entry.id)) {
+        continue;
+      }
       await database
           .into(database.rewardTransactions)
           .insert(

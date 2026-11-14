@@ -95,6 +95,128 @@ void main() {
     expect((await words).single.spelling, 'Word 1');
   });
 
+  test(
+    'library summaries count active owner words and retain empty sets',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'empty-set', name: 'Empty', normalizedName: 'empty'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
+      );
+      for (var index = 1; index <= 4; index++) {
+        await repository.createWord(word(index));
+      }
+      await repository.createWord(
+        word(99, ownerId: 'owner-2', categoryId: 'other-set'),
+      );
+      final summaries = await repository.watchLibrary('owner-1').first;
+      expect(summaries, hasLength(2));
+      final travel = summaries.singleWhere(
+        (entry) => entry.category.id == 'category-1',
+      );
+      expect(travel.wordCount, 4);
+      expect(travel.previewSpellings, ['Word 1', 'Word 2', 'Word 3']);
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'empty-set')
+            .wordCount,
+        0,
+      );
+      final changed = repository
+          .watchLibrary('owner-1')
+          .firstWhere(
+            (entries) => entries.any(
+              (entry) =>
+                  entry.category.id == 'category-1' && entry.wordCount == 3,
+            ),
+          );
+      await repository.deleteWord(
+        ownerId: 'owner-1',
+        wordId: 'word-1',
+        nowUtc: createdAt,
+      );
+      expect(
+        (await changed)
+            .singleWhere((entry) => entry.category.id == 'category-1')
+            .previewSpellings,
+        ['Word 2', 'Word 3', 'Word 4'],
+      );
+    },
+  );
+
+  test(
+    'global search spans sets, excludes other owners and treats wildcards literally',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'set-b', name: 'Food', normalizedName: 'food'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
+      );
+      await repository.createWord(word(1));
+      await repository.createWord(word(2, categoryId: 'set-b'));
+      await repository.createWord(
+        word(3, ownerId: 'owner-2', categoryId: 'other-set'),
+      );
+      await repository.createWord(
+        word(
+          4,
+        ).copyWith(spelling: '100%_safe', normalizedSpelling: '100%_safe'),
+      );
+      expect(
+        (await repository.searchWords('owner-1', 'word').first).map(
+          (word) => word.id,
+        ),
+        ['word-1', 'word-2'],
+      );
+      expect(
+        (await repository.searchWords('owner-1', 'meaning 2').first)
+            .single
+            .categoryId,
+        'set-b',
+      );
+      expect(
+        (await repository.searchWords('owner-1', '%').first).single.id,
+        'word-4',
+      );
+      expect(
+        (await repository.searchWords('owner-1', '_').first).single.id,
+        'word-4',
+      );
+      expect(await repository.searchWords('owner-1', '').first, isEmpty);
+      await repository.deleteCategory(
+        ownerId: 'owner-1',
+        categoryId: 'set-b',
+        nowUtc: createdAt,
+      );
+      expect(
+        await repository.searchWords('owner-1', 'meaning 2').first,
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'global search limits the complete owner result to fifty words',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'set-b', name: 'Food', normalizedName: 'food'),
+      );
+      for (var index = 0; index < 60; index++) {
+        await repository.createWord(
+          word(index, categoryId: index < 30 ? 'category-1' : 'set-b'),
+        );
+      }
+      final found = await repository.searchWords('owner-1', 'word').first;
+      expect(found, hasLength(50));
+      expect(found.map((word) => word.id).toSet(), hasLength(50));
+    },
+  );
+
   test('repository reconstruction reads persisted vocabulary', () async {
     await repository.createCategory(category());
     await repository.createWord(word(1));

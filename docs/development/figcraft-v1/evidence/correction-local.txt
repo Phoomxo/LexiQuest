@@ -1,0 +1,32 @@
+FigCraft native-observation corrections — local verification
+Observed 2026-11-14 01:47 Bangkok on Windows.
+Source: the Dart source in the commit containing this record, parent 984e616438f264f4c54565ea0c7e0787272d7386.
+All source writers stopped before integration checks. No Dart changes occurred during or after the full checks.
+
+flutter analyze --no-pub
+PASS: No issues found.
+Raw log: build/correction-analyze.txt
+Raw log SHA-256: 8cbdd5a84b005e0cd6d8ba151534977422ccefd3111338c7377cc4a3ff375943
+
+flutter test --no-pub --reporter compact
+PASS: 1821/1821 tests. Final output: +1821: All tests passed!
+Raw log: build/correction-full-test.txt
+Raw log SHA-256: 3ea1a036c4bf7dfc08e81e7507d472794e55eb1181d793c148c0f95b8d5b2ab6
+
+Focused correction journey and layout: 50 tests passed.
+Includes mapped acceptance and manual correction through explicit save, selected-A practice, persisted session ID, file-SQLite close/reopen, and unchanged B records.
+Camera/model boundaries in the local journey are synthetic. This is not native camera evidence.
+Separate subsystem run: 140 passed. Separate home/theme run: 26 passed. These overlapping suites are not summed.
+
+Dart formatting check of all 27 changed/new Dart files: 0 changes required.
+git diff --check: pass. Frozen source/evidence denominators: 48 screens / 44 features / 64 packages.
+vivo source-984e6164 evidence: all 62 file sizes and SHA-256 values match the manifest.
+Comparison placement/aspect-ratio self-check: pass.
+Windows large-text home render opened before updating the expected golden. Full local suite then passed.
+
+Independent source dispositions: Home/theme accepted; S2 library/search and async owner/scope corrections accepted; S3 category history accepted; S4 manual correction and original-scope pin accepted.
+Initial full analysis reported 22 missing-brace style diagnostics. All were corrected before the clean analysis/full suite above.
+
+Pending: current-head Linux golden/CI, v28 Android build/install/manual-camera journey, new native comparisons/accessibility observations, and remaining S5/S6/S7 acceptance.
+Known-object recognition accuracy is not checked; the user cannot position a known object in this run.
+No deployment, publication, real enrollment/upload, or app-data clearing is part of this verification.

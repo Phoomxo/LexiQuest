@@ -1,0 +1,47 @@
+S7 v12 local evidence
+
+Worktree C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest.
+Branch codex/figcraft-flutter-prototype, parent 34e628a711b730b049777a51b3440d4b61338f14.
+Synthetic SQLite fixtures and Windows Flutter 3.44.7. No live data.
+
+Flutter test --no-pub -r expanded
+2,241 passed in 9:17. Terminal exit 0, session 48426.
+build/s7-v12-release-regression.txt SHA256
+0159517df41282979df11101300fe60cf4690038124c130dba947905c83eb9ac
+
+Flutter analyze --no-pub
+No issues, 6.1s. build/s7-v12-release-analyze.txt SHA256
+1b36465b4d193f8dcffcddd9d0c4f8e99661c9c2fbde3c4124e268cbe14f1a7f
+
+Dart format --output=none --set-exit-if-changed on 541 tracked and new Dart
+files, in batches of 90 for Windows. All passed without changes.
+tool/figcraft/fingerprint_inputs.py hashed 586 declared inputs before and after.
+Both manifests SHA256 6680a81c43438d8258cfbaee70ea9892e915a4c1ab02086eba6697ef7d16fc93.
+The manifest includes the v11 SQL fixture, source, tests and both PNG goldens.
+
+Local CPU-only backend suites: 117 AI, 55 Voice, 75 LexiQuest LM, 247 total.
+From each backend directory use uv run --offline --frozen with the existing
+groups and python -m pytest or pytest. Voice excludes tests/integration.
+Logs: build/s7-v12-ai-full.txt, build/s7-v12-voice-full.txt, build/s7-v12-lm-full.txt.
+
+Observed in the current full Flutter run:
+- Real v11 file upgrades and reopens with existing rows and nullable/default
+  v12 fields. Fresh/upgraded schema parity and transactional rollback pass.
+- Guest/owner merge, export, deletion and sync checks cover the new owner
+  scopes. Local exports have 35 scopes and cloud deletion retains 26.
+- Library Quiz returns to A, resumes the paused cursor independently of B,
+  and history preserves original question and selected response after edits.
+  Stale vocabulary can restart explicitly without rewriting the old round.
+- Selected-set bookmark persists and owner switch hides the old Quiz,
+  Score and bookmark sheet. Source Practice report confirmation and cancel
+  exercise the local-only queue.
+- Focus reports two active minutes and a separate three-minute pause. A
+  background checkpoint preserves the revision and excludes unknown gaps.
+- Verified local account chooses and opens the starter reading or skips the
+  invitation. Study method and goal survive reopen under the same owner.
+
+Windows large-text Quiz PNG SHA256
+4318f71e921561673f678e427779c06a01e66173d81efb5273214ecad2457804.
+Linux has a separate expected PNG and needs exact-head CI verification.
+The existing vivo build remains v29. Current-source signed APK, Android
+journey, TalkBack and known-object accuracy are separate observations.

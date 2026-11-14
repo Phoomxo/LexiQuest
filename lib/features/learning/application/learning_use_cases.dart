@@ -1,28 +1,21 @@
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
-import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/quiz_prompt_policy.dart';
+import '../domain/quiz_round.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
-
-/// Receives a [EventEnvelopeV2] produced from every recorded answer.
-///
-/// Used by callers (e.g. [AppDependencies]) to forward learning events into
-/// the quest pipeline when [Feature.questV2] is enabled.  Errors from the
-/// sink are swallowed — the sink must never break production.
-typedef QuestEventSink = Future<void> Function(EventEnvelopeV2 event);
-
-/// Called after every successful `recordAnswer` so that [StreakUseCases] can
-/// log the learning day and update streak counters.
-///
-/// No argument — the streak use case resolves the owner and the current UTC
-/// time from its own injected dependencies.  Errors are swallowed.
-typedef StreakEventSink = Future<void> Function();
+typedef AnswerCommittedSink =
+    Future<void> Function({
+      required String ownerId,
+      required String attemptId,
+      required int occurredAtUtcMs,
+    });
 
 final class LearningUseCases {
   LearningUseCases({
@@ -34,8 +27,7 @@ final class LearningUseCases {
     this.onLocalMutation,
     this.shadowOrchestrator,
     this.eventAdapter,
-    this.questEventSink,
-    this.streakEventSink,
+    this.onAnswerCommitted,
   });
 
   final LocalOwnerRepository owners;
@@ -44,30 +36,38 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final LearningMutationNotifier? onLocalMutation;
+  final AnswerCommittedSink? onAnswerCommitted;
 
   /// Shadow mode — when non-null, every recorded answer is also run through
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
   final ShadowRewardOrchestrator? shadowOrchestrator;
 
   /// Required when [shadowOrchestrator] is non-null; adapts V1 commands to
-  /// [EventEnvelopeV2] for shadow processing.
+  /// a V2 event for shadow processing.
   final EventV1ToV2Adapter? eventAdapter;
 
-  /// Quest pipeline hook — when non-null, the V2 event from each answer is
-  /// forwarded to [QuestUseCases.processEvent] (or a compatible consumer).
-  ///
-  /// Wired at the [AppDependencies] composition root when
-  /// `Feature.questV2` is enabled.  Errors are swallowed.
-  final QuestEventSink? questEventSink;
+  bool get supportsDurableQuiz => repository is DurableQuizRepository;
 
-  /// Streak pipeline hook — when non-null, called after every successful
-  /// answer so that [StreakUseCases.recordLearningDay] can update counters.
-  ///
-  /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
-  final StreakEventSink? streakEventSink;
-
-  Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
-      _startVocabularySession(categoryId, limit, 'quiz');
+  Future<QuizSession> startQuiz({
+    String? categoryId,
+    int limit = 10,
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+    QuizOrigin? origin,
+    bool skipUnavailable = false,
+    String? categoryName,
+    String? returnLabel,
+  }) => _startVocabularySession(
+    categoryId,
+    limit,
+    'quiz',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+    origin: origin,
+    skipUnavailable: skipUnavailable,
+    categoryName: categoryName,
+    returnLabel: returnLabel,
+  );
 
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
@@ -85,38 +85,54 @@ final class LearningUseCases {
   Future<QuizSession> _startVocabularySession(
     String? categoryId,
     int limit,
-    String activityType,
-  ) async {
+    String activityType, {
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+    QuizOrigin? origin,
+    bool skipUnavailable = false,
+    String? categoryName,
+    String? returnLabel,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    _checkOrigin(origin, kind: kind, categoryId: categoryId);
+    final open = await _openRound(owner.id, origin, skipUnavailable);
+    if (open != null) return _quizSession(open);
     final words = await repository.listQuizWords(
       ownerId: owner.id,
       categoryId: _optionalId(categoryId, 'categoryId'),
+      limit: kind == QuizPromptKind.meaningChoice ? limit : null,
+      normalizedSpellings: kind == QuizPromptKind.definitionChoice
+          ? QuizPromptPolicy.definitionSpellings
+          : null,
+      normalizedMeanings: kind == QuizPromptKind.definitionChoice
+          ? QuizPromptPolicy.definitionMeanings
+          : null,
+    );
+    final questions = QuizPromptPolicy.build(
+      words: words,
+      kind: kind,
       limit: limit,
     );
-    if (words.isEmpty) {
-      return const QuizSession(id: '', questions: [], startedAtUtc: null);
-    }
-    final now = _now();
-    final sessionId = 'session:${_nextId()}';
-    await repository.startSession(
-      LearningSessionDraft(
-        id: sessionId,
-        ownerId: owner.id,
-        activityType: activityType,
-        startedAtUtc: now,
-        appVersion: buildInfo.version,
-        buildId: buildInfo.buildId,
-      ),
-    );
-    return QuizSession(
-      id: sessionId,
-      startedAtUtc: now,
-      questions: _questions(words),
+    return _startQuestions(
+      owner.id,
+      activityType,
+      questions,
+      origin: origin,
+      categoryName: categoryName,
+      returnLabel: returnLabel,
     );
   }
 
-  Future<QuizSession> startDueReview({int limit = 20}) async {
+  Future<QuizSession> startDueReview({
+    int limit = 20,
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final now = _now();
     final words = await repository.listDueWords(
       ownerId: owner.id,
@@ -139,7 +155,11 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
-      questions: _questions(words),
+      questions: QuizPromptPolicy.build(
+        words: words,
+        kind: QuizPromptKind.meaningChoice,
+        limit: limit,
+      ),
       startedAtUtc: now,
     );
   }
@@ -147,7 +167,23 @@ final class LearningUseCases {
   Future<QuizSession> startWeaknessPractice({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'weaknessPractice');
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+    QuizOrigin? origin,
+    bool skipUnavailable = false,
+    String? categoryName,
+    String? returnLabel,
+  }) => _startWordPractice(
+    wordIds,
+    limit,
+    'weaknessPractice',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+    origin: origin,
+    skipUnavailable: skipUnavailable,
+    categoryName: categoryName,
+    returnLabel: returnLabel,
+  );
 
   Future<QuizSession> startGhostDuel({
     required Iterable<String> wordIds,
@@ -157,50 +193,214 @@ final class LearningUseCases {
   Future<QuizSession> startSourcePracticeForWords({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'sourcePractice');
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+    QuizOrigin? origin,
+    bool skipUnavailable = false,
+    String? categoryName,
+    String? returnLabel,
+  }) => _startWordPractice(
+    wordIds,
+    limit,
+    'sourcePractice',
+    expectedOwnerId: expectedOwnerId,
+    kind: kind,
+    origin: origin,
+    skipUnavailable: skipUnavailable,
+    categoryName: categoryName,
+    returnLabel: returnLabel,
+  );
 
   Future<QuizSession> _startWordPractice(
     Iterable<String> wordIds,
     int limit,
-    String activityType,
-  ) async {
+    String activityType, {
+    String? expectedOwnerId,
+    QuizPromptKind kind = QuizPromptKind.meaningChoice,
+    QuizOrigin? origin,
+    bool skipUnavailable = false,
+    String? categoryName,
+    String? returnLabel,
+  }) async {
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
-    final requested = wordIds.map((id) => _requiredId(id, 'wordId')).toSet();
+    final selectedIds = wordIds.map((id) => _requiredId(id, 'wordId')).toList();
+    final requested = selectedIds.toSet();
     if (requested.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final owner = await owners.getOrCreateActiveOwner();
-    final selected = await repository.listQuizWords(
-      ownerId: owner.id,
-      wordIds: requested,
-      limit: limit,
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    _checkOrigin(origin, kind: kind, wordIds: selectedIds);
+    final open = await _openRound(owner.id, origin, skipUnavailable);
+    if (open != null) return _quizSession(open);
+    final List<QuizQuestion> questions;
+    if (kind != QuizPromptKind.meaningChoice) {
+      final words = await repository.listQuizWords(
+        ownerId: owner.id,
+        limit: null,
+        normalizedSpellings: kind == QuizPromptKind.definitionChoice
+            ? QuizPromptPolicy.definitionSpellings
+            : null,
+        normalizedMeanings: kind == QuizPromptKind.definitionChoice
+            ? QuizPromptPolicy.definitionMeanings
+            : null,
+      );
+      questions = QuizPromptPolicy.build(
+        words: words,
+        kind: kind,
+        limit: limit,
+        targetWordIds: requested,
+      );
+    } else {
+      final selected = await repository.listQuizWords(
+        ownerId: owner.id,
+        wordIds: requested,
+        limit: limit,
+      );
+      final optionWords = selected.isEmpty
+          ? const <QuizWord>[]
+          : await repository.listQuizWords(ownerId: owner.id, limit: 100);
+      questions = QuizPromptPolicy.build(
+        words: selected,
+        optionWords: optionWords,
+        kind: kind,
+        limit: limit,
+      );
+    }
+    return _startQuestions(
+      owner.id,
+      activityType,
+      questions,
+      origin: origin,
+      categoryName: categoryName,
+      returnLabel: returnLabel,
     );
-    if (selected.isEmpty) {
+  }
+
+  Future<QuizRound?> _openRound(
+    String ownerId,
+    QuizOrigin? origin,
+    bool skipUnavailable,
+  ) async {
+    final durable = repository;
+    if (durable is! DurableQuizRepository || origin == null) return null;
+    return durable.findOpenQuizRound(
+      ownerId: ownerId,
+      origin: origin,
+      skipUnavailable: skipUnavailable,
+    );
+  }
+
+  void _checkOrigin(
+    QuizOrigin? origin, {
+    required QuizPromptKind kind,
+    String? categoryId,
+    List<String>? wordIds,
+  }) {
+    if (origin == null) return;
+    final selected = origin.wordIds;
+    if (origin.promptKind != kind ||
+        (wordIds == null
+            ? selected != null || origin.categoryId != categoryId
+            : selected == null ||
+                  selected.length != wordIds.length ||
+                  Iterable<int>.generate(
+                    wordIds.length,
+                  ).any((index) => wordIds[index] != selected[index]))) {
+      throw ArgumentError('Quiz origin does not match the requested practice');
+    }
+  }
+
+  QuizSession _quizSession(QuizRound round) => QuizSession(
+    id: round.sessionId,
+    questions: round.plan.questions,
+    startedAtUtc: round.startedAtUtc,
+    durableRound: round,
+  );
+
+  Future<QuizSession> _startQuestions(
+    String ownerId,
+    String activityType,
+    List<QuizQuestion> questions, {
+    QuizOrigin? origin,
+    String? categoryName,
+    String? returnLabel,
+  }) async {
+    if (questions.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
-    final optionWords = await repository.listQuizWords(
-      ownerId: owner.id,
-      limit: 100,
-    );
+    final durable = repository;
+    final plan =
+        origin != null &&
+            durable is DurableQuizRepository &&
+            questions.every((question) => question.options.toSet().length >= 2)
+        ? QuizPlan(
+            origin: origin,
+            questions: questions,
+            categoryName: categoryName,
+            returnLabel: returnLabel,
+          )
+        : null;
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
       LearningSessionDraft(
         id: sessionId,
-        ownerId: owner.id,
+        ownerId: ownerId,
         activityType: activityType,
         startedAtUtc: now,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
+        quizPlan: plan,
       ),
     );
-    return QuizSession(
-      id: sessionId,
-      questions: _questions([...selected], optionWords: optionWords),
-      startedAtUtc: now,
+    if (plan != null && durable is DurableQuizRepository) {
+      final round = await durable.loadQuizRound(
+        ownerId: ownerId,
+        sessionId: sessionId,
+      );
+      if (round == null) throw StateError('Saved quiz round is missing');
+      return _quizSession(round);
+    }
+    return QuizSession(id: sessionId, questions: questions, startedAtUtc: now);
+  }
+
+  Future<QuizRound?> loadQuizRound(
+    String sessionId, {
+    required String expectedOwnerId,
+  }) async {
+    final durable = repository;
+    if (durable is! DurableQuizRepository) return null;
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    return durable.loadQuizRound(ownerId: owner.id, sessionId: sessionId);
+  }
+
+  Future<QuizRound> advanceQuizRound(
+    String sessionId, {
+    required int expectedRevision,
+    required QuizStep step,
+    required String expectedOwnerId,
+    int activeResponseMs = 0,
+  }) async {
+    final durable = repository;
+    if (durable is! DurableQuizRepository) {
+      throw StateError('Quiz recovery unavailable');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final round = await durable.advanceQuizRound(
+      ownerId: owner.id,
+      sessionId: sessionId,
+      expectedRevision: expectedRevision,
+      step: step,
+      atUtc: _now(),
+      activeResponseMs: activeResponseMs,
     );
+    if (step == QuizStep.finish) onLocalMutation?.call();
+    return round;
   }
 
   Future<AnswerRecordResult> recordAnswer({
@@ -213,6 +413,8 @@ final class LearningUseCases {
     String? providerProvenance,
     String? attemptId,
     DateTime? occurredAtUtc,
+    String? expectedOwnerId,
+    QuizAdmission? quiz,
   }) async {
     if ((attemptId == null) != (occurredAtUtc == null)) {
       throw ArgumentError(
@@ -222,22 +424,23 @@ final class LearningUseCases {
     final recordedAt = occurredAtUtc ?? _now();
     if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
     final owner = await owners.getOrCreateActiveOwner();
-    final result = await repository.recordAnswer(
-      RecordAnswerCommand(
-        id: attemptId == null
-            ? 'attempt:${_nextId()}'
-            : _requiredId(attemptId, 'attemptId'),
-        ownerId: owner.id,
-        sessionId: _requiredId(sessionId, 'sessionId'),
-        wordId: _requiredId(wordId, 'wordId'),
-        promptMode: _requiredId(promptMode, 'promptMode'),
-        isCorrect: isCorrect,
-        responseTimeMs: responseTimeMs,
-        attemptNumber: attemptNumber,
-        occurredAtUtc: recordedAt,
-        providerProvenance: providerProvenance,
-      ),
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final command = RecordAnswerCommand(
+      id: attemptId == null
+          ? 'attempt:${_nextId()}'
+          : _requiredId(attemptId, 'attemptId'),
+      ownerId: owner.id,
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      wordId: _requiredId(wordId, 'wordId'),
+      promptMode: _requiredId(promptMode, 'promptMode'),
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: recordedAt,
+      providerProvenance: providerProvenance,
+      quiz: quiz,
     );
+    final result = await repository.recordAnswer(command);
     onLocalMutation?.call();
 
     // Shadow V2 reward pipeline — runs after production succeeds.
@@ -265,44 +468,25 @@ final class LearningUseCases {
       }
     }
 
-    // Quest pipeline hook — forward answer event to quest use cases.
-    // Uses the same V2 event produced for shadow mode when available;
-    // builds a fresh event otherwise.  Errors are swallowed.
-    final questSink = questEventSink;
-    if (questSink != null) {
-      try {
-        final questEvent = adapter?.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: recordedAt,
-          providerProvenance: providerProvenance,
-          appVersion: buildInfo.version,
-          buildId: buildInfo.buildId,
-        );
-        if (questEvent != null) {
-          await questSink(questEvent);
-        }
-      } catch (_) {
-        // Intentionally swallowed — quest hook must never break production.
-      }
-    }
-
-    // Streak hook — notify StreakUseCases that a learning event occurred.
-    // Errors are swallowed — streak tracking must never break production.
     try {
-      await streakEventSink?.call();
-    } catch (_) {}
+      await onAnswerCommitted?.call(
+        ownerId: command.ownerId,
+        attemptId: command.id,
+        occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
+      );
+    } catch (_) {
+      // Durable answers remain available for startup or replay repair.
+    }
 
     return result;
   }
 
-  Future<LearningSessionSummary> finishSession(String sessionId) async {
+  Future<LearningSessionSummary> finishSession(
+    String sessionId, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
     final result = await repository.finishSession(
       ownerId: owner.id,
       sessionId: _requiredId(sessionId, 'sessionId'),
@@ -310,6 +494,13 @@ final class LearningUseCases {
     );
     onLocalMutation?.call();
     return result;
+  }
+
+  void _requireExpectedOwner(String actualOwnerId, String? expectedOwnerId) {
+    if (expectedOwnerId != null &&
+        actualOwnerId != _requiredId(expectedOwnerId, 'expectedOwnerId')) {
+      throw StateError('learning owner is no longer active');
+    }
   }
 
   Future<ReadingProgressSnapshot?> loadReadingProgress({
@@ -349,33 +540,6 @@ final class LearningUseCases {
     );
     onLocalMutation?.call();
     return result;
-  }
-
-  List<QuizQuestion> _questions(
-    List<QuizWord> words, {
-    List<QuizWord> optionWords = const [],
-  }) {
-    final allMeanings = [
-      ...words,
-      ...optionWords,
-    ].map((word) => word.meaning).toSet().toList(growable: false)..sort();
-    return words
-        .map((word) {
-          final distractors = allMeanings
-              .where((meaning) => meaning != word.meaning)
-              .take(3)
-              .toList(growable: true);
-          final options = <String>[word.meaning, ...distractors];
-          final offset =
-              word.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
-              options.length;
-          final rotated = <String>[
-            ...options.skip(offset),
-            ...options.take(offset),
-          ];
-          return QuizQuestion(word: word, options: List.unmodifiable(rotated));
-        })
-        .toList(growable: false);
   }
 
   String _nextId() {

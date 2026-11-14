@@ -37,7 +37,10 @@ void main() {
   test(
     'create commands normalize text and propagate stable ownership',
     () async {
-      final category = await useCases.createCategory('  Travel   Plans ');
+      final category = await useCases.createCategory(
+        '  Travel   Plans ',
+        expectedOwnerId: 'local:guest',
+      );
       final word = await useCases.createWord(
         CreateWordCommand(
           categoryId: category.id,
@@ -45,6 +48,7 @@ void main() {
           meaning: '  สถานี รถไฟ ',
           partOfSpeech: ' noun ',
         ),
+        expectedOwnerId: 'local:guest',
       );
 
       expect(category.id, 'category:id-1');
@@ -68,6 +72,46 @@ void main() {
     await useCases.createCategory('Travel');
 
     expect((await categories).single.name, 'Travel');
+  });
+
+  test(
+    'pinned category creation rejects another active owner without writes',
+    () async {
+      await expectLater(
+        useCases.createCategory(
+          'Synthetic set',
+          expectedOwnerId: 'local:previous-owner',
+        ),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
+
+  test('pinned word creation cannot use the new owner category', () async {
+    final category = await useCases.createCategory('Synthetic new owner set');
+    final outboxBefore = await database.select(database.outboxOperations).get();
+    await expectLater(
+      useCases.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'apple',
+          meaning: 'แอปเปิล',
+          partOfSpeech: 'noun',
+        ),
+        expectedOwnerId: 'local:previous-owner',
+      ),
+      throwsA(isA<VocabularyNotFoundFailure>()),
+    );
+    expect(await database.select(database.vocabularyWords).get(), isEmpty);
+    expect(
+      await database.select(database.outboxOperations).get(),
+      outboxBefore,
+    );
   });
 
   test('blank and oversized fields fail before database mutation', () async {

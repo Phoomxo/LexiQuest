@@ -1,3 +1,5 @@
+import 'quiz_round.dart';
+
 final class QuizWord {
   const QuizWord({
     required this.id,
@@ -5,6 +7,7 @@ final class QuizWord {
     required this.spelling,
     required this.meaning,
     required this.partOfSpeech,
+    this.localRevision = 1,
   });
 
   final String id;
@@ -12,15 +15,57 @@ final class QuizWord {
   final String spelling;
   final String meaning;
   final String partOfSpeech;
+  final int localRevision;
 }
 
+enum QuizPromptKind { meaningChoice, spellingChoice, definitionChoice }
+
 final class QuizQuestion {
-  const QuizQuestion({required this.word, required this.options});
+  const QuizQuestion({required this.word, required this.options})
+    : kind = QuizPromptKind.meaningChoice,
+      _definition = null,
+      optionWords = null,
+      optionExplanations = null,
+      sourcePin = null;
+
+  QuizQuestion.spellingChoice({
+    required this.word,
+    required List<String> options,
+    required Map<String, QuizWord> optionWords,
+  }) : kind = QuizPromptKind.spellingChoice,
+       options = List.unmodifiable(options),
+       _definition = null,
+       optionWords = Map.unmodifiable(optionWords),
+       optionExplanations = null,
+       sourcePin = null;
+
+  QuizQuestion.definitionChoice({
+    required this.word,
+    required List<String> options,
+    required this._definition,
+    required Map<String, QuizWord> optionWords,
+    required Map<String, String> optionExplanations,
+    required this.sourcePin,
+  }) : kind = QuizPromptKind.definitionChoice,
+       options = List.unmodifiable(options),
+       optionWords = Map.unmodifiable(optionWords),
+       optionExplanations = Map.unmodifiable(optionExplanations);
 
   final QuizWord word;
   final List<String> options;
+  final QuizPromptKind kind;
+  final String? _definition;
+  final Map<String, QuizWord>? optionWords;
+  final Map<String, String>? optionExplanations;
+  final String? sourcePin;
 
-  String get correctAnswer => word.meaning;
+  String get correctAnswer =>
+      kind == QuizPromptKind.meaningChoice ? word.meaning : word.spelling;
+  String get promptText => switch (kind) {
+    QuizPromptKind.meaningChoice => word.spelling,
+    QuizPromptKind.spellingChoice => word.meaning,
+    QuizPromptKind.definitionChoice => _definition!,
+  };
 }
 
 final class QuizSession {
@@ -28,11 +73,13 @@ final class QuizSession {
     required this.id,
     required this.questions,
     required this.startedAtUtc,
+    this.durableRound,
   });
 
   final String id;
   final List<QuizQuestion> questions;
   final DateTime? startedAtUtc;
+  final QuizRound? durableRound;
 
   bool get isEmpty => questions.isEmpty;
 }
@@ -45,6 +92,7 @@ final class LearningSessionDraft {
     required this.startedAtUtc,
     required this.appVersion,
     required this.buildId,
+    this.quizPlan,
   });
 
   final String id;
@@ -53,6 +101,7 @@ final class LearningSessionDraft {
   final DateTime? startedAtUtc;
   final String appVersion;
   final String buildId;
+  final QuizPlan? quizPlan;
 
   LearningSessionDraft copyWith({DateTime? startedAtUtc}) {
     return LearningSessionDraft(
@@ -62,6 +111,7 @@ final class LearningSessionDraft {
       startedAtUtc: startedAtUtc ?? this.startedAtUtc,
       appVersion: appVersion,
       buildId: buildId,
+      quizPlan: quizPlan,
     );
   }
 }
@@ -78,6 +128,7 @@ final class RecordAnswerCommand {
     required this.attemptNumber,
     required this.occurredAtUtc,
     this.providerProvenance,
+    this.quiz,
   });
 
   final String id;
@@ -90,6 +141,7 @@ final class RecordAnswerCommand {
   final int attemptNumber;
   final DateTime occurredAtUtc;
   final String? providerProvenance;
+  final QuizAdmission? quiz;
 }
 
 final class SrsSnapshot {
@@ -115,10 +167,15 @@ final class SrsSnapshot {
 }
 
 final class AnswerRecordResult {
-  const AnswerRecordResult({required this.inserted, required this.srs});
+  const AnswerRecordResult({
+    required this.inserted,
+    required this.srs,
+    this.durableRound,
+  });
 
   final bool inserted;
   final SrsSnapshot srs;
+  final QuizRound? durableRound;
 }
 
 final class LearningSessionSummary {

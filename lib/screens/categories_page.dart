@@ -4,6 +4,7 @@ import '../config/m3_theme.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -20,114 +21,484 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  var _retryEpoch = 0;
+  final _searchController = TextEditingController();
+  String _query = '';
+  VocabularyUseCases? _vocabulary;
+  Stream<List<VocabularyCategorySummary>>? _categories;
+  Stream<List<VocabularyWord>>? _matches;
+  bool _choosingDestination = false;
+  bool _hadScope = false;
 
-  VocabularyUseCases? _useCases(BuildContext context) =>
-      widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  VocabularyUseCases? _useCases(BuildContext context) {
+    final scope = AppDependenciesScope.maybeOf(context);
+    if (scope != null) {
+      _hadScope = true;
+      return scope.vocabulary;
+    }
+    return _hadScope ? null : widget.vocabulary;
+  }
+
+  bool _isCurrent(VocabularyUseCases useCases) =>
+      mounted && identical(_useCases(context), useCases);
 
   @override
   Widget build(BuildContext context) {
     final useCases = _useCases(context);
+    if (!identical(useCases, _vocabulary)) {
+      _vocabulary = useCases;
+      _categories = useCases?.watchLibrary();
+      _matches = useCases?.searchWords(_query);
+    }
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+    final addWord = useCases == null
+        ? null
+        : FilledButton.icon(
+            key: const ValueKey('library-add-word'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(96, 48),
+              textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(9),
+              ),
+            ),
+            onPressed: _choosingDestination
+                ? null
+                : () => _chooseDestination(context, useCases),
+            icon: const Icon(Icons.add),
+            label: Text(_choosingDestination ? 'กำลังเปิด…' : 'เพิ่มคำ'),
+          );
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, 'คลังคำศัพท์'),
-        actions: widget.onOpenMenu == null
-            ? null
-            : [
-                IconButton(
-                  key: const ValueKey<String>('shell-drawer-button'),
-                  tooltip: 'เปิดเมนูเพิ่มเติม',
-                  onPressed: widget.onOpenMenu,
-                  icon: const Icon(Icons.menu),
-                ),
-              ],
+        toolbarHeight: M3Theme.rootAppBarToolbarHeight(context),
+        centerTitle: false,
+        titleSpacing: 24,
+        title: Text(
+          'คลังคำศัพท์',
+          maxLines: 2,
+          softWrap: true,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        actions: [
+          if (!largeText && addWord != null)
+            Padding(padding: const EdgeInsets.only(right: 8), child: addWord),
+          if (widget.onOpenMenu != null)
+            IconButton(
+              key: const ValueKey<String>('shell-drawer-button'),
+              tooltip: 'เปิดเมนูเพิ่มเติม',
+              onPressed: widget.onOpenMenu,
+              icon: const Icon(Icons.menu),
+            ),
+        ],
       ),
       body: AdaptiveContentPane(
         child: useCases == null
             ? const _LocalDataUnavailable()
-            : StreamBuilder<List<VocabularyCategory>>(
-                key: ValueKey<int>(_retryEpoch),
-                stream: useCases.watchCategories(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return _FailureState(
-                      onRetry: () => setState(() => _retryEpoch++),
-                    );
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'กำลังโหลดหมวดหมู่',
+            : CustomScrollView(
+                key: const PageStorageKey('vocabulary-categories'),
+                slivers: [
+                  if (largeText && addWord != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: addWord,
+                        ),
                       ),
-                    );
-                  }
-                  final categories = snapshot.data!;
-                  if (categories.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: categories.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.folder_outlined),
-                          title: Text(category.name),
-                          subtitle: const Text('แตะเพื่อดูคำศัพท์'),
-                          trailing: IconButton(
-                            tooltip: 'ลบหมวดหมู่ ${category.name}',
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () =>
-                                _confirmDelete(context, useCases, category),
+                    ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                    sliver: SliverToBoxAdapter(
+                      child: SearchBar(
+                        key: const ValueKey('category-search'),
+                        controller: _searchController,
+                        hintText: 'ค้นหาคำในคลัง',
+                        elevation: const WidgetStatePropertyAll(0),
+                        surfaceTintColor: const WidgetStatePropertyAll(
+                          Colors.transparent,
+                        ),
+                        backgroundColor: WidgetStatePropertyAll(
+                          Theme.of(context).colorScheme.surface,
+                        ),
+                        constraints: const BoxConstraints(minHeight: 58),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                           ),
-                          onTap: () {
-                            AppNavigator.pushPage<void>(
-                              context,
-                              AppPage<void>(
-                                name: 'vocabulary/category',
-                                builder: (_) => VocabListScreen(
-                                  categoryId: category.id,
-                                  categoryName: category.name,
-                                  vocabulary: useCases,
-                                ),
+                        ),
+                        leading: const Icon(Icons.search),
+                        onChanged: (value) {
+                          if (!_isCurrent(useCases)) return;
+                          setState(() {
+                            _query = normalizeVocabularyText(value);
+                            _matches = useCases.searchWords(_query);
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    sliver: SliverToBoxAdapter(
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            _query.isEmpty ? 'ชุดคำของฉัน' : 'ผลการค้นหา',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          TextButton.icon(
+                            key: const ValueKey('add-category'),
+                            onPressed: () =>
+                                _showAddCategory(context, useCases),
+                            icon: const Icon(Icons.create_new_folder_outlined),
+                            style: TextButton.styleFrom(
+                              textStyle: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            label: const Text('เพิ่มชุด'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    sliver: StreamBuilder<List<VocabularyCategorySummary>>(
+                      key: ValueKey((useCases, 'library')),
+                      stream: _categories,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _FailureState(
+                              onRetry: () {
+                                if (!_isCurrent(useCases)) return;
+                                setState(
+                                  () => _categories = useCases.watchLibrary(),
+                                );
+                              },
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                semanticsLabel: 'กำลังโหลดหมวดหมู่',
                               ),
+                            ),
+                          );
+                        }
+                        if (snapshot.data!.isEmpty) {
+                          return const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Text(
+                                'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
+                        final summaries = snapshot.requireData;
+                        final categories = summaries
+                            .where(
+                              (entry) => entry.category.normalizedName.contains(
+                                _query,
+                              ),
+                            )
+                            .toList(growable: false);
+                        if (_query.isEmpty) {
+                          return _libraryList(context, useCases, categories);
+                        }
+                        return StreamBuilder<List<VocabularyWord>>(
+                          key: ValueKey((useCases, _query)),
+                          stream: _matches,
+                          builder: (context, matches) {
+                            if (matches.hasError) {
+                              return SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _FailureState(
+                                  onRetry: () {
+                                    if (!_isCurrent(useCases)) return;
+                                    setState(
+                                      () => _matches = useCases.searchWords(
+                                        _query,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+                            if (!matches.hasData) {
+                              return const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    semanticsLabel: 'กำลังค้นหาคำในคลัง',
+                                  ),
+                                ),
+                              );
+                            }
+                            final byId = {
+                              for (final summary in summaries)
+                                summary.category.id: summary.category,
+                            };
+                            final words = matches.requireData
+                                .where(
+                                  (word) => byId.containsKey(word.categoryId),
+                                )
+                                .toList(growable: false);
+                            if (words.isEmpty && categories.isEmpty) {
+                              return const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Center(
+                                  child: Text('ไม่พบคำหรือชุดที่ค้นหา'),
+                                ),
+                              );
+                            }
+                            return SliverList.builder(
+                              itemCount:
+                                  categories.length +
+                                  words.length +
+                                  (words.length == 50 ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index < categories.length) {
+                                  return _categoryTile(
+                                    context,
+                                    useCases,
+                                    categories[index],
+                                  );
+                                }
+                                final wordIndex = index - categories.length;
+                                if (wordIndex == words.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Text(
+                                      'แสดง 50 คำแรก พิมพ์เพิ่มเพื่อค้นหาให้แคบลง',
+                                    ),
+                                  );
+                                }
+                                final word = words[wordIndex];
+                                return ListTile(
+                                  title: Text(word.spelling),
+                                  subtitle: Text(byId[word.categoryId]!.name),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => _openCategory(
+                                    context,
+                                    useCases,
+                                    byId[word.categoryId]!,
+                                    initialQuery: word.spelling,
+                                  ),
+                                );
+                              },
                             );
                           },
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
       ),
-      floatingActionButton: useCases == null
-          ? null
-          : FloatingActionButton.extended(
-              key: const ValueKey('add-category'),
-              heroTag: 'categories-add',
-              onPressed: () => _showAddCategory(context, useCases),
-              icon: const Icon(Icons.add),
-              label: const Text('เพิ่มหมวดหมู่'),
-            ),
     );
   }
 
-  Future<void> _showAddCategory(
+  Widget _libraryList(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    List<VocabularyCategorySummary> summaries,
+  ) => SliverList.separated(
+    itemCount: summaries.length,
+    separatorBuilder: (_, _) => const Divider(),
+    itemBuilder: (context, index) =>
+        _categoryTile(context, useCases, summaries[index]),
+  );
+
+  Widget _categoryTile(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    VocabularyCategorySummary summary,
+  ) {
+    final category = summary.category;
+    return ListTile(
+      minTileHeight: 98,
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      leading: const Icon(Icons.folder_outlined),
+      title: Text(
+        category.name,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        '${summary.wordCount} คำ${summary.previewSpellings.isEmpty ? '' : ' · ${summary.previewSpellings.join(' · ')}'}',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopupMenuButton<String>(
+            tooltip: 'ตัวเลือกชุด ${category.name}',
+            onSelected: (_) => _confirmDelete(context, useCases, category),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'delete', child: Text('ลบชุดคำศัพท์')),
+            ],
+          ),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
+      onTap: () => _openCategory(context, useCases, category),
+    );
+  }
+
+  Future<void> _openCategory(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    VocabularyCategory category, {
+    bool startAdding = false,
+    String initialQuery = '',
+  }) => AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(
+      name: 'vocabulary/category',
+      builder: (_) => VocabListScreen(
+        categoryId: category.id,
+        categoryName: category.name,
+        vocabulary: useCases,
+        startAdding: startAdding,
+        initialQuery: initialQuery,
+      ),
+    ),
+  );
+
+  Future<void> _chooseDestination(
     BuildContext context,
     VocabularyUseCases useCases,
   ) async {
+    if (_choosingDestination) return;
+    setState(() => _choosingDestination = true);
+    try {
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      final categories = await useCases.watchCategories().first;
+      if (!context.mounted) return;
+      await _requireDestinationContext(useCases, owner.id);
+      if (!context.mounted) return;
+      final category = await showModalBottomSheet<VocabularyCategory>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'เลือกชุดที่จะเพิ่มคำ',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                for (final category in categories)
+                  ListTile(
+                    title: Text(category.name),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pop(sheetContext, category),
+                  ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final created = await _showAddCategory(
+                      sheetContext,
+                      useCases,
+                      expectedOwnerId: owner.id,
+                    );
+                    if (sheetContext.mounted && created != null) {
+                      Navigator.pop(sheetContext, created);
+                    }
+                  },
+                  icon: const Icon(Icons.create_new_folder_outlined),
+                  label: const Text('สร้างชุดคำศัพท์ใหม่'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (category != null && context.mounted) {
+        await _requireDestinationContext(useCases, owner.id);
+        if (!context.mounted) return;
+        if (category.ownerId != owner.id) {
+          throw StateError('destination owner changed');
+        }
+        await _openCategory(context, useCases, category, startAdding: true);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'อ่านชุดคำไม่สำเร็จ กรุณาลองอีกครั้ง');
+      }
+    } finally {
+      if (mounted) setState(() => _choosingDestination = false);
+    }
+  }
+
+  Future<void> _requireDestinationContext(
+    VocabularyUseCases useCases,
+    String ownerId,
+  ) async {
+    if (!mounted || !identical(_useCases(context), useCases)) {
+      throw StateError('vocabulary scope changed');
+    }
+    final owner = await useCases.owners.getOrCreateActiveOwner();
+    if (!mounted ||
+        !identical(_useCases(context), useCases) ||
+        owner.id != ownerId) {
+      throw StateError('vocabulary owner changed');
+    }
+  }
+
+  Future<VocabularyCategory?> _showAddCategory(
+    BuildContext context,
+    VocabularyUseCases useCases, {
+    String? expectedOwnerId,
+  }) async {
     var name = '';
     var busy = false;
     String? error;
-    await showDialog<void>(
+    late final String ownerId;
+    try {
+      ownerId =
+          expectedOwnerId ??
+          (await useCases.owners.getOrCreateActiveOwner()).id;
+      await _requireDestinationContext(useCases, ownerId);
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'บัญชีเปลี่ยนแล้ว กรุณาเลือกชุดใหม่');
+      }
+      return null;
+    }
+    if (!context.mounted) return null;
+    return showDialog<VocabularyCategory>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
@@ -142,8 +513,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
               error = null;
             });
             try {
-              await useCases.createCategory(name);
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              await _requireDestinationContext(useCases, ownerId);
+              final created = await useCases.createCategory(
+                name,
+                expectedOwnerId: ownerId,
+              );
+              if (dialogContext.mounted) Navigator.pop(dialogContext, created);
             } on InvalidVocabularyFailure {
               if (dialogContext.mounted) {
                 setDialogState(
@@ -208,25 +583,28 @@ class _CategoriesPageState extends State<CategoriesPage> {
     VocabularyUseCases useCases,
     VocabularyCategory category,
   ) async {
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบหมวดหมู่'),
-        content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true) return;
     try {
+      await _requireDestinationContext(useCases, category.ownerId);
+      if (!context.mounted) return;
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ลบหมวดหมู่'),
+          content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('ลบ'),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true) return;
+      await _requireDestinationContext(useCases, category.ownerId);
       await useCases.deleteCategory(category.id);
     } catch (_) {
       if (context.mounted) {

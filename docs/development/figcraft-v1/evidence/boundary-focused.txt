@@ -1,0 +1,12 @@
+00:09 +91: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: answer retry preserves one attempt when afterCommit=true
+00:09 +92: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/mastery_dashboard_screen_test.dart: XP label is readable at 2x Size(800.0, 360.0) Brightness.light
+00:09 +93: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: reveal double tap waits for acknowledgement then practices the mistake
+00:09 +94: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: hint uses existing part of speech without writing evidence
+00:09 +95: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: quiz hint reveal and failed save remain reachable at 2x
+00:09 +96: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: quiz feedback and next action fit large Thai text
+00:10 +97: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: answer feedback uses accessible dark semantic color pairs
+00:10 +98: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: missing category shows honest empty state
+00:10 +99: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: load failure is announced as a live region
+00:10 +100: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:12 +101: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: (tearDownAll)
+00:12 +101: All tests passed!

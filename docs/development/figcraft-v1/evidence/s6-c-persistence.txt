@@ -1,0 +1,66 @@
+S6-C local persistence and lifecycle integration, 2026-11-14.
+Worktree C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
+Branch codex/figcraft-flutter-prototype; integration parent e432fa0574d209de9086c329775bf1b85716b558.
+
+Final current-source verification (Windows, Flutter3.44.7/Dart3.12.2):
+- dart format:26 changed/new Dart files, zero changes.
+- flutter analyze --no-pub: no issues,13.6s.
+- flutter test --no-pub --reporter expanded:1946 passed.
+- AI API: uv run --frozen --group dev --group llm python -m pytest tests -q -W error:107 passed.
+- Focused current schema/history/policy86 and identity/account/screen44 passed.
+- Independent migration, owner-merge, journal and historical-test reviews accepted.
+
+544 declared lib/test/assets/package/analysis/AI-source/CI inputs were identical
+before and after the full run. s6-c-inputs.tsv records Windows working-file bytes.
+Manifest SHA256 f62db8b73908d2ab37785350734426dee4aaedb6347f7c569b7f1a27247204fc
+Reproduce with python tool/figcraft/fingerprint_inputs.py build/replay.tsv;
+the committed helper reproduced the same544 records/hash after the run.
+
+Behavior verified:
+- Real frozen v10 file (29 original tables), not a relabelled current database.
+  Schema11 adds five tables/four owner scopes and nullable answer metadata.
+  Original rows/columns/raw JSON, balances, negative legacy freeze baselines,
+  original indexes and objective cascades survive upgrade/reopen. New historical
+  metadata stays NULL; no migration claim/XP/coins/research row is created.
+- Parent/objectives stage and restore in one FK-enforced transaction, with exact
+  bidirectional comparisons, FK checks and user_version11 published last.
+  Unsupported hybrid tables/dependents and wrong-definition indexes fail closed.
+  Precommit failure rolls back; postcommit beforeOpen failure reopens at11.
+- Merging paid compatible synthetic periods retains both receipts/grants and
+  assets (110XP/10coins), target calendar/continuity and original origin fields.
+  A new target starts continuity0; wrong-pin aliases and duplicate Quest XP
+  provenance reject/rollback. Repeat merge is a no-op. Synthetic pinned fixtures
+  are not evidence of the still-unwired public claim/stamp validator.
+- Full local export has32 scopes including public immutable catalog bodies;
+  backend cloud deletion remains26. Client accepts only current schema11;
+  backend accepts known legacy1-10+26 or11+32, rejects unknown versions/scopes.
+  The server checks receipt metadata, not artifact contents or a bound replay hash.
+- Actual journal adapter resumes completed cleanup after remove failure without
+  repeating cloud/local deletion or secret purge; A/B/guest state remains intact.
+- Existing sync whitelist omits local calendar/Quest metadata. Incoming metadata
+  is discarded while ordinary answers/replays remain accepted. Opaque metadata
+  tests do not certify a future stamp decoder or actual uploader invocation.
+
+Development evidence retained (raw logs in build/):
+Initial full run1944pass/2fail exposed obsolete source-string schema tests;
+their replacements inspect SQLite while real/sparse upgrade coverage remains.
+Actual schema-spoof RED7pass4fail, SQL-literal RED12pass2fail then14pass1fail,
+owner RED1pass2fail then3pass2fail, journal RED24pass2fail preceded fixes.
+Removing the exact-version guard made schema10/12+current32 both fail; restoring
+it returned the identical production hash before final verification.
+
+Raw log SHA256:
+s6-c-full-regression-final.txt 6db93cab67a54f277351d5bcd753c3589656452dd667fe2be43a4042a7e1d1c4
+s6-c-final-analyze.txt 2ae9ebd7c87f582b0e2d9ec935c584693badc5188e7bf1d1c2511f39885d4488
+s6-c-ai-api-final.txt f922f26fccff8aa2274f2c0eb70faf488f1d3b98b76836e522ef4a9f2f209938
+s6-c-final-schema-gates.txt 45e5adbefe5e522c1a02a332b01a90850d5c89de2f484e86e629f0aa55f82720
+s6-c-identity-callers-green.txt ce9ad1ba6ccaf1231a173e27e2a3ba0c87a7cb0b76e90ff1b84f7009e422d3b9
+s6-c-export-version-counterfactual.txt 49dfbc473d228a32ee15fcfd4641cb8f966c697f73d56ead32d63cbf0bd49d56
+s6-c-full-regression-stale-schema.txt 62dfa82449994dec5f91a682b667ba8ce12daa17f6655166677579f51b605acf
+
+Limits: S6-D reconstruction, original evidence capture, real claim/XP recovery,
+streak asset folding, Settings scheduling and Mastery integration remain open.
+No new local APK/native schema11 migration was exercised in this card; subsequent
+head CI/build is separate. Vivo v29 proves only its earlier source/UI slice.
+Camera known-object accuracy is not_checked; emulator install acknowledgement
+remains uncertain. No rollout, real enrollment/upload or live deletion enabled.

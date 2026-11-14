@@ -17,6 +17,15 @@ import 'package:vocab_learning_app/features/account/domain/account_contracts.dar
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_progress_models.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
   @override
@@ -44,6 +53,271 @@ AppDatabase _testDatabase() {
 }
 
 void main() {
+  for (final hidden in ['quest', 'mastery', 'host']) {
+    test(
+      'original-answer bootstrap hidden $hidden has no Quest pipeline',
+      () async {
+        final features = BuildFeatureRegistry({
+          Feature.questV2: hidden == 'quest'
+              ? FeatureState.hidden
+              : FeatureState.limited,
+          Feature.mastery: hidden == 'mastery'
+              ? FeatureState.hidden
+              : FeatureState.enabled,
+        });
+        final fieldFeatures = hidden == 'host'
+            ? const BuildFieldFeatureRegistry({
+                FieldFeature.mastery: FieldFeatureState.hidden,
+              })
+            : const BuildFieldFeatureRegistry.fieldDefaults();
+        var factories = 0;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          cloudSyncEnabled: false,
+          features: features,
+          fieldFeatures: fieldFeatures,
+          questCatalogFactory: (_) async {
+            factories++;
+            throw StateError('hidden catalog must not be constructed');
+          },
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        expect(identical(dependencies.features, features), isTrue);
+        expect(identical(dependencies.fieldFeatures, fieldFeatures), isTrue);
+        await _recordOriginalBootstrapAnswer(dependencies);
+        expect(factories, 0);
+        expect((await dependencies.progress!.load()).quests, isNull);
+        final database = dependencies.database!;
+        final snapshot = await dependencies.progress!.load();
+        expect(snapshot.learningDays?.status, StreakFoldStatus.ready);
+        expect(snapshot.learningDays?.currentStreakDays, 1);
+        expect(
+          await database.select(database.learningDayLog).get(),
+          hasLength(1),
+        );
+        final updates = dependencies.progressUpdates!;
+        final beforeRead = updates.value;
+        expect(beforeRead, greaterThan(0));
+        await dependencies.progress!.load();
+        expect(updates.value, beforeRead);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        await dependencies.streak!.settle(expectedOwnerId: owner.id);
+        expect(updates.value, greaterThan(beforeRead));
+        final select = dependencies.streak!.selectHomeTimezone;
+        if (hidden == 'quest') {
+          expect(
+            (await select(
+              expectedOwnerId: owner.id,
+              ianaId: 'Asia/Bangkok',
+            )).ianaId,
+            'Asia/Bangkok',
+          );
+        } else {
+          await expectLater(
+            select(expectedOwnerId: owner.id, ianaId: 'Asia/Bangkok'),
+            throwsStateError,
+          );
+        }
+        final answer = await database
+            .select(database.answerAttempts)
+            .getSingle();
+        expect(answer.questIntent, isNull);
+        for (final table in [
+          'quest_definition_revisions',
+          'quest_instances',
+          'quest_objective_progress',
+          'quest_claim_receipts',
+          'events_v2',
+          'research_consents',
+        ]) {
+          expect(
+            (await database
+                    .customSelect('SELECT COUNT(*) AS n FROM $table')
+                    .getSingle())
+                .read<int>('n'),
+            0,
+            reason: table,
+          );
+        }
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          hasLength(1),
+        );
+        final awards = await database.select(database.achievementUnlocks).get();
+        expect(
+          awards.map(
+            (row) => (
+              row.ownerId,
+              row.achievementId,
+              row.definitionVersion,
+              row.sourceEventId,
+            ),
+          ),
+          unorderedEquals([
+            (owner.id, 'first_answer', 1, answer.id),
+            (owner.id, 'first_correct', 1, answer.id),
+          ]),
+        );
+        final outbox = await database.select(database.outboxOperations).get();
+        expect(
+          outbox.map(
+            (row) =>
+                (row.ownerId, row.entityType, row.entityId, row.operationKind),
+          ),
+          unorderedEquals([
+            (owner.id, 'attempt', answer.id, 'upsert'),
+            (owner.id, 'srsState', answer.wordId, 'upsert'),
+            for (final award in awards)
+              (owner.id, 'achievementUnlock', award.id, 'upsert'),
+          ]),
+        );
+        final lateMutation = dependencies.learning!.onLocalMutation!;
+        final lastRevision = updates.value;
+        await dependencies.dispose();
+        lateMutation();
+        expect(updates.value, lastRevision);
+      },
+    );
+  }
+
+  test(
+    'original-answer bootstrap limited Quest installs once and captures through learning',
+    () async {
+      const features = BuildFeatureRegistry.fieldDefaults();
+      var factories = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+        features: features,
+        questCatalogFactory: (database) {
+          factories++;
+          return DriftQuestRepository(database).installAnswerCatalog();
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(
+        dependencies.features.stateOf(Feature.questV2),
+        FeatureState.limited,
+      );
+      expect(factories, 1);
+      final database = dependencies.database!;
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        hasLength(2),
+      );
+      await _recordOriginalBootstrapAnswer(dependencies);
+      final answer =
+          (await database.select(database.answerAttempts).get()).single;
+      final metadata = OriginalAnswerMetadata(
+        calendar: decodeCalendarEvidence(answer.calendarEvidence!),
+        quest: decodeQuestIntent(answer.questIntent!),
+      );
+      expect(metadata.calendar, isA<CapturedCalendarEvidence>());
+      expect(metadata.quest, isA<CapturedQuestIntent>());
+      expect(metadata.calendar.originOwnerId, answer.ownerId);
+      expect(metadata.calendar.occurredAtUtcMs, answer.occurredAtUtcMs);
+      expect(factories, 1);
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      expect(await database.select(database.questClaimReceipts).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+
+      for (var number = 2; number <= 5; number++) {
+        await dependencies.learning!.recordAnswer(
+          sessionId: answer.sessionId,
+          wordId: answer.wordId,
+          promptMode: answer.promptMode,
+          isCorrect: true,
+          responseTimeMs: 100,
+          attemptNumber: number,
+        );
+      }
+      final beforeClaim = await dependencies.progress!.load();
+      final daily = beforeClaim.quests!.current.singleWhere(
+        (card) => card.cadence == QuestType.daily,
+      );
+      expect(beforeClaim.ownerId, answer.ownerId);
+      expect(beforeClaim.totalXp, 5);
+      expect(daily.state, QuestProgressState.completedUnclaimed);
+      final receipt = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: beforeClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((receipt.xpAmount, receipt.replayed), (50, false));
+      final afterClaim = await dependencies.progress!.load();
+      expect(afterClaim.totalXp, 55);
+      expect(
+        afterClaim.quests!.current
+            .singleWhere((card) => card.cadence == QuestType.daily)
+            .state,
+        QuestProgressState.claimed,
+      );
+      expect((await dependencies.rewards!.load()).balance, 5);
+      final replay = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: afterClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((replay.receiptId, replay.replayed), (receipt.receiptId, true));
+      expect((await dependencies.progress!.load()).totalXp, 55);
+      expect(factories, 1);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.researchConsents).get(), isEmpty);
+    },
+  );
+
+  test(
+    'original-answer bootstrap catalog failure leaves ordinary learning available',
+    () async {
+      var factories = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+        questCatalogFactory: (_) async {
+          factories++;
+          throw StateError('synthetic optional catalog failure');
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      await _recordOriginalBootstrapAnswer(dependencies);
+      expect(factories, 1);
+      final database = dependencies.database!;
+      final answer =
+          (await database.select(database.answerAttempts).get()).single;
+      expect(
+        decodeQuestIntent(answer.questIntent!),
+        isA<UnavailableQuestIntent>(),
+      );
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(1),
+      );
+      expect(await database.select(database.srsStates).get(), hasLength(1));
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      final progress = await dependencies.progress!.load();
+      expect(progress.totalXp, 1);
+      expect(
+        progress.quests!.issues,
+        contains(QuestProgressIssue.unavailableCatalog),
+      );
+    },
+  );
+
   test(
     'two committed Drift owner transitions A B A cancel delayed validation without reactivating A',
     () async {
@@ -947,6 +1221,43 @@ final class _GeminiGateway implements GeminiGateway {
     if (!started.isCompleted) started.complete();
     return gate?.future ?? 'synthetic';
   }
+}
+
+Future<void> _recordOriginalBootstrapAnswer(
+  AppDependencies dependencies,
+) async {
+  final database = dependencies.database!;
+  final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+  await database.customStatement(
+    'INSERT INTO vocabulary_categories '
+    '(id,owner_id,name,normalized_name,created_at_utc_ms,updated_at_utc_ms) '
+    "VALUES ('original-category',?,'Synthetic','synthetic',1,1)",
+    [owner.id],
+  );
+  for (final word in [
+    ('original-word-one', 'station', 'สถานี'),
+    ('original-word-two', 'ticket', 'ตั๋ว'),
+  ]) {
+    await database.customStatement(
+      'INSERT INTO vocabulary_words '
+      '(id,owner_id,category_id,spelling,normalized_spelling,meaning,normalized_meaning,'
+      'part_of_speech,source,created_at_utc_ms,updated_at_utc_ms) '
+      "VALUES (?,?,'original-category',?,?,?,?, 'noun','manual',1,1)",
+      [word.$1, owner.id, word.$2, word.$2, word.$3, word.$3],
+    );
+  }
+  final session = await dependencies.learning!.startQuiz(
+    categoryId: 'original-category',
+  );
+  expect(session.questions, hasLength(2));
+  await dependencies.learning!.recordAnswer(
+    sessionId: session.id,
+    wordId: 'original-word-one',
+    promptMode: 'meaning',
+    isCorrect: true,
+    responseTimeMs: 100,
+    attemptNumber: 1,
+  );
 }
 
 final class _BootstrapSyncGateway implements SyncGateway {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'config/app_appearance_preferences.dart';
 import 'config/m3_theme.dart';
 import 'features/account/domain/account_contracts.dart';
+import 'features/motivation/domain/focus_models.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
 import 'runtime/app_runtime_status.dart';
@@ -49,6 +50,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final _navigatorKey = GlobalKey<NavigatorState>();
   Stream<RewardAppearance>? _appearanceStream;
+  final _streakRecoveries = Map<AppDependencies, Future<void>>.identity();
+  final _focusLifecycle = Map<AppDependencies, Future<void>>.identity();
   late final AppAppearanceController _appAppearance;
   late final bool _ownsAppAppearance;
   late final String _platformRoute =
@@ -62,8 +65,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _appAppearance = widget.appearance ?? AppAppearanceController.system();
     _appearanceStream = widget.dependencies.rewards?.watchAppearance();
     WidgetsBinding.instance.addObserver(this);
+    final startupDependencies = widget.dependencies;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (identical(startupDependencies, widget.dependencies)) {
+        unawaited(_recoverStreak(startupDependencies));
+        _updateFocus(startupDependencies, foreground: true);
+      }
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.startup));
@@ -73,7 +81,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _updateFocus(
+      widget.dependencies,
+      foreground: state == AppLifecycleState.resumed,
+    );
     if (state == AppLifecycleState.resumed) {
+      unawaited(_recoverStreak(widget.dependencies));
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.appResume));
@@ -86,15 +99,97 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.dependencies, widget.dependencies)) {
       _appearanceStream = widget.dependencies.rewards?.watchAppearance();
-      unawaited(oldWidget.dependencies.dispose());
+      unawaited(_disposeAfterRecovery(oldWidget.dependencies));
+      unawaited(_recoverStreak(widget.dependencies));
+      _updateFocus(
+        widget.dependencies,
+        foreground:
+            WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+      );
     }
+  }
+
+  Future<void> _recoverStreak(AppDependencies scope) {
+    if (!mounted || !identical(scope, widget.dependencies)) {
+      return Future<void>.value();
+    }
+    return _streakRecoveries.putIfAbsent(
+      scope,
+      () => _settleActiveOwner(scope).whenComplete(() {
+        _streakRecoveries.remove(scope);
+      }),
+    );
+  }
+
+  Future<void> _settleActiveOwner(AppDependencies scope) async {
+    final owners = scope.localOwners;
+    final streak = scope.streak;
+    if (owners == null || streak == null) {
+      return;
+    }
+    try {
+      final owner = await owners.getOrCreateActiveOwner();
+      if (mounted && identical(scope, widget.dependencies)) {
+        await streak.settle(expectedOwnerId: owner.id);
+      }
+    } on Object {
+      // A later resume can recover the committed attendance.
+    }
+  }
+
+  void _updateFocus(AppDependencies scope, {required bool foreground}) {
+    final focus = scope.focus;
+    final owners = scope.localOwners;
+    if (focus == null || owners == null) return;
+    final FocusSample? sample;
+    try {
+      sample = foreground ? null : focus.clock.sample();
+    } on Object {
+      return;
+    }
+    final earlier = _focusLifecycle[scope] ?? Future<void>.value();
+    late final Future<void> next;
+    next = earlier
+        .then((_) async {
+          if (!mounted || !identical(widget.dependencies, scope)) return;
+          try {
+            final owner = await owners.getOrCreateActiveOwner();
+            if (!mounted || !identical(widget.dependencies, scope)) return;
+            if (foreground) {
+              await focus.recover(expectedOwnerId: owner.id);
+            } else {
+              await focus.background(expectedOwnerId: owner.id, sample: sample);
+            }
+          } on Object {
+            // Opening the timer reconciles any incomplete checkpoint.
+          }
+        })
+        .whenComplete(() {
+          if (identical(_focusLifecycle[scope], next)) {
+            _focusLifecycle.remove(scope);
+          }
+        });
+    _focusLifecycle[scope] = next;
+  }
+
+  Future<void> _disposeAfterRecovery(AppDependencies scope) async {
+    final recovery = _streakRecoveries[scope];
+    if (recovery != null) {
+      await recovery;
+      if (mounted && identical(widget.dependencies, scope)) {
+        return;
+      }
+    }
+    await _focusLifecycle[scope];
+    if (mounted && identical(widget.dependencies, scope)) return;
+    await scope.dispose();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (_ownsAppAppearance) _appAppearance.dispose();
-    unawaited(widget.dependencies.dispose());
+    unawaited(_disposeAfterRecovery(widget.dependencies));
     super.dispose();
   }
 

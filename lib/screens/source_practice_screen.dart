@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -5,6 +7,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/vocabulary/application/source_practice.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/local_content_report.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../navigation/app_routes.dart';
@@ -50,6 +53,8 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
   String? _error;
   bool _working = false;
   bool _confirmed = false;
+  bool _reporting = false;
+  (String, LocalContentReportDraft)? _pendingReport;
   final _voiceContext = ValueNotifier(0);
 
   @override
@@ -76,6 +81,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
   @override
   Widget build(BuildContext context) {
     final preview = _preview;
+    final reports = AppDependenciesScope.maybeOf(context)?.localContentReports;
     return Scaffold(
       appBar: AppBar(title: const Text('ฝึกจากไฟล์ในเครื่อง')),
       body: SafeArea(
@@ -162,6 +168,12 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                       ),
                     ),
                   ],
+                  if (reports != null)
+                    TextButton.icon(
+                      onPressed: _reporting ? null : _openReportQueue,
+                      icon: const Icon(Icons.inbox_outlined),
+                      label: const Text('รายงานที่รอส่ง'),
+                    ),
                   if (preview != null) ...[
                     const SizedBox(height: 24),
                     Text(
@@ -179,6 +191,14 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                           for (final word in preview.matchedWords)
                             Chip(label: Text(word.spelling)),
                         ],
+                      ),
+                    if (reports != null && preview.matchedWords.isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: _working || _reporting
+                            ? null
+                            : () => _reviewReport(preview),
+                        icon: const Icon(Icons.flag_outlined),
+                        label: const Text('รายงานปัญหาเนื้อหา'),
                       ),
                     const SizedBox(height: 20),
                     Text(
@@ -277,6 +297,164 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _reviewReport(SourcePracticePreview preview) async {
+    if (_working || _reporting || !identical(_preview, preview)) return;
+    final scope = AppDependenciesScope.maybeOf(context);
+    final reports = scope?.localContentReports;
+    final vocabulary = widget.vocabulary;
+    final categoryId = widget.categoryId;
+    final ownerId = _ownerId;
+    if (reports == null || ownerId == null || preview.matchedWords.isEmpty) {
+      return;
+    }
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), scope) &&
+        identical(widget.vocabulary, vocabulary) &&
+        widget.categoryId == categoryId &&
+        _ownerId == ownerId &&
+        identical(_preview, preview);
+
+    setState(() => _reporting = true);
+    try {
+      if (!await _ownerStillCurrent() || !mounted || !current()) return;
+      final selection = await showDialog<_ReportSelection>(
+        context: context,
+        builder: (_) => StreamBuilder<bool>(
+          stream: reports.watchOwnerActive(ownerId),
+          builder: (_, snapshot) => _ReportReview(
+            preview: preview,
+            isCurrent: () => current() && snapshot.data == true,
+          ),
+        ),
+      );
+      if (selection == null || !current()) return;
+      final words = await _loadCurrentCategoryWords();
+      final (word, reason, sentence) = selection;
+      if (!current() ||
+          words == null ||
+          !words.any(
+            (entry) =>
+                entry.id == word.id &&
+                entry.ownerId == ownerId &&
+                entry.categoryId == categoryId &&
+                entry.localRevision == word.localRevision &&
+                entry.spelling == word.spelling &&
+                entry.meaning == word.meaning,
+          )) {
+        throw StateError('Report source changed');
+      }
+      final prior = _pendingReport;
+      final saved = prior?.$2;
+      final draft =
+          prior?.$1 == ownerId &&
+              saved?.sourceId == preview.documentId &&
+              saved?.sourceRevision == preview.documentRevision &&
+              saved?.spelling == word.spelling &&
+              saved?.meaning == word.meaning &&
+              saved?.sentence == sentence &&
+              saved?.reason == reason
+          ? saved!
+          : LocalContentReportDraft(
+              id: vocabulary.generateId(),
+              sourceKind: 'localSource',
+              sourceId: preview.documentId,
+              sourceRevision: preview.documentRevision,
+              spelling: word.spelling,
+              meaning: word.meaning,
+              sentence: sentence,
+              reason: reason,
+              createdAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                vocabulary.nowUtc().millisecondsSinceEpoch,
+                isUtc: true,
+              ),
+            );
+      _pendingReport = (ownerId, draft);
+      await reports.queue(expectedOwnerId: ownerId, report: draft);
+      _pendingReport = null;
+      if (current() && await _ownerStillCurrent() && mounted && current()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกรายงานในเครื่องแล้ว')),
+        );
+      }
+    } catch (_) {
+      if (current()) {
+        setState(
+          () => _error = 'บันทึกรายงานไม่สำเร็จ กรุณาตรวจและลองอีกครั้ง',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _reporting = false);
+    }
+  }
+
+  Future<void> _openReportQueue() async {
+    if (_reporting) return;
+    final scope = AppDependenciesScope.maybeOf(context);
+    final reports = scope?.localContentReports;
+    if (reports == null) return;
+    final vocabulary = widget.vocabulary;
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), scope) &&
+        identical(widget.vocabulary, vocabulary);
+    setState(() => _reporting = true);
+    try {
+      final owners = vocabulary.owners;
+      final owner = await owners.getOrCreateActiveOwner();
+      final rows = await reports.watchReports(owner.id).first;
+      if ((await owners.getOrCreateActiveOwner()).id != owner.id ||
+          !mounted ||
+          !current()) {
+        return;
+      }
+      await showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        isScrollControlled: true,
+        builder: (sheetContext) {
+          AppDependenciesScope.maybeOf(sheetContext);
+          return StreamBuilder<bool>(
+            stream: reports.watchOwnerActive(owner.id),
+            builder: (sheetContext, active) => SafeArea(
+              child: FractionallySizedBox(
+                heightFactor: 0.7,
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Text(
+                      'รายงานที่รอส่ง',
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    if (!current() || active.data != true)
+                      Text(
+                        active.connectionState == ConnectionState.waiting
+                            ? 'กำลังตรวจบัญชี'
+                            : 'บัญชีผู้เรียนเปลี่ยนแล้ว',
+                      )
+                    else ...[
+                      const Text('บันทึกในเครื่อง · ยังไม่ส่ง'),
+                      if (rows.isEmpty) const Text('ยังไม่มีรายงาน'),
+                      for (final row in rows)
+                        ListTile(
+                          title: Text('${row.spelling} · ${row.meaning}'),
+                          subtitle: Text(_reportReason(row.reason)),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (current()) setState(() => _error = 'อ่านรายงานในเครื่องไม่สำเร็จ');
+    } finally {
+      if (mounted) setState(() => _reporting = false);
+    }
   }
 
   Future<void> _pickFile() async {
@@ -401,11 +579,15 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         AppPage<void>(
           name: 'learning/source-quiz',
           builder: (_) => QuizScreen(
+            categoryId: widget.categoryId,
+            categoryName: widget.categoryName,
+            returnLabel: 'กลับไปเลือกกิจกรรม',
             wordIds: preview.matchedWords
                 .take(_maxPracticeWords)
                 .map((word) => word.id)
                 .toList(),
             selectionMode: QuizWordSelectionMode.sourcePractice,
+            originParentId: '${preview.documentId}:${preview.documentRevision}',
             learning: widget.learning,
           ),
         ),
@@ -643,6 +825,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                             AppPage<void>(
                               name: repairRouteName,
                               builder: (_) => QuizScreen(
+                                categoryId: widget.categoryId,
+                                categoryName: widget.categoryName,
+                                returnLabel: 'กลับไปเลือกกิจกรรม',
                                 wordIds: mistakeIds,
                                 learning: captured.learning,
                               ),
@@ -860,6 +1045,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                                           resultOpen &&
                                           repairing
                                       ? QuizScreen(
+                                          categoryId: widget.categoryId,
+                                          categoryName: widget.categoryName,
+                                          returnLabel: 'กลับไปเลือกกิจกรรม',
                                           wordIds: [word.id],
                                           learning: learning,
                                         )
@@ -1086,6 +1274,116 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
     });
   }
 }
+
+typedef _ReportSelection = (VocabularyWord, LocalContentReportReason, String?);
+
+class _ReportReview extends StatefulWidget {
+  const _ReportReview({required this.preview, required this.isCurrent});
+
+  final SourcePracticePreview preview;
+  final bool Function() isCurrent;
+
+  @override
+  State<_ReportReview> createState() => _ReportReviewState();
+}
+
+class _ReportReviewState extends State<_ReportReview> {
+  late VocabularyWord _word = widget.preview.matchedWords.first;
+  var _reason = LocalContentReportReason.translationMismatch;
+
+  @override
+  Widget build(BuildContext context) {
+    AppDependenciesScope.maybeOf(context);
+    final sentence = _reportSentence(
+      widget.preview.passageText,
+      _word.spelling,
+    );
+    final current = widget.isCurrent();
+    return AlertDialog(
+      title: const Text('ตรวจรายงาน'),
+      scrollable: true,
+      content: current
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.preview.matchedWords.length > 1)
+                  DropdownButtonFormField<VocabularyWord>(
+                    initialValue: _word,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'คำที่แจ้ง'),
+                    items: [
+                      for (final word in widget.preview.matchedWords)
+                        DropdownMenuItem(
+                          value: word,
+                          child: Text(word.spelling),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _word = value;
+                        _reason = LocalContentReportReason.translationMismatch;
+                      });
+                    },
+                  ),
+                Text('${_word.spelling} · ${_word.meaning}'),
+                if (sentence != null) Text(sentence),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final reason in LocalContentReportReason.values)
+                      if (sentence != null ||
+                          reason ==
+                              LocalContentReportReason.translationMismatch)
+                        ChoiceChip(
+                          label: Text(_reportReason(reason)),
+                          selected: reason == _reason,
+                          onSelected: (_) => setState(() => _reason = reason),
+                        ),
+                  ],
+                ),
+                const Text('บันทึกในเครื่อง · ยังไม่ส่ง'),
+              ],
+            )
+          : const Text('บัญชีหรือข้อความเปลี่ยนแล้ว'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('ยกเลิก'),
+        ),
+        FilledButton(
+          onPressed: current
+              ? () => Navigator.pop(context, (_word, _reason, sentence))
+              : null,
+          child: const Text('บันทึกรายงานในเครื่อง'),
+        ),
+      ],
+    );
+  }
+}
+
+String? _reportSentence(String passage, String spelling) {
+  final token = RegExp(
+    '\\b${RegExp.escape(spelling)}\\b',
+    caseSensitive: false,
+  );
+  for (final line in passage.split('\n')) {
+    for (final match in RegExp(r'[^.!?]+[.!?]+').allMatches(line)) {
+      final sentence = match.group(0)!.trim();
+      if (token.hasMatch(sentence) && utf8.encode(sentence).length <= 4096) {
+        return sentence;
+      }
+    }
+  }
+  return null;
+}
+
+String _reportReason(LocalContentReportReason reason) => switch (reason) {
+  LocalContentReportReason.translationMismatch => 'คำแปลไม่ตรง',
+  LocalContentReportReason.exampleSpellingError => 'ประโยคตัวอย่างสะกดผิด',
+};
 
 final class _SourceResultContext {
   _SourceResultContext({

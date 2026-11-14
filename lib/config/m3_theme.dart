@@ -10,6 +10,9 @@ class M3Theme {
     return scale >= 1.5 ? 96 : kToolbarHeight;
   }
 
+  static double rootAppBarToolbarHeight(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(1) >= 1.5 ? 160 : 104;
+
   static Widget appBarTitle(BuildContext context, String label) {
     return Text(
       label,
@@ -23,16 +26,16 @@ class M3Theme {
     );
   }
 
-  static const Color primary = Color(0xFF5A4CF2);
+  static const Color primary = Color(0xFF3942AD);
   static const Color mastery = Color(0xFF0E8176);
   static const Color momentum = Color(0xFFD98213);
   static const Color momentumInk = Color(0xFF6B3E00);
   static const Color error = Color(0xFFB3261E);
-  static const Color background = Color(0xFFF5F6FA);
+  static const Color background = Color(0xFFFBFBFE);
   static const Color surface = Colors.white;
-  static const Color ink = Color(0xFF171A2B);
-  static const Color muted = Color(0xFF626A80);
-  static const Color border = Color(0xFFDDE1EC);
+  static const Color ink = Color(0xFF1F2441);
+  static const Color muted = Color(0xFF525B73);
+  static const Color border = Color(0xFFDADEEB);
   static const Color oceanLight = Color(0xFF075985);
   static const Color oceanDark = Color(0xFF7DD3FC);
   static const Color oceanDarkInk = Color(0xFF082F49);
@@ -47,26 +50,32 @@ class M3Theme {
     final selectedBackground = wallpaperId == 'wallpaper_focus'
         ? focusBackgroundLight
         : background;
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: selectedPrimary,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: selectedPrimary,
-          onPrimary: Colors.white,
-          secondary: mastery,
-          onSecondary: Colors.white,
-          tertiary: momentum,
-          onTertiary: ink,
-          tertiaryContainer: const Color(0xFFFFDDB8),
-          onTertiaryContainer: momentumInk,
-          error: error,
-          onError: Colors.white,
-          surface: surface,
-          onSurface: ink,
-          onSurfaceVariant: muted,
-          outline: border,
-        );
+    final seeded = ColorScheme.fromSeed(
+      seedColor: selectedPrimary,
+      brightness: Brightness.light,
+    );
+    final colorScheme = seeded.copyWith(
+      primary: selectedPrimary,
+      onPrimary: Colors.white,
+      primaryContainer: themeId == 'theme_ocean'
+          ? seeded.primaryContainer
+          : const Color(0xFFE8EBF8),
+      onPrimaryContainer: themeId == 'theme_ocean'
+          ? seeded.onPrimaryContainer
+          : ink,
+      secondary: mastery,
+      onSecondary: Colors.white,
+      tertiary: momentum,
+      onTertiary: ink,
+      tertiaryContainer: const Color(0xFFFFDDB8),
+      onTertiaryContainer: momentumInk,
+      error: error,
+      onError: Colors.white,
+      surface: surface,
+      onSurface: ink,
+      onSurfaceVariant: muted,
+      outline: border,
+    );
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
@@ -114,23 +123,23 @@ class M3Theme {
 
   static ThemeData darkThemeFor({String? themeId, String? wallpaperId}) {
     final isOcean = themeId == 'theme_ocean';
-    final selectedPrimary = isOcean ? oceanDark : primary;
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: selectedPrimary,
-          brightness: Brightness.dark,
-        ).copyWith(
-          primary: selectedPrimary,
-          onPrimary: isOcean ? oceanDarkInk : Colors.white,
-          secondary: mastery,
-          onSecondary: Colors.white,
-          tertiary: momentum,
-          onTertiary: ink,
-          tertiaryContainer: const Color(0xFF513000),
-          onTertiaryContainer: const Color(0xFFFFDDB8),
-          error: error,
-          onError: Colors.white,
-        );
+    final seeded = ColorScheme.fromSeed(
+      seedColor: isOcean ? oceanDark : primary,
+      brightness: Brightness.dark,
+    );
+    final selectedPrimary = isOcean ? oceanDark : seeded.primary;
+    final colorScheme = seeded.copyWith(
+      primary: selectedPrimary,
+      onPrimary: isOcean ? oceanDarkInk : seeded.onPrimary,
+      secondary: mastery,
+      onSecondary: Colors.white,
+      tertiary: momentum,
+      onTertiary: ink,
+      tertiaryContainer: const Color(0xFF513000),
+      onTertiaryContainer: const Color(0xFFFFDDB8),
+      error: error,
+      onError: Colors.white,
+    );
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,

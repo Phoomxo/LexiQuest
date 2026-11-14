@@ -11,11 +11,19 @@ class AddWordScreen extends StatefulWidget {
     required this.categoryId,
     this.vocabulary,
     this.word,
-  });
+    this.initialDraft,
+    this.expectedOwnerId,
+    this.categoryName,
+    this.onCreated,
+  }) : assert(word == null || initialDraft == null);
 
   final String categoryId;
   final VocabularyUseCases? vocabulary;
   final VocabularyWord? word;
+  final CreateWordCommand? initialDraft;
+  final String? expectedOwnerId;
+  final String? categoryName;
+  final ValueChanged<VocabularyWord>? onCreated;
 
   @override
   State<AddWordScreen> createState() => _AddWordScreenState();
@@ -25,6 +33,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _wordController;
   late final TextEditingController _meaningController;
   late final TextEditingController _partOfSpeechController;
+  AppDependencies? _writeDependencies;
+  bool _writeContextCaptured = false;
+  String? _writeOwnerId;
+  String? _writeCategoryId;
+  CreateWordCommand? _writeDraft;
+  VocabularyWord? _writeWord;
   bool _saving = false;
   String? _wordError;
   String? _meaningError;
@@ -34,11 +48,31 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void initState() {
     super.initState();
-    _wordController = TextEditingController(text: widget.word?.spelling);
-    _meaningController = TextEditingController(text: widget.word?.meaning);
-    _partOfSpeechController = TextEditingController(
-      text: widget.word?.partOfSpeech,
+    _wordController = TextEditingController(
+      text: widget.word?.spelling ?? widget.initialDraft?.spelling,
     );
+    _meaningController = TextEditingController(
+      text: widget.word?.meaning ?? widget.initialDraft?.meaning,
+    );
+    _partOfSpeechController = TextEditingController(
+      text: widget.word?.partOfSpeech ?? widget.initialDraft?.partOfSpeech,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if ((widget.initialDraft != null ||
+            widget.expectedOwnerId != null ||
+            widget.word != null) &&
+        !_writeContextCaptured) {
+      _writeDependencies = AppDependenciesScope.maybeOf(context);
+      _writeContextCaptured = true;
+      _writeOwnerId = widget.word?.ownerId ?? widget.expectedOwnerId;
+      _writeCategoryId = widget.categoryId;
+      _writeDraft = widget.initialDraft;
+      _writeWord = widget.word;
+    }
   }
 
   @override
@@ -57,11 +91,25 @@ class _AddWordScreenState extends State<AddWordScreen> {
       canPop: !_saving,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.word == null ? 'เพิ่มคำศัพท์' : 'แก้ไขคำศัพท์'),
+          title: Text(
+            widget.initialDraft != null
+                ? 'ตรวจคำจากภาพ'
+                : widget.word == null
+                ? 'เพิ่มคำศัพท์'
+                : 'แก้ไขคำศัพท์',
+          ),
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (widget.categoryName != null) ...[
+              Text('เก็บในชุด ${widget.categoryName}'),
+              const SizedBox(height: 8),
+            ],
+            if (widget.initialDraft != null) ...[
+              const Text('ผลสแกนยังไม่ยืนยัน ตรวจชื่อและกรอกคำแปลเอง'),
+              const SizedBox(height: 16),
+            ],
             TextField(
               key: const ValueKey('word-field'),
               controller: _wordController,
@@ -184,30 +232,60 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return;
     }
     setState(() => _saving = true);
+    final draft = widget.initialDraft;
+    final word = widget.word;
+    final expectedOwnerId = word?.ownerId ?? widget.expectedOwnerId;
+    final bound = draft != null || word != null || expectedOwnerId != null;
     try {
-      if (widget.word == null) {
-        await useCases.createWord(
+      VocabularyWord? created;
+      if (bound) await _requireWriteContext(useCases, expectedOwnerId);
+      if (word == null) {
+        created = await useCases.createWord(
           CreateWordCommand(
             categoryId: widget.categoryId,
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
+            cefrLevel: draft?.cefrLevel,
+            source: draft?.source ?? 'manual',
           ),
+          expectedOwnerId: expectedOwnerId,
         );
       } else {
         await useCases.updateWord(
           UpdateWordCommand(
-            id: widget.word!.id,
+            id: word.id,
             categoryId: widget.categoryId,
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
-            cefrLevel: widget.word!.cefrLevel,
-            source: widget.word!.source,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
           ),
         );
       }
-      if (mounted) Navigator.pop(context);
+      if (bound) {
+        await _requireWriteContext(useCases, expectedOwnerId);
+        if (word == null &&
+            (created == null ||
+                created.ownerId != expectedOwnerId ||
+                created.categoryId != _writeCategoryId)) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (draft != null) {
+        if (mounted) Navigator.pop<VocabularyWord>(context, created);
+      } else if (mounted) {
+        if (created != null) widget.onCreated?.call(created);
+        Navigator.pop(context);
+      }
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () =>
+              _formError = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
     } on InvalidVocabularyFailure catch (error) {
       if (mounted) _showInvalidField(error.field);
     } on DuplicateVocabularyFailure {
@@ -220,6 +298,42 @@ class _AddWordScreenState extends State<AddWordScreen> {
       if (mounted) setState(() => _formError = 'บันทึกคำศัพท์ไม่สำเร็จ');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _requireWriteContext(
+    VocabularyUseCases useCases,
+    String? expectedOwnerId,
+  ) async {
+    if (!mounted ||
+        !_writeContextCaptured ||
+        expectedOwnerId == null ||
+        !identical(AppDependenciesScope.maybeOf(context), _writeDependencies) ||
+        _writeOwnerId != expectedOwnerId ||
+        !identical(widget.initialDraft, _writeDraft) ||
+        !identical(widget.word, _writeWord) ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId) ||
+        widget.categoryId != _writeCategoryId ||
+        (_writeDraft != null && _writeDraft!.categoryId != widget.categoryId)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final dependencies = _writeDependencies;
+    final currentVocabulary = dependencies?.vocabulary;
+    if (currentVocabulary != null && !identical(currentVocabulary, useCases)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final owner = await (dependencies?.localOwners ?? useCases.owners)
+        .getOrCreateActiveOwner();
+    if (!mounted ||
+        owner.id != expectedOwnerId ||
+        !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
+        !identical(widget.initialDraft, _writeDraft) ||
+        !identical(widget.word, _writeWord) ||
+        widget.categoryId != _writeCategoryId ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId)) {
+      throw const VocabularyNotFoundFailure();
     }
   }
 

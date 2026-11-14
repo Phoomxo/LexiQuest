@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../config/app_appearance_preferences.dart';
@@ -11,6 +12,8 @@ import '../features/consent/domain/research_consent.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/device_model/domain/model_manifest.dart';
+import '../features/motivation/application/streak_use_cases.dart';
+import '../features/motivation/domain/timezone_policy.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -18,6 +21,7 @@ import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'export_center_screen.dart';
 import 'account_deletion_screen.dart';
@@ -26,6 +30,7 @@ import 'gemini_settings_screen.dart';
 import 'device_permission_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'shadowing_challenge_screen.dart';
+import 'study_preferences_panel.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({
@@ -63,6 +68,7 @@ class _SettingScreenState extends State<SettingScreen> {
   int _syncStatusGeneration = 0;
   bool _busy = false;
   bool _syncBusy = false;
+  int _syncRequestGeneration = 0;
   String? _syncStatus;
   DeviceModelUseCases? _deviceModels;
   FieldFeatureRegistry _fieldFeatures =
@@ -73,27 +79,305 @@ class _SettingScreenState extends State<SettingScreen> {
   int _modelStatusGeneration = 0;
   bool _modelBusy = false;
   String? _modelFeedback;
+  StreakUseCases? _streak;
+  bool _calendarVisible = false;
+  final _calendarInput = TextEditingController();
+  ValueListenable<int>? _calendarUpdates;
+  ({String ownerId, OwnerCalendarRule current, OwnerCalendarRule? pending})?
+  _calendarView;
+  String? _calendarLoadedOwner;
+  String? _calendarError;
+  bool _calendarLoading = false;
+  bool _calendarSaving = false;
+  int _calendarGeneration = 0;
+  int _calendarLoadRequest = 0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindDependencies();
+  }
+
+  @override
+  void didUpdateWidget(SettingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  AccountUseCases? get _currentAccount =>
+      widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
+
+  AccountDeletionUseCases? get _currentDeletion =>
+      widget.accountDeletion ??
+      AppDependenciesScope.maybeOf(context)?.accountDeletion;
+
+  bool _isCurrentAccount(AccountUseCases account, String uid) =>
+      mounted &&
+      identical(_currentAccount, account) &&
+      account.currentSession?.uid == uid;
+
+  void _bindDependencies() {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    _account ??= widget.account ?? dependencies?.account;
-    _accountDeletion ??=
-        widget.accountDeletion ?? dependencies?.accountDeletion;
+    _account = widget.account ?? dependencies?.account;
+    _accountDeletion = widget.accountDeletion ?? dependencies?.accountDeletion;
     final researchConsent =
         widget.researchConsent ?? dependencies?.researchConsent;
     if (!identical(_researchConsent, researchConsent)) {
       _researchConsent = researchConsent;
       _researchStatus = researchConsent?.load();
     }
-    _syncTrigger ??= dependencies?.syncTrigger;
+    if (!identical(_syncTrigger, dependencies?.syncTrigger)) {
+      _syncTrigger = dependencies?.syncTrigger;
+      _syncRequestGeneration++;
+      _syncBusy = false;
+      _syncStatus = null;
+    }
     _replaceSyncStatusSource(dependencies?.syncStatus);
     _fieldFeatures =
         widget.featureRegistry ??
         dependencies?.fieldFeatures ??
         const BuildFieldFeatureRegistry.fieldDefaults();
     _replaceDeviceModels(widget.deviceModels ?? dependencies?.deviceModels);
+    final features =
+        dependencies?.features ?? const BuildFeatureRegistry.fieldDefaults();
+    final streak = dependencies?.streak;
+    final calendarVisible =
+        streak != null &&
+        features.isVisible(Feature.mastery) &&
+        _fieldFeatures.isVisible(FieldFeature.mastery);
+    final updates = calendarVisible ? dependencies?.progressUpdates : null;
+    if (!identical(_calendarUpdates, updates)) {
+      _calendarUpdates?.removeListener(_onCalendarUpdate);
+      _calendarUpdates = updates;
+      _calendarUpdates?.addListener(_onCalendarUpdate);
+    }
+    if (!identical(_streak, streak) || _calendarVisible != calendarVisible) {
+      _streak = streak;
+      _calendarVisible = calendarVisible;
+      _calendarGeneration++;
+      _calendarLoadRequest++;
+      _calendarView = null;
+      _calendarLoadedOwner = null;
+      _calendarError = null;
+      _calendarInput.clear();
+      _calendarSaving = false;
+      _calendarLoading = calendarVisible;
+      if (calendarVisible) unawaited(_loadHomeCalendar(rebuild: false));
+    }
+  }
+
+  bool _isCurrentCalendar(StreakUseCases source, int generation) =>
+      mounted &&
+      _calendarVisible &&
+      identical(_streak, source) &&
+      generation == _calendarGeneration;
+
+  void _onCalendarUpdate() {
+    if (!mounted || !_calendarVisible) return;
+    if (_calendarSaving) {
+      setState(() {
+        _calendarView = null;
+        _calendarLoading = true;
+      });
+      return;
+    }
+    unawaited(_loadHomeCalendar());
+  }
+
+  Future<void> _loadHomeCalendar({
+    bool rebuild = true,
+    bool clearError = false,
+  }) async {
+    final source = _streak;
+    if (!_calendarVisible || source == null) return;
+    final generation = _calendarGeneration;
+    final request = ++_calendarLoadRequest;
+    void loading() {
+      _calendarLoading = true;
+      _calendarView = null;
+      if (clearError) _calendarError = null;
+    }
+
+    if (rebuild) {
+      setState(loading);
+    } else {
+      loading();
+    }
+    try {
+      final view = await source.loadCalendar();
+      if (!_isCurrentCalendar(source, generation) ||
+          request != _calendarLoadRequest) {
+        return;
+      }
+      setState(() {
+        _calendarView = view;
+        _calendarLoading = false;
+        if (_calendarLoadedOwner != view.ownerId) {
+          _calendarInput.text = view.pending?.ianaId ?? view.current.ianaId;
+        }
+        _calendarLoadedOwner = view.ownerId;
+      });
+    } on Object {
+      if (!_isCurrentCalendar(source, generation) ||
+          request != _calendarLoadRequest) {
+        return;
+      }
+      setState(() {
+        _calendarLoading = false;
+        _calendarError = 'โหลดปฏิทินการเรียนไม่ได้ โปรดลองโหลดใหม่';
+      });
+    }
+  }
+
+  Future<void> _saveHomeCalendar() async {
+    final source = _streak;
+    final view = _calendarView;
+    if (!_calendarVisible ||
+        source == null ||
+        view == null ||
+        _calendarLoading ||
+        _calendarSaving ||
+        _busy ||
+        _syncBusy) {
+      return;
+    }
+    final zone = _calendarInput.text.trim();
+    if (zone.isEmpty) {
+      setState(
+        () => _calendarError = 'กรอกเขตเวลา IANA เช่น Asia/Bangkok หรือ UTC',
+      );
+      return;
+    }
+    final generation = _calendarGeneration;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _calendarSaving = true;
+      _calendarError = null;
+    });
+    try {
+      await source.selectHomeTimezone(
+        expectedOwnerId: view.ownerId,
+        ianaId: zone,
+      );
+      if (!_isCurrentCalendar(source, generation)) return;
+      setState(() => _calendarSaving = false);
+      await _loadHomeCalendar(clearError: true);
+    } on Object catch (error) {
+      if (!_isCurrentCalendar(source, generation)) return;
+      setState(() {
+        _calendarSaving = false;
+        _calendarError = error is ArgumentError
+            ? 'ไม่พบเขตเวลานี้ โปรดใช้ชื่อ IANA เช่น Asia/Bangkok หรือ UTC'
+            : 'ยืนยันการเปลี่ยนเขตเวลาไม่ได้ โปรดตรวจสอบค่าปัจจุบันแล้วลองอีกครั้ง';
+      });
+      await _loadHomeCalendar();
+    }
+  }
+
+  String _calendarActivation(int us) {
+    final value = DateTime.fromMicrosecondsSinceEpoch(us, isUtc: true);
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${value.year}-${two(value.month)}-${two(value.day)} '
+        '${two(value.hour)}:${two(value.minute)}'
+        '${value.second == 0 ? '' : ':${two(value.second)}'} UTC';
+  }
+
+  Widget _homeCalendarCard() {
+    final view = _calendarView;
+    final pending = view?.pending;
+    final disabled =
+        _calendarLoading ||
+        _calendarSaving ||
+        _busy ||
+        _syncBusy ||
+        view == null;
+    return Card(
+      key: const ValueKey<String>('settings-home-calendar'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.public_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'ปฏิทินการเรียน',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_calendarLoading) const Text('กำลังโหลดปฏิทินการเรียน…'),
+            if (view != null) ...[
+              Text(
+                'เขตเวลาปัจจุบัน: ${view.current.ianaId}',
+                key: const ValueKey<String>('settings-home-calendar-current'),
+              ),
+              if (pending != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'กำหนดไว้: ${pending.ianaId}\nเริ่ม ${_calendarActivation(pending.effectiveUtcUs)}',
+                  key: const ValueKey<String>('settings-home-calendar-pending'),
+                ),
+              ],
+            ],
+            const SizedBox(height: 8),
+            const Text(
+              'การเดินทางไม่เปลี่ยนค่านี้อัตโนมัติ เขตเวลาใหม่เริ่มหลังสิ้นสัปดาห์ปัจจุบัน',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              key: const ValueKey<String>('settings-home-calendar-input'),
+              controller: _calendarInput,
+              enabled: !disabled,
+              autocorrect: false,
+              enableSuggestions: false,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'เขตเวลา IANA',
+                helperText: 'เช่น Asia/Bangkok หรือ UTC',
+                helperMaxLines: 2,
+              ),
+              onSubmitted: (_) => unawaited(_saveHomeCalendar()),
+            ),
+            if (_calendarError case final error?) ...[
+              const SizedBox(height: 12),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  error,
+                  key: const ValueKey<String>('settings-home-calendar-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const ValueKey<String>('settings-home-calendar-save'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: disabled ? null : () => unawaited(_saveHomeCalendar()),
+              child: Text(_calendarSaving ? 'กำลังบันทึก…' : 'บันทึกเขตเวลา'),
+            ),
+            if (_calendarError != null)
+              TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: _calendarLoading || _calendarSaving
+                    ? null
+                    : () => unawaited(_loadHomeCalendar(clearError: true)),
+                child: const Text('โหลดข้อมูลใหม่'),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _replaceSyncStatusSource(SyncStatusSource? source) {
@@ -138,6 +422,9 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   void dispose() {
+    _calendarGeneration++;
+    _calendarUpdates?.removeListener(_onCalendarUpdate);
+    _calendarInput.dispose();
     _syncStatusGeneration++;
     _modelStatusGeneration++;
     final subscription = _syncStatusSubscription;
@@ -221,6 +508,15 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _changePassword() async {
+    final account = _currentAccount;
+    final session = account?.currentSession;
+    if (account == null ||
+        session == null ||
+        session.isAnonymous ||
+        _busy ||
+        _syncBusy) {
+      return;
+    }
     var currentPassword = '';
     var newPassword = '';
     String? currentPasswordError;
@@ -298,9 +594,8 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
     );
     if (submitted != true || !mounted) return;
-    final account = _account;
-    if (account == null) {
-      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
+    if (!_isCurrentAccount(account, session.uid)) {
+      _show('บัญชีเปลี่ยนแล้ว กรุณาเปิดการตั้งค่าอีกครั้ง');
       return;
     }
     setState(() => _busy = true);
@@ -309,9 +604,11 @@ class _SettingScreenState extends State<SettingScreen> {
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
-      if (mounted) _show('เปลี่ยนรหัสผ่านแล้ว');
+      if (_isCurrentAccount(account, session.uid)) {
+        _show('เปลี่ยนรหัสผ่านแล้ว');
+      }
     } on AccountException catch (error) {
-      if (mounted) {
+      if (_isCurrentAccount(account, session.uid)) {
         _show(
           error.code == AccountFailureCode.requiresRecentLogin
               ? 'กรุณาเข้าสู่ระบบใหม่ก่อนเปลี่ยนรหัสผ่าน'
@@ -335,15 +632,22 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _logout() async {
-    final account = _account;
-    if (account == null || _busy || _syncBusy) return;
+    final account = _currentAccount;
+    if (account == null ||
+        account.currentSession?.isAnonymous != false ||
+        _busy ||
+        _syncBusy) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       await account.signOutToLocalGuest();
-      if (!mounted) return;
+      if (!mounted || !identical(_currentAccount, account)) return;
       await AppNavigator.resetTo<void>(context, AppRoute.login);
     } on AccountException {
-      if (mounted) _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+      if (mounted && identical(_currentAccount, account)) {
+        _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -358,6 +662,11 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _withdrawResearchConsent(String expectedOwnerId) async {
     final consent = _researchConsent;
     if (consent == null || _busy || _syncBusy) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), dependencies) &&
+        identical(_researchConsent, consent);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -380,7 +689,7 @@ class _SettingScreenState extends State<SettingScreen> {
         ],
       ),
     );
-    if (!mounted) return;
+    if (!current()) return;
     if (confirmed != true) {
       setState(() {
         _researchStatus = consent.load();
@@ -392,7 +701,7 @@ class _SettingScreenState extends State<SettingScreen> {
       final withdrawn = await consent.withdraw(
         expectedOwnerId: expectedOwnerId,
       );
-      if (mounted) {
+      if (current()) {
         setState(() {
           _researchStatus = consent.load();
         });
@@ -401,7 +710,7 @@ class _SettingScreenState extends State<SettingScreen> {
         }
       }
     } catch (_) {
-      if (mounted) {
+      if (current()) {
         setState(() {
           _researchStatus = consent.load();
         });
@@ -414,6 +723,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
   Future<void> _runSync() async {
     final trigger = _syncTrigger;
+    final generation = _syncRequestGeneration;
     if (trigger == null || _syncBusy) return;
     setState(() {
       _syncBusy = true;
@@ -429,7 +739,11 @@ class _SettingScreenState extends State<SettingScreen> {
           'ตรวจสอบการซิงก์ออนไลน์ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ '
           'โปรดลองใหม่ภายหลัง';
     }
-    if (!mounted) return;
+    if (!mounted ||
+        generation != _syncRequestGeneration ||
+        !identical(trigger, _syncTrigger)) {
+      return;
+    }
     setState(() {
       _syncBusy = false;
       _syncStatus = status;
@@ -487,6 +801,24 @@ class _SettingScreenState extends State<SettingScreen> {
     AppNavigator.pushPage<void>(
       context,
       AppPage<void>(name: name, builder: (_) => page),
+    );
+  }
+
+  void _openAccountDeletion(
+    AccountDeletionUseCases deletion,
+    AccountUseCases? account,
+    String? uid,
+  ) {
+    if (account == null ||
+        uid == null ||
+        !_isCurrentAccount(account, uid) ||
+        !identical(_currentDeletion, deletion)) {
+      _show('บัญชีเปลี่ยนแล้ว กรุณาเปิดการตั้งค่าอีกครั้ง');
+      return;
+    }
+    _openSettingsPage(
+      'account/delete',
+      AccountDeletionScreen(useCases: deletion),
     );
   }
 
@@ -640,10 +972,15 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final account = _account;
+    final study = AppDependenciesScope.maybeOf(context)?.studyPreferences;
     final session = _account?.currentSession;
     final isRegistered = session != null && !session.isAnonymous;
-    return Scaffold(
-      appBar: AppBar(title: const Text('ตั้งค่า')),
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: !_busy && !_calendarSaving,
+        title: const Text('ตั้งค่า'),
+      ),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.proseMaxWidth,
         child: ListView(
@@ -692,6 +1029,7 @@ class _SettingScreenState extends State<SettingScreen> {
                       ),
               ),
             ),
+            if (_calendarVisible) _homeCalendarCard(),
             if (_researchConsent != null)
               FutureBuilder(
                 future: _researchStatus,
@@ -862,12 +1200,20 @@ class _SettingScreenState extends State<SettingScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _busy || _syncBusy
                       ? null
-                      : () => _openSettingsPage(
-                          'account/delete',
-                          AccountDeletionScreen(useCases: deletion),
+                      : () => _openAccountDeletion(
+                          deletion,
+                          account,
+                          session.uid,
                         ),
                 ),
             ],
+            if (study != null)
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('วิธีเรียนและวันเป้าหมาย'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _busy ? null : () => showStudyPreferences(context),
+              ),
             _sectionTitle('ข้อมูลและผู้ช่วยการเรียน'),
             Card(
               child: Column(
@@ -964,6 +1310,7 @@ class _SettingScreenState extends State<SettingScreen> {
         ),
       ),
     );
+    return PopScope(canPop: !_busy && !_calendarSaving, child: scaffold);
   }
 }
 

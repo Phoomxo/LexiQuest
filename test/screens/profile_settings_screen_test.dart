@@ -9,9 +9,51 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
+  for (final status in [
+    StreakFoldStatus.pending,
+    StreakFoldStatus.unavailable,
+  ]) {
+    testWidgets('profile does not present unsettled streak as zero: $status', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProfileSettingsScreen(
+            loader: () async => _streakProgress(status),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('รอตรวจวันเรียน'), findsOneWidget);
+      expect(find.text('0 วัน'), findsNothing);
+      expect(find.text('7 วัน'), findsNothing);
+      expect(find.text('42'), findsOneWidget);
+    });
+  }
+
+  testWidgets(
+    'profile reads the same current headline as the learning calendar',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProfileSettingsScreen(
+            loader: () async => _streakProgress(StreakFoldStatus.ready),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('6 วัน'), findsOneWidget);
+      expect(find.text('9 วัน'), findsNothing);
+      expect(
+        find.text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'),
+        findsOneWidget,
+      );
+    },
+  );
   testWidgets('announces profile loading state', (tester) async {
     final pending = Completer<ProgressSnapshot>();
     await tester.pumpWidget(
@@ -40,7 +82,7 @@ void main() {
     expect(find.text('7 วัน'), findsOneWidget);
     expect(find.text('10'), findsOneWidget);
     expect(find.text('ระดับจากคะแนนประสบการณ์'), findsOneWidget);
-    expect(find.text('แสดงเฉพาะคะแนนจากคำตอบที่บันทึกจริง'), findsOneWidget);
+    expect(find.text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'), findsOneWidget);
     expect(find.textContaining('วิธีคำนวณรุ่น'), findsNothing);
     expect(find.textContaining('Khun Phet'), findsNothing);
   });
@@ -224,6 +266,39 @@ Future<void> _openProfile(
   );
   await tester.pumpAndSettle();
 }
+
+ProgressSnapshot _streakProgress(StreakFoldStatus status) => ProgressSnapshot(
+  ownerId: 'synthetic-owner',
+  asOfUtc: DateTime.utc(2026, 11, 10),
+  sampleSize: 10,
+  correctCount: 8,
+  wrongCount: 2,
+  accuracy: 0.8,
+  totalXp: 42,
+  completedSessions: 2,
+  streakDays: 7,
+  dueReviewCount: 0,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 3,
+  skills: const [],
+  weaknesses: const [],
+  recommendations: const [],
+  learningDays: StreakFoldResult(
+    state: const StreakState(
+      ownerId: 'synthetic-owner',
+      currentStreakDays: 9,
+      longestStreakDays: 12,
+      freezeCount: 1,
+      lastLearnedAtUtcMs: null,
+      updatedAtUtcMs: 1,
+    ),
+    currentStreakDays: 6,
+    days: const [],
+    status: status,
+    uncertainHistory: false,
+  ),
+);
 
 const _progress = ProgressSnapshot(
   sampleSize: 10,

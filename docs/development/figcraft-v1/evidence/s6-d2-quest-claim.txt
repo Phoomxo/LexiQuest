@@ -1,0 +1,66 @@
+S6-D2 local Quest reconstruction and explicit claim
+2026-11-14; branch codex/figcraft-flutter-prototype; parent fd22b778.
+The commit containing this receipt identifies the verified source.
+
+Final frozen checks (Windows working-file bytes):
+  flutter analyze --no-pub: no issues, exit0, 8.0s.
+  flutter test --no-pub --reporter expanded: 2021 passed, exit0, 09:21.
+  All550 declared inputs identical before/after; manifest s6-d2-inputs.tsv.
+  SHA256 6564d08ec94c944ede1e45e101427f51f4ba241b8632efd3734338c4519fe8e7
+  Raw full log build/s6-d2-full-regression.txt
+  SHA256 b37951391c1f0879878aa8c61cbc26e90f5ae4e27124ea1b7d9cf88fcb66573a
+  Raw analysis build/s6-d2-final-analyze.txt
+  SHA256 ca5945fc3eb09d1e3cb5aa3c6db88c938b894835f34ef9ef95f7140fb14b03d8
+  Final formatter: 2 files, zero changes. Earlier24-file format changed8 files.
+  Initial analysis18 style/import diagnostics were corrected before this run.
+
+Observed REDs before implementation/correction:
+  Reader/claim27 failed; support30 passed/13 failed; snapshot5 failed;
+  owner-bound application claim3 failed after correcting a test import.
+  Canonical receipt issue time, backward-clock replay and renamed XP identity:
+  0 passed/3 failed, build/s6-d2-issued-provenance-red.txt
+  SHA256 3c18c648dd4b89e52a10f12207930766d22c050faa06ef827cdc618ac906f683
+  A real answer ID equalling its earlier receipt ID: 0 passed/1 failed,
+  build/s6-d2-polymorphic-source-red.txt
+  SHA256 45d84b23d06d1036409c888832f85bf053bcd496c89116d1d634f737f6a24623
+  Combined component/application/bootstrap124 passed before the final
+  source-kind guard correction; final complete claim23 passed afterward.
+  Both are included in the final2021 pass on identical declared inputs.
+
+Behavior covered:
+  Read-only virtual current daily/weekly cards and real historical periods;
+  distinct same-ms answer IDs, target-th completion, LAST-segment expiry,
+  closed completed claims, original pending repair and authored archive pins.
+  NULL/unavailable evidence never gains retrospective eligibility.
+  Exact-compatible unmaterialized3+2 merge; straddling conflicts; retained
+  one/both paid origins; late facts preserve the original issued proof.
+  One SQLite claim transaction materializes period/aliases, immutable receipt
+  and XP through DriftLearningProjectionRebuilder. Fault injection at each
+  write boundary, file reopen, two connections, replay and owner fences.
+  Canonical proof binds issued time; already paid replay survives a clock
+  before the original facts. Unpaid qualification still excludes future facts.
+  XP repair checks full provenance and rejects renamed Quest grant identities;
+  polymorphic ordinary-answer source IDs remain valid. No extra coin grant.
+  Actual bootstrap: same three Quest gates/catalog; hidden pipeline absent;
+  optional catalog failure preserves learning with explicit unavailability;
+  five real correct answers => XP5/coins5; explicit claim => XP55/coins5.
+  Progress aggregates and Quest share one owner/asOf read transaction; a real
+  second connection proves the old mixed-snapshot defect and the correction.
+  Legacy mutable Quest APIs and disconnected answer hook retired; meaningful
+  assertions moved to real answer/read/claim integration. Shadow/research
+  contracts and the Streak hook remain unchanged in this unit.
+
+Review disposition:
+  Independent reader, claim/XP and application source reviews accepted the
+  corrected shape. Root inspected the diff and observed all cited test runs.
+  No schema, backend, dependency, frozen envelope or reward authority added.
+  Seven pre-existing platform EOL files and failure images are excluded.
+
+Limits:
+  This is a local engineering unit, not completed S6/S1-S7 or UI acceptance.
+  D3 Streak/Settings, D4 Mastery/Profile, catalogue reconciliation, final
+  APK/current-source native/accessibility and exact-head CI remain required.
+  Earlier D1 CI success is recorded separately in ci-fd22b778.txt.
+  Known-object vivo accuracy is not_checked; user cannot arrange the object.
+  Emulator install acknowledgement remains uncertain; no duplicate write.
+  No merge, deploy, real enrollment/upload or live account deletion.

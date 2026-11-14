@@ -1,126 +1,114 @@
 import '../../identity/domain/local_owner_repository.dart';
 import '../data/drift_streak_repository.dart';
 import '../domain/streak_policy.dart';
+import '../domain/timezone_policy.dart';
 
 typedef StreakUtcNow = DateTime Function();
 
-/// Application façade for streak tracking.
-///
-/// **Responsibilities:**
-/// - On each learning session: evaluate the streak impact via [StreakPolicy]
-///   and persist both the [StreakState] and a [LearningDayLog] entry.
-/// - On demand: return the current [StreakState].
-/// - On request: consume a freeze token to protect an at-risk streak.
-///
-/// All methods are idempotent when called multiple times for the same
-/// learning day.
 final class StreakUseCases {
-  StreakUseCases({
+  const StreakUseCases({
     required this.repository,
     required this.owners,
     required this.nowUtc,
-    required this.timezoneId,
+    this.onSettled,
   });
 
   final DriftStreakRepository repository;
   final LocalOwnerRepository owners;
   final StreakUtcNow nowUtc;
+  final void Function()? onSettled;
 
-  /// IANA timezone identifier, e.g. `'Asia/Bangkok'`.
-  final String timezoneId;
-
-  // ISO date formatter: 'YYYY-MM-DD'
-  static String _formatDay(DateTime utcMidnight) {
-    final y = utcMidnight.year.toString().padLeft(4, '0');
-    final m = utcMidnight.month.toString().padLeft(2, '0');
-    final d = utcMidnight.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
-
-  // ── Public API ─────────────────────────────────────────────────────────────
-
-  /// Record that the current owner completed a learning session and return
-  /// the resulting [StreakUpdate].
-  ///
-  /// Safe to call multiple times for the same day — [StreakOutcome.sameDay]
-  /// is returned for subsequent calls with no DB writes beyond the first.
-  Future<StreakUpdate> recordLearningDay() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final nowMs = now.millisecondsSinceEpoch;
-
-    final current = await repository.getOrCreate(owner.id, nowMs);
-    final update = StreakPolicy.evaluate(
-      current: current,
-      nowUtc: now,
-      timezoneId: timezoneId,
+  Future<StreakFoldResult> settle({required String expectedOwnerId}) async {
+    await _requireOwner(expectedOwnerId);
+    final result = await repository.settle(
+      expectedOwnerId: expectedOwnerId,
+      asOfUtc: _now(),
     );
-
-    if (update.changed) {
-      final updated = update.after.copyWith(updatedAtUtcMs: nowMs);
-      await repository.save(updated);
+    await _requireOwner(expectedOwnerId);
+    if (result.status == StreakFoldStatus.ready) {
+      onSettled?.call();
     }
+    return result;
+  }
 
-    // Always record learning day (insertOrIgnore — idempotent).
-    final dayLabel = _formatDay(update.learningDay);
-    await repository.recordLearningDay(
+  Future<void> afterAnswerCommitted({
+    required String ownerId,
+    required String attemptId,
+    required int occurredAtUtcMs,
+  }) async {
+    await _requireOwner(ownerId);
+    final result = await repository.settle(
+      expectedOwnerId: ownerId,
+      asOfUtc: _now(),
+      answer: (attemptId: attemptId, occurredAtUtcMs: occurredAtUtcMs),
+    );
+    await _requireOwner(ownerId);
+    if (result.status == StreakFoldStatus.ready) {
+      onSettled?.call();
+    }
+  }
+
+  Future<bool> useFreezeToken({
+    required String expectedOwnerId,
+    required String commandId,
+  }) async {
+    await _requireOwner(expectedOwnerId);
+    final result = await repository.debitFreezeToken(
+      expectedOwnerId: expectedOwnerId,
+      commandId: commandId,
+      occurredAtUtc: _now(),
+    );
+    await _requireOwner(expectedOwnerId);
+    if (result) {
+      onSettled?.call();
+    }
+    return result;
+  }
+
+  Future<OwnerCalendarRule> selectHomeTimezone({
+    required String expectedOwnerId,
+    required String ianaId,
+  }) async {
+    await _requireOwner(expectedOwnerId);
+    final result = await repository.selectHomeTimezone(
+      expectedOwnerId: expectedOwnerId,
+      ianaId: ianaId,
+      occurredAtUtc: _now(),
+    );
+    await _requireOwner(expectedOwnerId);
+    onSettled?.call();
+    return result;
+  }
+
+  Future<
+    ({String ownerId, OwnerCalendarRule current, OwnerCalendarRule? pending})
+  >
+  loadCalendar() async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final result = await repository.previewCalendarSchedule(
       ownerId: owner.id,
-      learningDay: dayLabel,
-      firstSessionAtUtcMs: nowMs,
+      asOfUtc: _now(),
     );
-
-    return update;
+    await _requireOwner(owner.id);
+    return (
+      ownerId: owner.id,
+      current: result.current,
+      pending: result.pending,
+    );
   }
 
-  /// Return the current [StreakState] for the active owner.
-  Future<StreakState> getCurrentStreak() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    return repository.getOrCreate(owner.id, now.millisecondsSinceEpoch);
+  Future<void> _requireOwner(String expectedOwnerId) async {
+    if (expectedOwnerId.isEmpty ||
+        (await owners.getOrCreateActiveOwner()).id != expectedOwnerId) {
+      throw StateError('Streak owner changed');
+    }
   }
-
-  /// Consume one freeze token to protect the current streak.
-  ///
-  /// Returns `true` if a token was consumed, `false` if none were available.
-  Future<bool> useFreezeToken() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    if (current.freezeCount <= 0) return false;
-    final updated = current.copyWith(
-      freezeCount: current.freezeCount - 1,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return true;
-  }
-
-  /// Grant [count] freeze tokens to the active owner (called by reward
-  /// pipeline when a daily/weekly quest is completed).
-  Future<StreakState> grantFreezeTokens(int count) async {
-    assert(count > 0, 'count must be positive');
-    final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    final updated = current.copyWith(
-      freezeCount: current.freezeCount + count,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return updated;
-  }
-
-  // ── Private ────────────────────────────────────────────────────────────────
 
   DateTime _now() {
     final value = nowUtc();
-    if (!value.isUtc) throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
+    if (!value.isUtc || value.microsecondsSinceEpoch < 0) {
+      throw ArgumentError.value(value, 'nowUtc', 'must be nonnegative UTC');
+    }
     return value;
   }
 }

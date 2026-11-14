@@ -1,0 +1,12 @@
+Completed GitHub Actions for S6-D2.
+Commit e1d7a5e9f15a0a0bd5d267480aa2e000a56b2e3e
+Run https://github.com/Phoomxo/LexiQuest/actions/runs/43554193770
+Conclusion SUCCESS, exact commit read back from API and full raw log.
+
+Flutter2021 passed; full analysis/format/CLI/Firestore/Supabase passed.
+Voice55, AI107 and LexiQuest-LM75 CPU tests passed; Android debug build passed.
+Raw log build/ci-e1d7a5e9-success.txt
+SHA256 c3b43df8df6c0c656285b64d7ce892f9205c48f80fd8d53e1c80e5fb6778f594
+
+This verifies committed D2, not dirty D3 Streak/calendar/application work.
+Native v29 remains earlier-source evidence. No D2 device install is claimed.

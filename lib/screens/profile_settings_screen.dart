@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'study_preferences_panel.dart';
 
 import '../config/m3_theme.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/motivation/domain/streak_policy.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 
 typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
@@ -15,11 +20,13 @@ class ProfileSettingsScreen extends StatefulWidget {
     this.loader,
     this.account,
     this.onOpenMenu,
+    this.isActive = true,
   });
 
   final ProfileProgressLoader? loader;
   final AccountUseCases? account;
   final VoidCallback? onOpenMenu;
+  final bool isActive;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -29,6 +36,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<ProgressSnapshot>? _load;
   ProfileProgressLoader? _loader;
   AccountUseCases? _account;
+  String? _accountUid;
+  ValueListenable<int>? _progressUpdates;
+
+  AccountUseCases? get _currentAccount =>
+      widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
 
   ProfileProgressLoader? get _currentLoader =>
       widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
@@ -36,9 +48,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _account ??=
-        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
-    if (_load == null || _currentLoader != _loader) {
+    _bindSources();
+  }
+
+  void _bindSources({bool reload = false}) {
+    final updates = AppDependenciesScope.maybeOf(context)?.progressUpdates;
+    final updatesChanged = !identical(updates, _progressUpdates);
+    if (updatesChanged) {
+      _progressUpdates?.removeListener(_refresh);
+      _progressUpdates = updates;
+      updates?.addListener(_refresh);
+    }
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    final accountChanged = !identical(_account, account) || _accountUid != uid;
+    _account = account;
+    _accountUid = uid;
+    if (reload ||
+        updatesChanged ||
+        _load == null ||
+        _currentLoader != _loader ||
+        accountChanged) {
       _load = _loadProgress();
     }
   }
@@ -46,7 +76,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didUpdateWidget(ProfileSettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loader != widget.loader) _load = _loadProgress();
+    _bindSources(reload: widget.isActive && !oldWidget.isActive);
   }
 
   Future<ProgressSnapshot> _loadProgress() {
@@ -68,12 +98,25 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _progressUpdates?.removeListener(_refresh);
+    super.dispose();
+  }
+
   Future<void> _editName() async {
-    final account = _account;
-    if (account == null) return;
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    if (account == null || uid == null) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => _EditDisplayNameDialog(account: account),
+      builder: (_) => _EditDisplayNameDialog(
+        account: account,
+        isCurrent: () =>
+            mounted &&
+            identical(_currentAccount, account) &&
+            account.currentSession?.uid == uid,
+      ),
     );
     if (mounted) setState(() {});
   }
@@ -100,6 +143,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
         child: FutureBuilder<ProgressSnapshot>(
+          key: ValueKey((_account, _accountUid, _loader)),
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -128,6 +172,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               );
             }
             final progress = snapshot.data!;
+            final dependencies = AppDependenciesScope.maybeOf(context);
+            final learningDaysVisible =
+                (dependencies?.features.isVisible(Feature.mastery) ?? true) &&
+                (dependencies?.fieldFeatures.isVisible(FieldFeature.mastery) ??
+                    true);
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -150,6 +199,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                 ),
+                if (dependencies?.studyPreferences != null)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.flag_outlined),
+                      title: const Text('วิธีเรียนและวันเป้าหมาย'),
+                      subtitle: const Text('เลือกสิ่งที่อยากฝึก หรือข้ามได้'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => showStudyPreferences(context),
+                    ),
+                  ),
                 if (account != null)
                   TextButton.icon(
                     onPressed: _editName,
@@ -158,10 +217,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 const SizedBox(height: 8),
                 _Metric(label: 'คะแนนประสบการณ์', value: '${progress.totalXp}'),
-                _Metric(
-                  label: 'เรียนต่อเนื่อง',
-                  value: '${progress.streakDays} วัน',
-                ),
+                if (learningDaysVisible)
+                  _Metric(
+                    label: 'เรียนต่อเนื่อง',
+                    value:
+                        progress.learningDays != null &&
+                            progress.learningDays!.status !=
+                                StreakFoldStatus.ready
+                        ? 'รอตรวจวันเรียน'
+                        : '${progress.streakDays} วัน',
+                  ),
                 _Metric(
                   label: 'ระดับจากคะแนนประสบการณ์',
                   value: '${progress.gameLevel}',
@@ -176,7 +241,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text('แสดงเฉพาะคะแนนจากคำตอบที่บันทึกจริง'),
+                  child: Text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'),
                 ),
               ],
             );
@@ -188,9 +253,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 }
 
 class _EditDisplayNameDialog extends StatefulWidget {
-  const _EditDisplayNameDialog({required this.account});
+  const _EditDisplayNameDialog({
+    required this.account,
+    required this.isCurrent,
+  });
 
   final AccountUseCases account;
+  final bool Function() isCurrent;
 
   @override
   State<_EditDisplayNameDialog> createState() => _EditDisplayNameDialogState();
@@ -205,13 +274,23 @@ class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
 
   Future<void> _save() async {
     if (_busy) return;
+    if (!widget.isCurrent()) {
+      setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await widget.account.updateDisplayName(_name.text);
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        if (widget.isCurrent()) {
+          Navigator.pop(context);
+        } else {
+          setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+        }
+      }
     } on AccountException catch (error) {
       if (mounted) {
         setState(

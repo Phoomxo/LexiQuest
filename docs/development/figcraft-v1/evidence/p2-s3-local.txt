@@ -1,0 +1,54 @@
+P2 visual roles and S3/S5 scope/navigation integration
+Date: 2026-11-14. Worktree: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
+Branch: codex/figcraft-flutter-prototype. Integration parent: 069ab0156190d6f89d28c0b4df7450f0abb39b98.
+
+Verified final source, not a sum of focused runs:
+flutter analyze --no-pub: no issues, build/p2-s3-final-analyze-v2.txt.
+flutter test --no-pub --reporter expanded: 1903 passed, build/p2-s3-full-test-final.txt.
+dart format: 26 changed/new Dart files, zero changes.
+Flutter3.44.7 stable, framework84fc5cbb223bc12f83d65b647ff8a56caf779ffd, Dart3.12.2, Windows.
+
+All 517 lib/test/assets/package/analysis input files were hashed before and after.
+Changed inputs: zero. p2-s3-inputs.tsv preserves the same517 records with canonical
+LF endings; source leaf hashes describe the Windows working bytes under test.
+Raw Windows before/after map SHA256: 0c69d935b9d228248e06279b6d82b276fe214737879a9ef4b9dfad0d4bfaf2ff
+Canonical committed manifest SHA256: 85c577f74228daeb787d3373b3883819a1eb275e35d558184a75ff8c9cf6f1cc
+Full test log SHA256: 32f745d680c8252305e37955f76a49e3d71d27862e3a1e8f9e911122ec961def
+Analysis log SHA256: 2469eef80b119a80847b34ba1bb187b74dea29b07eeb49434226add15c51978d
+
+Accepted changes:
+- Pinned FigCraft palette/type/spacing on Home/Library, growable 48dp controls,
+  and one lazy library scroll body at landscape200%. Actual Windows Home and
+  Quiz feedback images were opened before normal golden updates. Thai buttons
+  inherit the theme font. These widget renders are not Android evidence.
+- Current authority replaces root library data; selected routes and stale
+  menus/edit/delete/retry/search callbacks reject replaced owner/category/scope.
+- A Quiz with one distinct meaning offers an honest Add Word/back path instead
+  of assessment/rewards. Normal creation returns through the existing writer;
+  a real saved second meaning can resume original A without borrowing B.
+- Score removes original artifacts on scope replacement/removal and fences old
+  repair/return actions. Quiz freezes origin, learning, mistakes and generation;
+  Source/history labels name the actual return destination.
+- Weakness drops old snapshots/callbacks; account tab refreshes actual persisted
+  metrics on activation without duplicate reads on unrelated rebuilds.
+- Actual MyApp logout: Back during pending signOut cannot dispose Settings
+  before the existing login reset. Failure rolls back to A and unlocks Back.
+  Synthetic tests preserve A rows and verify the new guest has no learning writes.
+
+RED evidence preceded fixes, including library-scope-landscape-red-and-quiz-green,
+stable-library-root-delete-and-edit-red, score-and-weakness-red-layout,
+score-presentation-red-library-green, profile-refresh-valid-red and
+logout-back-valid-red-v4 logs in build/. The first full run passed1902 and failed
+only Source Voice repair's wrong return label. Existing failing assertions stayed;
+source-return-label-green passed9 before the final full1903 run.
+
+Independent reviews: library/P2/Score by design_critic; Weakness/Profile by
+ground_routes; S3/Settings/final return-label delta by s1_tests. All accepted.
+The proposed profile-clamp stale-metric defect was disproven by the refined
+behavior check; no production clamp change was made.
+
+Limits: current-head CI/Linux renders, new-source APK/native images and complete
+TalkBack coverage remain separate pending checks. Installed v28/native camera
+milestone belongs to08ce39bc. Known-object accuracy remains not_checked; the user
+cannot position an object. Research/default-off and live deletion boundaries
+remain in place. This subcard does not complete all48/44/64 or S1–S7.

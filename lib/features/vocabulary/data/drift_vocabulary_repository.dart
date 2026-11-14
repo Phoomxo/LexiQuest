@@ -10,8 +10,101 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   DriftVocabularyRepository(this.database);
 
   static const int categoryWordLimit = 50;
+  static const int searchWordLimit = 50;
 
   final db.AppDatabase database;
+
+  @override
+  Stream<List<VocabularyCategorySummary>> watchLibrary(String ownerId) {
+    final categories = database.vocabularyCategories;
+    final words = database.vocabularyWords;
+    final query =
+        database.select(categories).join([
+            leftOuterJoin(
+              words,
+              words.categoryId.equalsExp(categories.id) &
+                  words.ownerId.equals(ownerId) &
+                  words.isDeleted.equals(false),
+              useColumns: false,
+            ),
+          ])
+          ..addColumns([words.spelling])
+          ..where(
+            categories.ownerId.equals(ownerId) &
+                categories.isDeleted.equals(false),
+          )
+          ..orderBy([
+            OrderingTerm.asc(categories.sortOrder),
+            OrderingTerm.asc(categories.normalizedName),
+            OrderingTerm.asc(categories.id),
+            OrderingTerm.asc(words.normalizedSpelling),
+            OrderingTerm.asc(words.id),
+          ]);
+    return query.watch().map((rows) {
+      final grouped =
+          <String, ({VocabularyCategory category, List<String> spellings})>{};
+      for (final row in rows) {
+        final category = _categoryToDomain(row.readTable(categories));
+        final entry = grouped.putIfAbsent(
+          category.id,
+          () => (category: category, spellings: []),
+        );
+        final spelling = row.read(words.spelling);
+        if (spelling != null) entry.spellings.add(spelling);
+      }
+      return [
+        for (final entry in grouped.values)
+          VocabularyCategorySummary(
+            category: entry.category,
+            wordCount: entry.spellings.length,
+            previewSpellings: List.unmodifiable(
+              entry.spellings.toSet().take(3),
+            ),
+          ),
+      ];
+    });
+  }
+
+  @override
+  Stream<List<VocabularyWord>> searchWords(
+    String ownerId,
+    String normalizedQuery,
+  ) {
+    if (normalizedQuery.isEmpty) return Stream.value(const []);
+    final words = database.vocabularyWords;
+    final categories = database.vocabularyCategories;
+    final escaped = normalizedQuery
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
+    final pattern = '%$escaped%';
+    final query =
+        database.select(words).join([
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equals(ownerId) &
+                  categories.isDeleted.equals(false),
+              useColumns: false,
+            ),
+          ])
+          ..where(
+            words.ownerId.equals(ownerId) &
+                words.isDeleted.equals(false) &
+                (words.normalizedSpelling.like(pattern, escapeChar: r'\') |
+                    words.normalizedMeaning.like(pattern, escapeChar: r'\')),
+          )
+          ..orderBy([
+            OrderingTerm.asc(words.normalizedSpelling),
+            OrderingTerm.asc(words.id),
+          ])
+          ..limit(searchWordLimit);
+    return query.watch().map(
+      (rows) => rows
+          .map((row) => _wordToDomain(row.readTable(words)))
+          .toList(growable: false),
+    );
+  }
 
   @override
   Stream<List<VocabularyCategory>> watchCategories(String ownerId) {
@@ -42,6 +135,62 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       (rows) => rows.map(_wordToDomain).toList(growable: false),
     );
   }
+
+  @override
+  Stream<List<VocabularyWord>> watchBookmarkedWords(String ownerId) {
+    final words = database.vocabularyWords;
+    final categories = database.vocabularyCategories;
+    final query =
+        database.select(words).join([
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equals(ownerId) &
+                  categories.isDeleted.equals(false),
+              useColumns: false,
+            ),
+          ])
+          ..where(
+            words.ownerId.equals(ownerId) &
+                words.isDeleted.equals(false) &
+                words.isBookmarked.equals(true),
+          )
+          ..orderBy([
+            OrderingTerm.asc(words.normalizedSpelling),
+            OrderingTerm.asc(words.id),
+          ]);
+    return query.watch().map(
+      (rows) => List.unmodifiable(
+        rows.map((row) => _wordToDomain(row.readTable(words))),
+      ),
+    );
+  }
+
+  @override
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  }) => database.transaction(() async {
+    final active = await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).get();
+    if (active.length != 1 || active.single.id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+    final word = await _activeWord(expectedOwnerId, wordId);
+    if (word == null ||
+        await _activeCategory(expectedOwnerId, word.categoryId) == null) {
+      throw const VocabularyNotFoundFailure();
+    }
+    if (word.isBookmarked != bookmarked) {
+      await (database.update(database.vocabularyWords)..where(
+            (row) =>
+                row.id.equals(wordId) & row.ownerId.equals(expectedOwnerId),
+          ))
+          .write(db.VocabularyWordsCompanion(isBookmarked: Value(bookmarked)));
+    }
+  });
 
   @override
   Future<VocabularyCategory> createCategory(VocabularyCategory category) async {
@@ -290,6 +439,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         nowUtc: word.updatedAtUtc,
       );
       return word.copyWith(
+        isBookmarked: current.isBookmarked,
         localRevision: revision,
         updatedAtUtc: word.updatedAtUtc,
       );
@@ -459,6 +609,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       cefrLevel: row.cefrLevel,
       source: row.source,
       isGlobal: row.isGlobal,
+      isBookmarked: row.isBookmarked,
       localRevision: row.localRevision,
       isDeleted: row.isDeleted,
       createdAtUtc: _fromEpoch(row.createdAtUtcMs),

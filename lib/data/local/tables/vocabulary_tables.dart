@@ -44,6 +44,7 @@ class VocabularyWords extends Table {
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   IntColumn get createdAtUtcMs => integer()();
   IntColumn get updatedAtUtcMs => integer()();
+  BoolColumn get isBookmarked => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

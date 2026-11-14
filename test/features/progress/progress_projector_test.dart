@@ -2,13 +2,19 @@ import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
+import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 
 void main() {
+  setUpAll(tz.initializeTimeZones);
   late AppDatabase database;
   late DriftLearningRepository learning;
   late DriftProgressQueries progress;
@@ -104,11 +110,298 @@ void main() {
   }
 
   test(
+    'streak progress reads both Bangkok civil days inside one UTC date',
+    () async {
+      await database.customStatement(
+        "INSERT INTO owner_calendar_epochs(rule_id,owner_id,origin_owner_id,effective_utc_us,iana_id,tzdb_revision,is_selected) VALUES ('bkk','owner-1','owner-1',1000,'Asia/Bangkok',?,1)",
+        [bundledTzdbRevision],
+      );
+      await startSession();
+      for (final (i, minute) in [(1, 59), (2, 61)]) {
+        await learning.recordAnswer(
+          RecordAnswerCommand(
+            id: 'bkk-$i',
+            ownerId: 'owner-1',
+            sessionId: 'session-owner-1',
+            wordId: 'word-1',
+            promptMode: 'meaningChoice',
+            isCorrect: i == 1,
+            responseTimeMs: 100,
+            attemptNumber: i,
+            occurredAtUtc: DateTime.utc(2026, 7, 30, 16, minute),
+          ),
+        );
+      }
+      final before = await _databaseSnapshot(database);
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 18),
+      );
+      expect(result.streakDays, 2);
+      expect(result.learningDays?.currentStreakDays, result.streakDays);
+      expect(result.learningDays?.status, StreakFoldStatus.pending);
+      expect(
+        result.learningDays!.days.where((d) => d.studied).map((d) => d.day),
+        [DateTime.utc(2026, 7, 30), DateTime.utc(2026, 7, 31)],
+      );
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'streak progress preserves legacy UTC attendance and isolates unavailable calendar evidence',
+    () async {
+      await startSession();
+      await record('meaningChoice', true);
+      await database.customStatement(
+        'UPDATE answer_attempts SET calendar_evidence=NULL',
+      );
+      final legacy = await load();
+      expect(legacy.learningDays?.uncertainHistory, true);
+      expect(legacy.streakDays, 1);
+      expect(legacy.learningDays?.currentStreakDays, 1);
+      await database.customStatement(
+        "UPDATE answer_attempts SET calendar_evidence='broken'",
+      );
+      final broken = await load();
+      expect(broken.learningDays?.status, StreakFoldStatus.unavailable);
+      expect(
+        (broken.sampleSize, broken.totalXp, broken.correctCount),
+        (1, 1, 1),
+      );
+      expect(broken.streakDays, broken.learningDays?.currentStreakDays);
+    },
+  );
+
+  Future<void> addSecondCategory() async {
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-b',
+            ownerId: 'owner-1',
+            name: 'Kitchen',
+            normalizedName: 'kitchen',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-b',
+            ownerId: 'owner-1',
+            categoryId: 'category-b',
+            spelling: 'plate',
+            normalizedSpelling: 'plate',
+            meaning: 'จาน',
+            normalizedMeaning: 'จาน',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+  }
+
+  Future<void> completeCategorySession(
+    String id,
+    List<(String, bool)> answers,
+    int minute,
+  ) async {
+    final start = DateTime.utc(2026, 7, 30, 10, minute);
+    await learning.startSession(
+      LearningSessionDraft(
+        id: id,
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: start,
+        appVersion: 'test',
+        buildId: 'test',
+      ),
+    );
+    for (var index = 0; index < answers.length; index++) {
+      await learning.recordAnswer(
+        RecordAnswerCommand(
+          id: '$id:attempt:$index',
+          ownerId: 'owner-1',
+          sessionId: id,
+          wordId: answers[index].$1,
+          promptMode: 'meaningChoice',
+          isCorrect: answers[index].$2,
+          responseTimeMs: 500,
+          attemptNumber: index + 1,
+          occurredAtUtc: start.add(Duration(seconds: index)),
+        ),
+      );
+    }
+    await learning.finishSession(
+      ownerId: 'owner-1',
+      sessionId: id,
+      endedAtUtc: start.add(const Duration(minutes: 1)),
+    );
+  }
+
+  test(
+    'category results keep A and B scores linked to their own saved ids',
+    () async {
+      await addSecondCategory();
+      await completeCategorySession('session-a', [('word-1', false)], 0);
+      await completeCategorySession('session-b', [('word-b', true)], 2);
+      final useCases = ProgressUseCases(
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unused',
+          nowUtc: () => DateTime.utc(2026, 7, 30),
+        ),
+        queries: progress,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      );
+      final before = await _databaseSnapshot(database);
+      final resultA = await useCases.loadLatestSessionForCategory('category-1');
+      final resultB = await useCases.loadLatestSessionForCategory('category-b');
+      expect(resultA!.summary.id, 'session-a');
+      expect(resultA.summary.score, 0);
+      expect(resultA.categoryId, 'category-1');
+      expect(resultA.categoryName, 'Travel');
+      expect(resultB!.summary.id, 'session-b');
+      expect(resultB.summary.score, 100);
+      expect(resultB.categoryId, 'category-b');
+      expect(resultB.categoryName, 'Kitchen');
+      final snapshot = await load();
+      expect(snapshot.recentSessions.map((entry) => entry.categoryName), [
+        'Kitchen',
+        'Travel',
+      ]);
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'category result lookup does not lose A behind twenty newer B rounds',
+    () async {
+      await addSecondCategory();
+      await completeCategorySession('old-a', [('word-1', false)], 0);
+      for (var index = 0; index < 21; index++) {
+        await completeCategorySession('new-b-$index', [
+          ('word-b', true),
+        ], index + 2);
+      }
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(20));
+      expect(
+        snapshot.recentSessions.every(
+          (entry) => entry.categoryId == 'category-b',
+        ),
+        isTrue,
+      );
+      final before = await _databaseSnapshot(database);
+      final result = await progress.loadLatestSessionForCategory(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+      );
+      expect(result!.summary.id, 'old-a');
+      expect(result.summary.score, 0);
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test('mixed and empty rounds have no invented category context', () async {
+    await addSecondCategory();
+    await completeCategorySession('single-a', [('word-1', true)], 0);
+    await completeCategorySession('mixed', [
+      ('word-1', false),
+      ('word-b', true),
+    ], 2);
+    await completeCategorySession('empty', [], 4);
+    for (final id in ['mixed', 'empty']) {
+      final result = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: id,
+      );
+      expect(result!.categoryId, isNull);
+      expect(result.categoryName, isNull);
+    }
+    final latestA = await progress.loadLatestSessionForCategory(
+      ownerId: 'owner-1',
+      categoryId: 'category-1',
+    );
+    expect(latestA!.summary.id, 'single-a');
+    expect(
+      await progress.loadLatestSessionForCategory(
+        ownerId: 'other-owner',
+        categoryId: 'category-1',
+      ),
+      isNull,
+    );
+    expect(
+      await progress.loadLatestSessionForCategory(
+        ownerId: 'owner-1',
+        categoryId: 'missing-category',
+      ),
+      isNull,
+    );
+  });
+
+  test(
+    'category context uses the current owner-matched name without rewriting a result',
+    () async {
+      await completeCategorySession('saved-a', [('word-1', false)], 0);
+      await database.customStatement(
+        'UPDATE vocabulary_categories SET name = ? WHERE id = ?',
+        ['Travel renamed', 'category-1'],
+      );
+      final before = await _databaseSnapshot(database);
+      final renamed = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'saved-a',
+      );
+      expect(renamed!.categoryName, 'Travel renamed');
+      expect(renamed.summary.score, 0);
+      expect(await _databaseSnapshot(database), before);
+
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+          );
+      await database.customStatement(
+        'UPDATE vocabulary_categories SET owner_id = ? WHERE id = ?',
+        ['owner-2', 'category-1'],
+      );
+      final mismatched = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'saved-a',
+      );
+      expect(mismatched!.categoryId, isNull);
+      expect(mismatched.categoryName, isNull);
+      expect(mismatched.summary.wrongCount, 1);
+      expect(
+        await progress.loadLatestSessionForCategory(
+          ownerId: 'owner-1',
+          categoryId: 'category-1',
+        ),
+        isNull,
+      );
+      await database.customStatement(
+        'UPDATE srs_states SET due_at_utc_ms = 1 WHERE word_id = ?',
+        ['word-1'],
+      );
+      final due = await load();
+      expect(due.dueReviewCount, 1);
+      expect(due.nextDueSpelling, 'station');
+      expect(due.nextDueCategoryName, isNull);
+    },
+  );
+
+  test(
     'empty evidence returns sample size zero without invented scores',
     () async {
       final result = await load();
 
       expect(result.sampleSize, 0);
+      expect(result.vocabularyWordCount, 2);
+      expect(result.nextDueSpelling, isNull);
       expect(result.accuracy, isNull);
       expect(result.streakDays, 0);
       expect(result.weaknesses, isEmpty);
@@ -121,6 +414,119 @@ void main() {
         expect(skill.sampleSize, 0);
         expect(skill.accuracy, isNull);
       }
+    },
+  );
+
+  test('home preview excludes other owners and deleted due words', () async {
+    await startSession();
+    await record('meaningChoice', false);
+    await database.customStatement(
+      'UPDATE srs_states SET due_at_utc_ms = 1 WHERE word_id = ?',
+      ['word-1'],
+    );
+    final due = await load();
+    expect(due.dueReviewCount, 1);
+    expect(due.nextDueSpelling, 'station');
+    expect(due.nextDueCategoryName, 'Travel');
+    expect((await load('another-owner')).vocabularyWordCount, 0);
+    expect((await load('another-owner')).nextDueSpelling, isNull);
+
+    await database.customStatement(
+      'UPDATE vocabulary_words SET is_deleted = 1 WHERE id = ?',
+      ['word-1'],
+    );
+    final deleted = await load();
+    expect(deleted.vocabularyWordCount, 1);
+    expect(deleted.dueReviewCount, 0);
+    expect(deleted.nextDueSpelling, isNull);
+  });
+
+  test(
+    'history and saved detail contain only completed owner sessions',
+    () async {
+      await startSession();
+      await record('meaningChoice', false);
+      await learning.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-owner-1',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 11),
+      );
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'pending-owner-1',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 12),
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+          );
+      await startSession('owner-2');
+      await learning.finishSession(
+        ownerId: 'owner-2',
+        sessionId: 'session-owner-2',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 11, 30),
+      );
+
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(1));
+      expect(snapshot.recentSessions.single.summary.id, 'session-owner-1');
+      final before = await _databaseSnapshot(database);
+      final detail = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-owner-1',
+      );
+      expect(detail!.summary.correctCount, 0);
+      expect(detail.summary.wrongCount, 1);
+      expect(detail.summary.score, 0);
+      expect(detail.mistakes.single.id, 'word-1');
+      expect(
+        await progress.loadSession(
+          ownerId: 'owner-1',
+          sessionId: 'session-owner-2',
+        ),
+        isNull,
+      );
+      expect(
+        await progress.loadSession(
+          ownerId: 'owner-1',
+          sessionId: 'pending-owner-1',
+        ),
+        isNull,
+      );
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'history keeps the latest twenty completed sessions in stable order',
+    () async {
+      for (var index = 0; index < 22; index++) {
+        await learning.startSession(
+          LearningSessionDraft(
+            id: 'history-$index',
+            ownerId: 'owner-1',
+            activityType: 'quiz',
+            startedAtUtc: DateTime.utc(2026, 7, 30, 10, index),
+            appVersion: 'test',
+            buildId: 'test',
+          ),
+        );
+        await learning.finishSession(
+          ownerId: 'owner-1',
+          sessionId: 'history-$index',
+          endedAtUtc: DateTime.utc(2026, 7, 30, 11, index),
+        );
+      }
+      final snapshot = await load();
+      expect(snapshot.recentSessions, hasLength(20));
+      expect(snapshot.recentSessions.first.summary.id, 'history-21');
+      expect(snapshot.recentSessions.last.summary.id, 'history-2');
     },
   );
 

@@ -54,8 +54,11 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
 
   @override
   void dispose() {
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
+    if (_ownsVoiceProvider) {
+      _voiceProvider.disposeIfOwned(true);
+    } else {
+      _voiceProvider.stop().ignore();
+    }
     super.dispose();
   }
 

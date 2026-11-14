@@ -123,6 +123,24 @@ final class PurchaseResult {
 
 enum EquipStatus { equipped, alreadyEquipped, replayed }
 
+final class QuestClaimResult {
+  const QuestClaimResult({
+    required this.ownerId,
+    required this.receiptId,
+    required this.canonicalInstanceId,
+    required this.xpAmount,
+    required this.issuedAtUtc,
+    required this.replayed,
+  });
+
+  final String ownerId;
+  final String receiptId;
+  final String canonicalInstanceId;
+  final int xpAmount;
+  final DateTime issuedAtUtc;
+  final bool replayed;
+}
+
 final class EquipResult {
   const EquipResult({required this.status, required this.account});
 
@@ -147,6 +165,8 @@ enum RewardFailureCode {
   ownerChanged,
   notOwned,
   slotMismatch,
+  questUnavailable,
+  questNotClaimable,
 }
 
 final class RewardException implements Exception {

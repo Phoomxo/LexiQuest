@@ -73,6 +73,18 @@ final class VocabularyUseCases {
     ).asyncExpand((owner) => vocabulary.watchCategories(owner.id));
   }
 
+  Stream<List<VocabularyCategorySummary>> watchLibrary() => Stream.fromFuture(
+    owners.getOrCreateActiveOwner(),
+  ).asyncExpand((owner) => vocabulary.watchLibrary(owner.id));
+
+  Stream<List<VocabularyWord>> searchWords(String query) {
+    final normalized = normalizeVocabularyText(query);
+    if (normalized.isEmpty) return Stream.value(const []);
+    return Stream.fromFuture(
+      owners.getOrCreateActiveOwner(),
+    ).asyncExpand((owner) => vocabulary.searchWords(owner.id, normalized));
+  }
+
   Stream<List<VocabularyWord>> watchWords(String categoryId) {
     final canonicalCategoryId = _required(
       categoryId,
@@ -84,7 +96,33 @@ final class VocabularyUseCases {
     );
   }
 
-  Future<VocabularyCategory> createCategory(String name) async {
+  Stream<List<VocabularyWord>> watchBookmarkedWords() => Stream.fromFuture(
+    owners.getOrCreateActiveOwner(),
+  ).asyncExpand((owner) => vocabulary.watchBookmarkedWords(owner.id));
+
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+    await vocabulary.setBookmarked(
+      expectedOwnerId: owner.id,
+      wordId: _required(wordId, 'wordId', maxLength: 256),
+      bookmarked: bookmarked,
+    );
+    if ((await owners.getOrCreateActiveOwner()).id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+  }
+
+  Future<VocabularyCategory> createCategory(
+    String name, {
+    String? expectedOwnerId,
+  }) async {
     final canonicalName = _required(
       name,
       'categoryName',
@@ -92,6 +130,9 @@ final class VocabularyUseCases {
     );
     final now = _currentUtc();
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final created = await vocabulary.createCategory(
       VocabularyCategory(
         id: 'category:${_nextId()}',
@@ -150,8 +191,14 @@ final class VocabularyUseCases {
     onLocalMutation?.call();
   }
 
-  Future<VocabularyWord> createWord(CreateWordCommand command) async {
+  Future<VocabularyWord> createWord(
+    CreateWordCommand command, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final now = _currentUtc();
     final created = await vocabulary.createWord(
       _wordFromInput(

@@ -1,6 +1,9 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../quest/data/drift_quest_progress_reader.dart';
+import '../../quest/data/drift_quest_repository.dart';
 import '../domain/learning_models.dart';
 import '../domain/srs_policy.dart';
 
@@ -8,10 +11,64 @@ final class DriftLearningProjectionRebuilder {
   const DriftLearningProjectionRebuilder(
     this.database, {
     this.srsPolicy = const BinarySm2SrsPolicy(),
+    this.questCatalog,
   });
 
   final db.AppDatabase database;
   final SrsPolicy srsPolicy;
+  final TrustedQuestAnswerCatalog? questCatalog;
+
+  Future<void> rebuildQuestXp(String ownerId) => database.transaction(() async {
+    final receipts = await DriftQuestProgressReader(
+      database,
+      catalog: questCatalog,
+    ).validatedReceipts(ownerId: ownerId);
+    for (final receipt in receipts) {
+      final id = 'points:quest:${receipt.id}';
+      final key = 'quest-claim:${receipt.id}';
+      final conflictingSource =
+          await (database.select(database.pointsLedgerEntries)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.entryType.equals('questClaimXpV1') &
+                      row.sourceEventId.equals(receipt.id) &
+                      (row.id.equals(id).not() |
+                          row.idempotencyKey.equals(key).not()),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (conflictingSource != null) {
+        throw StateError('Conflicting immutable Quest XP provenance');
+      }
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
+            db.PointsLedgerEntriesCompanion.insert(
+              id: id,
+              ownerId: ownerId,
+              idempotencyKey: key,
+              entryType: 'questClaimXpV1',
+              amount: receipt.xpAmount,
+              sourceEventId: Value(receipt.id),
+              occurredAtUtcMs: receipt.issuedAtUtcMs,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+      final row = await (database.select(
+        database.pointsLedgerEntries,
+      )..where((row) => row.id.equals(id))).getSingleOrNull();
+      if (row == null ||
+          row.ownerId != ownerId ||
+          row.idempotencyKey != key ||
+          row.entryType != 'questClaimXpV1' ||
+          row.amount != receipt.xpAmount ||
+          row.sourceEventId != receipt.id ||
+          row.occurredAtUtcMs != receipt.issuedAtUtcMs) {
+        throw StateError('Conflicting immutable Quest XP provenance');
+      }
+    }
+  });
 
   Future<SrsSnapshot> rebuildWord({
     required String ownerId,
@@ -21,7 +78,10 @@ final class DriftLearningProjectionRebuilder {
         await (database.select(database.answerAttempts)
               ..where(
                 (row) =>
-                    row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+                    row.ownerId.equals(ownerId) &
+                    row.wordId.equals(wordId) &
+                    (row.legacyEvidenceDisposition.isNull() |
+                        row.legacyEvidenceDisposition.equals('base-v25')),
               )
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtcMs),
@@ -39,7 +99,7 @@ final class DriftLearningProjectionRebuilder {
         isCorrect: attempt.isCorrect,
         nowUtc: _utc(attempt.occurredAtUtcMs),
       );
-      if (attempt.isCorrect) {
+      if (attempt.isCorrect && attempt.legacyEvidenceDisposition == null) {
         await database
             .into(database.pointsLedgerEntries)
             .insert(
@@ -96,12 +156,18 @@ final class DriftLearningProjectionRebuilder {
     if (session == null) {
       throw StateError('owner-scoped learning session not found');
     }
+    if (session.legacyEvidenceDisposition != null) {
+      return;
+    }
     final attempts =
         await (database.select(database.answerAttempts)..where(
               (row) =>
                   row.ownerId.equals(ownerId) & row.sessionId.equals(sessionId),
             ))
             .get();
+    if (attempts.any((attempt) => attempt.legacyEvidenceDisposition != null)) {
+      return;
+    }
     final correct = attempts.where((attempt) => attempt.isCorrect).length;
     final wrong = attempts.length - correct;
     final score = attempts.isEmpty
@@ -121,10 +187,17 @@ final class DriftLearningProjectionRebuilder {
         );
   }
 
-  Future<void> rebuildAchievements(String ownerId) async {
+  Future<void> rebuildAchievements(
+    String ownerId, {
+    bool enqueueNewUnlocks = true,
+  }) async {
     final attempts =
         await (database.select(database.answerAttempts)
-              ..where((row) => row.ownerId.equals(ownerId))
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.legacyEvidenceDisposition.isNull(),
+              )
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtcMs),
                 (row) => OrderingTerm.asc(row.id),
@@ -134,7 +207,9 @@ final class DriftLearningProjectionRebuilder {
     await _insertAchievement(
       ownerId: ownerId,
       achievementId: 'first_answer',
-      source: attempts.first,
+      sourceEventId: attempts.first.id,
+      unlockedAtUtcMs: attempts.first.occurredAtUtcMs,
+      enqueue: enqueueNewUnlocks,
     );
     final correct = attempts
         .where((attempt) => attempt.isCorrect)
@@ -143,14 +218,63 @@ final class DriftLearningProjectionRebuilder {
       await _insertAchievement(
         ownerId: ownerId,
         achievementId: 'first_correct',
-        source: correct.first,
+        sourceEventId: correct.first.id,
+        unlockedAtUtcMs: correct.first.occurredAtUtcMs,
+        enqueue: enqueueNewUnlocks,
       );
     }
     if (correct.length >= 10) {
       await _insertAchievement(
         ownerId: ownerId,
         achievementId: 'ten_correct',
-        source: correct[9],
+        sourceEventId: correct[9].id,
+        unlockedAtUtcMs: correct[9].occurredAtUtcMs,
+        enqueue: enqueueNewUnlocks,
+      );
+    }
+    final counts = <String, ({int total, int wrong})>{};
+    for (final attempt in attempts) {
+      final prior = counts[attempt.sessionId] ?? (total: 0, wrong: 0);
+      counts[attempt.sessionId] = (
+        total: prior.total + 1,
+        wrong: prior.wrong + (attempt.isCorrect ? 0 : 1),
+      );
+    }
+    final sessions =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.legacyEvidenceDisposition.isNull() &
+                    row.state.equals('completed') &
+                    row.endedAtUtcMs.isNotNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.endedAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
+            .get();
+    db.LearningSession? firstSession;
+    db.LearningSession? perfectSession;
+    for (final session in sessions) {
+      final facts = counts[session.id];
+      if (facts == null || facts.total == 0) continue;
+      firstSession ??= session;
+      if (facts.wrong == 0) perfectSession ??= session;
+      if (perfectSession != null) break;
+    }
+    for (final entry in [
+      ('first_session', firstSession),
+      ('perfect_session', perfectSession),
+    ]) {
+      final source = entry.$2;
+      if (source == null) continue;
+      await _insertAchievement(
+        ownerId: ownerId,
+        achievementId: entry.$1,
+        sourceEventId: source.id,
+        unlockedAtUtcMs: source.endedAtUtcMs!,
+        enqueue: enqueueNewUnlocks,
       );
     }
   }
@@ -219,28 +343,63 @@ final class DriftLearningProjectionRebuilder {
   Future<void> _insertAchievement({
     required String ownerId,
     required String achievementId,
-    required db.AnswerAttempt source,
+    required String sourceEventId,
+    required int unlockedAtUtcMs,
+    required bool enqueue,
   }) async {
     const definitionVersion = 1;
-    await (database.delete(database.achievementUnlocks)..where(
-          (row) =>
-              row.ownerId.equals(ownerId) &
-              row.achievementId.equals(achievementId) &
-              row.definitionVersion.equals(definitionVersion),
-        ))
-        .go();
+    final existing =
+        await (database.select(database.achievementUnlocks)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.achievementId.equals(achievementId) &
+                  row.definitionVersion.equals(definitionVersion),
+            ))
+            .getSingleOrNull();
+    if (existing != null) return;
+    var id = 'achievement:$ownerId:$achievementId:$definitionVersion';
+    while (await database
+            .customSelect(
+              'SELECT 1 FROM achievement_unlocks WHERE id = ? '
+              'UNION ALL SELECT 1 FROM outbox_operations WHERE operation_id = ? '
+              "OR (entity_type = 'achievementUnlock' AND entity_id = ?) LIMIT 1",
+              variables: [
+                Variable<String>(id),
+                Variable<String>('achievementUnlock:$id:1'),
+                Variable<String>(id),
+              ],
+            )
+            .getSingleOrNull() !=
+        null) {
+      id = 'achievement:${const Uuid().v4()}';
+    }
     await database
         .into(database.achievementUnlocks)
         .insert(
           db.AchievementUnlocksCompanion.insert(
-            id: 'achievement:$ownerId:$achievementId:$definitionVersion',
+            id: id,
             ownerId: ownerId,
             achievementId: achievementId,
             definitionVersion: definitionVersion,
-            sourceEventId: source.id,
-            unlockedAtUtcMs: source.occurredAtUtcMs,
+            sourceEventId: sourceEventId,
+            unlockedAtUtcMs: unlockedAtUtcMs,
           ),
         );
+    if (enqueue) {
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            db.OutboxOperationsCompanion.insert(
+              operationId: 'achievementUnlock:$id:1',
+              ownerId: ownerId,
+              entityType: 'achievementUnlock',
+              entityId: id,
+              operationKind: 'upsert',
+              baseRevision: const Value(0),
+              createdAtUtcMs: unlockedAtUtcMs,
+            ),
+          );
+    }
   }
 }
 

@@ -1,0 +1,34 @@
+S5 bounded local full-account export adapter
+Worktree: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
+Branch: codex/figcraft-flutter-prototype
+Base: cd45d6a5ce61a72375939144382386d2bb287795
+
+Valid RED: build/s3-and-full-export-red.txt, seven expected scaffold failures.
+GREEN: flutter test --no-pub test/features/account_deletion test/features/export
+Result: 76 passed, build/full-account-export-green.txt.
+Final import cleanup verification: eight new exporter tests passed again,
+build/full-account-export-final-eight.txt.
+Scoped analysis: account_deletion, export, account_deletion tests; no issues,
+build/full-account-export-analyze.txt. Format and focused diff check passed.
+
+The actual existing snapshot and file-selector store save owner A JSON bytes
+before producing a receipt with that snapshot's hash, schema and required scopes.
+Tests read an actual synthetic temporary file, hold the save acknowledgement,
+reject owner changes/cancel/failure before deletion, then exercise the existing
+deletion use case and real local gateway and reopen SQLite with B unchanged.
+The method channel/picker, reauthentication and privileged cloud response are
+synthetic. These are not native file-picker or production deletion observations.
+
+Ordinary export rejects fullAccountJson before reading data. Full account export
+is distinct from researchJson. There is no UI/bootstrap wiring, reauthentication
+adapter, production deletion enablement, schema migration or real enrollment.
+Root review: accepted. Independent ground_routes review: accepted, no must-fix.
+Full current-source suite, new-source native checks and CI remain pending.
+
+SHA-256 of the verified files:
+lib/features/account_deletion/data/drift_full_account_exporter.dart 76d429f52b83741d6313d444421087973f39c200e5388f39bb98b66296cc9318
+lib/features/account_deletion/data/drift_account_snapshot.dart 16384627e589bc5a153b4b0ecec3cfaf799c44303bb7000a59b0cbe2aafb4833
+lib/features/export/application/export_use_cases.dart 5e2539c8c201a5d3202898329f2e65edfed524f6c58ba3d53ce0aa0a336e760f
+lib/features/export/domain/export_contracts.dart 00f18c1e27e5e2ce3ee0d73f76e6d9f3417b34e87d84d3c7c8221efce5f3e541
+test/features/account_deletion/drift_full_account_exporter_test.dart f8c25904184c84d356ae22c32e0260347c28812102c80f48ab71b27298d437f6
+test/features/account_deletion/drift_account_snapshot_test.dart 2ff195089c0ce1acaba6c38f372b7678d182068a33d01803101b2c1f814ccf63

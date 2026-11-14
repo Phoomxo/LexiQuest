@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
@@ -54,6 +57,124 @@ void main() {
       expect((await rewards.load('b')).balance, 0);
       final outbox = await db.select(db.outboxOperations).get();
       expect(outbox.where((r) => r.entityType == 'rewardTransaction'), isEmpty);
+    },
+  );
+
+  test(
+    'Quest XP preserves five quiz coins across load rebuild and file reopen',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'quest-xp-coins-',
+      );
+      final file = File('${directory.path}/economy.sqlite');
+      var fileDb = AppDatabase(NativeDatabase(file));
+      try {
+        await _seedOwner(fileDb, 'a');
+        await _seedOwner(fileDb, 'b');
+        final learning = DriftLearningRepository(fileDb);
+        for (var index = 0; index < 5; index++) {
+          await learning.recordAnswer(
+            RecordAnswerCommand(
+              id: 'answer-a-$index',
+              ownerId: 'a',
+              sessionId: 'session-a',
+              wordId: 'word-a',
+              promptMode: 'meaningChoice',
+              isCorrect: true,
+              responseTimeMs: 100,
+              attemptNumber: index + 1,
+              occurredAtUtc: _time.add(Duration(seconds: index)),
+            ),
+          );
+        }
+        expect(
+          (await DriftProgressQueries(
+            fileDb,
+          ).load(ownerId: 'a', nowUtc: _time)).totalXp,
+          5,
+        );
+        expect((await DriftRewardRepository(fileDb).load('a')).balance, 5);
+        await _questXp(fileDb, id: 'quest-xp-a');
+
+        Future<void> expectEconomy() async {
+          final progress = DriftProgressQueries(fileDb);
+          final rewards = DriftRewardRepository(fileDb);
+          expect(
+            (await progress.load(ownerId: 'a', nowUtc: _time)).totalXp,
+            55,
+          );
+          expect((await rewards.load('a')).balance, 5);
+          expect((await progress.load(ownerId: 'b', nowUtc: _time)).totalXp, 0);
+          expect((await rewards.load('b')).balance, 0);
+          expect(
+            await (fileDb.select(
+              fileDb.pointsLedgerEntries,
+            )..where((row) => row.ownerId.equals('b'))).get(),
+            isEmpty,
+          );
+          expect(
+            await (fileDb.select(
+              fileDb.rewardTransactions,
+            )..where((row) => row.ownerId.equals('b'))).get(),
+            isEmpty,
+          );
+        }
+
+        await expectEconomy();
+        await DriftRewardRepository(fileDb).projections.rebuild('a');
+        await expectEconomy();
+        await fileDb.close();
+        fileDb = AppDatabase(NativeDatabase(file));
+        await expectEconomy();
+        await DriftRewardRepository(fileDb).projections.rebuild('a');
+        await expectEconomy();
+      } finally {
+        await fileDb.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test(
+    'Quest XP cannot consume correct source backing for legitimate legacy carry',
+    () async {
+      await DriftLearningRepository(db).recordAnswer(
+        RecordAnswerCommand(
+          id: 'answer-a',
+          ownerId: 'a',
+          sessionId: 'session-a',
+          wordId: 'word-a',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 100,
+          attemptNumber: 1,
+          occurredAtUtc: _time,
+        ),
+      );
+      await _legacyCredit(db, 'a', 200, sourceEventId: 'answer-a');
+      await _questXp(db, id: 'a-quest-xp', sourceEventId: 'answer-a');
+      await rewards.projections.rebuild('a');
+      final carry = await (db.select(
+        db.rewardTransactions,
+      )..where((row) => row.id.equals('coin:legacy:legacy-a'))).getSingle();
+      expect(
+        carry.amount,
+        199,
+        reason: 'the quiz coin backs the legacy carry, never the XP-only row',
+      );
+      expect((await rewards.load('a')).balance, 200);
+      expect(
+        (await DriftProgressQueries(
+          db,
+        ).load(ownerId: 'a', nowUtc: _time)).totalXp,
+        251,
+      );
+      expect((await rewards.load('b')).balance, 0);
+      final legacy = await (db.select(
+        db.pointsLedgerEntries,
+      )..where((row) => row.id.equals('legacy-a'))).getSingle();
+      expect(legacy.amount, 200);
+      expect(legacy.sourceEventId, 'answer-a');
     },
   );
 
@@ -284,7 +405,31 @@ void main() {
   });
 }
 
-Future<void> _legacyCredit(AppDatabase db, String owner, int amount) => db
+Future<void> _questXp(
+  AppDatabase db, {
+  required String id,
+  String? sourceEventId,
+}) => db
+    .into(db.pointsLedgerEntries)
+    .insert(
+      PointsLedgerEntriesCompanion.insert(
+        id: id,
+        ownerId: 'a',
+        idempotencyKey: 'quest-claim:$id',
+        entryType: 'questClaimXpV1',
+        amount: 50,
+        sourceEventId: Value(sourceEventId),
+        occurredAtUtcMs: _time.millisecondsSinceEpoch,
+      ),
+    )
+    .then((_) {});
+
+Future<void> _legacyCredit(
+  AppDatabase db,
+  String owner,
+  int amount, {
+  String? sourceEventId,
+}) => db
     .into(db.pointsLedgerEntries)
     .insert(
       PointsLedgerEntriesCompanion.insert(
@@ -293,6 +438,7 @@ Future<void> _legacyCredit(AppDatabase db, String owner, int amount) => db
         idempotencyKey: 'legacy-$owner',
         entryType: 'learning',
         amount: amount,
+        sourceEventId: Value(sourceEventId),
         occurredAtUtcMs: 1,
       ),
     )

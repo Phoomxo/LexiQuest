@@ -130,7 +130,7 @@ String _validatedExtension(String fileName, String? mimeType) {
     return extension;
   }
   final allowed = extension == 'csv'
-      ? const {'text/csv', 'application/csv'}
+      ? const {'text/csv', 'application/csv', 'text/comma-separated-values'}
       : const {'application/json', 'text/json'};
   if (!allowed.contains(mime)) {
     throw const VocabularyImportFileFailure('unsupportedType');

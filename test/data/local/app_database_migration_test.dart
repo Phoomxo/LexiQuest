@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version ten with product tables', () async {
+  test('new databases use schema version 26 with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 10);
+    expect(database.schemaVersion, 26);
 
     final categoryColumns = await _columnNames(
       database,
@@ -57,6 +57,10 @@ void main() {
         'reward_transactions',
         'owned_reward_items',
         'equipped_reward_items',
+        'local_content_reports',
+        'focus_sessions',
+        'learning_preferences',
+        'archived_v25_records',
       ]),
     );
     expect(
@@ -84,104 +88,98 @@ void main() {
     );
   });
 
-  test(
-    'schema one upgrades to a complete schema six without row loss',
-    () async {
-      final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
-      final database = AppDatabase(executor);
-      addTearDown(database.close);
+  test('schema one upgrades to the current schema without row loss', () async {
+    final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
+    final database = AppDatabase(executor);
+    addTearDown(database.close);
 
-      final version = await database
-          .customSelect('PRAGMA user_version')
-          .map((row) => row.read<int>('user_version'))
-          .getSingle();
-      final category = await database
-          .customSelect(
-            'SELECT id, name, cloud_revision '
-            'FROM vocabulary_categories WHERE id = ?',
-            variables: const [Variable<String>('category:travel')],
-          )
-          .getSingle();
-      final word = await database
-          .customSelect(
-            'SELECT id, spelling, cloud_revision '
-            'FROM vocabulary_words WHERE id = ?',
-            variables: const [Variable<String>('word:station')],
-          )
-          .getSingle();
-      final outbox = await database
-          .customSelect(
-            'SELECT operation_id, state, lease_token '
-            'FROM outbox_operations WHERE operation_id = ?',
-            variables: const [Variable<String>('category:travel:1:upsert')],
-          )
-          .getSingle();
-      final conflict = await database
-          .customSelect(
-            'SELECT id, outcome, local_snapshot_json, cloud_snapshot_json '
-            'FROM sync_conflicts WHERE id = ?',
-            variables: const [Variable<String>('conflict:1')],
-          )
-          .getSingle();
+    final version = await database
+        .customSelect('PRAGMA user_version')
+        .map((row) => row.read<int>('user_version'))
+        .getSingle();
+    final category = await database
+        .customSelect(
+          'SELECT id, name, cloud_revision '
+          'FROM vocabulary_categories WHERE id = ?',
+          variables: const [Variable<String>('category:travel')],
+        )
+        .getSingle();
+    final word = await database
+        .customSelect(
+          'SELECT id, spelling, cloud_revision '
+          'FROM vocabulary_words WHERE id = ?',
+          variables: const [Variable<String>('word:station')],
+        )
+        .getSingle();
+    final outbox = await database
+        .customSelect(
+          'SELECT operation_id, state, lease_token '
+          'FROM outbox_operations WHERE operation_id = ?',
+          variables: const [Variable<String>('category:travel:1:upsert')],
+        )
+        .getSingle();
+    final conflict = await database
+        .customSelect(
+          'SELECT id, outcome, local_snapshot_json, cloud_snapshot_json '
+          'FROM sync_conflicts WHERE id = ?',
+          variables: const [Variable<String>('conflict:1')],
+        )
+        .getSingle();
 
-      expect(version, 10); // schema v10 added associative tables (Phase 2 D8.3)
-      expect(category.read<String>('name'), 'Travel');
-      expect(category.read<int>('cloud_revision'), 0);
-      expect(word.read<String>('spelling'), 'station');
-      expect(word.read<int>('cloud_revision'), 0);
-      expect(outbox.read<String>('state'), 'pending');
-      expect(outbox.readNullable<String>('lease_token'), isNull);
-      expect(conflict.read<String>('outcome'), 'cloudWins');
-      expect(conflict.readNullable<String>('local_snapshot_json'), isNull);
-      expect(conflict.readNullable<String>('cloud_snapshot_json'), isNull);
-      expect(await _tableNames(database), containsAll(_expectedTables));
+    expect(version, 26);
+    expect(category.read<String>('name'), 'Travel');
+    expect(category.read<int>('cloud_revision'), 0);
+    expect(word.read<String>('spelling'), 'station');
+    expect(word.read<int>('cloud_revision'), 0);
+    expect(outbox.read<String>('state'), 'pending');
+    expect(outbox.readNullable<String>('lease_token'), isNull);
+    expect(conflict.read<String>('outcome'), 'cloudWins');
+    expect(conflict.readNullable<String>('local_snapshot_json'), isNull);
+    expect(conflict.readNullable<String>('cloud_snapshot_json'), isNull);
+    expect(await _tableNames(database), containsAll(_expectedTables));
 
-      await database
-          .into(database.learningSessions)
-          .insert(
-            LearningSessionsCompanion.insert(
-              id: 'session:post-upgrade',
-              ownerId: 'local:guest',
-              activityType: 'quiz',
-              state: 'active',
-              startedAtUtcMs: 3,
-              appVersion: 'test',
-              buildId: 'migration',
-            ),
-          );
-      await database
-          .into(database.answerAttempts)
-          .insert(
-            AnswerAttemptsCompanion.insert(
-              id: 'attempt:post-upgrade',
-              ownerId: 'local:guest',
-              sessionId: 'session:post-upgrade',
-              wordId: 'word:station',
-              promptMode: 'meaningChoice',
-              isCorrect: true,
-              attemptNumber: 1,
-              occurredAtUtcMs: 4,
-            ),
-          );
-      await database
-          .into(database.readingEvents)
-          .insert(
-            ReadingEventsCompanion.insert(
-              id: 'reading:post-upgrade',
-              ownerId: 'local:guest',
-              documentId: 'doc:1',
-              eventType: 'checkpoint',
-              occurredAtUtcMs: 5,
-            ),
-          );
+    await database
+        .into(database.learningSessions)
+        .insert(
+          LearningSessionsCompanion.insert(
+            id: 'session:post-upgrade',
+            ownerId: 'local:guest',
+            activityType: 'quiz',
+            state: 'active',
+            startedAtUtcMs: 3,
+            appVersion: 'test',
+            buildId: 'migration',
+          ),
+        );
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'attempt:post-upgrade',
+            ownerId: 'local:guest',
+            sessionId: 'session:post-upgrade',
+            wordId: 'word:station',
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            attemptNumber: 1,
+            occurredAtUtcMs: 4,
+          ),
+        );
+    await database
+        .into(database.readingEvents)
+        .insert(
+          ReadingEventsCompanion.insert(
+            id: 'reading:post-upgrade',
+            ownerId: 'local:guest',
+            documentId: 'doc:1',
+            eventType: 'checkpoint',
+            occurredAtUtcMs: 5,
+          ),
+        );
 
-      expect(
-        await database.select(database.answerAttempts).get(),
-        hasLength(1),
-      );
-      expect(await database.select(database.readingEvents).get(), hasLength(1));
-    },
-  );
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(await database.select(database.readingEvents).get(), hasLength(1));
+  });
 
   test(
     'schema three reading events gain revision one without row loss',
@@ -202,7 +200,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        10, // schema v10 added associative tables (Phase 2 D8.3)
+        26,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +227,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        10, // schema v10 added associative tables (Phase 2 D8.3)
+        26,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');
@@ -260,6 +258,10 @@ const _expectedTables = <String>{
   'sync_conflicts',
   'runtime_flags',
   'model_downloads',
+  'local_content_reports',
+  'focus_sessions',
+  'learning_preferences',
+  'archived_v25_records',
 };
 
 Future<Set<String>> _tableNames(AppDatabase database) async {

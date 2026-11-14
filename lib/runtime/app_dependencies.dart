@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
@@ -16,7 +17,6 @@ import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
-import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
@@ -24,6 +24,9 @@ import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/source_practice.dart';
+import '../features/vocabulary/data/drift_local_content_report_repository.dart';
+import '../features/motivation/data/drift_study_preferences_repository.dart';
+import '../features/motivation/application/focus_use_cases.dart';
 import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -55,11 +58,15 @@ final class AppDependencies {
     this.syncStatus,
     this.learning,
     this.progress,
+    this.progressUpdates,
     this.rewards,
     this.vocabulary,
     this.vocabularyImporter,
     this.vocabularyImportFilePicker,
     this.sourcePracticeFilePicker,
+    this.localContentReports,
+    this.studyPreferences,
+    this.focus,
     this.deviceModels,
     this.account,
     this.accountDeletion,
@@ -70,7 +77,6 @@ final class AppDependencies {
     this.devicePermissions,
     this.speechPractice,
     this.voice,
-    this.quest,
     this.streak,
     this.associativeLearning,
     this.disposeResources,
@@ -94,13 +100,27 @@ final class AppDependencies {
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
+  final ValueListenable<int>? progressUpdates;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final VocabularyImportFilePicker? vocabularyImportFilePicker;
   final SourcePracticeFilePicker? sourcePracticeFilePicker;
+  final DriftLocalContentReportRepository? localContentReports;
+  final DriftStudyPreferencesRepository? studyPreferences;
+  final FocusUseCases? focus;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
+
+  Stream<String?>? watchActiveOwnerId() {
+    final db = database;
+    if (db == null) return null;
+    return (db.select(db.localOwners)
+          ..where((row) => row.isActive.equals(true)))
+        .watch()
+        .map((rows) => rows.length == 1 ? rows.single.id : null)
+        .distinct();
+  }
 
   /// Present only when the privileged deletion backend is configured.
   final AccountDeletionUseCases? accountDeletion;
@@ -111,10 +131,6 @@ final class AppDependencies {
   final DevicePermissionAccess? devicePermissions;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
-
-  /// V2 Quest pipeline — wired when [Feature.questV2] is enabled.
-  /// Null when the feature flag is off (hidden state).
-  final QuestUseCases? quest;
 
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;

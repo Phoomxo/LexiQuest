@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../features/motivation/domain/study_preferences.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
 import 'ai_tutor_screen.dart';
 import 'categories_page.dart';
+import 'cefr_article_reader_screen.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'gemini_settings_screen.dart';
@@ -17,6 +22,7 @@ import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
+import 'study_preferences_panel.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({
@@ -36,6 +42,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int _currentIndex;
   List<_NavigationEntry> _entries = const [];
+  AppDependencies? _checkedStudySetup;
 
   @override
   void initState() {
@@ -48,6 +55,80 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.didChangeDependencies();
     _entries = _buildEntries(_fieldFeatures(context));
     _currentIndex = _currentIndex.clamp(0, _entries.length - 1);
+    final scope = AppDependenciesScope.maybeOf(context);
+    final session = scope?.account?.currentSession;
+    if (scope != null &&
+        scope.studyPreferences != null &&
+        session != null &&
+        !session.isAnonymous &&
+        session.emailVerified &&
+        !identical(_checkedStudySetup, scope)) {
+      _checkedStudySetup = scope;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_hasStudyAccount(scope, session.uid)) {
+          unawaited(_openFirstStudyActivity(scope, session.uid));
+        }
+      });
+    }
+  }
+
+  bool _hasStudyAccount(AppDependencies scope, String uid) {
+    if (!mounted || !identical(AppDependenciesScope.maybeOf(context), scope)) {
+      return false;
+    }
+    final session = scope.account?.currentSession;
+    return session?.uid == uid &&
+        session?.emailVerified == true &&
+        session?.isAnonymous == false;
+  }
+
+  Future<void> _openFirstStudyActivity(
+    AppDependencies scope,
+    String uid,
+  ) async {
+    final method = await showStudyPreferences(context, firstRunAccountUid: uid);
+    if (!mounted ||
+        method == null ||
+        !_hasStudyAccount(scope, uid) ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final features = _fieldFeatures(context);
+    switch (method) {
+      case StudyMethod.reading:
+        if (features.isVisible(FieldFeature.reading) &&
+            scope.features.isVisible(Feature.reading)) {
+          _pushDestination(
+            'learning/first-reading',
+            CefrArticleReaderScreen(
+              title: 'บทอ่านเริ่มต้น · ที่สถานีรถไฟ',
+              content:
+                  'Mina reads the sign at the station. '
+                  'Her friend is on platform two. '
+                  'They meet before the train leaves.',
+              cefrLevel: 'A1',
+              voice: scope.voice,
+            ),
+          );
+          return;
+        }
+      case StudyMethod.speaking:
+        if (features.isVisible(FieldFeature.speechPractice)) {
+          _pushDestination(
+            'practice/shadowing',
+            ShadowingChallengeScreen(
+              referenceSentence: 'Which platform does the train leave from?',
+              voice: scope.voice,
+            ),
+          );
+          return;
+        }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('บันทึกวิธีเรียนแล้ว กิจกรรมนี้ยังไม่พร้อมใช้งาน'),
+      ),
+    );
   }
 
   FieldFeatureRegistry _fieldFeatures(BuildContext context) {
@@ -57,41 +138,53 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   List<_NavigationEntry> _buildEntries(FieldFeatureRegistry features) {
+    final showPractice =
+        features.isVisible(FieldFeature.quiz) ||
+        features.isVisible(FieldFeature.srs) ||
+        features.isVisible(FieldFeature.reading);
+    final showLibrary = features.isVisible(FieldFeature.vocabulary);
+    final progressIndex = (showPractice ? 1 : 0) + (showLibrary ? 1 : 0);
+    final profileIndex =
+        progressIndex + (features.isVisible(FieldFeature.mastery) ? 1 : 0);
     return [
-      if (features.isVisible(FieldFeature.quiz) ||
-          features.isVisible(FieldFeature.srs) ||
-          features.isVisible(FieldFeature.reading))
+      if (showPractice)
         _NavigationEntry(
           screen: ChooseModeScreen(
             featureRegistry: features,
             onOpenMenu: _openDrawer,
+            onOpenLibrary: _openLibrary,
+            isActive: _currentIndex == 0,
           ),
           icon: Icons.school_outlined,
           selectedIcon: Icons.school,
-          label: 'เรียน',
+          label: 'ฝึกภาษา',
         ),
-      if (features.isVisible(FieldFeature.vocabulary))
+      if (showLibrary)
         _NavigationEntry(
           screen: CategoriesPage(onOpenMenu: _openDrawer),
           icon: Icons.menu_book_outlined,
           selectedIcon: Icons.menu_book,
-          label: 'คำศัพท์',
+          label: 'คลังคำศัพท์',
         ),
       if (features.isVisible(FieldFeature.mastery))
         _NavigationEntry(
           screen: MasteryDashboardScreen(
             featureRegistry: features,
             onOpenMenu: _openDrawer,
+            isActive: _currentIndex == progressIndex,
           ),
           icon: Icons.analytics_outlined,
           selectedIcon: Icons.analytics,
-          label: 'ก้าวหน้า',
+          label: 'ความก้าวหน้า',
         ),
       _NavigationEntry(
-        screen: ProfileSettingsScreen(onOpenMenu: _openDrawer),
+        screen: ProfileSettingsScreen(
+          onOpenMenu: _openDrawer,
+          isActive: _currentIndex == profileIndex,
+        ),
         icon: Icons.person_outlined,
         selectedIcon: Icons.person,
-        label: 'โปรไฟล์',
+        label: 'บัญชี',
       ),
     ];
   }
@@ -129,6 +222,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
+
+  void _openLibrary() {
+    final index = _entries.indexWhere(
+      (entry) => entry.screen is CategoriesPage,
+    );
+    if (index >= 0) _selectDestination(index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,14 +308,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   if (features.isVisible(FieldFeature.vocabulary))
                     ListTile(
                       leading: const Icon(Icons.menu_book),
-                      title: const Text('คำศัพท์'),
+                      title: const Text('คลังคำศัพท์'),
                       onTap: () {
                         _scaffoldKey.currentState?.closeDrawer();
-                        setState(() {
-                          _currentIndex = _entries.indexWhere(
-                            (entry) => entry.screen is CategoriesPage,
-                          );
-                        });
+                        _openLibrary();
                       },
                     ),
                   if (features.isVisible(FieldFeature.shop))
@@ -349,6 +445,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _selectDestination(int index) {
     setState(() {
       _currentIndex = index;
+      _entries = _buildEntries(_fieldFeatures(context));
     });
   }
 

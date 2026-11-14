@@ -1,0 +1,32 @@
+Android v29 builds, source196d4e22b3e4365fba22d36198cb07762d95b981.
+Branch codex/figcraft-flutter-prototype, 2026-11-14.
+
+Both completed with exit0, serialized after full1903 and clean analysis.
+Flutter3.44.7/Dart3.12.2. No dependency upgrade. Source inputs were unchanged
+before/after each build. Subsequent bbb63b7c changes only Linux goldens/docs.
+
+Release arm64: build/figcraft-196d4e22/lexiquest-196d4e22-v29-arm64.apk
+SHA256450d2dc340219da11dde06581982046737dcccda91a26629fdbf437e13eeda7f
+64413777 bytes. assembleRelease271.9s, build/p2-s3-v29-arm64-build.txt.
+Debug x64: build/figcraft-196d4e22/lexiquest-196d4e22-v29-x64-debug.apk
+SHA2561beac9aa0f3b760ac5e0db9e68e5056dca83b6c3cc98687e4d42b7bf9f34d2a4
+assembleDebug68.8s, build/p2-s3-v29-x64-build.txt.
+
+Build flags: --no-pub --build-number29; each with its --target-platform.
+--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=false
+--dart-define=LEXIQUEST_VERSION=1.0.0+29
+--dart-define=LEXIQUEST_BUILD_ID=196d4e22b3e4365fba22d36198cb07762d95b981
+Application com.lexiquest.app, versionCode29/versionName1.0.0,
+minSdk26, target/compileSdk36. The release Flutter target is arm64 only;
+plugin packaging also advertises other ABIs, so emulator uses debugx64.
+Release certificate SHA256:
+e1b00e17896bfb73fe0dc42429768b966465213d49a8a5165de06688cc8fdc1f
+
+Vivo install-r returned Success; version29 and actual installed base.apk hash
+match the release archive. Data-preserving native observations are recorded in
+vivo-196d4e22/README.md. No uninstall/data clear, enrollment or upload.
+Task emulator install acknowledgement is still pending; do not claim it has
+v29 or repeat/reboot an uncertain package transaction without reconciliation.
+
+Nonfatal Kotlin/SDK XML warnings are preserved in the raw build logs.
+This is engineering build evidence, not complete S1-S7/release acceptance.

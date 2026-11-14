@@ -1,0 +1,12 @@
+CI evidence for S6-D1
+
+Commit: fd22b77818c872f65f555a4a6e180115d080b72a
+Run: https://github.com/Phoomxo/LexiQuest/actions/runs/43548907646
+Result: SUCCESS, read back on 2026-11-14.
+Raw log: build/ci-fd22b778-success.txt
+Raw log SHA-256: 45c018916cce24d21b514b959662ea7ba2be2bd48910f232b061a2573aa2feca
+
+The raw log records 1,999 Flutter unit and widget tests passed, 55 Voice API
+tests passed, 107 AI API tests passed, and 75 LexiQuest-LM tests passed. It
+also records the Android debug APK build. This run tests the committed D1
+snapshot; it does not verify the uncommitted D2 reader, claim, or cutover.

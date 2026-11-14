@@ -1,18 +1,708 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner, VocabularyWord;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_benchmark.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/services/object_vocabulary_database.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  Future<void> openSelectedSetScanner(
+    WidgetTester tester,
+    _FakeScanner scanner, {
+    AppDependencies? dependencies,
+    String categoryId = 'category:travel',
+    String categoryName = 'ชุดทดสอบ',
+  }) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final app = MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () async {
+              final word = await Navigator.of(context).push<VocabularyWord>(
+                MaterialPageRoute<VocabularyWord>(
+                  builder: (_) => ObjectScannerScreen(
+                    scanner: scanner,
+                    voice: VoiceUseCases(_FakeVoice()),
+                    targetCategoryId: categoryId,
+                    targetCategoryName: categoryName,
+                  ),
+                ),
+              );
+              if (context.mounted && word != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('กลับชุด ${word.categoryId}')),
+                );
+              }
+            },
+            child: const Text('ถ่ายภาพเพิ่มคำในชุด'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      dependencies == null
+          ? app
+          : AppDependenciesScope(dependencies: dependencies, child: app),
+    );
+    await tester.tap(find.text('ถ่ายภาพเพิ่มคำในชุด'));
+    await _pumpUntilManual(
+      tester,
+      find.byKey(const ValueKey('camera-preview')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Future<
+    ({
+      AppDatabase database,
+      AppDependencies dependencies,
+      _FakeScanner scanner,
+      String categoryA,
+      String categoryB,
+      String ownerId,
+      _ControlledVocabularyRepository repository,
+    })
+  >
+  manualFixture() async {
+    final database = AppDatabase(NativeDatabase.memory());
+    var sequence = 0;
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'manual-owner-${++sequence}',
+      nowUtc: () => DateTime.utc(2026, 11, 14),
+    );
+    final owner = await owners.getOrCreateActiveOwner();
+    final delegate = DriftVocabularyRepository(database);
+    final seed = VocabularyUseCases(
+      owners: owners,
+      vocabulary: delegate,
+      generateId: () => 'manual-${++sequence}',
+      nowUtc: () => DateTime.utc(2026, 11, 14),
+    );
+    final categoryA = await seed.createCategory('ชุด A');
+    final categoryB = await seed.createCategory('ชุด B');
+    final repository = _ControlledVocabularyRepository(delegate);
+    final vocabulary = VocabularyUseCases(
+      owners: owners,
+      vocabulary: repository,
+      generateId: () => 'manual-${++sequence}',
+      nowUtc: () => DateTime.utc(2026, 11, 14),
+    );
+    final scanner = _FakeScanner()
+      ..captureResult = ObjectScanResult(
+        classifications: const [
+          ModelClassification(index: 1, label: 'wombat', confidence: 0.152),
+        ],
+        vocabulary: null,
+        matchedClassification: null,
+        modelId: 'model',
+        modelVersion: 'model-v1',
+        capturedAtUtc: DateTime.utc(2026, 11, 14),
+      );
+    final dependencies = AppDependencies(
+      runtimeStatus: const AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
+        firebase: RuntimeAvailability.unavailable,
+        supabase: RuntimeAvailability.unavailable,
+        backends: RuntimeAvailability.unavailable,
+      ),
+      config: null,
+      guestSessionService: _UnusedGuestSession(),
+      database: database,
+      localOwners: owners,
+      vocabulary: vocabulary,
+      objectScanner: scanner,
+    );
+    return (
+      database: database,
+      dependencies: dependencies,
+      scanner: scanner,
+      categoryA: categoryA.id,
+      categoryB: categoryB.id,
+      ownerId: owner.id,
+      repository: repository,
+    );
+  }
+
+  Future<void> enterManualWord(WidgetTester tester) async {
+    await _pumpUntilManual(tester, find.byKey(const ValueKey('word-field')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('word-field')), 'mug');
+    await tester.enterText(find.byKey(const ValueKey('meaning-field')), 'แก้ว');
+    await tester.enterText(
+      find.byKey(const ValueKey('part-of-speech-field')),
+      'noun',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('save-word')));
+  }
+
+  Future<void> disposeManualFixture(
+    WidgetTester tester,
+    AppDatabase database,
+  ) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.runAsync(database.close);
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+
+  testWidgets(
+    'unmapped scan opens an editable draft and saves only the selected set',
+    (tester) async {
+      final fixture = (await tester.runAsync(manualFixture))!;
+      try {
+        await openSelectedSetScanner(
+          tester,
+          fixture.scanner,
+          dependencies: fixture.dependencies,
+          categoryId: fixture.categoryA,
+          categoryName: 'ชุด A',
+        );
+        expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+        await tester.tap(find.text('กรอกคำเอง'));
+        await _pumpUntilManual(tester, find.byType(AddWordScreen));
+        await tester.pumpAndSettle();
+        expect(find.text('เก็บในชุด ชุด A'), findsOneWidget);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('word-field')))
+              .controller!
+              .text,
+          'wombat',
+        );
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('meaning-field')))
+              .controller!
+              .text,
+          isEmpty,
+        );
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const ValueKey('part-of-speech-field')),
+              )
+              .controller!
+              .text,
+          isEmpty,
+        );
+        expect(
+          await tester.runAsync(
+            () =>
+                fixture.database.select(fixture.database.vocabularyWords).get(),
+          ),
+          isEmpty,
+        );
+        await enterManualWord(tester);
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilManual(
+          tester,
+          find.text('กลับชุด ${fixture.categoryA}'),
+        );
+        final words = await tester.runAsync(
+          () => fixture.database.select(fixture.database.vocabularyWords).get(),
+        );
+        expect(words, hasLength(1));
+        expect(words!.single.categoryId, fixture.categoryA);
+        expect(words.single.ownerId, fixture.ownerId);
+        expect(words.single.spelling, 'mug');
+        expect(words.single.meaning, 'แก้ว');
+        expect(words.single.source, 'object-scanner:manualCorrection');
+        expect(fixture.scanner.acceptCalls, 0);
+        expect(fixture.scanner.captureResult!.vocabulary, isNull);
+      } finally {
+        await disposeManualFixture(tester, fixture.database);
+      }
+    },
+  );
+
+  testWidgets(
+    'cancelling manual correction resumes the unchanged scan without writes',
+    (tester) async {
+      final fixture = (await tester.runAsync(manualFixture))!;
+      try {
+        await openSelectedSetScanner(
+          tester,
+          fixture.scanner,
+          dependencies: fixture.dependencies,
+          categoryId: fixture.categoryA,
+        );
+        await tester.tap(find.text('กรอกคำเอง'));
+        await _pumpUntilManual(tester, find.byType(AddWordScreen));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await _pumpUntilManual(tester, find.text('กรอกคำเอง'));
+        await tester.pumpAndSettle();
+        expect(find.text('wombat'), findsOneWidget);
+        expect(fixture.scanner.resumeCalls, 1);
+        expect(fixture.scanner.acceptCalls, 0);
+        expect(
+          await tester.runAsync(
+            () =>
+                fixture.database.select(fixture.database.vocabularyWords).get(),
+          ),
+          isEmpty,
+        );
+      } finally {
+        await disposeManualFixture(tester, fixture.database);
+      }
+    },
+  );
+
+  testWidgets(
+    'mapped wrong guess can be corrected without accepting the model word',
+    (tester) async {
+      final fixture = (await tester.runAsync(manualFixture))!;
+      fixture.scanner.captureResult = null;
+      try {
+        await openSelectedSetScanner(
+          tester,
+          fixture.scanner,
+          dependencies: fixture.dependencies,
+          categoryId: fixture.categoryA,
+        );
+        expect(find.text('เพิ่มเข้าคลัง'), findsOneWidget);
+        await tester.tap(find.text('กรอกคำเอง'));
+        await _pumpUntilManual(tester, find.byType(AddWordScreen));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('word-field')))
+              .controller!
+              .text,
+          'apple',
+        );
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('meaning-field')))
+              .controller!
+              .text,
+          isEmpty,
+        );
+        await enterManualWord(tester);
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilManual(
+          tester,
+          find.text('กลับชุด ${fixture.categoryA}'),
+        );
+        final words = await tester.runAsync(
+          () => fixture.database.select(fixture.database.vocabularyWords).get(),
+        );
+        expect(words, hasLength(1));
+        expect(words!.single.spelling, 'mug');
+        expect(words.single.categoryId, fixture.categoryA);
+        expect(words.single.source, 'object-scanner:manualCorrection');
+        expect(fixture.scanner.acceptCalls, 0);
+      } finally {
+        await disposeManualFixture(tester, fixture.database);
+      }
+    },
+  );
+
+  testWidgets('no confident scan still opens a blank manual draft', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(manualFixture))!;
+    fixture.scanner.captureFailure = const CameraPracticeException(
+      CameraFailureCode.noConfidentMatch,
+    );
+    try {
+      await openSelectedSetScanner(
+        tester,
+        fixture.scanner,
+        dependencies: fixture.dependencies,
+        categoryId: fixture.categoryA,
+      );
+      expect(find.text('wombat'), findsNothing);
+      await tester.tap(find.text('กรอกคำเอง'));
+      await _pumpUntilManual(tester, find.byType(AddWordScreen));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('word-field')))
+            .controller!
+            .text,
+        isEmpty,
+      );
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('meaning-field')))
+            .controller!
+            .text,
+        isEmpty,
+      );
+      expect(
+        await tester.runAsync(
+          () => fixture.database.select(fixture.database.vocabularyWords).get(),
+        ),
+        isEmpty,
+      );
+      expect(fixture.scanner.acceptCalls, 0);
+    } finally {
+      await disposeManualFixture(tester, fixture.database);
+    }
+  });
+
+  testWidgets('manual correction rejects an owner change before Save', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(manualFixture))!;
+    try {
+      await openSelectedSetScanner(
+        tester,
+        fixture.scanner,
+        dependencies: fixture.dependencies,
+        categoryId: fixture.categoryA,
+      );
+      await tester.tap(find.text('กรอกคำเอง'));
+      await enterManualWord(tester);
+      await tester.runAsync(() async {
+        await fixture.database.customStatement(
+          'UPDATE local_owners SET is_active = 0',
+        );
+        await fixture.database
+            .into(fixture.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'manual-switched-owner',
+                createdAtUtcMs: DateTime.utc(
+                  2026,
+                  11,
+                  14,
+                ).millisecondsSinceEpoch,
+              ),
+            );
+      });
+      await tester.tap(find.byKey(const ValueKey('save-word')));
+      await _pumpUntilManual(
+        tester,
+        find.text('บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่'),
+      );
+      expect(
+        await tester.runAsync(
+          () => fixture.database.select(fixture.database.vocabularyWords).get(),
+        ),
+        isEmpty,
+      );
+      expect(fixture.scanner.acceptCalls, 0);
+    } finally {
+      await disposeManualFixture(tester, fixture.database);
+    }
+  });
+
+  testWidgets(
+    'manual draft rejects a replacement scope with unavailable owners before writing',
+    (tester) async {
+      final fixture = (await tester.runAsync(manualFixture))!;
+      try {
+        await openSelectedSetScanner(
+          tester,
+          fixture.scanner,
+          dependencies: fixture.dependencies,
+          categoryId: fixture.categoryA,
+        );
+        await tester.tap(find.text('กรอกคำเอง'));
+        await _pumpUntilManual(tester, find.byType(AddWordScreen));
+        await tester.pumpAndSettle();
+        final editor = tester.state(find.byType(AddWordScreen));
+        final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final before = await tester.runAsync(
+          () =>
+              fixture.database.select(fixture.database.outboxOperations).get(),
+        );
+        final replacement = AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.unavailable,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _UnusedGuestSession(),
+        );
+        await tester.pumpWidget(
+          AppDependenciesScope(dependencies: replacement, child: app),
+        );
+        expect(tester.state(find.byType(AddWordScreen)), same(editor));
+        await enterManualWord(tester);
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilManual(
+          tester,
+          find.text('บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่'),
+        );
+        expect(
+          await tester.runAsync(
+            () =>
+                fixture.database.select(fixture.database.vocabularyWords).get(),
+          ),
+          isEmpty,
+        );
+        final after = await tester.runAsync(
+          () =>
+              fixture.database.select(fixture.database.outboxOperations).get(),
+        );
+        expect(
+          after!.map((row) => row.toJson()).toList(),
+          before!.map((row) => row.toJson()).toList(),
+        );
+        expect(tester.state(find.byType(AddWordScreen)), same(editor));
+        expect(find.text('กลับชุด ${fixture.categoryA}'), findsNothing);
+      } finally {
+        await disposeManualFixture(tester, fixture.database);
+      }
+    },
+  );
+
+  testWidgets('manual correction opens once and guards pending Save and Back', (
+    tester,
+  ) async {
+    final fixture = (await tester.runAsync(manualFixture))!;
+    try {
+      fixture.repository.pendingSave = Completer<void>();
+      await openSelectedSetScanner(
+        tester,
+        fixture.scanner,
+        dependencies: fixture.dependencies,
+        categoryId: fixture.categoryA,
+      );
+      final launch = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'กรอกคำเอง'),
+      );
+      launch.onPressed!();
+      launch.onPressed!();
+      await enterManualWord(tester);
+      expect(find.byType(AddWordScreen), findsOneWidget);
+      final save = tester.widget<FilledButton>(
+        find.byKey(const ValueKey('save-word')),
+      );
+      save.onPressed!();
+      save.onPressed!();
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      expect(fixture.repository.createCalls, 1);
+      await tester.pageBack();
+      await tester.pump();
+      expect(find.byType(AddWordScreen), findsOneWidget);
+      fixture.repository.pendingSave!.complete();
+      await _pumpUntilManual(tester, find.text('กลับชุด ${fixture.categoryA}'));
+      expect(
+        await tester.runAsync(
+          () => fixture.database.select(fixture.database.vocabularyWords).get(),
+        ),
+        hasLength(1),
+      );
+      expect(fixture.scanner.acceptCalls, 0);
+    } finally {
+      final pending = fixture.repository.pendingSave;
+      if (pending != null && !pending.isCompleted) pending.complete();
+      await disposeManualFixture(tester, fixture.database);
+    }
+  });
+
+  testWidgets(
+    'manual correction retains edited fields after a failed write for retry',
+    (tester) async {
+      final fixture = (await tester.runAsync(manualFixture))!;
+      try {
+        fixture.repository.failNextSave = true;
+        await openSelectedSetScanner(
+          tester,
+          fixture.scanner,
+          dependencies: fixture.dependencies,
+          categoryId: fixture.categoryA,
+        );
+        await tester.tap(find.text('กรอกคำเอง'));
+        await enterManualWord(tester);
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilManual(tester, find.text('บันทึกคำศัพท์ไม่สำเร็จ'));
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('word-field')))
+              .controller!
+              .text,
+          'mug',
+        );
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('meaning-field')))
+              .controller!
+              .text,
+          'แก้ว',
+        );
+        expect(
+          await tester.runAsync(
+            () =>
+                fixture.database.select(fixture.database.vocabularyWords).get(),
+          ),
+          isEmpty,
+        );
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilManual(
+          tester,
+          find.text('กลับชุด ${fixture.categoryA}'),
+        );
+        expect(fixture.repository.createCalls, 2);
+        expect(
+          await tester.runAsync(
+            () =>
+                fixture.database.select(fixture.database.vocabularyWords).get(),
+          ),
+          hasLength(1),
+        );
+      } finally {
+        await disposeManualFixture(tester, fixture.database);
+      }
+    },
+  );
+
+  testWidgets('selected-set confirmation returns the saved word to its set', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner();
+    await openSelectedSetScanner(tester, scanner);
+
+    expect(find.text('เก็บในชุด ชุดทดสอบ'), findsOneWidget);
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+
+    expect(scanner.acceptedCategoryId, 'category:travel');
+    expect(scanner.acceptCalls, 1);
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+    expect(find.byType(ObjectScannerScreen), findsNothing);
+  });
+
+  testWidgets('pending confirmation blocks repeated taps capture and Back', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()..pendingAccept = Completer<void>();
+    await openSelectedSetScanner(tester, scanner);
+    final confirm = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'เพิ่มเข้าคลัง'),
+    );
+    confirm.onPressed!();
+    confirm.onPressed!();
+    await tester.pump();
+
+    expect(scanner.acceptCalls, 1);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.pageBack();
+    await tester.pump();
+    expect(find.byType(ObjectScannerScreen), findsOneWidget);
+
+    scanner.pendingAccept!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+  });
+
+  testWidgets('failed confirmation keeps the proposal for a safe retry', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()
+      ..acceptFailure = StateError('synthetic save failure');
+    await openSelectedSetScanner(tester, scanner);
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('apple'), findsOneWidget);
+    expect(
+      find.text('บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง'),
+      findsOneWidget,
+    );
+    expect(find.text('บันทึกแล้ว'), findsNothing);
+    scanner.acceptFailure = null;
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+    expect(scanner.acceptCalls, 2);
+    expect(find.text('กลับชุด category:travel'), findsOneWidget);
+  });
+
+  for (final selectedSet in [false, true]) {
+    testWidgets(
+      'owner switch stops confirmation before the scanner writes $selectedSet',
+      (tester) async {
+        final scanner = _FakeScanner();
+        final owners = _MutableOwners();
+        await tester.binding.setSurfaceSize(const Size(800, 1200));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: AppDependencies(
+              runtimeStatus: const AppRuntimeStatus(
+                localData: RuntimeAvailability.ready,
+                firebase: RuntimeAvailability.unavailable,
+                supabase: RuntimeAvailability.unavailable,
+                backends: RuntimeAvailability.unavailable,
+              ),
+              config: null,
+              guestSessionService: _UnusedGuestSession(),
+              localOwners: owners,
+            ),
+            child: MaterialApp(
+              home: ObjectScannerScreen(
+                scanner: scanner,
+                voice: VoiceUseCases(_FakeVoice()),
+                targetCategoryId: selectedSet ? 'category:travel' : null,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('object-scanner-capture-button')),
+        );
+        await tester.pumpAndSettle();
+        owners.ownerId = 'owner:other';
+
+        await tester.tap(find.text('เพิ่มเข้าคลัง'));
+        await tester.pumpAndSettle();
+
+        expect(scanner.acceptCalls, 0);
+        expect(
+          find.text('บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่'),
+          findsOneWidget,
+        );
+        expect(find.text('บันทึกแล้ว'), findsNothing);
+      },
+    );
+  }
+
   testWidgets('captures real adapter result and persists accepted vocabulary', (
     tester,
   ) async {
@@ -206,6 +896,44 @@ void main() {
     expect(scanner.isReady, isTrue);
   });
 
+  testWidgets('permission dialog lifecycle does not reopen a denied camera', (
+    tester,
+  ) async {
+    final permissionReply = Completer<void>();
+    final scanner = _FakeScanner()
+      ..pendingInitialize = permissionReply
+      ..initializeFailure = const CameraPracticeException(
+        CameraFailureCode.permissionDenied,
+      );
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    permissionReply.complete();
+    await tester.pumpAndSettle();
+    expect(scanner.resumeCalls, 0);
+    expect(scanner.initializeCalls, 1);
+    expect(
+      find.text('ไม่ได้รับสิทธิ์ใช้กล้อง จึงยังสแกนวัตถุไม่ได้'),
+      findsOneWidget,
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(scanner.resumeCalls, 0);
+    expect(scanner.initializeCalls, 1);
+  });
+
   testWidgets('offers verified model download when no active model exists', (
     tester,
   ) async {
@@ -354,22 +1082,35 @@ void main() {
 
 final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? initializeFailure;
+  Completer<void>? pendingInitialize;
   CameraPracticeException? captureFailure;
   int acceptCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
   int benchmarkCalls = 0;
   int initializeCalls = 0;
+  String? acceptedCategoryId;
+  Completer<void>? pendingAccept;
+  Object? acceptFailure;
+  ObjectScanResult? captureResult;
   @override
   bool isReady = false;
 
   @override
-  Future<VocabularyWord> accept(ObjectScanResult result) async {
+  Future<VocabularyWord> accept(
+    ObjectScanResult result, {
+    String? categoryId,
+    String? expectedOwnerId,
+  }) async {
     acceptCalls += 1;
+    acceptedCategoryId = categoryId;
+    await pendingAccept?.future;
+    final failure = acceptFailure;
+    if (failure != null) throw failure;
     return VocabularyWord(
       id: 'word:apple',
       ownerId: 'owner:1',
-      categoryId: 'category:food',
+      categoryId: categoryId ?? 'category:food',
       spelling: 'apple',
       normalizedSpelling: 'apple',
       meaning: 'แอปเปิล',
@@ -438,6 +1179,8 @@ final class _FakeScanner implements ObjectScannerController {
   }) async {
     final failure = captureFailure;
     if (failure != null) throw failure;
+    final result = captureResult;
+    if (result != null) return result;
     return ObjectScanResult(
       classifications: const [
         ModelClassification(index: 1, label: 'Apple', confidence: 0.91),
@@ -468,6 +1211,7 @@ final class _FakeScanner implements ObjectScannerController {
   @override
   Future<void> initialize() async {
     initializeCalls += 1;
+    await pendingInitialize?.future;
     final failure = initializeFailure;
     if (failure != null) throw failure;
     isReady = true;
@@ -484,6 +1228,47 @@ final class _FakeScanner implements ObjectScannerController {
     resumeCalls += 1;
     isReady = true;
   }
+}
+
+final class _MutableOwners extends Fake implements LocalOwnerRepository {
+  String ownerId = 'owner:1';
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async =>
+      LocalOwner(id: ownerId, createdAtUtc: DateTime.utc(2026, 11, 13));
+}
+
+final class _UnusedGuestSession extends Fake implements GuestSessionService {}
+
+final class _ControlledVocabularyRepository extends Fake
+    implements VocabularyRepository {
+  _ControlledVocabularyRepository(this.delegate);
+  final VocabularyRepository delegate;
+  Completer<void>? pendingSave;
+  bool failNextSave = false;
+  int createCalls = 0;
+
+  @override
+  Future<VocabularyWord> createWord(VocabularyWord word) async {
+    createCalls++;
+    await pendingSave?.future;
+    if (failNextSave) {
+      failNextSave = false;
+      throw StateError('synthetic manual save failure');
+    }
+    return delegate.createWord(word);
+  }
+}
+
+Future<void> _pumpUntilManual(WidgetTester tester, Finder finder) async {
+  for (var index = 0; index < 100; index++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  fail('Manual correction did not reach $finder');
 }
 
 final class _FakeVoice implements VoiceProvider {

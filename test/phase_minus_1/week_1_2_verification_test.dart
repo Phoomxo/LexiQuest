@@ -1,14 +1,16 @@
 /// Phase -1 Week 1-2 Gate Verification Tests
 ///
 /// These tests verify that all 5 deliverables exist and contain
-/// required content. They are file-system / static-analysis tests
-/// and do NOT require a running Flutter app or database.
+/// required content and the current in-memory SQLite schema.
+/// They do not require a running app or external database.
 ///
 /// Run: flutter test test/phase_minus_1/week_1_2_verification_test.dart
 library;
 
 import 'dart:io';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -253,39 +255,47 @@ void main() {
     });
 
     test(
-      'confirms v7 and v8 migrations deployed, no v9+ migration exists yet',
-      () {
-        final dbContent = _read('lib/data/local/app_database.dart');
+      'current database retains historical tables and adds reserved v26 tables',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final tables = await database
+            .customSelect("SELECT name FROM sqlite_master WHERE type='table'")
+            .map((row) => row.read<String>('name'))
+            .get();
         expect(
-          dbContent.contains('from < 7'),
-          isTrue,
-          reason: 'Schema v7 migration must exist after Week 5-6',
+          tables,
+          containsAll([
+            'events_v2',
+            'quest_definitions',
+            'quest_instances',
+            'quest_objective_progress',
+            'streak_states',
+            'learning_day_log',
+            'association_records',
+            'associative_memory_states',
+            'owner_calendar_epochs',
+            'quest_definition_revisions',
+            'quest_claim_receipts',
+            'streak_baselines',
+            'streak_token_adjustments',
+            'local_content_reports',
+            'focus_sessions',
+            'learning_preferences',
+            'archived_v25_records',
+          ]),
         );
-        expect(
-          dbContent.contains('from < 8'),
-          isTrue,
-          reason: 'Schema v8 migration must exist after Phase 0 Week 10-11',
-        );
-        expect(
-          dbContent.contains('from < 9'),
-          isTrue,
-          reason: 'Schema v9 migration must exist after Phase 1 D7.2',
-        );
-        expect(
-          dbContent.contains('from < 10'),
-          isTrue,
-          reason: 'Schema v10 migration must exist after Phase 2 D8.3',
-        );
-        expect(dbContent.contains('from < 11'), isFalse);
       },
     );
 
-    test('current schemaVersion in code is 10', () {
-      final dbContent = _read('lib/data/local/app_database.dart');
+    test('current database persists reserved schema version 26', () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      expect(database.schemaVersion, 26);
       expect(
-        dbContent.contains('schemaVersion => 10'),
-        isTrue,
-        reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3',
+        (await database.customSelect('PRAGMA user_version').getSingle())
+            .read<int>('user_version'),
+        database.schemaVersion,
       );
     });
   });

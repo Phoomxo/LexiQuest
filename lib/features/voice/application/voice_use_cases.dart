@@ -42,7 +42,7 @@ final class VoiceUseCases {
   /// the provider is not a [ManagedVoiceService].
   void disposeIfOwned(bool owns) {
     if (owns && _provider is ManagedVoiceService) {
-      _provider.dispose();
+      _provider.dispose().ignore();
     }
   }
 

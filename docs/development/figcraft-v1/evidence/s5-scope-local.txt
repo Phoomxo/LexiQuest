@@ -1,0 +1,22 @@
+S5 account, progress and export scope subcard
+Source: Dart files in the commit containing this record; parent 2d4e43f56f8b695b0fe073b413ef30cd497e8a28.
+
+PASS: 377 focused tests in build/s5-boundaries-verified.txt.
+Command: flutter test --no-pub test/features/account test/features/identity test/features/account_deletion test/features/export test/features/consent test/features/research test/features/sync test/features/progress/progress_use_cases_test.dart test/features/events/event_envelope_v2_test.dart test/screens/account_dependency_scope_test.dart test/screens/setting_screen_test.dart test/screens/profile_settings_screen_test.dart test/screens/export_center_screen_test.dart test/screens/account_deletion_screen_test.dart test/screens/login_guest_mode_test.dart test/screens/email_action_screen_test.dart test/runtime/app_bootstrap_test.dart test/architecture/participant_screen_boundary_test.dart --reporter expanded --timeout 45s
+
+PASS: clean full flutter analyze --no-pub in build/s5-analyze.txt.
+PASS: 47 final Settings/Profile/account-scope tests after removing one redundant null-aware operator, build/s5-account-final.txt. This overlapping suite is not added to 377.
+Formatting: nine changed/new Dart files unchanged by formatter. git diff --check passed.
+
+Observed REDs before correction:
+- build/s5-progress-export-red.txt: seven contract failures, six baseline controls passed. Stale owner summary, old export dispatch and external artifact after replacement were reproduced.
+- build/s5-export-injected-scope-red.txt: missing replacement scope still exposed the old injected export callback.
+- build/s5-account-scope-red.txt: seven stale account/dialog/sync/name behaviors reproduced.
+- build/s5-name-uid-red-and-export-recheck.txt: held owner-A lookup followed by same-gateway UID B wrote firebase-b. The corrected export viewport fixture passed in the same run.
+- build/s5-consent-dialog-red.txt: Cancel/Confirm under replaced service or same-service/new-scope performed old reads/decisions. All four cases reproduced.
+
+Corrections use existing owners, gateways, export cancellation, consent use cases and sync triggers. No schema or public gateway API changed. Synthetic adapters/SQLite only; no real passwords, research decisions, deletion, cloud enrollment or upload were executed.
+
+Independent review accepted Progress/Export, AccountUseCases name UID guard, Settings/Profile and the consent continuation pin. Existing irreversible native write after dispatch remains an explicit export contract; cancellation prevents dispatch while the request/picker is still pending.
+
+This closes the stale-scope subcard, not all S5. FullAccountExporter local implementation and disabled/live composition disposition remain open. Current-source full regression/CI and native tests after S5 remain for integration. The signed v28/native images are source 08ce39bc, not this later source.

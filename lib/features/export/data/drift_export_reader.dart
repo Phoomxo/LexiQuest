@@ -135,13 +135,25 @@ final class DriftExportReader implements ExportReader {
                        a.prompt_mode, a.is_correct, a.response_time_ms,
                        a.occurred_at_utc_ms, a.provider_provenance
                 FROM answer_attempts a
+                INNER JOIN learning_sessions s
+                  ON s.id = a.session_id AND s.owner_id = a.owner_id
                 INNER JOIN vocabulary_words w
                   ON w.id = a.word_id AND w.owner_id = a.owner_id
-                WHERE a.owner_id = ?
+                WHERE a.owner_id = ? AND s.activity_type <> 'assessment'
+                  AND NOT EXISTS (
+                    SELECT 1 FROM archived_v25_records ar
+                    WHERE ar.owner_id = s.owner_id AND ar.source_table = 'assessment_runs'
+                      AND json_extract(ar.payload_json, '\$.learning_session_id') = s.id
+                  )
                 ORDER BY a.occurred_at_utc_ms, a.id
                 ''',
                 variables: [Variable<String>(ownerId)],
-                readsFrom: {database.answerAttempts, database.vocabularyWords},
+                readsFrom: {
+                  database.answerAttempts,
+                  database.vocabularyWords,
+                  database.learningSessions,
+                  database.archivedV25Records,
+                },
               )
               .get()
         : const <QueryRow>[];

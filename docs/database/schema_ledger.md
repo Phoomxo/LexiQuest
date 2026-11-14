@@ -132,19 +132,126 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 ---
 
-## Phase 0+ (v11+)
+### v11 — Local calendar evidence and recurring Quest claims
+**Reserved:** 2026-11-14
+**Branch:** codex/figcraft-flutter-prototype
+**PR:** [16](https://github.com/Phoomxo/LexiQuest/pull/16)
+**Owner:** Root integration; disjoint table/test writers under S6-C
+**Status:** 🔒 RESERVED — locally implemented/verified in S6-C (Flutter1946, AI107, analysis/reviews); no rollout
 
-Current implemented schema is **v10**, matching `AppDatabase.schemaVersion` and
-the deployed Associative Learning Persistence entry above. The former future-v10
-placeholder was superseded by that recorded migration and must not be reused.
-The next reservable version is **v11**; this reconciliation reserves no version
-and adds no schema or migration code.
+**Planned tables/columns:**
+- Nullable `answer_attempts.calendar_evidence` and `quest_intent`, preserving old rows.
+- New `owner_calendar_epochs`, `quest_definition_revisions` (shared),
+  `quest_claim_receipts`, `streak_baselines`, `streak_token_adjustments`.
+- Quest instance origin/period/calendar/segments/digest/alias/kind fields,
+  exact revision FK and canonical period uniqueness replacing lifetime uniqueness.
+- Owner/time/ID query index; existing indexes and original EventEnvelopeV2 schema unchanged.
+
+**Migration safety and coverage:**
+Frozen actual v10 SQL fixture and focused RED precede migration code. Stage and
+restore parent/objective data with FK enforcement inside one write transaction;
+compare original data/IDs/JSON and publish version last. Preserve legacy balances,
+freeze assets and unverifiable history; generate no claims or research events.
+Four new owner scopes require migration, merge, full local export and deletion;
+shared definitions remain public/retained. Calendar/claim authority stays local,
+with local-only sync metadata handling and schema-aware export/backend contracts.
+Real-file reopen/rollback/current-create parity and historical upgrades are required.
+Same-database downgrade to old clients is unsupported; never reset live data.
+
+The concrete write set and checks are in
+`docs/development/figcraft-v1/s6-persistence-plan.md`. Existing approved S1–S7
+implementation authority covers this local card; release and real-data authority
+remain separate. AppDatabase is still v10 at reservation time.
+
+---
+
+### v12 — Local practice recovery and study records
+**Reserved:** 2026-11-14
+**Branch:** codex/figcraft-flutter-prototype
+**PR:** [16](https://github.com/Phoomxo/LexiQuest/pull/16)
+**Owner:** Root integration; disjoint schema/test/backend writers
+**Status:** Implemented locally, verification in progress. No rollout.
+
+**Tables and columns:**
+- Nullable local-only session `question_plan_json` and `continuation_json`;
+  nullable attempt `answer_evidence_json` (slot plus selected/reveal evidence).
+- Default-false local `vocabulary_words.is_bookmarked`, preserving public sync.
+- Three owner scopes: `local_content_reports`, `focus_sessions`,
+  `learning_preferences`. Focus is independent of learning sessions/rewards.
+  Actual generated table count must be37, not the44-feature catalogue count.
+
+**Migration safety and coverage:**
+The actual fresh-v11 schema was captured before migration and checked against
+the real frozen-v10→v11 upgrade for columns/FKs/indexes. Its synthetic fixture
+contains no learner rows. Focused RED precedes migration code. Add nullable/default
+columns without fabricated history, duration, preferences or research facts.
+Test populated v11 file upgrade/reopen, fresh/upgraded parity, failure rollback,
+re-entry, FK/check constraints and all historical upgrade paths. Preserve IDs,
+raw data, existing indexes and frozen research/event contracts.
+
+Every new owner scope requires merge, export and deletion. Bookmark follows the
+existing word, with explicit duplicate OR and inbound-local-field preservation.
+Preference singleton/closed-goal and two-open-timer merges need deterministic
+rules. Local exports and backend schema-version scope validation extend together;
+old versions and fixed cloud deletion scopes remain unchanged. New fields/tables
+must not enter cloud/research payloads. Same-database downgrade is unsupported;
+never reset live data. The executable order and acceptance are recorded in
+`docs/development/figcraft-v1/execution.md` under the S7 persistence plan.
+
+Existing S1–S7 authorization covers local implementation/synthetic tests. Real
+enrollment/upload, deployment, live deletion and merge permission stay separate.
+AppDatabase remains v11 at reservation; f31 source34e628a7 passed2176 locally.
+
+---
+
+### v26 — Reconcile the installed v25 lineage
+
+**Reserved:** 2026-11-14
+**Branch:** codex/figcraft-flutter-prototype
+**PR:** [16](https://github.com/Phoomxo/LexiQuest/pull/16)
+**Status:** Local regression and analysis passed. Native and CI verification pending.
+
+The installed Cycle 12 v26 APK used database v25 at `00d6c8ea`.
+Its [lineage evidence](../development/figcraft-v1/evidence/s7-v12-native-migration.txt)
+shows that a later v10 binary retained old tables while changing `user_version`.
+The other branch already used v11–v25. Those numbers cannot identify a schema
+across both lineages. Reserve v26, higher than both branches' installed schemas.
+
+Reserve one owner-scoped table, `archived_v25_records`, for lossless local retention
+of historical-only rows and columns. Keep origin identity and source keys.
+Archive records are accessible through full owner export and local deletion.
+Ordinary records may follow an authorized owner merge. Preserve the old
+restriction on transferring signed historical research across owners.
+
+Reserve nullable migration-only `legacy_evidence_disposition` on
+`learning_sessions` and `answer_attempts`. Retain raw old classifications
+in the archive and use the disposition to prevent incompatible evidence from
+entering new projections or sync. Keep existing XP entries and issued coin
+receipts with their original identities. Archive the v25 eligibility verdict
+for old points and answer rows. Rendering balances and replaying old rows
+respects those verdicts. Assessment links take precedence over old activity
+labels. Rebuild legacy Quest and day tables after copying and validating their
+data. The full export has 36 scopes and cloud deletion has 26. Frozen research
+and cloud-wire contracts are unchanged.
+
+Support clean local v1–v12, exact historical v25 and known relabelled-v10 shape.
+Route on semantically verified DDL and versions. Reject unknown future, partial
+and ambiguous cross-branch layouts transactionally. Require coverage for both
+owners, rollback/reopen, merge/export/delete, no reactivation of past research
+or delivery operations, and ordinary offline practice before a device update.
+
+## Phase 0+ (v27+)
+
+The FigCraft branch declares **v26** in `AppDatabase.schemaVersion`.
+The last deployed entry in this ledger remains **v10** Associative Learning
+Persistence. Both branches' reservations through **v26** are recorded above.
+The next reservable version is **v27**.
 
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
-| v11+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v27+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10. Reserve the next available version, starting at v11,
+> **Rule:** Do not reuse v10–v26. Reserve the next available version, starting at v27,
 > through a separate approved entry before writing migration code.
 
 ---
@@ -163,6 +270,8 @@ and adds no schema or migration code.
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
+| 2026-11-14 | Reserved v11 for S6-C after actual v10 fixture and focused RED; new local calendar/Quest/streak data requires lifecycle and policy coverage before acceptance. No rollout. | Root integration |
+| 2026-11-14 | Reserved v12 for local practice recovery, bookmark and three study owner scopes after actual v11 capture/parity; coordinated lifecycle/export/delete and local-only sync checks required. No rollout. | Root integration |
 
 ---
 

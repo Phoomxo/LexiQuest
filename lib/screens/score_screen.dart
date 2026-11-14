@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 
-class ScoreScreen extends StatelessWidget {
+class ScoreScreen extends StatefulWidget {
   const ScoreScreen({
     super.key,
     required this.correctAnswers,
@@ -12,6 +16,12 @@ class ScoreScreen extends StatelessWidget {
     this.selectedCategoryId,
     this.mistakes = const [],
     this.onPracticeMistakes,
+    this.categoryName,
+    this.sessionId,
+    this.returnLabel = 'กลับไปเลือกกิจกรรม',
+    this.showOriginalHistory = false,
+    this.originalAnswers,
+    this.expectedOwnerId,
   });
 
   final int correctAnswers;
@@ -19,17 +29,98 @@ class ScoreScreen extends StatelessWidget {
   final int? score;
   final List<QuizWord> mistakes;
   final VoidCallback? onPracticeMistakes;
+  final String? categoryName;
+  final String? sessionId;
+  final String returnLabel;
+  final bool showOriginalHistory;
+  final List<OriginalQuizAnswer>? originalAnswers;
+  final String? expectedOwnerId;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
   final String? selectedCategoryId;
 
   @override
+  State<ScoreScreen> createState() => _ScoreScreenState();
+}
+
+class _ScoreScreenState extends State<ScoreScreen> {
+  AppDependencies? _dependencies;
+  bool _captured = false;
+  bool _invalidated = false;
+  StreamSubscription<String?>? _ownerChanges;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = AppDependenciesScope.maybeOf(context);
+    if (!_captured) {
+      _dependencies = current;
+      _captured = true;
+      final ownerId = widget.expectedOwnerId;
+      if (ownerId != null) {
+        _ownerChanges = current?.watchActiveOwnerId()?.listen((active) {
+          if (active != ownerId) _hideResult();
+        }, onError: (Object _) => _hideResult());
+      }
+    } else if (!identical(current, _dependencies)) {
+      _invalidated = true;
+    }
+  }
+
+  void _hideResult() {
+    if (mounted && !_invalidated) setState(() => _invalidated = true);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_ownerChanges?.cancel());
+    super.dispose();
+  }
+
+  bool get _isCurrent =>
+      mounted &&
+      !_invalidated &&
+      identical(AppDependenciesScope.maybeOf(context), _dependencies);
+
+  bool get _canAct => _isCurrent && (ModalRoute.of(context)?.isCurrent ?? true);
+
+  @override
   Widget build(BuildContext context) {
-    final total = correctAnswers + wrongAnswers;
+    if (!_isCurrent) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('ผลการเรียน')),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('กรุณากลับไปเปิดผลการฝึกอีกครั้ง'),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () {
+                    if (mounted &&
+                        (ModalRoute.of(context)?.isCurrent ?? true)) {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
+                  child: const Text('กลับ'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    final total = widget.correctAnswers + widget.wrongAnswers;
     final resolvedScore =
-        score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
+        widget.score ??
+        (total == 0 ? 0 : ((widget.correctAnswers * 100) / total).round());
     return Scaffold(
+      key: widget.sessionId == null
+          ? null
+          : ValueKey('score-session:${widget.sessionId}'),
       appBar: AppBar(title: const Text('ผลการเรียน')),
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
@@ -39,6 +130,13 @@ class ScoreScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (widget.categoryName != null) ...[
+                  Text(
+                    widget.categoryName!,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   '$resolvedScore%',
                   style: Theme.of(context).textTheme.displayMedium,
@@ -46,12 +144,12 @@ class ScoreScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 _ResultRow(
                   label: 'ตอบถูก',
-                  value: correctAnswers,
+                  value: widget.correctAnswers,
                   icon: Icons.check_circle_outline,
                 ),
                 _ResultRow(
                   label: 'ตอบผิด',
-                  value: wrongAnswers,
+                  value: widget.wrongAnswers,
                   icon: Icons.cancel_outlined,
                 ),
                 _ResultRow(
@@ -60,30 +158,61 @@ class ScoreScreen extends StatelessWidget {
                   icon: Icons.dataset_outlined,
                 ),
                 const SizedBox(height: 24),
-                if (mistakes.isNotEmpty) ...[
+                if (widget.showOriginalHistory) ...[
+                  Text(
+                    'คำตอบจากรอบเดิม',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (widget.originalAnswers == null)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('ไม่มีข้อความโจทย์และคำตอบเดิมของรอบนี้'),
+                    )
+                  else
+                    for (final answer in widget.originalAnswers!)
+                      ListTile(
+                        leading: Icon(
+                          answer.isCorrect
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
+                          semanticLabel: answer.isCorrect ? 'ตอบถูก' : 'ตอบผิด',
+                        ),
+                        title: Text(answer.question.promptText),
+                        subtitle: Text(
+                          answer.chosenAnswer == null
+                              ? 'ครั้งก่อนขอดูคำตอบ'
+                              : 'ครั้งก่อนเลือก ${answer.chosenAnswer}',
+                        ),
+                      ),
+                ],
+                if (widget.mistakes.isNotEmpty) ...[
                   Text(
                     'คำที่ควรฝึกต่อ',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  ...mistakes.map(
+                  ...widget.mistakes.map(
                     (word) => ListTile(
                       title: Text(word.spelling),
                       subtitle: Text(word.meaning),
                     ),
                   ),
-                  if (onPracticeMistakes != null)
+                  if (widget.onPracticeMistakes != null)
                     FilledButton.icon(
-                      onPressed: onPracticeMistakes,
+                      onPressed: () {
+                        if (_canAct) widget.onPracticeMistakes?.call();
+                      },
                       icon: const Icon(Icons.refresh),
-                      label: Text('ฝึกคำที่ผิด (${mistakes.length})'),
+                      label: Text('ฝึกคำที่ผิด (${widget.mistakes.length})'),
                     ),
                   const SizedBox(height: 12),
                 ],
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    if (_canAct) Navigator.of(context).pop();
+                  },
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('กลับไปเลือกกิจกรรม'),
+                  label: Text(widget.returnLabel),
                 ),
               ],
             ),

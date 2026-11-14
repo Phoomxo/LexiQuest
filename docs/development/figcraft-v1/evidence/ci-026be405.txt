@@ -1,0 +1,12 @@
+Completed GitHub Actions for S6-D3/D4.
+Commit 026be405c510cd642911dc4dc2ba1fdc1b2a487f
+Run https://github.com/Phoomxo/LexiQuest/actions/runs/43563486487
+Conclusion SUCCESS, exact commit read back from API and full raw log.
+
+Flutter2089 passed; full analysis/format/CLI/Firestore/Supabase passed.
+Voice55, AI107 and LexiQuest-LM75 CPU tests passed; Android debug build passed.
+Raw log build/ci-026be405-success.txt
+SHA256 0eea1a7e937b960cad41375b9aea2072d67c38161599a3c06e3b2b0ac3aee3f8
+
+This verifies committed D3/D4, not subsequent dirty S7 practice work.
+Native v29 remains earlier-source evidence. No current-source install claimed.

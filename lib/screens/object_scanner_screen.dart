@@ -7,18 +7,30 @@ import '../features/device_model/application/model_benchmark.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'device_permission_center_screen.dart';
+import 'add_vocab_screen.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
-  const ObjectScannerScreen({super.key, this.scanner, this.voice});
+  const ObjectScannerScreen({
+    super.key,
+    this.scanner,
+    this.voice,
+    this.targetCategoryId,
+    this.targetCategoryName,
+  });
 
   final ObjectScannerController? scanner;
   final VoiceUseCases? voice;
+  final String? targetCategoryId;
+  final String? targetCategoryName;
 
   @override
   State<ObjectScannerScreen> createState() => _ObjectScannerScreenState();
@@ -35,8 +47,12 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _benchmarking = false;
   bool _modelUnavailable = false;
   bool _accepted = false;
+  bool _saving = false;
+  bool _editingManual = false;
+  String? _expectedOwnerId;
   String? _error;
   CameraFailureCode? _initializationFailure;
+  CameraFailureCode? _captureFailure;
   ObjectScanResult? _result;
   List<ModelBenchmarkResult> _benchmarks = const [];
   ModelCancellation? _cancellation;
@@ -77,6 +93,15 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       });
     }
     try {
+      final owners = AppDependenciesScope.maybeOf(context)?.localOwners;
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (_expectedOwnerId != null && owner.id != _expectedOwnerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        _expectedOwnerId = owner.id;
+      }
+      if (!mounted) return;
       await scanner.initialize();
       if (mounted) {
         setState(() {
@@ -94,12 +119,19 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
           _error = _cameraFailureText(error.code);
         });
       }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+          _error = 'อ่านบัญชีในเครื่องไม่สำเร็จ กรุณากลับแล้วลองอีกครั้ง';
+        });
+      }
     }
   }
 
   Future<void> _capture() async {
     final scanner = _scanner;
-    if (scanner == null || _capturing) return;
+    if (scanner == null || _capturing || _saving || _editingManual) return;
     final cancellation = ModelCancellation();
     _cancellation = cancellation;
     setState(() {
@@ -107,6 +139,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       _accepted = false;
       _error = null;
       _result = null;
+      _captureFailure = null;
     });
     try {
       final result = await scanner.captureAndClassify(
@@ -114,7 +147,12 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       );
       if (mounted) setState(() => _result = result);
     } on CameraPracticeException catch (error) {
-      if (mounted) setState(() => _error = _cameraFailureText(error.code));
+      if (mounted) {
+        setState(() {
+          _error = _cameraFailureText(error.code);
+          _captureFailure = error.code;
+        });
+      }
     } finally {
       if (mounted) setState(() => _capturing = false);
       _cancellation = null;
@@ -183,14 +221,194 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Future<void> _accept() async {
     final scanner = _scanner;
     final result = _result;
-    if (scanner == null || result == null || result.vocabulary == null) return;
+    if (scanner == null ||
+        result == null ||
+        result.vocabulary == null ||
+        _saving ||
+        _editingManual ||
+        _accepted) {
+      return;
+    }
+    final owners = AppDependenciesScope.maybeOf(context)?.localOwners;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      await scanner.accept(result);
-      if (mounted) setState(() => _accepted = true);
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (owner.id != _expectedOwnerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (!mounted) return;
+      final word = await scanner.accept(
+        result,
+        categoryId: widget.targetCategoryId,
+        expectedOwnerId: _expectedOwnerId,
+      );
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (owner.id != _expectedOwnerId || word.ownerId != owner.id) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (!mounted) return;
+      if (widget.targetCategoryId != null &&
+          word.categoryId != widget.targetCategoryId) {
+        throw const VocabularyNotFoundFailure();
+      }
+      setState(() {
+        _accepted = true;
+        _saving = false;
+      });
+      if (widget.targetCategoryId != null) {
+        Navigator.of(context).pop<VocabularyWord>(word);
+      }
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () => _error = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง');
       }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _correctManually() async {
+    if (_editingManual || _saving || _capturing) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = dependencies?.vocabulary;
+    final scanner = _scanner;
+    final result = _result;
+    final categoryId = widget.targetCategoryId;
+    final ownerId = _expectedOwnerId;
+    if (dependencies == null ||
+        vocabulary == null ||
+        scanner == null ||
+        categoryId == null ||
+        ownerId == null ||
+        (result == null &&
+            _captureFailure != CameraFailureCode.noConfidentMatch)) {
+      return;
+    }
+    setState(() {
+      _editingManual = true;
+      _error = null;
+    });
+    try {
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      await scanner.pause();
+      try {
+        await _voice.stop();
+      } catch (_) {
+        // Audio failure must not prevent a manual word correction.
+      }
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (!mounted) return;
+      final draft = CreateWordCommand(
+        categoryId: categoryId,
+        spelling:
+            result?.vocabulary?.englishWord ?? result?.primary.label ?? '',
+        meaning: '',
+        partOfSpeech: '',
+        source: 'object-scanner:manualCorrection',
+      );
+      final saved = await AppNavigator.pushPage<VocabularyWord>(
+        context,
+        AppPage<VocabularyWord>(
+          name: 'vocabulary/camera-manual-correction',
+          builder: (_) => AddWordScreen(
+            categoryId: categoryId,
+            categoryName: widget.targetCategoryName,
+            vocabulary: vocabulary,
+            expectedOwnerId: ownerId,
+            initialDraft: draft,
+          ),
+        ),
+      );
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (saved != null) {
+        if (saved.categoryId != categoryId || saved.ownerId != ownerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        if (!mounted) return;
+        setState(() {
+          _accepted = true;
+          _editingManual = false;
+        });
+        Navigator.of(context).pop<VocabularyWord>(saved);
+        return;
+      }
+      await scanner.resume();
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (mounted) setState(() {});
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () => _error = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'เปิดหน้ากรอกคำหรือกลับไปใช้กล้องไม่สำเร็จ กรุณาลองอีกครั้ง',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _editingManual = false);
+    }
+  }
+
+  Future<void> _requireManualContext(
+    AppDependencies dependencies,
+    ObjectScanResult? result,
+    String categoryId,
+    String ownerId,
+    ObjectScannerController scanner,
+  ) async {
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), dependencies) &&
+        identical(_result, result) &&
+        identical(_scanner, scanner) &&
+        widget.targetCategoryId == categoryId &&
+        _expectedOwnerId == ownerId;
+    final owners = dependencies.localOwners;
+    if (!current() || owners == null) throw const VocabularyNotFoundFailure();
+    final owner = await owners.getOrCreateActiveOwner();
+    if (!current() || owner.id != ownerId) {
+      throw const VocabularyNotFoundFailure();
     }
   }
 
@@ -216,7 +434,10 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final scanner = _scanner;
     if (scanner == null) return;
+    // The OS permission dialog can pause and resume the app during initialization.
+    if (_initializing) return;
     if (state == AppLifecycleState.resumed) {
+      if (_editingManual || _initializationFailure != null) return;
       scanner
           .resume()
           .then((_) {
@@ -251,177 +472,219 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Widget build(BuildContext context) {
     final scanner = _scanner;
     final result = _result;
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, 'สแกนวัตถุ'),
-      ),
-      body: AdaptiveContentPane(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.all(
-              MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
-            ),
-            children: [
-              AspectRatio(
-                aspectRatio: 4 / 3,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: ColoredBox(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    child: _initializing
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              semanticsLabel: 'กำลังเปิดกล้อง',
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final canCorrectManually =
+        widget.targetCategoryId != null &&
+        _expectedOwnerId != null &&
+        dependencies?.localOwners != null &&
+        dependencies?.vocabulary != null &&
+        (result != null ||
+            _captureFailure == CameraFailureCode.noConfidentMatch);
+    return PopScope(
+      canPop: !_saving && !_editingManual,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: M3Theme.appBarToolbarHeight(context),
+          title: M3Theme.appBarTitle(context, 'สแกนวัตถุ'),
+        ),
+        body: AdaptiveContentPane(
+          child: SafeArea(
+            child: ListView(
+              padding: EdgeInsets.all(
+                MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
+              ),
+              children: [
+                if (widget.targetCategoryName != null) ...[
+                  Text('เก็บในชุด ${widget.targetCategoryName}'),
+                  const SizedBox(height: 12),
+                ],
+                AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: ColoredBox(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      child: _initializing
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                semanticsLabel: 'กำลังเปิดกล้อง',
+                              ),
+                            )
+                          : scanner?.isReady ?? false
+                          ? scanner!.buildPreview()
+                          : const Center(
+                              child: Icon(
+                                Icons.no_photography_outlined,
+                                size: 64,
+                              ),
                             ),
-                          )
-                        : scanner?.isReady ?? false
-                        ? scanner!.buildPreview()
-                        : const Center(
-                            child: Icon(
-                              Icons.no_photography_outlined,
-                              size: 64,
-                            ),
-                          ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                key: const ValueKey<String>('object-scanner-capture-button'),
-                onPressed: scanner?.isReady == true && !_capturing
-                    ? _capture
-                    : null,
-                icon: _capturing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          semanticsLabel: 'กำลังวิเคราะห์ภาพ',
-                        ),
-                      )
-                    : const Icon(Icons.camera_alt_outlined),
-                label: Text(
-                  _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
-                ),
-              ),
-              if (scanner?.isReady == true) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  key: const ValueKey<String>('object-scanner-benchmark-model'),
-                  onPressed: _benchmarking || _capturing
-                      ? null
-                      : _benchmarkModel,
-                  icon: _benchmarking
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  key: const ValueKey<String>('object-scanner-capture-button'),
+                  onPressed:
+                      scanner?.isReady == true &&
+                          !_capturing &&
+                          !_saving &&
+                          !_editingManual
+                      ? _capture
+                      : null,
+                  icon: _capturing
                       ? const SizedBox.square(
                           dimension: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            semanticsLabel: 'กำลังทดสอบประสิทธิภาพโมเดล',
+                            semanticsLabel: 'กำลังวิเคราะห์ภาพ',
                           ),
                         )
-                      : const Icon(Icons.speed_outlined),
+                      : const Icon(Icons.camera_alt_outlined),
                   label: Text(
-                    _benchmarking
-                        ? 'กำลังทดสอบประสิทธิภาพ…'
-                        : 'ทดสอบประสิทธิภาพบนเครื่องนี้',
+                    _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
                   ),
                 ),
-              ],
-              if (_benchmarks.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Card(
-                  key: const ValueKey<String>(
-                    'object-scanner-benchmark-result',
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
-                        for (final result in _benchmarks)
-                          Text(_benchmarkSummary(result)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (_modelUnavailable) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  key: const ValueKey<String>('object-scanner-download-model'),
-                  onPressed: _downloading
-                      ? () => _cancellation?.cancel()
-                      : _downloadModel,
-                  icon: Icon(_downloading ? Icons.stop : Icons.download),
-                  label: Text(
-                    _downloading
-                        ? 'ยกเลิกดาวน์โหลด'
-                        : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
-                  ),
-                ),
-              ],
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _error!,
-                    key: const ValueKey<String>('object-scanner-error'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-                if (scanner != null &&
-                    scanner.isReady != true &&
-                    !_modelUnavailable) ...[
+                if (scanner?.isReady == true) ...[
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    key: const ValueKey<String>('object-scanner-retry-camera'),
+                    key: const ValueKey<String>(
+                      'object-scanner-benchmark-model',
+                    ),
                     onPressed:
-                        _initializationFailure ==
-                            CameraFailureCode.permissionPermanentlyDenied
-                        ? () => AppNavigator.pushPage<void>(
-                            context,
-                            AppPage<void>(
-                              name: 'settings/device-permissions',
-                              builder: (_) =>
-                                  const DevicePermissionCenterScreen(),
+                        _benchmarking || _capturing || _saving || _editingManual
+                        ? null
+                        : _benchmarkModel,
+                    icon: _benchmarking
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              semanticsLabel: 'กำลังทดสอบประสิทธิภาพโมเดล',
                             ),
                           )
-                        : _initialize,
-                    icon: Icon(
-                      _initializationFailure ==
-                              CameraFailureCode.permissionPermanentlyDenied
-                          ? Icons.settings_outlined
-                          : Icons.refresh,
-                    ),
+                        : const Icon(Icons.speed_outlined),
                     label: Text(
-                      _initializationFailure ==
-                              CameraFailureCode.permissionPermanentlyDenied
-                          ? 'เปิดศูนย์สิทธิ์อุปกรณ์'
-                          : 'ลองเปิดกล้องอีกครั้ง',
+                      _benchmarking
+                          ? 'กำลังทดสอบประสิทธิภาพ…'
+                          : 'ทดสอบประสิทธิภาพบนเครื่องนี้',
                     ),
                   ),
                 ],
-              ],
-              if (result != null) ...[
-                const SizedBox(height: 16),
-                _ResultCard(
-                  result: result,
-                  accepted: _accepted,
-                  onSpeak: () => _speak(
-                    result.vocabulary?.englishWord ??
-                        (result.matchedClassification ?? result.primary).label,
+                if (_benchmarks.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Card(
+                    key: const ValueKey<String>(
+                      'object-scanner-benchmark-result',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
+                          for (final result in _benchmarks)
+                            Text(_benchmarkSummary(result)),
+                        ],
+                      ),
+                    ),
                   ),
-                  onAccept: result.vocabulary == null ? null : _accept,
-                ),
+                ],
+                if (_modelUnavailable) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: const ValueKey<String>(
+                      'object-scanner-download-model',
+                    ),
+                    onPressed: _downloading
+                        ? () => _cancellation?.cancel()
+                        : _downloadModel,
+                    icon: Icon(_downloading ? Icons.stop : Icons.download),
+                    label: Text(
+                      _downloading
+                          ? 'ยกเลิกดาวน์โหลด'
+                          : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
+                    ),
+                  ),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _error!,
+                      key: const ValueKey<String>('object-scanner-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                  if (scanner != null &&
+                      scanner.isReady != true &&
+                      !_modelUnavailable) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      key: const ValueKey<String>(
+                        'object-scanner-retry-camera',
+                      ),
+                      onPressed:
+                          _initializationFailure ==
+                              CameraFailureCode.permissionPermanentlyDenied
+                          ? () => AppNavigator.pushPage<void>(
+                              context,
+                              AppPage<void>(
+                                name: 'settings/device-permissions',
+                                builder: (_) =>
+                                    const DevicePermissionCenterScreen(),
+                              ),
+                            )
+                          : _initialize,
+                      icon: Icon(
+                        _initializationFailure ==
+                                CameraFailureCode.permissionPermanentlyDenied
+                            ? Icons.settings_outlined
+                            : Icons.refresh,
+                      ),
+                      label: Text(
+                        _initializationFailure ==
+                                CameraFailureCode.permissionPermanentlyDenied
+                            ? 'เปิดศูนย์สิทธิ์อุปกรณ์'
+                            : 'ลองเปิดกล้องอีกครั้ง',
+                      ),
+                    ),
+                  ],
+                ],
+                if (result != null) ...[
+                  const SizedBox(height: 16),
+                  _ResultCard(
+                    result: result,
+                    accepted: _accepted,
+                    saving: _saving,
+                    onSpeak: () => _speak(
+                      result.vocabulary?.englishWord ??
+                          (result.matchedClassification ?? result.primary)
+                              .label,
+                    ),
+                    onAccept: result.vocabulary == null ? null : _accept,
+                  ),
+                ],
+                if (canCorrectManually) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'ผลสแกนยังไม่ยืนยันชื่อวัตถุ คุณกรอกคำและคำแปลเองก่อนบันทึกได้',
+                  ),
+                  OutlinedButton.icon(
+                    key: const ValueKey('object-scanner-manual-correction'),
+                    onPressed: _editingManual || _saving
+                        ? null
+                        : _correctManually,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('กรอกคำเอง'),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -465,12 +728,14 @@ final class _ResultCard extends StatelessWidget {
   const _ResultCard({
     required this.result,
     required this.accepted,
+    required this.saving,
     required this.onSpeak,
     required this.onAccept,
   });
 
   final ObjectScanResult result;
   final bool accepted;
+  final bool saving;
   final VoidCallback onSpeak;
   final VoidCallback? onAccept;
 
@@ -520,9 +785,15 @@ final class _ResultCard extends StatelessWidget {
                 ),
                 if (onAccept != null)
                   FilledButton.icon(
-                    onPressed: accepted ? null : onAccept,
+                    onPressed: accepted || saving ? null : onAccept,
                     icon: Icon(accepted ? Icons.check : Icons.add),
-                    label: Text(accepted ? 'บันทึกแล้ว' : 'เพิ่มเข้าคลัง'),
+                    label: Text(
+                      accepted
+                          ? 'บันทึกแล้ว'
+                          : saving
+                          ? 'กำลังบันทึก...'
+                          : 'เพิ่มเข้าคลัง',
+                    ),
                   ),
               ],
             ),
