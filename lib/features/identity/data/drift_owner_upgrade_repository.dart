@@ -79,6 +79,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           throw StateError('Conflicting Quest XP provenance');
         }
 
+        await _requireTransferableHistoricalOwner(source.id);
         var conflicts = await _mergeQuestHistory(source.id, target.id);
         conflicts += await _mergeStreakHistory(
           source.id,
@@ -791,6 +792,25 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     );
   }
 
+  Future<void> _requireTransferableHistoricalOwner(String ownerId) async {
+    final row = await _database
+        .customSelect(
+          'SELECT 1 FROM archived_v25_records WHERE owner_id = ? AND source_table IN ('
+          "'research_participation_permits','motivation_measurement_runs','motivation_responses',"
+          "'measurement_opportunities','assessment_runs') "
+          'UNION ALL SELECT 1 FROM events_v2 WHERE owner_id = ? AND event_type IN ('
+          "'TodayExperiencePresented','TodayExperiencePresentationChanged',"
+          "'TodayExperienceMissionStarted','TodayExperienceMissionCompleted') LIMIT 1",
+          variables: [Variable<String>(ownerId), Variable<String>(ownerId)],
+        )
+        .getSingleOrNull();
+    if (row != null) {
+      throw StateError(
+        'Changing a signed research owner requires re-enrollment',
+      );
+    }
+  }
+
   Future<void> _requeueOwnerForNewCloudNamespace(
     String ownerId,
     int rehomedAtUtcMs,
@@ -845,8 +865,16 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             'SELECT id${specification.hasSoftDelete ? ', is_deleted' : ''} '
             'FROM ${specification.table} WHERE owner_id = ? '
             '${specification.entityType == 'rewardTransaction' ? "AND transaction_type IN ('purchase', 'equip') " : ''}'
+            '${specification.entityType == 'attempt' ? "AND (legacy_evidence_disposition IS NULL OR legacy_evidence_disposition = 'base-v25') " : ''}'
+            'AND NOT EXISTS (SELECT 1 FROM outbox_operations archived '
+            'WHERE archived.owner_id = ${specification.table}.owner_id '
+            'AND archived.entity_type = ? AND archived.entity_id = ${specification.table}.id '
+            "AND (archived.payload_version <> 1 OR archived.state = 'historicalV25')) "
             'ORDER BY id',
-            variables: [Variable<String>(ownerId)],
+            variables: [
+              Variable<String>(ownerId),
+              Variable<String>(specification.entityType),
+            ],
           )
           .get();
       for (final row in rows) {
@@ -857,7 +885,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'lease_token = NULL, lease_expires_at_utc_ms = NULL, '
           'last_attempt_at_utc_ms = NULL, acknowledged_at_utc_ms = NULL, '
           'failure_code = NULL '
-          'WHERE owner_id = ? AND entity_type = ? AND entity_id = ?',
+          'WHERE owner_id = ? AND entity_type = ? AND entity_id = ? '
+          "AND payload_version = 1 AND state <> 'historicalV25'",
           variables: [
             Variable<String>(ownerId),
             Variable<String>(specification.entityType),
@@ -892,7 +921,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final wordRows = await _database
         .customSelect(
           'SELECT DISTINCT word_id FROM answer_attempts '
-          'WHERE owner_id = ? ORDER BY word_id',
+          'WHERE owner_id = ? AND (legacy_evidence_disposition IS NULL '
+          "OR legacy_evidence_disposition = 'base-v25') ORDER BY word_id",
           variables: [Variable<String>(ownerId)],
         )
         .get();
@@ -906,7 +936,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final sessionRows = await _database
         .customSelect(
           'SELECT DISTINCT session_id FROM answer_attempts '
-          'WHERE owner_id = ? ORDER BY session_id',
+          'WHERE owner_id = ? AND legacy_evidence_disposition IS NULL ORDER BY session_id',
           variables: [Variable<String>(ownerId)],
         )
         .get();

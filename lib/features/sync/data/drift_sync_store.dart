@@ -690,6 +690,9 @@ final class DriftSyncStore implements SyncStatusSource {
         if (attempt == null) {
           throw StateError('outbox attempt was not found');
         }
+        if (attempt.legacyEvidenceDisposition == 'history-v25') {
+          throw StateError('Historical answer cannot be sent');
+        }
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
@@ -1059,6 +1062,17 @@ final class DriftSyncStore implements SyncStatusSource {
             ))
             .getSingleOrNull();
     if (existing != null) {
+      if (existing.legacyEvidenceDisposition != null) {
+        if (existing.legacyEvidenceDisposition != 'base-v25') {
+          throw const InvalidSyncPayloadFailure();
+        }
+        await _handleExistingImmutable(
+          ownerId: ownerId,
+          entity: entity,
+          localPayload: _attemptPayload(existing),
+        );
+        return;
+      }
       await _handleExistingImmutable(
         ownerId: ownerId,
         entity: entity,
@@ -1107,7 +1121,8 @@ final class DriftSyncStore implements SyncStatusSource {
     if (session != null &&
         (session.ownerId != ownerId ||
             session.questionPlanJson != null ||
-            session.continuationJson != null)) {
+            session.continuationJson != null ||
+            session.legacyEvidenceDisposition != null)) {
       throw const InvalidSyncPayloadFailure();
     }
     if (session == null) {
@@ -1536,10 +1551,12 @@ final class DriftSyncStore implements SyncStatusSource {
               row.ownerId.equals(ownerId) &
               row.entityType.equals(entity.collection.entityType) &
               row.entityId.equals(entity.entityId) &
+              row.payloadVersion.equals(currentSyncPayloadVersion) &
               row.state.isNotIn(const [
                 'acknowledged',
                 'superseded',
                 'conflictResolved',
+                'historicalV25',
               ]),
         ))
         .write(

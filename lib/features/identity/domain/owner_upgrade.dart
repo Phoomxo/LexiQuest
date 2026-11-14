@@ -68,4 +68,5 @@ const Set<String> ownerUpgradeInventory = <String>{
   'local_content_reports',
   'focus_sessions',
   'learning_preferences',
+  'archived_v25_records',
 };

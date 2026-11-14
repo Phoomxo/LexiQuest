@@ -204,19 +204,54 @@ AppDatabase remains v11 at reservation; f31 source34e628a7 passed2176 locally.
 
 ---
 
-## Phase 0+ (v13+)
+### v26 — Reconcile the installed v25 lineage
 
-Current local implementation is **v12**, matching `AppDatabase.schemaVersion`.
-Integration verification is in progress. The last deployed
-entry remains **v10** Associative Learning Persistence. The former future-v10
-placeholder was superseded by that recorded migration and must not be reused.
-Versions **v11** and **v12** are reserved above. The next reservable version is **v13**.
+**Reserved:** 2026-11-14
+**Branch:** codex/figcraft-flutter-prototype
+**PR:** [16](https://github.com/Phoomxo/LexiQuest/pull/16)
+**Status:** Local regression and analysis passed. Native and CI verification pending.
+
+The installed Cycle 12 v26 APK used database v25 at `00d6c8ea`.
+Its [lineage evidence](../development/figcraft-v1/evidence/s7-v12-native-migration.txt)
+shows that a later v10 binary retained old tables while changing `user_version`.
+The other branch already used v11–v25. Those numbers cannot identify a schema
+across both lineages. Reserve v26, higher than both branches' installed schemas.
+
+Reserve one owner-scoped table, `archived_v25_records`, for lossless local retention
+of historical-only rows and columns. Keep origin identity and source keys.
+Archive records are accessible through full owner export and local deletion.
+Ordinary records may follow an authorized owner merge. Preserve the old
+restriction on transferring signed historical research across owners.
+
+Reserve nullable migration-only `legacy_evidence_disposition` on
+`learning_sessions` and `answer_attempts`. Retain raw old classifications
+in the archive and use the disposition to prevent incompatible evidence from
+entering new projections or sync. Keep existing XP entries and issued coin
+receipts with their original identities. Archive the v25 eligibility verdict
+for old points and answer rows. Rendering balances and replaying old rows
+respects those verdicts. Assessment links take precedence over old activity
+labels. Rebuild legacy Quest and day tables after copying and validating their
+data. The full export has 36 scopes and cloud deletion has 26. Frozen research
+and cloud-wire contracts are unchanged.
+
+Support clean local v1–v12, exact historical v25 and known relabelled-v10 shape.
+Route on semantically verified DDL and versions. Reject unknown future, partial
+and ambiguous cross-branch layouts transactionally. Require coverage for both
+owners, rollback/reopen, merge/export/delete, no reactivation of past research
+or delivery operations, and ordinary offline practice before a device update.
+
+## Phase 0+ (v27+)
+
+The FigCraft branch declares **v26** in `AppDatabase.schemaVersion`.
+The last deployed entry in this ledger remains **v10** Associative Learning
+Persistence. Both branches' reservations through **v26** are recorded above.
+The next reservable version is **v27**.
 
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
-| v13+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v27+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11 or v12. Reserve the next available version, starting at v13,
+> **Rule:** Do not reuse v10–v26. Reserve the next available version, starting at v27,
 > through a separate approved entry before writing migration code.
 
 ---

@@ -229,7 +229,12 @@ final class DriftQuestProgressReader {
     }
 
     final query = database.select(database.answerAttempts)
-      ..where((r) => r.ownerId.equals(owner) & r.questIntent.isNotNull());
+      ..where(
+        (r) =>
+            r.ownerId.equals(owner) &
+            r.legacyEvidenceDisposition.isNull() &
+            r.questIntent.isNotNull(),
+      );
     if (at != null) {
       query.where(
         (r) =>

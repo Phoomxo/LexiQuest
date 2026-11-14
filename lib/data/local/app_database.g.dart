@@ -4144,6 +4144,17 @@ class $LearningSessionsTable extends LearningSessions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _legacyEvidenceDispositionMeta =
+      const VerificationMeta('legacyEvidenceDisposition');
+  @override
+  late final GeneratedColumn<String> legacyEvidenceDisposition =
+      GeneratedColumn<String>(
+        'legacy_evidence_disposition',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4159,6 +4170,7 @@ class $LearningSessionsTable extends LearningSessions
     buildId,
     questionPlanJson,
     continuationJson,
+    legacyEvidenceDisposition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4279,6 +4291,15 @@ class $LearningSessionsTable extends LearningSessions
         ),
       );
     }
+    if (data.containsKey('legacy_evidence_disposition')) {
+      context.handle(
+        _legacyEvidenceDispositionMeta,
+        legacyEvidenceDisposition.isAcceptableOrUnknown(
+          data['legacy_evidence_disposition']!,
+          _legacyEvidenceDispositionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4340,6 +4361,10 @@ class $LearningSessionsTable extends LearningSessions
         DriftSqlType.string,
         data['${effectivePrefix}continuation_json'],
       ),
+      legacyEvidenceDisposition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}legacy_evidence_disposition'],
+      ),
     );
   }
 
@@ -4363,6 +4388,7 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
   final String buildId;
   final String? questionPlanJson;
   final String? continuationJson;
+  final String? legacyEvidenceDisposition;
   const LearningSession({
     required this.id,
     required this.ownerId,
@@ -4377,6 +4403,7 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     required this.buildId,
     this.questionPlanJson,
     this.continuationJson,
+    this.legacyEvidenceDisposition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4401,6 +4428,11 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     }
     if (!nullToAbsent || continuationJson != null) {
       map['continuation_json'] = Variable<String>(continuationJson);
+    }
+    if (!nullToAbsent || legacyEvidenceDisposition != null) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition,
+      );
     }
     return map;
   }
@@ -4428,6 +4460,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       continuationJson: continuationJson == null && nullToAbsent
           ? const Value.absent()
           : Value(continuationJson),
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legacyEvidenceDisposition),
     );
   }
 
@@ -4450,6 +4486,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       buildId: serializer.fromJson<String>(json['buildId']),
       questionPlanJson: serializer.fromJson<String?>(json['questionPlanJson']),
       continuationJson: serializer.fromJson<String?>(json['continuationJson']),
+      legacyEvidenceDisposition: serializer.fromJson<String?>(
+        json['legacyEvidenceDisposition'],
+      ),
     );
   }
   @override
@@ -4469,6 +4508,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       'buildId': serializer.toJson<String>(buildId),
       'questionPlanJson': serializer.toJson<String?>(questionPlanJson),
       'continuationJson': serializer.toJson<String?>(continuationJson),
+      'legacyEvidenceDisposition': serializer.toJson<String?>(
+        legacyEvidenceDisposition,
+      ),
     };
   }
 
@@ -4486,6 +4528,7 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     String? buildId,
     Value<String?> questionPlanJson = const Value.absent(),
     Value<String?> continuationJson = const Value.absent(),
+    Value<String?> legacyEvidenceDisposition = const Value.absent(),
   }) => LearningSession(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -4504,6 +4547,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     continuationJson: continuationJson.present
         ? continuationJson.value
         : this.continuationJson,
+    legacyEvidenceDisposition: legacyEvidenceDisposition.present
+        ? legacyEvidenceDisposition.value
+        : this.legacyEvidenceDisposition,
   );
   LearningSession copyWithCompanion(LearningSessionsCompanion data) {
     return LearningSession(
@@ -4536,6 +4582,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       continuationJson: data.continuationJson.present
           ? data.continuationJson.value
           : this.continuationJson,
+      legacyEvidenceDisposition: data.legacyEvidenceDisposition.present
+          ? data.legacyEvidenceDisposition.value
+          : this.legacyEvidenceDisposition,
     );
   }
 
@@ -4554,7 +4603,8 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ..write('appVersion: $appVersion, ')
           ..write('buildId: $buildId, ')
           ..write('questionPlanJson: $questionPlanJson, ')
-          ..write('continuationJson: $continuationJson')
+          ..write('continuationJson: $continuationJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition')
           ..write(')'))
         .toString();
   }
@@ -4574,6 +4624,7 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     buildId,
     questionPlanJson,
     continuationJson,
+    legacyEvidenceDisposition,
   );
   @override
   bool operator ==(Object other) =>
@@ -4591,7 +4642,8 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           other.appVersion == this.appVersion &&
           other.buildId == this.buildId &&
           other.questionPlanJson == this.questionPlanJson &&
-          other.continuationJson == this.continuationJson);
+          other.continuationJson == this.continuationJson &&
+          other.legacyEvidenceDisposition == this.legacyEvidenceDisposition);
 }
 
 class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
@@ -4608,6 +4660,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
   final Value<String> buildId;
   final Value<String?> questionPlanJson;
   final Value<String?> continuationJson;
+  final Value<String?> legacyEvidenceDisposition;
   final Value<int> rowid;
   const LearningSessionsCompanion({
     this.id = const Value.absent(),
@@ -4623,6 +4676,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.buildId = const Value.absent(),
     this.questionPlanJson = const Value.absent(),
     this.continuationJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningSessionsCompanion.insert({
@@ -4639,6 +4693,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     required String buildId,
     this.questionPlanJson = const Value.absent(),
     this.continuationJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -4661,6 +4716,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Expression<String>? buildId,
     Expression<String>? questionPlanJson,
     Expression<String>? continuationJson,
+    Expression<String>? legacyEvidenceDisposition,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4677,6 +4733,8 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       if (buildId != null) 'build_id': buildId,
       if (questionPlanJson != null) 'question_plan_json': questionPlanJson,
       if (continuationJson != null) 'continuation_json': continuationJson,
+      if (legacyEvidenceDisposition != null)
+        'legacy_evidence_disposition': legacyEvidenceDisposition,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4695,6 +4753,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Value<String>? buildId,
     Value<String?>? questionPlanJson,
     Value<String?>? continuationJson,
+    Value<String?>? legacyEvidenceDisposition,
     Value<int>? rowid,
   }) {
     return LearningSessionsCompanion(
@@ -4711,6 +4770,8 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       buildId: buildId ?? this.buildId,
       questionPlanJson: questionPlanJson ?? this.questionPlanJson,
       continuationJson: continuationJson ?? this.continuationJson,
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition ?? this.legacyEvidenceDisposition,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4757,6 +4818,11 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     if (continuationJson.present) {
       map['continuation_json'] = Variable<String>(continuationJson.value);
     }
+    if (legacyEvidenceDisposition.present) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4779,6 +4845,7 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
           ..write('buildId: $buildId, ')
           ..write('questionPlanJson: $questionPlanJson, ')
           ..write('continuationJson: $continuationJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4942,6 +5009,17 @@ class $AnswerAttemptsTable extends AnswerAttempts
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _legacyEvidenceDispositionMeta =
+      const VerificationMeta('legacyEvidenceDisposition');
+  @override
+  late final GeneratedColumn<String> legacyEvidenceDisposition =
+      GeneratedColumn<String>(
+        'legacy_evidence_disposition',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4957,6 +5035,7 @@ class $AnswerAttemptsTable extends AnswerAttempts
     calendarEvidence,
     questIntent,
     answerEvidenceJson,
+    legacyEvidenceDisposition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5082,6 +5161,15 @@ class $AnswerAttemptsTable extends AnswerAttempts
         ),
       );
     }
+    if (data.containsKey('legacy_evidence_disposition')) {
+      context.handle(
+        _legacyEvidenceDispositionMeta,
+        legacyEvidenceDisposition.isAcceptableOrUnknown(
+          data['legacy_evidence_disposition']!,
+          _legacyEvidenceDispositionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5143,6 +5231,10 @@ class $AnswerAttemptsTable extends AnswerAttempts
         DriftSqlType.string,
         data['${effectivePrefix}answer_evidence_json'],
       ),
+      legacyEvidenceDisposition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}legacy_evidence_disposition'],
+      ),
     );
   }
 
@@ -5166,6 +5258,7 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
   final String? calendarEvidence;
   final String? questIntent;
   final String? answerEvidenceJson;
+  final String? legacyEvidenceDisposition;
   const AnswerAttempt({
     required this.id,
     required this.ownerId,
@@ -5180,6 +5273,7 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     this.calendarEvidence,
     this.questIntent,
     this.answerEvidenceJson,
+    this.legacyEvidenceDisposition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5206,6 +5300,11 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     }
     if (!nullToAbsent || answerEvidenceJson != null) {
       map['answer_evidence_json'] = Variable<String>(answerEvidenceJson);
+    }
+    if (!nullToAbsent || legacyEvidenceDisposition != null) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition,
+      );
     }
     return map;
   }
@@ -5235,6 +5334,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       answerEvidenceJson: answerEvidenceJson == null && nullToAbsent
           ? const Value.absent()
           : Value(answerEvidenceJson),
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legacyEvidenceDisposition),
     );
   }
 
@@ -5261,6 +5364,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       answerEvidenceJson: serializer.fromJson<String?>(
         json['answerEvidenceJson'],
       ),
+      legacyEvidenceDisposition: serializer.fromJson<String?>(
+        json['legacyEvidenceDisposition'],
+      ),
     );
   }
   @override
@@ -5280,6 +5386,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       'calendarEvidence': serializer.toJson<String?>(calendarEvidence),
       'questIntent': serializer.toJson<String?>(questIntent),
       'answerEvidenceJson': serializer.toJson<String?>(answerEvidenceJson),
+      'legacyEvidenceDisposition': serializer.toJson<String?>(
+        legacyEvidenceDisposition,
+      ),
     };
   }
 
@@ -5297,6 +5406,7 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     Value<String?> calendarEvidence = const Value.absent(),
     Value<String?> questIntent = const Value.absent(),
     Value<String?> answerEvidenceJson = const Value.absent(),
+    Value<String?> legacyEvidenceDisposition = const Value.absent(),
   }) => AnswerAttempt(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -5319,6 +5429,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     answerEvidenceJson: answerEvidenceJson.present
         ? answerEvidenceJson.value
         : this.answerEvidenceJson,
+    legacyEvidenceDisposition: legacyEvidenceDisposition.present
+        ? legacyEvidenceDisposition.value
+        : this.legacyEvidenceDisposition,
   );
   AnswerAttempt copyWithCompanion(AnswerAttemptsCompanion data) {
     return AnswerAttempt(
@@ -5351,6 +5464,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       answerEvidenceJson: data.answerEvidenceJson.present
           ? data.answerEvidenceJson.value
           : this.answerEvidenceJson,
+      legacyEvidenceDisposition: data.legacyEvidenceDisposition.present
+          ? data.legacyEvidenceDisposition.value
+          : this.legacyEvidenceDisposition,
     );
   }
 
@@ -5369,7 +5485,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           ..write('providerProvenance: $providerProvenance, ')
           ..write('calendarEvidence: $calendarEvidence, ')
           ..write('questIntent: $questIntent, ')
-          ..write('answerEvidenceJson: $answerEvidenceJson')
+          ..write('answerEvidenceJson: $answerEvidenceJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition')
           ..write(')'))
         .toString();
   }
@@ -5389,6 +5506,7 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     calendarEvidence,
     questIntent,
     answerEvidenceJson,
+    legacyEvidenceDisposition,
   );
   @override
   bool operator ==(Object other) =>
@@ -5406,7 +5524,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           other.providerProvenance == this.providerProvenance &&
           other.calendarEvidence == this.calendarEvidence &&
           other.questIntent == this.questIntent &&
-          other.answerEvidenceJson == this.answerEvidenceJson);
+          other.answerEvidenceJson == this.answerEvidenceJson &&
+          other.legacyEvidenceDisposition == this.legacyEvidenceDisposition);
 }
 
 class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
@@ -5423,6 +5542,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
   final Value<String?> calendarEvidence;
   final Value<String?> questIntent;
   final Value<String?> answerEvidenceJson;
+  final Value<String?> legacyEvidenceDisposition;
   final Value<int> rowid;
   const AnswerAttemptsCompanion({
     this.id = const Value.absent(),
@@ -5438,6 +5558,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     this.calendarEvidence = const Value.absent(),
     this.questIntent = const Value.absent(),
     this.answerEvidenceJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AnswerAttemptsCompanion.insert({
@@ -5454,6 +5575,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     this.calendarEvidence = const Value.absent(),
     this.questIntent = const Value.absent(),
     this.answerEvidenceJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -5477,6 +5599,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Expression<String>? calendarEvidence,
     Expression<String>? questIntent,
     Expression<String>? answerEvidenceJson,
+    Expression<String>? legacyEvidenceDisposition,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5494,6 +5617,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       if (questIntent != null) 'quest_intent': questIntent,
       if (answerEvidenceJson != null)
         'answer_evidence_json': answerEvidenceJson,
+      if (legacyEvidenceDisposition != null)
+        'legacy_evidence_disposition': legacyEvidenceDisposition,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5512,6 +5637,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Value<String?>? calendarEvidence,
     Value<String?>? questIntent,
     Value<String?>? answerEvidenceJson,
+    Value<String?>? legacyEvidenceDisposition,
     Value<int>? rowid,
   }) {
     return AnswerAttemptsCompanion(
@@ -5528,6 +5654,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       calendarEvidence: calendarEvidence ?? this.calendarEvidence,
       questIntent: questIntent ?? this.questIntent,
       answerEvidenceJson: answerEvidenceJson ?? this.answerEvidenceJson,
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition ?? this.legacyEvidenceDisposition,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5574,6 +5702,11 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     if (answerEvidenceJson.present) {
       map['answer_evidence_json'] = Variable<String>(answerEvidenceJson.value);
     }
+    if (legacyEvidenceDisposition.present) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5596,6 +5729,7 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
           ..write('calendarEvidence: $calendarEvidence, ')
           ..write('questIntent: $questIntent, ')
           ..write('answerEvidenceJson: $answerEvidenceJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -22427,6 +22561,501 @@ class LearningPreferencesCompanion extends UpdateCompanion<LearningPreference> {
   }
 }
 
+class $ArchivedV25RecordsTable extends ArchivedV25Records
+    with TableInfo<$ArchivedV25RecordsTable, ArchivedV25Record> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ArchivedV25RecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceTableMeta = const VerificationMeta(
+    'sourceTable',
+  );
+  @override
+  late final GeneratedColumn<String> sourceTable = GeneratedColumn<String>(
+    'source_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRowKeyMeta = const VerificationMeta(
+    'sourceRowKey',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRowKey = GeneratedColumn<String>(
+    'source_row_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadBlobMeta = const VerificationMeta(
+    'payloadBlob',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> payloadBlob =
+      GeneratedColumn<Uint8List>(
+        'payload_blob',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    originOwnerId,
+    sourceTable,
+    sourceRowKey,
+    payloadJson,
+    payloadBlob,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'archived_v25_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ArchivedV25Record> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('source_table')) {
+      context.handle(
+        _sourceTableMeta,
+        sourceTable.isAcceptableOrUnknown(
+          data['source_table']!,
+          _sourceTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTableMeta);
+    }
+    if (data.containsKey('source_row_key')) {
+      context.handle(
+        _sourceRowKeyMeta,
+        sourceRowKey.isAcceptableOrUnknown(
+          data['source_row_key']!,
+          _sourceRowKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRowKeyMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('payload_blob')) {
+      context.handle(
+        _payloadBlobMeta,
+        payloadBlob.isAcceptableOrUnknown(
+          data['payload_blob']!,
+          _payloadBlobMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ArchivedV25Record map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ArchivedV25Record(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      sourceTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_table'],
+      )!,
+      sourceRowKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_row_key'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      payloadBlob: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}payload_blob'],
+      ),
+    );
+  }
+
+  @override
+  $ArchivedV25RecordsTable createAlias(String alias) {
+    return $ArchivedV25RecordsTable(attachedDatabase, alias);
+  }
+}
+
+class ArchivedV25Record extends DataClass
+    implements Insertable<ArchivedV25Record> {
+  final String id;
+  final String ownerId;
+  final String originOwnerId;
+  final String sourceTable;
+  final String sourceRowKey;
+  final String payloadJson;
+  final Uint8List? payloadBlob;
+  const ArchivedV25Record({
+    required this.id,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.sourceTable,
+    required this.sourceRowKey,
+    required this.payloadJson,
+    this.payloadBlob,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['source_table'] = Variable<String>(sourceTable);
+    map['source_row_key'] = Variable<String>(sourceRowKey);
+    map['payload_json'] = Variable<String>(payloadJson);
+    if (!nullToAbsent || payloadBlob != null) {
+      map['payload_blob'] = Variable<Uint8List>(payloadBlob);
+    }
+    return map;
+  }
+
+  ArchivedV25RecordsCompanion toCompanion(bool nullToAbsent) {
+    return ArchivedV25RecordsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      sourceTable: Value(sourceTable),
+      sourceRowKey: Value(sourceRowKey),
+      payloadJson: Value(payloadJson),
+      payloadBlob: payloadBlob == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadBlob),
+    );
+  }
+
+  factory ArchivedV25Record.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ArchivedV25Record(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      sourceTable: serializer.fromJson<String>(json['sourceTable']),
+      sourceRowKey: serializer.fromJson<String>(json['sourceRowKey']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      payloadBlob: serializer.fromJson<Uint8List?>(json['payloadBlob']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'sourceTable': serializer.toJson<String>(sourceTable),
+      'sourceRowKey': serializer.toJson<String>(sourceRowKey),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'payloadBlob': serializer.toJson<Uint8List?>(payloadBlob),
+    };
+  }
+
+  ArchivedV25Record copyWith({
+    String? id,
+    String? ownerId,
+    String? originOwnerId,
+    String? sourceTable,
+    String? sourceRowKey,
+    String? payloadJson,
+    Value<Uint8List?> payloadBlob = const Value.absent(),
+  }) => ArchivedV25Record(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    sourceTable: sourceTable ?? this.sourceTable,
+    sourceRowKey: sourceRowKey ?? this.sourceRowKey,
+    payloadJson: payloadJson ?? this.payloadJson,
+    payloadBlob: payloadBlob.present ? payloadBlob.value : this.payloadBlob,
+  );
+  ArchivedV25Record copyWithCompanion(ArchivedV25RecordsCompanion data) {
+    return ArchivedV25Record(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      sourceTable: data.sourceTable.present
+          ? data.sourceTable.value
+          : this.sourceTable,
+      sourceRowKey: data.sourceRowKey.present
+          ? data.sourceRowKey.value
+          : this.sourceRowKey,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      payloadBlob: data.payloadBlob.present
+          ? data.payloadBlob.value
+          : this.payloadBlob,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedV25Record(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRowKey: $sourceRowKey, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('payloadBlob: $payloadBlob')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    originOwnerId,
+    sourceTable,
+    sourceRowKey,
+    payloadJson,
+    $driftBlobEquality.hash(payloadBlob),
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ArchivedV25Record &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.sourceTable == this.sourceTable &&
+          other.sourceRowKey == this.sourceRowKey &&
+          other.payloadJson == this.payloadJson &&
+          $driftBlobEquality.equals(other.payloadBlob, this.payloadBlob));
+}
+
+class ArchivedV25RecordsCompanion extends UpdateCompanion<ArchivedV25Record> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<String> sourceTable;
+  final Value<String> sourceRowKey;
+  final Value<String> payloadJson;
+  final Value<Uint8List?> payloadBlob;
+  final Value<int> rowid;
+  const ArchivedV25RecordsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.sourceTable = const Value.absent(),
+    this.sourceRowKey = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.payloadBlob = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ArchivedV25RecordsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String originOwnerId,
+    required String sourceTable,
+    required String sourceRowKey,
+    required String payloadJson,
+    this.payloadBlob = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       sourceTable = Value(sourceTable),
+       sourceRowKey = Value(sourceRowKey),
+       payloadJson = Value(payloadJson);
+  static Insertable<ArchivedV25Record> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<String>? sourceTable,
+    Expression<String>? sourceRowKey,
+    Expression<String>? payloadJson,
+    Expression<Uint8List>? payloadBlob,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (sourceTable != null) 'source_table': sourceTable,
+      if (sourceRowKey != null) 'source_row_key': sourceRowKey,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (payloadBlob != null) 'payload_blob': payloadBlob,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ArchivedV25RecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<String>? sourceTable,
+    Value<String>? sourceRowKey,
+    Value<String>? payloadJson,
+    Value<Uint8List?>? payloadBlob,
+    Value<int>? rowid,
+  }) {
+    return ArchivedV25RecordsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      sourceTable: sourceTable ?? this.sourceTable,
+      sourceRowKey: sourceRowKey ?? this.sourceRowKey,
+      payloadJson: payloadJson ?? this.payloadJson,
+      payloadBlob: payloadBlob ?? this.payloadBlob,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (sourceTable.present) {
+      map['source_table'] = Variable<String>(sourceTable.value);
+    }
+    if (sourceRowKey.present) {
+      map['source_row_key'] = Variable<String>(sourceRowKey.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (payloadBlob.present) {
+      map['payload_blob'] = Variable<Uint8List>(payloadBlob.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedV25RecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRowKey: $sourceRowKey, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('payloadBlob: $payloadBlob, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -22500,6 +23129,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FocusSessionsTable focusSessions = $FocusSessionsTable(this);
   late final $LearningPreferencesTable learningPreferences =
       $LearningPreferencesTable(this);
+  late final $ArchivedV25RecordsTable archivedV25Records =
+      $ArchivedV25RecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -22542,6 +23173,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localContentReports,
     focusSessions,
     learningPreferences,
+    archivedV25Records,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -23214,6 +23846,27 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _learningPreferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ArchivedV25RecordsTable, List<ArchivedV25Record>>
+  _archivedV25RecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.archivedV25Records,
+        aliasName: 'local_owners__id__archived_v25_records__owner_id',
+      );
+
+  $$ArchivedV25RecordsTableProcessedTableManager get archivedV25RecordsRefs {
+    final manager = $$ArchivedV25RecordsTableTableManager(
+      $_db,
+      $_db.archivedV25Records,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _archivedV25RecordsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -24004,6 +24657,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$LearningPreferencesTableFilterComposer(
             $db: $db,
             $table: $db.learningPreferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> archivedV25RecordsRefs(
+    Expression<bool> Function($$ArchivedV25RecordsTableFilterComposer f) f,
+  ) {
+    final $$ArchivedV25RecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.archivedV25Records,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ArchivedV25RecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.archivedV25Records,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -24853,6 +25531,32 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> archivedV25RecordsRefs<T extends Object>(
+    Expression<T> Function($$ArchivedV25RecordsTableAnnotationComposer a) f,
+  ) {
+    final $$ArchivedV25RecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.archivedV25Records,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ArchivedV25RecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.archivedV25Records,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -24899,6 +25603,7 @@ class $$LocalOwnersTableTableManager
             bool localContentReportsRefs,
             bool focusSessionsRefs,
             bool learningPreferencesRefs,
+            bool archivedV25RecordsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -24988,6 +25693,7 @@ class $$LocalOwnersTableTableManager
                 localContentReportsRefs = false,
                 focusSessionsRefs = false,
                 learningPreferencesRefs = false,
+                archivedV25RecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -25022,6 +25728,7 @@ class $$LocalOwnersTableTableManager
                     if (localContentReportsRefs) db.localContentReports,
                     if (focusSessionsRefs) db.focusSessions,
                     if (learningPreferencesRefs) db.learningPreferences,
+                    if (archivedV25RecordsRefs) db.archivedV25Records,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -25656,6 +26363,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (archivedV25RecordsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ArchivedV25Record
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._archivedV25RecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).archivedV25RecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -25707,6 +26435,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool localContentReportsRefs,
         bool focusSessionsRefs,
         bool learningPreferencesRefs,
+        bool archivedV25RecordsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -28729,6 +29458,7 @@ typedef $$LearningSessionsTableCreateCompanionBuilder =
       required String buildId,
       Value<String?> questionPlanJson,
       Value<String?> continuationJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 typedef $$LearningSessionsTableUpdateCompanionBuilder =
@@ -28746,6 +29476,7 @@ typedef $$LearningSessionsTableUpdateCompanionBuilder =
       Value<String> buildId,
       Value<String?> questionPlanJson,
       Value<String?> continuationJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 
@@ -28860,6 +29591,11 @@ class $$LearningSessionsTableFilterComposer
 
   ColumnFilters<String> get continuationJson => $composableBuilder(
     column: $table.continuationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -28981,6 +29717,11 @@ class $$LearningSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -29063,6 +29804,11 @@ class $$LearningSessionsTableAnnotationComposer
 
   GeneratedColumn<String> get continuationJson => $composableBuilder(
     column: $table.continuationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => column,
   );
 
@@ -29158,6 +29904,7 @@ class $$LearningSessionsTableTableManager
                 Value<String> buildId = const Value.absent(),
                 Value<String?> questionPlanJson = const Value.absent(),
                 Value<String?> continuationJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion(
                 id: id,
@@ -29173,6 +29920,7 @@ class $$LearningSessionsTableTableManager
                 buildId: buildId,
                 questionPlanJson: questionPlanJson,
                 continuationJson: continuationJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29190,6 +29938,7 @@ class $$LearningSessionsTableTableManager
                 required String buildId,
                 Value<String?> questionPlanJson = const Value.absent(),
                 Value<String?> continuationJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion.insert(
                 id: id,
@@ -29205,6 +29954,7 @@ class $$LearningSessionsTableTableManager
                 buildId: buildId,
                 questionPlanJson: questionPlanJson,
                 continuationJson: continuationJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -29316,6 +30066,7 @@ typedef $$AnswerAttemptsTableCreateCompanionBuilder =
       Value<String?> calendarEvidence,
       Value<String?> questIntent,
       Value<String?> answerEvidenceJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
@@ -29333,6 +30084,7 @@ typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
       Value<String?> calendarEvidence,
       Value<String?> questIntent,
       Value<String?> answerEvidenceJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 
@@ -29454,6 +30206,11 @@ class $$AnswerAttemptsTableFilterComposer
 
   ColumnFilters<String> get answerEvidenceJson => $composableBuilder(
     column: $table.answerEvidenceJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29586,6 +30343,11 @@ class $$AnswerAttemptsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -29711,6 +30473,11 @@ class $$AnswerAttemptsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => column,
+  );
+
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -29824,6 +30591,7 @@ class $$AnswerAttemptsTableTableManager
                 Value<String?> calendarEvidence = const Value.absent(),
                 Value<String?> questIntent = const Value.absent(),
                 Value<String?> answerEvidenceJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion(
                 id: id,
@@ -29839,6 +30607,7 @@ class $$AnswerAttemptsTableTableManager
                 calendarEvidence: calendarEvidence,
                 questIntent: questIntent,
                 answerEvidenceJson: answerEvidenceJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -29856,6 +30625,7 @@ class $$AnswerAttemptsTableTableManager
                 Value<String?> calendarEvidence = const Value.absent(),
                 Value<String?> questIntent = const Value.absent(),
                 Value<String?> answerEvidenceJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion.insert(
                 id: id,
@@ -29871,6 +30641,7 @@ class $$AnswerAttemptsTableTableManager
                 calendarEvidence: calendarEvidence,
                 questIntent: questIntent,
                 answerEvidenceJson: answerEvidenceJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -42419,6 +43190,387 @@ typedef $$LearningPreferencesTableProcessedTableManager =
       LearningPreference,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$ArchivedV25RecordsTableCreateCompanionBuilder =
+    ArchivedV25RecordsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String originOwnerId,
+      required String sourceTable,
+      required String sourceRowKey,
+      required String payloadJson,
+      Value<Uint8List?> payloadBlob,
+      Value<int> rowid,
+    });
+typedef $$ArchivedV25RecordsTableUpdateCompanionBuilder =
+    ArchivedV25RecordsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<String> sourceTable,
+      Value<String> sourceRowKey,
+      Value<String> payloadJson,
+      Value<Uint8List?> payloadBlob,
+      Value<int> rowid,
+    });
+
+final class $$ArchivedV25RecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ArchivedV25RecordsTable,
+          ArchivedV25Record
+        > {
+  $$ArchivedV25RecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('archived_v25_records__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ArchivedV25RecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ArchivedV25RecordsTable,
+          ArchivedV25Record,
+          $$ArchivedV25RecordsTableFilterComposer,
+          $$ArchivedV25RecordsTableOrderingComposer,
+          $$ArchivedV25RecordsTableAnnotationComposer,
+          $$ArchivedV25RecordsTableCreateCompanionBuilder,
+          $$ArchivedV25RecordsTableUpdateCompanionBuilder,
+          (ArchivedV25Record, $$ArchivedV25RecordsTableReferences),
+          ArchivedV25Record,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ArchivedV25RecordsTableTableManager(
+    _$AppDatabase db,
+    $ArchivedV25RecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ArchivedV25RecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ArchivedV25RecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ArchivedV25RecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<String> sourceTable = const Value.absent(),
+                Value<String> sourceRowKey = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<Uint8List?> payloadBlob = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ArchivedV25RecordsCompanion(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                sourceTable: sourceTable,
+                sourceRowKey: sourceRowKey,
+                payloadJson: payloadJson,
+                payloadBlob: payloadBlob,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String originOwnerId,
+                required String sourceTable,
+                required String sourceRowKey,
+                required String payloadJson,
+                Value<Uint8List?> payloadBlob = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ArchivedV25RecordsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                sourceTable: sourceTable,
+                sourceRowKey: sourceRowKey,
+                payloadJson: payloadJson,
+                payloadBlob: payloadBlob,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ArchivedV25RecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$ArchivedV25RecordsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ArchivedV25RecordsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ArchivedV25RecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ArchivedV25RecordsTable,
+      ArchivedV25Record,
+      $$ArchivedV25RecordsTableFilterComposer,
+      $$ArchivedV25RecordsTableOrderingComposer,
+      $$ArchivedV25RecordsTableAnnotationComposer,
+      $$ArchivedV25RecordsTableCreateCompanionBuilder,
+      $$ArchivedV25RecordsTableUpdateCompanionBuilder,
+      (ArchivedV25Record, $$ArchivedV25RecordsTableReferences),
+      ArchivedV25Record,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -42512,4 +43664,6 @@ class $AppDatabaseManager {
       $$FocusSessionsTableTableManager(_db, _db.focusSessions);
   $$LearningPreferencesTableTableManager get learningPreferences =>
       $$LearningPreferencesTableTableManager(_db, _db.learningPreferences);
+  $$ArchivedV25RecordsTableTableManager get archivedV25Records =>
+      $$ArchivedV25RecordsTableTableManager(_db, _db.archivedV25Records);
 }

@@ -834,6 +834,74 @@ void main() {
   });
 
   test(
+    'legacy attempt replay keeps suspended receipts and yields no rewards',
+    () async {
+      final entity = _attemptEntity(
+        id: 'attempt-replay-v25',
+        sessionId: 'session-replay-v25',
+        occurredAt: now,
+      );
+      final page = _page(entity);
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: page,
+      );
+      await database.customStatement(
+        "UPDATE learning_sessions SET legacy_evidence_disposition = 'base-v25'",
+      );
+      await database.customStatement(
+        "UPDATE answer_attempts SET legacy_evidence_disposition = 'base-v25'",
+      );
+      await database.delete(database.srsStates).go();
+      await database.delete(database.pointsLedgerEntries).go();
+      for (final (id, version, state) in [
+        ('current', 1, 'pending'),
+        ('historical-v1', 1, 'historicalV25'),
+        ('historical-v2', 2, 'historicalV25'),
+      ]) {
+        await database
+            .into(database.outboxOperations)
+            .insert(
+              OutboxOperationsCompanion.insert(
+                operationId: id,
+                ownerId: 'owner-1',
+                entityType: 'attempt',
+                entityId: entity.entityId,
+                operationKind: 'upsert',
+                payloadVersion: Value(version),
+                state: Value(state),
+                createdAtUtcMs: now.millisecondsSinceEpoch,
+              ),
+            );
+      }
+      final before = await database.select(database.outboxOperations).get();
+
+      for (var replay = 0; replay < 2; replay++) {
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.attempts,
+          page: page,
+        );
+      }
+
+      final after = await database.select(database.outboxOperations).get();
+      final current = after.singleWhere((row) => row.operationId == 'current');
+      expect(current.state, 'conflictResolved');
+      expect(current.failureCode, 'identicalCloudEvidence');
+      expect(
+        after.where((row) => row.operationId != 'current'),
+        before.where((row) => row.operationId != 'current'),
+      );
+      expect(await database.select(database.srsStates).get(), isEmpty);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
     'reading projection rebuild uses monotonic position and latest time',
     () async {
       final later = _readingEntity(

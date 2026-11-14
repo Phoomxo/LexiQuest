@@ -84,6 +84,56 @@ Focused commands include `flutter test --no-pub test/database`, touched learning
 
 f44 remains manifest-bound offline camera-model verify/repair/cancel/confirmed-remove through the existing manager/Settings, preserving learning history. Its exact-file restart recovery and cached-interpreter lifetime need synthetic-file tests; it requires no learning table. No separate Pair Matching task is created. Known-object accuracy remainsnot_checked without another request; uncertain emulator1837 remains untouched.
 
+### Native schema reconciliation
+
+The v30 native update failed on an app database inherited from Cycle 12 v26
+APK/source00d6c8ea, whose schema was 25. The v29 source 196d4e22 stamped that
+layout as v10 while retaining its twelve-field Quest table. Signed recovery v31
+restored the prior app and its A/B data. The exact native and synthetic
+reproduction is in [native migration evidence](evidence/s7-v12-native-migration.txt).
+The v26 database ledger entry reconciles both lineages. The
+[synthetic verification receipt](evidence/s7-v26-bridge.txt) records the
+captured data shapes and observed study and owner behavior.
+
+Ground and sketch compared preserving all 16 old tables as active storage
+with one lossless owner archive. The archive keeps the current runtime
+authorities and removes the need to splice old FK/research code into learning.
+Preserve affected SQLite scalar types in JSON with source table and key,
+original owner and current owner. Retain pack BLOBs separately and bound
+migration read batches. Validate parent ownership on linked evidence before
+archiving.
+Fresh and upgraded v25 capture should share a semantic fingerprint. Explicitly
+retain the old signed-research transfer restriction.
+
+1. Freeze fresh and v23→v25 schema-only captures and a replay that invokes
+   196d4e22 to produce the actual relabelled v10. Extend the populated two-owner
+   RED with correct owner/FK references, old Quest periods/day labels, learning
+   pack BLOB, ordinary/assisted/assessment attempts and v2 delivery payloads.
+2. Implement the branch in `lib/data/local/app_database.dart` with a dedicated
+   migration helper. Inspect shape before writes and use one transaction.
+   Archive historical-only rows plus incompatible fields in common tables;
+   retain stable core identities. Rebuild Quest into legacy instances without
+   claim authority, and preserve admitted civil days after reducing duplicate
+   projections at owner/day. New local study columns still use v12 semantics.
+   Unknown layouts and mismatched owners stop the transaction.
+3. Preserve a validated ordinary subset in live reads. Keep unsupported/mixed
+   historical session summaries read-only, with assessment private in export.
+   Resolve Assessment linkage before classifying the legacy attempt or balance.
+   Keep the v25 ledger receipt and its eligibility for read-side projection.
+   Fence XP, coins, SRS, achievements, Streak, history and sync at their current
+   consumers. Do not infer UTC days or Quest pins from old answers. Retain
+   immutable ledger and operation IDs. Suspend old v2 payloads and ineligible
+   attempts without rewriting payloads or queues as current evidence.
+4. Extend the owner inventory and exact v26 local-export scope contract in
+   Flutter and AI API. Ensure archived owner rows merge and delete safely while
+   preserving origin keys; deny owner rekey for restricted historical research.
+   Keep v10/v11/v12 receipt compatibility and the same 26 cloud-deletion scopes.
+5. For both lineages and true local v10/v11/v12, verify atomic failure/retry,
+   reopen, new practice, stable history, owner isolation and export/delete.
+   Run full Flutter and backend checks against one frozen snapshot, then exact
+   PR head CI and a new signed APK. Use the recovered vivo only after the
+   migration paths have passed against the exact captured shapes.
+
 ## Grounded constraints
 
 ### S6 architecture task board

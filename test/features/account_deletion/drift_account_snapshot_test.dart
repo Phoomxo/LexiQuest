@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/native.dart';
@@ -44,7 +45,7 @@ void main() {
       expect(snapshot.schemaVersion, database.schemaVersion);
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 12);
+      expect(json['schemaVersion'], 26);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -62,7 +63,7 @@ void main() {
   );
 
   test(
-    'schema 12 exports every owner scope and exact public pinned catalog',
+    'schema 26 exports every owner scope and exact public pinned catalog',
     () async {
       await _seedS6Rows(database);
       final fixture =
@@ -75,33 +76,41 @@ void main() {
       final historicalScopes = (fixture['exportV11'] as List)
           .cast<String>()
           .toSet();
-      final expectedScopes = (fixture['exportV12'] as List)
-          .cast<String>()
-          .toSet();
+      final v12Scopes = (fixture['exportV12'] as List).cast<String>().toSet();
       expect(historicalScopes, hasLength(32));
-      expect(expectedScopes.difference(historicalScopes), {
+      expect(v12Scopes.difference(historicalScopes), {
         'local_content_reports',
         'focus_sessions',
         'learning_preferences',
       });
-      expect(expectedScopes, hasLength(35));
+      expect(v12Scopes, hasLength(35));
+      final expectedScopes = (fixture['exportV26'] as List)
+          .cast<String>()
+          .toSet();
+      expect(expectedScopes.difference(v12Scopes), {'archived_v25_records'});
+      expect(expectedScopes, hasLength(36));
       expect(requiredFullAccountExportScopes, expectedScopes);
       final builder = DriftAccountSnapshotBuilder(database, nowUtc: () => now);
       final snapshot = await builder.build(ownerId: 'owner-a');
       final repeated = await builder.build(ownerId: 'owner-a');
       expect(snapshot.bytes, repeated.bytes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
-      expect(snapshot.schemaVersion, 12);
+      expect(snapshot.schemaVersion, 26);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle()).data,
-        {'user_version': 12},
+        {'user_version': 26},
       );
       expect(snapshot.coveredScopes, expectedScopes);
       final decoded =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       final data = decoded['data'] as Map<String, dynamic>;
-      expect(decoded['schemaVersion'], 12);
+      expect(decoded['schemaVersion'], 26);
       expect(data.keys.toSet(), expectedScopes);
+      final archived = (data['archived_v25_records'] as List).single as Map;
+      expect(archived['id'], 'archive-a');
+      expect(archived['origin_owner_id'], 'owner-a');
+      expect(archived['payload_blob'], base64Encode([0, 128, 255]));
+      expect(utf8.decode(snapshot.bytes), isNot(contains('archive-b')));
       expect((data['local_content_reports'] as List).single['id'], 'report-a');
       expect(
         (data['focus_sessions'] as List).single['start_rule_id'],
@@ -125,6 +134,7 @@ void main() {
         ...publicScopes,
         ...childScopes,
         'local_owners',
+        'archived_v25_records',
       })) {
         final actual = await database
             .customSelect(
@@ -206,6 +216,18 @@ Future<void> _seedS6Rows(AppDatabase database) async {
     "VALUES ('public-quest',1,'Synthetic public Quest','Public catalog','daily','[]','{\"xpAmount\":50}')",
   );
   for (final (suffix, version) in [('a', 1), ('b', 2)]) {
+    await database.customStatement(
+      'INSERT INTO archived_v25_records (id,owner_id,origin_owner_id,source_table,source_row_key,payload_json,payload_blob) VALUES (?,?,?,?,?,?,?)',
+      [
+        'archive-$suffix',
+        'owner-$suffix',
+        'owner-$suffix',
+        'learning_pack_versions',
+        'pack-$suffix',
+        '{"synthetic":true}',
+        Uint8List.fromList([0, 128, 255]),
+      ],
+    );
     final body =
         '{"synthetic":true,"publicTitle":"${suffix.toUpperCase()}","xpAmount":50}';
     final digest = sha256.convert(utf8.encode(body)).toString();

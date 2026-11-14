@@ -9,10 +9,15 @@ const _newTables = {
   'local_content_reports',
   'focus_sessions',
   'learning_preferences',
+  'archived_v25_records',
 };
 const _addedColumns = {
-  'learning_sessions': ['question_plan_json', 'continuation_json'],
-  'answer_attempts': ['answer_evidence_json'],
+  'learning_sessions': [
+    'question_plan_json',
+    'continuation_json',
+    'legacy_evidence_disposition',
+  ],
+  'answer_attempts': ['answer_evidence_json', 'legacy_evidence_disposition'],
   'vocabulary_words': ['is_bookmarked'],
 };
 
@@ -93,16 +98,40 @@ void main() {
   });
 
   test(
-    'v12 preserves every v11 row and starts new local fields empty on upgrade and reopen',
+    'v26 preserves every v11 row and starts new local fields empty on upgrade and reopen',
     () async {
       for (var openings = 0; openings < 2; openings++) {
         await _openAndClose(file);
         final raw = sqlite.sqlite3.open(file.path);
         try {
-          expect(_version(raw), 12);
+          expect(_version(raw), 26);
           expect(_tables(raw), {...oldColumns.keys, ..._newTables});
           expect(_projectedRows(raw, oldColumns), oldRows);
           expect(_indexes(raw), containsAll(oldIndexes));
+          final archiveIndex = raw
+              .select(
+                "SELECT tbl_name,sql FROM sqlite_master WHERE type='index' AND name='idx_archived_v25_owner'",
+              )
+              .single;
+          expect(archiveIndex['tbl_name'], 'archived_v25_records');
+          expect(
+            archiveIndex['sql'],
+            contains('(owner_id, source_table, source_row_key)'),
+          );
+          expect(
+            raw
+                .select('PRAGMA table_info(archived_v25_records)')
+                .map((row) => row['name']),
+            containsAll([
+              'id',
+              'owner_id',
+              'origin_owner_id',
+              'source_table',
+              'source_row_key',
+              'payload_json',
+              'payload_blob',
+            ]),
+          );
           for (final table in _newTables) {
             expect(
               raw.select('SELECT * FROM "$table"'),
@@ -141,7 +170,7 @@ void main() {
   );
 
   test(
-    'fresh and upgraded v12 have equivalent columns, foreign keys and indexes',
+    'fresh and upgraded v26 have equivalent columns, foreign keys and indexes',
     () async {
       final freshFile = File('${directory.path}/fresh.sqlite');
       await _openAndClose(freshFile);
@@ -149,9 +178,9 @@ void main() {
       final fresh = sqlite.sqlite3.open(freshFile.path);
       final upgraded = sqlite.sqlite3.open(file.path);
       try {
-        expect(_version(fresh), 12);
-        expect(_version(upgraded), 12);
-        expect(_tables(fresh), hasLength(37));
+        expect(_version(fresh), 26);
+        expect(_version(upgraded), 26);
+        expect(_tables(fresh), hasLength(38));
         expect(_tables(fresh), {...oldColumns.keys, ..._newTables});
         expect(_schemaFacts(upgraded), _schemaFacts(fresh));
         expect(fresh.select('PRAGMA foreign_key_check'), isEmpty);
@@ -162,6 +191,85 @@ void main() {
       }
     },
   );
+
+  test('pinned v12 study rows survive direct v26 upgrade and reopen', () async {
+    final pinnedFile = File('${directory.path}/pinned-v12.sqlite');
+    final before = sqlite.sqlite3.open(pinnedFile.path);
+    final columns = <String, List<String>>{};
+    late Map<String, List<Map<String, Object?>>> rows;
+    try {
+      before.execute('PRAGMA foreign_keys=ON');
+      before.execute(
+        File('test/fixtures/database/v12/schema.sql').readAsStringSync(),
+      );
+      _seedV11(before);
+      before.execute('''
+        UPDATE vocabulary_words SET is_bookmarked=1 WHERE id='word';
+        UPDATE learning_sessions SET question_plan_json='{"synthetic":"plan"}',
+          continuation_json='{"synthetic":"cursor"}' WHERE id='round';
+        UPDATE answer_attempts SET answer_evidence_json='{"synthetic":"evidence"}'
+          WHERE id='answer';
+        INSERT INTO local_content_reports (id,owner_id,source_kind,source_id,
+          source_revision,spelling,meaning,reason,created_at_utc_ms)
+          VALUES ('report','owner-a','word','word',5,'station','สถานี','other',50);
+        INSERT INTO focus_sessions (id,owner_id,origin_owner_id,target_ms,
+          started_at_utc_ms,state,spans_json,ended_at_utc_ms)
+          VALUES ('focus','owner-a','owner-a',120000,60,'completed','[]',120060);
+        INSERT INTO learning_preferences (owner_id,onboarding_state,purpose,
+          planned_minutes,learning_method,goal_civil_date,goal_state,updated_at_utc_ms)
+          VALUES ('owner-a','completed','travel',15,'practice','2026-12-01','active',70);
+        ''');
+      expect(_version(before), 12);
+      for (final table in _tables(before)) {
+        columns[table] = [
+          for (final col in before.select('PRAGMA table_info("$table")'))
+            col['name'] as String,
+        ];
+      }
+      expect(columns, hasLength(37));
+      rows = _projectedRows(before, columns);
+    } finally {
+      before.close();
+    }
+
+    final freshFile = File('${directory.path}/fresh-v26.sqlite');
+    await _openAndClose(freshFile);
+    final fresh = sqlite.sqlite3.open(
+      freshFile.path,
+      mode: sqlite.OpenMode.readOnly,
+    );
+    try {
+      for (var opening = 0; opening < 2; opening++) {
+        await _openAndClose(pinnedFile);
+        final upgraded = sqlite.sqlite3.open(
+          pinnedFile.path,
+          mode: sqlite.OpenMode.readOnly,
+        );
+        try {
+          expect(_version(upgraded), 26);
+          expect(_schemaFacts(upgraded), _schemaFacts(fresh));
+          expect(_projectedRows(upgraded, columns), rows);
+          for (final table in ['learning_sessions', 'answer_attempts']) {
+            expect(
+              upgraded
+                  .select('SELECT legacy_evidence_disposition FROM $table')
+                  .single['legacy_evidence_disposition'],
+              isNull,
+            );
+          }
+          expect(
+            upgraded.select('SELECT * FROM archived_v25_records'),
+            isEmpty,
+          );
+          expect(upgraded.select('PRAGMA foreign_key_check'), isEmpty);
+        } finally {
+          upgraded.close();
+        }
+      }
+    } finally {
+      fresh.close();
+    }
+  });
 
   test(
     'malformed preexisting v12 table rolls back the entire upgrade and permits a repaired retry',
@@ -207,7 +315,7 @@ void main() {
       await _openAndClose(file);
       final repaired = sqlite.sqlite3.open(file.path);
       try {
-        expect(_version(repaired), 12);
+        expect(_version(repaired), 26);
         expect(_tables(repaired), {...oldColumns.keys, ..._newTables});
         expect(_projectedRows(repaired, oldColumns), oldRows);
         expect(repaired.select('PRAGMA foreign_key_check'), isEmpty);

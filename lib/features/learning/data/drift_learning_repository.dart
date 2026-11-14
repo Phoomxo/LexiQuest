@@ -94,6 +94,9 @@ final class DriftLearningRepository implements DurableQuizRepository {
       final plan = session.quizPlan;
       final encodedPlan = plan == null ? null : encodeQuizPlan(plan);
       final existing = await _session(session.ownerId, session.id);
+      if (existing?.legacyEvidenceDisposition != null) {
+        throw StateError('Historical learning session is read-only');
+      }
       if (existing != null &&
           (plan != null || existing.questionPlanJson != null)) {
         if (existing.questionPlanJson != encodedPlan ||
@@ -142,6 +145,9 @@ final class DriftLearningRepository implements DurableQuizRepository {
         database.answerAttempts,
       )..where((row) => row.id.equals(command.id))).getSingleOrNull();
       if (existing != null) {
+        if (existing.legacyEvidenceDisposition != null) {
+          throw StateError('Historical answer is read-only');
+        }
         if (!_sameAttempt(existing, command)) {
           throw StateError('attempt id already exists with different evidence');
         }
@@ -180,7 +186,7 @@ final class DriftLearningRepository implements DurableQuizRepository {
                     row.state.equals('active'),
               ))
               .getSingleOrNull();
-      if (session == null) {
+      if (session == null || session.legacyEvidenceDisposition != null) {
         throw StateError('active learning session not found');
       }
       final word =
@@ -718,6 +724,9 @@ final class DriftLearningRepository implements DurableQuizRepository {
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      if (row.legacyEvidenceDisposition != null) {
+        throw StateError('Historical learning session is read-only');
+      }
       if (row.state != 'completed' &&
           (row.state != 'active' ||
               row.questionPlanJson != null ||

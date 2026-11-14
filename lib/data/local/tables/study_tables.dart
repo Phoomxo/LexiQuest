@@ -3,6 +3,19 @@ import 'package:drift/drift.dart';
 import 'identity_tables.dart';
 import 'motivation_tables.dart';
 
+class ArchivedV25Records extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get originOwnerId => text()();
+  TextColumn get sourceTable => text()();
+  TextColumn get sourceRowKey => text()();
+  TextColumn get payloadJson => text()();
+  BlobColumn get payloadBlob => blob().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 class LocalContentReports extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().references(LocalOwners, #id)();

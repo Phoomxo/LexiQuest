@@ -17,6 +17,7 @@ const _newTables = {
   'local_content_reports',
   'focus_sessions',
   'learning_preferences',
+  'archived_v25_records',
 };
 const _objectives =
     '[ { "objectiveId": "synthetic-correct", "targetCount": 5 } ]';
@@ -90,7 +91,7 @@ void main() {
       var db = _openFile(file);
       opened = db;
       expect((await db.customSelect('PRAGMA user_version').getSingle()).data, {
-        'user_version': 12,
+        'user_version': 26,
       });
       final latestCutoff = DateTime.now().toUtc().millisecondsSinceEpoch;
       expect(await _tableNames(db), {...original.columns.keys, ..._newTables});
@@ -174,7 +175,7 @@ void main() {
         );
         expect(
           (await db.customSelect('PRAGMA user_version').getSingle()).data,
-          {'user_version': 12},
+          {'user_version': 26},
         );
         final rewards = DriftRewardRepository(db);
         expect((await rewards.load('owner-a')).balance, 1);
@@ -515,7 +516,7 @@ void main() {
       opened = retry;
       expect(
         (await retry.customSelect('PRAGMA user_version').getSingle()).data,
-        {'user_version': 12},
+        {'user_version': 26},
       );
       await _expectOriginalRows(retry, original);
       expect(await _rows(retry, 'PRAGMA foreign_key_check'), isEmpty);
@@ -528,7 +529,7 @@ void main() {
     "CREATE UNIQUE INDEX idx_quest_canonical_owner_period ON quest_instances(owner_id,period_key) WHERE record_kind='c a n o n i c a l'",
     "CREATE UNIQUE INDEX idx_quest_canonical_owner_period ON quest_instances(owner_id,period_key) WHERE record_kind='canon IF NOT EXISTSical'",
   ]) {
-    test('v12 rejects and repairs index: $badDefinition', () async {
+    test('v26 rejects and repairs index: $badDefinition', () async {
       const index = 'idx_quest_canonical_owner_period';
       final initial = _openFile(file);
       await initial.customSelect('SELECT 1').get();
@@ -548,7 +549,7 @@ void main() {
         isA<StateError>().having((e) => e.message, 'message', contains(index)),
       );
       _withRaw(file, (raw) {
-        expect(raw.select('PRAGMA user_version').single['user_version'], 12);
+        expect(raw.select('PRAGMA user_version').single['user_version'], 26);
         expect(_rawSchema(raw), before);
         expect(_readRawRows(raw, original.columns), original.rows);
         expect(raw.select('PRAGMA foreign_key_check'), isEmpty);
@@ -582,7 +583,7 @@ void main() {
   }
 
   test(
-    'failure after migration commit retains v12 and its sealed baselines',
+    'failure after migration commit retains v26 and its sealed baselines',
     () async {
       const collision = 'idx_events_v2_owner_occurred';
       _withRaw(file, (raw) {
@@ -593,7 +594,7 @@ void main() {
 
       await _expectOpenFailure(_openFile(file), _indexCollision(collision));
       final beforeRetry = _withRaw(file, (raw) {
-        expect(raw.select('PRAGMA user_version').single['user_version'], 12);
+        expect(raw.select('PRAGMA user_version').single['user_version'], 26);
         expect(_readRawRows(raw, original.columns), original.rows);
         expect(raw.select('PRAGMA foreign_key_check'), isEmpty);
         final tables = raw
@@ -639,7 +640,7 @@ void main() {
       expect(await _rows(retry, 'PRAGMA foreign_key_check'), isEmpty);
       expect(
         (await retry.customSelect('PRAGMA user_version').getSingle()).data,
-        {'user_version': 12},
+        {'user_version': 26},
       );
     },
   );

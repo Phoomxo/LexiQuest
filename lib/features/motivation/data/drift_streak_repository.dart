@@ -284,6 +284,7 @@ final class DriftStreakRepository {
         await (_database.select(_database.answerAttempts)..where(
               (r) =>
                   r.ownerId.equals(owner) &
+                  r.legacyEvidenceDisposition.isNull() &
                   r.occurredAtUtcMs.isSmallerOrEqualValue(at),
             ))
             .get();
@@ -698,9 +699,13 @@ final class DriftStreakRepository {
     int boundary, {
     String? replacingRuleId,
   }) async {
-    final attempts = await (_database.select(
-      _database.answerAttempts,
-    )..where((r) => r.ownerId.equals(current.originOwnerId))).get();
+    final attempts =
+        await (_database.select(_database.answerAttempts)..where(
+              (r) =>
+                  r.ownerId.equals(current.originOwnerId) &
+                  r.legacyEvidenceDisposition.isNull(),
+            ))
+            .get();
     for (final attempt in attempts) {
       if (attempt.calendarEvidence == null && attempt.questIntent == null) {
         continue;

@@ -31,41 +31,60 @@ final class DriftProgressQueries {
     }
     return database.transaction(() async {
       final attempts =
-          await (database.select(database.answerAttempts)
-                ..where((row) => row.ownerId.equals(ownerId))
-                ..orderBy([
-                  (row) => OrderingTerm.asc(row.occurredAtUtcMs),
-                  (row) => OrderingTerm.asc(row.id),
-                ]))
-              .get();
+          (await database
+                  .customSelect(
+                    '''
+        SELECT a.* FROM answer_attempts a
+        JOIN learning_sessions s ON s.id = a.session_id AND s.owner_id = a.owner_id
+        WHERE a.owner_id = ? AND $_eligibleAttempt AND $_nonAssessment
+        ORDER BY a.occurred_at_utc_ms, a.id
+        ''',
+                    variables: [Variable<String>(ownerId)],
+                    readsFrom: {
+                      database.answerAttempts,
+                      database.learningSessions,
+                      database.archivedV25Records,
+                    },
+                  )
+                  .get())
+              .map((row) => database.answerAttempts.map(row.data))
+              .toList();
       final correctCount = attempts.where((row) => row.isCorrect).length;
       final wrongCount = attempts.length - correctCount;
       final responseTimes = attempts
           .map((row) => row.responseTimeMs)
           .whereType<int>()
           .toList(growable: false);
-      final pointsExpression = database.pointsLedgerEntries.amount.sum();
       // Legacy purchase debits still fund the shop, but never spend learning XP.
-      final pointsRow =
-          await (database.selectOnly(database.pointsLedgerEntries)
-                ..addColumns([pointsExpression])
-                ..where(
-                  database.pointsLedgerEntries.ownerId.equals(ownerId) &
-                      database.pointsLedgerEntries.entryType
-                          .equals('rewardPurchase')
-                          .not(),
-                ))
-              .getSingle();
-      final totalXp = pointsRow.read(pointsExpression) ?? 0;
-      final completedCount = database.learningSessions.id.count();
-      final completedRow =
-          await (database.selectOnly(database.learningSessions)
-                ..addColumns([completedCount])
-                ..where(
-                  database.learningSessions.ownerId.equals(ownerId) &
-                      database.learningSessions.state.equals('completed'),
-                ))
-              .getSingle();
+      final pointsRow = await database
+          .customSelect(
+            r'''
+        SELECT COALESCE(SUM(p.amount),0) AS xp FROM points_ledger_entries p
+        WHERE p.owner_id=? AND p.entry_type <> 'rewardPurchase'
+          AND NOT EXISTS (
+            SELECT 1 FROM archived_v25_records ar
+            WHERE ar.owner_id=p.owner_id AND ar.source_table='points_ledger_entries'
+              AND ar.source_row_key=p.id AND json_extract(ar.payload_json,'$._v25_reward_excluded')=1
+          )
+        ''',
+            variables: [Variable<String>(ownerId)],
+            readsFrom: {
+              database.pointsLedgerEntries,
+              database.archivedV25Records,
+            },
+          )
+          .getSingle();
+      final totalXp = pointsRow.read<int>('xp');
+      final completedRow = await database
+          .customSelect(
+            '''
+        SELECT COUNT(*) AS n FROM learning_sessions s
+        WHERE s.owner_id = ? AND s.state = 'completed' AND $_nonAssessment
+        ''',
+            variables: [Variable<String>(ownerId)],
+            readsFrom: {database.learningSessions, database.archivedV25Records},
+          )
+          .getSingle();
       final wordCount = database.vocabularyWords.id.count();
       final wordRow =
           await (database.selectOnly(database.vocabularyWords)
@@ -162,7 +181,7 @@ final class DriftProgressQueries {
         wrongCount: wrongCount,
         accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
         totalXp: totalXp,
-        completedSessions: completedRow.read(completedCount) ?? 0,
+        completedSessions: completedRow.read<int>('n'),
         learningDays: learningDays,
         dueReviewCount: dueWords.length,
         vocabularyWordCount: wordRow.read(wordCount) ?? 0,
@@ -220,7 +239,7 @@ final class DriftProgressQueries {
         .customSelect(
           '''
       $_historyProjection
-      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
       GROUP BY s.id
       ORDER BY s.ended_at_utc_ms DESC, s.id DESC
       LIMIT 20
@@ -231,6 +250,7 @@ final class DriftProgressQueries {
             database.answerAttempts,
             database.vocabularyWords,
             database.vocabularyCategories,
+            database.archivedV25Records,
           },
         )
         .get();
@@ -245,7 +265,7 @@ final class DriftProgressQueries {
         .customSelect(
           '''
       $_historyProjection
-      WHERE s.owner_id = ? AND s.id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      WHERE s.owner_id = ? AND s.id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
       GROUP BY s.id
       ''',
           variables: [Variable<String>(ownerId), Variable<String>(sessionId)],
@@ -254,6 +274,7 @@ final class DriftProgressQueries {
             database.answerAttempts,
             database.vocabularyWords,
             database.vocabularyCategories,
+            database.archivedV25Records,
           },
         )
         .getSingleOrNull();
@@ -269,7 +290,7 @@ final class DriftProgressQueries {
         .customSelect(
           '''
       $_historyProjection
-      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL
+      WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
       GROUP BY s.id
       HAVING COUNT(DISTINCT c.id) = 1 AND COUNT(c.id) = COUNT(a.id) AND MIN(c.id) = ?
       ORDER BY s.ended_at_utc_ms DESC, s.id DESC
@@ -281,6 +302,7 @@ final class DriftProgressQueries {
             database.answerAttempts,
             database.vocabularyWords,
             database.vocabularyCategories,
+            database.archivedV25Records,
           },
         )
         .getSingleOrNull();
@@ -293,6 +315,10 @@ final class DriftProgressQueries {
     QueryRow row,
   ) async {
     final sessionId = row.read<String>('id');
+    if (row.readNullable<String>('legacy_evidence_disposition') ==
+        'history-v25') {
+      return _historyEntry(row);
+    }
     final mistakes = await _loadSessionMistakes(ownerId, sessionId);
     final raw = row.readNullable<String>('question_plan_json');
     QuizPlan? plan;
@@ -430,6 +456,17 @@ final class DriftProgressQueries {
         ON c.id = w.category_id AND c.owner_id = w.owner_id
       ''';
 
+  static const _nonAssessment =
+      '''s.activity_type <> 'assessment' AND NOT EXISTS (
+        SELECT 1 FROM archived_v25_records ar
+        WHERE ar.owner_id = s.owner_id AND ar.source_table = 'assessment_runs'
+          AND json_extract(ar.payload_json, '\$.learning_session_id') = s.id
+      )''';
+
+  static const _eligibleAttempt = '''
+      (a.legacy_evidence_disposition IS NULL OR a.legacy_evidence_disposition = 'base-v25')
+      AND (s.legacy_evidence_disposition IS NULL OR s.legacy_evidence_disposition = 'base-v25')''';
+
   Future<List<WeaknessEvidence>> _loadWeaknesses(String ownerId) async {
     final rows = await database
         .customSelect(
@@ -442,11 +479,18 @@ final class DriftProgressQueries {
         SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) AS incorrect_count,
         s.due_at_utc_ms AS due_at_utc_ms
       FROM answer_attempts a
+      JOIN learning_sessions session ON session.id = a.session_id AND session.owner_id = a.owner_id
       INNER JOIN vocabulary_words w
         ON w.id = a.word_id AND w.owner_id = a.owner_id
       LEFT JOIN srs_states s
         ON s.word_id = a.word_id AND s.owner_id = a.owner_id
       WHERE a.owner_id = ? AND w.is_deleted = 0
+        AND session.activity_type <> 'assessment'
+        AND (a.legacy_evidence_disposition IS NULL OR a.legacy_evidence_disposition = 'base-v25')
+        AND (session.legacy_evidence_disposition IS NULL OR session.legacy_evidence_disposition = 'base-v25')
+        AND NOT EXISTS (SELECT 1 FROM archived_v25_records ar
+          WHERE ar.owner_id = session.owner_id AND ar.source_table = 'assessment_runs'
+            AND json_extract(ar.payload_json, '\$.learning_session_id') = session.id)
       GROUP BY a.word_id, w.spelling, w.meaning, s.due_at_utc_ms
       HAVING SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) > 0
       ORDER BY
@@ -459,6 +503,8 @@ final class DriftProgressQueries {
             database.answerAttempts,
             database.vocabularyWords,
             database.srsStates,
+            database.learningSessions,
+            database.archivedV25Records,
           },
         )
         .get();

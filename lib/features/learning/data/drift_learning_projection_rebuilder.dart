@@ -78,7 +78,10 @@ final class DriftLearningProjectionRebuilder {
         await (database.select(database.answerAttempts)
               ..where(
                 (row) =>
-                    row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+                    row.ownerId.equals(ownerId) &
+                    row.wordId.equals(wordId) &
+                    (row.legacyEvidenceDisposition.isNull() |
+                        row.legacyEvidenceDisposition.equals('base-v25')),
               )
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtcMs),
@@ -96,7 +99,7 @@ final class DriftLearningProjectionRebuilder {
         isCorrect: attempt.isCorrect,
         nowUtc: _utc(attempt.occurredAtUtcMs),
       );
-      if (attempt.isCorrect) {
+      if (attempt.isCorrect && attempt.legacyEvidenceDisposition == null) {
         await database
             .into(database.pointsLedgerEntries)
             .insert(
@@ -153,12 +156,18 @@ final class DriftLearningProjectionRebuilder {
     if (session == null) {
       throw StateError('owner-scoped learning session not found');
     }
+    if (session.legacyEvidenceDisposition != null) {
+      return;
+    }
     final attempts =
         await (database.select(database.answerAttempts)..where(
               (row) =>
                   row.ownerId.equals(ownerId) & row.sessionId.equals(sessionId),
             ))
             .get();
+    if (attempts.any((attempt) => attempt.legacyEvidenceDisposition != null)) {
+      return;
+    }
     final correct = attempts.where((attempt) => attempt.isCorrect).length;
     final wrong = attempts.length - correct;
     final score = attempts.isEmpty
@@ -184,7 +193,11 @@ final class DriftLearningProjectionRebuilder {
   }) async {
     final attempts =
         await (database.select(database.answerAttempts)
-              ..where((row) => row.ownerId.equals(ownerId))
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.legacyEvidenceDisposition.isNull(),
+              )
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtcMs),
                 (row) => OrderingTerm.asc(row.id),
@@ -232,6 +245,7 @@ final class DriftLearningProjectionRebuilder {
               ..where(
                 (row) =>
                     row.ownerId.equals(ownerId) &
+                    row.legacyEvidenceDisposition.isNull() &
                     row.state.equals('completed') &
                     row.endedAtUtcMs.isNotNull(),
               )

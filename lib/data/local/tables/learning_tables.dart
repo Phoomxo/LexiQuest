@@ -17,6 +17,7 @@ class LearningSessions extends Table {
   TextColumn get buildId => text()();
   TextColumn get questionPlanJson => text().nullable()();
   TextColumn get continuationJson => text().nullable()();
+  TextColumn get legacyEvidenceDisposition => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -37,6 +38,7 @@ class AnswerAttempts extends Table {
   TextColumn get calendarEvidence => text().nullable()();
   TextColumn get questIntent => text().nullable()();
   TextColumn get answerEvidenceJson => text().nullable()();
+  TextColumn get legacyEvidenceDisposition => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

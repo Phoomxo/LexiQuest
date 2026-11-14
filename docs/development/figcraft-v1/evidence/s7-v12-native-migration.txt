@@ -28,6 +28,32 @@ Drift changes user_version. A fresh v10 fixture has different Quest DDL.
 The exact APK lineage explains the guard failure independently of the clean
 v11→v12 tests. Direct device schema inspection has not been performed.
 
+Recovery versionCode31, source196d4e22b3e4365fba22d36198cb07762d95b981,
+signed arm64, 64,413,777 bytes, cloud sync false and default deny-all Research.
+APK SHA256 dc2e8e5f8d7f2fd852f6207cf8271fb024011a6cb78e76515eb41ff9558495cb.
+Build and install-r exit0, v2 signature verified with the same certificate.
+Pulled base APK matches. Android cold launch returned ok. Synthetic set A has
+the same three words and 67% result. Before-v30 and after-recovery A hierarchy
+files match SHA256 934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85.
+B remained empty with no result. UI evidence and both APKs are local under
+build/figcraft-a194d01a/. This restores access, with the v29 code lineage.
+
+Synthetic reproduction:
+1. Actual fresh AppDatabase at 00d6c8ea captured 45 empty tables and nine
+   indexes. SQL SHA256 bf56548a5fb52e1405ae6e90b944014237fa69a25699381ecc6d3e45f30c3066;
+   locally archived as build/s7-v12-actual-v25-schema.sql.
+2. Opened a file built from that SQL with the actual 196d4e22 AppDatabase.
+   It set user_version to 10 and retained 12 Quest fields and zero FK
+   violations, without a manual version override.
+3. Current v12 on a copied synthetic file rejected the same Quest guard.
+   The post-failure read showed user_version10, the seeded station row,
+   all 12 Quest fields, zero FK violations and no v11 parent objects.
+   Test log SHA256 d4f75be3ff03f7d57d7ce90ede0b707dda6f56a230bff71179118b136d288.
+
+Bridge scope includes 16 historical-only tables and distinct Quest/day,
+attempt and session contracts in common tables. Their owner links and
+original eligibility must survive before another physical v12 install.
+
 Linux CI 43597933619 passed format, analysis and policy steps and ran 2,241
 Flutter cases, one Quiz large-text expected-image mismatch (28.12%).
 Artifact flutter-golden-diffs ID14115600673. Root and an independent reviewer

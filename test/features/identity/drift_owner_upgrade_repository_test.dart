@@ -1071,6 +1071,12 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     'goal_civil_date, goal_state, updated_at_utc_ms) VALUES '
     "('guest-owner', 'unset', NULL, NULL, NULL, NULL, 'unset', 20)",
   );
+  await database.customInsert(
+    'INSERT INTO archived_v25_records '
+    '(id,owner_id,origin_owner_id,source_table,source_row_key,payload_json) '
+    "VALUES ('legacy-seed','guest-owner','guest-owner',"
+    "'saved_words','synthetic-save','{}')",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

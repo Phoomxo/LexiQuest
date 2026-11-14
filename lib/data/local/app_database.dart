@@ -5,6 +5,7 @@ import 'package:drift/remote.dart' show DriftRemoteException;
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:sqlite3/common.dart' show SqlError, SqliteException;
 
+import 'legacy_v25_migration.dart';
 import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
@@ -70,6 +71,7 @@ final _productionNativeOptions = DriftNativeOptions(
     LocalContentReports,
     FocusSessions,
     LearningPreferences,
+    ArchivedV25Records,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -79,7 +81,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 26;
 
   @override
   Future<T> transaction<T>(
@@ -120,7 +122,11 @@ final class AppDatabase extends _$AppDatabase {
         throw StateError('Migration requires foreign-key enforcement');
       }
       await transaction(() async {
-        if (from < 11) {
+        final oldLineage = await LegacyV25Migration.detect(this, from);
+        if (!oldLineage && (from > 12 || from < 1)) {
+          throw StateError('Unsupported local database version $from');
+        }
+        if (from < 11 || oldLineage) {
           final unexpected = await customSelect(
             "SELECT name FROM sqlite_master WHERE lower(name) IN ("
             "'owner_calendar_epochs','quest_definition_revisions',"
@@ -130,8 +136,21 @@ final class AppDatabase extends _$AppDatabase {
             throw StateError('Unexpected schema 11 objects in legacy database');
           }
         }
-        if (from < 12) await _checkStudyMigrationSource();
+        if (from < 12 || oldLineage) await _checkStudyMigrationSource();
+        if (await _tableExists('archived_v25_records') ||
+            await _columnExists(
+              'learning_sessions',
+              'legacy_evidence_disposition',
+            ) ||
+            await _columnExists(
+              'answer_attempts',
+              'legacy_evidence_disposition',
+            )) {
+          throw StateError('Unexpected schema 26 objects in legacy database');
+        }
         final questParentExisted = await _tableExists('quest_instances');
+        final sessionTableExisted = await _tableExists('learning_sessions');
+        final attemptTableExisted = await _tableExists('answer_attempts');
         await _createMissingTables(migrator);
         if (from < 2) {
           await _addColumnIfMissing(
@@ -220,7 +239,7 @@ final class AppDatabase extends _$AppDatabase {
             modelDownloads.failureCode,
           );
         }
-        if (from < 11) {
+        if (from < 11 || oldLineage) {
           await _addColumnIfMissing(
             migrator,
             'answer_attempts',
@@ -233,10 +252,15 @@ final class AppDatabase extends _$AppDatabase {
             answerAttempts,
             answerAttempts.questIntent,
           );
-          await _rebuildQuestPeriods(
-            migrator,
-            createdCurrentParent: !questParentExisted,
-          );
+          if (oldLineage) {
+            await migrator.createTable(archivedV25Records);
+            await LegacyV25Migration(this).archiveAndNormalize(migrator);
+          } else {
+            await _rebuildQuestPeriods(
+              migrator,
+              createdCurrentParent: !questParentExisted,
+            );
+          }
           if (!await _tableExists('quest_claim_receipts')) {
             await migrator.createTable(questClaimReceipts);
           }
@@ -254,11 +278,29 @@ final class AppDatabase extends _$AppDatabase {
             throw StateError('Schema 11 foreign-key validation failed');
           }
         }
-        if (from < 12) {
+        if (from < 12 || oldLineage) {
           await _migrateLocalStudy(migrator);
-          // Publish with the validated DDL so a beforeOpen failure cannot replay it.
-          await customStatement('PRAGMA user_version = 12');
         }
+        if (!oldLineage) await migrator.createTable(archivedV25Records);
+        if (sessionTableExisted) {
+          await migrator.addColumn(
+            learningSessions,
+            learningSessions.legacyEvidenceDisposition,
+          );
+        }
+        if (attemptTableExisted) {
+          await migrator.addColumn(
+            answerAttempts,
+            answerAttempts.legacyEvidenceDisposition,
+          );
+        }
+        if (oldLineage) await LegacyV25Migration(this).restoreStudyFlags();
+        await _createLegacyArchiveIndex();
+        if ((await customSelect('PRAGMA foreign_key_check').get()).isNotEmpty) {
+          throw StateError('Schema 26 foreign-key validation failed');
+        }
+        // Publish with the validated DDL so a beforeOpen failure cannot replay it.
+        await customStatement('PRAGMA user_version = 26');
       });
     },
     beforeOpen: (details) async {
@@ -267,8 +309,13 @@ final class AppDatabase extends _$AppDatabase {
       await _createEventIndexes();
       await _createS6Indexes();
       await _createStudyIndexes();
+      await _createLegacyArchiveIndex();
     },
   );
+
+  Future<void> _createLegacyArchiveIndex() => _ensureExactIndexes(const [
+    'CREATE INDEX IF NOT EXISTS idx_archived_v25_owner ON archived_v25_records(owner_id, source_table, source_row_key)',
+  ]);
 
   Future<void> _checkStudyMigrationSource() async {
     final unexpected = await customSelect(

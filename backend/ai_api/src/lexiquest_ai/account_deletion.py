@@ -63,6 +63,8 @@ EXPORT_V12_SCOPES = EXPORT_V11_SCOPES | frozenset(
     {"local_content_reports", "focus_sessions", "learning_preferences"}
 )
 
+EXPORT_V26_SCOPES = EXPORT_V12_SCOPES | frozenset({"archived_v25_records"})
+
 _KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{16,128}$")
 _OWNER_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
@@ -87,6 +89,7 @@ class FullExportReceipt(BaseModel):
             if self.schema_version <= 10
             else EXPORT_V11_SCOPES if self.schema_version == 11
             else EXPORT_V12_SCOPES if self.schema_version == 12
+            else EXPORT_V26_SCOPES if self.schema_version == 26
             else None
         )
         if self.covered_scopes != expected:

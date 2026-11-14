@@ -115,9 +115,9 @@ void main() {
     },
   );
 
-  for (final version in [10, 11]) {
+  for (final version in [10, 11, 12]) {
     test(
-      'v12 client rejects a v$version export receipt before reauth or deletion',
+      'v26 client rejects a v$version export receipt before reauth or deletion',
       () async {
         SharedPreferences.setMockInitialValues({});
         final fixture =
@@ -186,7 +186,7 @@ void main() {
   }
 
   test(
-    'file reopen resumes secret purge after deleting all v12 owner rows',
+    'file reopen resumes secret purge after deleting all v26 owner rows',
     () async {
       final directory = await Directory.systemTemp.createTemp(
         's6-owner-deletion-',
@@ -200,7 +200,7 @@ void main() {
         expect(
           (await persisted.customSelect('PRAGMA user_version').getSingle())
               .data,
-          {'user_version': 12},
+          {'user_version': 26},
         );
         final beforeB = await _lifecycleRows(persisted, 'owner-b');
         final cloudReceipt = _cloudReceipt(now);
@@ -756,6 +756,7 @@ const _s6OwnerTables = {
   'local_content_reports',
   'focus_sessions',
   'learning_preferences',
+  'archived_v25_records',
 };
 
 Future<Map<String, Object?>> _lifecycleRows(
@@ -770,7 +771,7 @@ Future<Map<String, Object?>> _lifecycleRows(
           )
           as Map<String, dynamic>;
   final data = <String, Object?>{};
-  for (final scope in (fixture['exportV12'] as List).cast<String>()) {
+  for (final scope in (fixture['exportV26'] as List).cast<String>()) {
     final (sql, variables) = switch (scope) {
       'quest_definitions' || 'quest_definition_revisions' => (
         'SELECT * FROM $scope ORDER BY rowid',
@@ -805,6 +806,18 @@ Future<Map<String, Object?>> _lifecycleRows(
 Future<void> _seedS6LifecycleRows(AppDatabase database) async {
   const at = 1792833600000;
   for (final (suffix, version) in [('a', 2), ('b', 3)]) {
+    await database.customStatement(
+      'INSERT INTO archived_v25_records (id,owner_id,origin_owner_id,source_table,source_row_key,payload_json,payload_blob) VALUES (?,?,?,?,?,?,?)',
+      [
+        'archive-$suffix',
+        'owner-$suffix',
+        'owner-$suffix',
+        'learning_pack_versions',
+        'pack-$suffix',
+        '{"synthetic":true}',
+        Uint8List.fromList([0, 128, 255]),
+      ],
+    );
     final body = '{"synthetic":true,"publicTitle":"$suffix","xpAmount":50}';
     final digest = sha256.convert(utf8.encode(body)).toString();
     await database.customStatement(

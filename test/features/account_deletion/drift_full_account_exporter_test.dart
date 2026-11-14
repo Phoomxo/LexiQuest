@@ -61,6 +61,7 @@ void main() {
     expect(receipt.artifactSha256, sha256.convert(bytes).toString());
     expect(receipt.bytesWritten, bytes.length);
     expect(receipt.schemaVersion, fixture.database.schemaVersion);
+    expect(receipt.schemaVersion, 26);
     expect(receipt.coveredScopes, requiredFullAccountExportScopes);
     expect(receipt.completedAtUtc, _now);
     expect(payload['ownerId'], 'owner-a');
