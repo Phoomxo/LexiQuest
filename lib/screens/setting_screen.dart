@@ -819,7 +819,7 @@ class _SettingScreenState extends State<SettingScreen> {
     }
     _openSettingsPage(
       'account/delete',
-      AccountDeletionScreen(useCases: deletion),
+      AccountDeletionScreen(useCases: deletion, expectedFirebaseUid: uid),
     );
   }
 

@@ -347,7 +347,7 @@ class _PersonalData extends StatelessWidget {
                 ),
               ),
             ),
-            if (deletion != null && session?.isAnonymous == false)
+            if (deletion != null && session != null && !session.isAnonymous)
               ListTile(
                 leading: Icon(
                   Icons.delete_forever_outlined,
@@ -359,14 +359,17 @@ class _PersonalData extends StatelessWidget {
                 onTap: () {
                   final current = AppDependenciesScope.maybeOf(context);
                   if (!identical(current?.accountDeletion, deletion) ||
-                      current?.account?.currentSession?.uid != session?.uid) {
+                      current?.account?.currentSession?.uid != session.uid) {
                     return;
                   }
                   AppNavigator.pushPage<void>(
                     context,
                     AppPage<void>(
                       name: 'account/delete',
-                      builder: (_) => AccountDeletionScreen(useCases: deletion),
+                      builder: (_) => AccountDeletionScreen(
+                        useCases: deletion,
+                        expectedFirebaseUid: session.uid,
+                      ),
                     ),
                   );
                 },

@@ -246,11 +246,11 @@ class _OwnedAppearanceScreenState extends State<OwnedAppearanceScreen> {
         _invalidate();
         return;
       }
-      if (!_current) return;
+      if (!mounted || !_current) return;
       await open(context, owner);
       if (_current) await _load(rewards);
     } catch (_) {
-      if (_current) {
+      if (mounted && _current) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('เปิดหน้านี้ไม่ได้ กรุณาลองใหม่')),
         );

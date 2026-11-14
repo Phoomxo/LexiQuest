@@ -34,6 +34,7 @@ final class AccountDeletionUseCases {
 
   Future<AccountDeletionReceipt> deleteAccount({
     required String idempotencyKey,
+    String? expectedFirebaseUid,
   }) async {
     if (!enabled) {
       throw const AccountDeletionException(AccountDeletionFailureCode.disabled);
@@ -45,7 +46,7 @@ final class AccountDeletionUseCases {
       );
     }
 
-    final identity = await _requireIdentity();
+    final identity = await _requireIdentity(firebaseUid: expectedFirebaseUid);
     late final FullAccountExportReceipt exportReceipt;
     try {
       exportReceipt = await exporter.export(ownerId: identity.owner.id);

@@ -90,6 +90,24 @@ void main() {
   });
 
   test(
+    'rejects a confirmation opened for another account before export',
+    () async {
+      await expectLater(
+        useCases().deleteAccount(
+          idempotencyKey: key,
+          expectedFirebaseUid: 'previous-owner',
+        ),
+        throwsA(_failure(AccountDeletionFailureCode.ownerChanged)),
+      );
+
+      expect(exporter.calls, 0);
+      expect(reauthenticator.calls, 0);
+      expect(cloud.calls, 0);
+      expect(local.calls, 0);
+    },
+  );
+
+  test(
     'requires a complete export before reauthentication or deletion',
     () async {
       exporter.receipt = _exportReceipt(

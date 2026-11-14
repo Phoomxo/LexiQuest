@@ -950,7 +950,7 @@ class _DashboardMessage extends StatelessWidget {
               const SizedBox(height: 8),
               OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
             ],
-            if (extra case final action?) action,
+            ?extra,
           ],
         ),
       ),
