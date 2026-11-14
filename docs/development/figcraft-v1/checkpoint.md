@@ -1,6 +1,26 @@
 # Continuous execution checkpoint
 
+## S3 Original flashcard result and linked repair
+
+- Application `bfe5f14e`, API 35 offline APK `f75c6f26` at font 2.0.
+  A seeded ferry recall saved the original card and 0%. A normal
+  vocabulary edit changed the live spelling and gloss. SRS history
+  retained the original card and self-rating. The live edited word
+  generated one new 100% Quiz linked to the same original 0% result.
+  Both SQLite owner/session rows matched their scope. f43 passes this
+  prototype history and repair journey. [Evidence](evidence/s3-f43-srs-original-card.txt).
+- The observed edit committed but showed an incorrect context warning.
+  Source `10956cc1` resolves the post-commit refresh and preserves the
+  pre-write guard with Windows Flutter 122 and analysis. The new
+  Android debug APK `dc4281f2` built. Next install it and recheck the
+  editor return. Signed startup reliability remains open.
+
 ## S3 Due review and reopen from Progress
+
+- P1.5 checked both ratings and reveal-only on the same offline APK.
+  The reveal-only state and timestamps matched. Forget reset a seeded
+  7-day interval to one day, reset repetitions and added one lapse.
+  Remember and forget both scheduled +24 hours from their answer time.
 
 - On offline API 35 debug APK `46c8a808` at system font 2.0, one isolated
   due word appeared on Today. Reveal left attempts empty. The single

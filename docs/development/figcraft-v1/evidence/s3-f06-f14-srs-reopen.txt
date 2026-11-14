@@ -49,5 +49,29 @@ build/s3-f06-f14-recheck.txt SHA-256:
 52d051921e869a1f667f4241a2130fb638eed155b6f829716d4f15602b33f3c2
 
 f06 and f14 pass in this offline prototype scope. Signed accessibility
-and live sync remain open. P1.5 still needs the matched native negative
-rating and no-answer due timestamp checks.
+and live sync remain open.
+
+P1.5 due-date branches on the same APK and fixture owner
+
+The second fixture added bridge with an overdue 7-day interval, three
+repetitions and zero lapses. Before reveal and after revealing and
+returning to Today without a rating, the complete five-field SRS state
+and zero-attempt count matched. The word remained due. On entering again,
+เลือก ยังจำไม่ได้ stored one srsRecall attempt and a completed 0% result.
+The interval reset to one day, repetitions to zero and lapses to one.
+The next due time was 86,400,000 ms from the timestamp of that answer.
+The earlier remember case used the same relative offset from its
+recorded answer; the policy tests compare both results at one fixed
+UTC reference time. The Today queue became empty after the rating.
+That assertion passed in the subsequent 177-test regression run.
+s3-f43-srs-original-card.txt records its Windows log hash.
+
+Raw Android logs under build/boss-android-evidence, SHA-256:
+p15-forget-fixture.sql 3e1007bb6e9aa250906d9f715b09a327b4f12075442bcb76131c4878f9acaa4a
+p15-forget-before.txt and p15-after-unanswered.txt
+910d019020ee4f0ef6975145c9ae7baa0a530a8998f428095160261281abdc15
+p15-forget-reveal.txt 211eff2b590343162ce9dc8871386e9fe90d8f3061c88d158e3d59bb0bc2a4b9
+p15-forget-rated.txt 70fe2534deb9dafba3a1358b605a1d5938f8687e53f9be7ac283da81aea9f9dd
+p15-forget-score.txt 62f5705473a99f3fa1568fd3c4abeb21c9666d9dae6283ee6ad541a5081d1869
+p15-forget-completed.txt e431968ad4c0a7e3e3f032fcd3d2ee65eeec1e0f0f07020e486f4cdb0d0cc392
+p15-forget-back-today.txt bcd92a41459e137a4399d2ab1d1316bf69af9ba3b625f675f16e62a88a34a71e

@@ -1,0 +1,99 @@
+S3 f43 original flashcard in saved review history
+
+Application source bfe5f14efe2f3613a0e277a3abcdb567a2b90fdc.
+The existing answer attempt stores a versioned copy of the displayed
+spelling, revealed meaning and part of speech. The same row stores the
+original self-rating. The saved score reads the original snapshot and
+the mistake practice reads current owner vocabulary.
+
+The write uses the original transaction, owner check and attempt ID.
+Retrying a lost acknowledgement compares the original snapshot. A
+retained incomplete card can still save its rating, and older or
+sync-only attempts without the snapshot retain their aggregate result.
+The automatic sync payload and EventEnvelopeV2 schema are unchanged.
+Full personal export keeps its existing owner-scoped archive behavior.
+
+Windows focused 177 passed across review, original history, quiz,
+progress, vocabulary, fixed-clock SRS, export and automatic sync.
+The widget case used the actual reveal and rating. File-backed history
+reopened after a vocabulary edit with the original card and rating,
+kept the snapshot-less aggregate, and denied a different owner's
+history request. Review found a compatibility case for an old blank
+meaning. The regression reproduced the failure and passed when snapshot
+capture became optional. Analysis of the 13 changed Dart files passed.
+
+Windows logs under build/, SHA-256:
+s3-srs-original-card-red.txt de18376f39fdfbccc2d987b3ce9a2974592bb19d09fd3671edb65e694ad80f37
+s3-srs-legacy-incomplete-red.txt 390e27dd827d7d3b56ec505bbf8f4f96b60290fa250305fe3cefb012010967c8
+s3-srs-original-card-final.txt 4567d777842f4ef909cf9758d233ae9a1f883090eb9dff3c0e01dd4584b8ed4f
+s3-srs-original-card-analyze.txt d7de60e23b13fb21137f506ad2feebdb6d5839d8f51552fe49ae83f5236fe54a
+
+Android API 35 offline x86_64 debug, font scale 2.0. The host and
+installed APK matched SHA-256:
+f75c6f2682ffa07f9a8244216f9813ddb7ff169ece875c113f4cf17feeffad0d
+build/s3-srs-original-card-android.txt SHA-256:
+fdea5328a616cda6e3d27dc25e288170aa09d6d0b1495e7feadec08779774268
+The isolated fixture retained the synthetic ferry word. Android recorded
+an initialization timeout after installation. A cold host restart
+retained the installed APK and Android Settings opened. LexiQuest
+reached the foreground and Android displayed an ANR.
+
+Device logs under build/boss-android-evidence, SHA-256:
+f43-start-timeout.txt c92b40fba7adc823b123d36b47b1660883fe1e695d99a2cde00ed4e9b4b9c06e
+f43-cold-start.txt 36573882fcc53804a07d97837d5c338b5114b171c9017d001f49448717b7ce8e
+
+Selecting Wait in the Android dialog reached the login. The learner
+declined enrollment and opened the due card from Today. The actual
+review saved ferry / เรือข้ามฟาก with the selected ยังจำไม่ได้, 0%,
+and one stored snapshot. The Library editor wrote ferryboat /
+crossing boat to the same word ID at revision 2. It showed an incorrect
+context warning after the commit. The test used Back and opened the
+updated word. It performed no duplicate save.
+
+Progress → ประวัติการฝึก → ทบทวนด้วยบัตรคำ retained the original card
+and 0%. Its mistake area showed the live ferryboat / crossing boat.
+ฝึกคำที่ผิด (1) used the updated word and correct meaning in a new 100%
+quiz. SQLite showed one fresh weaknessPractice attempt and linked its
+plan to the original 0% SRS session. The parent row was byte-for-byte
+equal to its snapshot before the edit and repair. The Back action
+returned to the same scrolled parent and then to Progress. Both research
+counts remained zero.
+
+Native evidence under build/boss-android-evidence, SHA-256:
+f43-ferry-fixture.sql 8f71807bee2bcb3d0b9428984c6a47d329eba5d81a8ca30b6c57ce9186a72602
+f43-login-after-wait.txt ba617a48340197819069df6fd0ba959576f8da96b4cc472e94638a00b45b0901
+f43-original-db.txt 4980222908e810dd7f7fe92c620c05cd11598f95d43162d22bc660f4f63774e8
+f43-edited-db.txt 85ba591731e014c24bff304b1a63b595f42998b8fefa92952c06dd63541ee582
+f43-saved-score-after-edit.txt d9bf9a0cd8489509d0787ae328b64f8e37e13ca20a43b2f0015b7fe419df29f6
+f43-repair-score.txt 3489d4e5ebda0b859c40aee8bb915f165531f43d85bce54dfa1f2f0052cf214b
+f43-repaired-db.txt 726deabc40e09fcfc8e5d2fe1327b4762818d28cdc7b65c54315e632e9cf4ae4
+f43-saved-score-actions.txt and f43-repair-return-parent.txt
+1150b9fb0c3eebcc8f2679d09b00b37adaa5cd140875093b807a0037c7cda771
+
+Library editor correction at 10956cc18adc7f24b0653759582870069cf81cca
+
+The live detail route emits a new word record after its own commit.
+The previous editor compared object identity after that update and
+misreported a scope change. The editor now pins word ID, owner,
+category and opening revision before submission. After the write it
+returns to the still-scoped detail route. Camera create keeps its
+draft checks. The live-stream regression reproduces the false warning,
+then verifies the returned detail, one revision and one edit outbox
+operation. The revision guard is at the form boundary.
+Windows Flutter 122 across Library, camera, owner scope, and Vocabulary
+passed. Analysis of the three changed Dart files passed.
+
+Windows logs under build/, SHA-256:
+s2-library-edit-post-commit-red.txt a2eab64966d49df096e67a2df11fb1366e306c9e5e6c30974121f8b1720de9fb
+s2-library-edit-post-commit-green.txt 65849fb53889c5f915ff7772993f0651187e7d5e6b2b08f169c3fa5fd4bb7024
+s2-library-edit-post-commit-analyze.txt 769614fdd52fbc57eafe5ec9bdee4be9ab776b669532b13e96ff7b9d09ef8ce3
+
+Android debug artifact under build/boss-android-evidence
+lexiquest-editor-return-10956cc1-api35-x64.apk SHA-256:
+dc4281f2053311009862bc5b91eed4cdd68ef0f634d7a01d9b81ab1cfb590ca9
+build/s2-library-edit-post-commit-android.txt SHA-256:
+0a96f948c11c5f439ff4a06b28532e21543d49a56b843e1d4dae325eddaaafdd
+The corrected editor's Android UI rerun is pending. The original
+SRS/repair native evidence above identifies its own installed build.
+Concurrent same-word writers can still win by commit order because
+the stale revision guard is evaluated before dispatch at the form.
