@@ -215,6 +215,11 @@ void main() {
           );
         }
 
+        await tester.scrollUntilVisible(
+          find.text('เรียงตัวอักษร'),
+          -160,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
         await _openGame(tester, 'เรียงตัวอักษร');
         await _tapTile(tester, 't');
         await tester.binding.handlePopRoute();

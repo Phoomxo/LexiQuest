@@ -8,13 +8,19 @@ import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'boss_battle_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 
 class WordGamesScreen extends StatefulWidget {
-  const WordGamesScreen({super.key, this.featureRegistry});
+  const WordGamesScreen({
+    super.key,
+    this.featureRegistry,
+    this.onReturnPractice,
+  });
 
   final FieldFeatureRegistry? featureRegistry;
+  final VoidCallback? onReturnPractice;
 
   @override
   State<WordGamesScreen> createState() => _WordGamesScreenState();
@@ -105,6 +111,29 @@ class _WordGamesScreenState extends State<WordGamesScreen> {
     }
   }
 
+  void _openSpellingStage() {
+    final games = ModalRoute.of(context);
+    if (_opening ||
+        games?.isCurrent != true ||
+        !_available(AppDependenciesScope.maybeOf(context))) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    final onReturnPractice = widget.onReturnPractice;
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'learning/spelling-stage',
+        builder: (_) => BossBattleScreen(
+          onChooseGame: () => navigator.popUntil(
+            (route) => identical(route, games) || route.isFirst,
+          ),
+          onReturnPractice: onReturnPractice,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final available = _available(AppDependenciesScope.maybeOf(context));
@@ -138,6 +167,13 @@ class _WordGamesScreenState extends State<WordGamesScreen> {
                   onTap: _opening
                       ? null
                       : () => _open(QuizPromptKind.sentenceScramble),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.flag_outlined),
+                  title: const Text('ด่านสะกดคำ'),
+                  subtitle: const Text('สะกดคำตามความหมายเพื่อผ่านด่าน'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _opening ? null : _openSpellingStage,
                 ),
               ],
               const SizedBox(height: 16),

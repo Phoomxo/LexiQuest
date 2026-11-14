@@ -367,8 +367,19 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             icon: Icons.extension_outlined,
             title: 'เกมฝึกคำ',
             subtitle: 'เรียงตัวอักษรหรือเรียงคำจากชุดของคุณ',
-            onTap: () =>
-                _push(context, WordGamesScreen(featureRegistry: _features)),
+            onTap: () {
+              final practice = ModalRoute.of(context);
+              final navigator = Navigator.of(context);
+              _push(
+                context,
+                WordGamesScreen(
+                  featureRegistry: _features,
+                  onReturnPractice: () => navigator.popUntil(
+                    (route) => identical(route, practice) || route.isFirst,
+                  ),
+                ),
+              );
+            },
           ),
         if (_learning?.supportsDurableQuiz == true)
           for (final (kind, title) in [
