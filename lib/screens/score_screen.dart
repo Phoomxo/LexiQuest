@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/cloze_prompt_policy.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import 'fill_in_the_blanks_screen.dart';
 import '../widgets/adaptive_content_pane.dart';
 
 class ScoreScreen extends StatefulWidget {
@@ -48,6 +52,8 @@ class _ScoreScreenState extends State<ScoreScreen> {
   AppDependencies? _dependencies;
   bool _captured = false;
   bool _invalidated = false;
+  bool _openingCloze = false;
+  Future<bool>? _clozeAvailable;
   StreamSubscription<String?>? _ownerChanges;
 
   @override
@@ -63,9 +69,30 @@ class _ScoreScreenState extends State<ScoreScreen> {
           if (active != ownerId) _hideResult();
         }, onError: (Object _) => _hideResult());
       }
+      _prepareCloze();
     } else if (!identical(current, _dependencies)) {
       _invalidated = true;
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant ScoreScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.sessionId != widget.sessionId ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId ||
+        !identical(oldWidget.mistakes, widget.mistakes)) {
+      _prepareCloze();
+    }
+  }
+
+  void _prepareCloze() {
+    _clozeAvailable = _canCheckCloze
+        ? _dependencies!.learning!.hasClozeRepair(
+            parentSessionId: widget.sessionId!,
+            expectedOwnerId: widget.expectedOwnerId!,
+          )
+        : null;
+    _clozeAvailable?.ignore();
   }
 
   void _hideResult() {
@@ -84,6 +111,38 @@ class _ScoreScreenState extends State<ScoreScreen> {
       identical(AppDependenciesScope.maybeOf(context), _dependencies);
 
   bool get _canAct => _isCurrent && (ModalRoute.of(context)?.isCurrent ?? true);
+
+  bool get _canCheckCloze =>
+      widget.sessionId != null &&
+      widget.expectedOwnerId != null &&
+      (_dependencies?.learning?.supportsDurableQuiz ?? false) &&
+      (_dependencies?.fieldFeatures.isVisible(FieldFeature.quiz) ?? false) &&
+      (_dependencies?.fieldFeatures.isVisible(FieldFeature.weakness) ??
+          false) &&
+      widget.mistakes.any(ClozePromptPolicy.supportsTarget);
+
+  Future<void> _openCloze() async {
+    if (!_canAct || !_canCheckCloze || _openingCloze) return;
+    _openingCloze = true;
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/cloze-repair',
+          builder: (clozeContext) => FillInTheBlanksScreen(
+            kind: QuizPromptKind.clozeChoice,
+            expectedOwnerId: widget.expectedOwnerId,
+            parentSessionId: widget.sessionId,
+            categoryName: widget.categoryName,
+            onComplete: () =>
+                AppNavigator.resetTo<void>(clozeContext, AppRoute.home),
+          ),
+        ),
+      );
+    } finally {
+      _openingCloze = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +263,21 @@ class _ScoreScreenState extends State<ScoreScreen> {
                       },
                       icon: const Icon(Icons.refresh),
                       label: Text('ฝึกคำที่ผิด (${widget.mistakes.length})'),
+                    ),
+                  if (_clozeAvailable != null)
+                    FutureBuilder<bool>(
+                      key: ValueKey(widget.sessionId),
+                      future: _clozeAvailable,
+                      builder: (context, snapshot) =>
+                          snapshot.connectionState == ConnectionState.done &&
+                              snapshot.data == true &&
+                              _canCheckCloze
+                          ? OutlinedButton.icon(
+                              onPressed: _openCloze,
+                              icon: const Icon(Icons.edit_note_outlined),
+                              label: const Text('ลองเติมคำนี้ในประโยค'),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   const SizedBox(height: 12),
                 ],

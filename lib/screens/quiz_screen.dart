@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/cloze_prompt_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/learning_evidence_contract.dart';
 import '../features/learning/domain/quiz_round.dart';
@@ -39,6 +40,7 @@ class QuizScreen extends StatefulWidget {
     this.originParentId,
     this.configureRound = false,
     this.voice,
+    this.onClozeComplete,
   });
 
   final String? categoryId;
@@ -53,6 +55,7 @@ class QuizScreen extends StatefulWidget {
   final String? originParentId;
   final bool configureRound;
   final VoiceUseCases? voice;
+  final VoidCallback? onClozeComplete;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -96,6 +99,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _practicingMistakes = false;
   bool _hintVisible = false;
   bool _revealed = false;
+  bool _responseCorrect = false;
+  final _typedAnswer = TextEditingController();
   AppDependencies? _dependencies;
   bool _wasScoped = false;
   String? _ownerId;
@@ -146,6 +151,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     unawaited(_ownerChanges?.cancel());
     _guideTimer?.cancel();
     _stopPromptVoice();
+    _typedAnswer.dispose();
     _questionClock.stop();
     super.dispose();
   }
@@ -256,6 +262,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _practicingMistakes = false;
     _hintVisible = false;
     _revealed = false;
+    _responseCorrect = false;
+    _typedAnswer.clear();
     _mistakes.clear();
     _load = _startSession(learning, generation, skipUnavailable, settings)
         .whenComplete(() {
@@ -344,7 +352,17 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     final QuizSession session;
     try {
-      session = _wordIds == null
+      session = widget.promptKind.isCloze
+          ? await learning.startCloze(
+              categoryId: _categoryId,
+              kind: widget.promptKind,
+              expectedOwnerId: owner.id,
+              parentSessionId: _originParentId,
+              skipUnavailable: skipUnavailable,
+              categoryName: widget.categoryName,
+              returnLabel: _returnLabel,
+            )
+          : _wordIds == null
           ? await learning.startQuiz(
               categoryId: _categoryId,
               kind: widget.promptKind,
@@ -497,13 +515,16 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   }
 
   bool _hasChoiceContrast(QuizSession session) => session.questions.every(
-    (question) => question.options.toSet().length >= 2,
+    (question) =>
+        question.kind == QuizPromptKind.clozeTyped ||
+        question.options.toSet().length >= 2,
   );
 
   int get _elapsed => (_activeElapsedMs + _questionClock.elapsedMilliseconds)
       .clamp(0, LearningEvidenceContract.maxResponseTimeMs);
 
   void _applyRound(QuizRound round) {
+    final previous = _round;
     _round = round;
     _index = round.cursor.slot;
     _committedAnswers = round.committedAnswers;
@@ -512,10 +533,19 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       ..addAll(round.mistakes);
     final response = round.feedback;
     _answered = response != null;
-    _revealed = response != null && response.selectedOption == null;
-    _selected = response?.selectedOption == null
-        ? null
-        : round.plan.questions[_index].options[response!.selectedOption!];
+    final question = round.plan.questions[_index];
+    _selected = response?.answerFor(question);
+    _revealed = response != null && _selected == null;
+    _responseCorrect = response?.isCorrectFor(question) ?? false;
+    if (question.kind == QuizPromptKind.clozeTyped) {
+      if (_selected != null) {
+        _typedAnswer.text = _selected!;
+      } else if (previous?.sessionId != round.sessionId ||
+          previous?.cursor.slot != round.cursor.slot ||
+          previous?.cursor.phase == QuizPhase.feedback) {
+        _typedAnswer.clear();
+      }
+    }
     _activeElapsedMs = round.cursor.activeResponseMs;
     _questionClock
       ..stop()
@@ -702,7 +732,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               ? _QuizMessage(
                   icon: Icons.error_outline,
                   message: 'บัญชีผู้เรียนเปลี่ยนแล้ว',
-                  actionLabel: _returnLabel,
+                  actionLabel: widget.promptKind.isCloze
+                      ? 'กลับ'
+                      : _returnLabel,
                   onAction: () => Navigator.maybePop(context),
                 )
               : FutureBuilder<QuizSession?>(
@@ -758,8 +790,13 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                             'ยังไม่มีคำและความหมายที่แยกตัวเลือกได้ชัดเจน',
                           QuizPromptKind.definitionChoice =>
                             'ยังไม่มีคู่นิยามที่รองรับ\nโจทย์นี้ใช้ platform · ชานชาลา และ ticket · ตั๋ว ชนิดคำนามในชุดเดียวกัน',
+                          QuizPromptKind.clozeChoice ||
+                          QuizPromptKind.clozeTyped =>
+                            'ยังไม่มีประโยคสำหรับคำนี้ในชุดฝึก',
                         },
-                        actionLabel: _returnLabel,
+                        actionLabel: widget.promptKind.isCloze
+                            ? 'กลับ'
+                            : _returnLabel,
                         onAction: () => Navigator.maybePop(context),
                       );
                     }
@@ -796,7 +833,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     );
   }
 
-  String get _title => widget.wordIds == null
+  String get _title => widget.promptKind.isCloze
+      ? 'เติมคำในประโยค'
+      : widget.wordIds == null
       ? 'แบบทดสอบคำศัพท์'
       : widget.selectionMode == QuizWordSelectionMode.sourcePractice
       ? 'แบบทดสอบจากเนื้อหานี้'
@@ -950,6 +989,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
+    final isCloze = question.kind.isCloze;
     final settings = _round?.plan.settings;
     return SafeArea(
       child: SingleChildScrollView(
@@ -1004,6 +1044,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               QuizPromptKind.meaningChoice => 'เลือกคำแปลที่ตรงกับคำศัพท์',
               QuizPromptKind.spellingChoice => 'เลือกคำอังกฤษที่ตรงกับความหมาย',
               QuizPromptKind.definitionChoice => 'โจทย์นิยามภาษาอังกฤษ',
+              QuizPromptKind.clozeChoice => 'เลือกคำที่หายไป',
+              QuizPromptKind.clozeTyped => 'พิมพ์คำที่หายไป',
             }),
             const SizedBox(height: 12),
             Text(
@@ -1011,6 +1053,32 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            if (isCloze &&
+                (_answered || question.kind == QuizPromptKind.clozeChoice))
+              Text(question.clozeTranslation!, textAlign: TextAlign.center),
+            if (question.kind == QuizPromptKind.clozeTyped) ...[
+              const SizedBox(height: 12),
+              TextField(
+                key: const ValueKey('cloze-typed-answer'),
+                controller: _typedAnswer,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(labelText: 'คำตอบ'),
+                maxLength: 120,
+                enabled: !_answered && !_saving && _attemptId == null,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _submitTypedCloze(question),
+              ),
+              if (!_answered)
+                OutlinedButton(
+                  onPressed:
+                      _saving ||
+                          _attemptId != null ||
+                          _typedAnswer.text.trim().isEmpty
+                      ? null
+                      : () => _submitTypedCloze(question),
+                  child: const Text('ตรวจคำตอบ'),
+                ),
+            ],
             if (settings?.listenAndRead == true) ...[
               OutlinedButton.icon(
                 onPressed: _startingVoice || _saving
@@ -1035,7 +1103,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             if (!_answered) ...[
-              if (question.word.partOfSpeech.isNotEmpty)
+              if (!isCloze && question.word.partOfSpeech.isNotEmpty)
                 TextButton(
                   onPressed: _saving || _attemptId != null
                       ? null
@@ -1043,13 +1111,14 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
                   child: Text(_hintVisible ? 'ซ่อนคำใบ้' : 'ดูคำใบ้'),
                 ),
-              TextButton(
-                onPressed: _saving || _attemptId != null
-                    ? null
-                    : () => _record(question, null, reveal: true),
-                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                child: const Text('เฉลยคำตอบ'),
-              ),
+              if (!isCloze)
+                TextButton(
+                  onPressed: _saving || _attemptId != null
+                      ? null
+                      : () => _record(question, null, reveal: true),
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  child: const Text('เฉลยคำตอบ'),
+                ),
             ],
             const SizedBox(height: 24),
             ...question.options.map((option) {
@@ -1091,18 +1160,25 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _selected == question.correctAnswer
-                          ? 'ถูกต้อง'
-                          : 'ยังไม่ถูก ลองดูคำแปลอีกครั้ง',
+                      _responseCorrect
+                          ? (isCloze ? 'เติมคำได้ถูกต้อง' : 'ถูกต้อง')
+                          : (isCloze
+                                ? 'ยังไม่ถูก ลองดูคำใบ้'
+                                : 'ยังไม่ถูก ลองดูคำแปลอีกครั้ง'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
                     ),
-                    Text(
-                      '${question.word.spelling} — ${question.word.meaning}',
-                    ),
+                    if (isCloze && _responseCorrect)
+                      Text(question.promptText.replaceFirst('____', _selected!))
+                    else if (isCloze)
+                      Text('คำใบ้ · ${question.word.meaning}')
+                    else
+                      Text(
+                        '${question.word.spelling} — ${question.word.meaning}',
+                      ),
                     if (question.optionWords?[_selected]
                         case final selectedWord?)
                       if (_selected != question.correctAnswer)
@@ -1112,6 +1188,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                     if (question.optionExplanations?[_selected]
                         case final explanation?)
                       Text(explanation),
+                    if (question.kind == QuizPromptKind.clozeChoice &&
+                        !_responseCorrect)
+                      if (ClozePromptPolicy.distractorMeaning(_selected)
+                          case final meaning?)
+                        Text('$_selected — $meaning'),
                   ],
                 ),
               ),
@@ -1119,16 +1200,18 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             ],
             if (_answered &&
                 question.kind != QuizPromptKind.meaningChoice &&
-                _selected != question.correctAnswer)
+                !_responseCorrect)
               OutlinedButton(
                 onPressed: _saving ? null : _retryQuestion,
-                child: const Text('ลองข้อเดิม'),
+                child: Text(isCloze ? 'ลองตอบอีกครั้ง' : 'ลองข้อเดิม'),
               ),
-            if (_answered)
+            if (_answered && (!isCloze || _responseCorrect))
               FilledButton(
                 onPressed: _saving ? null : _next,
                 child: Text(
-                  _index == session.questions.length - 1
+                  isCloze
+                      ? _returnLabel
+                      : _index == session.questions.length - 1
                       ? 'ดูผลการเรียน'
                       : 'คำถามถัดไป',
                 ),
@@ -1145,7 +1228,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   ) {
     if (!_answered) return null;
     final colors = Theme.of(context).colorScheme;
-    if (option == question.correctAnswer) {
+    if (QuizChoiceResponse(
+      slot: _index,
+      selectedOption: question.options.indexOf(option),
+    ).isCorrectFor(question)) {
       if (colors.brightness == Brightness.light) {
         return (
           background: Colors.green.shade100,
@@ -1191,7 +1277,15 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       _selected = option;
       _revealed = reveal;
     }
-    final correct = !_revealed && _selected == question.correctAnswer;
+    final response = question.kind == QuizPromptKind.clozeTyped && !_revealed
+        ? QuizTextResponse(slot: _index, text: _selected!)
+        : QuizChoiceResponse(
+            slot: _index,
+            selectedOption: _revealed
+                ? null
+                : question.options.indexOf(_selected!),
+          );
+    final correct = response.isCorrectFor(question);
     _submittedAtUtc ??= DateTime.now().toUtc();
     _responseTimeMs ??= _round != null
         ? _elapsed
@@ -1217,19 +1311,12 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         expectedOwnerId: _ownerId,
         quiz: round == null
             ? null
-            : (
-                expectedRevision: round.cursor.revision,
-                response: (
-                  slot: round.cursor.slot,
-                  selectedOption: _revealed
-                      ? null
-                      : question.options.indexOf(_selected!),
-                ),
-              ),
+            : (expectedRevision: round.cursor.revision, response: response),
       );
       if (!_current(generation)) return;
       setState(() {
         _answered = true;
+        _responseCorrect = correct;
         _saving = false;
         _answerSaveFailed = false;
         if (result.durableRound case final saved?) {
@@ -1273,6 +1360,23 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _submitTypedCloze(QuizQuestion question) {
+    final text = _typedAnswer.text;
+    if (_attemptId != null) return;
+    try {
+      normalizeQuizClozeAnswer(text);
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรอกคำตอบในบรรทัดเดียว ไม่เกิน 120 อักขระ'),
+        ),
+      );
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    _record(question, text.trim());
+  }
+
   void _retryQuestion() {
     if (_saving || !_answered || !_current(_generation)) return;
     if (_round != null) {
@@ -1281,6 +1385,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     setState(() {
       _answered = false;
+      _responseCorrect = false;
       _selected = null;
       _revealed = false;
       _hintVisible = false;
@@ -1316,7 +1421,20 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     final planned = _round != null;
     final finished = planned ? await _advanceDurable(QuizStep.finish) : null;
-    if (!_current(generation) || (planned && finished?.summary == null)) return;
+    if (!mounted ||
+        !_current(generation) ||
+        (planned && finished?.summary == null)) {
+      return;
+    }
+    if (widget.promptKind.isCloze && finished?.summary != null) {
+      final onComplete = widget.onClozeComplete;
+      if (onComplete == null) {
+        Navigator.of(context).pop();
+      } else {
+        onComplete();
+      }
+      return;
+    }
     setState(() => _saving = true);
     try {
       final summary =

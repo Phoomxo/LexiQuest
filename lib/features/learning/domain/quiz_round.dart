@@ -101,6 +101,9 @@ final class QuizPlan {
     if (this.questions.isEmpty || this.questions.length > _maxQuestions) {
       throw const FormatException('Invalid quiz question count');
     }
+    if (origin.promptKind.isCloze && settings != null) {
+      throw const FormatException('Cloze plans cannot contain quiz settings');
+    }
     if (settings case final settings?) {
       if (settings.questionCount < 1 ||
           settings.questionCount > _maxQuestions ||
@@ -141,8 +144,76 @@ typedef QuizCursor = ({
   int activeResponseMs,
 });
 
+sealed class QuizResponse {
+  const QuizResponse({required this.slot});
+
+  final int slot;
+
+  String? answerFor(QuizQuestion question) {
+    switch (this) {
+      case QuizChoiceResponse(:final selectedOption):
+        if (selectedOption == null) {
+          return null;
+        }
+        if (question.kind == QuizPromptKind.clozeTyped ||
+            selectedOption < 0 ||
+            selectedOption >= question.options.length) {
+          throw const FormatException('Quiz selected option is not displayed');
+        }
+        return question.options[selectedOption];
+      case QuizTextResponse(:final text):
+        if (question.kind != QuizPromptKind.clozeTyped) {
+          throw const FormatException('Typed answer requires a typed cloze');
+        }
+        normalizeQuizClozeAnswer(text);
+        return text.trim();
+    }
+  }
+
+  bool isCorrectFor(QuizQuestion question) {
+    final answer = answerFor(question);
+    if (answer == null) {
+      return false;
+    }
+    if (!question.kind.isCloze) {
+      return answer == question.correctAnswer;
+    }
+    final normalized = normalizeQuizClozeAnswer(answer);
+    return question.acceptedAnswers.any(
+      (accepted) => normalizeQuizClozeAnswer(accepted) == normalized,
+    );
+  }
+}
+
 // A null option records an explicit reveal. A missing response is separate.
-typedef QuizResponse = ({int slot, int? selectedOption});
+final class QuizChoiceResponse extends QuizResponse {
+  const QuizChoiceResponse({required super.slot, required this.selectedOption});
+
+  final int? selectedOption;
+
+  @override
+  bool operator ==(Object other) =>
+      other is QuizChoiceResponse &&
+      slot == other.slot &&
+      selectedOption == other.selectedOption;
+
+  @override
+  int get hashCode => Object.hash(QuizChoiceResponse, slot, selectedOption);
+}
+
+final class QuizTextResponse extends QuizResponse {
+  const QuizTextResponse({required super.slot, required this.text});
+
+  final String text;
+
+  @override
+  bool operator ==(Object other) =>
+      other is QuizTextResponse && slot == other.slot && text == other.text;
+
+  @override
+  int get hashCode => Object.hash(QuizTextResponse, slot, text);
+}
+
 typedef QuizAdmission = ({int expectedRevision, QuizResponse response});
 
 const QuizCursor initialQuizCursor = (
@@ -190,7 +261,9 @@ const _maxPlanBytes = 4 * 1024 * 1024;
 const _maxSmallBytes = 4096;
 
 String encodeQuizPlan(QuizPlan plan) => _encode({
-  'v': plan.settings == null ? _version : 2,
+  'v': plan.origin.promptKind.isCloze
+      ? 3
+      : (plan.settings == null ? _version : 2),
   'origin': {
     'route': plan.origin.route,
     'promptKind': plan.origin.promptKind.name,
@@ -220,10 +293,15 @@ QuizPlan decodeQuizPlan(String raw) {
         'questions': final List<dynamic> questions,
       }
       when ((version == _version && json.length == 5) ||
-              (version == 2 && json.length == 6)) &&
+              (version == 2 && json.length == 6) ||
+              (version == 3 && json.length == 5)) &&
           questions.length <= _maxQuestions) {
+    final decodedOrigin = _decodeOrigin(origin);
+    if (decodedOrigin.promptKind.isCloze != (version == 3)) {
+      throw const FormatException('Quiz plan version does not match its kind');
+    }
     return QuizPlan(
-      origin: _decodeOrigin(origin),
+      origin: decodedOrigin,
       questions: questions.map(_decodeQuestion),
       categoryName: categoryName,
       returnLabel: returnLabel,
@@ -304,10 +382,17 @@ QuizCursor decodeQuizCursor(String raw, {required QuizPlan plan}) {
 
 String encodeQuizResponse(QuizResponse response, {required QuizPlan plan}) {
   _validateResponse(response, plan);
-  return _encode({
-    'v': _version,
-    'slot': response.slot,
-    'selectedOption': response.selectedOption,
+  return _encode(switch (response) {
+    QuizChoiceResponse(:final slot, :final selectedOption) => {
+      'v': _version,
+      'slot': slot,
+      'selectedOption': selectedOption,
+    },
+    QuizTextResponse(:final slot, :final text) => {
+      'v': 2,
+      'slot': slot,
+      'text': text.trim(),
+    },
   }, _maxSmallBytes);
 }
 
@@ -318,7 +403,20 @@ QuizResponse decodeQuizResponse(String raw, {required QuizPlan plan}) {
     'slot': final int slot,
     'selectedOption': final int? selectedOption,
   } when version == _version && json.length == 3) {
-    final response = (slot: slot, selectedOption: selectedOption);
+    final response = QuizChoiceResponse(
+      slot: slot,
+      selectedOption: selectedOption,
+    );
+    _validateResponse(response, plan);
+    return response;
+  }
+  if (json case {
+    'v': final int version,
+    'slot': final int slot,
+    'text': final String text,
+  } when version == 2 && json.length == 3) {
+    normalizeQuizClozeAnswer(text);
+    final response = QuizTextResponse(slot: slot, text: text.trim());
     _validateResponse(response, plan);
     return response;
   }
@@ -341,9 +439,39 @@ Map<String, Object?> _questionJson(QuizQuestion q) => {
       ? null
       : {for (final option in q.options) option: q.optionExplanations![option]},
   'sourcePin': q.sourcePin,
+  if (q.kind.isCloze) ...{
+    'clozeTranslation': q.clozeTranslation,
+    'acceptedAnswers': q.acceptedAnswers,
+  },
 };
 
 QuizQuestion _decodeQuestion(Object? value) {
+  if (value case {
+    'word': final Object? target,
+    'kind': final String kind,
+    'promptText': final String prompt,
+    'options': final List<dynamic> options,
+    'correctOption': final int correctOption,
+    'optionWords': null,
+    'optionExplanations': null,
+    'sourcePin': final String sourcePin,
+    'clozeTranslation': final String translation,
+    'acceptedAnswers': final List<dynamic> acceptedAnswers,
+  } when value.length == 10) {
+    final question = QuizQuestion.cloze(
+      word: _decodeWord(target),
+      kind: _named(QuizPromptKind.values, kind),
+      prompt: prompt,
+      options: _strings(options, _maxOptions),
+      translation: translation,
+      acceptedAnswers: _strings(acceptedAnswers, _maxQuestions),
+      sourcePin: sourcePin,
+    );
+    if (correctOption != question.options.indexOf(question.correctAnswer)) {
+      throw const FormatException('Cloze canonical option does not match');
+    }
+    return question;
+  }
   if (value case {
     'word': final Object? target,
     'kind': final String kind,
@@ -429,6 +557,9 @@ void _validateQuestion(QuizQuestion q) {
   _validateWord(q.word);
   _requireText(q.promptText);
   final options = q.options.toSet();
+  if (q.kind == QuizPromptKind.clozeTyped) {
+    return;
+  }
   if (options.length < 2 ||
       options.length > _maxOptions ||
       options.length != q.options.length ||
@@ -503,11 +634,7 @@ void _validateCursor(QuizCursor cursor, QuizPlan plan) {
 
 void _validateResponse(QuizResponse response, QuizPlan plan) {
   _requireSlot(response.slot, plan);
-  final option = response.selectedOption;
-  if (option != null &&
-      (option < 0 || option >= plan.questions[response.slot].options.length)) {
-    throw const FormatException('Quiz selected option is not displayed');
-  }
+  response.answerFor(plan.questions[response.slot]);
 }
 
 void _requireSlot(int slot, QuizPlan plan) {

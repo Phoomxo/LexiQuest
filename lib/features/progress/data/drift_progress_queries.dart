@@ -345,10 +345,9 @@ final class DriftProgressQueries {
             plan: pinned,
           );
           final question = pinned.questions[evidence.slot];
-          final choice = evidence.selectedOption;
-          final selected = choice == null ? null : question.options[choice];
+          final selected = evidence.answerFor(question);
           if (attempt.promptMode != question.kind.name ||
-              attempt.isCorrect != (selected == question.correctAnswer)) {
+              attempt.isCorrect != evidence.isCorrectFor(question)) {
             throw const FormatException(
               'Original quiz response does not match the plan',
             );

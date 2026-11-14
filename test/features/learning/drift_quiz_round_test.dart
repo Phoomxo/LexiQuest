@@ -39,7 +39,10 @@ void main() {
         );
         round = (await _load(repository))!;
         expect(round.cursor.phase, QuizPhase.feedback);
-        expect(round.feedback, (slot: 0, selectedOption: 0));
+        expect(
+          round.feedback,
+          const QuizChoiceResponse(slot: 0, selectedOption: 0),
+        );
         round = await _advance(repository, round, QuizStep.next);
         expect(round.cursor.slot, 1);
         round = await _advance(
@@ -88,7 +91,10 @@ void main() {
           ),
         );
         round = (await _load(repository))!;
-        expect(round.feedback, (slot: 1, selectedOption: 0));
+        expect(
+          round.feedback,
+          const QuizChoiceResponse(slot: 1, selectedOption: 0),
+        );
         round = await _advance(repository, round, QuizStep.finish);
         expect(round.cursor.phase, QuizPhase.finished);
         expect(round.summary!.correctCount, 1);
@@ -108,7 +114,7 @@ void main() {
         expect(wrong.responseTimeMs, 1500);
         expect(
           decodeQuizResponse(wrong.answerEvidenceJson!, plan: round.plan),
-          (slot: 1, selectedOption: 0),
+          const QuizChoiceResponse(slot: 1, selectedOption: 0),
         );
         final completed = await _snapshot(database);
         await _load(repository);
@@ -134,11 +140,11 @@ void main() {
         expect(round.plan.questions[1].word.spelling, 'ticket');
         expect(round.plan.questions[1].word.meaning, 'ตั๋ว');
         expect(round.plan.questions[1].word.localRevision, 1);
-        expect(round.feedback, (slot: 1, selectedOption: 0));
         expect(
-          round.plan.questions[1].options[round.feedback!.selectedOption!],
-          'สถานี',
+          round.feedback,
+          const QuizChoiceResponse(slot: 1, selectedOption: 0),
         );
+        expect(round.feedback!.answerFor(round.plan.questions[1]), 'สถานี');
         expect(round.summary!.score, 50);
         expect(await _snapshot(database), edited);
       } finally {
@@ -170,7 +176,10 @@ void main() {
         expect((await repository.recordAnswer(first)).inserted, isTrue);
         var round = (await _load(repository))!;
         expect(round.cursor.slot, 0);
-        expect(round.feedback, (slot: 0, selectedOption: 1));
+        expect(
+          round.feedback,
+          const QuizChoiceResponse(slot: 0, selectedOption: 1),
+        );
         final feedback = await _snapshot(database);
         expect((await repository.recordAnswer(first)).inserted, isFalse);
         expect(await _snapshot(database), feedback);
@@ -465,7 +474,7 @@ RecordAnswerCommand _answer(
   occurredAtUtc: occurredAt ?? _at.add(Duration(seconds: ordinal)),
   quiz: (
     expectedRevision: revision,
-    response: (slot: slot, selectedOption: selected),
+    response: QuizChoiceResponse(slot: slot, selectedOption: selected),
   ),
 );
 

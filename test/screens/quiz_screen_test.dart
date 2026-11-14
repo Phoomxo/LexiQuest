@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,6 +16,8 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/navigation/app_route_factory.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -22,6 +25,8 @@ import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
+import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
@@ -43,7 +48,12 @@ void main() {
   var id = 0;
 
   setUp(() async {
-    database = AppDatabase(NativeDatabase.memory());
+    database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
     id = 0;
     final owners = DriftLocalOwnerRepository(
       database,
@@ -253,6 +263,181 @@ void main() {
     );
   }
 
+  for (final typed in [false, true]) {
+    testWidgets(
+      typed
+          ? 'Cloze typed route keeps IME draft and persists a valid authored alias'
+          : 'Cloze Score repair keeps wrong attempt and original score on return',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        await tester.runAsync(addDefinitionWord);
+        final vocabulary = VocabularyUseCases(
+          owners: learning.owners,
+          vocabulary: DriftVocabularyRepository(database),
+          generateId: () => 'cloze-test-${++id}',
+          nowUtc: learning.nowUtc,
+        );
+        final progress = ProgressUseCases(
+          owners: learning.owners,
+          queries: DriftProgressQueries(database),
+          nowUtc: learning.nowUtc,
+        );
+        final dependencies = AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _UnusedGuestSession(),
+          database: database,
+          learning: learning,
+          vocabulary: vocabulary,
+          progress: progress,
+        );
+        String? parentId;
+        if (!typed) {
+          parentId = await tester.runAsync(() async {
+            final parent = await learning.startQuiz(categoryId: 'category-1');
+            await learning.recordAnswer(
+              sessionId: parent.id,
+              wordId: 'definition-platform',
+              promptMode: 'meaningChoice',
+              isCorrect: false,
+              responseTimeMs: 100,
+              attemptNumber: 1,
+            );
+            await learning.finishSession(parent.id);
+            return parent.id;
+          });
+        }
+        try {
+          final history = parentId == null
+              ? null
+              : (await tester.runAsync(() => progress.loadSession(parentId!)))!;
+          await tester.pumpWidget(
+            AppDependenciesScope(
+              dependencies: dependencies,
+              child: MaterialApp(
+                onGenerateRoute: AppRouteFactory.onGenerateRoute,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: const TextScaler.linear(2)),
+                  child: child!,
+                ),
+                home: typed
+                    ? const ChooseModeScreen()
+                    : ScoreScreen(
+                        correctAnswers: history!.summary.correctCount,
+                        wrongAnswers: history.summary.wrongCount,
+                        mistakes: history.mistakes,
+                        expectedOwnerId: history.ownerId,
+                        sessionId: history.summary.id,
+                      ),
+              ),
+            ),
+          );
+          if (typed) {
+            await tester.scrollUntilVisible(find.text('ดูแบบฝึกทั้งหมด'), 240);
+            await tapPrompt(tester, 'ดูแบบฝึกทั้งหมด');
+            await tester.pumpAndSettle();
+            await tester.scrollUntilVisible(
+              find.text('เติมคำในประโยคแบบพิมพ์'),
+              240,
+            );
+            await tapPrompt(tester, 'เติมคำในประโยคแบบพิมพ์');
+            await _pumpUntilFound(tester, find.text('Travel'));
+            await tapPrompt(tester, 'Travel');
+          } else {
+            await _pumpUntilFound(tester, find.text('ลองเติมคำนี้ในประโยค'));
+            await tapPrompt(tester, 'ลองเติมคำนี้ในประโยค');
+          }
+          await _pumpUntilFound(tester, find.byType(FillInTheBlanksScreen));
+          await _pumpUntilFound(tester, find.text('The train is at ____ two.'));
+          if (typed) {
+            final input = find.byKey(const ValueKey('cloze-typed-answer'));
+            await tester.enterText(input, 'ticket');
+            tester.testTextInput.hide();
+            await tester.pump();
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.paused,
+            );
+            await _pumpUntilFound(tester, find.text('ฝึกต่อ'));
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.resumed,
+            );
+            await tapPrompt(tester, 'ฝึกต่อ');
+            await _pumpUntilFound(tester, input);
+            expect(tester.widget<TextField>(input).controller!.text, 'ticket');
+            await tapPrompt(tester, 'ตรวจคำตอบ');
+            await _pumpUntilFound(tester, find.text('ลองตอบอีกครั้ง'));
+            await tapPrompt(tester, 'ลองตอบอีกครั้ง');
+            await _pumpUntilFound(tester, input);
+            await tester.enterText(input, 'platform number');
+            await tapPrompt(tester, 'ตรวจคำตอบ');
+            await _pumpUntilFound(
+              tester,
+              find.text('The train is at platform number two.'),
+            );
+          } else {
+            expect(find.text('รถไฟจอดอยู่ที่ชานชาลาสอง'), findsOneWidget);
+            await tapPrompt(tester, 'ticket');
+            await _pumpUntilFound(tester, find.text('ticket — ตั๋ว'));
+            await tapPrompt(tester, 'ลองตอบอีกครั้ง');
+            await _pumpUntilFound(
+              tester,
+              find.widgetWithText(FilledButton, 'platform'),
+            );
+            await tapPrompt(tester, 'platform');
+            await _pumpUntilFound(
+              tester,
+              find.text('The train is at platform two.'),
+            );
+          }
+          await tapPrompt(tester, 'กลับหน้าฝึกภาษา');
+          await _pumpUntilFound(tester, find.byType(MainNavigationScreen));
+          await tester.pumpAndSettle();
+          expect(find.byType(FillInTheBlanksScreen), findsNothing);
+          final child = (await tester.runAsync(
+            () => (database.select(
+              database.learningSessions,
+            )..where((row) => row.activityType.equals('cloze'))).getSingle(),
+          ))!;
+          final result = (await tester.runAsync(
+            () => progress.loadSession(child.id),
+          ))!;
+          expect(result.originalAnswers!.map((item) => item.chosenAnswer), [
+            'ticket',
+            typed ? 'platform number' : 'platform',
+          ]);
+          expect(result.originalAnswers!.map((item) => item.isCorrect), [
+            false,
+            true,
+          ]);
+          if (parentId != null) {
+            final original = (await tester.runAsync(
+              () => progress.loadSession(parentId!),
+            ))!;
+            expect(original.summary.score, 0);
+            expect(original.summary.wrongCount, 1);
+          }
+          expect(tester.takeException(), isNull);
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 1));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 1));
+        }
+      },
+    );
+  }
   testWidgets(
     'prompt mode reverse keeps the same real word through wrong then intentional retry',
     (tester) async {

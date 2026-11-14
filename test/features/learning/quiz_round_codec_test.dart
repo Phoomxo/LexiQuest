@@ -6,6 +6,263 @@ import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
 
 void main() {
   test(
+    'f09 evaluator accepts only authored forms and preserves displayed text',
+    () {
+      final choice = decodeQuizPlan(jsonEncode(_clozeJson())).questions.single;
+      final typed = decodeQuizPlan(
+        jsonEncode(_clozeJson(typed: true)),
+      ).questions.single;
+      expect(choice.kind.isCloze, isTrue);
+      expect(typed.kind.isCloze, isTrue);
+      expect(QuizPromptKind.meaningChoice.isCloze, isFalse);
+      expect(choice.clozeTranslation, 'รถไฟจอดอยู่ที่ชานชาลาสอง');
+      expect(choice.sourcePin, 'synthetic-authored-cloze@1');
+      expect(
+        const QuizChoiceResponse(
+          slot: 0,
+          selectedOption: 0,
+        ).isCorrectFor(choice),
+        isTrue,
+      );
+      expect(
+        const QuizChoiceResponse(
+          slot: 0,
+          selectedOption: 1,
+        ).isCorrectFor(choice),
+        isTrue,
+      );
+      expect(
+        const QuizChoiceResponse(
+          slot: 0,
+          selectedOption: 2,
+        ).isCorrectFor(choice),
+        isFalse,
+      );
+      const answer = QuizTextResponse(slot: 0, text: '  THE  PLATFORM  ');
+      expect(answer.answerFor(typed), 'THE  PLATFORM');
+      expect(answer.isCorrectFor(typed), isTrue);
+      expect(
+        const QuizTextResponse(slot: 0, text: 'platforms').isCorrectFor(typed),
+        isFalse,
+      );
+      expect(
+        const QuizTextResponse(slot: 0, text: 'platform!').isCorrectFor(typed),
+        isFalse,
+      );
+      expect(
+        const QuizChoiceResponse(
+          slot: 0,
+          selectedOption: null,
+        ).answerFor(typed),
+        isNull,
+      );
+      expect(
+        const QuizChoiceResponse(
+          slot: 0,
+          selectedOption: null,
+        ).isCorrectFor(typed),
+        isFalse,
+      );
+      expect(() => answer.isCorrectFor(choice), throwsFormatException);
+      expect(
+        encodeQuizResponse(
+          answer,
+          plan: decodeQuizPlan(jsonEncode(_clozeJson(typed: true))),
+        ),
+        '{"v":2,"slot":0,"text":"THE  PLATFORM"}',
+      );
+    },
+  );
+
+  test('f09 authored snapshots and response identities are immutable', () {
+    final options = ['platform', 'ticket'];
+    final aliases = ['platform', 'the platform'];
+    final question = QuizQuestion.cloze(
+      word: _platform,
+      kind: QuizPromptKind.clozeChoice,
+      prompt: 'The train is at ____ two.',
+      options: options,
+      translation: 'รถไฟจอดอยู่ที่ชานชาลาสอง',
+      acceptedAnswers: aliases,
+      sourcePin: 'synthetic-authored-cloze@1',
+    );
+    options.clear();
+    aliases.clear();
+    expect(question.options, ['platform', 'ticket']);
+    expect(question.acceptedAnswers, ['platform', 'the platform']);
+    expect(
+      () => question.acceptedAnswers.add('station'),
+      throwsUnsupportedError,
+    );
+    expect(() => question.options.add('station'), throwsUnsupportedError);
+    final choice = QuizChoiceResponse(slot: 0, selectedOption: 0);
+    final sameChoice = QuizChoiceResponse(slot: 0, selectedOption: 0);
+    final text = QuizTextResponse(slot: 0, text: 'platform');
+    final sameText = QuizTextResponse(slot: 0, text: 'platform');
+    expect(choice, sameChoice);
+    expect(choice.hashCode, sameChoice.hashCode);
+    expect(text, sameText);
+    expect(text.hashCode, sameText.hashCode);
+    expect(choice, isNot(text));
+    expect(text, isNot(const QuizTextResponse(slot: 1, text: 'platform')));
+    expect(text, isNot(const QuizTextResponse(slot: 0, text: 'Platform')));
+    expect(
+      () => QuizPlan(
+        origin: QuizOrigin(
+          route: 'source',
+          promptKind: QuizPromptKind.clozeChoice,
+        ),
+        questions: [question],
+        settings: const QuizRoundSettings(questionCount: 1),
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('f09 choice plan preserves authored cloze and exact v1 responses', () {
+    final stored = jsonEncode(_clozeJson());
+    final plan = decodeQuizPlan(stored);
+    expect(encodeQuizPlan(plan), stored);
+    expect(plan.questions.single.promptText, 'The train is at ____ two.');
+    for (final selected in [0, 1, 2, null]) {
+      final evidence = jsonEncode({
+        'v': 1,
+        'slot': 0,
+        'selectedOption': selected,
+      });
+      expect(
+        encodeQuizResponse(
+          decodeQuizResponse(evidence, plan: plan),
+          plan: plan,
+        ),
+        evidence,
+      );
+    }
+  });
+
+  test(
+    'f09 typed plan stores explicit text separately from choice and reveal',
+    () {
+      final stored = jsonEncode(_clozeJson(typed: true));
+      final plan = decodeQuizPlan(stored);
+      expect(encodeQuizPlan(plan), stored);
+      const evidence = '{"v":2,"slot":0,"text":"THE  PLATFORM"}';
+      expect(
+        encodeQuizResponse(
+          decodeQuizResponse(evidence, plan: plan),
+          plan: plan,
+        ),
+        evidence,
+      );
+      const reveal = '{"v":1,"slot":0,"selectedOption":null}';
+      expect(
+        encodeQuizResponse(decodeQuizResponse(reveal, plan: plan), plan: plan),
+        reveal,
+      );
+    },
+  );
+
+  test('f09 rejects typed evidence for choice and malformed typed answers', () {
+    final typed = decodeQuizPlan(jsonEncode(_clozeJson(typed: true)));
+    final choice = decodeQuizPlan(jsonEncode(_clozeJson()));
+    expect(
+      () => decodeQuizResponse(
+        '{"v":2,"slot":0,"text":"platform"}',
+        plan: choice,
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => decodeQuizResponse(
+        '{"v":1,"slot":0,"selectedOption":0}',
+        plan: typed,
+      ),
+      throwsFormatException,
+    );
+    for (final text in ['', '   ', 'plat\nform', 'platform\u0000', 'a' * 121]) {
+      expect(
+        () => decodeQuizResponse(
+          jsonEncode({'v': 2, 'slot': 0, 'text': text}),
+          plan: typed,
+        ),
+        throwsFormatException,
+      );
+    }
+    for (final fields in [
+      {'v': 2, 'slot': 0, 'text': null},
+      {'v': 2.0, 'slot': 0, 'text': 'platform'},
+      {'v': 2, 'slot': 0, 'text': 'platform', 'selectedOption': null},
+      {'v': 2, 'slot': 1, 'text': 'platform'},
+    ]) {
+      expect(
+        () => decodeQuizResponse(jsonEncode(fields), plan: typed),
+        throwsFormatException,
+      );
+    }
+  });
+
+  test(
+    'f09 rejects incomplete authored cloze pins and incompatible versions',
+    () {
+      final valid = _clozeJson();
+      final original =
+          (valid['questions'] as List).single as Map<String, Object?>;
+      for (final overrides in <Map<String, Object?>>[
+        {'promptText': 'No blank here.'},
+        {'promptText': '____ is at ____ two.'},
+        {'clozeTranslation': ''},
+        {'acceptedAnswers': []},
+        {
+          'acceptedAnswers': ['the platform'],
+        },
+        {
+          'acceptedAnswers': ['platform', ' PLATFORM '],
+        },
+        {
+          'acceptedAnswers': ['platform', 'plat\nform'],
+        },
+        {'sourcePin': null},
+        {'sourcePin': ''},
+        {'kind': 'clozeTyped'},
+        {
+          'options': ['platform', 'the platform'],
+        },
+        {'correctOption': 2},
+        {'extra': true},
+      ]) {
+        expect(
+          () => decodeQuizPlan(
+            jsonEncode({
+              ...valid,
+              'questions': [
+                {...original, ...overrides},
+              ],
+            }),
+          ),
+          throwsFormatException,
+          reason: '$overrides',
+        );
+      }
+      for (final overrides in <Map<String, Object?>>[
+        {'v': 1},
+        {'v': 2},
+        {
+          'settings': {
+            'questionCount': 1,
+            'listenAndRead': false,
+            'fiveMinuteGuide': false,
+          },
+        },
+      ]) {
+        expect(
+          () => decodeQuizPlan(jsonEncode({...valid, ...overrides})),
+          throwsFormatException,
+        );
+      }
+    },
+  );
+
+  test(
     'f16 typed settings preserve defaults and reject plan count mismatch',
     () {
       const settings = QuizRoundSettings(questionCount: 1);
@@ -219,8 +476,8 @@ void main() {
         );
       }
       for (final response in <QuizResponse>[
-        (slot: 0, selectedOption: 0),
-        (slot: 0, selectedOption: null),
+        const QuizChoiceResponse(slot: 0, selectedOption: 0),
+        const QuizChoiceResponse(slot: 0, selectedOption: null),
       ]) {
         expect(
           decodeQuizResponse(
@@ -284,6 +541,32 @@ void main() {
       expect(() => decodeQuizResponse(raw, plan: plan), throwsFormatException);
     }
   });
+}
+
+Map<String, Object?> _clozeJson({bool typed = false}) {
+  final old =
+      jsonDecode(encodeQuizPlan(_definitionPlan())) as Map<String, dynamic>;
+  final kind = typed ? 'clozeTyped' : 'clozeChoice';
+  final question = (old['questions'] as List).single as Map<String, dynamic>;
+  return {
+    ...old,
+    'v': 3,
+    'origin': {...(old['origin'] as Map<String, dynamic>), 'promptKind': kind},
+    'questions': [
+      <String, Object?>{
+        ...question,
+        'kind': kind,
+        'promptText': 'The train is at ____ two.',
+        'options': typed ? <String>[] : ['platform', 'the platform', 'ticket'],
+        'correctOption': typed ? -1 : 0,
+        'optionWords': null,
+        'optionExplanations': null,
+        'sourcePin': 'synthetic-authored-cloze@1',
+        'clozeTranslation': 'รถไฟจอดอยู่ที่ชานชาลาสอง',
+        'acceptedAnswers': ['platform', 'the platform'],
+      },
+    ],
+  };
 }
 
 const _platform = QuizWord(

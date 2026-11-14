@@ -106,7 +106,7 @@ void main() {
             occurredAtUtc: now.add(Duration(seconds: slot * 2 + 1)),
             quiz: (
               expectedRevision: revision,
-              response: (slot: slot, selectedOption: 0),
+              response: QuizChoiceResponse(slot: slot, selectedOption: 0),
             ),
           ),
         );

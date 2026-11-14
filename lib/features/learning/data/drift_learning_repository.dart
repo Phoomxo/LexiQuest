@@ -210,7 +210,6 @@ final class DriftLearningRepository implements DurableQuizRepository {
         final question = round.plan.questions[cursor.slot];
         final response = admission.response;
         answerEvidence = encodeQuizResponse(response, plan: round.plan);
-        final choice = response.selectedOption;
         if (cursor.phase != QuizPhase.awaitingAnswer ||
             cursor.revision != admission.expectedRevision ||
             cursor.slot != response.slot ||
@@ -218,9 +217,7 @@ final class DriftLearningRepository implements DurableQuizRepository {
             question.kind.name != command.promptMode ||
             command.attemptNumber != round.committedAnswers + 1 ||
             (command.responseTimeMs ?? -1) < cursor.activeResponseMs ||
-            command.isCorrect !=
-                (choice != null &&
-                    question.options[choice] == question.correctAnswer)) {
+            command.isCorrect != response.isCorrectFor(question)) {
           throw StateError('Quiz answer does not match the current question');
         }
         await _requireQuizWord(command.ownerId, question.word, row: word);
@@ -551,6 +548,54 @@ final class DriftLearningRepository implements DurableQuizRepository {
             );
     if (updated != 1) throw StateError('Quiz cursor changed');
   }
+
+  @override
+  Future<QuizRound> openOrStartClozeRound(
+    LearningSessionDraft draft, {
+    required bool skipUnavailable,
+  }) => database.transaction(() async {
+    final plan = draft.quizPlan;
+    if (draft.activityType != 'cloze' ||
+        plan == null ||
+        plan.origin.route != 'cloze' ||
+        !plan.origin.promptKind.isCloze) {
+      throw ArgumentError('Expected a pinned cloze draft');
+    }
+    final existing = await findOpenQuizRound(
+      ownerId: draft.ownerId,
+      origin: plan.origin,
+      skipUnavailable: skipUnavailable,
+    );
+    if (existing != null) return existing;
+    await startSession(draft);
+    final saved = await _session(draft.ownerId, draft.id);
+    if (saved == null) throw StateError('Saved cloze round is missing');
+    return (await _readRound(saved))!;
+  });
+
+  @override
+  Future<Set<String>> loadCompletedQuizMistakeIds({
+    required String ownerId,
+    required String sessionId,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final session = await _session(ownerId, sessionId);
+    if (session == null ||
+        session.state != 'completed' ||
+        session.activityType != 'quiz' ||
+        session.legacyEvidenceDisposition != null) {
+      return const {};
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.sessionId.equals(sessionId) &
+                  row.isCorrect.equals(false),
+            ))
+            .get();
+    return attempts.map((attempt) => attempt.wordId).toSet();
+  });
 
   @override
   Future<QuizRound?> loadQuizRound({

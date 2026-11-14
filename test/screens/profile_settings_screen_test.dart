@@ -54,6 +54,37 @@ void main() {
       );
     },
   );
+
+  testWidgets('profile shows the pending streak at 390dp and 200% text', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: ProfileSettingsScreen(
+          loader: () async => _streakProgress(StreakFoldStatus.pending),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('เรียนต่อเนื่อง').hitTestable(), findsOneWidget);
+    expect(find.text('รอตรวจวันเรียน').hitTestable(), findsOneWidget);
+    expect(find.text('0 วัน'), findsNothing);
+  });
+
   testWidgets('announces profile loading state', (tester) async {
     final pending = Completer<ProgressSnapshot>();
     await tester.pumpWidget(

@@ -746,7 +746,10 @@ void main() {
           responseTimeMs: 300,
           attemptNumber: 1,
           occurredAtUtc: now,
-          quiz: (expectedRevision: 0, response: (slot: 0, selectedOption: 0)),
+          quiz: (
+            expectedRevision: 0,
+            response: const QuizChoiceResponse(slot: 0, selectedOption: 0),
+          ),
         ),
       );
       final completed = await learning.advanceQuizRound(

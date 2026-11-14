@@ -73,6 +73,90 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'cloze repair requires a real incorrect answer from its owner and parent',
+    () async {
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      final quiz = await useCases.startQuiz(categoryId: 'category-1');
+      await useCases.recordAnswer(
+        sessionId: quiz.id,
+        wordId: 'word-3',
+        promptMode: 'meaningChoice',
+        isCorrect: false,
+        responseTimeMs: 50,
+        attemptNumber: 1,
+        expectedOwnerId: owner.id,
+      );
+      Future<QuizSession> repair() => useCases.startCloze(
+        parentSessionId: quiz.id,
+        kind: QuizPromptKind.clozeChoice,
+        expectedOwnerId: owner.id,
+      );
+      expect((await repair()).isEmpty, isTrue);
+      await useCases.finishSession(quiz.id, expectedOwnerId: owner.id);
+      expect(
+        await useCases.hasClozeRepair(
+          parentSessionId: quiz.id,
+          expectedOwnerId: owner.id,
+        ),
+        isTrue,
+      );
+      final opened = await Future.wait([repair(), repair()]);
+      final round = opened.first;
+      expect(opened.last.id, round.id);
+      expect(round.questions.single.word.id, 'word-3');
+      expect(round.durableRound!.plan.origin.parentId, quiz.id);
+      await (database.update(database.vocabularyWords)
+            ..where((row) => row.id.equals('word-2')))
+          .write(const VocabularyWordsCompanion(isDeleted: Value(true)));
+      expect((await repair()).id, round.id);
+      expect(
+        await useCases.hasClozeRepair(
+          parentSessionId: quiz.id,
+          expectedOwnerId: owner.id,
+        ),
+        isTrue,
+      );
+      expect(
+        (await database.select(database.learningSessions).get()),
+        hasLength(2),
+      );
+      await database.transaction(() async {
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(owner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'synthetic-cloze-foreign-owner',
+                createdAtUtcMs: 2,
+              ),
+            );
+      });
+      await expectLater(repair(), throwsStateError);
+      expect(
+        await useCases.hasClozeRepair(
+          parentSessionId: quiz.id,
+          expectedOwnerId: 'synthetic-cloze-foreign-owner',
+        ),
+        isFalse,
+      );
+      expect(
+        (await useCases.startCloze(
+          parentSessionId: quiz.id,
+          kind: QuizPromptKind.clozeChoice,
+          expectedOwnerId: 'synthetic-cloze-foreign-owner',
+        )).isEmpty,
+        isTrue,
+      );
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  test(
     'configured start rechecks availability before creating a round',
     () async {
       final owner = await useCases.owners.getOrCreateActiveOwner();

@@ -1,17 +1,51 @@
 import 'package:flutter/material.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../models/sentence_model.dart';
 import '../services/sentence_service.dart';
+import 'quiz_screen.dart';
 
-class FillInTheBlanksScreen extends StatefulWidget {
-  final String word;
+class FillInTheBlanksScreen extends StatelessWidget {
+  const FillInTheBlanksScreen({
+    super.key,
+    required this.kind,
+    this.expectedOwnerId,
+    this.categoryId,
+    this.categoryName,
+    this.parentSessionId,
+    this.onComplete,
+  });
 
-  const FillInTheBlanksScreen({super.key, required this.word});
+  final QuizPromptKind kind;
+  final String? expectedOwnerId;
+  final String? categoryId;
+  final String? categoryName;
+  final String? parentSessionId;
+  final VoidCallback? onComplete;
 
   @override
-  State<FillInTheBlanksScreen> createState() => _FillInTheBlanksScreenState();
+  Widget build(BuildContext context) => QuizScreen(
+    expectedOwnerId: expectedOwnerId,
+    categoryId: categoryId,
+    categoryName: categoryName,
+    originParentId: parentSessionId,
+    promptKind: kind,
+    returnLabel: 'กลับหน้าฝึกภาษา',
+    onClozeComplete: onComplete,
+  );
 }
 
-class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
+class LegacySentenceOrderingScreen extends StatefulWidget {
+  final String word;
+
+  const LegacySentenceOrderingScreen({super.key, required this.word});
+
+  @override
+  State<LegacySentenceOrderingScreen> createState() =>
+      _LegacySentenceOrderingScreenState();
+}
+
+class _LegacySentenceOrderingScreenState
+    extends State<LegacySentenceOrderingScreen> {
   SentenceModel? sentenceModel;
   List<String> userSentence = [];
 
@@ -23,7 +57,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
 
   void _loadSentence() async {
     SentenceModel? model = await SentenceService.fetchSentence(widget.word);
-    if (model != null) {
+    if (mounted && model != null) {
       setState(() {
         sentenceModel = model;
         userSentence = List.filled(model.words.length, "");
@@ -58,7 +92,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("เติมคำในช่องว่าง"),
+        title: const Text('เรียงคำเป็นประโยค'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,

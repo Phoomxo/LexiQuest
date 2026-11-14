@@ -4,6 +4,7 @@ import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/cloze_prompt_policy.dart';
 import '../domain/quiz_prompt_policy.dart';
 import '../domain/quiz_round.dart';
 
@@ -70,6 +71,107 @@ final class LearningUseCases {
     returnLabel: returnLabel,
     settings: settings,
   );
+
+  Future<QuizSession> startCloze({
+    required QuizPromptKind kind,
+    required String expectedOwnerId,
+    String? categoryId,
+    String? parentSessionId,
+    String? categoryName,
+    String? returnLabel,
+    bool skipUnavailable = false,
+  }) async {
+    if (!kind.isCloze) throw ArgumentError.value(kind, 'kind');
+    final durable = repository;
+    if (durable is! DurableQuizRepository) {
+      throw StateError('Durable practice unavailable');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final parentId = _optionalId(parentSessionId, 'parentSessionId');
+    final selectedCategory = _optionalId(categoryId, 'categoryId');
+    final targets = parentId == null
+        ? null
+        : await durable.loadCompletedQuizMistakeIds(
+            ownerId: owner.id,
+            sessionId: parentId,
+          );
+    if (targets?.isEmpty == true) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final origin = QuizOrigin(
+      route: 'cloze',
+      promptKind: kind,
+      categoryId: selectedCategory,
+      parentId: parentId,
+    );
+    final existing = await _openRound(owner.id, origin, skipUnavailable);
+    if (existing != null) return _quizSession(existing);
+    final question = await _firstClozeQuestion(owner.id, origin, targets);
+    if (question == null) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final round = await durable.openOrStartClozeRound(
+      LearningSessionDraft(
+        id: 'session:${_nextId()}',
+        ownerId: owner.id,
+        activityType: 'cloze',
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+        quizPlan: QuizPlan(
+          origin: origin,
+          questions: [question],
+          categoryName: categoryName,
+          returnLabel: returnLabel,
+        ),
+      ),
+      skipUnavailable: skipUnavailable,
+    );
+    return _quizSession(round);
+  }
+
+  Future<bool> hasClozeRepair({
+    required String parentSessionId,
+    required String expectedOwnerId,
+  }) async {
+    final durable = repository;
+    if (durable is! DurableQuizRepository) return false;
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final parentId = _requiredId(parentSessionId, 'parentSessionId');
+    final targets = await durable.loadCompletedQuizMistakeIds(
+      ownerId: owner.id,
+      sessionId: parentId,
+    );
+    if (targets.isEmpty) return false;
+    final origin = QuizOrigin(
+      route: 'cloze',
+      promptKind: QuizPromptKind.clozeChoice,
+      parentId: parentId,
+    );
+    return await _openRound(owner.id, origin, true) != null ||
+        await _firstClozeQuestion(owner.id, origin, targets) != null;
+  }
+
+  Future<QuizQuestion?> _firstClozeQuestion(
+    String ownerId,
+    QuizOrigin origin,
+    Set<String>? targets,
+  ) async {
+    final words = await repository.listQuizWords(
+      ownerId: ownerId,
+      categoryId: origin.categoryId,
+      normalizedSpellings: ClozePromptPolicy.spellings,
+      normalizedMeanings: ClozePromptPolicy.meanings,
+      limit: null,
+    );
+    return ClozePromptPolicy.build(
+      words: words,
+      kind: origin.promptKind,
+      targetWordIds: targets,
+    ).firstOrNull;
+  }
 
   Future<({QuizSession? existing, int available})> prepareCategoryQuiz({
     required QuizOrigin origin,

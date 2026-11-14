@@ -351,10 +351,16 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+    final valueText = Text(
+      value,
+      style: Theme.of(context).textTheme.titleLarge,
+    );
     return Card(
       child: ListTile(
         title: Text(label),
-        trailing: Text(value, style: Theme.of(context).textTheme.titleLarge),
+        subtitle: largeText ? valueText : null,
+        trailing: largeText ? null : valueText,
       ),
     );
   }

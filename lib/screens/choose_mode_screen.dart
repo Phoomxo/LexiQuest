@@ -13,6 +13,7 @@ import '../widgets/handwriting_scratchpad.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'categories_page.dart';
+import 'fill_in_the_blanks_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
@@ -357,6 +358,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         ),
       ],
       if (all && _wordPracticeVisible) ...[
+        if (_learning?.supportsDurableQuiz == true)
+          for (final (kind, title) in [
+            (QuizPromptKind.clozeChoice, 'เติมคำในประโยคแบบเลือก'),
+            (QuizPromptKind.clozeTyped, 'เติมคำในประโยคแบบพิมพ์'),
+          ])
+            _LearningTile(
+              icon: Icons.edit_note_outlined,
+              title: title,
+              subtitle: 'ใช้คำจากชุดที่มีประโยคฝึก',
+              onTap: () => _openCategoryQuiz(context, kind: kind),
+            ),
         _LearningTile(
           icon: Icons.translate_outlined,
           title: 'เลือกคำอังกฤษจากความหมายไทย',
@@ -451,7 +463,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           !identical(learning, _learning)) {
         return;
       }
-      if (kind == QuizPromptKind.meaningChoice &&
+      if ((kind == QuizPromptKind.meaningChoice || kind.isCloze) &&
           scope != null &&
           vocabulary != null &&
           learning.supportsDurableQuiz) {
@@ -477,17 +489,29 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       !_features.isVisible(FieldFeature.quiz)) {
                     return;
                   }
+                  if (kind.isCloze && !_wordPracticeVisible) return;
                   await _push(
                     selectorContext,
-                    QuizScreen(
-                      categoryId: category.id,
-                      categoryName: category.name,
-                      returnLabel: 'กลับไปเลือกชุดคำ',
-                      learning: learning,
-                      featureRegistry: _features,
-                      expectedOwnerId: owner.id,
-                      configureRound: true,
-                    ),
+                    kind.isCloze
+                        ? FillInTheBlanksScreen(
+                            kind: kind,
+                            categoryId: category.id,
+                            categoryName: category.name,
+                            expectedOwnerId: owner.id,
+                            onComplete: () => AppNavigator.resetTo<void>(
+                              selectorContext,
+                              AppRoute.home,
+                            ),
+                          )
+                        : QuizScreen(
+                            categoryId: category.id,
+                            categoryName: category.name,
+                            returnLabel: 'กลับไปเลือกชุดคำ',
+                            learning: learning,
+                            featureRegistry: _features,
+                            expectedOwnerId: owner.id,
+                            configureRound: true,
+                          ),
                   );
                 } on Object {
                   if (!selectorContext.mounted) return;

@@ -18,7 +18,24 @@ final class QuizWord {
   final int localRevision;
 }
 
-enum QuizPromptKind { meaningChoice, spellingChoice, definitionChoice }
+enum QuizPromptKind {
+  meaningChoice,
+  spellingChoice,
+  definitionChoice,
+  clozeChoice,
+  clozeTyped;
+
+  bool get isCloze => this == clozeChoice || this == clozeTyped;
+}
+
+String normalizeQuizClozeAnswer(String value) {
+  if (value.runes.length > 120 ||
+      value.trim().isEmpty ||
+      RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(value)) {
+    throw const FormatException('Invalid cloze answer text');
+  }
+  return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+}
 
 final class QuizQuestion {
   const QuizQuestion({required this.word, required this.options})
@@ -26,7 +43,9 @@ final class QuizQuestion {
       _definition = null,
       optionWords = null,
       optionExplanations = null,
-      sourcePin = null;
+      sourcePin = null,
+      clozeTranslation = null,
+      acceptedAnswers = const [];
 
   QuizQuestion.spellingChoice({
     required this.word,
@@ -37,7 +56,9 @@ final class QuizQuestion {
        _definition = null,
        optionWords = Map.unmodifiable(optionWords),
        optionExplanations = null,
-       sourcePin = null;
+       sourcePin = null,
+       clozeTranslation = null,
+       acceptedAnswers = const [];
 
   QuizQuestion.definitionChoice({
     required this.word,
@@ -49,7 +70,56 @@ final class QuizQuestion {
   }) : kind = QuizPromptKind.definitionChoice,
        options = List.unmodifiable(options),
        optionWords = Map.unmodifiable(optionWords),
-       optionExplanations = Map.unmodifiable(optionExplanations);
+       optionExplanations = Map.unmodifiable(optionExplanations),
+       clozeTranslation = null,
+       acceptedAnswers = const [];
+
+  QuizQuestion.cloze({
+    required this.word,
+    required this.kind,
+    required String prompt,
+    required Iterable<String> options,
+    required String translation,
+    required Iterable<String> acceptedAnswers,
+    required String sourcePin,
+  }) : options = List.unmodifiable(options),
+       _definition = prompt,
+       optionWords = null,
+       optionExplanations = null,
+       clozeTranslation = translation,
+       acceptedAnswers = List.unmodifiable(acceptedAnswers),
+       sourcePin = sourcePin {
+    if (!kind.isCloze ||
+        prompt.split('____').length != 2 ||
+        prompt.length > 4096 ||
+        translation.trim().isEmpty ||
+        translation.length > 4096 ||
+        sourcePin.trim().isEmpty ||
+        sourcePin.length > 4096 ||
+        this.acceptedAnswers.isEmpty ||
+        this.acceptedAnswers.length > 100 ||
+        !this.acceptedAnswers.contains(word.spelling)) {
+      throw const FormatException('Invalid authored cloze');
+    }
+    final answers = this.acceptedAnswers.map(normalizeQuizClozeAnswer).toSet();
+    if (answers.length != this.acceptedAnswers.length) {
+      throw const FormatException('Duplicate cloze answers');
+    }
+    if (kind == QuizPromptKind.clozeTyped) {
+      if (this.options.isNotEmpty) {
+        throw const FormatException('Typed cloze cannot contain choices');
+      }
+    } else {
+      final choices = this.options.map(normalizeQuizClozeAnswer).toSet();
+      if (this.options.length < 2 ||
+          this.options.length > 4 ||
+          choices.length != this.options.length ||
+          !this.options.contains(word.spelling) ||
+          choices.every(answers.contains)) {
+        throw const FormatException('Invalid cloze choices');
+      }
+    }
+  }
 
   final QuizWord word;
   final List<String> options;
@@ -58,13 +128,17 @@ final class QuizQuestion {
   final Map<String, QuizWord>? optionWords;
   final Map<String, String>? optionExplanations;
   final String? sourcePin;
+  final String? clozeTranslation;
+  final List<String> acceptedAnswers;
 
   String get correctAnswer =>
       kind == QuizPromptKind.meaningChoice ? word.meaning : word.spelling;
   String get promptText => switch (kind) {
     QuizPromptKind.meaningChoice => word.spelling,
     QuizPromptKind.spellingChoice => word.meaning,
-    QuizPromptKind.definitionChoice => _definition!,
+    QuizPromptKind.definitionChoice ||
+    QuizPromptKind.clozeChoice ||
+    QuizPromptKind.clozeTyped => _definition!,
   };
 }
 
