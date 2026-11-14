@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S4 Listening hub and playlist
+
+- Source `718ba6f02f5481351c04277199dbccf539039f34` links the actual
+  listening menu to IPA, saved-word dictation and the selected-set
+  playlist. The native completion callback drives playback. Leaving
+  the app stops playback and preserves the position.
+- Windows 113 passed, analysis and format clean. Android API 35 tested
+  both playlist entries, playback completion for two real stored words,
+  same set restoration, and Home interruption on word 2. The verified
+  APK matches the installed base. [Evidence](evidence/s4-listening-playlist.txt).
+- Screens 48 now 5 fail and 43 unverified. Next S6 slice grounds the
+  authored spelling path at `boss_battle_screen` / `result_screen`.
+  Preserve earned rewards, active owner, prior scores and the separate
+  Pair Matching dependency. Native audio and spoken TalkBack remain open.
+
 ## S4 Saved-word detail, IPA and Dictation
 
 - Source `1ced5df447cf21314078679fbe96cd733d36bc26`. A saved word
@@ -11,10 +26,11 @@
   IPA and normal/slow dictation, used the meaning hint, retained staton
   for correction, and returned from both activities to the same detail.
   This confirms the Library origin. Check audible TTS, TalkBack and
-  the additional listening/source/mic routes independently.
-- Screens 48 now 6 fail and 42 unverified. Next S4 card grounds
-  `smart_audio_playlist_screen` from the selected set and listening
-  hub using `21b34eaa:finish_routes_b.py` and `detached-b.md`.
+  the additional source/mic routes independently.
+- [Exact saved-word CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43632727258)
+  passed at `4baf9db4` with Flutter 2,351, CPU backend 267, both policies,
+  analysis and Android debug build.
+- The saved-word unit reduced missing screens to six at that checkpoint.
   Physical known-object camera recognition remains `not_checked`.
 
 ## S2 Library JSON practice and CSV review

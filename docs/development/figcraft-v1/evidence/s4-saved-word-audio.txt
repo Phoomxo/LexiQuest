@@ -70,3 +70,8 @@ Raw Android UI hierarchy hashes from build/s4-android-evidence/:
 This covers the saved-word origin. Listening hub, source and mic-denial
 origins remain pending. Audible TTS, TalkBack, native text at 200% and
 signed-device acceptance remain unverified.
+
+Exact PR head 4baf9db4cd38c2657d3087d1e41e6a396c915b91, CI 43632727258,
+passed Flutter 2,351, CPU backend 267, both policies, analysis and
+Android debug APK. Raw log SHA-256
+6ac91db7dec5f7d84de27a8136e03380a130f507283306b262fa4aa3e8427518.
