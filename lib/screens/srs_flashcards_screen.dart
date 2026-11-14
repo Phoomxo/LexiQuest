@@ -323,9 +323,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
             .difference(_questionStartedAt ?? DateTime.now())
             .inMilliseconds;
         _attemptId ??= 'attempt:srs:${_session!.id}:$_currentIndex';
+        final card = _currentQuestion.word;
+        final hasSnapshot =
+            card.spelling.trim().isNotEmpty && card.meaning.trim().isNotEmpty;
         await learning.recordAnswer(
           sessionId: _session!.id,
-          wordId: _currentQuestion.word.id,
+          wordId: card.id,
           promptMode: 'srsRecall',
           isCorrect: _submittedRating!,
           responseTimeMs: _responseTimeMs,
@@ -333,6 +336,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           attemptId: _attemptId,
           occurredAtUtc: _submittedAtUtc,
           expectedOwnerId: _ownerId,
+          srsRecallSnapshot: hasSnapshot
+              ? (
+                  spelling: card.spelling,
+                  meaning: card.meaning,
+                  partOfSpeech: card.partOfSpeech,
+                )
+              : null,
         );
         if (!await _validateContext(learning, generation)) return;
       }

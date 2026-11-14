@@ -1,7 +1,11 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
@@ -9,6 +13,7 @@ import 'package:vocab_learning_app/features/progress/data/drift_progress_queries
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
   late AppDatabase database;
@@ -215,6 +220,155 @@ void main() {
       expect(entry.summary.wrongCount, 1);
       expect(entry.mistakes.single.spelling, 'platform');
       expect(entry.originalAnswers, isNull);
+    },
+  );
+
+  test(
+    'SRS history reopens the original card after an owner edits the word',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-srs-history-',
+      );
+      final file = File('${directory.path}/history.sqlite');
+      var fileDatabase = AppDatabase(NativeDatabase(file));
+      addTearDown(() async {
+        await fileDatabase.close();
+        await directory.delete(recursive: true);
+      });
+      var clock = now;
+      var fileId = 0;
+      String nextId() => 'synthetic-recall-${++fileId}';
+      final owners = DriftLocalOwnerRepository(
+        fileDatabase,
+        generateId: () => 'srs-history-a',
+        nowUtc: () => clock,
+      );
+      final owner = await owners.getOrCreateActiveOwner();
+      const otherOwner = 'local:srs-history-b';
+      await fileDatabase
+          .into(fileDatabase.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: otherOwner,
+              createdAtUtcMs: now.millisecondsSinceEpoch,
+              isActive: const Value(false),
+            ),
+          );
+      final fileVocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: DriftVocabularyRepository(fileDatabase),
+        generateId: nextId,
+        nowUtc: () => clock,
+      );
+      final repository = DriftLearningRepository(fileDatabase);
+      final review = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: nextId,
+        nowUtc: () => clock,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final category = await fileVocabulary.createCategory('การเดินทาง');
+      final word = await fileVocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'station',
+          meaning: 'สถานี',
+          partOfSpeech: 'noun',
+        ),
+      );
+      await fileDatabase
+          .into(fileDatabase.srsStates)
+          .insert(
+            SrsStatesCompanion.insert(
+              id: 'synthetic-due-station',
+              ownerId: owner.id,
+              wordId: word.id,
+              dueAtUtcMs: now.millisecondsSinceEpoch,
+              algorithmVersion: 1,
+            ),
+          );
+
+      final session = await review.startDueReview(expectedOwnerId: owner.id);
+      final shown = session.questions.single.word;
+      expect(shown.id, word.id);
+      clock = clock.add(const Duration(seconds: 1));
+      await review.recordAnswer(
+        sessionId: session.id,
+        wordId: shown.id,
+        promptMode: 'srsRecall',
+        isCorrect: false,
+        responseTimeMs: null,
+        attemptNumber: 1,
+        expectedOwnerId: owner.id,
+        srsRecallSnapshot: (
+          spelling: shown.spelling,
+          meaning: shown.meaning,
+          partOfSpeech: shown.partOfSpeech,
+        ),
+      );
+      clock = clock.add(const Duration(seconds: 1));
+      await review.finishSession(session.id, expectedOwnerId: owner.id);
+      const legacySessionId = 'older-srs-round-without-snapshot';
+      await repository.startSession(
+        LearningSessionDraft(
+          id: legacySessionId,
+          ownerId: owner.id,
+          activityType: 'srsReview',
+          startedAtUtc: clock,
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await review.recordAnswer(
+        sessionId: legacySessionId,
+        wordId: shown.id,
+        promptMode: 'srsRecall',
+        isCorrect: true,
+        responseTimeMs: null,
+        attemptNumber: 1,
+        expectedOwnerId: owner.id,
+      );
+      clock = clock.add(const Duration(seconds: 1));
+      await review.finishSession(legacySessionId, expectedOwnerId: owner.id);
+      final edited = await fileVocabulary.updateWord(
+        UpdateWordCommand(
+          id: shown.id,
+          categoryId: category.id,
+          spelling: 'stationed',
+          meaning: 'ประจำการ',
+          partOfSpeech: 'verb',
+        ),
+      );
+      expect(edited.spelling, 'stationed');
+      expect(edited.meaning, 'ประจำการ');
+      expect(edited.partOfSpeech, 'verb');
+
+      await fileDatabase.close();
+      fileDatabase = AppDatabase(NativeDatabase(file));
+      final reopened = DriftProgressQueries(fileDatabase);
+      final historical = (await reopened.loadSession(
+        ownerId: owner.id,
+        sessionId: session.id,
+      ))!;
+      expect(historical.summary.id, session.id);
+      expect(historical.summary.wrongCount, 1);
+      expect(historical.originalRecallAnswers, [
+        (
+          card: (spelling: 'station', meaning: 'สถานี', partOfSpeech: 'noun'),
+          remembered: false,
+        ),
+      ]);
+      final legacy = (await reopened.loadSession(
+        ownerId: owner.id,
+        sessionId: legacySessionId,
+      ))!;
+      expect(legacy.summary.score, 100);
+      expect(legacy.originalRecallAnswers, isNull);
+      expect(
+        await reopened.loadSession(ownerId: otherOwner, sessionId: session.id),
+        isNull,
+      );
     },
   );
 }

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_models.dart';
 import '../../learning/domain/quiz_round.dart';
+import '../../learning/domain/srs_recall_snapshot.dart';
 import '../../motivation/data/drift_streak_repository.dart';
 import '../../motivation/domain/streak_policy.dart' as motivation;
 import '../../quest/data/drift_quest_progress_reader.dart';
@@ -321,46 +322,66 @@ final class DriftProgressQueries {
     }
     final mistakes = await _loadSessionMistakes(ownerId, sessionId);
     final raw = row.readNullable<String>('question_plan_json');
+    final activity = row.read<String>('activity_type');
     QuizPlan? plan;
     List<OriginalQuizAnswer>? original;
-    if (raw != null) {
+    List<OriginalSrsRecallAnswer>? originalRecall;
+    if (raw != null ||
+        activity == 'srsReview' ||
+        activity == 'sourcePractice') {
+      final attempts =
+          await (database.select(database.answerAttempts)
+                ..where(
+                  (attempt) =>
+                      attempt.ownerId.equals(ownerId) &
+                      attempt.sessionId.equals(sessionId),
+                )
+                ..orderBy([
+                  (attempt) => OrderingTerm.asc(attempt.attemptNumber),
+                  (attempt) => OrderingTerm.asc(attempt.id),
+                ]))
+              .get();
       try {
-        final pinned = decodeQuizPlan(raw);
-        final attempts =
-            await (database.select(database.answerAttempts)
-                  ..where(
-                    (attempt) =>
-                        attempt.ownerId.equals(ownerId) &
-                        attempt.sessionId.equals(sessionId),
-                  )
-                  ..orderBy([
-                    (attempt) => OrderingTerm.asc(attempt.attemptNumber),
-                    (attempt) => OrderingTerm.asc(attempt.id),
-                  ]))
-                .get();
-        final answers = <OriginalQuizAnswer>[];
-        for (final attempt in attempts) {
-          final evidence = decodeQuizResponse(
-            attempt.answerEvidenceJson ?? '',
-            plan: pinned,
-          );
-          final question = pinned.questions[evidence.slot];
-          final selected = evidence.answerFor(question);
-          if (attempt.promptMode != question.kind.name ||
-              attempt.isCorrect != evidence.isCorrectFor(question)) {
-            throw const FormatException(
-              'Original quiz response does not match the plan',
+        if (raw == null) {
+          if (attempts.isNotEmpty &&
+              attempts.every((attempt) => attempt.promptMode == 'srsRecall')) {
+            originalRecall = List.unmodifiable(
+              attempts.map(
+                (attempt) => (
+                  card: decodeSrsRecallSnapshot(
+                    attempt.answerEvidenceJson ?? '',
+                  ),
+                  remembered: attempt.isCorrect,
+                ),
+              ),
             );
           }
-          answers.add((
-            question: question,
-            chosenAnswer: selected,
-            isCorrect: attempt.isCorrect,
-          ));
-        }
-        if (answers.isNotEmpty) {
-          plan = pinned;
-          original = List.unmodifiable(answers);
+        } else {
+          final pinned = decodeQuizPlan(raw);
+          final answers = <OriginalQuizAnswer>[];
+          for (final attempt in attempts) {
+            final evidence = decodeQuizResponse(
+              attempt.answerEvidenceJson ?? '',
+              plan: pinned,
+            );
+            final question = pinned.questions[evidence.slot];
+            final selected = evidence.answerFor(question);
+            if (attempt.promptMode != question.kind.name ||
+                attempt.isCorrect != evidence.isCorrectFor(question)) {
+              throw const FormatException(
+                'Original quiz response does not match the plan',
+              );
+            }
+            answers.add((
+              question: question,
+              chosenAnswer: selected,
+              isCorrect: attempt.isCorrect,
+            ));
+          }
+          if (answers.isNotEmpty) {
+            plan = pinned;
+            original = List.unmodifiable(answers);
+          }
         }
       } on FormatException {
         // Aggregate results remain readable when the original wording is unavailable.
@@ -371,6 +392,7 @@ final class DriftProgressQueries {
       mistakes: mistakes,
       plan: plan,
       originalAnswers: original,
+      originalRecallAnswers: originalRecall,
     );
   }
 
@@ -409,6 +431,7 @@ final class DriftProgressQueries {
     List<QuizWord> mistakes = const [],
     QuizPlan? plan,
     List<OriginalQuizAnswer>? originalAnswers,
+    List<OriginalSrsRecallAnswer>? originalRecallAnswers,
   }) {
     final row = database.learningSessions.map(projected.data);
     final total = row.correctCount + row.wrongCount;
@@ -438,6 +461,7 @@ final class DriftProgressQueries {
           plan?.categoryName ??
           projected.readNullable<String>('linked_category_name'),
       originalAnswers: originalAnswers,
+      originalRecallAnswers: originalRecallAnswers,
     );
   }
 

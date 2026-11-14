@@ -234,6 +234,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
             returnLabel: 'กลับไปดูประวัติ',
             showOriginalHistory: true,
             originalAnswers: entry.originalAnswers,
+            originalRecallAnswers: entry.originalRecallAnswers,
             mistakes: entry.mistakes,
             onPracticeMistakes:
                 !canRepair || learning == null || entry.mistakes.isEmpty

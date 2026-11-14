@@ -25,6 +25,7 @@ class ScoreScreen extends StatefulWidget {
     this.returnLabel = 'กลับไปเลือกกิจกรรม',
     this.showOriginalHistory = false,
     this.originalAnswers,
+    this.originalRecallAnswers,
     this.expectedOwnerId,
     this.onOpenSentence,
   });
@@ -39,6 +40,7 @@ class ScoreScreen extends StatefulWidget {
   final String returnLabel;
   final bool showOriginalHistory;
   final List<OriginalQuizAnswer>? originalAnswers;
+  final List<OriginalSrsRecallAnswer>? originalRecallAnswers;
   final String? expectedOwnerId;
   final ValueChanged<BuildContext>? onOpenSentence;
 
@@ -231,7 +233,20 @@ class _ScoreScreenState extends State<ScoreScreen> {
                     'คำตอบจากรอบเดิม',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  if (widget.originalAnswers == null)
+                  if (widget.originalRecallAnswers case final recalls?)
+                    for (final answer in recalls)
+                      ListTile(
+                        title: Text(answer.card.spelling),
+                        subtitle: Text(
+                          [
+                            answer.card.meaning,
+                            if (answer.card.partOfSpeech.isNotEmpty)
+                              answer.card.partOfSpeech,
+                            answer.remembered ? 'จำได้แล้ว' : 'ยังจำไม่ได้',
+                          ].join('\n'),
+                        ),
+                      )
+                  else if (widget.originalAnswers == null)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text('ไม่มีข้อความโจทย์และคำตอบเดิมของรอบนี้'),

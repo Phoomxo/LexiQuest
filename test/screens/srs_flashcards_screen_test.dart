@@ -11,6 +11,8 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -673,6 +675,91 @@ void main() {
       (await tester.runAsync(() => db.select(db.answerAttempts).get()))!,
       hasLength(1),
     );
+  });
+
+  testWidgets('due review saves the revealed card after a vocabulary edit', (
+    tester,
+  ) async {
+    await _withF33(tester, (f) async {
+      await _openF33(tester, f);
+      await tester.ensureVisible(find.text('ดูคำแปล'));
+      await tester.tap(find.text('ดูคำแปล'));
+      await tester.pumpAndSettle();
+      expect(find.text('apple'), findsOneWidget);
+      expect(find.text('meaning-apple'), findsOneWidget);
+      expect(find.text('noun'), findsOneWidget);
+      await tester.ensureVisible(find.text('จำได้แล้ว'));
+      await tester.tap(find.text('จำได้แล้ว'));
+      await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+      final recorded = (await tester.runAsync(
+        () => f.db.select(f.db.answerAttempts).getSingle(),
+      ))!;
+      expect(recorded.isCorrect, isTrue);
+
+      final vocabulary = VocabularyUseCases(
+        owners: f.owners,
+        vocabulary: DriftVocabularyRepository(f.db),
+        generateId: () => 'unused-update-id',
+        nowUtc: () => DateTime.utc(2026, 11, 15),
+      );
+      final updated = await tester.runAsync(
+        () => vocabulary.updateWord(
+          const UpdateWordCommand(
+            id: 'apple',
+            categoryId: 'category',
+            spelling: 'bake',
+            meaning: 'อบ',
+            partOfSpeech: 'verb',
+          ),
+        ),
+      );
+      expect(updated?.meaning, 'อบ');
+
+      final attempts = (await tester.runAsync(
+        () => f.db.select(f.db.answerAttempts).get(),
+      ))!;
+      expect(attempts, hasLength(1));
+      final saved = attempts.single;
+      expect(saved.id, recorded.id);
+      expect(saved.isCorrect, isTrue);
+      expect(saved.attemptNumber, 1);
+      expect(saved.answerEvidenceJson, isNotNull);
+      expect(jsonDecode(saved.answerEvidenceJson!), {
+        'v': 1,
+        'kind': 'srsRecall',
+        'spelling': 'apple',
+        'meaning': 'meaning-apple',
+        'partOfSpeech': 'noun',
+      });
+    });
+  });
+
+  testWidgets('due review saves a rating for a legacy card without a meaning', (
+    tester,
+  ) async {
+    await _withF33(tester, (f) async {
+      await tester.runAsync(
+        () => f.db.customStatement(
+          "UPDATE vocabulary_words SET meaning = '', normalized_meaning = '' "
+          'WHERE id = ?',
+          ['apple'],
+        ),
+      );
+      await _openF33(tester, f);
+      await tester.tap(find.text('ดูคำแปล'));
+      await tester.pumpAndSettle();
+      expect(find.text('noun'), findsOneWidget);
+      await tester.tap(find.text('จำได้แล้ว'));
+      await _pumpUntil(tester, find.text('บันทึกแล้ว'));
+
+      final attempts = (await tester.runAsync(
+        () => f.db.select(f.db.answerAttempts).get(),
+      ))!;
+      expect(attempts, hasLength(1));
+      expect(attempts.single.wordId, 'apple');
+      expect(attempts.single.isCorrect, isTrue);
+      expect(attempts.single.answerEvidenceJson, isNull);
+    });
   });
 
   testWidgets(

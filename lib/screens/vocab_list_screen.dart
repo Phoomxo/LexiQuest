@@ -790,6 +790,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
             returnLabel: 'กลับไปที่ชุดคำ',
             showOriginalHistory: true,
             originalAnswers: entry.originalAnswers,
+            originalRecallAnswers: entry.originalRecallAnswers,
           ),
         ),
       );

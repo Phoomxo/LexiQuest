@@ -8,6 +8,7 @@ import '../domain/cloze_prompt_policy.dart';
 import '../domain/quiz_prompt_policy.dart';
 import '../domain/quiz_round.dart';
 import '../domain/scramble_prompt_policy.dart';
+import '../domain/srs_recall_snapshot.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -663,6 +664,7 @@ final class LearningUseCases {
     DateTime? occurredAtUtc,
     String? expectedOwnerId,
     QuizAdmission? quiz,
+    SrsRecallSnapshot? srsRecallSnapshot,
   }) async {
     if ((attemptId == null) != (occurredAtUtc == null)) {
       throw ArgumentError(
@@ -687,6 +689,7 @@ final class LearningUseCases {
       occurredAtUtc: recordedAt,
       providerProvenance: providerProvenance,
       quiz: quiz,
+      srsRecallSnapshot: srsRecallSnapshot,
     );
     final result = await repository.recordAnswer(command);
     onLocalMutation?.call();

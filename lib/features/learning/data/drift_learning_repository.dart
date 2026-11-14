@@ -12,6 +12,7 @@ import '../domain/learning_repository.dart';
 import '../domain/quiz_round.dart';
 import '../domain/scramble_prompt_policy.dart';
 import '../domain/srs_policy.dart';
+import '../domain/srs_recall_snapshot.dart';
 import '../domain/answer_motivation_evidence.dart';
 
 typedef AnswerCalendarCapture =
@@ -154,12 +155,12 @@ final class DriftLearningRepository implements DurableQuizRepository {
         }
         final round = await _roundForAttempt(command);
         final expectedEvidence = command.quiz == null || round == null
-            ? null
+            ? encodeSrsRecallSnapshot(command.srsRecallSnapshot)
             : encodeQuizResponse(command.quiz!.response, plan: round.plan);
         if (existing.answerEvidenceJson != expectedEvidence ||
             (round != null) != (command.quiz != null)) {
           throw StateError(
-            'attempt id already exists with different quiz evidence',
+            'attempt id already exists with different answer snapshot',
           );
         }
         final srs = await projections.rebuildWord(
@@ -205,7 +206,15 @@ final class DriftLearningRepository implements DurableQuizRepository {
 
       final round = await _readRound(session);
       final admission = command.quiz;
-      String? answerEvidence;
+      if (command.srsRecallSnapshot != null &&
+          (round != null ||
+              (session.activityType != 'srsReview' &&
+                  session.activityType != 'sourcePractice'))) {
+        throw StateError('SRS recall snapshot requires a review session');
+      }
+      String? answerEvidence = encodeSrsRecallSnapshot(
+        command.srsRecallSnapshot,
+      );
       if (round != null && admission != null) {
         final cursor = round.cursor;
         final question = round.plan.questions[cursor.slot];
@@ -1033,6 +1042,10 @@ final class DriftLearningRepository implements DurableQuizRepository {
   }
 
   void _validateAnswer(RecordAnswerCommand command) {
+    if (command.srsRecallSnapshot != null &&
+        (command.promptMode != 'srsRecall' || command.quiz != null)) {
+      throw ArgumentError('SRS recall snapshot requires a flashcard rating');
+    }
     final occurredAt = _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
     if (!LearningEvidenceContract.validAttempt(
       id: command.id,

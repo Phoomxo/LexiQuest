@@ -1,4 +1,5 @@
 import '../../learning/domain/learning_models.dart';
+import '../../learning/domain/srs_recall_snapshot.dart';
 import '../../motivation/domain/streak_policy.dart';
 import '../../quest/domain/quest_progress_models.dart';
 
@@ -153,6 +154,8 @@ typedef OriginalQuizAnswer = ({
   bool isCorrect,
 });
 
+typedef OriginalSrsRecallAnswer = ({SrsRecallSnapshot card, bool remembered});
+
 final class SessionHistoryEntry {
   const SessionHistoryEntry({
     required this.ownerId,
@@ -164,6 +167,7 @@ final class SessionHistoryEntry {
     this.categoryId,
     this.categoryName,
     this.originalAnswers,
+    this.originalRecallAnswers,
   });
 
   final String ownerId;
@@ -175,4 +179,5 @@ final class SessionHistoryEntry {
   final String? categoryId;
   final String? categoryName;
   final List<OriginalQuizAnswer>? originalAnswers;
+  final List<OriginalSrsRecallAnswer>? originalRecallAnswers;
 }

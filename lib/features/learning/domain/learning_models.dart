@@ -1,4 +1,5 @@
 import 'quiz_round.dart';
+import 'srs_recall_snapshot.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -278,6 +279,7 @@ final class RecordAnswerCommand {
     required this.occurredAtUtc,
     this.providerProvenance,
     this.quiz,
+    this.srsRecallSnapshot,
   });
 
   final String id;
@@ -291,6 +293,7 @@ final class RecordAnswerCommand {
   final DateTime occurredAtUtc;
   final String? providerProvenance;
   final QuizAdmission? quiz;
+  final SrsRecallSnapshot? srsRecallSnapshot;
 }
 
 final class SrsSnapshot {
