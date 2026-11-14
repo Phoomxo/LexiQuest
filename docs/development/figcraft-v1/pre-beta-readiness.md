@@ -8,8 +8,8 @@ v32 ใช้บน vivo ได้ตั้งแต่เปิดแอปถ�
 
 รุ่นที่ตรวจบนอุปกรณ์คือ source `189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9`,
 APK 32 SHA-256 `e8e04089e4e2bc821be18bec2714065fe0ff29f66dfc6a01314d6e53d6fa2154`.
-Windows และ Linux CI ของ source นี้ผ่าน Flutter 2,268 กรณี
-และ backend CPU 267 กรณี. [Draft PR #16](https://github.com/Phoomxo/LexiQuest/pull/16) ·
+โค้ดรุ่นนี้ผ่าน Flutter 2,268 กรณีทั้ง Windows ในเครื่องและ Linux CI.
+ชุด backend CPU ผ่าน 267 กรณี. [Draft PR #16](https://github.com/Phoomxo/LexiQuest/pull/16) ·
 [CI](evidence/ci-189fd79d.txt) · [อุปกรณ์จริง](evidence/vivo-189fd79d.md)
 
 รุ่นทดสอบล่าสุดบน vivo คือ v34 จาก source
@@ -22,6 +22,16 @@ v34 แล้ว ทั้งสองครั้งกลับมาชุด
 หลังเปิดออฟไลน์ A ยังมีทั้งคำใหม่และผลรอบนั้น ส่วน B ยังว่าง.
 [Score semantics](evidence/s7-score-semantics.txt) ·
 [ผลตรวจสิทธิ์กล้อง](evidence/s7-camera-denial.txt)
+
+Windows รอบสุดท้ายผ่าน Flutter 2,270 กรณีใน 9:17. แฮชของไฟล์ทดสอบ
+597 รายการก่อนและหลังตรงกันที่
+`bb3dbd84038a18e9244e5647e5a0d3d015cb7e9a90576ec73d6cc412e34b5301`.
+ไฟล์โค้ดและเทสต์ตรงกับ source สร้าง v34. รอบ Linux
+[43608908010](https://github.com/Phoomxo/LexiQuest/actions/runs/43608908010)
+ทดสอบ PR head `92f7c2ef37eb13e3b6ea6824198a2bcc6058c458`.
+ผลรวมผ่าน Flutter 2,270, backend CPU 267, Firestore, Supabase และ
+Android debug build. SHA-256 ของ raw log คือ
+`9a1401b420be1a7fe6cc25c743e691a825fef24bf5871e4559d196c9efc16d43`.
 
 ## ผลรายรหัส
 
@@ -40,13 +50,17 @@ v34 แล้ว ทั้งสองครั้งกลับมาชุด
 และการเข้าถึงตามที่ระบุในแต่ละแถว. f10 รอการปิดงานวิศวกรรม Research
 และคำขอแยกจากเจ้าของโครงการ
 
+ยอดผ่านอ้างอิงรุ่นตามแถว. f05 ทดสอบพักและฝึกต่อข้ามโปรเซสบน v32.
+f20 ทดสอบ bookmark บน v34. f21 ทดสอบ Source Practice และไฟล์ SQLite
+ด้วยข้อมูลสังเคราะห์ใน Flutter. ไม่ใช้ยอดเทสต์รวมแทนผลตรวจรายรหัส.
+
 ## เกณฑ์ก่อน Beta เก้าข้อ
 
 | ข้อ | ผลที่ยืนยันได้ | งานค้างและเจ้าของ |
 | --- | --- | --- |
 | 1 โค้ดและหนี้ทางเทคนิค | อ่าน source/review จนครบ 156 รหัส พบช่องว่างของทางเข้าและสถานะ. Migration ผ่าน independent review. แก้ป้ายถูก/ผิด (16 เทสต์) และการขอสิทธิ์กล้องซ้ำ (71 เทสต์) แล้วตรวจซ้ำบน vivo | ทีม Flutter ปิดทางหลักที่ขาดและปรับขอบช่องค้นหากับปุ่มเพิ่มคำในธีมสว่าง ซึ่งวัดได้ราว 1.3:1 |
 | 2 สถาปัตยกรรมและฐานข้อมูล | สคีมา v11/v12 และอีกสามรูปแบบจาก v25 ผ่านเปิดซ้ำ/เก็บข้อมูลเดิม. ความล้มเหลวก่อน commit ย้อนครบ. มี 38 ตาราง, local export 36 และ cloud deletion 26. owner switch, export, delete, sync และคงใบรับเดิมผ่านด้วยข้อมูลสังเคราะห์ | เก็บขอบเขตการกู้คืนไว้กับรุ่น. ใช้ forward recovery ที่รองรับ v26 เมื่อ migration สำเร็จแล้ว |
-| 3 Security และ compliance | Gitleaks ตรวจ 22 commits ของสาขาแบบปกปิดข้อมูลและไม่พบ leak. Firestore 33 และ Auth 3 ผ่านใน demo emulator. Supabase reset/lint/advisors/storage ผ่านที่ CI. Research start deny-all | OSV พบ advisories ใน lockfiles เดิม และ npm audit พบ 18 รายการ ได้แก่ high 7, moderate 10, low 1. ทีม security/backend ต้องทวน runtime reachability และแก้ dependency ตามผลจริงก่อน Beta |
+| 3 Security และ compliance | Gitleaks ตรวจ 28 commits ถึงหัว PR `92f7c2ef` แบบปกปิดข้อมูลและไม่พบ leak. Firestore 33 และ Auth 3 ผ่านใน demo emulator. Supabase reset/lint/advisors/storage ผ่านที่ CI. Research start deny-all | OSV พบ advisories ใน lockfiles เดิม และ npm audit พบ 18 รายการ ได้แก่ high 7, moderate 10, low 1. ทีม security/backend ต้องทวน runtime reachability และแก้ dependency ตามผลจริงก่อน Beta |
 | 4 UX, design system และ edge cases | ภาพคู่เดิมใช้สถานะตรงกันบน Android emulator. vivo v32 ตรวจไทย 200% และกด Score Back หลังเลื่อน. v33 รักษาชุด A ในแนวนอนและส่งป้ายถูก/ผิดใน semantics. v34 กดปฏิเสธกล้องครั้งเดียวแล้วกลับ A ได้ | ผู้ทดสอบมือถือเทียบแบบในสถานะเดียวกันรอบใหม่ ตรวจแนวนอนทั้งเส้นทาง และฟัง TalkBack จบรอบ โดยตรวจเสียงสถานะคำตอบและโฟกัสหลังย้อน |
 | 5 Backend และ API | CPU suites ตรวจ bearer, owner scope, request length, timeout/retry, safe errors และ readiness แบบ local. Auth และ deletion ใช้ fixture สังเคราะห์ | ผู้ดูแล staging ตรวจ provider, App Check, quotas, budget alerts, kill switch และหลาย replica ในโครงการที่อนุญาต. Readiness ของ AI ตรวจ configuration |
 | 6 Performance และ load | vivo v32 เปิด process-cold 5 รอบ Activity median 606 ms ช่วง 524–621 ms ทุกครั้งพบ Home และ Library A4/B0. PSS Home 141,421–147,543 KiB และ Library 125,826–129,843 KiB. API test ภายในโปรเซสมี 600 requests ที่ concurrency 1/2/4 และไม่มี error | ทีม performance เก็บ first interactive frame, รายการใหญ่, memory แบบหลายช่วงและ latency จริงใน staging. Library 2,394–2,912 ms รวม ADB และรอ UI dump. ขาด baseline อุปกรณ์/ข้อมูลเดียวกัน จึงยังเทียบ budget ไม่ได้ |
