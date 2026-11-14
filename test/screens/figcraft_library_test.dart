@@ -342,7 +342,7 @@ void main() {
       await _tapLabel(tester, 'ดูแบบฝึกทั้งหมด', scroll: true);
       await _tapLabel(tester, 'ฟังและพูด', scroll: true);
       final hub = tester.state(find.byType(ListeningPracticeMenuScreen));
-      await _tapLabel(tester, 'ฝึกเสียงทีละคำ');
+      await _tapLabel(tester, 'ฝึกเสียงทีละคำ', scroll: true);
       await _tapLabel(tester, '/ʃ/ she');
       await _tapLabel(tester, 'ลองเสียง /ʃ/ ในคำว่า she');
       expect(voice.requests.single.text, 'she');
