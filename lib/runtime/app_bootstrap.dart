@@ -49,6 +49,8 @@ import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/motivation/application/streak_use_cases.dart';
+import '../features/motivation/data/drift_streak_repository.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/quest/data/drift_quest_repository.dart';
 import '../features/quest/data/drift_quest_progress_reader.dart';
@@ -278,7 +280,19 @@ final class AppBootstrap {
       );
       syncTrigger = SyncTrigger(syncEngine.run);
     }
+    final progressUpdates = ValueNotifier<int>(0);
+    var disposed = false;
+    void notifyProgress() {
+      if (!disposed) {
+        progressUpdates.value++;
+      }
+    }
+
     void notifyLocalMutation() {
+      if (disposed) {
+        return;
+      }
+      notifyProgress();
       final trigger = syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.localMutation));
@@ -317,10 +331,21 @@ final class AppBootstrap {
     } on Object {
       // Original-answer capture records missing calendar authority independently.
     }
-    bool questVisible() =>
-        features.isVisible(Feature.questV2) &&
+    bool masteryVisible() =>
         features.isVisible(Feature.mastery) &&
         fieldFeatures.isVisible(FieldFeature.mastery);
+    bool questVisible() =>
+        features.isVisible(Feature.questV2) && masteryVisible();
+    final streakRepository = DriftStreakRepository(
+      database,
+      calendarVisible: masteryVisible,
+    );
+    final streak = StreakUseCases(
+      repository: streakRepository,
+      owners: localOwners,
+      nowUtc: () => DateTime.now().toUtc(),
+      onSettled: notifyProgress,
+    );
     TrustedQuestAnswerCatalog? answerCatalog;
     if (questVisible()) {
       try {
@@ -342,11 +367,13 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
+      onAnswerCommitted: streak.afterAnswerCommitted,
     );
     final progress = ProgressUseCases(
       owners: localOwners,
       queries: DriftProgressQueries(
         database,
+        streakRepository: streakRepository,
         questReader: questVisible()
             ? DriftQuestProgressReader(database, catalog: answerCatalog)
             : null,
@@ -468,7 +495,10 @@ final class AppBootstrap {
     final geminiOwnerUpdatesSubscription = database
         .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
         .listen(
-          (_) => geminiTutor.invalidateScope(),
+          (_) {
+            geminiTutor.invalidateScope();
+            notifyProgress();
+          },
           onError: (Object _) {
             geminiOwner = null;
             geminiTutor.invalidateScope();
@@ -526,6 +556,8 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       syncStatus: syncStore,
       learning: learning,
+      streak: streak,
+      progressUpdates: progressUpdates,
       associativeLearning: DriftAssociativeLearningAdapter(database),
       progress: progress,
       rewards: rewards,
@@ -542,6 +574,8 @@ final class AppBootstrap {
       devicePermissions: const PluginDevicePermissionAccess(),
       speechPractice: speechPractice,
       disposeResources: () async {
+        disposed = true;
+        progressUpdates.dispose();
         await geminiAuthSubscription?.cancel();
         await geminiOwnerUpdatesSubscription.cancel();
         await geminiOwnerSubscription.cancel();

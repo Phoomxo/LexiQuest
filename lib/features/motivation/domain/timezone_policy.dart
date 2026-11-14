@@ -74,6 +74,44 @@ abstract final class TimezonePolicy {
   /// cached streak values can be invalidated if necessary.
   static const int version = 1;
 
+  /// Tests the whole civil date, including returning fragments and epoch bounds.
+  static bool hasCivilDay(
+    DateTime civilDay,
+    String timezoneId, {
+    DateTime? epochEffectiveAtUtc,
+    DateTime? epochExpiresAtUtc,
+  }) {
+    if (!civilDay.isUtc ||
+        civilDay != DateTime.utc(civilDay.year, civilDay.month, civilDay.day)) {
+      throw ArgumentError.value(
+        civilDay,
+        'civilDay',
+        'must be a UTC date ordinal',
+      );
+    }
+    if ((epochEffectiveAtUtc != null && !epochEffectiveAtUtc.isUtc) ||
+        (epochExpiresAtUtc != null && !epochExpiresAtUtc.isUtc) ||
+        (epochEffectiveAtUtc != null &&
+            epochExpiresAtUtc != null &&
+            !epochExpiresAtUtc.isAfter(epochEffectiveAtUtc))) {
+      throw ArgumentError('Calendar epoch must be a nonempty UTC interval');
+    }
+    if (!timeZoneDatabase.isInitialized) {
+      throw StateError('timezone database is not initialized');
+    }
+    final location = timeZoneDatabase.locations[timezoneId];
+    if (location == null) {
+      throw ArgumentError.value(timezoneId, 'timezoneId', 'unknown IANA zone');
+    }
+    return _civilSegments(
+      location,
+      civilDay.millisecondsSinceEpoch,
+      1,
+      epochEffectiveAtUtc: epochEffectiveAtUtc,
+      epochExpiresAtUtc: epochExpiresAtUtc,
+    ).isNotEmpty;
+  }
+
   /// Captures the UTC segments of the occurrence's day and Monday-based week
   /// from [epochEffectiveAtUtc] until (but excluding) [epochExpiresAtUtc].
   static LearningCalendarWindow captureWindow(
@@ -123,52 +161,13 @@ abstract final class TimezonePolicy {
     final dayMs = day.millisecondsSinceEpoch;
     final weekMs =
         dayMs - (day.weekday - DateTime.monday) * Duration.millisecondsPerDay;
-    var minOffset = offset;
-    var maxOffset = offset;
-    for (final zone in location.zones) {
-      minOffset = math.min(minOffset, zone.offset);
-      maxOffset = math.max(maxOffset, zone.offset);
-    }
-
-    List<UtcSegment> segments(int civilStart, int days) {
-      final civilEnd = civilStart + days * Duration.millisecondsPerDay;
-      var cursor = civilStart - maxOffset;
-      final limit = civilEnd - minOffset;
-      if (civilStart < minTime ||
-          civilEnd > maxTime ||
-          cursor < minTime ||
-          limit > maxTime) {
-        throw RangeError('Calendar period exceeds the supported date range');
-      }
-      final result = <UtcSegment>[];
-      while (cursor < limit) {
-        final interval = location.lookupTimeZone(cursor);
-        final next = math.min(interval.end, limit);
-        final first = math.max(cursor, civilStart - interval.timeZone.offset);
-        final last = math.min(next, civilEnd - interval.timeZone.offset);
-        if (first < last) {
-          var start = DateTime.fromMillisecondsSinceEpoch(first, isUtc: true);
-          var end = DateTime.fromMillisecondsSinceEpoch(last, isUtc: true);
-          if (epochEffectiveAtUtc != null &&
-              start.isBefore(epochEffectiveAtUtc)) {
-            start = epochEffectiveAtUtc;
-          }
-          if (epochExpiresAtUtc != null && end.isAfter(epochExpiresAtUtc)) {
-            end = epochExpiresAtUtc;
-          }
-          if (start.isBefore(end)) {
-            if (result.isNotEmpty &&
-                result.last.endUtc.isAtSameMomentAs(start)) {
-              start = result.removeLast().startUtc;
-            }
-            result.add(UtcSegment._(start, end));
-          }
-        }
-        cursor = next;
-      }
-      return List.unmodifiable(result);
-    }
-
+    List<UtcSegment> segments(int start, int count) => _civilSegments(
+      location,
+      start,
+      count,
+      epochEffectiveAtUtc: epochEffectiveAtUtc,
+      epochExpiresAtUtc: epochExpiresAtUtc,
+    );
     final days = segments(dayMs, 1);
     final weeks = segments(weekMs, 7);
     return LearningCalendarWindow._(
@@ -179,6 +178,56 @@ abstract final class TimezonePolicy {
       daySegments: days,
       weekSegments: weeks,
     );
+  }
+
+  static List<UtcSegment> _civilSegments(
+    Location location,
+    int civilStart,
+    int days, {
+    DateTime? epochEffectiveAtUtc,
+    DateTime? epochExpiresAtUtc,
+  }) {
+    var minOffset = location.zones.first.offset;
+    var maxOffset = minOffset;
+    for (final zone in location.zones) {
+      minOffset = math.min(minOffset, zone.offset);
+      maxOffset = math.max(maxOffset, zone.offset);
+    }
+    final civilEnd = civilStart + days * Duration.millisecondsPerDay;
+    var cursor = civilStart - maxOffset;
+    final limit = civilEnd - minOffset;
+    if (civilStart < minTime ||
+        civilEnd > maxTime ||
+        cursor < minTime ||
+        limit > maxTime) {
+      throw RangeError('Calendar period exceeds the supported date range');
+    }
+    final result = <UtcSegment>[];
+    while (cursor < limit) {
+      final interval = location.lookupTimeZone(cursor);
+      final next = math.min(interval.end, limit);
+      final first = math.max(cursor, civilStart - interval.timeZone.offset);
+      final last = math.min(next, civilEnd - interval.timeZone.offset);
+      if (first < last) {
+        var start = DateTime.fromMillisecondsSinceEpoch(first, isUtc: true);
+        var end = DateTime.fromMillisecondsSinceEpoch(last, isUtc: true);
+        if (epochEffectiveAtUtc != null &&
+            start.isBefore(epochEffectiveAtUtc)) {
+          start = epochEffectiveAtUtc;
+        }
+        if (epochExpiresAtUtc != null && end.isAfter(epochExpiresAtUtc)) {
+          end = epochExpiresAtUtc;
+        }
+        if (start.isBefore(end)) {
+          if (result.isNotEmpty && result.last.endUtc.isAtSameMomentAs(start)) {
+            start = result.removeLast().startUtc;
+          }
+          result.add(UtcSegment._(start, end));
+        }
+      }
+      cursor = next;
+    }
+    return List.unmodifiable(result);
   }
 
   /// Returns the learner's *learning day* as a local [DateTime] with no

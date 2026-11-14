@@ -1,10 +1,14 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/motivation/domain/streak_policy.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 
 typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
@@ -32,6 +36,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   ProfileProgressLoader? _loader;
   AccountUseCases? _account;
   String? _accountUid;
+  ValueListenable<int>? _progressUpdates;
 
   AccountUseCases? get _currentAccount =>
       widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
@@ -46,12 +51,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _bindSources({bool reload = false}) {
+    final updates = AppDependenciesScope.maybeOf(context)?.progressUpdates;
+    final updatesChanged = !identical(updates, _progressUpdates);
+    if (updatesChanged) {
+      _progressUpdates?.removeListener(_refresh);
+      _progressUpdates = updates;
+      updates?.addListener(_refresh);
+    }
     final account = _currentAccount;
     final uid = account?.currentSession?.uid;
     final accountChanged = !identical(_account, account) || _accountUid != uid;
     _account = account;
     _accountUid = uid;
     if (reload ||
+        updatesChanged ||
         _load == null ||
         _currentLoader != _loader ||
         accountChanged) {
@@ -82,6 +95,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     setState(() {
       _load = next;
     });
+  }
+
+  @override
+  void dispose() {
+    _progressUpdates?.removeListener(_refresh);
+    super.dispose();
   }
 
   Future<void> _editName() async {
@@ -152,6 +171,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               );
             }
             final progress = snapshot.data!;
+            final dependencies = AppDependenciesScope.maybeOf(context);
+            final learningDaysVisible =
+                (dependencies?.features.isVisible(Feature.mastery) ?? true) &&
+                (dependencies?.fieldFeatures.isVisible(FieldFeature.mastery) ??
+                    true);
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -182,10 +206,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 const SizedBox(height: 8),
                 _Metric(label: 'คะแนนประสบการณ์', value: '${progress.totalXp}'),
-                _Metric(
-                  label: 'เรียนต่อเนื่อง',
-                  value: '${progress.streakDays} วัน',
-                ),
+                if (learningDaysVisible)
+                  _Metric(
+                    label: 'เรียนต่อเนื่อง',
+                    value:
+                        progress.learningDays != null &&
+                            progress.learningDays!.status !=
+                                StreakFoldStatus.ready
+                        ? 'รอตรวจวันเรียน'
+                        : '${progress.streakDays} วัน',
+                  ),
                 _Metric(
                   label: 'ระดับจากคะแนนประสบการณ์',
                   value: '${progress.gameLevel}',
@@ -200,7 +230,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text('แสดงเฉพาะคะแนนจากคำตอบที่บันทึกจริง'),
+                  child: Text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'),
                 ),
               ],
             );

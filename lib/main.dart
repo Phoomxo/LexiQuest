@@ -49,6 +49,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final _navigatorKey = GlobalKey<NavigatorState>();
   Stream<RewardAppearance>? _appearanceStream;
+  final _streakRecoveries = Map<AppDependencies, Future<void>>.identity();
   late final AppAppearanceController _appAppearance;
   late final bool _ownsAppAppearance;
   late final String _platformRoute =
@@ -62,8 +63,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _appAppearance = widget.appearance ?? AppAppearanceController.system();
     _appearanceStream = widget.dependencies.rewards?.watchAppearance();
     WidgetsBinding.instance.addObserver(this);
+    final startupDependencies = widget.dependencies;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (identical(startupDependencies, widget.dependencies)) {
+        unawaited(_recoverStreak(startupDependencies));
+      }
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.startup));
@@ -74,6 +79,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(_recoverStreak(widget.dependencies));
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.appResume));
@@ -86,15 +92,55 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.dependencies, widget.dependencies)) {
       _appearanceStream = widget.dependencies.rewards?.watchAppearance();
-      unawaited(oldWidget.dependencies.dispose());
+      unawaited(_disposeAfterRecovery(oldWidget.dependencies));
+      unawaited(_recoverStreak(widget.dependencies));
     }
+  }
+
+  Future<void> _recoverStreak(AppDependencies scope) {
+    if (!mounted || !identical(scope, widget.dependencies)) {
+      return Future<void>.value();
+    }
+    return _streakRecoveries.putIfAbsent(
+      scope,
+      () => _settleActiveOwner(scope).whenComplete(() {
+        _streakRecoveries.remove(scope);
+      }),
+    );
+  }
+
+  Future<void> _settleActiveOwner(AppDependencies scope) async {
+    final owners = scope.localOwners;
+    final streak = scope.streak;
+    if (owners == null || streak == null) {
+      return;
+    }
+    try {
+      final owner = await owners.getOrCreateActiveOwner();
+      if (mounted && identical(scope, widget.dependencies)) {
+        await streak.settle(expectedOwnerId: owner.id);
+      }
+    } on Object {
+      // A later resume can recover the committed attendance.
+    }
+  }
+
+  Future<void> _disposeAfterRecovery(AppDependencies scope) async {
+    final recovery = _streakRecoveries[scope];
+    if (recovery != null) {
+      await recovery;
+      if (mounted && identical(widget.dependencies, scope)) {
+        return;
+      }
+    }
+    await scope.dispose();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (_ownsAppAppearance) _appAppearance.dispose();
-    unawaited(widget.dependencies.dispose());
+    unawaited(_disposeAfterRecovery(widget.dependencies));
     super.dispose();
   }
 

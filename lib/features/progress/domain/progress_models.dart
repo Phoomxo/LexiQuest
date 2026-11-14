@@ -1,4 +1,5 @@
 import '../../learning/domain/learning_models.dart';
+import '../../motivation/domain/streak_policy.dart';
 import '../../quest/domain/quest_progress_models.dart';
 
 final class SkillEvidence {
@@ -71,7 +72,7 @@ final class ProgressSnapshot {
     required this.accuracy,
     required this.totalXp,
     required this.completedSessions,
-    required this.streakDays,
+    this._streakDays = 0,
     required this.dueReviewCount,
     required this.masteredWordCount,
     required this.achievementCount,
@@ -90,11 +91,13 @@ final class ProgressSnapshot {
     this.ownerId,
     this.asOfUtc,
     this.quests,
+    this.learningDays,
   }) : assert(quests == null || (ownerId != null && asOfUtc != null));
 
   final String? ownerId;
   final DateTime? asOfUtc;
   final QuestSummary? quests;
+  final StreakFoldResult? learningDays;
 
   final int sampleSize;
   final int correctCount;
@@ -102,7 +105,8 @@ final class ProgressSnapshot {
   final double? accuracy;
   final int totalXp;
   final int completedSessions;
-  final int streakDays;
+  final int _streakDays;
+  int get streakDays => learningDays?.currentStreakDays ?? _streakDays;
   final int dueReviewCount;
   final int vocabularyWordCount;
   final String? nextDueSpelling;

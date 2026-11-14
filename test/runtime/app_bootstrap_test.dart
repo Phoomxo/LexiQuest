@@ -18,6 +18,7 @@ import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart'
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_progress_models.dart';
@@ -91,6 +92,36 @@ void main() {
         expect(factories, 0);
         expect((await dependencies.progress!.load()).quests, isNull);
         final database = dependencies.database!;
+        final snapshot = await dependencies.progress!.load();
+        expect(snapshot.learningDays?.status, StreakFoldStatus.ready);
+        expect(snapshot.learningDays?.currentStreakDays, 1);
+        expect(
+          await database.select(database.learningDayLog).get(),
+          hasLength(1),
+        );
+        final updates = dependencies.progressUpdates!;
+        final beforeRead = updates.value;
+        expect(beforeRead, greaterThan(0));
+        await dependencies.progress!.load();
+        expect(updates.value, beforeRead);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        await dependencies.streak!.settle(expectedOwnerId: owner.id);
+        expect(updates.value, greaterThan(beforeRead));
+        final select = dependencies.streak!.selectHomeTimezone;
+        if (hidden == 'quest') {
+          expect(
+            (await select(
+              expectedOwnerId: owner.id,
+              ianaId: 'Asia/Bangkok',
+            )).ianaId,
+            'Asia/Bangkok',
+          );
+        } else {
+          await expectLater(
+            select(expectedOwnerId: owner.id, ianaId: 'Asia/Bangkok'),
+            throwsStateError,
+          );
+        }
         expect(
           (await database.select(database.answerAttempts).get())
               .single
@@ -122,6 +153,11 @@ void main() {
           await database.select(database.outboxOperations).get(),
           hasLength(2),
         );
+        final lateMutation = dependencies.learning!.onLocalMutation!;
+        final lastRevision = updates.value;
+        await dependencies.dispose();
+        lateMutation();
+        expect(updates.value, lastRevision);
       },
     );
   }

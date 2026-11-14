@@ -2,15 +2,19 @@ import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
+import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 
 void main() {
+  setUpAll(tz.initializeTimeZones);
   late AppDatabase database;
   late DriftLearningRepository learning;
   late DriftProgressQueries progress;
@@ -104,6 +108,70 @@ void main() {
     expect(await _databaseSnapshot(database), before);
     return result;
   }
+
+  test(
+    'streak progress reads both Bangkok civil days inside one UTC date',
+    () async {
+      await database.customStatement(
+        "INSERT INTO owner_calendar_epochs(rule_id,owner_id,origin_owner_id,effective_utc_us,iana_id,tzdb_revision,is_selected) VALUES ('bkk','owner-1','owner-1',1000,'Asia/Bangkok',?,1)",
+        [bundledTzdbRevision],
+      );
+      await startSession();
+      for (final (i, minute) in [(1, 59), (2, 61)]) {
+        await learning.recordAnswer(
+          RecordAnswerCommand(
+            id: 'bkk-$i',
+            ownerId: 'owner-1',
+            sessionId: 'session-owner-1',
+            wordId: 'word-1',
+            promptMode: 'meaningChoice',
+            isCorrect: i == 1,
+            responseTimeMs: 100,
+            attemptNumber: i,
+            occurredAtUtc: DateTime.utc(2026, 7, 30, 16, minute),
+          ),
+        );
+      }
+      final before = await _databaseSnapshot(database);
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 18),
+      );
+      expect(result.streakDays, 2);
+      expect(result.learningDays?.currentStreakDays, result.streakDays);
+      expect(result.learningDays?.status, StreakFoldStatus.pending);
+      expect(
+        result.learningDays!.days.where((d) => d.studied).map((d) => d.day),
+        [DateTime.utc(2026, 7, 30), DateTime.utc(2026, 7, 31)],
+      );
+      expect(await _databaseSnapshot(database), before);
+    },
+  );
+
+  test(
+    'streak progress preserves legacy UTC attendance and isolates unavailable calendar evidence',
+    () async {
+      await startSession();
+      await record('meaningChoice', true);
+      await database.customStatement(
+        'UPDATE answer_attempts SET calendar_evidence=NULL',
+      );
+      final legacy = await load();
+      expect(legacy.learningDays?.uncertainHistory, true);
+      expect(legacy.streakDays, 1);
+      expect(legacy.learningDays?.currentStreakDays, 1);
+      await database.customStatement(
+        "UPDATE answer_attempts SET calendar_evidence='broken'",
+      );
+      final broken = await load();
+      expect(broken.learningDays?.status, StreakFoldStatus.unavailable);
+      expect(
+        (broken.sampleSize, broken.totalXp, broken.correctCount),
+        (1, 1, 1),
+      );
+      expect(broken.streakDays, broken.learningDays?.currentStreakDays);
+    },
+  );
 
   Future<void> addSecondCategory() async {
     await database

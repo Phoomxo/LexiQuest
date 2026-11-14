@@ -1,0 +1,78 @@
+S6-D3/D4 local Streak, home calendar and motivation surfaces
+2026-11-14; branch codex/figcraft-flutter-prototype; parent e1d7a5e9.
+The commit containing this receipt identifies the verified source.
+
+Final frozen checks (Windows working-file bytes):
+  flutter analyze --no-pub: no issues, exit0, 9.9s.
+  dart format --output=none --set-exit-if-changed lib test:
+    509 files, zero changes, exit0, 5.33s.
+  flutter test --no-pub --reporter expanded: 2089 passed, exit0, 09:31.
+  All555 declared inputs identical before/after; s6-d3-d4-inputs.tsv.
+  SHA256 bfab15f050ed5501dedaa9bdb921592132b1defc457555e17d3e26f1db4a46a7
+  Raw full log build/s6-d3-d4-full-regression.txt
+  SHA256 8588ff54329abbfa2e6e991d05809d1dfab050889b44b06df7763b3aba16ca72
+  Raw analysis build/s6-d3-d4-final-analyze.txt
+  SHA256 89027e7f7d7e728d824ed3cbf7eaaddc7688b94c5ae63cf5faea92b26ad666a8
+  Raw format build/s6-d3-d4-final-format.txt
+  SHA256 ec6138f2d68925b5de7d474146511499568d298811bf8cc4b8872482513c58e1
+
+Behavior covered by the final full run:
+  Original calendar evidence drives civil attendance; reads do not spend.
+  Pure Streak reconstruction preserves principal, immutable debits, transfer
+  times, existing protections, late facts and forward-settlement bounds.
+  Later assets cannot finance an earlier gap or invalidate a future debit.
+  Legacy NULL continuity is UTC-only with proven unmerged provenance;
+  unavailable authority never silently gains current-calendar eligibility.
+  Exact civil-day existence handles Apia's skipped day and disconnected
+  St Johns fragments. Prospective home-zone changes use the LAST old-week
+  segment end, retain referenced rules and preserve immutable answer pins.
+  Atomic settlement verifies the original committed answer wake and owner;
+  replay, file reopen, two connections and rollback preserve one ledger.
+  Startup/resume recovery drains an accepted old-scope transaction before
+  disposal; a new dependency scope can recover independently.
+  Existing Settings shows current/pending timezone with owner/gate fences.
+  Existing Mastery shows seven honest days, wallet, current/history Quest
+  cards and explicit claim through the existing XP issuer. Profile uses the
+  same current-day headline. Hidden gates suppress the relevant surfaces.
+  Claim/recovery request identity prevents an older reply clearing a newer
+  scope's spinner. Successful local mutations refresh the shared projection.
+  Legacy Streak mutators/no-argument hooks retired after caller migration;
+  frozen research envelopes, schema11 and backend/dependencies unchanged.
+
+Observed REDs before corrections (raw build logs retained):
+  foundations14 PASS/35 FAIL; progress/bootstrap160 PASS/5 FAIL;
+  lifecycle/Settings44 PASS/8 FAIL; Mastery5 FAIL; Profile4 FAIL.
+  Legacy NULL fold7 PASS/1 FAIL and skipped-date fold8 PASS/1 FAIL.
+  Real database lifecycle drain counterfactual failed under immediate close:
+    build/s6-d3-lifecycle-drain-counterfactual-red.txt
+    SHA256 0846da8d90904eae7381a9a0339b1d5ad2745069b62a26c42414ddd7bebf26f4
+  Replaced-scope claim spinner failed before atomic request identity:
+    build/s6-d4-claim-replacement-red.txt
+    SHA256 aa10e025351ddaaf53b45dec541d65269b77b92171f68d32b58a70d07e5ccbbd
+  Synthetic test-driver hangs were corrected with real-zone barriers,
+  valid lifecycle transitions and bounded cleanup. No assertions weakened.
+
+Review and desktop visual evidence:
+  Independent final source review found no P1/P2 in the assigned paths;
+  root inspected the diff and observed the complete serialized run.
+  Raw review build/s6-d3-d4-final-review.md
+  SHA256 d351200ac3ea196fd855bfd3c2a00751cfa370644cc0b855449bf032319e0077
+  The bundled MaterialIcons font was loaded in the test fixture before
+  the final run. Both Thai200% Windows widget renders were inspected:
+    s6-d3-d4-mastery-200.png
+    SHA256 85ad68ee83635d42444174e94e5c46639eb07f31b9bc504af44a80c00d6e1b43
+    s6-d3-d4-mastery-200-scrolled.png
+    SHA256 f8087827759210b231b31f5201d5e3411300245d97a739e9833d52843c730e14
+  The scrolled Sunday tile is clipped at the viewport below fixed actions;
+  no actual button/text overlap was found. This is desktop-only evidence.
+
+Limits and next work:
+  This accepts the local D3/D4 engineering unit, not all S6/S1-S7 criteria.
+  The48 screens/44 features/64 work packages remain tracked. Source audit
+  identifies further real journeys to implement; test counts do not accept
+  those rows. No separate Pair Matching task is authorized.
+  Exact-head CI, final APK/native touch/TalkBack and catalogue acceptance
+  remain required. Existing vivo v29 evidence is for source196d4e22 only.
+  Known-object camera accuracy stays not_checked; no repeat user request.
+  Emulator1837 install acknowledgement remains uncertain; no duplicate write.
+  No merge, deploy, real enrollment/upload or live account deletion.

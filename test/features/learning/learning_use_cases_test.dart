@@ -293,6 +293,123 @@ void main() {
     },
   );
 
+  test('committed-answer signal retains original identity on replay', () async {
+    final observed = <(String, String, int)>[];
+    final original = now.add(const Duration(microseconds: 123));
+    final learning = LearningUseCases(
+      owners: useCases.owners,
+      repository: useCases.repository,
+      generateId: useCases.generateId,
+      nowUtc: () => now,
+      buildInfo: useCases.buildInfo,
+      onAnswerCommitted:
+          ({
+            required ownerId,
+            required attemptId,
+            required occurredAtUtcMs,
+          }) async {
+            final row = await (database.select(
+              database.answerAttempts,
+            )..where((row) => row.id.equals(attemptId))).getSingle();
+            expect(
+              (row.ownerId, row.occurredAtUtcMs),
+              (ownerId, occurredAtUtcMs),
+            );
+            observed.add((ownerId, attemptId, occurredAtUtcMs));
+          },
+    );
+    final session = await learning.startQuiz(limit: 1);
+    Future<void> submit() => learning.recordAnswer(
+      sessionId: session.id,
+      wordId: 'word-1',
+      promptMode: 'meaningChoice',
+      isCorrect: false,
+      responseTimeMs: 42,
+      attemptNumber: 1,
+      attemptId: 'attempt:original-signal',
+      occurredAtUtc: original,
+    );
+    await submit();
+    now = now.add(const Duration(days: 2));
+    await submit();
+    expect(observed, [
+      (
+        'local:guest',
+        'attempt:original-signal',
+        original.millisecondsSinceEpoch,
+      ),
+      (
+        'local:guest',
+        'attempt:original-signal',
+        original.millisecondsSinceEpoch,
+      ),
+    ]);
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(await database.select(database.srsStates).get(), hasLength(1));
+    expect(await database.select(database.eventsV2).get(), isEmpty);
+  });
+
+  test(
+    'failed committed-answer signal preserves learning and permits repair',
+    () async {
+      var signals = 0;
+      final original = now;
+      final learning = LearningUseCases(
+        owners: useCases.owners,
+        repository: useCases.repository,
+        generateId: useCases.generateId,
+        nowUtc: () => now,
+        buildInfo: useCases.buildInfo,
+        onAnswerCommitted:
+            ({
+              required ownerId,
+              required attemptId,
+              required occurredAtUtcMs,
+            }) async {
+              signals++;
+              if (signals == 1) {
+                throw StateError('synthetic settlement failure');
+              }
+            },
+      );
+      final session = await learning.startQuiz(limit: 1);
+      Future<void> submit() => learning.recordAnswer(
+        sessionId: session.id,
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 42,
+        attemptNumber: 1,
+        attemptId: 'attempt:repair-signal',
+        occurredAtUtc: original,
+      );
+      await submit();
+      expect(signals, 1);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(
+        (await database.select(database.pointsLedgerEntries).getSingle())
+            .amount,
+        1,
+      );
+      expect(await database.select(database.srsStates).get(), hasLength(1));
+      await submit();
+      expect(signals, 2);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(1),
+      );
+      expect(await database.select(database.researchConsents).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+    },
+  );
+
   test('reading use cases save and restore owner-scoped progress', () async {
     final empty = await useCases.loadReadingProgress(
       documentId: 'article-1',

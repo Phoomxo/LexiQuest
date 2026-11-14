@@ -8,13 +8,12 @@ import '../domain/learning_repository.dart';
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
-
-/// Called after every successful `recordAnswer` so that [StreakUseCases] can
-/// log the learning day and update streak counters.
-///
-/// No argument — the streak use case resolves the owner and the current UTC
-/// time from its own injected dependencies.  Errors are swallowed.
-typedef StreakEventSink = Future<void> Function();
+typedef AnswerCommittedSink =
+    Future<void> Function({
+      required String ownerId,
+      required String attemptId,
+      required int occurredAtUtcMs,
+    });
 
 final class LearningUseCases {
   LearningUseCases({
@@ -26,7 +25,7 @@ final class LearningUseCases {
     this.onLocalMutation,
     this.shadowOrchestrator,
     this.eventAdapter,
-    this.streakEventSink,
+    this.onAnswerCommitted,
   });
 
   final LocalOwnerRepository owners;
@@ -35,6 +34,7 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final LearningMutationNotifier? onLocalMutation;
+  final AnswerCommittedSink? onAnswerCommitted;
 
   /// Shadow mode — when non-null, every recorded answer is also run through
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
@@ -43,12 +43,6 @@ final class LearningUseCases {
   /// Required when [shadowOrchestrator] is non-null; adapts V1 commands to
   /// a V2 event for shadow processing.
   final EventV1ToV2Adapter? eventAdapter;
-
-  /// Streak pipeline hook — when non-null, called after every successful
-  /// answer so that [StreakUseCases.recordLearningDay] can update counters.
-  ///
-  /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
-  final StreakEventSink? streakEventSink;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
       _startVocabularySession(categoryId, limit, 'quiz');
@@ -206,22 +200,21 @@ final class LearningUseCases {
     final recordedAt = occurredAtUtc ?? _now();
     if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
     final owner = await owners.getOrCreateActiveOwner();
-    final result = await repository.recordAnswer(
-      RecordAnswerCommand(
-        id: attemptId == null
-            ? 'attempt:${_nextId()}'
-            : _requiredId(attemptId, 'attemptId'),
-        ownerId: owner.id,
-        sessionId: _requiredId(sessionId, 'sessionId'),
-        wordId: _requiredId(wordId, 'wordId'),
-        promptMode: _requiredId(promptMode, 'promptMode'),
-        isCorrect: isCorrect,
-        responseTimeMs: responseTimeMs,
-        attemptNumber: attemptNumber,
-        occurredAtUtc: recordedAt,
-        providerProvenance: providerProvenance,
-      ),
+    final command = RecordAnswerCommand(
+      id: attemptId == null
+          ? 'attempt:${_nextId()}'
+          : _requiredId(attemptId, 'attemptId'),
+      ownerId: owner.id,
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      wordId: _requiredId(wordId, 'wordId'),
+      promptMode: _requiredId(promptMode, 'promptMode'),
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: recordedAt,
+      providerProvenance: providerProvenance,
     );
+    final result = await repository.recordAnswer(command);
     onLocalMutation?.call();
 
     // Shadow V2 reward pipeline — runs after production succeeds.
@@ -249,11 +242,15 @@ final class LearningUseCases {
       }
     }
 
-    // Streak hook — notify StreakUseCases that a learning event occurred.
-    // Errors are swallowed — streak tracking must never break production.
     try {
-      await streakEventSink?.call();
-    } catch (_) {}
+      await onAnswerCommitted?.call(
+        ownerId: command.ownerId,
+        attemptId: command.id,
+        occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
+      );
+    } catch (_) {
+      // Durable answers remain available for startup or replay repair.
+    }
 
     return result;
   }

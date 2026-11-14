@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
@@ -54,6 +55,7 @@ final class AppDependencies {
     this.syncStatus,
     this.learning,
     this.progress,
+    this.progressUpdates,
     this.rewards,
     this.vocabulary,
     this.vocabularyImporter,
@@ -92,6 +94,7 @@ final class AppDependencies {
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
+  final ValueListenable<int>? progressUpdates;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;

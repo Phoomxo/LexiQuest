@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_models.dart';
+import '../../motivation/data/drift_streak_repository.dart';
+import '../../motivation/domain/streak_policy.dart' as motivation;
 import '../../quest/data/drift_quest_progress_reader.dart';
 import '../../quest/domain/quest_progress_models.dart';
 import '../domain/progress_models.dart';
@@ -11,9 +13,11 @@ final class DriftProgressQueries {
     this.database, {
     this.questReader,
     this.questVisible,
+    this.streakRepository,
   });
 
   final AppDatabase database;
+  final DriftStreakRepository? streakRepository;
   final DriftQuestProgressReader? questReader;
   final bool Function()? questVisible;
 
@@ -131,6 +135,23 @@ final class DriftProgressQueries {
           issues: const [QuestProgressIssue.unavailableEvidence],
         );
       }
+      late final motivation.StreakFoldResult learningDays;
+      try {
+        learningDays =
+            await (streakRepository ?? DriftStreakRepository(database))
+                .loadLearningDays(ownerId: ownerId, asOfUtc: nowUtc);
+      } on Object {
+        learningDays = motivation.StreakFoldResult(
+          state: motivation.StreakState.initial(
+            ownerId: ownerId,
+            nowMs: nowUtc.millisecondsSinceEpoch,
+          ),
+          currentStreakDays: 0,
+          days: const [],
+          status: motivation.StreakFoldStatus.unavailable,
+          uncertainHistory: true,
+        );
+      }
       return ProgressSnapshot(
         ownerId: ownerId,
         asOfUtc: nowUtc,
@@ -141,10 +162,7 @@ final class DriftProgressQueries {
         accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
         totalXp: totalXp,
         completedSessions: completedRow.read(completedCount) ?? 0,
-        streakDays: _streakDays(
-          attempts.map((row) => row.occurredAtUtcMs),
-          nowUtc,
-        ),
+        learningDays: learningDays,
         dueReviewCount: dueWords.length,
         vocabularyWordCount: wordRow.read(wordCount) ?? 0,
         nextDueSpelling: dueWords.firstOrNull?.read<String>('spelling'),
@@ -432,24 +450,5 @@ final class DriftProgressQueries {
           );
         })
         .toList(growable: false);
-  }
-
-  int _streakDays(Iterable<int> timestamps, DateTime nowUtc) {
-    final days = timestamps
-        .map((value) => DateTime.fromMillisecondsSinceEpoch(value, isUtc: true))
-        .map((value) => DateTime.utc(value.year, value.month, value.day))
-        .toSet();
-    if (days.isEmpty) return 0;
-    final today = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
-    var cursor = days.contains(today)
-        ? today
-        : today.subtract(const Duration(days: 1));
-    if (!days.contains(cursor)) return 0;
-    var streak = 0;
-    while (days.contains(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
   }
 }

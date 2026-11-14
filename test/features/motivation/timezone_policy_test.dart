@@ -11,6 +11,62 @@ void main() {
   // New York observes DST; in August it is UTC-4
   const newYork = 'America/New_York';
 
+  group('hasCivilDay', () {
+    test('Apia has no December30 between two actual consecutive dates', () {
+      const zone = 'Pacific/Apia';
+      final before = TimezonePolicy.captureWindow(
+        DateTime.utc(2011, 12, 29, 12),
+        zone,
+      );
+      final after = TimezonePolicy.captureWindow(
+        DateTime.utc(2011, 12, 30, 12),
+        zone,
+      );
+      expect(before.civilDay, DateTime.utc(2011, 12, 29));
+      expect(after.civilDay, DateTime.utc(2011, 12, 31));
+      expect(TimezonePolicy.hasCivilDay(before.civilDay, zone), isTrue);
+      expect(
+        TimezonePolicy.hasCivilDay(DateTime.utc(2011, 12, 30), zone),
+        isFalse,
+      );
+      expect(TimezonePolicy.hasCivilDay(after.civilDay, zone), isTrue);
+    });
+
+    test('short and long DST days still offer a learning day', () {
+      expect(
+        TimezonePolicy.hasCivilDay(DateTime.utc(2026, 3, 8), newYork),
+        isTrue,
+      );
+      expect(
+        TimezonePolicy.hasCivilDay(DateTime.utc(2026, 11, 1), newYork),
+        isTrue,
+      );
+    });
+
+    test('returning date uses every segment and exact epoch clipping', () {
+      final day = DateTime.utc(2009, 10, 31);
+      const zone = 'America/St_Johns';
+      expect(
+        TimezonePolicy.hasCivilDay(
+          day,
+          zone,
+          epochEffectiveAtUtc: DateTime.utc(2009, 11, 1, 2, 30),
+          epochExpiresAtUtc: DateTime.utc(2009, 11, 1, 2, 31),
+        ),
+        isFalse,
+      );
+      expect(
+        TimezonePolicy.hasCivilDay(
+          day,
+          zone,
+          epochEffectiveAtUtc: DateTime.utc(2009, 11, 1, 2, 31),
+          epochExpiresAtUtc: DateTime.utc(2009, 11, 1, 3, 30),
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('captureWindow', () {
     final utc = DateTime.utc;
     final capture = TimezonePolicy.captureWindow;
