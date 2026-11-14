@@ -246,11 +246,14 @@ class _ScoreScreenState extends State<ScoreScreen> {
                           semanticLabel: answer.isCorrect ? 'ตอบถูก' : 'ตอบผิด',
                         ),
                         title: Text(answer.question.promptText),
-                        subtitle: Text(
-                          answer.chosenAnswer == null
-                              ? 'ครั้งก่อนขอดูคำตอบ'
-                              : 'ครั้งก่อนเลือก ${answer.chosenAnswer}',
-                        ),
+                        subtitle: Text(switch (answer.chosenAnswer) {
+                          null => 'ครั้งก่อนขอดูคำตอบ',
+                          final value
+                              when answer.question.kind ==
+                                  QuizPromptKind.clozeTyped =>
+                            'ครั้งก่อนพิมพ์ $value',
+                          final value => 'ครั้งก่อนเลือก $value',
+                        }),
                       ),
                 ],
                 if (widget.mistakes.isNotEmpty) ...[

@@ -14,14 +14,14 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ScoreScreen(
           correctAnswers: 1,
           wrongAnswers: 1,
           showOriginalHistory: true,
           originalAnswers: [
             (
-              question: QuizQuestion(
+              question: const QuizQuestion(
                 word: QuizWord(
                   id: 'station',
                   categoryId: 'travel',
@@ -35,7 +35,7 @@ void main() {
               isCorrect: false,
             ),
             (
-              question: QuizQuestion(
+              question: const QuizQuestion(
                 word: QuizWord(
                   id: 'ticket',
                   categoryId: 'travel',
@@ -46,6 +46,25 @@ void main() {
                 options: ['สถานี', 'ตั๋ว'],
               ),
               chosenAnswer: 'ตั๋ว',
+              isCorrect: true,
+            ),
+            (
+              question: QuizQuestion.cloze(
+                word: const QuizWord(
+                  id: 'platform',
+                  categoryId: 'travel',
+                  spelling: 'platform',
+                  meaning: 'ชานชาลา',
+                  partOfSpeech: 'noun',
+                ),
+                kind: QuizPromptKind.clozeTyped,
+                prompt: 'The train is at ____ two.',
+                options: [],
+                translation: 'รถไฟจอดอยู่ที่ชานชาลาสอง',
+                acceptedAnswers: ['platform', 'platform number'],
+                sourcePin: 'synthetic-authored-fixture',
+              ),
+              chosenAnswer: 'platform number',
               isCorrect: true,
             ),
           ],
@@ -69,6 +88,17 @@ void main() {
         findsOneWidget,
       );
     }
+    await tester.ensureVisible(find.text('The train is at ____ two.'));
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel(
+        RegExp(
+          r'(?=.*The train)(?=.*ตอบถูก)(?=.*ครั้งก่อนพิมพ์ platform number)',
+          dotAll: true,
+        ),
+      ),
+      findsOneWidget,
+    );
     semantics.dispose();
   });
 

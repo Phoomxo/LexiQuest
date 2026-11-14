@@ -1,5 +1,18 @@
 # Continuous execution checkpoint
 
+## S3 Cloze Android input and saved history
+
+- Integrated debug APK at `77f38d27` passed both normal activity entries
+  at Android font scale 2.0. Hiding the keyboard and Home pause/resume
+  preserved the typed draft. Both modes stored separate 50% results and
+  two attempts. Typed history and return were observed.
+  [Android and focused evidence](evidence/s3-f09-cloze.txt).
+- [CI 43638623614](https://github.com/Phoomxo/LexiQuest/actions/runs/43638623614)
+  passed Flutter 2,379, CPU backend 267, Firestore, Supabase and Android.
+- User declined staging a known object on vivo. That physical check remains
+  `not_checked`. Resume with the original Score repair origin on Android,
+  current-build core journey and signed/native accessibility checks.
+
 ## S5/S6 Synthetic chart and owned appearance
 
 - Source `6af5a5f430614cc99e9e4fc128c7e42bc901cc2c`. The chart's three
@@ -9,9 +22,11 @@
 - Windows focused 246 and account/entry 103 (overlapping), Firestore emulator
   34, clean integration analysis, and independent review.
   [Evidence](evidence/s5-s6-appearance-chart.txt).
-- The 48-screen list now has a source candidate for every entry. To check off
-  rows, complete native observations at current source. The next executable
-  step is to verify the integrated APK and run the full current-head CI.
+- Android API 35 verified Collection, Shop cancel, Settings focus across a
+  cold restart, standard restore, and the Personal Data chart return.
+  Installed debug SHA-256 matches the integrated APK at `77f38d27`.
+- Every screen has a source candidate. Native 200%, spoken TalkBack and
+  signed delivery acceptance remain for these appearance and chart rows.
 
 ## S6 Authored spelling stage
 
