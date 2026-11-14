@@ -6,9 +6,11 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 
 void main() {
@@ -23,6 +25,180 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test('local bookmark survives word pull and never travels on wire', () async {
+    await database.customStatement(
+      "UPDATE vocabulary_words SET is_bookmarked = 1 WHERE id = 'word-1'",
+    );
+    SyncEntity remote(String id, String spelling) => SyncEntity(
+      collection: SyncCollection.words,
+      entityId: id,
+      revision: 2,
+      isDeleted: false,
+      payloadVersion: 1,
+      clientUpdatedAtUtc: now,
+      serverUpdatedAtUtc: now.add(const Duration(seconds: 1)),
+      payload: {
+        'categoryId': 'category-1',
+        'spelling': spelling,
+        'meaning': 'สถานี',
+        'partOfSpeech': 'noun',
+        'isBookmarked': true,
+        'is_bookmarked': true,
+      },
+    );
+    await store.applyPullPage(
+      ownerId: 'owner-1',
+      collection: SyncCollection.words,
+      page: _page(remote('word-1', 'station-renamed')),
+    );
+    await store.applyPullPage(
+      ownerId: 'owner-1',
+      collection: SyncCollection.words,
+      page: _page(remote('word-new', 'depot')),
+    );
+    final rows = await database
+        .customSelect(
+          'SELECT id,spelling,is_bookmarked FROM vocabulary_words ORDER BY id',
+        )
+        .get();
+    expect(
+      rows.map(
+        (r) => (
+          r.read<String>('id'),
+          r.read<String>('spelling'),
+          r.read<int>('is_bookmarked'),
+        ),
+      ),
+      [('word-1', 'station-renamed', 1), ('word-new', 'depot', 0)],
+    );
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
+    await database.customStatement(
+      "INSERT INTO outbox_operations (operation_id,owner_id,entity_type,entity_id,operation_kind,created_at_utc_ms) VALUES ('synthetic-word-op','owner-1','word','word-1','upsert',1)",
+    );
+    final claim = (await store.claimPending(
+      ownerId: 'owner-1',
+      firebaseUid: 'synthetic-uid',
+      limit: 10,
+      leaseToken: 'synthetic-word-lease',
+      leaseDuration: const Duration(minutes: 5),
+      nowUtc: now,
+    )).single;
+    expect(claim.mutation.payload.keys.toSet(), {
+      'categoryId',
+      'spelling',
+      'normalizedSpelling',
+      'meaning',
+      'normalizedMeaning',
+      'partOfSpeech',
+      'cefrLevel',
+      'source',
+      'isGlobal',
+      'isDeleted',
+      'createdAtUtcMs',
+      'updatedAtUtcMs',
+    });
+    expect(claim.mutation.payload['spelling'], 'station-renamed');
+    expect(claim.mutation.payload, isNot(contains('isBookmarked')));
+    expect(claim.mutation.payload, isNot(contains('is_bookmarked')));
+  });
+
+  test(
+    'attempt replay preserves local round evidence and omits it from wire',
+    () async {
+      final learning = DriftLearningRepository(database);
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'session-local-v12',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: now,
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      final command = RecordAnswerCommand(
+        id: 'attempt-local-v12',
+        ownerId: 'owner-1',
+        sessionId: 'session-local-v12',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 300,
+        attemptNumber: 1,
+        occurredAtUtc: now,
+      );
+      await learning.recordAnswer(command);
+      await database.customStatement(
+        "UPDATE learning_sessions SET question_plan_json = ?, continuation_json = ? WHERE id = 'session-local-v12'",
+        ['{"synthetic":"plan"}', '{"synthetic":"cursor"}'],
+      );
+      await database.customStatement(
+        "UPDATE answer_attempts SET answer_evidence_json = ? WHERE id = 'attempt-local-v12'",
+        ['{"synthetic":"answer"}'],
+      );
+      final outgoing = (await store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'synthetic-uid',
+        limit: 10,
+        leaseToken: 'synthetic-attempt-lease',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      )).firstWhere((c) => c.mutation.collection == SyncCollection.attempts);
+      expect(outgoing.mutation.payload.keys.toSet(), {
+        'sessionId',
+        'wordId',
+        'promptMode',
+        'isCorrect',
+        'responseTimeMs',
+        'attemptNumber',
+        'occurredAtUtcMs',
+        'providerProvenance',
+      });
+      final entity = _attemptEntity(
+        id: command.id,
+        sessionId: command.sessionId,
+        occurredAt: now,
+      );
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(
+          SyncEntity(
+            collection: entity.collection,
+            entityId: entity.entityId,
+            revision: entity.revision,
+            isDeleted: entity.isDeleted,
+            payloadVersion: entity.payloadVersion,
+            clientUpdatedAtUtc: entity.clientUpdatedAtUtc,
+            serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+            payload: {
+              ...entity.payload,
+              'answerEvidenceJson': '{"synthetic":"untrusted"}',
+              'answer_evidence_json': '{"synthetic":"untrusted"}',
+              'questionPlanJson': '{"synthetic":"untrusted"}',
+              'continuationJson': '{"synthetic":"untrusted"}',
+            },
+          ),
+        ),
+      );
+      final session = await database
+          .customSelect(
+            "SELECT question_plan_json,continuation_json FROM learning_sessions WHERE id = 'session-local-v12'",
+          )
+          .getSingle();
+      final attempt = await database
+          .customSelect(
+            "SELECT answer_evidence_json FROM answer_attempts WHERE id = 'attempt-local-v12'",
+          )
+          .getSingle();
+      expect(session.data, {
+        'question_plan_json': '{"synthetic":"plan"}',
+        'continuation_json': '{"synthetic":"cursor"}',
+      });
+      expect(attempt.data['answer_evidence_json'], '{"synthetic":"answer"}');
+    },
+  );
 
   test('attempt outbox reconstructs an immutable cloud mutation', () async {
     final learning = DriftLearningRepository(database);
@@ -523,6 +699,117 @@ void main() {
     expect(await database.select(database.answerAttempts).get(), isEmpty);
   });
 
+  test(
+    'an unseen pulled attempt cannot alter a local planned Quiz round',
+    () async {
+      const ownerId = 'owner-1';
+      const sessionId = 'local-planned-round';
+      const attemptId = 'local-planned-answer';
+      final learning = DriftLearningRepository(database);
+      await learning.startSession(
+        LearningSessionDraft(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          startedAtUtc: now,
+          appVersion: 'test',
+          buildId: 'test',
+          quizPlan: QuizPlan(
+            origin: QuizOrigin(
+              route: 'category',
+              promptKind: QuizPromptKind.meaningChoice,
+              categoryId: 'category-1',
+            ),
+            questions: const [
+              QuizQuestion(
+                word: QuizWord(
+                  id: 'word-1',
+                  categoryId: 'category-1',
+                  spelling: 'station',
+                  meaning: 'สถานี',
+                  partOfSpeech: 'noun',
+                ),
+                options: ['สถานี', 'ชานชาลา'],
+              ),
+            ],
+          ),
+        ),
+      );
+      final result = await learning.recordAnswer(
+        RecordAnswerCommand(
+          id: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 300,
+          attemptNumber: 1,
+          occurredAtUtc: now,
+          quiz: (expectedRevision: 0, response: (slot: 0, selectedOption: 0)),
+        ),
+      );
+      final completed = await learning.advanceQuizRound(
+        ownerId: ownerId,
+        sessionId: sessionId,
+        expectedRevision: result.durableRound!.cursor.revision,
+        step: QuizStep.finish,
+        atUtc: now.add(const Duration(seconds: 1)),
+      );
+      expect(completed.summary!.score, 100);
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      final answer = await database.select(database.answerAttempts).getSingle();
+
+      Future<void> pull(SyncEntity entity) => store.applyPullPage(
+        ownerId: ownerId,
+        collection: SyncCollection.attempts,
+        page: _page(entity),
+      );
+      await pull(
+        _attemptEntity(id: attemptId, sessionId: sessionId, occurredAt: now),
+      );
+      final outbox = await database.select(database.outboxOperations).get();
+      final replayed = outbox.singleWhere(
+        (row) => row.entityType == 'attempt' && row.entityId == attemptId,
+      );
+      expect(replayed.state, 'conflictResolved');
+      expect(replayed.failureCode, 'identicalCloudEvidence');
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      final checkpoint = await database
+          .select(database.syncCheckpoints)
+          .getSingle();
+
+      await expectLater(
+        pull(
+          _attemptEntity(
+            id: 'unseen-remote-answer',
+            sessionId: sessionId,
+            occurredAt: now.add(const Duration(seconds: 2)),
+            attemptNumber: 2,
+            isCorrect: false,
+          ),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+
+      expect(
+        await database.select(database.learningSessions).getSingle(),
+        session,
+      );
+      expect(
+        await database.select(database.answerAttempts).getSingle(),
+        answer,
+      );
+      expect(await database.select(database.outboxOperations).get(), outbox);
+      expect(
+        await database.select(database.syncCheckpoints).getSingle(),
+        checkpoint,
+      );
+    },
+  );
+
   test('identical attempt pull repairs a missing SRS projection', () async {
     final entity = _attemptEntity(
       id: 'attempt-repair',
@@ -787,6 +1074,8 @@ SyncEntity _attemptEntity({
   required String id,
   required String sessionId,
   required DateTime occurredAt,
+  int attemptNumber = 1,
+  bool isCorrect = true,
 }) => SyncEntity(
   collection: SyncCollection.attempts,
   entityId: id,
@@ -799,9 +1088,9 @@ SyncEntity _attemptEntity({
     'sessionId': sessionId,
     'wordId': 'word-1',
     'promptMode': 'meaningChoice',
-    'isCorrect': true,
+    'isCorrect': isCorrect,
     'responseTimeMs': 300,
-    'attemptNumber': 1,
+    'attemptNumber': attemptNumber,
     'occurredAtUtcMs': occurredAt.millisecondsSinceEpoch,
     'providerProvenance': null,
   },

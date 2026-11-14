@@ -24,6 +24,9 @@ import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/source_practice.dart';
+import '../features/vocabulary/data/drift_local_content_report_repository.dart';
+import '../features/motivation/data/drift_study_preferences_repository.dart';
+import '../features/motivation/application/focus_use_cases.dart';
 import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -61,6 +64,9 @@ final class AppDependencies {
     this.vocabularyImporter,
     this.vocabularyImportFilePicker,
     this.sourcePracticeFilePicker,
+    this.localContentReports,
+    this.studyPreferences,
+    this.focus,
     this.deviceModels,
     this.account,
     this.accountDeletion,
@@ -100,8 +106,21 @@ final class AppDependencies {
   final ImportVocabulary? vocabularyImporter;
   final VocabularyImportFilePicker? vocabularyImportFilePicker;
   final SourcePracticeFilePicker? sourcePracticeFilePicker;
+  final DriftLocalContentReportRepository? localContentReports;
+  final DriftStudyPreferencesRepository? studyPreferences;
+  final FocusUseCases? focus;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
+
+  Stream<String?>? watchActiveOwnerId() {
+    final db = database;
+    if (db == null) return null;
+    return (db.select(db.localOwners)
+          ..where((row) => row.isActive.equals(true)))
+        .watch()
+        .map((rows) => rows.length == 1 ? rows.single.id : null)
+        .distinct();
+  }
 
   /// Present only when the privileged deletion backend is configured.
   final AccountDeletionUseCases? accountDeletion;

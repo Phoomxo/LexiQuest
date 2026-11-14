@@ -59,6 +59,10 @@ EXPORT_V11_SCOPES = CLOUD_DELETION_SCOPES | frozenset(
     }
 )
 
+EXPORT_V12_SCOPES = EXPORT_V11_SCOPES | frozenset(
+    {"local_content_reports", "focus_sessions", "learning_preferences"}
+)
+
 _KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{16,128}$")
 _OWNER_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
@@ -81,7 +85,9 @@ class FullExportReceipt(BaseModel):
         expected = (
             CLOUD_DELETION_SCOPES
             if self.schema_version <= 10
-            else EXPORT_V11_SCOPES if self.schema_version == 11 else None
+            else EXPORT_V11_SCOPES if self.schema_version == 11
+            else EXPORT_V12_SCOPES if self.schema_version == 12
+            else None
         )
         if self.covered_scopes != expected:
             raise ValueError("export must cover the complete account scope")

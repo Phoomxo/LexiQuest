@@ -1,4 +1,5 @@
 import 'learning_models.dart';
+import 'quiz_round.dart';
 
 abstract interface class LearningRepository {
   /// A null limit reads the complete matching pool for prompt eligibility.
@@ -36,4 +37,26 @@ abstract interface class LearningRepository {
   Future<ReadingProgressSnapshot> saveReadingProgress(
     ReadingProgressCommand command,
   );
+}
+
+abstract interface class DurableQuizRepository implements LearningRepository {
+  Future<QuizRound?> loadQuizRound({
+    required String ownerId,
+    required String sessionId,
+  });
+
+  Future<QuizRound?> findOpenQuizRound({
+    required String ownerId,
+    required QuizOrigin origin,
+    bool skipUnavailable = false,
+  });
+
+  Future<QuizRound> advanceQuizRound({
+    required String ownerId,
+    required String sessionId,
+    required int expectedRevision,
+    required QuizStep step,
+    required DateTime atUtc,
+    int activeResponseMs = 0,
+  });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -422,6 +423,315 @@ void main() {
     expect(repository.watchCalls, 2);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'saved words persist across pages and remain within their vocabulary set',
+    (tester) async {
+      final vocabulary = dependencies.vocabulary!;
+      late domain_vocabulary.VocabularyCategory travel;
+      late domain_word.VocabularyWord station;
+      await tester.runAsync(() async {
+        travel = await vocabulary.createCategory('Travel');
+        station = await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: travel.id,
+            spelling: 'station',
+            meaning: 'สถานี',
+            partOfSpeech: 'noun',
+          ),
+        );
+        await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: travel.id,
+            spelling: 'ticket',
+            meaning: 'ตั๋ว',
+            partOfSpeech: 'noun',
+          ),
+        );
+        final nature = await vocabulary.createCategory('Nature');
+        final ocean = await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: nature.id,
+            spelling: 'ocean',
+            meaning: 'มหาสมุทร',
+            partOfSpeech: 'noun',
+          ),
+        );
+        await vocabulary.setBookmarked(
+          expectedOwnerId: ocean.ownerId,
+          wordId: ocean.id,
+          bookmarked: true,
+        );
+      });
+
+      Future<void> expectStoredBookmark(bool expected) async {
+        for (var index = 0; index < 50; index++) {
+          final stored = await tester.runAsync(() async {
+            final words = await database.select(database.vocabularyWords).get();
+            return words.singleWhere((word) => word.id == station.id);
+          });
+          await tester.pump(const Duration(milliseconds: 20));
+          if (stored?.isBookmarked == expected) break;
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        await tester.runAsync(() async {
+          final words = await database.select(database.vocabularyWords).get();
+          final stored = words.singleWhere((word) => word.id == station.id);
+          expect(stored.isBookmarked, expected);
+          expect(stored.ownerId, station.ownerId);
+          expect(stored.categoryId, travel.id);
+          expect(stored.spelling, 'station');
+          expect(stored.isDeleted, isFalse);
+          expect(
+            words.singleWhere((word) => word.spelling == 'ocean').isBookmarked,
+            isTrue,
+          );
+        });
+      }
+
+      Future<void> waitForSavedWordsUi({String? dismissedAction}) async {
+        final savedChip = find.widgetWithText(ChoiceChip, 'คำที่เก็บไว้');
+        for (var index = 0; index < 50; index++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          final sheetClosed =
+              dismissedAction == null ||
+              find.text(dismissedAction).evaluate().isEmpty;
+          if (sheetClosed &&
+              savedChip.evaluate().length == 1 &&
+              tester.widget<ChoiceChip>(savedChip).selected &&
+              find.text('ticket').evaluate().isEmpty) {
+            return;
+          }
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        if (dismissedAction != null) {
+          expect(find.text(dismissedAction), findsNothing);
+        }
+        expect(tester.widget<ChoiceChip>(savedChip).selected, isTrue);
+        expect(find.text('ticket'), findsNothing);
+      }
+
+      try {
+        await pumpCategories(tester);
+        await pumpUntilFound(tester, find.text('Travel'));
+        await tester.tap(find.text('Travel'));
+        await pumpUntilFound(tester, find.text('station'));
+        await finishRouteTransition(tester);
+        expect(find.text('ticket'), findsOneWidget);
+        expect(find.byTooltip('ลบคำศัพท์ station'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('จัดการคำนี้ station'));
+        await pumpUntilFound(tester, find.text('เก็บไว้อ่านอีกครั้ง'));
+        await finishRouteTransition(tester);
+        await tester.tap(find.text('เก็บไว้อ่านอีกครั้ง'));
+        await finishRouteTransition(tester);
+        await expectStoredBookmark(true);
+        await waitForSavedWordsUi(dismissedAction: 'เก็บไว้อ่านอีกครั้ง');
+        expect(find.text('station'), findsOneWidget);
+        expect(find.text('ticket'), findsNothing);
+        expect(find.text('ocean'), findsNothing);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await pumpCategories(tester);
+        await pumpUntilFound(tester, find.text('Travel'));
+        await tester.tap(find.text('Travel'));
+        await pumpUntilFound(tester, find.text('station'));
+        await finishRouteTransition(tester);
+        await tester.tap(find.text('คำที่เก็บไว้'));
+        await waitForSavedWordsUi();
+        expect(find.text('station'), findsOneWidget);
+        expect(find.text('ticket'), findsNothing);
+        expect(find.text('ocean'), findsNothing);
+        await expectStoredBookmark(true);
+
+        await tester.tap(find.byTooltip('จัดการคำนี้ station'));
+        await pumpUntilFound(tester, find.text('นำออกจากรายการคำที่เก็บไว้'));
+        await finishRouteTransition(tester);
+        await tester.tap(find.text('นำออกจากรายการคำที่เก็บไว้'));
+        await pumpUntilFound(tester, find.text('ยังไม่มีคำที่เก็บไว้'));
+        await finishRouteTransition(tester);
+        await expectStoredBookmark(false);
+        await waitForSavedWordsUi(
+          dismissedAction: 'นำออกจากรายการคำที่เก็บไว้',
+        );
+        expect(find.text('station'), findsNothing);
+        await tester.tap(find.text('คำทั้งหมด'));
+        await pumpUntilFound(tester, find.text('station'));
+        expect(find.text('ticket'), findsOneWidget);
+        expect(find.text('ocean'), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.runAsync(database.close);
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'open bookmark sheet hides the old word after an active owner switch',
+    (tester) async {
+      final vocabulary = dependencies.vocabulary!;
+      const nextOwner = 'local:bookmark-owner-b';
+      const privateWord = 'synthetic-private-a';
+      const privateMeaning = 'คำของบัญชีเดิม';
+      const saveLabel = 'เก็บไว้อ่านอีกครั้ง';
+      try {
+        Future<void> activate(String ownerId) => database.transaction(() async {
+          await (database.update(database.localOwners)
+                ..where((row) => row.isActive.equals(true)))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          final changed =
+              await (database.update(database.localOwners)
+                    ..where((row) => row.id.equals(ownerId)))
+                  .write(const LocalOwnersCompanion(isActive: Value(true)));
+          if (changed != 1) throw StateError('Fixture must activate one owner');
+        });
+
+        Future<(List<VocabularyWord>, List<OutboxOperation>)>
+        snapshot() async => (
+          await database.select(database.vocabularyWords).get(),
+          await database.select(database.outboxOperations).get(),
+        );
+
+        Future<
+          ({
+            String originalOwner,
+            (List<VocabularyWord>, List<OutboxOperation>) rows,
+          })
+        >
+        seed() async {
+          final category = await vocabulary.createCategory('ชุดคำ A');
+          final word = await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: privateWord,
+              meaning: privateMeaning,
+              partOfSpeech: 'noun',
+            ),
+          );
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: nextOwner,
+                  createdAtUtcMs: nowUtc.millisecondsSinceEpoch,
+                  isActive: const Value(false),
+                ),
+              );
+          await activate(nextOwner);
+          final otherCategory = await vocabulary.createCategory('ชุดคำ B');
+          await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: otherCategory.id,
+              spelling: 'synthetic-private-b',
+              meaning: 'คำของบัญชีใหม่',
+              partOfSpeech: 'noun',
+            ),
+          );
+          await activate(word.ownerId);
+          return (originalOwner: word.ownerId, rows: await snapshot());
+        }
+
+        final seeded = (await tester.runAsync(
+          () => seed().timeout(const Duration(seconds: 5)),
+        ))!;
+
+        await pumpCategories(tester);
+        await pumpUntilFound(tester, find.text('ชุดคำ A'));
+        await tester.tap(find.text('ชุดคำ A'));
+        await pumpUntilFound(tester, find.text(privateWord));
+        await finishRouteTransition(tester);
+        await tester.tap(find.byTooltip('จัดการคำนี้ $privateWord'));
+        final save = find.widgetWithText(FilledButton, saveLabel);
+        await pumpUntilFound(tester, save.hitTestable());
+        final sheetText = find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text(privateWord),
+        );
+        expect(sheetText, findsOneWidget);
+        expect(find.text(privateMeaning), findsWidgets);
+        final lateTap = tester.widget<FilledButton>(save).onPressed!;
+
+        var switched = false;
+        final switching = activate(
+          nextOwner,
+        ).whenComplete(() => switched = true);
+        unawaited(switching.then<void>((_) {}, onError: (Object _) {}));
+
+        for (var index = 0; index < 50; index++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          if (switched &&
+              find.text(privateWord).evaluate().isEmpty &&
+              find.text(privateMeaning).evaluate().isEmpty &&
+              save.evaluate().isEmpty) {
+            break;
+          }
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+        }
+        expect(switched, isTrue, reason: 'the active owner switch must finish');
+        await switching;
+        await finishRouteTransition(tester);
+        expect(find.text(privateWord), findsNothing);
+        expect(find.text(privateMeaning), findsNothing);
+        expect(save, findsNothing);
+
+        final visibleBeforeTap = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((widget) => widget.data)
+            .whereType<String>()
+            .toList();
+        lateTap();
+        await finishRouteTransition(tester);
+        expect(tester.takeException(), isNull);
+        expect(
+          tester
+              .widgetList<Text>(find.byType(Text))
+              .map((widget) => widget.data)
+              .whereType<String>()
+              .toList(),
+          visibleBeforeTap,
+        );
+        final after = (await tester.runAsync(
+          () => snapshot().timeout(const Duration(seconds: 5)),
+        ))!;
+        expect(after.$1, seeded.rows.$1);
+        expect(after.$2, seeded.rows.$2);
+        expect(
+          after.$1.map((row) => row.ownerId),
+          unorderedEquals([seeded.originalOwner, nextOwner]),
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        var closed = false;
+        final closing = database.close().whenComplete(() => closed = true);
+        unawaited(closing.then<void>((_) {}, onError: (Object _) {}));
+        for (var index = 0; index < 80 && !closed; index++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          await tester.pump(const Duration(milliseconds: 20));
+        }
+        expect(
+          closed,
+          isTrue,
+          reason: 'database close must finish after unmount',
+        );
+        await closing;
+        await tester.pump();
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
   testWidgets(
     'guest vocabulary survives widget reconstruction without cloud',

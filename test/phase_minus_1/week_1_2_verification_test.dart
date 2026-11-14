@@ -255,7 +255,7 @@ void main() {
     });
 
     test(
-      'current database retains the v7-v10 tables and adds reserved v11 tables',
+      'current database retains historical tables and adds reserved v12 tables',
       () async {
         final database = AppDatabase(NativeDatabase.memory());
         addTearDown(database.close);
@@ -279,15 +279,18 @@ void main() {
             'quest_claim_receipts',
             'streak_baselines',
             'streak_token_adjustments',
+            'local_content_reports',
+            'focus_sessions',
+            'learning_preferences',
           ]),
         );
       },
     );
 
-    test('current database persists reserved schema version 11', () async {
+    test('current database persists reserved schema version 12', () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 11);
+      expect(database.schemaVersion, 12);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),

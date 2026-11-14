@@ -9,6 +9,7 @@ import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/quiz_round.dart';
 import '../domain/srs_policy.dart';
 import '../domain/answer_motivation_evidence.dart';
 
@@ -20,7 +21,7 @@ typedef AnswerCalendarCapture =
       DateTime? epochExpiresAtUtc,
     });
 
-final class DriftLearningRepository implements LearningRepository {
+final class DriftLearningRepository implements DurableQuizRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -79,6 +80,7 @@ final class DriftLearningRepository implements LearningRepository {
             spelling: row.spelling,
             meaning: row.meaning,
             partOfSpeech: row.partOfSpeech,
+            localRevision: row.localRevision,
           ),
         )
         .toList(growable: false);
@@ -89,6 +91,25 @@ final class DriftLearningRepository implements LearningRepository {
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
     await database.transaction(() async {
       await _requireActiveOwner(session.ownerId);
+      final plan = session.quizPlan;
+      final encodedPlan = plan == null ? null : encodeQuizPlan(plan);
+      final existing = await _session(session.ownerId, session.id);
+      if (existing != null &&
+          (plan != null || existing.questionPlanJson != null)) {
+        if (existing.questionPlanJson != encodedPlan ||
+            existing.activityType != session.activityType ||
+            existing.startedAtUtcMs != startedAt.millisecondsSinceEpoch ||
+            existing.appVersion != session.appVersion ||
+            existing.buildId != session.buildId) {
+          throw StateError('Session ID already has a different quiz plan');
+        }
+        return;
+      }
+      if (plan != null) {
+        for (final question in plan.questions) {
+          await _requireQuizWord(session.ownerId, question.word);
+        }
+      }
       await database
           .into(database.learningSessions)
           .insert(
@@ -100,8 +121,14 @@ final class DriftLearningRepository implements LearningRepository {
               startedAtUtcMs: startedAt.millisecondsSinceEpoch,
               appVersion: _required(session.appVersion, 'appVersion'),
               buildId: _required(session.buildId, 'buildId'),
+              questionPlanJson: Value(encodedPlan),
+              continuationJson: Value(
+                plan == null
+                    ? null
+                    : encodeQuizCursor(initialQuizCursor, plan: plan),
+              ),
             ),
-            mode: InsertMode.insertOrIgnore,
+            mode: plan == null ? InsertMode.insertOrIgnore : InsertMode.insert,
           );
     });
   }
@@ -118,6 +145,16 @@ final class DriftLearningRepository implements LearningRepository {
         if (!_sameAttempt(existing, command)) {
           throw StateError('attempt id already exists with different evidence');
         }
+        final round = await _roundForAttempt(command);
+        final expectedEvidence = command.quiz == null || round == null
+            ? null
+            : encodeQuizResponse(command.quiz!.response, plan: round.plan);
+        if (existing.answerEvidenceJson != expectedEvidence ||
+            (round != null) != (command.quiz != null)) {
+          throw StateError(
+            'attempt id already exists with different quiz evidence',
+          );
+        }
         final srs = await projections.rebuildWord(
           ownerId: command.ownerId,
           wordId: command.wordId,
@@ -128,7 +165,11 @@ final class DriftLearningRepository implements LearningRepository {
         );
         await projections.rebuildAchievements(command.ownerId);
         await _rebuildOptionalRewards(command.ownerId);
-        return AnswerRecordResult(inserted: false, srs: srs);
+        return AnswerRecordResult(
+          inserted: false,
+          srs: srs,
+          durableRound: round,
+        );
       }
 
       final session =
@@ -151,7 +192,41 @@ final class DriftLearningRepository implements LearningRepository {
               ))
               .getSingleOrNull();
       if (word == null) {
+        if (command.quiz != null) throw QuizVocabularyChanged();
         throw StateError('active vocabulary word not found');
+      }
+
+      final round = await _readRound(session);
+      final admission = command.quiz;
+      String? answerEvidence;
+      if (round != null && admission != null) {
+        final cursor = round.cursor;
+        final question = round.plan.questions[cursor.slot];
+        final response = admission.response;
+        answerEvidence = encodeQuizResponse(response, plan: round.plan);
+        final choice = response.selectedOption;
+        if (cursor.phase != QuizPhase.awaitingAnswer ||
+            cursor.revision != admission.expectedRevision ||
+            cursor.slot != response.slot ||
+            question.word.id != command.wordId ||
+            question.kind.name != command.promptMode ||
+            command.attemptNumber != round.committedAnswers + 1 ||
+            (command.responseTimeMs ?? -1) < cursor.activeResponseMs ||
+            command.isCorrect !=
+                (choice != null &&
+                    question.options[choice] == question.correctAnswer)) {
+          throw StateError('Quiz answer does not match the current question');
+        }
+        await _requireQuizWord(command.ownerId, question.word, row: word);
+        await _saveQuizCursor(session, round.plan, (
+          revision: cursor.revision + 1,
+          slot: cursor.slot,
+          phase: QuizPhase.feedback,
+          lastAttemptId: command.id,
+          activeResponseMs: command.responseTimeMs!,
+        ));
+      } else if (round != null || admission != null) {
+        throw StateError('Quiz answer admission is missing or unexpected');
       }
 
       String? calendarEvidence;
@@ -184,6 +259,7 @@ final class DriftLearningRepository implements LearningRepository {
               providerProvenance: Value(command.providerProvenance),
               calendarEvidence: Value(calendarEvidence),
               questIntent: Value(questIntent),
+              answerEvidenceJson: Value(answerEvidence),
             ),
           );
       final next = await projections.rebuildWord(
@@ -210,7 +286,11 @@ final class DriftLearningRepository implements LearningRepository {
         entityId: command.wordId,
         occurredAtUtc: command.occurredAtUtc,
       );
-      return AnswerRecordResult(inserted: true, srs: next);
+      return AnswerRecordResult(
+        inserted: true,
+        srs: next,
+        durableRound: round == null ? null : await _roundForAttempt(command),
+      );
     });
   }
 
@@ -343,6 +423,284 @@ final class DriftLearningRepository implements LearningRepository {
     }
   }
 
+  Future<db.LearningSession?> _session(String ownerId, String id) =>
+      (database.select(database.learningSessions)
+            ..where((row) => row.id.equals(id) & row.ownerId.equals(ownerId)))
+          .getSingleOrNull();
+
+  Future<void> _requireQuizWord(
+    String ownerId,
+    QuizWord word, {
+    db.VocabularyWord? row,
+  }) async {
+    row ??= await (database.select(
+      database.vocabularyWords,
+    )..where((candidate) => candidate.id.equals(word.id))).getSingleOrNull();
+    final category =
+        await (database.select(database.vocabularyCategories)..where(
+              (candidate) =>
+                  candidate.id.equals(word.categoryId) &
+                  candidate.ownerId.equals(ownerId) &
+                  candidate.isDeleted.equals(false),
+            ))
+            .getSingleOrNull();
+    if (row == null ||
+        category == null ||
+        row.ownerId != ownerId ||
+        row.isDeleted ||
+        row.categoryId != word.categoryId ||
+        row.localRevision != word.localRevision ||
+        row.spelling != word.spelling ||
+        row.meaning != word.meaning ||
+        row.partOfSpeech != word.partOfSpeech) {
+      throw QuizVocabularyChanged();
+    }
+  }
+
+  Future<QuizRound?> _roundForAttempt(RecordAnswerCommand command) async {
+    final session = await _session(command.ownerId, command.sessionId);
+    return session == null ? null : _readRound(session);
+  }
+
+  Future<QuizRound?> _readRound(
+    db.LearningSession session, {
+    QuizPlan? plan,
+  }) async {
+    final encodedPlan = session.questionPlanJson;
+    final continuation = session.continuationJson;
+    if (encodedPlan == null && continuation == null) return null;
+    if (encodedPlan == null || continuation == null) {
+      throw StateError('Incomplete stored quiz round');
+    }
+    plan ??= decodeQuizPlan(encodedPlan);
+    final cursor = decodeQuizCursor(continuation, plan: plan);
+    final completed = session.state == 'completed';
+    if ((session.state != 'active' &&
+            session.state != 'paused' &&
+            !completed) ||
+        completed != (cursor.phase == QuizPhase.finished)) {
+      throw StateError('Stored quiz state and cursor disagree');
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(session.ownerId) &
+                    row.sessionId.equals(session.id),
+              )
+              ..orderBy([(row) => OrderingTerm.asc(row.attemptNumber)]))
+            .get();
+    QuizResponse? feedback;
+    final mistakes = <String, QuizWord>{};
+    for (final attempt in attempts) {
+      final evidence = attempt.answerEvidenceJson;
+      if (evidence == null) throw StateError('Quiz answer evidence is missing');
+      final response = decodeQuizResponse(evidence, plan: plan);
+      final word = plan.questions[response.slot].word;
+      if (!attempt.isCorrect) mistakes[word.id] = word;
+      if (attempt.id == cursor.lastAttemptId) feedback = response;
+    }
+    if (cursor.lastAttemptId != null && feedback?.slot != cursor.slot) {
+      throw StateError('Stored quiz feedback does not match the cursor');
+    }
+    return QuizRound(
+      sessionId: session.id,
+      startedAtUtc: _fromEpoch(session.startedAtUtcMs)!,
+      plan: plan,
+      cursor: cursor,
+      isPaused: session.state == 'paused',
+      committedAnswers: attempts.length,
+      feedback: feedback,
+      mistakes: mistakes.values,
+      summary: completed ? _summary(session) : null,
+    );
+  }
+
+  Future<void> _saveQuizCursor(
+    db.LearningSession row,
+    QuizPlan plan,
+    QuizCursor cursor, {
+    String? state,
+    DateTime? endedAtUtc,
+  }) async {
+    final updated =
+        await (database.update(database.learningSessions)..where(
+              (candidate) =>
+                  candidate.id.equals(row.id) &
+                  candidate.ownerId.equals(row.ownerId) &
+                  candidate.state.equals(row.state) &
+                  candidate.continuationJson.equals(row.continuationJson!),
+            ))
+            .write(
+              db.LearningSessionsCompanion(
+                continuationJson: Value(encodeQuizCursor(cursor, plan: plan)),
+                state: state == null ? const Value.absent() : Value(state),
+                endedAtUtcMs: endedAtUtc == null
+                    ? const Value.absent()
+                    : Value(endedAtUtc.millisecondsSinceEpoch),
+                score: endedAtUtc == null
+                    ? const Value.absent()
+                    : Value(_score(row)),
+              ),
+            );
+    if (updated != 1) throw StateError('Quiz cursor changed');
+  }
+
+  @override
+  Future<QuizRound?> loadQuizRound({
+    required String ownerId,
+    required String sessionId,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, sessionId);
+    return row == null ? null : _readRound(row);
+  });
+
+  @override
+  Future<QuizRound?> findOpenQuizRound({
+    required String ownerId,
+    required QuizOrigin origin,
+    bool skipUnavailable = false,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final rows =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.state.isIn(['active', 'paused']) &
+                    row.questionPlanJson.isNotNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.startedAtUtcMs),
+                (row) => OrderingTerm.desc(row.id),
+              ]))
+            .get();
+    for (final row in rows) {
+      final QuizPlan plan;
+      try {
+        plan = decodeQuizPlan(row.questionPlanJson!);
+      } on FormatException {
+        continue;
+      }
+      if (plan.origin != origin) continue;
+      final round = (await _readRound(row, plan: plan))!;
+      try {
+        final cursor = round.cursor;
+        final firstPending =
+            cursor.slot + (cursor.phase == QuizPhase.feedback ? 1 : 0);
+        for (final question in plan.questions.skip(firstPending)) {
+          await _requireQuizWord(ownerId, question.word);
+        }
+      } on QuizVocabularyChanged {
+        if (!skipUnavailable) rethrow;
+        continue;
+      }
+      return round;
+    }
+    return null;
+  });
+
+  @override
+  Future<QuizRound> advanceQuizRound({
+    required String ownerId,
+    required String sessionId,
+    required int expectedRevision,
+    required QuizStep step,
+    required DateTime atUtc,
+    int activeResponseMs = 0,
+  }) => database.transaction(() async {
+    _requiredUtc(atUtc, 'atUtc');
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, sessionId);
+    final round = row == null ? null : await _readRound(row);
+    if (row == null || round == null) throw StateError('Quiz round not found');
+    final cursor = round.cursor;
+    if (cursor.phase == QuizPhase.finished && step == QuizStep.finish) {
+      return round;
+    }
+    if (cursor.revision != expectedRevision ||
+        cursor.phase == QuizPhase.finished) {
+      throw StateError('Quiz cursor changed');
+    }
+    final feedback = cursor.phase == QuizPhase.feedback;
+    var slot = cursor.slot;
+    var phase = cursor.phase;
+    var lastAttempt = cursor.lastAttemptId;
+    var elapsed = cursor.activeResponseMs;
+    var state = row.state;
+    DateTime? ended;
+    switch (step) {
+      case QuizStep.pause:
+        if (round.isPaused ||
+            activeResponseMs < 0 ||
+            activeResponseMs > LearningEvidenceContract.maxResponseTimeMs) {
+          throw StateError('Quiz cannot be paused');
+        }
+        if (!feedback && activeResponseMs > elapsed) elapsed = activeResponseMs;
+        state = 'paused';
+      case QuizStep.resume:
+        if (!round.isPaused) throw StateError('Quiz is not paused');
+        for (final question in round.plan.questions.skip(
+          slot + (feedback ? 1 : 0),
+        )) {
+          await _requireQuizWord(ownerId, question.word);
+        }
+        state = 'active';
+      case QuizStep.retryQuestion:
+      case QuizStep.next:
+        if (round.isPaused || !feedback) {
+          throw StateError('Quiz feedback is required');
+        }
+        if (step == QuizStep.next) slot++;
+        if (slot >= round.plan.questions.length) {
+          throw StateError('Quiz is at its last question');
+        }
+        await _requireQuizWord(ownerId, round.plan.questions[slot].word);
+        phase = QuizPhase.awaitingAnswer;
+        lastAttempt = null;
+        elapsed = 0;
+      case QuizStep.finish:
+        if (round.isPaused ||
+            !feedback ||
+            slot != round.plan.questions.length - 1) {
+          throw StateError('Final quiz feedback is required');
+        }
+        phase = QuizPhase.finished;
+        state = 'completed';
+        ended = atUtc;
+    }
+    await _saveQuizCursor(
+      row,
+      round.plan,
+      (
+        revision: cursor.revision + 1,
+        slot: slot,
+        phase: phase,
+        lastAttemptId: lastAttempt,
+        activeResponseMs: elapsed,
+      ),
+      state: state,
+      endedAtUtc: ended,
+    );
+    if (ended != null) await projections.rebuildAchievements(ownerId);
+    return (await _readRound((await _session(ownerId, sessionId))!))!;
+  });
+
+  int _score(db.LearningSession row) {
+    final total = row.correctCount + row.wrongCount;
+    return total == 0 ? 0 : ((row.correctCount * 100) / total).round();
+  }
+
+  LearningSessionSummary _summary(db.LearningSession row) =>
+      LearningSessionSummary(
+        id: row.id,
+        state: row.state,
+        correctCount: row.correctCount,
+        wrongCount: row.wrongCount,
+        score: row.score ?? _score(row),
+      );
+
   @override
   Future<LearningSessionSummary> finishSession({
     required String ownerId,
@@ -360,8 +718,13 @@ final class DriftLearningRepository implements LearningRepository {
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
-      final total = row.correctCount + row.wrongCount;
-      final score = total == 0 ? 0 : ((row.correctCount * 100) / total).round();
+      if (row.state != 'completed' &&
+          (row.state != 'active' ||
+              row.questionPlanJson != null ||
+              row.continuationJson != null)) {
+        throw StateError('Learning session cannot finish through this command');
+      }
+      final score = row.score ?? _score(row);
       if (row.state != 'completed') {
         await (database.update(
           database.learningSessions,

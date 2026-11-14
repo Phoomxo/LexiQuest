@@ -31,6 +31,238 @@ void main() {
     await database.close();
   });
 
+  group('v12 study owner merge', () {
+    Future<List<Map<String, Object?>>> rows(String table) async =>
+        (await database
+                .customSelect('SELECT * FROM "$table" ORDER BY rowid')
+                .get())
+            .map((r) => r.data)
+            .toList();
+
+    Future<void> merge() async {
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      expect(result.targetOwnerId, 'account-owner');
+    }
+
+    Future<void> expectStableReplay() async {
+      final before = {
+        for (final table in database.allTables)
+          table.actualTableName: await rows(table.actualTableName),
+      };
+      final replay = await repository.upgrade(
+        activeOwnerId: 'account-owner',
+        firebaseUid: 'firebase-user',
+      );
+      expect(replay.mode, OwnerUpgradeMode.alreadyBound);
+      for (final entry in before.entries) {
+        expect(await rows(entry.key), entry.value, reason: entry.key);
+      }
+    }
+
+    test(
+      'bookmarks merge by exact sense without restoring deleted target words',
+      () async {
+        for (final owner in ['guest-owner', 'account-owner']) {
+          await database.customStatement(
+            'INSERT INTO vocabulary_categories '
+            '(id,owner_id,name,normalized_name,created_at_utc_ms,updated_at_utc_ms) '
+            "VALUES (?,?,'Travel','travel',1,2)",
+            ['cat-$owner', owner],
+          );
+        }
+        for (final (id, owner, meaning, marked, deleted) in [
+          ('guest-same', 'guest-owner', 'railway', 1, 0),
+          ('target-same', 'account-owner', 'railway', 0, 0),
+          ('guest-deleted', 'guest-owner', 'broadcast', 1, 0),
+          ('target-deleted', 'account-owner', 'broadcast', 0, 1),
+          ('guest-distinct', 'guest-owner', 'post', 1, 0),
+          ('target-distinct', 'account-owner', 'stop', 0, 0),
+          ('target-marked', 'account-owner', 'base', 1, 0),
+        ]) {
+          await database.customStatement(
+            'INSERT INTO vocabulary_words (id,owner_id,category_id,spelling,normalized_spelling,'
+            'meaning,normalized_meaning,part_of_speech,is_bookmarked,is_deleted,created_at_utc_ms,updated_at_utc_ms) '
+            "VALUES (?,?,?,'station','station',?,?,'noun',?,?,3,4)",
+            [id, owner, 'cat-$owner', meaning, meaning, marked, deleted],
+          );
+        }
+        final targetBefore = (await rows(
+          'vocabulary_words',
+        )).where((r) => r['owner_id'] == 'account-owner').toList();
+        await merge();
+        final words = await rows('vocabulary_words');
+        expect(words, hasLength(5));
+        for (final before in targetBefore) {
+          final marked = [
+            'target-same',
+            'target-deleted',
+            'target-marked',
+          ].contains(before['id']);
+          expect(words.singleWhere((r) => r['id'] == before['id']), {
+            ...before,
+            'is_bookmarked': marked ? 1 : 0,
+          });
+        }
+        final moved = words.singleWhere((r) => r['id'] == 'guest-distinct');
+        expect(
+          (
+            moved['owner_id'],
+            moved['category_id'],
+            moved['is_bookmarked'],
+            moved['meaning'],
+          ),
+          ('account-owner', 'cat-account-owner', 1, 'post'),
+        );
+        await expectStableReplay();
+      },
+    );
+
+    Future<void> focus(String owner, String state) async {
+      await database.customStatement(
+        'INSERT INTO owner_calendar_epochs (rule_id,owner_id,origin_owner_id,'
+        'effective_utc_us,iana_id,tzdb_revision,is_selected) '
+        "VALUES (?,?,?,0,'UTC','synthetic-retained-revision',1)",
+        ['rule-$owner', owner, owner],
+      );
+      await database.customStatement(
+        'INSERT INTO focus_sessions (id,owner_id,origin_owner_id,target_ms,started_at_utc_ms,'
+        'start_rule_id,start_civil_week,state,revision,spans_json) VALUES (?,?,?,300000,10,?,?,?,4,?)',
+        [
+          'focus-$owner',
+          owner,
+          owner,
+          'rule-$owner',
+          '2026-07-27',
+          state,
+          '{ "version": 1, "spans": [{"kind":"active","elapsedMs":1234}] }',
+        ],
+      );
+    }
+
+    for (final (guestState, hasTarget) in [
+      ('running', true),
+      ('paused', true),
+      ('running', false),
+      ('paused', false),
+    ]) {
+      test(
+        'rehome $guestState focus with targetOpen=$hasTarget preserves measured history',
+        () async {
+          await focus('guest-owner', guestState);
+          if (hasTarget) {
+            await focus('account-owner', 'paused');
+          }
+          await database.customStatement(
+            'INSERT INTO local_content_reports '
+            '(id,owner_id,source_kind,source_id,source_revision,spelling,meaning,sentence,reason,created_at_utc_ms) '
+            "VALUES ('report','guest-owner','localPassage','retained-source',3,'station','สถานี','Original sentence.','sentenceTypo',17)",
+          );
+          final before = await rows('focus_sessions');
+          final reports = await rows('local_content_reports');
+          final rules = await rows('owner_calendar_epochs');
+          await merge();
+          expect(await rows('local_content_reports'), [
+            for (final report in reports)
+              {...report, 'owner_id': 'account-owner'},
+          ]);
+          final after = await rows('focus_sessions');
+          for (final original in before) {
+            final row = after.singleWhere((r) => r['id'] == original['id']);
+            final guest = original['owner_id'] == 'guest-owner';
+            final interrupted = guest && (guestState == 'running' || hasTarget);
+            final expected = {
+              ...original,
+              'owner_id': 'account-owner',
+              if (interrupted) 'state': 'interrupted',
+            };
+            // Preserve the measured spans and the unknown end of the old lease.
+            expect(
+              row['revision'],
+              interrupted
+                  ? greaterThanOrEqualTo(original['revision'] as int)
+                  : original['revision'],
+            );
+            expected['revision'] = row['revision'];
+            expect(row, expected);
+          }
+          for (final original in rules) {
+            final retained = (await rows(
+              'owner_calendar_epochs',
+            )).singleWhere((r) => r['rule_id'] == original['rule_id']);
+            expect(retained['owner_id'], 'account-owner');
+            expect(retained['origin_owner_id'], original['origin_owner_id']);
+            expect(retained['iana_id'], original['iana_id']);
+            expect(retained['tzdb_revision'], original['tzdb_revision']);
+          }
+          for (final table in [
+            'answer_attempts',
+            'learning_sessions',
+            'points_ledger_entries',
+            'reward_transactions',
+            'achievement_unlocks',
+            'events_v2',
+            'outbox_operations',
+          ]) {
+            expect(await rows(table), isEmpty, reason: table);
+          }
+          await expectStableReplay();
+        },
+      );
+    }
+
+    for (final target in ['skipped', 'completed', 'unset', 'absent']) {
+      test(
+        'preferences preserve $target target decisions and fill nullable choices',
+        () async {
+          await database.customStatement(
+            'INSERT INTO learning_preferences (owner_id,onboarding_state,purpose,planned_minutes,'
+            'learning_method,goal_state,goal_civil_date,updated_at_utc_ms) '
+            "VALUES ('guest-owner','completed','travel',5,'read','active','2026-12-01',90)",
+          );
+          final goalState = target == 'skipped'
+              ? 'closed'
+              : target == 'completed'
+              ? 'active'
+              : 'unset';
+          final goalDate = target == 'completed' ? '2026-11-20' : null;
+          if (target != 'absent') {
+            await database.customStatement(
+              'INSERT INTO learning_preferences (owner_id,onboarding_state,purpose,planned_minutes,'
+              'learning_method,goal_state,goal_civil_date,updated_at_utc_ms) VALUES (?,?,?,?,?,?,?,?)',
+              [
+                'account-owner',
+                target,
+                target == 'skipped' ? 'work' : null,
+                target == 'completed' ? 10 : null,
+                target == 'unset' ? 'speak' : null,
+                goalState,
+                goalDate,
+                target == 'completed' ? 100 : 60,
+              ],
+            );
+          }
+          await merge();
+          expect(await rows('learning_preferences'), [
+            {
+              'owner_id': 'account-owner',
+              'onboarding_state': target == 'skipped' ? 'skipped' : 'completed',
+              'purpose': target == 'skipped' ? 'work' : 'travel',
+              'planned_minutes': target == 'completed' ? 10 : 5,
+              'learning_method': target == 'unset' ? 'speak' : 'read',
+              'goal_state': goalState == 'unset' ? 'active' : goalState,
+              'goal_civil_date': goalState == 'unset' ? '2026-12-01' : goalDate,
+              'updated_at_utc_ms': target == 'completed' ? 100 : 90,
+            },
+          ]);
+          await expectStableReplay();
+        },
+      );
+    }
+  });
+
   test('merge duplicate earned badge leaves no dangling pending sync operation', () async {
     await _seedEveryOwnerScopedTable(database);
     await database.customInsert(
@@ -641,7 +873,9 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('import-row-1', 'import-1', 1, 'row-hash-1', 'accepted', NULL, 'word-1')",
   );
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions "
+    "(id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, "
+    "correct_count, wrong_count, score, app_version, build_id) VALUES "
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
@@ -817,6 +1051,26 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('ams-seed-1', 'guest-owner', 'banana', 1.0, 5.0, 0.0, "
     "0, 1722844800000, 'v1.0.0')",
   );
+  await database.customInsert(
+    'INSERT INTO local_content_reports '
+    '(id, owner_id, source_kind, source_id, source_revision, spelling, meaning, '
+    'reason, created_at_utc_ms) VALUES '
+    "('report-seed', 'guest-owner', 'word', 'word-1', 1, 'banana', 'fruit', "
+    "'Synthetic report', 20)",
+  );
+  await database.customInsert(
+    'INSERT INTO focus_sessions '
+    '(id, owner_id, origin_owner_id, target_ms, started_at_utc_ms, start_rule_id, '
+    'start_civil_week, state, revision, spans_json, ended_at_utc_ms) VALUES '
+    "('focus-seed', 'guest-owner', 'guest-owner', 1000, 20, 'rule-seed', "
+    "'1969-12-29', 'completed', 1, '[[20,1020]]', 1020)",
+  );
+  await database.customInsert(
+    'INSERT INTO learning_preferences '
+    '(owner_id, onboarding_state, purpose, planned_minutes, learning_method, '
+    'goal_civil_date, goal_state, updated_at_utc_ms) VALUES '
+    "('guest-owner', 'unset', NULL, NULL, NULL, NULL, 'unset', 20)",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {
@@ -846,7 +1100,9 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
     );
   }
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions "
+    "(id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, "
+    "correct_count, wrong_count, score, app_version, build_id) VALUES "
     "('session-guest', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, 1, '1', '1')",
   );
   await database.customInsert(
@@ -865,7 +1121,9 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
 Future<void> _seedProjectionCollisionGraph(AppDatabase database) async {
   await _seedCollisionGraph(database);
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions "
+    "(id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, "
+    "correct_count, wrong_count, score, app_version, build_id) VALUES "
     "('session-target', 'account-owner', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(

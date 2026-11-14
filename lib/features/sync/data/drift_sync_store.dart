@@ -1104,7 +1104,10 @@ final class DriftSyncStore implements SyncStatusSource {
     final session = await (database.select(
       database.learningSessions,
     )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
-    if (session != null && session.ownerId != ownerId) {
+    if (session != null &&
+        (session.ownerId != ownerId ||
+            session.questionPlanJson != null ||
+            session.continuationJson != null)) {
       throw const InvalidSyncPayloadFailure();
     }
     if (session == null) {

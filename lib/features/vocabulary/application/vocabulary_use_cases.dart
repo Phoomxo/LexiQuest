@@ -96,6 +96,29 @@ final class VocabularyUseCases {
     );
   }
 
+  Stream<List<VocabularyWord>> watchBookmarkedWords() => Stream.fromFuture(
+    owners.getOrCreateActiveOwner(),
+  ).asyncExpand((owner) => vocabulary.watchBookmarkedWords(owner.id));
+
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+    await vocabulary.setBookmarked(
+      expectedOwnerId: owner.id,
+      wordId: _required(wordId, 'wordId', maxLength: 256),
+      bookmarked: bookmarked,
+    );
+    if ((await owners.getOrCreateActiveOwner()).id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+  }
+
   Future<VocabularyCategory> createCategory(
     String name, {
     String? expectedOwnerId,

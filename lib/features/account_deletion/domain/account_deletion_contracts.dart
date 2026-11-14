@@ -1,6 +1,6 @@
 import '../../identity/domain/owner_upgrade.dart';
 
-const int currentFullAccountExportSchemaVersion = 11;
+const int currentFullAccountExportSchemaVersion = 12;
 
 const Set<String> publicFullAccountExportScopes = <String>{
   'quest_definitions',

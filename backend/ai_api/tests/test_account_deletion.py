@@ -37,6 +37,7 @@ SCOPE_FIXTURE = json.loads(
 V11_ADDITIONS = frozenset(SCOPE_FIXTURE["exportV11"]) - frozenset(
     SCOPE_FIXTURE["exportV10"]
 )
+V12_ADDITIONS = frozenset({"local_content_reports", "focus_sessions", "learning_preferences"})
 
 
 class _Verifier:
@@ -137,6 +138,8 @@ def test_export_fixture_separates_local_scopes_from_cloud_deletion() -> None:
     new_export = frozenset(SCOPE_FIXTURE["exportV11"])
     assert len(cloud) == len(old_export) == 26
     assert len(new_export) == 32
+    assert len(SCOPE_FIXTURE["exportV12"]) == 35
+    assert frozenset(SCOPE_FIXTURE["exportV12"]) == new_export | V12_ADDITIONS
     assert cloud == old_export == CLOUD_DELETION_SCOPES
     assert V11_ADDITIONS == {
         "owner_calendar_epochs", "quest_claim_receipts", "streak_baselines",
@@ -179,6 +182,59 @@ def test_v11_export_deletes_only_cloud_scopes_and_replays_receipt() -> None:
     assert len(deleter.calls) == 1
 
 
+def test_v12_export_deletes_only_cloud_scopes_and_replays() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    client = _client(service=_service(store, deleter))
+    body = _body_with_scopes(12, frozenset(SCOPE_FIXTURE["exportV12"]))
+    headers = {"Authorization": "Bearer valid-token"}
+    first = client.post("/v1/account-deletions", headers=headers, json=body)
+    second = client.post("/v1/account-deletions", headers=headers, json=body)
+    assert first.status_code == second.status_code == 200
+    assert first.json() == second.json()
+    assert first.json()["ownerId"] == OWNER
+    assert first.json()["firebaseUid"] == "firebase-user"
+    assert first.json()["idempotencyKey"] == KEY
+    assert len(deleter.calls) == 1
+    assert deleter.calls[0][:3] == (OWNER, "firebase-user", CLOUD_DELETION_SCOPES)
+    body["idempotencyKey"] = "delete:00000000-0000-4000-8000-000000000002"
+    assert client.post("/v1/account-deletions", headers=headers, json=body).status_code == 409
+    assert len(deleter.calls) == 1
+
+
+@pytest.mark.parametrize("missing", sorted(V12_ADDITIONS))
+def test_v12_export_requires_each_added_scope(missing: str) -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    body = _body_with_scopes(12, frozenset(SCOPE_FIXTURE["exportV12"]) - {missing})
+    response = _client(service=_service(store, deleter)).post(
+        "/v1/account-deletions", headers={"Authorization": "Bearer valid-token"}, json=body,
+    )
+    assert response.status_code == 422
+    assert not store.operations
+    assert not deleter.calls
+
+
+@pytest.mark.parametrize("invalid", ["owner", "sha", "bytes"])
+def test_v12_rejects_invalid_receipt_without_deletion(invalid: str) -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    body = _body_with_scopes(12, frozenset(SCOPE_FIXTURE["exportV12"]))
+    receipt = body["exportReceipt"]
+    if invalid == "owner":
+        receipt["ownerId"] = "other-owner"
+    elif invalid == "sha":
+        receipt["artifactSha256"] = "invalid"
+    else:
+        receipt["bytesWritten"] = 0
+    response = _client(service=_service(store, deleter)).post(
+        "/v1/account-deletions", headers={"Authorization": "Bearer valid-token"}, json=body,
+    )
+    assert response.status_code == 422
+    assert not store.operations
+    assert not deleter.calls
+
+
 @pytest.mark.parametrize("missing", sorted(V11_ADDITIONS))
 def test_v11_export_requires_every_added_scope(missing: str) -> None:
     store = _Store()
@@ -197,7 +253,8 @@ def test_v11_export_requires_every_added_scope(missing: str) -> None:
     ("version", "scope_key", "extra"),
     [(11, "exportV11", True), (11, "exportV10", False),
      (10, "exportV11", False), (12, "exportV11", False),
-     (12, "exportV10", False)],
+     (12, "exportV10", False), (12, "exportV12", True),
+     (11, "exportV12", False), (13, "exportV12", False)],
 )
 def test_export_rejects_extra_mismatched_or_future_scopes(
     version: int, scope_key: str, extra: bool,

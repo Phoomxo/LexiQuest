@@ -15,6 +15,8 @@ class LearningSessions extends Table {
   IntColumn get score => integer().nullable()();
   TextColumn get appVersion => text()();
   TextColumn get buildId => text()();
+  TextColumn get questionPlanJson => text().nullable()();
+  TextColumn get continuationJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -34,6 +36,7 @@ class AnswerAttempts extends Table {
   TextColumn get providerProvenance => text().nullable()();
   TextColumn get calendarEvidence => text().nullable()();
   TextColumn get questIntent => text().nullable()();
+  TextColumn get answerEvidenceJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

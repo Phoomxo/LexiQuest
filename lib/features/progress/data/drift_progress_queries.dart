@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_models.dart';
+import '../../learning/domain/quiz_round.dart';
 import '../../motivation/data/drift_streak_repository.dart';
 import '../../motivation/domain/streak_policy.dart' as motivation;
 import '../../quest/data/drift_quest_progress_reader.dart';
@@ -257,10 +258,7 @@ final class DriftProgressQueries {
         )
         .getSingleOrNull();
     if (row == null) return null;
-    return _historyEntry(
-      row,
-      mistakes: await _loadSessionMistakes(ownerId, sessionId),
-    );
+    return _loadHistoryDetails(ownerId, row);
   }
 
   Future<SessionHistoryEntry?> loadLatestSessionForCategory({
@@ -287,9 +285,67 @@ final class DriftProgressQueries {
         )
         .getSingleOrNull();
     if (row == null) return null;
+    return _loadHistoryDetails(ownerId, row);
+  }
+
+  Future<SessionHistoryEntry> _loadHistoryDetails(
+    String ownerId,
+    QueryRow row,
+  ) async {
+    final sessionId = row.read<String>('id');
+    final mistakes = await _loadSessionMistakes(ownerId, sessionId);
+    final raw = row.readNullable<String>('question_plan_json');
+    QuizPlan? plan;
+    List<OriginalQuizAnswer>? original;
+    if (raw != null) {
+      try {
+        final pinned = decodeQuizPlan(raw);
+        final attempts =
+            await (database.select(database.answerAttempts)
+                  ..where(
+                    (attempt) =>
+                        attempt.ownerId.equals(ownerId) &
+                        attempt.sessionId.equals(sessionId),
+                  )
+                  ..orderBy([
+                    (attempt) => OrderingTerm.asc(attempt.attemptNumber),
+                    (attempt) => OrderingTerm.asc(attempt.id),
+                  ]))
+                .get();
+        final answers = <OriginalQuizAnswer>[];
+        for (final attempt in attempts) {
+          final evidence = decodeQuizResponse(
+            attempt.answerEvidenceJson ?? '',
+            plan: pinned,
+          );
+          final question = pinned.questions[evidence.slot];
+          final choice = evidence.selectedOption;
+          final selected = choice == null ? null : question.options[choice];
+          if (attempt.promptMode != question.kind.name ||
+              attempt.isCorrect != (selected == question.correctAnswer)) {
+            throw const FormatException(
+              'Original quiz response does not match the plan',
+            );
+          }
+          answers.add((
+            question: question,
+            chosenAnswer: selected,
+            isCorrect: attempt.isCorrect,
+          ));
+        }
+        if (answers.isNotEmpty) {
+          plan = pinned;
+          original = List.unmodifiable(answers);
+        }
+      } on FormatException {
+        // Aggregate results remain readable when the original wording is unavailable.
+      }
+    }
     return _historyEntry(
       row,
-      mistakes: await _loadSessionMistakes(ownerId, row.read<String>('id')),
+      mistakes: mistakes,
+      plan: plan,
+      originalAnswers: original,
     );
   }
 
@@ -326,6 +382,8 @@ final class DriftProgressQueries {
   SessionHistoryEntry _historyEntry(
     QueryRow projected, {
     List<QuizWord> mistakes = const [],
+    QuizPlan? plan,
+    List<OriginalQuizAnswer>? originalAnswers,
   }) {
     final row = database.learningSessions.map(projected.data);
     final total = row.correctCount + row.wrongCount;
@@ -351,7 +409,10 @@ final class DriftProgressQueries {
       ),
       mistakes: mistakes,
       categoryId: projected.readNullable<String>('linked_category_id'),
-      categoryName: projected.readNullable<String>('linked_category_name'),
+      categoryName:
+          plan?.categoryName ??
+          projected.readNullable<String>('linked_category_name'),
+      originalAnswers: originalAnswers,
     );
   }
 

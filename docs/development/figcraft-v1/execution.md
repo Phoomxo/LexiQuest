@@ -16,6 +16,26 @@ Implement S1 through S7 in dependency order. Preserve the denominators of 48 scr
 
 The end-to-end predicate is app → library → camera → confirm → practice the selected set → result → return to that set → restart and read the saved data. Use synthetic records and existing owners, use cases, repositories, and reward authorities.
 
+### Pre-Beta completion criteria for this Goal
+
+Continue in this worktree and draft PR #16. Finish the in-flight v12 unit, audit the 48 screens, 44 features and 64 work packages, then verify pre-Beta readiness and deliver one linked report. Use ADLC for each unit and verify previously accepted journeys against the delivery build. For v12, exercise the real v11 fixture and compare with a fresh database. Verify recovery and reopen, existing data, owner isolation, saved results and bookmarks, export/delete, sync compatibility and the normal entry points for features using v12.
+
+Update the existing [screen](evidence/screens.csv), [feature](evidence/features.csv) and [work-package](evidence/work-packages.csv) registers by ID. Record the real entry, user action, observed result, return destination and persistence after reopening where relevant. Include commit SHA or APK SHA-256, device/environment, test case and redacted evidence such as CI, screenshot, video or log. Use pass, fail, unverified or waiting for an external dependency, with a reason and next action. Opening a screen, finding a test file or observing green CI alone does not satisfy a row. Report counts for each register with the original denominators.
+
+1. **Code and technical debt.** Review the diff and broken or incomplete user paths. Fix issues affecting primary journeys and record the reason for remaining debt.
+2. **Architecture and database.** Compare implementation with design and the schema ledger. Verify migration, recovery, prior data, owner isolation, export, deletion and sync. Update diagrams where contracts changed.
+3. **Security and compliance.** Run Firestore/Supabase policy tests, Gitleaks, OSV and dependency audits as allowed by AGENTS.md. Review the diff for authorization, personal data and consent. Keep Research default-off and record outstanding owner approvals.
+4. **Usability, design system and edge cases.** Compare FigCraft with the running Flutter build. Inspect Thai labels and diacritics, hierarchy, spacing, target sizes, light/dark, 200% text and TalkBack where available. Exercise empty, error, offline, permission denied, owner switch and contextual Back paths.
+5. **Backend and API.** Verify API contracts, auth and owner scope, timeout/retry, load limits, readiness, applicable App Check, budget alerts and kill switches in authorized test environments. Record runtime and mock evidence distinctly.
+6. **Frontend performance and load.** Measure startup, library interaction, memory, API latency and error rate under concurrent use. Record device, data, workload and protocol and compare against an existing budget or baseline. Use local or authorized staging only.
+7. **Analytics.** Check event contracts, consent and transmitted data. Use synthetic staging events and verify dashboard delivery and alert operation when the environment is available. Keep operational analytics apart from research data.
+8. **Functional, automated and acceptance testing.** Run Flutter/backend/policy/CI and the main Android journey on the delivery APK. Verify camera capture, word confirmation, practice, result, return to the same set and offline reopen. Record manual camera workflow and known-object model accuracy separately. Prepare the UAT script and record actual participant observations when people and permission are available.
+9. **CI/CD, environments and release preparation.** Bind the PR head, CI and verified APK. Check dev/staging/production separation and configuration. Use the existing field release tooling, [monitoring plan](../../v2-implementation/monitoring_plan.md) and [rollback playbook](../../v2-implementation/rollback_playbook.md) to verify rollback in authorized staging and prepare feedback, feature-disable and rollout-stop procedures. Opening Beta, merging, deploying, using real data or enrolling participants requires the project's existing authorization.
+
+Record each skill with the work and evidence it informed. Use poteto-mode to sequence work, Ponytail Audit or code review for debt, Archify and the schema ledger for structure, Impeccable critique and mobile-android-design for Android, systematic-debugging/TDD/verification-before-completion for fixes and evidence, and benchmark-checklist for measurements. Apply skills at the relevant step without adding dependencies or mandatory workflows solely for a skill. Obtain independent review of material risks under AGENTS.md.
+
+Deliver one report linked to the registers and original evidence. Include counts, reproduction steps and the readiness verdict with its limits. For any unavailable device, environment, participant or approval, identify the responsible role, condition and missing observation. Continue independent work while awaiting these dependencies.
+
 ## Execution board
 
 1. Read the poteto-mode Principles. Ground the plan against source and design evidence.
@@ -37,7 +57,7 @@ The end-to-end predicate is app → library → camera → confirm → practice 
 
 ## S7 remaining persistence and recovery plan
 
-This unit follows integration of f31. Practice commit9371b434 has successful exact-head CI43571302282; dirty achievement evidence is separate. The next migration candidate is v12, still **unreserved**. Re-read the ledger and reserve its concrete scope before migration code. Existing local implementation authority applies; no rollout or live-data permission follows.
+This unit follows f31 commit34e628a7 (2176 tests locally and draft PR16 readback). The ledger reserved v12 on 2026-11-14 before migration code. The team captured the actual v11 fixture and compared its schema with an upgrade from the frozen v10 fixture. Existing authority covers local implementation with synthetic data.
 
 Task board: Ground and Sketch complete from current v11 source and pinned21b34eaa; existing authority supplies Agree. Implement, Review, Attest and Integrate remain pending. Scrap the sketch only if implementation disproves its invariants. Compare normalized relations, an embedded owner profile and a narrow hybrid: select the hybrid below. A local word bit replaces a saved-word table; independent reports, timers and preferences remain separate. Actual f43 requires the selected wrong response, and f24 requires measured active/pause ranges; boolean correctness and a total duration cannot reconstruct those approved displays.
 

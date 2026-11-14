@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show DatabaseConnection, Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/features/media_practice/domain/media_practice
 import 'package:vocab_learning_app/features/vocabulary/application/source_practice.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_local_content_report_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -71,7 +72,12 @@ void main() {
   var id = 0;
 
   setUp(() async {
-    database = AppDatabase(NativeDatabase.memory());
+    database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
     owners = DriftLocalOwnerRepository(
       database,
       generateId: () => 'owner-a',
@@ -185,6 +191,7 @@ void main() {
     Size size = const Size(360, 800),
     double keyboardInset = 0,
     SpeechPracticeUseCases? speech,
+    bool withReports = false,
   }) => AppDependenciesScope(
     dependencies: AppDependencies(
       runtimeStatus: const AppRuntimeStatus(
@@ -201,6 +208,9 @@ void main() {
       learning: learning,
       geminiTutor: withTutor ? tutor : null,
       speechPractice: speech,
+      localContentReports: withReports
+          ? DriftLocalContentReportRepository(database)
+          : null,
     ),
     child: MaterialApp(
       theme: ThemeData(fontFamily: 'NotoSansThai'),
@@ -224,6 +234,106 @@ void main() {
         ),
       ),
     ),
+  );
+
+  testWidgets(
+    'source preview reviews, cancels and stores a local content report',
+    (tester) async {
+      const passage = 'Meet me at the station.';
+      await tester.pumpWidget(screen(text: passage, withReports: true));
+      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
+      await _scrollUntilFound(tester, find.text('รายงานปัญหาเนื้อหา'));
+      expect(find.byKey(const ValueKey('start-source-reading')), findsNothing);
+      await tester.tap(find.text('รายงานปัญหาเนื้อหา'));
+      await _pumpUntilFound(tester, find.text('บันทึกรายงานในเครื่อง'));
+      expect(find.textContaining('station'), findsWidgets);
+      await tester.tap(find.text('ยกเลิก'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        expect(
+          await database.select(database.localContentReports).get(),
+          isEmpty,
+        );
+        await _expectNoPracticeWrites(database);
+        expect(await database.select(database.outboxOperations).get(), isEmpty);
+      });
+
+      await _scrollUntilFound(tester, find.text('รายงานปัญหาเนื้อหา'));
+      await tester.tap(find.text('รายงานปัญหาเนื้อหา'));
+      await _pumpUntilFound(tester, find.text('ประโยคตัวอย่างสะกดผิด'));
+      await tester.tap(find.text('ประโยคตัวอย่างสะกดผิด'));
+      await tester.pump();
+      await tester.tap(find.text('บันทึกรายงานในเครื่อง'));
+      await _pumpUntilFound(tester, find.text('บันทึกรายงานในเครื่องแล้ว'));
+      await _pumpUntilCondition(
+        tester,
+        () => find.byType(AlertDialog).evaluate().isEmpty,
+      );
+      expect(find.text('บันทึกรายงานในเครื่อง'), findsNothing);
+      final word = (await tester.runAsync(
+        () => vocabulary.watchWords('category-1').first,
+      ))!.single;
+      final preview = reviewSourcePracticeText(
+        sourceName: 'lesson.txt',
+        text: passage,
+        words: [word],
+      );
+      final stored = (await tester.runAsync(
+        () => database.select(database.localContentReports).getSingle(),
+      ))!;
+      expect(
+        (
+          stored.ownerId,
+          stored.sourceKind,
+          stored.sourceId,
+          stored.sourceRevision,
+          stored.spelling,
+          stored.meaning,
+          stored.sentence,
+          stored.reason,
+        ),
+        (
+          ownerId,
+          'localSource',
+          preview.documentId,
+          preview.documentRevision,
+          'station',
+          'สถานี',
+          passage,
+          'exampleSpellingError',
+        ),
+      );
+      await _scrollUntilFound(tester, find.text('รายงานที่รอส่ง'));
+      await tester.tap(find.text('รายงานที่รอส่ง'));
+      await _pumpUntilFound(tester, find.text('ประโยคตัวอย่างสะกดผิด'));
+      expect(find.textContaining('station'), findsWidgets);
+      expect(find.textContaining('ยังไม่ส่ง'), findsWidgets);
+      await tester.runAsync(() async {
+        await _expectNoPracticeWrites(database);
+        expect(await database.select(database.outboxOperations).get(), isEmpty);
+        expect(await database.select(database.eventsV2).get(), isEmpty);
+        expect(await database.select(database.researchConsents).get(), isEmpty);
+        await database.transaction(() async {
+          await (database.update(database.localOwners)
+                ..where((row) => row.id.equals(ownerId)))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'local:owner-b',
+                  createdAtUtcMs: 2,
+                ),
+              );
+        });
+      });
+      await _pumpUntilFound(tester, find.text('บัญชีผู้เรียนเปลี่ยนแล้ว'));
+      expect(find.text('station · สถานี'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpAsyncWork(tester);
+      await tester.pump(const Duration(milliseconds: 20));
+    },
   );
 
   testWidgets(

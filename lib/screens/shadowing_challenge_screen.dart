@@ -249,8 +249,11 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     _speechEpoch += 1;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());
-    unawaited(_voice.stop());
-    _voice.disposeIfOwned(_ownsVoice);
+    if (_ownsVoice) {
+      _voice.disposeIfOwned(true);
+    } else {
+      _voice.stop().ignore();
+    }
     super.dispose();
   }
 

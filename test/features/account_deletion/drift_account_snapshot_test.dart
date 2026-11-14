@@ -44,7 +44,7 @@ void main() {
       expect(snapshot.schemaVersion, database.schemaVersion);
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 11);
+      expect(json['schemaVersion'], 12);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -62,7 +62,7 @@ void main() {
   );
 
   test(
-    'schema 11 exports every owner scope and exact public pinned catalog',
+    'schema 12 exports every owner scope and exact public pinned catalog',
     () async {
       await _seedS6Rows(database);
       final fixture =
@@ -72,27 +72,47 @@ void main() {
                 ).readAsStringSync(),
               )
               as Map<String, dynamic>;
-      final expectedScopes = (fixture['exportV11'] as List)
+      final historicalScopes = (fixture['exportV11'] as List)
           .cast<String>()
           .toSet();
-      expect(expectedScopes, hasLength(32));
+      final expectedScopes = (fixture['exportV12'] as List)
+          .cast<String>()
+          .toSet();
+      expect(historicalScopes, hasLength(32));
+      expect(expectedScopes.difference(historicalScopes), {
+        'local_content_reports',
+        'focus_sessions',
+        'learning_preferences',
+      });
+      expect(expectedScopes, hasLength(35));
       expect(requiredFullAccountExportScopes, expectedScopes);
       final builder = DriftAccountSnapshotBuilder(database, nowUtc: () => now);
       final snapshot = await builder.build(ownerId: 'owner-a');
       final repeated = await builder.build(ownerId: 'owner-a');
       expect(snapshot.bytes, repeated.bytes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
-      expect(snapshot.schemaVersion, 11);
+      expect(snapshot.schemaVersion, 12);
       expect(
         (await database.customSelect('PRAGMA user_version').getSingle()).data,
-        {'user_version': 11},
+        {'user_version': 12},
       );
       expect(snapshot.coveredScopes, expectedScopes);
       final decoded =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       final data = decoded['data'] as Map<String, dynamic>;
-      expect(decoded['schemaVersion'], 11);
+      expect(decoded['schemaVersion'], 12);
       expect(data.keys.toSet(), expectedScopes);
+      expect((data['local_content_reports'] as List).single['id'], 'report-a');
+      expect(
+        (data['focus_sessions'] as List).single['start_rule_id'],
+        'rule-a',
+      );
+      expect(
+        (data['learning_preferences'] as List).single['goal_state'],
+        'closed',
+      );
+      expect(utf8.decode(snapshot.bytes), isNot(contains('report-b')));
+      expect(utf8.decode(snapshot.bytes), isNot(contains('focus-b')));
       final sortedScopes = expectedScopes.toList()..sort();
       expect(decoded['coveredScopes'], sortedScopes);
       expect(data.keys, sortedScopes);
@@ -200,6 +220,48 @@ Future<void> _seedS6Rows(AppDatabase database) async {
         at * 1000,
         'UTC',
         'synthetic-tzdb',
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO local_content_reports (id,owner_id,source_kind,source_id,source_revision,spelling,meaning,sentence,reason,created_at_utc_ms) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [
+        'report-$suffix',
+        'owner-$suffix',
+        'word',
+        'synthetic-$suffix',
+        1,
+        'station',
+        'สถานี',
+        null,
+        'synthetic-reason',
+        at,
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO focus_sessions (id,owner_id,origin_owner_id,target_ms,started_at_utc_ms,start_rule_id,start_civil_week,state,spans_json,ended_at_utc_ms) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [
+        'focus-$suffix',
+        'owner-$suffix',
+        'owner-$suffix',
+        300000,
+        at,
+        'rule-$suffix',
+        '2026-10-19',
+        'completed',
+        '{"version":1,"spans":[]}',
+        at + 1000,
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO learning_preferences (owner_id,onboarding_state,purpose,planned_minutes,learning_method,goal_state,updated_at_utc_ms) VALUES (?,?,?,?,?,?,?)',
+      [
+        'owner-$suffix',
+        'completed',
+        'synthetic-purpose',
+        5,
+        'reading',
+        'closed',
+        at,
       ],
     );
     await database.customStatement(

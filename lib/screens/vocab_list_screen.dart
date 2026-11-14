@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
@@ -59,9 +61,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Future<SessionHistoryEntry?>? _latest;
   bool _addStarted = false;
   bool _openingLatest = false;
+  bool _savedOnly = false;
+  bool _managingBookmark = false;
   AppDependencies? _dependencies;
   bool _dependenciesCaptured = false;
   bool _invalidated = false;
+  String? _routeOwnerId;
+  StreamSubscription<String?>? _ownerSubscription;
 
   @override
   void initState() {
@@ -77,6 +83,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
     if (!_dependenciesCaptured) {
       _dependencies = dependencies;
       _dependenciesCaptured = true;
+      _watchRouteOwner(dependencies);
     } else if (!identical(_dependencies, dependencies)) {
       _invalidated = true;
     }
@@ -89,12 +96,34 @@ class _VocabListScreenState extends State<VocabListScreen> {
       _dependencies = AppDependenciesScope.maybeOf(context);
       _dependenciesCaptured = true;
       _invalidated = false;
+      _watchRouteOwner(_dependencies);
       _addStarted = false;
+      _savedOnly = false;
       _searchController.text = widget.initialQuery;
       _query = normalizeVocabularyText(widget.initialQuery);
     } else if (!identical(oldWidget.vocabulary, widget.vocabulary)) {
       _invalidated = true;
     }
+  }
+
+  void _watchRouteOwner(AppDependencies? dependencies) {
+    unawaited(_ownerSubscription?.cancel());
+    _routeOwnerId = null;
+    _ownerSubscription = dependencies?.watchActiveOwnerId()?.listen(
+      (active) {
+        if (!mounted || !identical(dependencies, _dependencies)) return;
+        if (_routeOwnerId == null && active != null) {
+          _routeOwnerId = active;
+        } else if (_routeOwnerId != null && _routeOwnerId != active) {
+          setState(() => _invalidated = true);
+        }
+      },
+      onError: (Object _) {
+        if (mounted && identical(dependencies, _dependencies)) {
+          setState(() => _invalidated = true);
+        }
+      },
+    );
   }
 
   _CategoryContext? get _currentCategory {
@@ -166,6 +195,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
   @override
   void dispose() {
+    unawaited(_ownerSubscription?.cancel());
     _searchController.dispose();
     super.dispose();
   }
@@ -227,8 +257,9 @@ class _VocabListScreenState extends State<VocabListScreen> {
                   final words = allWords
                       .where(
                         (word) =>
-                            word.normalizedSpelling.contains(_query) ||
-                            word.normalizedMeaning.contains(_query),
+                            (!_savedOnly || word.isBookmarked) &&
+                            (word.normalizedSpelling.contains(_query) ||
+                                word.normalizedMeaning.contains(_query)),
                       )
                       .toList(growable: false);
                   return CustomScrollView(
@@ -262,6 +293,27 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
+                              if (snapshot.hasData &&
+                                  (_savedOnly || allWords.isNotEmpty)) ...[
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    ChoiceChip(
+                                      label: const Text('คำทั้งหมด'),
+                                      selected: !_savedOnly,
+                                      onSelected: (_) =>
+                                          setState(() => _savedOnly = false),
+                                    ),
+                                    ChoiceChip(
+                                      label: const Text('คำที่เก็บไว้'),
+                                      selected: _savedOnly,
+                                      onSelected: (_) =>
+                                          setState(() => _savedOnly = true),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               if (canPractice) ...[
                                 FilledButton.icon(
                                   onPressed:
@@ -465,7 +517,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(24),
                             child: Text(
-                              allWords.isEmpty
+                              _savedOnly &&
+                                      !allWords.any((word) => word.isBookmarked)
+                                  ? 'ยังไม่มีคำที่เก็บไว้'
+                                  : allWords.isEmpty
                                   ? 'ยังไม่มีคำศัพท์ในหมวดนี้'
                                   : 'ไม่พบคำศัพท์ที่ค้นหา',
                               textAlign: TextAlign.center,
@@ -492,11 +547,28 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                   category,
                                   word: word,
                                 ),
-                                trailing: IconButton(
-                                  tooltip: 'ลบคำศัพท์ ${word.spelling}',
-                                  icon: const Icon(Icons.delete_outline),
-                                  onPressed: () =>
-                                      _deleteWord(context, category, word),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'จัดการคำนี้ ${word.spelling}',
+                                      icon: Icon(
+                                        word.isBookmarked
+                                            ? Icons.bookmark
+                                            : Icons.bookmark_border,
+                                      ),
+                                      onPressed: _managingBookmark
+                                          ? null
+                                          : () =>
+                                                _manageBookmark(category, word),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'ลบคำศัพท์ ${word.spelling}',
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () =>
+                                          _deleteWord(context, category, word),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
@@ -551,9 +623,12 @@ class _VocabListScreenState extends State<VocabListScreen> {
             wrongAnswers: summary.wrongCount,
             score: summary.score,
             sessionId: summary.id,
+            expectedOwnerId: entry.ownerId,
             categoryName: entry.categoryName ?? category.name,
             mistakes: entry.mistakes,
             returnLabel: 'กลับไปที่ชุดคำ',
+            showOriginalHistory: true,
+            originalAnswers: entry.originalAnswers,
           ),
         ),
       );
@@ -709,6 +784,114 @@ class _VocabListScreenState extends State<VocabListScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _manageBookmark(
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (_managingBookmark ||
+        !_isCurrent(category) ||
+        word.categoryId != category.id) {
+      return;
+    }
+    setState(() => _managingBookmark = true);
+    final save = !word.isBookmarked;
+    try {
+      final owner = await _currentOwner(
+        category,
+        expectedOwnerId: word.ownerId,
+      );
+      if (owner == null || !mounted || !_isCurrent(category)) return;
+      final activeOwners = category.dependencies?.watchActiveOwnerId()?.map(
+        (id) => id == owner,
+      );
+      final confirmed = await showModalBottomSheet<bool>(
+        context: context,
+        useSafeArea: true,
+        builder: (sheetContext) => StreamBuilder<bool>(
+          stream: activeOwners,
+          initialData: activeOwners == null,
+          builder: (sheetContext, snapshot) {
+            final sameScope = identical(
+              AppDependenciesScope.maybeOf(sheetContext),
+              category.dependencies,
+            );
+            if (!sameScope || !_isCurrent(category) || snapshot.data != true) {
+              return const SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('รายการเก็บคำยังไม่พร้อมใช้งาน'),
+                ),
+              );
+            }
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      word.spelling,
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    Text(word.meaning),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () async {
+                        if (!sheetContext.mounted ||
+                            await _currentOwner(
+                                  category,
+                                  expectedOwnerId: owner,
+                                ) ==
+                                null ||
+                            !sheetContext.mounted ||
+                            ModalRoute.of(sheetContext)?.isCurrent != true) {
+                          return;
+                        }
+                        Navigator.pop(sheetContext, true);
+                      },
+                      child: Text(
+                        save
+                            ? 'เก็บไว้อ่านอีกครั้ง'
+                            : 'นำออกจากรายการคำที่เก็บไว้',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      if (confirmed != true ||
+          await _currentOwner(category, expectedOwnerId: owner) == null) {
+        return;
+      }
+      await category.vocabulary.setBookmarked(
+        expectedOwnerId: owner,
+        wordId: word.id,
+        bookmarked: save,
+      );
+      if (save && _isCurrent(category)) {
+        setState(() {
+          _searchController.clear();
+          _query = '';
+          _savedOnly = true;
+        });
+      }
+    } catch (_) {
+      if (await _currentOwner(category, expectedOwnerId: word.ownerId) !=
+              null &&
+          mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เปลี่ยนรายการคำที่เก็บไว้ไม่สำเร็จ')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _managingBookmark = false);
+    }
   }
 
   Future<void> _deleteWord(

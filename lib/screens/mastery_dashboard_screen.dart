@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'focus_planner_panel.dart';
 
 import '../config/m3_theme.dart';
 import '../features/progress/domain/progress_models.dart';
@@ -227,8 +228,11 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
             wrongAnswers: entry.summary.wrongCount,
             score: entry.summary.score,
             sessionId: entry.summary.id,
+            expectedOwnerId: entry.ownerId,
             categoryName: entry.categoryName,
             returnLabel: 'กลับไปดูประวัติ',
+            showOriginalHistory: true,
+            originalAnswers: entry.originalAnswers,
             mistakes: entry.mistakes,
             onPracticeMistakes:
                 !canRepair || learning == null || entry.mistakes.isEmpty
@@ -274,6 +278,8 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
           name: 'progress/session/${entry.summary.id}/practice',
           builder: (_) => QuizScreen(
             wordIds: entry.mistakes.map((word) => word.id).toList(),
+            originParentId: entry.summary.id,
+            expectedOwnerId: entry.ownerId,
             categoryName: entry.categoryName,
             returnLabel: 'กลับไปที่ผลการฝึก',
             learning: learning,
@@ -433,6 +439,13 @@ class _ProgressActions extends StatelessWidget {
               ),
               icon: const Icon(Icons.emoji_events_outlined),
               label: const Text('ความสำเร็จ'),
+            ),
+          if (features.isVisible(FieldFeature.mastery) &&
+              AppDependenciesScope.maybeOf(context)?.focus != null)
+            OutlinedButton.icon(
+              onPressed: () => showFocusPlanner(context),
+              icon: const Icon(Icons.timer_outlined),
+              label: const Text('วางแผนการฝึก'),
             ),
           if (features.isVisible(FieldFeature.shop))
             OutlinedButton.icon(

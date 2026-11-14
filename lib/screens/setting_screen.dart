@@ -30,6 +30,7 @@ import 'gemini_settings_screen.dart';
 import 'device_permission_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'shadowing_challenge_screen.dart';
+import 'study_preferences_panel.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({
@@ -972,6 +973,7 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   Widget build(BuildContext context) {
     final account = _account;
+    final study = AppDependenciesScope.maybeOf(context)?.studyPreferences;
     final session = _account?.currentSession;
     final isRegistered = session != null && !session.isAnonymous;
     final scaffold = Scaffold(
@@ -1205,6 +1207,13 @@ class _SettingScreenState extends State<SettingScreen> {
                         ),
                 ),
             ],
+            if (study != null)
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('วิธีเรียนและวันเป้าหมาย'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _busy ? null : () => showStudyPreferences(context),
+              ),
             _sectionTitle('ข้อมูลและผู้ช่วยการเรียน'),
             Card(
               child: Column(

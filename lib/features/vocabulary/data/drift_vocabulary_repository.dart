@@ -137,6 +137,62 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   }
 
   @override
+  Stream<List<VocabularyWord>> watchBookmarkedWords(String ownerId) {
+    final words = database.vocabularyWords;
+    final categories = database.vocabularyCategories;
+    final query =
+        database.select(words).join([
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equals(ownerId) &
+                  categories.isDeleted.equals(false),
+              useColumns: false,
+            ),
+          ])
+          ..where(
+            words.ownerId.equals(ownerId) &
+                words.isDeleted.equals(false) &
+                words.isBookmarked.equals(true),
+          )
+          ..orderBy([
+            OrderingTerm.asc(words.normalizedSpelling),
+            OrderingTerm.asc(words.id),
+          ]);
+    return query.watch().map(
+      (rows) => List.unmodifiable(
+        rows.map((row) => _wordToDomain(row.readTable(words))),
+      ),
+    );
+  }
+
+  @override
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  }) => database.transaction(() async {
+    final active = await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).get();
+    if (active.length != 1 || active.single.id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+    final word = await _activeWord(expectedOwnerId, wordId);
+    if (word == null ||
+        await _activeCategory(expectedOwnerId, word.categoryId) == null) {
+      throw const VocabularyNotFoundFailure();
+    }
+    if (word.isBookmarked != bookmarked) {
+      await (database.update(database.vocabularyWords)..where(
+            (row) =>
+                row.id.equals(wordId) & row.ownerId.equals(expectedOwnerId),
+          ))
+          .write(db.VocabularyWordsCompanion(isBookmarked: Value(bookmarked)));
+    }
+  });
+
+  @override
   Future<VocabularyCategory> createCategory(VocabularyCategory category) async {
     _requireUtc(category.createdAtUtc);
     _requireUtc(category.updatedAtUtc);
@@ -383,6 +439,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         nowUtc: word.updatedAtUtc,
       );
       return word.copyWith(
+        isBookmarked: current.isBookmarked,
         localRevision: revision,
         updatedAtUtc: word.updatedAtUtc,
       );
@@ -552,6 +609,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       cefrLevel: row.cefrLevel,
       source: row.source,
       isGlobal: row.isGlobal,
+      isBookmarked: row.isBookmarked,
       localRevision: row.localRevision,
       isDeleted: row.isDeleted,
       createdAtUtc: _fromEpoch(row.createdAtUtcMs),

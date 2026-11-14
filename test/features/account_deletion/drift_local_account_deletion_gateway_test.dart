@@ -34,6 +34,26 @@ void main() {
     () async {
       await _seedS6LifecycleRows(database);
       final beforeB = await _lifecycleRows(database, 'owner-b');
+      final focusForeignKeys = await database
+          .customSelect('PRAGMA foreign_key_list(focus_sessions)')
+          .get();
+      expect(
+        focusForeignKeys.any(
+          (row) =>
+              row.data['table'] == 'owner_calendar_epochs' &&
+              row.data['from'] == 'start_rule_id',
+        ),
+        isTrue,
+      );
+      expect(
+        await _count(
+          database,
+          'focus_sessions',
+          'owner_id = ? AND start_rule_id = ?',
+          ['owner-a', 'rule-a'],
+        ),
+        1,
+      );
       final purgedScopes = <(String, String)>[];
       final gateway = DriftLocalAccountDeletionGateway(
         database,
@@ -95,74 +115,78 @@ void main() {
     },
   );
 
-  test(
-    'v11 client rejects a v10 export receipt before reauth or deletion',
-    () async {
-      SharedPreferences.setMockInitialValues({});
-      final fixture =
-          jsonDecode(
-                File(
-                  'test/fixtures/account_deletion_export_scopes.json',
-                ).readAsStringSync(),
-              )
-              as Map<String, dynamic>;
-      final dependencies = _UnusedAccountDeletionDependencies(
-        exportReceipt: FullAccountExportReceipt(
-          ownerId: 'owner-a',
-          artifactId: 'synthetic-historical-v10.json',
-          artifactSha256: 'a' * 64,
-          bytesWritten: 100,
-          schemaVersion: 10,
-          coveredScopes: (fixture['exportV10'] as List).cast<String>().toSet(),
-          completedAtUtc: now,
-        ),
-      );
-      final before = await _lifecycleRows(database, 'owner-a');
-      var purged = false;
-      final useCases = AccountDeletionUseCases(
-        enabled: true,
-        owners: _BoundOwners(now),
-        currentSession: () => const AccountSession(
-          uid: 'firebase-user',
-          email: 'synthetic@example.test',
-          isAnonymous: false,
-          emailVerified: true,
-        ),
-        exporter: dependencies,
-        reauthenticator: dependencies,
-        cloud: dependencies,
-        local: DriftLocalAccountDeletionGateway(
-          database,
-          nowUtc: () => now,
-          purgeOwnerSecret: ({required ownerId, required firebaseUid}) async {
-            purged = true;
-          },
-        ),
-        journal: SharedPreferencesAccountDeletionJournal(
-          await SharedPreferences.getInstance(),
-        ),
-        nowUtc: () => now,
-      );
-      await expectLater(
-        useCases.deleteAccount(
-          idempotencyKey: _cloudReceipt(now).idempotencyKey,
-        ),
-        throwsA(
-          isA<AccountDeletionException>().having(
-            (error) => error.code,
-            'code',
-            AccountDeletionFailureCode.fullExportRequired,
+  for (final version in [10, 11]) {
+    test(
+      'v12 client rejects a v$version export receipt before reauth or deletion',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final fixture =
+            jsonDecode(
+                  File(
+                    'test/fixtures/account_deletion_export_scopes.json',
+                  ).readAsStringSync(),
+                )
+                as Map<String, dynamic>;
+        final dependencies = _UnusedAccountDeletionDependencies(
+          exportReceipt: FullAccountExportReceipt(
+            ownerId: 'owner-a',
+            artifactId: 'synthetic-historical-v$version.json',
+            artifactSha256: 'a' * 64,
+            bytesWritten: 100,
+            schemaVersion: version,
+            coveredScopes: (fixture['exportV$version'] as List)
+                .cast<String>()
+                .toSet(),
+            completedAtUtc: now,
           ),
-        ),
-      );
-      expect(dependencies.calls, ['export']);
-      expect(purged, isFalse);
-      expect(await _lifecycleRows(database, 'owner-a'), before);
-    },
-  );
+        );
+        final before = await _lifecycleRows(database, 'owner-a');
+        var purged = false;
+        final useCases = AccountDeletionUseCases(
+          enabled: true,
+          owners: _BoundOwners(now),
+          currentSession: () => const AccountSession(
+            uid: 'firebase-user',
+            email: 'synthetic@example.test',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+          exporter: dependencies,
+          reauthenticator: dependencies,
+          cloud: dependencies,
+          local: DriftLocalAccountDeletionGateway(
+            database,
+            nowUtc: () => now,
+            purgeOwnerSecret: ({required ownerId, required firebaseUid}) async {
+              purged = true;
+            },
+          ),
+          journal: SharedPreferencesAccountDeletionJournal(
+            await SharedPreferences.getInstance(),
+          ),
+          nowUtc: () => now,
+        );
+        await expectLater(
+          useCases.deleteAccount(
+            idempotencyKey: _cloudReceipt(now).idempotencyKey,
+          ),
+          throwsA(
+            isA<AccountDeletionException>().having(
+              (error) => error.code,
+              'code',
+              AccountDeletionFailureCode.fullExportRequired,
+            ),
+          ),
+        );
+        expect(dependencies.calls, ['export']);
+        expect(purged, isFalse);
+        expect(await _lifecycleRows(database, 'owner-a'), before);
+      },
+    );
+  }
 
   test(
-    'file reopen resumes secret purge after deleting all v11 owner rows',
+    'file reopen resumes secret purge after deleting all v12 owner rows',
     () async {
       final directory = await Directory.systemTemp.createTemp(
         's6-owner-deletion-',
@@ -176,7 +200,7 @@ void main() {
         expect(
           (await persisted.customSelect('PRAGMA user_version').getSingle())
               .data,
-          {'user_version': 11},
+          {'user_version': 12},
         );
         final beforeB = await _lifecycleRows(persisted, 'owner-b');
         final cloudReceipt = _cloudReceipt(now);
@@ -729,6 +753,9 @@ const _s6OwnerTables = {
   'quest_claim_receipts',
   'streak_baselines',
   'streak_token_adjustments',
+  'local_content_reports',
+  'focus_sessions',
+  'learning_preferences',
 };
 
 Future<Map<String, Object?>> _lifecycleRows(
@@ -743,7 +770,7 @@ Future<Map<String, Object?>> _lifecycleRows(
           )
           as Map<String, dynamic>;
   final data = <String, Object?>{};
-  for (final scope in (fixture['exportV11'] as List).cast<String>()) {
+  for (final scope in (fixture['exportV12'] as List).cast<String>()) {
     final (sql, variables) = switch (scope) {
       'quest_definitions' || 'quest_definition_revisions' => (
         'SELECT * FROM $scope ORDER BY rowid',
@@ -791,6 +818,48 @@ Future<void> _seedS6LifecycleRows(AppDatabase database) async {
         at * 1000,
         'UTC',
         'synthetic-tzdb',
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO local_content_reports (id,owner_id,source_kind,source_id,source_revision,spelling,meaning,sentence,reason,created_at_utc_ms) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [
+        'report-$suffix',
+        'owner-$suffix',
+        'word',
+        'synthetic-$suffix',
+        1,
+        'station',
+        'สถานี',
+        null,
+        'synthetic-reason',
+        at,
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO focus_sessions (id,owner_id,origin_owner_id,target_ms,started_at_utc_ms,start_rule_id,start_civil_week,state,spans_json,ended_at_utc_ms) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [
+        'focus-$suffix',
+        'owner-$suffix',
+        'owner-$suffix',
+        300000,
+        at,
+        'rule-$suffix',
+        '2026-10-19',
+        'completed',
+        '{"version":1,"spans":[]}',
+        at + 1000,
+      ],
+    );
+    await database.customStatement(
+      'INSERT INTO learning_preferences (owner_id,onboarding_state,purpose,planned_minutes,learning_method,goal_state,updated_at_utc_ms) VALUES (?,?,?,?,?,?,?)',
+      [
+        'owner-$suffix',
+        'completed',
+        'synthetic-purpose',
+        5,
+        'reading',
+        'closed',
+        at,
       ],
     );
     await database.customStatement(

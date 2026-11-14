@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../features/motivation/domain/study_preferences.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
 import 'ai_tutor_screen.dart';
 import 'categories_page.dart';
+import 'cefr_article_reader_screen.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'gemini_settings_screen.dart';
@@ -17,6 +22,7 @@ import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
+import 'study_preferences_panel.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({
@@ -36,6 +42,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int _currentIndex;
   List<_NavigationEntry> _entries = const [];
+  AppDependencies? _checkedStudySetup;
 
   @override
   void initState() {
@@ -48,6 +55,80 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.didChangeDependencies();
     _entries = _buildEntries(_fieldFeatures(context));
     _currentIndex = _currentIndex.clamp(0, _entries.length - 1);
+    final scope = AppDependenciesScope.maybeOf(context);
+    final session = scope?.account?.currentSession;
+    if (scope != null &&
+        scope.studyPreferences != null &&
+        session != null &&
+        !session.isAnonymous &&
+        session.emailVerified &&
+        !identical(_checkedStudySetup, scope)) {
+      _checkedStudySetup = scope;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_hasStudyAccount(scope, session.uid)) {
+          unawaited(_openFirstStudyActivity(scope, session.uid));
+        }
+      });
+    }
+  }
+
+  bool _hasStudyAccount(AppDependencies scope, String uid) {
+    if (!mounted || !identical(AppDependenciesScope.maybeOf(context), scope)) {
+      return false;
+    }
+    final session = scope.account?.currentSession;
+    return session?.uid == uid &&
+        session?.emailVerified == true &&
+        session?.isAnonymous == false;
+  }
+
+  Future<void> _openFirstStudyActivity(
+    AppDependencies scope,
+    String uid,
+  ) async {
+    final method = await showStudyPreferences(context, firstRunAccountUid: uid);
+    if (!mounted ||
+        method == null ||
+        !_hasStudyAccount(scope, uid) ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final features = _fieldFeatures(context);
+    switch (method) {
+      case StudyMethod.reading:
+        if (features.isVisible(FieldFeature.reading) &&
+            scope.features.isVisible(Feature.reading)) {
+          _pushDestination(
+            'learning/first-reading',
+            CefrArticleReaderScreen(
+              title: 'บทอ่านเริ่มต้น · ที่สถานีรถไฟ',
+              content:
+                  'Mina reads the sign at the station. '
+                  'Her friend is on platform two. '
+                  'They meet before the train leaves.',
+              cefrLevel: 'A1',
+              voice: scope.voice,
+            ),
+          );
+          return;
+        }
+      case StudyMethod.speaking:
+        if (features.isVisible(FieldFeature.speechPractice)) {
+          _pushDestination(
+            'practice/shadowing',
+            ShadowingChallengeScreen(
+              referenceSentence: 'Which platform does the train leave from?',
+              voice: scope.voice,
+            ),
+          );
+          return;
+        }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('บันทึกวิธีเรียนแล้ว กิจกรรมนี้ยังไม่พร้อมใช้งาน'),
+      ),
+    );
   }
 
   FieldFeatureRegistry _fieldFeatures(BuildContext context) {

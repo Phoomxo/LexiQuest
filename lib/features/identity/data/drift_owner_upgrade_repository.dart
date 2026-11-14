@@ -99,6 +99,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           upgradedAt,
         );
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+        await _mergeStudyRecords(source.id, target.id);
         await _moveOwnerRows(source.id, target.id);
         await _rebuildLearningProjections(target.id);
         await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
@@ -264,7 +265,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           '''
       SELECT guest.id AS guest_id, target.id AS target_id,
              guest.spelling AS guest_spelling,
-             target.spelling AS target_spelling
+             target.spelling AS target_spelling,
+             guest.is_bookmarked AS guest_bookmarked
       FROM vocabulary_words guest
       JOIN vocabulary_words target
         ON target.owner_id = ?
@@ -280,6 +282,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     for (final collision in collisions) {
       final guestId = collision.read<String>('guest_id');
       final targetWordId = collision.read<String>('target_id');
+      if (collision.read<int>('guest_bookmarked') == 1) {
+        await (_database.update(
+          _database.vocabularyWords,
+        )..where((row) => row.id.equals(targetWordId))).write(
+          const db.VocabularyWordsCompanion(isBookmarked: Value(true)),
+        );
+      }
       await _database.customUpdate(
         'UPDATE answer_attempts SET word_id = ? WHERE word_id = ?',
         variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
@@ -723,6 +732,50 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       }
     }
     return conflicts;
+  }
+
+  Future<void> _mergeStudyRecords(String sourceId, String targetId) async {
+    await _database.customUpdate(
+      "UPDATE focus_sessions SET state = 'interrupted', revision = revision + 1 "
+      "WHERE owner_id = ? AND (state = 'running' OR "
+      "(state = 'paused' AND EXISTS (SELECT 1 FROM focus_sessions "
+      "WHERE owner_id = ? AND state IN ('running','paused'))))",
+      variables: [Variable(sourceId), Variable(targetId)],
+      updates: {_database.focusSessions},
+    );
+    final preferences = await (_database.select(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.isIn([sourceId, targetId]))).get();
+    if (preferences.length != 2) return;
+    final source = preferences.singleWhere((row) => row.ownerId == sourceId);
+    final target = preferences.singleWhere((row) => row.ownerId == targetId);
+    final takeSourceGoal = target.goalState == 'unset';
+    await (_database.update(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.equals(targetId))).write(
+      db.LearningPreferencesCompanion(
+        onboardingState: Value(
+          target.onboardingState == 'unset'
+              ? source.onboardingState
+              : target.onboardingState,
+        ),
+        purpose: Value(target.purpose ?? source.purpose),
+        plannedMinutes: Value(target.plannedMinutes ?? source.plannedMinutes),
+        learningMethod: Value(target.learningMethod ?? source.learningMethod),
+        goalState: Value(takeSourceGoal ? source.goalState : target.goalState),
+        goalCivilDate: Value(
+          takeSourceGoal ? source.goalCivilDate : target.goalCivilDate,
+        ),
+        updatedAtUtcMs: Value(
+          source.updatedAtUtcMs > target.updatedAtUtcMs
+              ? source.updatedAtUtcMs
+              : target.updatedAtUtcMs,
+        ),
+      ),
+    );
+    await (_database.delete(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.equals(sourceId))).go();
   }
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {

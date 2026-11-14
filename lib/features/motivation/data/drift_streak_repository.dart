@@ -771,6 +771,19 @@ final class DriftStreakRepository {
       }
     }
     final ids = [current.ruleId, ?replacingRuleId];
+    final focusStarts = await (_database.select(
+      _database.focusSessions,
+    )..where((row) => row.startRuleId.isIn(ids))).get();
+    for (final focus in focusStarts) {
+      final start = focus.startedAtUtcMs * 1000;
+      if (focus.startRuleId == replacingRuleId ||
+          focus.ownerId != current.originOwnerId ||
+          focus.originOwnerId != current.originOwnerId ||
+          start < current.effectiveUtcUs ||
+          start >= boundary) {
+        throw StateError('Home calendar change conflicts with focus history');
+      }
+    }
     final instances = await (_database.select(
       _database.questInstances,
     )..where((r) => r.calendarRuleId.isIn(ids))).get();

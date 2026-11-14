@@ -217,11 +217,18 @@ void main() {
         expect(find.text('50%'), findsOneWidget);
         expect(find.text('Synthetic'), findsOneWidget);
         expect(
+          find.text('ไม่มีข้อความโจทย์และคำตอบเดิมของรอบนี้'),
+          findsOneWidget,
+        );
+        expect(
           find.text('ฝึกคำที่ผิด (1)'),
           hiddenFeature == null ? findsOneWidget : findsNothing,
         );
-        expect(find.text('กลับไปดูประวัติ'), findsOneWidget);
-        await tester.tap(find.text('กลับไปดูประวัติ'));
+        final backToHistory = find.text('กลับไปดูประวัติ');
+        await tester.ensureVisible(backToHistory);
+        await tester.pumpAndSettle();
+        expect(backToHistory.hitTestable(), findsOneWidget);
+        await tester.tap(backToHistory.hitTestable());
         await tester.pumpAndSettle();
         expect(find.byType(MasteryDashboardScreen), findsOneWidget);
         expect(await _databaseSnapshot(db), before);
@@ -240,7 +247,9 @@ void main() {
           await tester.pumpAndSettle();
           final repair = find.text('ฝึกคำที่ผิด (1)');
           await tester.ensureVisible(repair);
-          await tester.tap(repair);
+          await tester.pumpAndSettle();
+          expect(repair.hitTestable(), findsOneWidget);
+          await tester.tap(repair.hitTestable());
           await _waitFor(
             tester,
             () => find
@@ -252,7 +261,11 @@ void main() {
             tester.widget<QuizScreen>(find.byType(QuizScreen)).returnLabel,
             'กลับไปที่ผลการฝึก',
           );
-          await tester.tap(find.text('กลับไปที่ผลการฝึก'));
+          final backToScore = find.text('กลับไปที่ผลการฝึก');
+          await tester.ensureVisible(backToScore);
+          await tester.pumpAndSettle();
+          expect(backToScore.hitTestable(), findsOneWidget);
+          await tester.tap(backToScore.hitTestable());
           await tester.pumpAndSettle();
           expect(
             find.byKey(const ValueKey('score-session:synthetic-session')),

@@ -71,6 +71,11 @@ import '../features/vocabulary/data/file_selector_vocabulary_import_file_picker.
 import '../features/vocabulary/data/file_selector_source_practice_file_picker.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
+import '../features/vocabulary/data/drift_local_content_report_repository.dart';
+import '../features/motivation/data/drift_study_preferences_repository.dart';
+import '../features/motivation/application/focus_use_cases.dart';
+import '../features/motivation/data/drift_focus_repository.dart';
+import '../features/motivation/domain/focus_models.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -346,6 +351,13 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onSettled: notifyProgress,
     );
+    final focus = FocusUseCases(
+      repository: DriftFocusRepository(database, calendar: streakRepository),
+      owners: localOwners,
+      clock: MonotonicFocusClock(continuityId: idGenerator.v4()),
+      generateId: idGenerator.v4,
+      onChanged: notifyProgress,
+    );
     TrustedQuestAnswerCatalog? answerCatalog;
     if (questVisible()) {
       try {
@@ -566,6 +578,12 @@ final class AppBootstrap {
       vocabularyImporter: vocabularyImporter,
       vocabularyImportFilePicker: FileSelectorVocabularyImportFilePicker().pick,
       sourcePracticeFilePicker: FileSelectorSourcePracticeFilePicker().pick,
+      localContentReports: DriftLocalContentReportRepository(database),
+      studyPreferences: DriftStudyPreferencesRepository(
+        database,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
+      focus: focus,
       deviceModels: deviceModels,
       account: account,
       researchConsent: researchConsent,
@@ -584,6 +602,7 @@ final class AppBootstrap {
         await objectScanner.dispose();
         await speechPractice.dispose();
         await deviceModels.dispose();
+        await focus.dispose();
         modelByteSource.close();
         await database.close();
       },

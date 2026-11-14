@@ -147,6 +147,12 @@ final class ProgressSnapshot {
   final DateTime? latestEvidenceAtUtc;
 }
 
+typedef OriginalQuizAnswer = ({
+  QuizQuestion question,
+  String? chosenAnswer,
+  bool isCorrect,
+});
+
 final class SessionHistoryEntry {
   const SessionHistoryEntry({
     required this.ownerId,
@@ -157,6 +163,7 @@ final class SessionHistoryEntry {
     this.mistakes = const [],
     this.categoryId,
     this.categoryName,
+    this.originalAnswers,
   });
 
   final String ownerId;
@@ -167,4 +174,5 @@ final class SessionHistoryEntry {
   final List<QuizWord> mistakes;
   final String? categoryId;
   final String? categoryName;
+  final List<OriginalQuizAnswer>? originalAnswers;
 }

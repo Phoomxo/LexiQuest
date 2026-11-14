@@ -182,69 +182,73 @@ void main() {
           generateId: () => 'unused-${++id}',
           nowUtc: learning.nowUtc,
         );
-        await tester.pumpWidget(
-          AppDependenciesScope(
-            dependencies: AppDependencies(
-              runtimeStatus: const AppRuntimeStatus(
-                localData: RuntimeAvailability.ready,
-                firebase: RuntimeAvailability.unavailable,
-                supabase: RuntimeAvailability.unavailable,
-                backends: RuntimeAvailability.unavailable,
+        try {
+          await tester.pumpWidget(
+            AppDependenciesScope(
+              dependencies: AppDependencies(
+                runtimeStatus: const AppRuntimeStatus(
+                  localData: RuntimeAvailability.ready,
+                  firebase: RuntimeAvailability.unavailable,
+                  supabase: RuntimeAvailability.unavailable,
+                  backends: RuntimeAvailability.unavailable,
+                ),
+                config: null,
+                guestSessionService: _UnusedGuestSession(),
+                database: database,
+                learning: learning,
+                localOwners: learning.owners,
+                vocabulary: vocabulary,
               ),
-              config: null,
-              guestSessionService: _UnusedGuestSession(),
-              database: database,
-              learning: learning,
-              localOwners: learning.owners,
-              vocabulary: vocabulary,
+              child: MaterialApp(
+                home: ChooseModeScreen(loader: () async => progress),
+              ),
             ),
-            child: MaterialApp(
-              home: ChooseModeScreen(loader: () async => progress),
+          );
+          await tapPrompt(tester, 'ดูแบบฝึกทั้งหมด');
+          await tapPrompt(tester, mode.$1);
+          await _pumpUntilFound(tester, find.text('Travel'));
+          expect(
+            (await tester.runAsync(
+              () => database.select(database.learningSessions).get(),
+            ))!,
+            isEmpty,
+          );
+          await tapPrompt(tester, 'Travel');
+          await _pumpUntilFound(tester, find.byType(QuizScreen));
+          final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+          expect(
+            (screen.categoryId, screen.expectedOwnerId, screen.promptKind),
+            ('category-1', 'local:guest', mode.$2),
+          );
+          await _pumpUntilFound(
+            tester,
+            find.text(
+              mode.$2 == QuizPromptKind.spellingChoice
+                  ? 'เลือกคำอังกฤษที่ตรงกับความหมาย'
+                  : 'โจทย์นิยามภาษาอังกฤษ',
             ),
-          ),
-        );
-        await tapPrompt(tester, 'ดูแบบฝึกทั้งหมด');
-        await tapPrompt(tester, mode.$1);
-        await _pumpUntilFound(tester, find.text('Travel'));
-        expect(
-          (await tester.runAsync(
-            () => database.select(database.learningSessions).get(),
-          ))!,
-          isEmpty,
-        );
-        await tapPrompt(tester, 'Travel');
-        await _pumpUntilFound(tester, find.byType(QuizScreen));
-        final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
-        expect(
-          (screen.categoryId, screen.expectedOwnerId, screen.promptKind),
-          ('category-1', 'local:guest', mode.$2),
-        );
-        await _pumpUntilFound(
-          tester,
-          find.text(
-            mode.$2 == QuizPromptKind.spellingChoice
-                ? 'เลือกคำอังกฤษที่ตรงกับความหมาย'
-                : 'โจทย์นิยามภาษาอังกฤษ',
-          ),
-        );
-        expect(
-          (await tester.runAsync(
-            () => database.select(database.answerAttempts).get(),
-          ))!,
-          isEmpty,
-        );
-        await tester.tap(
-          find
-              .descendant(
-                of: find.byType(QuizScreen),
-                matching: find.byType(BackButton),
-              )
-              .hitTestable(),
-        );
-        await tester.pump(const Duration(milliseconds: 400));
-        await _pumpUntilFound(tester, find.text('เลือกวิธีฝึก'));
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
+          );
+          expect(
+            (await tester.runAsync(
+              () => database.select(database.answerAttempts).get(),
+            ))!,
+            isEmpty,
+          );
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byType(QuizScreen),
+                  matching: find.byType(BackButton),
+                )
+                .hitTestable(),
+          );
+          await tester.pump(const Duration(milliseconds: 400));
+          await _pumpUntilFound(tester, find.text('เลือกวิธีฝึก'));
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          // Drift defers removing canceled query streams to a timer.
+          await tester.pump(const Duration(milliseconds: 1));
+        }
       },
     );
   }

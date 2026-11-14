@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version eleven with product tables', () async {
+  test('new databases use schema version twelve with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 11);
+    expect(database.schemaVersion, 12);
 
     final categoryColumns = await _columnNames(
       database,
@@ -57,6 +57,9 @@ void main() {
         'reward_transactions',
         'owned_reward_items',
         'equipped_reward_items',
+        'local_content_reports',
+        'focus_sessions',
+        'learning_preferences',
       ]),
     );
     expect(
@@ -122,7 +125,7 @@ void main() {
         )
         .getSingle();
 
-    expect(version, 11);
+    expect(version, 12);
     expect(category.read<String>('name'), 'Travel');
     expect(category.read<int>('cloud_revision'), 0);
     expect(word.read<String>('spelling'), 'station');
@@ -196,7 +199,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        11,
+        12,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -223,7 +226,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        11,
+        12,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');
@@ -254,6 +257,9 @@ const _expectedTables = <String>{
   'sync_conflicts',
   'runtime_flags',
   'model_downloads',
+  'local_content_reports',
+  'focus_sessions',
+  'learning_preferences',
 };
 
 Future<Set<String>> _tableNames(AppDatabase database) async {

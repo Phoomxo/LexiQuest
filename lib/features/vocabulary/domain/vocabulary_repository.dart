@@ -13,6 +13,14 @@ abstract interface class VocabularyRepository {
 
   Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId);
 
+  Stream<List<VocabularyWord>> watchBookmarkedWords(String ownerId);
+
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  });
+
   Future<VocabularyCategory> createCategory(VocabularyCategory category);
 
   Future<VocabularyCategory> renameCategory({

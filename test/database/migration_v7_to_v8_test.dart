@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports schema version 11', () async {
+    test('fresh database reports schema version 12', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,7 +68,7 @@ void main() {
           .getSingle();
       expect(
         version,
-        11,
+        12,
         reason: 'fresh databases use the current local schema',
       );
     });

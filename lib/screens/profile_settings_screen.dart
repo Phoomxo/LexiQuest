@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'study_preferences_panel.dart';
 
 import '../config/m3_theme.dart';
 import '../features/account/application/account_use_cases.dart';
@@ -198,6 +199,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                 ),
+                if (dependencies?.studyPreferences != null)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.flag_outlined),
+                      title: const Text('วิธีเรียนและวันเป้าหมาย'),
+                      subtitle: const Text('เลือกสิ่งที่อยากฝึก หรือข้ามได้'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => showStudyPreferences(context),
+                    ),
+                  ),
                 if (account != null)
                   TextButton.icon(
                     onPressed: _editName,

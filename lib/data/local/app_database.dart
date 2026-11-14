@@ -14,6 +14,7 @@ import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/runtime_tables.dart';
+import 'tables/study_tables.dart';
 import 'tables/sync_tables.dart';
 import 'tables/vocabulary_tables.dart';
 
@@ -66,6 +67,9 @@ final _productionNativeOptions = DriftNativeOptions(
     StreakTokenAdjustments,
     AssociationRecords,
     AssociativeMemoryStates,
+    LocalContentReports,
+    FocusSessions,
+    LearningPreferences,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -75,7 +79,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   Future<T> transaction<T>(
@@ -126,6 +130,7 @@ final class AppDatabase extends _$AppDatabase {
             throw StateError('Unexpected schema 11 objects in legacy database');
           }
         }
+        if (from < 12) await _checkStudyMigrationSource();
         final questParentExisted = await _tableExists('quest_instances');
         await _createMissingTables(migrator);
         if (from < 2) {
@@ -248,8 +253,11 @@ final class AppDatabase extends _$AppDatabase {
           ).get()).isNotEmpty) {
             throw StateError('Schema 11 foreign-key validation failed');
           }
+        }
+        if (from < 12) {
+          await _migrateLocalStudy(migrator);
           // Publish with the validated DDL so a beforeOpen failure cannot replay it.
-          await customStatement('PRAGMA user_version = 11');
+          await customStatement('PRAGMA user_version = 12');
         }
       });
     },
@@ -258,8 +266,69 @@ final class AppDatabase extends _$AppDatabase {
       await _createLearningIndexes();
       await _createEventIndexes();
       await _createS6Indexes();
+      await _createStudyIndexes();
     },
   );
+
+  Future<void> _checkStudyMigrationSource() async {
+    final unexpected = await customSelect(
+      "SELECT name FROM sqlite_master WHERE lower(name) IN ("
+      "'local_content_reports','focus_sessions','learning_preferences',"
+      "'idx_focus_open_owner','idx_focus_owner_start_week') "
+      "ORDER BY name LIMIT 1",
+    ).getSingleOrNull();
+    if (unexpected != null) {
+      throw StateError(
+        'Unexpected schema 12 object in legacy database: '
+        '${unexpected.read<String>('name')}',
+      );
+    }
+    for (final (table, column) in const [
+      ('learning_sessions', 'question_plan_json'),
+      ('learning_sessions', 'continuation_json'),
+      ('answer_attempts', 'answer_evidence_json'),
+      ('vocabulary_words', 'is_bookmarked'),
+    ]) {
+      if (await _columnExists(table, column)) {
+        throw StateError('Unexpected schema 12 column: $table.$column');
+      }
+    }
+  }
+
+  Future<void> _migrateLocalStudy(Migrator migrator) async {
+    await _addColumnIfMissing(
+      migrator,
+      'learning_sessions',
+      learningSessions,
+      learningSessions.questionPlanJson,
+    );
+    await _addColumnIfMissing(
+      migrator,
+      'learning_sessions',
+      learningSessions,
+      learningSessions.continuationJson,
+    );
+    await _addColumnIfMissing(
+      migrator,
+      'answer_attempts',
+      answerAttempts,
+      answerAttempts.answerEvidenceJson,
+    );
+    await _addColumnIfMissing(
+      migrator,
+      'vocabulary_words',
+      vocabularyWords,
+      vocabularyWords.isBookmarked,
+    );
+    await migrator.createTable(localContentReports);
+    await migrator.createTable(focusSessions);
+    await migrator.createTable(learningPreferences);
+    await _createStudyIndexes();
+    final violations = await customSelect('PRAGMA foreign_key_check').get();
+    if (violations.isNotEmpty) {
+      throw StateError('Schema 12 foreign-key validation failed');
+    }
+  }
 
   Future<void> _rebuildQuestPeriods(
     Migrator migrator, {
@@ -388,14 +457,21 @@ final class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Future<void> _createS6Indexes() async {
-    for (final sql in const [
-      'CREATE INDEX IF NOT EXISTS idx_learning_attempts_owner_time_id ON answer_attempts(owner_id,occurred_at_utc_ms,id)',
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_selected_owner_effective ON owner_calendar_epochs(owner_id,effective_utc_us) WHERE is_selected=1',
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_quest_canonical_owner_period ON quest_instances(owner_id,period_key) WHERE record_kind='canonical'",
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_continuity_owner ON streak_baselines(owner_id) WHERE controls_continuity=1',
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_auto_protection_origin_day ON streak_token_adjustments(origin_owner_id,protected_day) WHERE kind='autoProtect'",
-    ]) {
+  Future<void> _createS6Indexes() => _ensureExactIndexes(const [
+    'CREATE INDEX IF NOT EXISTS idx_learning_attempts_owner_time_id ON answer_attempts(owner_id,occurred_at_utc_ms,id)',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_selected_owner_effective ON owner_calendar_epochs(owner_id,effective_utc_us) WHERE is_selected=1',
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_quest_canonical_owner_period ON quest_instances(owner_id,period_key) WHERE record_kind='canonical'",
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_continuity_owner ON streak_baselines(owner_id) WHERE controls_continuity=1',
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_streak_auto_protection_origin_day ON streak_token_adjustments(origin_owner_id,protected_day) WHERE kind='autoProtect'",
+  ]);
+
+  Future<void> _createStudyIndexes() => _ensureExactIndexes(const [
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_focus_open_owner ON focus_sessions(owner_id) WHERE state IN ('running','paused')",
+    'CREATE INDEX IF NOT EXISTS idx_focus_owner_start_week ON focus_sessions(owner_id,start_civil_week)',
+  ]);
+
+  Future<void> _ensureExactIndexes(List<String> definitions) async {
+    for (final sql in definitions) {
       final name = sql.split(' IF NOT EXISTS ')[1].split(' ')[0];
       final existing = await customSelect(
         'SELECT type,sql FROM sqlite_master WHERE name = ? COLLATE NOCASE',

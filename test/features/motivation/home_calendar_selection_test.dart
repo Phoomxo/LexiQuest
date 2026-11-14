@@ -256,6 +256,57 @@ void main() {
     );
   }
 
+  test('focus calendar pin prevents replacing a used pending epoch', () async {
+    final f = await _Fixture.memory(installCatalog: false);
+    final pending = await f.select('Asia/Bangkok');
+    final started = _boundary.add(const Duration(hours: 1));
+    final activeAtStart = await f.repository.calendarRuleAt(
+      ownerId: 'a',
+      occurredAtUtcMs: started.millisecondsSinceEpoch,
+    );
+    expect(_identity(activeAtStart), _identity(pending));
+    await _focusAt(f.db, activeAtStart, started);
+
+    // The selection clock has moved back before the focus session's start.
+    final before = await _snapshot(f.db);
+    await expectLater(f.select('America/New_York'), _rejected);
+    expect(await _snapshot(f.db), before);
+  });
+
+  for (final excludedByCutover in [false, true]) {
+    test(
+      'focus calendar pin survives current epoch closure: excluded=$excludedByCutover',
+      () async {
+        final f = await _Fixture.memory(installCatalog: false);
+        final started = excludedByCutover
+            ? _boundary
+            : _boundary.subtract(const Duration(milliseconds: 1));
+        final rule = await f.repository.calendarRuleAt(
+          ownerId: 'a',
+          occurredAtUtcMs: started.millisecondsSinceEpoch,
+        );
+        await _focusAt(f.db, rule, started);
+
+        if (excludedByCutover) {
+          final before = await _snapshot(f.db);
+          await expectLater(f.select('Asia/Bangkok'), _rejected);
+          expect(await _snapshot(f.db), before);
+        } else {
+          final before = await _snapshotExceptEpochs(f.db);
+          final pending = await f.select('Asia/Bangkok');
+          expect(pending.effectiveUtcUs, _boundary.microsecondsSinceEpoch);
+          final retained = await f.repository.calendarRuleAt(
+            ownerId: 'a',
+            occurredAtUtcMs: started.millisecondsSinceEpoch,
+          );
+          expect(retained.ruleId, rule.ruleId);
+          expect(retained.expiresUtcUs, pending.effectiveUtcUs);
+          expect(await _snapshotExceptEpochs(f.db), before);
+        }
+      },
+    );
+  }
+
   test(
     'future captured week crossing cutover refuses selection and preserves original bytes',
     () async {
@@ -620,6 +671,37 @@ LearningCalendarWindow _unavailable(
 
 Future<AnswerAttempt> _answer(AppDatabase db, String id) =>
     (db.select(db.answerAttempts)..where((r) => r.id.equals(id))).getSingle();
+
+Future<void> _focusAt(
+  AppDatabase db,
+  OwnerCalendarRule rule,
+  DateTime started,
+) {
+  final window = TimezonePolicy.captureWindow(
+    started,
+    rule.ianaId,
+    epochEffectiveAtUtc: DateTime.fromMicrosecondsSinceEpoch(
+      rule.effectiveUtcUs,
+      isUtc: true,
+    ),
+  );
+  return db.customStatement(
+    'INSERT INTO focus_sessions '
+    '(id,owner_id,origin_owner_id,target_ms,started_at_utc_ms,start_rule_id,'
+    'start_civil_week,state,spans_json) VALUES (?,?,?,?,?,?,?,?,?)',
+    [
+      'synthetic-focus',
+      'a',
+      'a',
+      300000,
+      started.millisecondsSinceEpoch,
+      rule.ruleId,
+      window.weekMonday.toIso8601String().substring(0, 10),
+      'running',
+      '[]',
+    ],
+  );
+}
 
 Object _identity(OwnerCalendarRule r) => (
   r.ruleId,

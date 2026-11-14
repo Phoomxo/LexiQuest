@@ -124,12 +124,12 @@ void main() {
     expect(local.calls, 0);
   });
 
-  for (final schemaVersion in [10, 12]) {
+  for (final schemaVersion in [10, 11, 13]) {
     test(
       'rejects schema $schemaVersion with current complete export scopes before reauth or deletion',
       () async {
         exporter.receipt = _exportReceipt(now, schemaVersion: schemaVersion);
-        expect(exporter.receipt.coveredScopes, hasLength(32));
+        expect(exporter.receipt.coveredScopes, hasLength(35));
         expect(exporter.receipt.coveredScopes, requiredFullAccountExportScopes);
 
         await expectLater(

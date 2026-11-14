@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 
@@ -16,6 +19,9 @@ class ScoreScreen extends StatefulWidget {
     this.categoryName,
     this.sessionId,
     this.returnLabel = 'กลับไปเลือกกิจกรรม',
+    this.showOriginalHistory = false,
+    this.originalAnswers,
+    this.expectedOwnerId,
   });
 
   final int correctAnswers;
@@ -26,6 +32,9 @@ class ScoreScreen extends StatefulWidget {
   final String? categoryName;
   final String? sessionId;
   final String returnLabel;
+  final bool showOriginalHistory;
+  final List<OriginalQuizAnswer>? originalAnswers;
+  final String? expectedOwnerId;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -39,6 +48,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
   AppDependencies? _dependencies;
   bool _captured = false;
   bool _invalidated = false;
+  StreamSubscription<String?>? _ownerChanges;
 
   @override
   void didChangeDependencies() {
@@ -47,9 +57,25 @@ class _ScoreScreenState extends State<ScoreScreen> {
     if (!_captured) {
       _dependencies = current;
       _captured = true;
+      final ownerId = widget.expectedOwnerId;
+      if (ownerId != null) {
+        _ownerChanges = current?.watchActiveOwnerId()?.listen((active) {
+          if (active != ownerId) _hideResult();
+        }, onError: (Object _) => _hideResult());
+      }
     } else if (!identical(current, _dependencies)) {
       _invalidated = true;
     }
+  }
+
+  void _hideResult() {
+    if (mounted && !_invalidated) setState(() => _invalidated = true);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_ownerChanges?.cancel());
+    super.dispose();
   }
 
   bool get _isCurrent =>
@@ -132,6 +158,32 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   icon: Icons.dataset_outlined,
                 ),
                 const SizedBox(height: 24),
+                if (widget.showOriginalHistory) ...[
+                  Text(
+                    'คำตอบจากรอบเดิม',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (widget.originalAnswers == null)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('ไม่มีข้อความโจทย์และคำตอบเดิมของรอบนี้'),
+                    )
+                  else
+                    for (final answer in widget.originalAnswers!)
+                      ListTile(
+                        leading: Icon(
+                          answer.isCorrect
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
+                        ),
+                        title: Text(answer.question.promptText),
+                        subtitle: Text(
+                          answer.chosenAnswer == null
+                              ? 'ครั้งก่อนขอดูคำตอบ'
+                              : 'ครั้งก่อนเลือก ${answer.chosenAnswer}',
+                        ),
+                      ),
+                ],
                 if (widget.mistakes.isNotEmpty) ...[
                   Text(
                     'คำที่ควรฝึกต่อ',
