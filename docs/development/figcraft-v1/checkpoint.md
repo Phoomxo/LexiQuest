@@ -1,5 +1,22 @@
 # Continuous execution checkpoint
 
+## S6 Android study reminder
+
+- Source `77e7dcdffde8fd8aa6c9c46c5dccee5dcee9f552`. F27 Android opt-in,
+  permission denial, closed-process delivery, retained choice, cancellation
+  and return to normal practice verified on isolated offline API 35.
+  The debug APK matched the installed base SHA-256. Windows focused 58,
+  analysis, format and independent source review passed.
+  [Commands, timestamps and artifact hash](evidence/s6-f27-study-reminder.txt).
+- Requiring signed delivery and physical accessibility keeps f27 unverified
+  in the release register. Next source unit f34 opens an owner-bound preview
+  from motivation, hides the date by default, and tests cancel/native share.
+  Keep the vivo v34 dataset and known-object recognition `not_checked`.
+- [Exact f09 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43617906629)
+  passed at `7190be0f` with Flutter 2,302, CPU backend 267, Firestore,
+  Supabase, analysis and Android debug build. Raw log SHA-256
+  `c9c2e6d67a9f5809196ba62eac52a50e59f8c276a80da1d8cb6ef7fe9ebe793c`.
+
 ## S3 Authored contextual cloze
 
 - Source `f0574ce914509d9229c0a2ccc7636783e84eed53`. F09 works from stored
@@ -10,10 +27,7 @@
   passed at `fd371a14` with Flutter 2,289, backend CPU 267, Firestore,
   Supabase and Android debug build. Raw CI log SHA-256
   `5cfc6f5ac859e117cb9e0286f8c6745d942f3936e39449788a620b9be4774d0c`.
-- Next unit is f27 reminder opt-in and cancellation from the study plan.
-  Verify the existing due predicate, Android permission and scheduler
-  boundary first. f09 requires delivery APK and physical accessibility
-  checks. Native camera recognition remains `not_checked`.
+- f09 requires delivery APK and physical accessibility checks.
 
 ## S3 Category quiz setup
 
