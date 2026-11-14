@@ -1,5 +1,22 @@
 # Continuous execution checkpoint
 
+## S4 Saved-word detail, IPA and Dictation
+
+- Source `1ced5df447cf21314078679fbe96cd733d36bc26`. A saved word
+  opens detail and explicit Edit, or starts one-word IPA/Dictation.
+  The exact word and owner stay bound across transitions. S4 checks
+  56 Flutter cases including 200% and owner-change playback cancellation.
+  Clean analysis and Android build. [Evidence and APK](evidence/s4-saved-word-audio.txt).
+- Android API 35 offline opened station through its real set, requested
+  IPA and normal/slow dictation, used the meaning hint, retained staton
+  for correction, and returned from both activities to the same detail.
+  This confirms the Library origin. Check audible TTS, TalkBack and
+  the additional listening/source/mic routes independently.
+- Screens 48 now 6 fail and 42 unverified. Next S4 card grounds
+  `smart_audio_playlist_screen` from the selected set and listening
+  hub using `21b34eaa:finish_routes_b.py` and `detached-b.md`.
+  Physical known-object camera recognition remains `not_checked`.
+
 ## S2 Library JSON practice and CSV review
 
 - Source `6d2c5af694ce0be29b27653b48ea8ac9f6fbb5aa` wires temporary JSON
@@ -12,6 +29,9 @@
   and empty Library and reopened without a draft. Explicit CSV
   confirmation saved one synthetic word in the chosen set.
   [Evidence and APK hash](evidence/s2-wordbook-json.txt).
+- [Exact Wordbook CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43631245794)
+  passed at `0ab02e37` with Flutter 2,344, CPU backend 267, both
+  policies, analysis and Android debug build.
 - Screens 48 now 8 fail and 40 unverified. Signed-device and TalkBack
   require separate evidence. Next is S4 word detail as the shared entry
   for Phonetic Explorer and Dictation, from the Library's existing

@@ -85,3 +85,8 @@ Native evidence files under build/wordbook-android-evidence/:
     ba07bfab447cca4e446324f490e040aed276282ba8e5a527bf89e46c9cbf0753
 
 Physical TalkBack, native 200% and signed APK acceptance remain open.
+
+Exact PR head 0ab02e3742c45c730e452cfbfb66500939ef42ce, CI 43631245794,
+passed Flutter 2,344, CPU backend 267, Firestore and Supabase policies,
+analysis and Android debug APK. Raw log SHA-256
+c72c495525b8c233378569aca6cfee2310486ac1173c4d14731390961f842531.
