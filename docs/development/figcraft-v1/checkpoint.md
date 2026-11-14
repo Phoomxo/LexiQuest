@@ -1,5 +1,27 @@
 # Continuous execution checkpoint
 
+## S3 Due review and reopen from Progress
+
+- On offline API 35 debug APK `46c8a808` at system font 2.0, one isolated
+  due word appeared on Today. Reveal left attempts empty. The single
+  self-rating produced a 100% result and due time +24h. Reopening the app
+  kept the same result and sent the empty queue action to the Library.
+- The existing flashcards, picker, policy and use case tests passed 87.
+  f06 and f14 pass the scoped journey. The original SRS prompt-text
+  snapshot and signed accessibility remain open.
+  [Evidence](evidence/s3-f06-f14-srs-reopen.txt).
+
+## S5 Read the paired synthetic assessment
+
+- Source `1edcabbf`, offline API 35 debug APK `46c8a808`. Settings research
+  options opens the authored two-word comparison at system font 2.0.
+  The viewer opens the per-word answers, returns to the same 1/2 and 2/2,
+  then returns to the original research options. Five SQLite counts matched.
+- Windows 142 focused tests and static analysis passed. Review accepted
+  the isolated fixture and checked owner/cycle/form linkage and time order.
+  f28 passes the synthetic scope. P3.6 real evidence and signed accessibility
+  are pending. [Evidence](evidence/s5-f28-synthetic-pair.txt).
+
 ## S4 Typed practice from the permission center
 
 - Settings shows an authored spelling exercise when the microphone
@@ -11,10 +33,11 @@
   issue. Windows full Flutter passed 2,384 at draft head `e4d032ad`.
   GitHub CI on that head passed Flutter 2,384, backend CPU 267, Firestore,
   Supabase, analysis and Android debug build.
-  The Android debug build and installed hash matched. Two Android
-  starts ended before a usable window, with initialization timeout and ANR.
-  Next compare the candidate and known-launch build on a healthy isolated
-  AVD session. Current signed hardware and TalkBack are pending.
+  A cold host restart of the isolated API 35 AVD recovered Settings and
+  LexiQuest after the initialization timeout and ANR. Installed hash
+  `5654793f` matched. Android font scale 2.0 verified `staton` to
+  `station`, silent retry and return to the same denied permission center.
+  Five SQLite counts matched. Current signed hardware and TalkBack are pending.
   [Evidence](evidence/s4-settings-typed.txt).
 
 ## S5 Research permit expiry during validation

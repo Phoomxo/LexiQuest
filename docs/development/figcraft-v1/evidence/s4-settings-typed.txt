@@ -31,17 +31,39 @@ Host copy is build/boss-android-evidence/lexiquest-permission-typed-05c75760-api
 The offline API 35 AVD had an initialization timeout after installation.
 Android first recorded failed process attachment while starting the
 reminder receiver with the activity pending. A separate activity start
-ended with an ANR before the app completed startup. Android typing
-verification is pending. Preserve the fixture and compare the same APK
-against the previously launching build in a healthy isolated AVD session.
+ended with an ANR before the app completed startup in that session.
 build/boss-android-evidence/permission-typed-start-exit.txt SHA-256:
 98746a9e2afc835bf6b3f7156982dcbfddc49e73a5f8f9eb6e40340262e98439
 The Android system Settings launch also timed out. The guest reboot
 request timed out and the subsequent uptime showed the old session.
-Next use a cold host start of the isolated AVD, then confirm system UI
-health, offline state and the installed hash before testing the route.
 build/boss-android-evidence/permission-typed-avd-health.txt SHA-256:
 1cad91ea39cb7fca0b5be699afe1407f9908dc9c6277295a827d79c4c178c3d7
+
+A cold host restart of only the isolated AVD preserved the fixture.
+Android Settings and LexiQuest opened with the same installed SHA-256.
+System font scale 2.0, airplane mode enabled and Wi-Fi off were checked.
+Declining the optional research prompt let the local guest continue.
+From the normal drawer Settings route, the center showed no microphone
+permission. Typing staton gave the missing i and -tion clues. After typing
+station, the correct screen showed station and สถานี. Retry returned to
+the silent hint and the explicit back button returned to the same center
+with its microphone status still denied. No audio controls were present.
+Read-only SQLite counts before and after were 8 sessions, 18 attempts,
+35 outbox operations, 0 EventEnvelopeV2 rows and 0 research consents.
+The two count snapshots were byte-for-byte equal.
+
+Raw logs under build/boss-android-evidence, SHA-256:
+permission-typed-cold-start.txt cdfc3186ce2c6bf1baa8f792a07243473f5d2cafaeb5a297379a5f5b637aa4e4
+permission-typed-recovered-wrong.txt f55721b483a6d4e391061520aba0be4d9a622596205403d7bb0916f8886591d0
+permission-typed-recovered-correct.txt 1035c281903052b053ca3c2a5944e033f6ad9c5cf9c0948f4413387aab8ebf2e
+permission-typed-recovered-retry.txt 5906c7f640528b65cc492144b2805fddc23839822c8b3d1c2558b5c271a6c0ce
+permission-typed-recovered-permissions.txt and permission-typed-recovered-return.txt:
+d08c158cfe2ac6e30f86b24b69889c89250e9c06c9b054cd9114664131fe1380
+permission-typed-recovered-before-db.txt and permission-typed-recovered-after-db.txt:
+180dd99ad6a139c58707f2928bb1ef28cadcefc205f1c3d18e59fef88c5e6323
+
+Current signed hardware, unavailable service behavior, permanent denial
+and audible TalkBack remain open.
 The earlier offline shadowing denial shares the fixture and is recorded
 separately in s4-shadowing-no-mic.txt.
 

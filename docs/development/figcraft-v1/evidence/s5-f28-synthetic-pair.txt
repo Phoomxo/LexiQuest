@@ -1,0 +1,55 @@
+S5 f28/P3.6 synthetic paired assessment
+
+Application source 1edcabbf332f71765584791b0a6f0fca4ef38571.
+Pinned FigCraft 21b34eaa pack_routes.py and feature_tasks_b.py.
+Settings → งานวิจัยและการเรียน → เปรียบเทียบสองรอบ →
+ดูคำตอบที่ใช้เปรียบเทียบ → กลับไปดูผลเปรียบเทียบ →
+กลับไปดูตัวเลือกงานวิจัย.
+
+The authored station and platform responses give 1 / 2 and 2 / 2.
+Inspection shows station with สถานี in both rounds and platform changing
+from สถานี to ชานชาลา. A local projection matches the synthetic owner,
+study cycle, assignment, protocol, instrument and form pins, ordered UTC
+timestamps and the canonical item IDs before scoring. The public sample
+uses a fixed synthetic owner independent of the current app account.
+It loads from the built-in fixture. Existing sample-chart entry points
+retain their five-question data. Production research defaults to deny.
+
+Windows Flutter 142 passed in research, consent, export, bootstrap,
+Settings, chart and sample journeys. The actual Settings widget journey
+at 390×844/200% verified the new button, response pairs, numeric totals
+and return to both original routes. The earlier RED reached research
+options and exposed the absent action. Domain tests rejected mismatched
+owners, versions and item keys, blank answers and unordered/non-UTC times.
+Independent review traced the fixed synthetic owner and no persistence
+ports, and the final route guards duplicate pushes.
+
+Raw Windows logs under build/, SHA-256:
+s5-f28-paired-ui-red.txt 8cf991c2eb91dcb6c9b4d3d1eebc589e04a052de335d7ecc910c0e95b39b9c55
+s5-f28-paired-focused.txt 4598a40e9fcded2de158f23fb0284be3868ee0e0c5080d60fea3244b620b924a
+s5-f28-paired-analyze.txt 587d564446293cfcfb0daf13a5a7347460bae89e595efbef5ac246f972070038
+
+Native Android API 35 x86_64, system font 2.0, airplane mode and local guest
+after declining research. Host and installed APK SHA-256:
+46c8a80801c4873162c11b2c9a4e76f9424285a6f69d71c2366670d62d0a0c67
+build/s5-f28-paired-android.txt SHA-256:
+35fa5fdcd7d1b08965db1342aed31be4e99037c327b9b981fdada9273519f301
+The initial post-install activity wait returned timeout, then Android
+showed the login and the learner completed this route. Signed startup
+reliability needs separate verification.
+The options, scores and per-word answers were present on the current APK.
+Both return UI dumps matched their exact original state. The before/after
+snapshots contained 8 learning sessions, 18 answers, 35 outbox operations,
+0 events_v2 and 0 research_consents. Matching snapshot SHA-256:
+180dd99ad6a139c58707f2928bb1ef28cadcefc205f1c3d18e59fef88c5e6323
+
+Raw logs and rendered PNGs under build/boss-android-evidence, SHA-256:
+f28-launch.txt 673d6f96dcff2ba82696887a83ac422c117ad1590009cf14e397d1320cf37bba
+f28-options.txt and f28-return-options.txt 200cca4971bc12fdcd00c4b54053f12d67fa916ab4858cf846105badf3ed5528
+f28-summary.txt and f28-return-summary.txt a990d477b4751a6b120529b98b6232cb42bdc8672ccffd936e3bde9f6aaa7c3e
+f28-detail.txt 31dad5e099e8852552123629fe9505fa4ce70e38d6786d2691f2015833f0e6e5
+f28-summary.png 4b11abbf2b32875e84b7a6f5fe840f8b8fa3011402fe1aeff397eef45c2feef1
+f28-detail.png bce44e17571e8fcd5ddc2d471c7e53baba5c9e586e2e4bd3836e8d0b80b15a19
+
+Real assessment assignment, authorized instruments, active research
+permission and outcome evaluation remain release dependencies.
