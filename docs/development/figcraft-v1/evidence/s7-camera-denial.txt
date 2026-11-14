@@ -33,3 +33,10 @@ Raw denial hierarchy SHA256
 4c3d560d08b9774042ea71f1105be601811cffe2e209b0859bd528250e18556c.
 Return-to-A XML SHA256
 64671d063d5b1064fe83cfb9544549e4c871fcd8f652e1b5fc1b03f20dd61a76.
+
+At the same v34 APK, bookmarked the synthetic notebook in A. It remained
+the only saved word after a cold offline launch. Unbookmark removed it
+from the filter, and the real word and 75% score remained in All Words.
+Restored the original Wi-Fi, font, theme and screen state.
+Offline bookmarked XML SHA256
+c578ae32ba2312ad8ed7c538a5222b91d32dbe2799bd3fada40ec7ca6c14d33b.
