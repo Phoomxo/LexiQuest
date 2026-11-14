@@ -1,0 +1,42 @@
+S4 f41 typed practice from the Settings permission center
+
+Application source 05c7576061ed0c4e2bfbb0837d4aa277c5a6795d.
+Settings → สิทธิ์กล้องและไมโครโฟน → ลองตอบโดยไม่ใช้เสียง.
+The permission center reads the OS state and displays the action for a
+denied, restricted, permanently denied or unavailable microphone while
+speech practice is visible in both registries. It reuses Dictation's
+existing correction and answer handling with the authored station clue.
+The hint-only path stays silent when retried.
+
+Windows Flutter 63 passed across Settings, permission center, Dictation,
+Shadowing and the Listening journey. The 390×844 / 200% Settings widget
+case typed staton, corrected it to station, retried in hint-only mode and
+returned to the same permission center. The permission handler received no
+request. The permission center tests covered each status and verified that
+each hidden flag removes the practice action while preserving status.
+Review identified a stale inherited flag in the Settings route argument.
+The final route forwards an explicit override only and reads live scope.
+
+Raw Windows logs in build/, SHA-256:
+s4-settings-typed-red.txt e0909c00a1086ac11a578ef02aa9fb0978bed2d20a7a521acdb33786c88abc0b
+s4-settings-typed-recheck.txt e85b0f3f7e25f4b112fded6694e598eead918d7b388cb53d209bd8b87facb37a
+s4-settings-typed-analyze.txt c6f78f77ce976cb9e4eeec23a7deddf08081570bda9fb2bfb5bf11dedad6b348
+
+Android x86_64 debug build at the same source succeeded.
+build/s4-settings-typed-android.txt SHA-256:
+7af0e85c5ccdee4399a4d4e0914935c4662cdaa09d0aeb0ab59cffcc64b9bc7c
+Installation and the new path on the emulator are pending confirmation.
+
+Full CI 43646850397 at 0be8f86f exposed a 200% library integration test
+that did not scroll past the new Shadowing row to find IPA. The same
+failure reproduced locally. Source 4f3278f5 makes the test scroll to IPA
+before tapping and preserves its audio and return assertions. Windows
+Settings, media practice and library focused tests passed 81 cases.
+Build log SHA-256:
+s4-listening-hub-ci-red.txt 0d96cf60f8775454df35052957dbcd7d371af1237f5ce9293f9139a570e60d47
+s4-listening-hub-ci-final.txt a5b733f469777799ad38e7589b400b564d38bb00a28d5c73ca18e298f9b2e437
+https://github.com/Phoomxo/LexiQuest/actions/runs/43646850397
+
+The pinned FigCraft flow has a choice exercise at a different Settings
+subpath. This implementation uses actual text entry from the existing
+permission center as specified by the Flutter acceptance register.

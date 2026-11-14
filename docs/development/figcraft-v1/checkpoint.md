@@ -1,5 +1,16 @@
 # Continuous execution checkpoint
 
+## S4 Typed practice from the permission center
+
+- Settings shows an authored spelling exercise when the microphone
+  lacks permission. At 200% text the widget journey stays silent through
+  typing, correction and retry, then returns to the same permission center.
+  Both registry gates preserve the diagnostic status while hiding practice.
+- Windows 81 focused tests passed after the CI-discovered IPA scroll
+  issue. The Android debug build succeeded. Native installation, current
+  signed hardware and TalkBack are pending.
+  [Evidence](evidence/s4-settings-typed.txt).
+
 ## S5 Research permit expiry during validation
 
 - In source `841c66f9469e1f00895167b4233dc5dded52f75a`, the signed
