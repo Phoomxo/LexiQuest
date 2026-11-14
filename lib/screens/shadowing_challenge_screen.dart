@@ -120,7 +120,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_starting) return;
+    if (_starting || ModalRoute.isCurrentOf(context) != true) return;
     if (_listening) {
       await _speech?.stop();
       if (mounted) setState(() => _listening = false);
@@ -262,8 +262,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   Future<void> _openSilentPractice(String reference) async {
     final route = ModalRoute.of(context);
     if (_starting || _listening || route?.isCurrent != true) return;
-    await _voice.stop().then<void>((_) {}, onError: (Object _) {});
-    if (!mounted || route?.isCurrent != true) return;
+    _voice.stop().ignore();
     await AppNavigator.pushPage<void>(
       context,
       AppPage<void>(

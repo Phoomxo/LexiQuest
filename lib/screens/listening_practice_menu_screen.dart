@@ -171,20 +171,23 @@ class _ListeningPracticeMenuScreenState
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _selectingSet
                       ? null
-                      : () => AppNavigator.pushPage<void>(
-                          context,
-                          AppPage<void>(
-                            name: 'practice/shadowing',
-                            builder: (context) => ShadowingChallengeScreen(
-                              referenceSentence:
-                                  'Which platform does the train leave from?',
-                              voice: AppDependenciesScope.maybeOf(
-                                context,
-                              )?.voice,
-                              returnLabel: 'กลับไปเลือกแบบฝึกฟัง',
+                      : () {
+                          if (ModalRoute.isCurrentOf(context) != true) return;
+                          AppNavigator.pushPage<void>(
+                            context,
+                            AppPage<void>(
+                              name: 'practice/shadowing',
+                              builder: (context) => ShadowingChallengeScreen(
+                                referenceSentence:
+                                    'Which platform does the train leave from?',
+                                voice: AppDependenciesScope.maybeOf(
+                                  context,
+                                )?.voice,
+                                returnLabel: 'กลับไปเลือกแบบฝึกฟัง',
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                 ),
                 ListTile(
                   leading: const Icon(Icons.record_voice_over_outlined),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -130,11 +132,14 @@ void main() {
       expect(microphone.permissionRequests, 1);
       expect(microphone.starts, 0);
 
+      final pendingStop = Completer<void>();
+      voice.pendingStop = pendingStop;
       await _tap(tester, find.text('ฝึกโดยไม่ใช้ไมค์'));
       await _reveal(tester, sentence);
       expect(sentence.hitTestable(), findsOneWidget);
       expect(find.byType(ShadowingChallengeScreen), findsNothing);
       expect(voice.requests, isEmpty);
+      pendingStop.complete();
       await _tap(tester, find.text('กลับไปฝึกพูด'));
       expect(
         tester.state(find.byType(ShadowingChallengeScreen)),
@@ -221,6 +226,7 @@ final class _DeniedMicrophone implements SpeechRecognitionGateway {
 }
 
 final class _TestVoice implements VoiceProvider {
+  Completer<void>? pendingStop;
   final requests = <VoiceRequest>[];
 
   @override
@@ -235,5 +241,5 @@ final class _TestVoice implements VoiceProvider {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() => pendingStop?.future ?? Future<void>.value();
 }
