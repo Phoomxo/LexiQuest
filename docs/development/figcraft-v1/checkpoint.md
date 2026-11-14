@@ -1,5 +1,20 @@
 # Continuous execution checkpoint
 
+## S7 Current-source offline core journey
+
+- On the corrected debug APK, Android API 35 added synthetic `mug` only
+  to A after virtual-camera capture and manual confirmation. A showed
+  the original 100% with three answers after offline restart. B retained
+  its two words. The before/after SQLite aggregates, including session ID,
+  matched byte for byte. [Evidence](evidence/s7-core-offline-a87ecdf6.txt).
+- Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`,
+  branch `codex/figcraft-flutter-prototype`. Windows Flutter 2,379 passed
+  at `a87ecdf6`; the same head passed Linux Flutter 2,379, backend CPU 267,
+  policy checks, analysis and APK build. A cold-start ANR on the emulator
+  recovered on Wait.
+  The known object check on vivo is deferred. Audible TalkBack, signed
+  delivery, cold-start reliability and remaining register acceptance are open.
+
 ## S3 Cloze Android input and saved history
 
 - Integrated debug APK at `77f38d27` passed both normal activity entries
@@ -14,7 +29,7 @@
   analysis passed, and offline APK `c439d1ec` replayed the route from Library
   at system font scale 2.0, preserved the two 50% results and read the new
   typed history label. The installed base matched the APK SHA-256.
-- User declined staging a known object on vivo. That physical check remains
+- A known object was unavailable for the vivo session. That check remains
   `not_checked`. Resume with the current-build core journey and signed/native
   accessibility checks. The task-owned Android emulator is `emulator-5592`.
 

@@ -62,6 +62,17 @@ and 1.6 seconds and returned directly to the same Personal Data route.
 Provenance showed the synthetic note; Android Back restored the same chart.
 The other two chart origins and 200% text are covered by Flutter above.
 
+Follow-up on the `6be1671f` offline APK, SHA-256
+c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767,
+confirmed all three native chart entries and their exact origin returns at
+Android font scale 2.0. Raw captures SHA-256:
+chart-personal-native-large.txt 18ac5a060c2643af3c1efdfd080d532d0a8917c302a09c028cc2f3df67b75d63
+chart-personal-native-large-return.txt 656bf4484a9d8c16538060e842bf6e8fa8c1a8079fdec5cc6b9fe881dca9f874
+chart-history-native.txt d124c987fe1572ba951d76136014c4760d2ec42aaabc3929c4f58c5143b4ebce
+chart-history-native-return.txt 626d332e5db265df446279aca7b8775ff365ef377918f8124877416a6109fcfb
+chart-settings-native.txt f4c6be407ce19f9b54eea17fea743db296ebcf5a4937dc9e17b785753bd3271f
+chart-settings-native-return.txt 62669d0c7d8a622734174f1ce074f744c109aa471911d8ccca8414e46418baff
+
 Android captures in build/boss-android-evidence/, SHA-256:
 appearance-shop-cancel.txt 4de919a27addd03117d82823c9852268bae30fcadc28bb8af62f19d9dc22173f
 appearance-hat-active.txt 4419ff971aac887dbdea9c8ccb5129c57e00309a87897e27f45c564df4cf8b17
@@ -76,7 +87,7 @@ chart-account-return.txt 9b339d2187f24be798df5e06d2a3633b2de8f56db6cd0b92c3374f7
 chart-source.txt 385f7fa9ea015e28cd0598311b0a8f4b1c601daea384b45c69d6308ee3ae3c71
 chart-timing.txt 218397fc52fb126b1eb167a80253e413f80e63567996e9737d9fa4d244437dc5
 
-Native 200%, audible TalkBack, and the signed APK remain open.
+Native 200% for owned appearance, audible TalkBack, and signed APK remain open.
 
 GitHub CI 43638623614 at 77f38d27b7d4f0a127ec449f7449f01630deef00 passed
 Flutter 2,379, backend CPU 267, Firestore and Supabase checks, analysis,

@@ -1,0 +1,53 @@
+S7 current-source offline camera and saved result
+
+PR head a87ecdf675246698f33def7a4064a266c29c14ad. The Android application
+source is identical to 6be1671f763d8af2cad6f73f74b4b2290aeaca67.
+Android API 35, x86_64, task AVD emulator-5592, 1080×1920 with system font
+scale 1.0, in airplane mode with cloud sync disabled and research declined.
+Debug APK and installed base SHA-256:
+c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767
+
+The offline model fixture matched the manifest SHA-256 and byte count.
+The app's Settings recovered the local file through its normal activation
+path and reported it ready. No download was used in this check. Set A was
+Cloze-Synthetic with platform and ticket. B was Wordbook-Synthetic with
+carriage and station. The scanner was opened from A and granted Android
+camera access only for that use. Capture and analysis ran against the AVD
+virtual scene. The app showed no confident result. The manual confirmation
+form saved synthetic mug / cup / noun into A; B remained at two words and
+no mug. The round opened from A, included mug among three prompts, finished
+with three correct answers and returned to A with 100% visible.
+
+After force stop, Android briefly showed an app-not-responding dialog;
+choosing Wait returned to sign-in with the same process. On continuing as
+the local guest, Library listed A with three words and B with its original
+two. A's latest result retained 100% and showed the three original answer
+rows. SQLite readback before and after matched byte for byte, including the
+same session ID, three attempts, A3/B2 and zero research consents/events.
+
+Raw captures under build/boss-android-evidence/, SHA-256:
+core-model-recovery.txt da633d554d82ef34cece657072fe01eda11242fe9fc87598811d8dbd2ea7ede8
+core-camera-result.txt 7b501f07c857a9da1ca90e06bf16eee46ed8bd4b497a0e583f4c7e77b64b91b2
+core-camera-reviewed.txt 2c7222b07e59749785cee4a631b3b52b76f1a0441a0dabbbf6c2d3d63a9265a4
+core-a-after-camera.txt 6a53c6bcc75192521fbbe8d087bfed02104bde64b54624c3a765bee521f70b49
+core-a-quiz-score.txt 8d31d6ea0edf04181ebd45142c0db58d13aa8d34c45b401ff56ca5c22a4ea5e9
+core-a-before-restart.txt and core-reopen-return.txt
+  b7d33444fa806af4a7ff41f59ccf960020f355ce58d613bb8d8075913b9ad479
+core-reopen-start.txt 6fe55744cef1d6b46bd998bdec29ff2f8e0855214f90320a2976dd5474410a49
+core-reopen-library.txt 79fef0901bfc7e4dd3e45bdf5898213fb3a9f978c63b779305a19ac08d2b20ca
+core-reopen-score-details.txt 35e85044f785732206a61154de8de3ecbe8640957cf85af3e37d559963d1fc8a
+core-before-reopen-db.txt and core-reopen-db.txt
+  1e620018b81195355fe34e9de7a64f0e378258dcca5e0c4b91ba214ee64fa37e
+
+Windows full Flutter result at this head 2,379 passed.
+build/s7-full-flutter-a87ecdf6.txt SHA-256:
+7a6dc5799a5d9a65d7622dbcd7f79612d22b6b4335d2661b3ae7854122622ddf
+
+Exact GitHub CI 43641624496 passed at a87ecdf6. Flutter 2,379, backend
+CPU 267, policy checks, analysis, format and Android debug build passed.
+CI console SHA-256:
+54d9e9ee0eb30a0fd0a9cbb9dbb80808e3b41b0f86a782e017e6bcbecadcc0ba
+https://github.com/Phoomxo/LexiQuest/actions/runs/43641624496
+
+The physical known-object accuracy stays `not_checked`. Signed hardware,
+audible TalkBack, and cold-start reliability are independently open.
