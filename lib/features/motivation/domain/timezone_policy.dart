@@ -13,6 +13,28 @@ import 'dart:math' as math;
 
 import 'package:timezone/timezone.dart';
 
+const String bundledTzdbRevision =
+    'timezone-0.9.4/latest_all/sha256:'
+    '88010336afd9dac1f89c685ed10b0613acf75641d52de868e74503f6b92c6756';
+
+final class OwnerCalendarRule {
+  const OwnerCalendarRule({
+    required this.ruleId,
+    required this.originOwnerId,
+    required this.ianaId,
+    required this.tzdbRevision,
+    required this.effectiveUtcUs,
+    this.expiresUtcUs,
+  });
+
+  final String ruleId;
+  final String originOwnerId;
+  final String ianaId;
+  final String tzdbRevision;
+  final int effectiveUtcUs;
+  final int? expiresUtcUs;
+}
+
 /// Includes [startUtc] and excludes [endUtc].
 final class UtcSegment {
   const UtcSegment._(this.startUtc, this.endUtc);

@@ -1,9 +1,12 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
@@ -63,6 +66,182 @@ void main() {
     expect(claim.mutation.payload['wordId'], 'word-1');
     expect(claim.mutation.payload['isCorrect'], isTrue);
   });
+
+  test(
+    'real original stamps stay local through outbox serialization pull and replay',
+    () async {
+      tz.initializeTimeZones();
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-2',
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      final catalog = await DriftQuestRepository(
+        database,
+      ).installAnswerCatalog();
+      final learning = DriftLearningRepository(
+        database,
+        questCatalog: catalog,
+        questVisible: () => true,
+      );
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'session-stamped',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: now,
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      final command = RecordAnswerCommand(
+        id: 'attempt-stamped',
+        ownerId: 'owner-1',
+        sessionId: 'session-stamped',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 300,
+        attemptNumber: 1,
+        occurredAtUtc: now,
+      );
+      await learning.recordAnswer(command);
+      final original = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      final calendar = decodeCalendarEvidence(original.calendarEvidence!);
+      final intent = decodeQuestIntent(original.questIntent!);
+      expect(calendar, isA<CapturedCalendarEvidence>());
+      expect(intent, isA<CapturedQuestIntent>());
+      expect(
+        OriginalAnswerMetadata(calendar: calendar, quest: intent).quest,
+        intent,
+      );
+      final owners = await database.select(database.localOwners).get();
+      final epochs = await database.select(database.ownerCalendarEpochs).get();
+      final archive = await database
+          .select(database.questDefinitionRevisions)
+          .get();
+      final outboxIds = (await database.select(database.outboxOperations).get())
+          .map((row) => row.operationId)
+          .toSet();
+      final claim =
+          (await store.claimPending(
+            ownerId: 'owner-1',
+            firebaseUid: 'firebase-1',
+            limit: 10,
+            leaseToken: 'lease-typed-stamp',
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: now,
+          )).firstWhere(
+            (entry) => entry.mutation.collection == SyncCollection.attempts,
+          );
+      expect(claim.mutation.payload.keys.toSet(), {
+        'sessionId',
+        'wordId',
+        'promptMode',
+        'isCorrect',
+        'responseTimeMs',
+        'attemptNumber',
+        'occurredAtUtcMs',
+        'providerProvenance',
+      });
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(
+          _attemptEntity(
+            id: command.id,
+            sessionId: command.sessionId,
+            occurredAt: now,
+          ),
+        ),
+      );
+      final remote = _attemptEntity(
+        id: 'remote-untrusted-stamps',
+        sessionId: 'remote-stamp-session',
+        occurredAt: now.add(const Duration(minutes: 1)),
+      );
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(
+          SyncEntity(
+            collection: remote.collection,
+            entityId: remote.entityId,
+            revision: remote.revision,
+            isDeleted: remote.isDeleted,
+            payloadVersion: remote.payloadVersion,
+            clientUpdatedAtUtc: remote.clientUpdatedAtUtc,
+            serverUpdatedAtUtc: remote.serverUpdatedAtUtc,
+            payload: {
+              ...remote.payload,
+              'calendarEvidence': original.calendarEvidence,
+              'questIntent': original.questIntent,
+              'calendar_evidence': original.calendarEvidence,
+              'quest_intent': original.questIntent,
+            },
+          ),
+        ),
+      );
+      final pulled = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals(remote.entityId))).getSingle();
+      expect(pulled.ownerId, 'owner-1');
+      expect(pulled.calendarEvidence, isNull);
+      expect(pulled.questIntent, isNull);
+      expect(
+        (await DriftLearningRepository(
+          database,
+        ).recordAnswer(command)).inserted,
+        isFalse,
+      );
+      expect(
+        await (database.select(
+          database.answerAttempts,
+        )..where((row) => row.id.equals(command.id))).getSingle(),
+        original,
+      );
+      expect(await database.select(database.localOwners).get(), owners);
+      expect(await database.select(database.ownerCalendarEpochs).get(), epochs);
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        archive,
+      );
+      expect(epochs, hasLength(1));
+      expect(archive, hasLength(2));
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      final xp = await database.select(database.pointsLedgerEntries).get();
+      final coins = await database.select(database.rewardTransactions).get();
+      expect(xp.fold<int>(0, (sum, row) => sum + row.amount), 2);
+      expect(coins.fold<int>(0, (sum, row) => sum + row.amount), 2);
+      expect(xp.map((row) => row.ownerId), everyElement('owner-1'));
+      expect(coins.map((row) => row.ownerId), everyElement('owner-1'));
+      for (final table in [
+        'quest_definitions',
+        'quest_instances',
+        'quest_objective_progress',
+        'quest_claim_receipts',
+        'research_consents',
+        'events_v2',
+      ]) {
+        expect(
+          await database.customSelect('SELECT * FROM $table').get(),
+          isEmpty,
+        );
+      }
+      final outbox = await database.select(database.outboxOperations).get();
+      expect(outbox.map((row) => row.operationId).toSet(), outboxIds);
+      expect(
+        outbox.map((row) => row.entityType),
+        everyElement(isIn({'attempt', 'srsState'})),
+      );
+    },
+  );
 
   test(
     'current attempt snapshot keeps local calendar and quest metadata off sync',

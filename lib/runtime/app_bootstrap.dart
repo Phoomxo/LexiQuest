@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
@@ -49,6 +50,7 @@ import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
+import '../features/quest/data/drift_quest_repository.dart';
 import '../features/research/domain/research_operation_authorizer.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
@@ -70,6 +72,9 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'field_feature_registry.dart';
+import 'field_feature.dart';
+import 'registries/feature_registry.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -77,6 +82,8 @@ typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
+typedef QuestAnswerCatalogFactory =
+    Future<TrustedQuestAnswerCatalog> Function(AppDatabase database);
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -158,6 +165,9 @@ final class AppBootstrap {
     this.geminiSettingsStoreFactory,
     this.geminiGatewayFactory,
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
+    this.features = const BuildFeatureRegistry.fieldDefaults(),
+    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
+    this.questCatalogFactory,
   });
 
   factory AppBootstrap.production({
@@ -204,6 +214,9 @@ final class AppBootstrap {
   final GeminiSettingsStore Function()? geminiSettingsStoreFactory;
   final GeminiGateway Function()? geminiGatewayFactory;
   final ResearchOperationAuthorizer researchAuthorizer;
+  final FeatureRegistry features;
+  final FieldFeatureRegistry fieldFeatures;
+  final QuestAnswerCatalogFactory? questCatalogFactory;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -298,9 +311,32 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    try {
+      timezone_data.initializeTimeZones();
+    } on Object {
+      // Original-answer capture records missing calendar authority independently.
+    }
+    bool questVisible() =>
+        features.isVisible(Feature.questV2) &&
+        features.isVisible(Feature.mastery) &&
+        fieldFeatures.isVisible(FieldFeature.mastery);
+    TrustedQuestAnswerCatalog? answerCatalog;
+    if (questVisible()) {
+      try {
+        answerCatalog =
+            await (questCatalogFactory?.call(database) ??
+                DriftQuestRepository(database).installAnswerCatalog());
+      } on Object {
+        // Catalog failure cannot prevent ordinary local practice.
+      }
+    }
     final learning = LearningUseCases(
       owners: localOwners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        questCatalog: answerCatalog,
+        questVisible: questVisible,
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
@@ -469,6 +505,8 @@ final class AppBootstrap {
       config: config,
       guestSessionService: exposedGuestSession,
       buildInfo: const AppBuildInfo.fromEnvironment(),
+      features: features,
+      fieldFeatures: fieldFeatures,
       database: database,
       localOwners: localOwners,
       upgradeGuestOwner: upgradeGuestOwner,

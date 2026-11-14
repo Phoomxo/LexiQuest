@@ -440,26 +440,44 @@ Future<void> _seedPaidPeriod(
   );
   final evidence = <String>[];
   final learning = DriftLearningRepository(db);
-  for (var i = 0; i < 5; i++) {
-    final id = 'answer-$owner-$i';
-    evidence.add(id);
-    await learning.recordAnswer(
-      RecordAnswerCommand(
-        id: id,
-        ownerId: owner,
-        sessionId: 'session-$owner',
-        wordId: 'word-$owner',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
-        responseTimeMs: 10,
-        attemptNumber: i + 1,
-        occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
-          first + i,
-          isUtc: true,
+  await db.transaction(() async {
+    final previous = await (db.select(
+      db.localOwners,
+    )..where((row) => row.isActive)).get();
+    await db.customStatement('UPDATE local_owners SET is_active = (id = ?)', [
+      owner,
+    ]);
+    for (var i = 0; i < 5; i++) {
+      final id = 'answer-$owner-$i';
+      evidence.add(id);
+      await learning.recordAnswer(
+        RecordAnswerCommand(
+          id: id,
+          ownerId: owner,
+          sessionId: 'session-$owner',
+          wordId: 'word-$owner',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: i + 1,
+          occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            first + i,
+            isUtc: true,
+          ),
         ),
-      ),
+      );
+    }
+    await db.customStatement(
+      'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+      [owner],
     );
-  }
+    for (final row in previous) {
+      await db.customStatement(
+        'UPDATE local_owners SET is_active = 1 WHERE id = ?',
+        [row.id],
+      );
+    }
+  });
   final json = jsonEncode(evidence);
   await db.customStatement(
     'INSERT INTO quest_instances(instance_id,quest_id,owner_id,catalog_version,assigned_at_utc_ms,state,'

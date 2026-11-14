@@ -1,9 +1,63 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 
 void main() {
   group('QuestCatalogProvider — D8.2', () {
+    test(
+      'answer manifests preserve every authored field and fixed policies',
+      () {
+        final revisions = QuestCatalogProvider.authoredRevisions;
+        expect(
+          revisions.map((r) => r.definition.questId),
+          QuestCatalogProvider.allQuests.map((q) => q.questId),
+        );
+        for (final revision in revisions) {
+          final def = revision.definition;
+          final body = QuestCatalogProvider.canonicalAnswerManifest(revision);
+          final manifest = jsonDecode(body) as Map<String, dynamic>;
+          expect(body, canonicalJson(manifest));
+          expect(manifest, {
+            'questId': def.questId,
+            'catalogVersion': def.catalogVersion,
+            'title': def.title,
+            'description': def.description,
+            'type': def.type.name,
+            'objectives': [
+              for (final objective in def.objectives)
+                {
+                  'objectiveId': objective.objectiveId,
+                  'description': objective.description,
+                  'targetCount': objective.targetCount,
+                  'eventType': objective.criteria.eventType,
+                  'filters': objective.criteria.filters,
+                },
+            ],
+            'reward': {
+              'xpAmount': def.reward.xpAmount,
+              'rewardItemId': def.reward.rewardItemId,
+            },
+            'expiresInMs': def.expiresIn?.inMilliseconds,
+            'tags': def.tags,
+            'definitionSchemaVersion': 1,
+            'criteriaPolicyVersion': 1,
+            'calendarPolicyVersion': TimezonePolicy.version,
+            'occurrencePolicy': 'civil-segments-v1',
+            'activeFromUtcMs': 0,
+          });
+          expect(revision.activeFromUtcMs, 0);
+        }
+        expect(revisions.first.definition.objectives.single.targetCount, 5);
+        expect(revisions.first.definition.reward.xpAmount, 50);
+        expect(revisions.last.definition.objectives.single.targetCount, 20);
+        expect(revisions.last.definition.reward.xpAmount, 200);
+      },
+    );
+
     test('catalog version is defined', () {
       expect(QuestCatalogProvider.version, greaterThan(0));
     });

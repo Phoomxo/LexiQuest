@@ -1,17 +1,32 @@
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../motivation/domain/timezone_policy.dart';
+import '../../motivation/data/drift_streak_repository.dart';
+import '../../quest/data/drift_quest_repository.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
+import '../domain/answer_motivation_evidence.dart';
+
+typedef AnswerCalendarCapture =
+    LearningCalendarWindow Function(
+      DateTime occurredAtUtc,
+      String timezoneId, {
+      DateTime? epochEffectiveAtUtc,
+      DateTime? epochExpiresAtUtc,
+    });
 
 final class DriftLearningRepository implements LearningRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
+    this.questCatalog,
+    this.questVisible,
+    this.captureCalendarWindow = TimezonePolicy.captureWindow,
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,
@@ -19,6 +34,9 @@ final class DriftLearningRepository implements LearningRepository {
        rewardProjections = DriftRewardProjectionRebuilder(database);
 
   final db.AppDatabase database;
+  final TrustedQuestAnswerCatalog? questCatalog;
+  final bool Function()? questVisible;
+  final AnswerCalendarCapture captureCalendarWindow;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
 
@@ -101,6 +119,7 @@ final class DriftLearningRepository implements LearningRepository {
         return AnswerRecordResult(inserted: false, srs: srs);
       }
 
+      await _requireActiveOwner(command.ownerId);
       final session =
           await (database.select(database.learningSessions)..where(
                 (row) =>
@@ -124,6 +143,20 @@ final class DriftLearningRepository implements LearningRepository {
         throw StateError('active vocabulary word not found');
       }
 
+      String? calendarEvidence;
+      String? questIntent;
+      try {
+        final metadata = await _captureOriginalMetadata(
+          ownerId: command.ownerId,
+          occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
+        );
+        calendarEvidence = encodeCalendarEvidence(metadata.calendar);
+        if (metadata.quest case final intent?) {
+          questIntent = encodeQuestIntent(intent);
+        }
+      } on Object {
+        // Unverifiable optional evidence must not discard the original answer.
+      }
       await database
           .into(database.answerAttempts)
           .insert(
@@ -138,6 +171,8 @@ final class DriftLearningRepository implements LearningRepository {
               attemptNumber: command.attemptNumber,
               occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
               providerProvenance: Value(command.providerProvenance),
+              calendarEvidence: Value(calendarEvidence),
+              questIntent: Value(questIntent),
             ),
           );
       final next = await projections.rebuildWord(
@@ -166,6 +201,135 @@ final class DriftLearningRepository implements LearningRepository {
       );
       return AnswerRecordResult(inserted: true, srs: next);
     });
+  }
+
+  Future<OriginalAnswerMetadata> _captureOriginalMetadata({
+    required String ownerId,
+    required int occurredAtUtcMs,
+  }) async {
+    final enabled = questVisible?.call() ?? questCatalog != null;
+    OwnerCalendarRule? rule;
+    late final AnswerCalendarEvidence calendar;
+    var retryable = false;
+    try {
+      rule = await DriftStreakRepository(
+        database,
+      ).calendarRuleAt(ownerId: ownerId, occurredAtUtcMs: occurredAtUtcMs);
+      final window = captureCalendarWindow(
+        DateTime.fromMillisecondsSinceEpoch(occurredAtUtcMs, isUtc: true),
+        rule.ianaId,
+        epochEffectiveAtUtc: DateTime.fromMicrosecondsSinceEpoch(
+          rule.effectiveUtcUs,
+          isUtc: true,
+        ),
+        epochExpiresAtUtc: rule.expiresUtcUs == null
+            ? null
+            : DateTime.fromMicrosecondsSinceEpoch(
+                rule.expiresUtcUs!,
+                isUtc: true,
+              ),
+      );
+      if (window.timezoneId != rule.ianaId) {
+        throw const FormatException('Captured timezone differs from authority');
+      }
+      final captured = CapturedCalendarEvidence(
+        originOwnerId: ownerId,
+        occurredAtUtcMs: occurredAtUtcMs,
+        rule: rule,
+        civilDay: window.civilDay.toIso8601String().substring(0, 10),
+        weekMonday: window.weekMonday.toIso8601String().substring(0, 10),
+        offsetSeconds: window.offsetSeconds,
+        daySegments: [
+          for (final part in window.daySegments)
+            (
+              part.startUtc.microsecondsSinceEpoch,
+              part.endUtc.microsecondsSinceEpoch,
+            ),
+        ],
+        weekSegments: [
+          for (final part in window.weekSegments)
+            (
+              part.startUtc.microsecondsSinceEpoch,
+              part.endUtc.microsecondsSinceEpoch,
+            ),
+        ],
+      );
+      encodeCalendarEvidence(captured);
+      calendar = captured;
+    } on Object catch (error) {
+      retryable = rule != null && error is StateError;
+      calendar = UnavailableCalendarEvidence(
+        originOwnerId: ownerId,
+        occurredAtUtcMs: occurredAtUtcMs,
+        rule: rule,
+      );
+    }
+    QuestAnswerIntent? intent;
+    if (enabled) {
+      intent = UnavailableQuestIntent(
+        originOwnerId: ownerId,
+        occurredAtUtcMs: occurredAtUtcMs,
+      );
+      final catalog = questCatalog;
+      if (catalog != null) {
+        try {
+          if (calendar is CapturedCalendarEvidence) {
+            final pins = await catalog.pinsForPeriod(
+              database: database,
+              dailyStartUtc: DateTime.fromMicrosecondsSinceEpoch(
+                calendar.daySegments.first.$1,
+                isUtc: true,
+              ),
+              weeklyStartUtc: DateTime.fromMicrosecondsSinceEpoch(
+                calendar.weekSegments.first.$1,
+                isUtc: true,
+              ),
+            );
+            intent = CapturedQuestIntent(
+              originOwnerId: ownerId,
+              occurredAtUtcMs: occurredAtUtcMs,
+              rule: calendar.rule,
+              daily: pins.daily,
+              weekly: pins.weekly,
+              civilDay: calendar.civilDay,
+              weekMonday: calendar.weekMonday,
+            );
+          } else if (retryable && rule != null) {
+            final pins = await catalog.pinsForPendingCalendar(
+              database: database,
+              occurredAtUtcMs: occurredAtUtcMs,
+              epochEffectiveUtcUs: rule.effectiveUtcUs,
+            );
+            intent = PendingQuestIntent(
+              originOwnerId: ownerId,
+              occurredAtUtcMs: occurredAtUtcMs,
+              rule: rule,
+              daily: pins.daily,
+              weekly: pins.weekly,
+            );
+          }
+          encodeQuestIntent(intent);
+        } on Object {
+          // Missing original pins cannot become retryable or use today's catalog.
+          intent = UnavailableQuestIntent(
+            originOwnerId: ownerId,
+            occurredAtUtcMs: occurredAtUtcMs,
+          );
+        }
+      }
+    }
+    return OriginalAnswerMetadata(calendar: calendar, quest: intent);
+  }
+
+  Future<void> _requireActiveOwner(String ownerId) async {
+    final owner =
+        await (database.select(database.localOwners)..where(
+              (row) => row.id.equals(ownerId) & row.isActive.equals(true),
+            ))
+            .getSingleOrNull();
+    if (owner == null) {
+      throw StateError('learning owner is no longer active');
+    }
   }
 
   @override
@@ -289,15 +453,7 @@ final class DriftLearningRepository implements LearningRepository {
   ) {
     _validateReading(command);
     return database.transaction(() async {
-      final activeOwner =
-          await (database.select(database.localOwners)..where(
-                (row) =>
-                    row.id.equals(command.ownerId) & row.isActive.equals(true),
-              ))
-              .getSingleOrNull();
-      if (activeOwner == null) {
-        throw StateError('reading owner is no longer active');
-      }
+      await _requireActiveOwner(command.ownerId);
       final priorEvent = await (database.select(
         database.readingEvents,
       )..where((row) => row.id.equals(command.eventId))).getSingleOrNull();

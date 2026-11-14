@@ -1,16 +1,23 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
+import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart'
+    as quest;
 
 void main() {
   late AppDatabase database;
   late DriftLearningRepository repository;
 
-  setUp(() async {
-    database = AppDatabase(NativeDatabase.memory());
-    repository = DriftLearningRepository(database);
+  Future<void> seedVocabulary(AppDatabase database) async {
     await database
         .into(database.localOwners)
         .insert(LocalOwnersCompanion.insert(id: 'owner-1', createdAtUtcMs: 1));
@@ -47,9 +54,478 @@ void main() {
             ),
           );
     }
+  }
+
+  setUpAll(tz.initializeTimeZones);
+  setUp(() async {
+    database = AppDatabase(NativeDatabase.memory());
+    repository = DriftLearningRepository(database);
+    await seedVocabulary(database);
   });
 
   tearDown(() => database.close());
+
+  group('original local answer motivation evidence', () {
+    final at = DateTime.utc(2027, 1, 5, 10);
+    late TrustedQuestAnswerCatalog catalog;
+    var visible = true;
+
+    setUp(() async {
+      visible = true;
+      catalog = await DriftQuestRepository(database).installAnswerCatalog();
+      repository = DriftLearningRepository(
+        database,
+        questCatalog: catalog,
+        questVisible: () => visible,
+      );
+      await _start(repository, at);
+    });
+
+    test(
+      'first commit pins the actual day, week and both archived digests',
+      () async {
+        await repository.recordAnswer(_answer('first', at));
+        final row = await _read(database, 'first');
+        final calendar =
+            decodeCalendarEvidence(row.calendarEvidence!)
+                as CapturedCalendarEvidence;
+        final intent =
+            decodeQuestIntent(row.questIntent!) as CapturedQuestIntent;
+        expect(
+          OriginalAnswerMetadata(calendar: calendar, quest: intent).quest,
+          intent,
+        );
+        expect(
+          (calendar.originOwnerId, calendar.occurredAtUtcMs),
+          ('owner-1', at.millisecondsSinceEpoch),
+        );
+        expect(
+          (
+            calendar.rule.ruleId,
+            calendar.rule.ianaId,
+            calendar.rule.tzdbRevision,
+          ),
+          ('calendar:utc-default:owner-1', 'UTC', bundledTzdbRevision),
+        );
+        expect(
+          (calendar.civilDay, calendar.weekMonday, calendar.offsetSeconds),
+          ('2027-01-05', '2027-01-04', 0),
+        );
+        expect(calendar.daySegments, [
+          (
+            DateTime.utc(2027, 1, 5).microsecondsSinceEpoch,
+            DateTime.utc(2027, 1, 6).microsecondsSinceEpoch,
+          ),
+        ]);
+        expect(calendar.weekSegments, [
+          (
+            DateTime.utc(2027, 1, 4).microsecondsSinceEpoch,
+            DateTime.utc(2027, 1, 11).microsecondsSinceEpoch,
+          ),
+        ]);
+        final archive = await database
+            .select(database.questDefinitionRevisions)
+            .get();
+        expect(archive, hasLength(2));
+        for (final (pin, id) in [
+          (intent.daily, QuestCatalogProvider.dailyCorrectAnswers.questId),
+          (intent.weekly, QuestCatalogProvider.weeklyCorrectAnswers.questId),
+        ]) {
+          expect(pin.questId, id);
+          final stored = archive.singleWhere((r) => r.questId == id);
+          expect(
+            (pin.catalogVersion, pin.definitionDigest),
+            (stored.catalogVersion, stored.definitionDigest),
+          );
+        }
+        await _expectOrdinaryCorrectAnswer(database, 'first');
+      },
+    );
+
+    test(
+      'enabling Quest affects only the next original answer in the same session',
+      () async {
+        visible = false;
+        final hidden = _answer('hidden', at);
+        await repository.recordAnswer(hidden);
+        final before = await _read(database, hidden.id);
+        expect(before.questIntent, isNull);
+        visible = true;
+        expect((await repository.recordAnswer(hidden)).inserted, isFalse);
+        expect(await _read(database, hidden.id), before);
+        await repository.recordAnswer(_answer('enabled', at));
+        expect(
+          decodeQuestIntent((await _read(database, 'enabled')).questIntent!),
+          isA<CapturedQuestIntent>(),
+        );
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(2),
+        );
+      },
+    );
+
+    test(
+      'replay keeps original bytes after gate, catalog and selected zone change',
+      () async {
+        final first = _answer('stable', at);
+        await repository.recordAnswer(first);
+        final raw = await _read(database, first.id);
+        expect(raw.questIntent, isNotNull);
+        final updated = await _installDailyRevision(database, at);
+        await database.customStatement(
+          'UPDATE owner_calendar_epochs SET is_selected=0',
+        );
+        await _epoch(
+          database,
+          'new-rule',
+          'Asia/Bangkok',
+          at.microsecondsSinceEpoch,
+          null,
+        );
+        var captures = 0, checks = 0;
+        repository = DriftLearningRepository(
+          database,
+          questCatalog: updated,
+          questVisible: () {
+            checks++;
+            return visible;
+          },
+          captureCalendarWindow:
+              (time, zone, {epochEffectiveAtUtc, epochExpiresAtUtc}) {
+                captures++;
+                return TimezonePolicy.captureWindow(
+                  time,
+                  zone,
+                  epochEffectiveAtUtc: epochEffectiveAtUtc,
+                  epochExpiresAtUtc: epochExpiresAtUtc,
+                );
+              },
+        );
+        visible = false;
+        expect((await repository.recordAnswer(first)).inserted, isFalse);
+        expect(await _read(database, first.id), raw);
+        expect((checks, captures), (0, 0));
+        visible = true;
+        await repository.recordAnswer(
+          _answer('next', at.add(const Duration(days: 1))),
+        );
+        final next = await _read(database, 'next');
+        final nextCalendar =
+            decodeCalendarEvidence(next.calendarEvidence!)
+                as CapturedCalendarEvidence;
+        final pins =
+            decodeQuestIntent(next.questIntent!) as CapturedQuestIntent;
+        expect(nextCalendar.rule.ruleId, 'new-rule');
+        expect((pins.daily.catalogVersion, pins.weekly.catalogVersion), (2, 1));
+      },
+    );
+
+    test(
+      'calendar uses stored millisecond at a sub-millisecond epoch boundary',
+      () async {
+        final boundary = at.microsecondsSinceEpoch + 500;
+        await _epoch(database, 'before', 'UTC', 1000, boundary);
+        await _epoch(database, 'after', 'Asia/Bangkok', boundary, null);
+        await repository.recordAnswer(
+          _answer('edge', at.add(const Duration(microseconds: 900))),
+        );
+        final row = await _read(database, 'edge');
+        final c =
+            decodeCalendarEvidence(row.calendarEvidence!)
+                as CapturedCalendarEvidence;
+        expect(row.occurredAtUtcMs, at.millisecondsSinceEpoch);
+        expect(c.occurredAtUtcMs, row.occurredAtUtcMs);
+        expect(c.rule.ruleId, 'before');
+        expect(c.daySegments.single.$2, boundary);
+        expect(c.weekSegments.single.$2, boundary);
+        expect(
+          (await repository.recordAnswer(
+            _answer('edge', at.add(const Duration(microseconds: 100))),
+          )).inserted,
+          isFalse,
+        );
+        expect(await _read(database, 'edge'), row);
+        await repository.recordAnswer(
+          _answer('later', at.add(const Duration(milliseconds: 1))),
+        );
+        final next =
+            decodeCalendarEvidence(
+                  (await _read(database, 'later')).calendarEvidence!,
+                )
+                as CapturedCalendarEvidence;
+        expect(next.rule.ruleId, 'after');
+        expect(next.daySegments.single.$1, boundary);
+      },
+    );
+
+    test(
+      'inactive original owner cannot create a fact or select either owner calendar',
+      () async {
+        await database.customStatement(
+          "UPDATE local_owners SET is_active=0 WHERE id='owner-1'",
+        );
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+            );
+        await expectLater(
+          repository.recordAnswer(_answer('stale', at)),
+          throwsStateError,
+        );
+        for (final table in [
+          'answer_attempts',
+          'owner_calendar_epochs',
+          'srs_states',
+          'points_ledger_entries',
+          'reward_transactions',
+          'outbox_operations',
+        ]) {
+          expect(
+            await database.customSelect('SELECT * FROM $table').get(),
+            isEmpty,
+            reason: table,
+          );
+        }
+      },
+    );
+
+    test(
+      'same-zone window for another day preserves learning with unavailable metadata',
+      () async {
+        repository = DriftLearningRepository(
+          database,
+          questCatalog: catalog,
+          questVisible: () => true,
+          captureCalendarWindow:
+              (time, zone, {epochEffectiveAtUtc, epochExpiresAtUtc}) {
+                expect(zone, 'UTC');
+                return TimezonePolicy.captureWindow(
+                  time.add(const Duration(days: 1)),
+                  zone,
+                  epochEffectiveAtUtc: epochEffectiveAtUtc,
+                  epochExpiresAtUtc: epochExpiresAtUtc,
+                );
+              },
+        );
+        final result = await repository.recordAnswer(
+          _answer('wrong-window', at),
+        );
+        expect(result.inserted, isTrue);
+        await _expectOrdinaryCorrectAnswer(database, 'wrong-window');
+        final row = await _read(database, 'wrong-window');
+        expect(
+          row.calendarEvidence,
+          isNotNull,
+          reason:
+              'invalid optional capture must retain explicit unavailable state',
+        );
+        expect(
+          row.questIntent,
+          isNotNull,
+          reason:
+              'the original visible decision must not become hidden or legacy',
+        );
+        final calendar = decodeCalendarEvidence(row.calendarEvidence!);
+        final intent = decodeQuestIntent(row.questIntent!);
+        expect(calendar, isA<UnavailableCalendarEvidence>());
+        expect(intent, isA<UnavailableQuestIntent>());
+        expect(intent, isNot(isA<PendingQuestIntent>()));
+        expect(
+          (calendar.originOwnerId, calendar.occurredAtUtcMs),
+          ('owner-1', at.millisecondsSinceEpoch),
+        );
+        expect(
+          (intent.originOwnerId, intent.occurredAtUtcMs),
+          ('owner-1', at.millisecondsSinceEpoch),
+        );
+        expect(
+          OriginalAnswerMetadata(calendar: calendar, quest: intent).quest,
+          intent,
+        );
+      },
+    );
+
+    test(
+      'unavailable calendar saves original rule and two unambiguous pins with the answer',
+      () async {
+        repository = DriftLearningRepository(
+          database,
+          questCatalog: catalog,
+          questVisible: () => true,
+          captureCalendarWindow: _failedCapture,
+        );
+        await repository.recordAnswer(_answer('pending', at));
+        final raw = await _read(database, 'pending');
+        final c =
+            decodeCalendarEvidence(raw.calendarEvidence!)
+                as UnavailableCalendarEvidence;
+        final q = decodeQuestIntent(raw.questIntent!) as PendingQuestIntent;
+        final rule = await database
+            .select(database.ownerCalendarEpochs)
+            .getSingle();
+        expect(
+          (
+            q.rule.ruleId,
+            q.rule.originOwnerId,
+            q.rule.effectiveUtcUs,
+            q.rule.tzdbRevision,
+          ),
+          (
+            rule.ruleId,
+            rule.originOwnerId,
+            rule.effectiveUtcUs,
+            rule.tzdbRevision,
+          ),
+        );
+        expect(
+          (q.daily.questId, q.weekly.questId),
+          (
+            QuestCatalogProvider.dailyCorrectAnswers.questId,
+            QuestCatalogProvider.weeklyCorrectAnswers.questId,
+          ),
+        );
+        final pins = await database
+            .select(database.questDefinitionRevisions)
+            .get();
+        for (final pin in [q.daily, q.weekly]) {
+          final archive = pins.singleWhere((r) => r.questId == pin.questId);
+          expect(
+            (pin.catalogVersion, pin.definitionDigest),
+            (archive.catalogVersion, archive.definitionDigest),
+          );
+        }
+        expect(OriginalAnswerMetadata(calendar: c, quest: q).quest, q);
+        await _expectOrdinaryCorrectAnswer(database, 'pending');
+      },
+    );
+
+    test(
+      'unavailable calendar and ambiguous revisions cannot become retryable',
+      () async {
+        final multiple = await _installDailyRevision(database, at);
+        repository = DriftLearningRepository(
+          database,
+          questCatalog: multiple,
+          questVisible: () => true,
+          captureCalendarWindow: _failedCapture,
+        );
+        await repository.recordAnswer(_answer('unavailable', at));
+        final row = await _read(database, 'unavailable');
+        expect(
+          decodeCalendarEvidence(row.calendarEvidence!),
+          isA<UnavailableCalendarEvidence>(),
+        );
+        expect(
+          decodeQuestIntent(row.questIntent!),
+          isA<UnavailableQuestIntent>(),
+        );
+        await _expectOrdinaryCorrectAnswer(database, 'unavailable');
+      },
+    );
+
+    test(
+      'core SRS failure rolls back original answer, default epoch and learning writes',
+      () async {
+        await database.customStatement("""
+        CREATE TRIGGER fail_srs BEFORE INSERT ON srs_states
+        BEGIN SELECT RAISE(ABORT,'synthetic core SRS failure'); END
+      """);
+        final command = _answer('rollback', at);
+        await expectLater(
+          repository.recordAnswer(command),
+          throwsA(
+            predicate(
+              (e) => e.toString().contains('synthetic core SRS failure'),
+            ),
+          ),
+        );
+        for (final table in [
+          'answer_attempts',
+          'srs_states',
+          'owner_calendar_epochs',
+          'points_ledger_entries',
+          'reward_transactions',
+          'outbox_operations',
+        ]) {
+          expect(
+            await database.customSelect('SELECT * FROM $table').get(),
+            isEmpty,
+            reason: table,
+          );
+        }
+        await database.customStatement('DROP TRIGGER fail_srs');
+        expect((await repository.recordAnswer(command)).inserted, isTrue);
+        expect(
+          decodeQuestIntent((await _read(database, command.id)).questIntent!),
+          isA<CapturedQuestIntent>(),
+        );
+      },
+    );
+
+    test(
+      'reopen with no catalog replays the durable answer and original evidence once',
+      () async {
+        final dir = await Directory.systemTemp.createTemp(
+          'lexiquest-answer-evidence-',
+        );
+        final originalDir = await dir.resolveSymbolicLinks();
+        final file = File('${dir.path}/answer.sqlite');
+        final command = _answer('committed', at);
+        try {
+          final writer = AppDatabase(NativeDatabase(file));
+          late AnswerAttempt original;
+          try {
+            await seedVocabulary(writer);
+            final installed = await DriftQuestRepository(
+              writer,
+            ).installAnswerCatalog();
+            final repo = DriftLearningRepository(
+              writer,
+              questCatalog: installed,
+              questVisible: () => true,
+            );
+            await _start(repo, at);
+            await repo.recordAnswer(command);
+            original = await _read(writer, command.id);
+            expect(
+              decodeQuestIntent(original.questIntent!),
+              isA<CapturedQuestIntent>(),
+            );
+            expect(
+              decodeCalendarEvidence(original.calendarEvidence!),
+              isA<CapturedCalendarEvidence>(),
+            );
+          } finally {
+            await writer.close();
+          }
+          final reader = AppDatabase(NativeDatabase(file));
+          try {
+            final replay = DriftLearningRepository(reader);
+            expect((await replay.recordAnswer(command)).inserted, isFalse);
+            expect(
+              await reader.select(reader.answerAttempts).getSingle(),
+              original,
+            );
+            await _expectOrdinaryCorrectAnswer(reader, command.id);
+          } finally {
+            await reader.close();
+          }
+        } finally {
+          final resolved = Directory(await dir.resolveSymbolicLinks());
+          final root = await Directory.systemTemp.resolveSymbolicLinks();
+          expect(resolved.path, originalDir);
+          expect(resolved.parent.path, root);
+          expect(
+            resolved.uri.pathSegments.where((p) => p.isNotEmpty).last,
+            startsWith('lexiquest-answer-evidence-'),
+          );
+          await resolved.delete(recursive: true);
+        }
+      },
+    );
+  });
 
   test('quiz words come from active local vocabulary for the owner', () async {
     final words = await repository.listQuizWords(
@@ -466,4 +942,124 @@ void main() {
     );
     expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
+}
+
+Future<void> _start(DriftLearningRepository repo, DateTime at) =>
+    repo.startSession(
+      LearningSessionDraft(
+        id: 'motivation-session',
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: at,
+        appVersion: 'test',
+        buildId: 'synthetic',
+      ),
+    );
+
+RecordAnswerCommand _answer(String id, DateTime at) => RecordAnswerCommand(
+  id: id,
+  ownerId: 'owner-1',
+  sessionId: 'motivation-session',
+  wordId: 'word-1',
+  promptMode: 'meaningChoice',
+  isCorrect: true,
+  responseTimeMs: 100,
+  attemptNumber: 1,
+  occurredAtUtc: at,
+);
+
+Future<AnswerAttempt> _read(AppDatabase db, String id) => (db.select(
+  db.answerAttempts,
+)..where((row) => row.id.equals(id))).getSingle();
+
+Future<void> _epoch(
+  AppDatabase db,
+  String id,
+  String zone,
+  int start,
+  int? end,
+) => db.customStatement(
+  'INSERT INTO owner_calendar_epochs '
+  '(rule_id,owner_id,origin_owner_id,iana_id,tzdb_revision,effective_utc_us,expires_utc_us,is_selected) '
+  "VALUES (?,'owner-1','owner-1',?,?,?,?,1)",
+  [id, zone, bundledTzdbRevision, start, end],
+);
+
+LearningCalendarWindow _failedCapture(
+  DateTime time,
+  String zone, {
+  DateTime? epochEffectiveAtUtc,
+  DateTime? epochExpiresAtUtc,
+}) => throw StateError('synthetic failure after calendar authority lookup');
+
+Future<TrustedQuestAnswerCatalog> _installDailyRevision(
+  AppDatabase db,
+  DateTime activation,
+) {
+  final daily = QuestCatalogProvider.dailyCorrectAnswers;
+  return DriftQuestRepository(db).installAnswerCatalog(
+    authoredRevisions: [
+      ...QuestCatalogProvider.authoredRevisions,
+      QuestCatalogRevision(
+        activeFromUtcMs: activation.millisecondsSinceEpoch,
+        definition: quest.QuestDefinition(
+          questId: daily.questId,
+          catalogVersion: 2,
+          title: 'Synthetic daily revision',
+          description: daily.description,
+          type: daily.type,
+          objectives: daily.objectives,
+          reward: daily.reward,
+          expiresIn: daily.expiresIn,
+          tags: daily.tags,
+        ),
+      ),
+    ],
+  );
+}
+
+Future<void> _expectOrdinaryCorrectAnswer(AppDatabase db, String id) async {
+  final fact = await db.select(db.answerAttempts).getSingle();
+  expect((fact.id, fact.ownerId, fact.isCorrect), (id, 'owner-1', true));
+  final xp = await db.select(db.pointsLedgerEntries).getSingle();
+  expect((xp.entryType, xp.amount, xp.sourceEventId), ('quizCorrect', 1, id));
+  final coin = await db.select(db.rewardTransactions).getSingle();
+  expect(
+    (coin.transactionType, coin.amount, coin.sourceEventId),
+    ('creditQuizCorrectV1', 1, id),
+  );
+  expect((await db.select(db.srsStates).getSingle()).repetitions, 1);
+  final session = await db.select(db.learningSessions).getSingle();
+  expect((session.correctCount, session.wrongCount), (1, 0));
+  final ops = await db.select(db.outboxOperations).get();
+  expect(
+    ops.where((r) => r.entityType == 'attempt' && r.entityId == id),
+    hasLength(1),
+  );
+  expect(
+    ops.where((r) => r.entityType == 'srsState' && r.entityId == 'word-1'),
+    hasLength(1),
+  );
+  expect(
+    ops.where(
+      (r) =>
+          r.entityType.toLowerCase().contains('research') ||
+          r.entityType.toLowerCase().contains('quest'),
+    ),
+    isEmpty,
+  );
+  for (final table in [
+    'quest_definitions',
+    'quest_instances',
+    'quest_objective_progress',
+    'quest_claim_receipts',
+    'events_v2',
+    'research_consents',
+  ]) {
+    expect(
+      await db.customSelect('SELECT * FROM $table').get(),
+      isEmpty,
+      reason: table,
+    );
+  }
 }
