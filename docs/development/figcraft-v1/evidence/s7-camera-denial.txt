@@ -40,3 +40,9 @@ from the filter, and the real word and 75% score remained in All Words.
 Restored the original Wi-Fi, font, theme and screen state.
 Offline bookmarked XML SHA256
 c578ae32ba2312ad8ed7c538a5222b91d32dbe2799bd3fada40ec7ca6c14d33b.
+
+After exercising one-time permission, v34 displayed the live preview and
+enabled Capture. Back retained A. Reopening Score on v34 yielded the same
+v33 corrected hierarchy (SHA256 1c336197e124ce235f3ac5d16ba6cbf2afb83aafe10534aa8a0eb422048a9b1b).
+Restored the camera to no permission with the prior one-time flag still
+recorded. Cold launch then returned to A4/75% with the same final XML.
