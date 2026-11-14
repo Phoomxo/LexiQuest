@@ -105,3 +105,23 @@ Firestore, Supabase, analysis and Android debug build.
 Captured CI console SHA-256:
 7e483c2c5a494e7cd49dda808ea4dc2925f0d0c951f549161f52c8b81f9977fa
 https://github.com/Phoomxo/LexiQuest/actions/runs/43644811662
+
+Current-source reopen after adding the paired assessment and completing
+the isolated SRS fixture, application 1edcabbf332f71765584791b0a6f0fca4ef38571.
+Offline Android API 35 at system font 2.0, installed APK SHA-256
+46c8a80801c4873162c11b2c9a4e76f9424285a6f69d71c2366670d62d0a0c67.
+The learner reopened A from Library and read the saved 100% with three
+original answers, including mug → cup, then returned to the same A state.
+B displayed two words and its no-saved-result state. SQLite found the
+same A session ID as resume-22-db-complete.txt, three distinct answers,
+A3 with mug, B2 and zero research consents. This check exercises the
+reopened word and session after the update. Known-object accuracy remains
+not_checked.
+
+Raw current Android logs under build/boss-android-evidence, SHA-256:
+current-a-reopen.txt and current-a-reopen-return.txt:
+e8f598f0f0b11c483a3460cc0de1e7029db8032470564574ea4433349ebd7f56
+current-a-reopen-score.txt 4cd6487b5299296ba5498193410d00ad826b3d8a6690a2c2a6e676eb8ed22d7a
+current-a-reopen-score-scrolled.txt a52f3ab6dbecb8d9f1a02882244aaa2dd7fd906996bd4952d5c3ebf7089c002a
+current-b-reopen.txt 639b2fcd702080e5638c343d1b90e479b3c6c7ec8c0c4846afe184a5f7029b56
+current-core-reopen-db.txt d181ee1843676455eea7c771665bd4362238806029bf0a1e17d55a4268e878b1

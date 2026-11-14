@@ -10,6 +10,10 @@
   f06 and f14 pass the scoped journey. The original SRS prompt-text
   snapshot and signed accessibility remain open.
   [Evidence](evidence/s3-f06-f14-srs-reopen.txt).
+- The same installed APK reopened the original A result, kept its three
+  answer rows and the word mug, and returned to A. B retained its two
+  words and empty result. SQLite confirmed the same saved A session ID.
+  [Evidence](evidence/s7-offline-resume-bookmark.txt).
 
 ## S5 Read the paired synthetic assessment
 
