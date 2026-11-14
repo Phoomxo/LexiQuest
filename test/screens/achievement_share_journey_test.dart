@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/export/data/file_selector_export_store.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -352,6 +353,9 @@ class _Fixture {
     focus: focus,
     streak: streak,
     progress: progress,
+    saveAchievementCard: const FileSelectorExportStore(
+      isAndroid: true,
+    ).saveAchievementCard,
   );
 
   Future<void> seed() async {

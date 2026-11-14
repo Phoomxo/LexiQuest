@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
-import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../config/m3_theme.dart';
-import '../features/export/data/file_selector_export_store.dart';
 import '../features/export/domain/export_contracts.dart';
 import '../features/motivation/domain/streak_policy.dart';
 import '../features/quest/domain/quest_models.dart';
@@ -47,7 +45,7 @@ class _AchievementSharePanel extends StatefulWidget {
 class _AchievementSharePanelState extends State<_AchievementSharePanel> {
   static const _channel = MethodChannel('com.lexiquest.app/achievement_share');
   final _art = GlobalKey();
-  late final StreamSubscription<Object?> _ownerWrites;
+  StreamSubscription<void>? _ownerWrites;
   _Page _page = _Page.motivation;
   bool _ownerChanged = false;
   bool _loading = false;
@@ -69,11 +67,10 @@ class _AchievementSharePanelState extends State<_AchievementSharePanel> {
   @override
   void initState() {
     super.initState();
-    final db = widget.scope.database!;
-    // Individual writes fence even an A→B→A switch between query snapshots.
-    _ownerWrites = db
-        .tableUpdates(TableUpdateQuery.onTable(db.localOwners))
-        .listen((_) => _invalidate(), onError: (Object _) => _invalidate());
+    _ownerWrites = widget.scope.watchLocalOwnerWrites()?.listen(
+      (_) => _invalidate(),
+      onError: (Object _) => _invalidate(),
+    );
   }
 
   void _invalidate() {
@@ -90,14 +87,9 @@ class _AchievementSharePanelState extends State<_AchievementSharePanel> {
 
   Future<void> _requireOwner() async {
     if (!_current) throw StateError('Achievement card is no longer active');
-    final db = widget.scope.database!;
-    final owners =
-        await (db.select(db.localOwners)
-              ..where((row) => row.isActive.equals(true))
-              ..limit(2))
-            .get();
+    final ownerId = await widget.scope.readActiveOwnerId();
     if (!_current) throw StateError('Achievement card is no longer active');
-    if (owners.length != 1 || owners.single.id != widget.ownerId) {
+    if (ownerId != widget.ownerId) {
       _invalidate();
       throw StateError('Achievement owner changed');
     }
@@ -202,11 +194,12 @@ class _AchievementSharePanelState extends State<_AchievementSharePanel> {
       final bytes = await _capture();
       await revalidate();
       if (save) {
-        await const FileSelectorExportStore(isAndroid: true).saveFile(
-          suggestedName: 'lexiquest-achievement.png',
-          mimeType: 'image/png',
-          typeLabel: 'PNG',
-          bytes: bytes,
+        final saveCard = widget.scope.saveAchievementCard;
+        if (saveCard == null) {
+          throw const ExportException(ExportFailureCode.unavailable);
+        }
+        await saveCard(
+          bytes,
           cancellation: cancellation,
           revalidateBeforeWrite: revalidate,
         );
@@ -278,7 +271,7 @@ class _AchievementSharePanelState extends State<_AchievementSharePanel> {
   @override
   void dispose() {
     _operation?.cancel();
-    unawaited(_ownerWrites.cancel());
+    unawaited(_ownerWrites?.cancel());
     super.dispose();
   }
 
@@ -295,6 +288,7 @@ class _AchievementSharePanelState extends State<_AchievementSharePanel> {
         : null;
     final android = Theme.of(context).platform == TargetPlatform.android;
     final maySave =
+        widget.scope.saveAchievementCard != null &&
         widget.scope.features.isVisible(Feature.export) &&
         widget.scope.fieldFeatures.isVisible(FieldFeature.export);
     final title = switch (_page) {

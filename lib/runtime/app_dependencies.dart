@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
@@ -8,6 +11,7 @@ import '../features/account_deletion/application/account_deletion_use_cases.dart
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
+import '../features/export/domain/export_contracts.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -39,6 +43,13 @@ import 'registries/consent_registry.dart';
 import 'registries/entitlement_registry.dart';
 import 'registries/experiment_registry.dart';
 import 'registries/feature_registry.dart';
+
+typedef SaveAchievementCard =
+    Future<ExportSaveResult> Function(
+      Uint8List bytes, {
+      required ExportCancellation cancellation,
+      required ExportWriteRevalidator revalidateBeforeWrite,
+    });
 
 final class AppDependencies {
   AppDependencies({
@@ -74,6 +85,7 @@ final class AppDependencies {
     this.accountDeletion,
     this.researchConsent,
     this.exports,
+    this.saveAchievementCard,
     this.geminiTutor,
     this.objectScanner,
     this.devicePermissions,
@@ -115,6 +127,26 @@ final class AppDependencies {
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
 
+  Future<String?> readActiveOwnerId() async {
+    final db = database;
+    if (db == null) return null;
+    final owners =
+        await (db.select(db.localOwners)
+              ..where((row) => row.isActive.equals(true))
+              ..limit(2))
+            .get();
+    return owners.length == 1 ? owners.single.id : null;
+  }
+
+  Stream<void>? watchLocalOwnerWrites() {
+    final db = database;
+    if (db == null) return null;
+    // Writes fence A→B→A even if the owner snapshots coalesce.
+    return db
+        .tableUpdates(TableUpdateQuery.onTable(db.localOwners))
+        .map((_) {});
+  }
+
   Stream<String?>? watchActiveOwnerId() {
     final db = database;
     if (db == null) return null;
@@ -129,6 +161,7 @@ final class AppDependencies {
   final AccountDeletionUseCases? accountDeletion;
   final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
+  final SaveAchievementCard? saveAchievementCard;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
   final DevicePermissionAccess? devicePermissions;

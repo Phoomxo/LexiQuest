@@ -440,10 +440,11 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    const exportStore = FileSelectorExportStore();
     final exports = ExportUseCases(
       owners: localOwners,
       reader: DriftExportReader(database),
-      store: const FileSelectorExportStore(),
+      store: exportStore,
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
@@ -609,6 +610,7 @@ final class AppBootstrap {
       progress: progress,
       rewards: rewards,
       exports: exports,
+      saveAchievementCard: exportStore.saveAchievementCard,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       vocabularyImportFilePicker: FileSelectorVocabularyImportFilePicker().pick,

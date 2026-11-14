@@ -25,7 +25,7 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     ExportArtifact artifact, {
     required ExportCancellation cancellation,
     required ExportWriteRevalidator revalidateBeforeWrite,
-  }) => saveFile(
+  }) => _saveFile(
     suggestedName: artifact.suggestedFileName,
     mimeType: artifact.mimeType,
     typeLabel: artifact.format.name,
@@ -34,7 +34,20 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     revalidateBeforeWrite: revalidateBeforeWrite,
   );
 
-  Future<ExportSaveResult> saveFile({
+  Future<ExportSaveResult> saveAchievementCard(
+    Uint8List bytes, {
+    required ExportCancellation cancellation,
+    required ExportWriteRevalidator revalidateBeforeWrite,
+  }) => _saveFile(
+    suggestedName: 'lexiquest-achievement.png',
+    mimeType: 'image/png',
+    typeLabel: 'PNG',
+    bytes: bytes,
+    cancellation: cancellation,
+    revalidateBeforeWrite: revalidateBeforeWrite,
+  );
+
+  Future<ExportSaveResult> _saveFile({
     required String suggestedName,
     required String mimeType,
     required String typeLabel,
