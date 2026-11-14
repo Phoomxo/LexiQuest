@@ -1,5 +1,22 @@
 # Continuous execution checkpoint
 
+## S3 Category quiz setup
+
+- Source `a30abdbc63e5c44f89339b971445b288fe674ec6`. F16 setup now
+  opens from selected set and normal category practice, with a read-only
+  preview, explicit Start and persisted question count, presentation and
+  five-minute guide. Legacy quiz plan decoding and contextual Back verified.
+  [Focused 176, final route 18 and analysis](evidence/s3-f16-round-setup.txt).
+- f01 [exact CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43613581763)
+  passed Flutter 2,272, CPU backend 267, Firestore/Supabase and Android debug
+  build at `e2b550d0`. Build log SHA-256
+  `cd9b27591b4e92df9dfcfaeca017d3288712fe876bee8fe559039073b0ad331d`.
+- Next executable unit is f09 contextual cloze using authored sentences and
+  the existing learning authority. Begin at normal practice and wrong-word
+  repair entry. Check the exact approved contextual selection and typed
+  acceptance before changing persisted contracts. Verify f16 exact-head CI
+  when terminal; native voice and TalkBack remain separate.
+
 ## S2 Library level selection
 
 - Source `447e22f79f30413d57d3f7698e21407d403413e2` on
@@ -10,10 +27,6 @@
 - Retest on the next delivery APK by selecting A2, opening a set, returning
   with its filter, checking C2 empty and clearing. Verify focus and speech
   on TalkBack. Do not reuse the earlier v34 delivery hash for this change.
-- Next executable unit is f16 on the Quiz entry from Library/ChooseMode.
-  Freeze and test the effective question count, presentation and advisory
-  pacing. Preserve prior quiz plan decoding, owner fences and no writes on
-  cancel. No Flutter process remains from the f01 focused/analysis runs.
 
 ## Current S7 study persistence and Android schema reconciliation
 

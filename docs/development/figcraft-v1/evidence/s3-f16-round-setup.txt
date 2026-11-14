@@ -1,0 +1,44 @@
+F16 category quiz round setup
+
+Source a30abdbc63e5c44f89339b971445b288fe674ec6. Win Flutter with synthetic
+A/B and in-memory SQLite. Library > selected set > Quiz and ChooseMode >
+all practice > category selector > Quiz are the production paths.
+
+Library: cancel before starting returns to the same set. Session and answer
+tables stay empty and the existing vocabulary outbox is unchanged. Choose
+two questions, answer question one, pause, remount, and open B independently.
+Reopen A, resume the same session on question two with the same choices, finish
+100%, return to A, and verify the stored result and settings.
+
+ChooseMode: with only two usable words, selecting three disables Start and
+creates no session. Select one question, Listen and read, and the five-minute
+guide. The second word in A supplies a distractor and neither word from B
+appears. Native channel fixture rejects playback; the failure message leaves
+the question answerable. Advance five minutes; no answer has been recorded.
+Answer, finish 100%, return to the real category selector, and read the stored
+one-question, listening, five-minute settings.
+
+Owner change while Start is held returns Back without creating a session or
+answer when the stale request resolves. Application test removes words after
+preview and confirms a shortage before writing. QuizPlan v2 stores settings
+in the existing plan JSON; null settings use the exact v1 shape. Cursor and
+response codecs remain v1. No schema migration applies.
+
+RED logs SHA-256 (codec v2, missing setup route, native cancellation/rejection)
+750eeced1d02cbf0a0f770b64bd72e99e186d9f1eee7a9b34ead7aa25e55864b
+76fa9f693137833f870405867541da9b8a1becd9b2d7e92b7f7e49627bbf6719
+840f42f1ab025cd4675de62c50d13be3d9ca41f944b19712cf8659ad44b4d464
+
+GREEN build/s3-f16-focused-final.txt, 176 focused Flutter cases, exit 0.
+e8558c73fd27113f1f90a584d331ac1790ca3caa65abb13c20114fce67e5c908
+After the analyzer-requested braces, build/s3-f16-final-route-regression.txt
+passed 18 on this source. b939e0f75d20ab0ca895f758e0ad8b35f67edc63883c980ba2d77c610f6284ca
+build/s3-f16-analyze.txt, no issues, exit 0, SHA-256
+b6b2495d87daece9b093f389930f9c97516f38efc4ad6410b0a419b6d0b2ae25
+15 changed Dart files passed format. Independent source review accepted f16.
+
+Five minutes are advisory wall time from the saved start, including pauses.
+Quiz uses system speech only on explicit request, through the native provider
+with no app remote fallback. The OS can pick a voice that depends on network.
+No physical playback, offline voice availability, or spoken TalkBack result
+is asserted by the mocked channel or the Windows tests.
