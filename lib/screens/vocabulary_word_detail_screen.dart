@@ -43,7 +43,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
       context,
       AppPage<void>(
         name: 'vocabulary/word/$route',
-        builder: (_) => _OwnedWordRoute(
+        builder: (_) => OwnedVocabularyWordRoute(
           word: word,
           vocabulary: vocabulary,
           scope: scope,
@@ -59,7 +59,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => _OwnedWordRoute(
+  Widget build(BuildContext context) => OwnedVocabularyWordRoute(
     word: word,
     vocabulary: vocabulary,
     scope: scope,
@@ -150,8 +150,9 @@ class VocabularyWordDetailScreen extends StatelessWidget {
   );
 }
 
-class _OwnedWordRoute extends StatefulWidget {
-  const _OwnedWordRoute({
+class OwnedVocabularyWordRoute extends StatefulWidget {
+  const OwnedVocabularyWordRoute({
+    super.key,
     required this.word,
     required this.vocabulary,
     required this.scope,
@@ -164,10 +165,10 @@ class _OwnedWordRoute extends StatefulWidget {
   final Widget Function(BuildContext, VocabularyWord) builder;
 
   @override
-  State<_OwnedWordRoute> createState() => _OwnedWordRouteState();
+  State<OwnedVocabularyWordRoute> createState() => _OwnedWordRouteState();
 }
 
-class _OwnedWordRouteState extends State<_OwnedWordRoute> {
+class _OwnedWordRouteState extends State<OwnedVocabularyWordRoute> {
   StreamSubscription<void>? _owners;
   StreamSubscription<List<VocabularyWord>>? _words;
   VocabularyWord? _current;

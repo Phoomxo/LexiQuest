@@ -11,13 +11,16 @@ import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
+import 'dictation_quiz_screen.dart';
 import '../navigation/app_routes.dart';
 import 'object_scanner_screen.dart';
 import 'quiz_screen.dart';
 import 'score_screen.dart';
+import 'smart_audio_playlist_screen.dart';
 import 'source_practice_screen.dart';
 import 'vocabulary_word_detail_screen.dart';
 import 'wordbook_import_screen.dart';
@@ -31,6 +34,93 @@ typedef _CategoryContext = ({
   String name,
 });
 
+class _OwnedPlaylistRoute extends StatefulWidget {
+  const _OwnedPlaylistRoute({required this.category, required this.ownerId});
+
+  final _CategoryContext category;
+  final String ownerId;
+
+  @override
+  State<_OwnedPlaylistRoute> createState() => _OwnedPlaylistRouteState();
+}
+
+class _OwnedPlaylistRouteState extends State<_OwnedPlaylistRoute> {
+  StreamSubscription<void>? _ownerWrites;
+  late final Future<List<VocabularyWord>> _words;
+  bool _invalidated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final scope = widget.category.dependencies;
+    _ownerWrites = scope?.watchLocalOwnerWrites()?.listen(
+      (_) => _invalidate(),
+      onError: (Object _) => _invalidate(),
+    );
+    _words = _loadWords();
+  }
+
+  Future<List<VocabularyWord>> _loadWords() async {
+    final category = widget.category;
+    if (_ownerWrites != null &&
+        await category.dependencies?.readActiveOwnerId() != widget.ownerId) {
+      _invalidate();
+      return const [];
+    }
+    if (!mounted || _invalidated) return const [];
+    return category.vocabulary
+        .watchWords(category.id, expectedOwnerId: widget.ownerId)
+        .first;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!identical(
+      widget.category.dependencies,
+      AppDependenciesScope.maybeOf(context),
+    )) {
+      _invalidate();
+    }
+  }
+
+  void _invalidate() {
+    if (mounted && !_invalidated) setState(() => _invalidated = true);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_ownerWrites?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<VocabularyWord>>(
+    future: _words,
+    builder: (context, snapshot) {
+      if (!_invalidated && snapshot.hasData) {
+        return SmartAudioPlaylistScreen(
+          wordList: [
+            for (final word in snapshot.data!)
+              {'word': word.spelling, 'translation': word.meaning},
+          ],
+          categoryName: widget.category.name,
+          returnLabel: 'กลับไปดูชุด${widget.category.name}',
+          voice: widget.category.dependencies?.voice,
+        );
+      }
+      return Scaffold(
+        appBar: AppBar(title: const Text('ฟังคำในชุด')),
+        body: Center(
+          child: _invalidated || snapshot.hasError
+              ? const Text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่')
+              : const CircularProgressIndicator(),
+        ),
+      );
+    },
+  );
+}
+
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
     super.key,
@@ -41,6 +131,8 @@ class VocabListScreen extends StatefulWidget {
     this.importer,
     this.startAdding = false,
     this.initialQuery = '',
+    this.selectForDictation = false,
+    this.onReturnFromDictation,
   });
 
   final String categoryId;
@@ -50,6 +142,8 @@ class VocabListScreen extends StatefulWidget {
   final ImportVocabulary? importer;
   final bool startAdding;
   final String initialQuery;
+  final bool selectForDictation;
+  final VoidCallback? onReturnFromDictation;
 
   @override
   State<VocabListScreen> createState() => _VocabListScreenState();
@@ -228,7 +322,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
         !identical(_progress, progress)) {
       _vocabulary = useCases;
       _categoryId = category?.id;
-      _words = useCases?.watchWords(category!.id);
+      _words = useCases?.watchWords(
+        category!.id,
+        expectedOwnerId: widget.expectedOwnerId,
+      );
       _progress = progress;
       _latest = category == null
           ? null
@@ -243,17 +340,30 @@ class _VocabListScreenState extends State<VocabListScreen> {
         }
       });
     }
+    final canListen =
+        features.isVisible(FieldFeature.speechPractice) &&
+        features.isVisible(FieldFeature.vocabulary) &&
+        (dependencies?.features.isVisible(Feature.speechPractice) ?? true) &&
+        (dependencies?.features.isVisible(Feature.vocabulary) ?? true);
     final canPracticeSource =
+        !widget.selectForDictation &&
         useCases != null &&
         learning != null &&
         sourcePicker != null &&
         features.isVisible(FieldFeature.reading);
     final canPractice =
-        learning != null && features.isVisible(FieldFeature.quiz);
+        !widget.selectForDictation &&
+        learning != null &&
+        features.isVisible(FieldFeature.quiz);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, category?.name ?? 'ชุดคำศัพท์'),
+        title: M3Theme.appBarTitle(
+          context,
+          widget.selectForDictation
+              ? 'เลือกคำที่จะเขียนตามเสียง'
+              : category?.name ?? 'ชุดคำศัพท์',
+        ),
       ),
       body: AdaptiveContentPane(
         child: category == null || useCases == null
@@ -302,7 +412,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              if (snapshot.hasData &&
+                              if (!widget.selectForDictation &&
+                                  snapshot.hasData &&
                                   (_savedOnly || allWords.isNotEmpty)) ...[
                                 Wrap(
                                   spacing: 8,
@@ -371,18 +482,33 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                   ),
                                 const SizedBox(height: 8),
                               ],
-                              OutlinedButton.icon(
-                                key: const ValueKey('add-word'),
-                                onPressed: () => _showAddWordOptions(
-                                  context,
-                                  category,
-                                  importer,
-                                  features,
+                              if (!widget.selectForDictation)
+                                OutlinedButton.icon(
+                                  key: const ValueKey('add-word'),
+                                  onPressed: () => _showAddWordOptions(
+                                    context,
+                                    category,
+                                    importer,
+                                    features,
+                                  ),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('เพิ่มคำ'),
                                 ),
-                                icon: const Icon(Icons.add),
-                                label: const Text('เพิ่มคำ'),
-                              ),
-                              if (_latest != null &&
+                              if (!widget.selectForDictation && canListen)
+                                OutlinedButton.icon(
+                                  onPressed:
+                                      allWords.isEmpty || snapshot.hasError
+                                      ? null
+                                      : () => _openPlaylist(
+                                          context,
+                                          category,
+                                          allWords.first.ownerId,
+                                        ),
+                                  icon: const Icon(Icons.headphones_outlined),
+                                  label: const Text('ฟังคำในชุดนี้'),
+                                ),
+                              if (!widget.selectForDictation &&
+                                  _latest != null &&
                                   features.isVisible(FieldFeature.mastery))
                                 FutureBuilder<SessionHistoryEntry?>(
                                   key: ValueKey((_progress, widget.categoryId)),
@@ -512,6 +638,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 onPressed: () => setState(
                                   () => _words = useCases.watchWords(
                                     widget.categoryId,
+                                    expectedOwnerId: widget.expectedOwnerId,
                                   ),
                                 ),
                                 child: const Text('ลองใหม่'),
@@ -557,31 +684,53 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                 subtitle: Text(
                                   '${word.meaning} · ${word.partOfSpeech}',
                                 ),
-                                onTap: () =>
-                                    _openWordDetail(context, category, word),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'จัดการคำนี้ ${word.spelling}',
-                                      icon: Icon(
-                                        word.isBookmarked
-                                            ? Icons.bookmark
-                                            : Icons.bookmark_border,
+                                onTap: widget.selectForDictation
+                                    ? canListen
+                                          ? () => _chooseDictationWord(
+                                              context,
+                                              category,
+                                              word,
+                                            )
+                                          : null
+                                    : () => _openWordDetail(
+                                        context,
+                                        category,
+                                        word,
                                       ),
-                                      onPressed: _managingBookmark
-                                          ? null
-                                          : () =>
-                                                _manageBookmark(category, word),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'ลบคำศัพท์ ${word.spelling}',
-                                      icon: const Icon(Icons.delete_outline),
-                                      onPressed: () =>
-                                          _deleteWord(context, category, word),
-                                    ),
-                                  ],
-                                ),
+                                trailing: widget.selectForDictation
+                                    ? const Icon(Icons.chevron_right)
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            tooltip:
+                                                'จัดการคำนี้ ${word.spelling}',
+                                            icon: Icon(
+                                              word.isBookmarked
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border,
+                                            ),
+                                            onPressed: _managingBookmark
+                                                ? null
+                                                : () => _manageBookmark(
+                                                    category,
+                                                    word,
+                                                  ),
+                                          ),
+                                          IconButton(
+                                            tooltip:
+                                                'ลบคำศัพท์ ${word.spelling}',
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                            ),
+                                            onPressed: () => _deleteWord(
+                                              context,
+                                              category,
+                                              word,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               );
                             },
                           ),
@@ -793,6 +942,62 @@ class _VocabListScreenState extends State<VocabListScreen> {
         );
         return;
     }
+  }
+
+  Future<void> _chooseDictationWord(
+    BuildContext context,
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (word.categoryId != category.id) return;
+    final owner = await _currentOwner(category, expectedOwnerId: word.ownerId);
+    if (owner == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/word/dictation',
+        builder: (_) => OwnedVocabularyWordRoute(
+          word: word,
+          vocabulary: category.vocabulary,
+          scope: category.dependencies,
+          builder: (_, current) => DictationQuizScreen(
+            key: ValueKey(current.localRevision),
+            targetWord: current.spelling,
+            meaning: current.meaning,
+            partOfSpeech: current.partOfSpeech,
+            categoryName: category.name,
+            voice: category.dependencies?.voice,
+            autoPlay: false,
+            returnLabel: 'กลับไปเลือกแบบฝึกฟัง',
+            onReturn: widget.onReturnFromDictation,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPlaylist(
+    BuildContext context,
+    _CategoryContext category,
+    String ownerId,
+  ) async {
+    if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/playlist',
+        builder: (_) =>
+            _OwnedPlaylistRoute(category: category, ownerId: ownerId),
+      ),
+    );
   }
 
   Future<void> _openWordDetail(

@@ -18,6 +18,7 @@ class DictationQuizScreen extends StatefulWidget {
     this.partOfSpeech,
     this.categoryName,
     this.returnLabel = 'กลับไปดูคำเดิม',
+    this.onReturn,
     this.autoPlay = true,
     this.voice,
   });
@@ -27,6 +28,7 @@ class DictationQuizScreen extends StatefulWidget {
   final String? partOfSpeech;
   final String? categoryName;
   final String returnLabel;
+  final VoidCallback? onReturn;
   final bool autoPlay;
   final VoiceUseCases? voice;
 
@@ -183,7 +185,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
               ..._stepContent(context),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => Navigator.maybePop(context),
+                onPressed: widget.onReturn ?? () => Navigator.maybePop(context),
                 child: Text(widget.returnLabel),
               ),
             ],

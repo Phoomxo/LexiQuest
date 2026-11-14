@@ -15,6 +15,7 @@ import 'associative_reading_session_screen.dart';
 import 'categories_page.dart';
 import 'cefr_reading_menu_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
+import 'listening_practice_menu_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
@@ -407,6 +408,16 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
           subtitle: 'ทบทวนคำที่ถึงเวลาแล้วตามประวัติการเรียน',
           onTap: () => _push(context, SrsFlashcardsScreen(learning: _learning)),
+        ),
+      if (all && ListeningPracticeMenuScreen.isAvailable(context, _features))
+        _LearningTile(
+          icon: Icons.hearing_outlined,
+          title: 'ฟังและพูด',
+          subtitle: 'ฟังคำศัพท์ เขียนตามเสียง หรือฝึกออกเสียง',
+          onTap: () => _push(
+            context,
+            ListeningPracticeMenuScreen(fieldFeatures: _features),
+          ),
         ),
       if (all &&
           canReading &&

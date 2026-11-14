@@ -26,8 +26,10 @@ final class VoiceUseCases {
   factory VoiceUseCases.createDefault() =>
       VoiceUseCases(VoiceServiceFactory.create());
 
-  factory VoiceUseCases.createOnDevice() =>
-      VoiceUseCases(NativeTtsProvider(FlutterTtsAdapter()));
+  factory VoiceUseCases.createOnDevice({bool awaitCompletion = false}) =>
+      VoiceUseCases(
+        NativeTtsProvider(FlutterTtsAdapter(awaitCompletion: awaitCompletion)),
+      );
 
   final VoiceProvider _provider;
 

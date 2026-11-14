@@ -26,10 +26,13 @@ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/listening_practice_menu_screen.dart';
 import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
+import 'package:vocab_learning_app/screens/smart_audio_playlist_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -143,6 +146,7 @@ void main() {
     double scale = 1,
     bool travelContrast = false,
     bool withLevels = false,
+    bool startAtPractice = false,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
@@ -185,11 +189,16 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
           ),
-          home: const CategoriesPage(),
+          home: startAtPractice
+              ? const ChooseModeScreen()
+              : const CategoriesPage(),
         ),
       ),
     );
-    await _pumpUntil(tester, find.text('การเดินทาง'));
+    await _pumpUntil(
+      tester,
+      find.text(startAtPractice ? 'ฝึกภาษา' : 'การเดินทาง'),
+    );
   }
 
   Future<void> disposeLibrary(WidgetTester tester) async {
@@ -325,6 +334,84 @@ void main() {
     },
   );
 
+  testWidgets('listening hub opens IPA and a saved dictation word', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2, startAtPractice: true);
+      await _tapLabel(tester, 'ดูแบบฝึกทั้งหมด', scroll: true);
+      await _tapLabel(tester, 'ฟังและพูด', scroll: true);
+      final hub = tester.state(find.byType(ListeningPracticeMenuScreen));
+      await _tapLabel(tester, 'ฝึกเสียงทีละคำ');
+      await _tapLabel(tester, '/ʃ/ she');
+      await _tapLabel(tester, 'ลองเสียง /ʃ/ ในคำว่า she');
+      expect(voice.requests.single.text, 'she');
+      await _tapLabel(tester, 'กลับไปเลือกแบบฝึกฟัง');
+      expect(tester.state(find.byType(ListeningPracticeMenuScreen)), same(hub));
+
+      await _tapLabel(tester, 'เขียนตามเสียง', settle: false);
+      await _pumpUntil(tester, find.text('เลือกหมวดหมู่'));
+      await _pumpUntil(tester, find.text('การเดินทาง'));
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _pumpUntil(tester, find.text('เลือกคำที่จะเขียนตามเสียง'));
+      await _pumpUntil(tester, find.text('station'));
+      await _tapLabel(tester, 'station', settle: false);
+      await _pumpUntil(tester, find.byType(DictationQuizScreen));
+      expect(voice.requests, hasLength(1));
+      await _tapLabel(tester, 'ฟังด้วยความเร็วปกติ');
+      expect(voice.requests.last.text, 'station');
+      await _tapLabel(tester, 'กลับไปเลือกแบบฝึกฟัง');
+      expect(tester.state(find.byType(ListeningPracticeMenuScreen)), same(hub));
+      expect(find.text('เลือกหมวดหมู่'), findsNothing);
+      expect(find.text('เลือกคำที่จะเขียนตามเสียง'), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('selected set plays both saved words and returns to its search', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2, travelContrast: true);
+      final before = await tester.runAsync(() => _localRecords(database));
+      await _tapLabel(tester, 'การเดินทาง');
+      final search = find.descendant(
+        of: find.byType(VocabListScreen),
+        matching: find.byType(SearchBar),
+      );
+      await _pumpUntil(tester, search);
+      await tester.ensureVisible(search);
+      await tester.enterText(search, 'stat');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await _tapLabel(tester, 'ฟังคำในชุดนี้', settle: false);
+      await _pumpUntil(tester, find.byType(SmartAudioPlaylistScreen));
+      await tester.pumpAndSettle();
+      expect(find.text('ฟังคำในชุด'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expect(voice.requests, isEmpty);
+      await _tapLabel(tester, 'ฟังคำแรก');
+      await _tapLabel(tester, 'จบการฟังชุดนี้');
+      expect(find.text('ฟังจบชุดแล้ว'), findsOneWidget);
+      expect(voice.requests.map((request) => request.text), [
+        'station',
+        'ticket',
+      ]);
+      expect(find.text('station'), findsOneWidget);
+      expect(find.text('ticket'), findsOneWidget);
+      await _tapLabel(tester, 'กลับไปดูชุดการเดินทาง');
+      await _pumpUntil(tester, search);
+      expect(tester.widget<SearchBar>(search).controller!.text, 'stat');
+      expect(find.text('ticket'), findsNothing);
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
   testWidgets('owner change stops pending audio and hides the old word', (
     tester,
   ) async {
@@ -398,7 +485,8 @@ void main() {
       await tester.enterText(wordSearch, 'stat');
       await tester.pumpAndSettle();
       await tester.tap(find.text('station'));
-      await _tapLabel(tester, 'แก้ไขคำ');
+      await _pumpUntil(tester, find.text('แก้ไขคำ'));
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
       await _pumpUntil(tester, find.byKey(const ValueKey('word-field')));
       await tester.pumpAndSettle();
       await tester.pageBack();
@@ -1103,8 +1191,25 @@ void main() {
   );
 }
 
-Future<void> _tapLabel(WidgetTester tester, String label) async {
+Future<void> _tapLabel(
+  WidgetTester tester,
+  String label, {
+  bool settle = true,
+  bool scroll = false,
+}) async {
   final item = find.text(label);
+  if (scroll && item.evaluate().isEmpty) {
+    final scrollable = find
+        .byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        )
+        .hitTestable();
+    if (scrollable.evaluate().isNotEmpty) {
+      await tester.scrollUntilVisible(item, 140, scrollable: scrollable.last);
+    }
+  }
   await _pumpUntil(tester, item);
   await tester.ensureVisible(item);
   await tester.pumpAndSettle();
@@ -1117,7 +1222,11 @@ Future<void> _tapLabel(WidgetTester tester, String label) async {
     );
   }
   await tester.tap(item.hitTestable().first);
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
 }
 
 Future<T> _withFrames<T>(

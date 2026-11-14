@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'voice_models.dart';
@@ -20,13 +22,20 @@ abstract interface class NativeTtsAdapter {
 
 /// Production [NativeTtsAdapter] backed by an injected-or-default [FlutterTts].
 final class FlutterTtsAdapter implements NativeTtsAdapter {
-  FlutterTtsAdapter({FlutterTts? flutterTts})
+  FlutterTtsAdapter({FlutterTts? flutterTts, this.awaitCompletion = false})
     : _flutterTts = flutterTts ?? FlutterTts();
 
   final FlutterTts _flutterTts;
+  final bool awaitCompletion;
+  Future<void>? _pendingStop;
 
   @override
   Future<void> setLanguage(String language) async {
+    if (_pendingStop case final pending?) {
+      await pending.timeout(const Duration(seconds: 5));
+    }
+    // Set the plugin's shared mode before the provider checks cancellation.
+    await _flutterTts.awaitSpeakCompletion(awaitCompletion);
     _requireAccepted(await _flutterTts.setLanguage(language));
   }
 
@@ -47,11 +56,25 @@ final class FlutterTtsAdapter implements NativeTtsAdapter {
 
   @override
   Future<void> speak(String text) async {
-    _requireAccepted(await _flutterTts.speak(text));
+    final speaking = _flutterTts.speak(text);
+    if (!awaitCompletion) {
+      _requireAccepted(await speaking);
+      return;
+    }
+    try {
+      _requireAccepted(await speaking.timeout(const Duration(seconds: 25)));
+    } on TimeoutException {
+      await stop().timeout(const Duration(seconds: 5));
+      rethrow;
+    }
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop() {
+    return _pendingStop ??= _stop().whenComplete(() => _pendingStop = null);
+  }
+
+  Future<void> _stop() async {
     _requireAccepted(await _flutterTts.stop());
   }
 

@@ -99,6 +99,63 @@ void main() {
     }
   });
 
+  test(
+    'playlist requests native completion without changing other speech',
+    () async {
+      const channel = MethodChannel('flutter_tts');
+      final completionModes = <bool>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'awaitSpeakCompletion') {
+          completionModes.add(call.arguments as bool);
+        }
+        return 1;
+      });
+      try {
+        await VoiceUseCases.createOnDevice(
+          awaitCompletion: true,
+        ).speak(_validRequest());
+        await VoiceUseCases.createOnDevice().speak(_validRequest());
+        expect(completionModes, [true, false]);
+      } finally {
+        messenger.setMockMethodCallHandler(channel, null);
+      }
+    },
+  );
+
+  testWidgets('playlist times out when native speech never completes', (
+    tester,
+  ) async {
+    const channel = MethodChannel('flutter_tts');
+    final stalled = Completer<int>();
+    var stops = 0;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'speak') return stalled.future;
+      if (call.method == 'stop') {
+        stops++;
+        stalled.complete(0);
+      }
+      return 1;
+    });
+    try {
+      final result = expectLater(
+        VoiceUseCases.createOnDevice(
+          awaitCompletion: true,
+        ).speak(_validRequest()),
+        throwsA(isA<VoiceFailure>()),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 26));
+      await result;
+      expect(stops, 1);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+    }
+  });
+
   for (final blockedCall in [_TtsCall.setLanguage, _TtsCall.setPitch]) {
     test('stop cancels speech waiting for ${blockedCall.name}', () async {
       final entered = Completer<void>();
