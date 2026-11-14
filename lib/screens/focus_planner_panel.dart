@@ -7,6 +7,7 @@ import '../features/motivation/domain/focus_models.dart';
 import '../features/motivation/domain/timezone_policy.dart';
 import '../runtime/app_dependencies.dart';
 import 'study_preferences_panel.dart';
+import 'study_reminder_panel.dart';
 
 Future<void> showFocusPlanner(BuildContext context) async {
   final scope = AppDependenciesScope.maybeOf(context);
@@ -451,6 +452,16 @@ class _FocusPlannerPanelState extends State<_FocusPlannerPanel>
                         ? null
                         : () => showStudyPreferences(context),
                     child: const Text('ปรับวิธีเรียนและวันเป้าหมาย'),
+                  ),
+                if (!running && widget.scope.studyReminders != null)
+                  TextButton(
+                    onPressed: _busy || _loading
+                        ? null
+                        : () => showStudyReminders(
+                            context,
+                            expectedOwnerId: widget.ownerId,
+                          ),
+                    child: const Text('เตือนให้กลับมาฝึก'),
                   ),
               ],
             ],

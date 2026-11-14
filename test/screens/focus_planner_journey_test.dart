@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -18,9 +19,149 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/focus_planner_panel.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/services/study_reminders.dart';
 
 void main() {
   setUpAll(tz.initializeTimeZones);
+
+  testWidgets(
+    'planner opts into weekdays after permission and cancels back to plan',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final db = AppDatabase(NativeDatabase.memory());
+      final clock = _Clock();
+      final owners = DriftLocalOwnerRepository(
+        db,
+        generateId: () => 'synthetic-reminder-owner',
+        nowUtc: () => clock.now,
+      );
+      final calendar = DriftStreakRepository(db);
+      final focus = FocusUseCases(
+        repository: DriftFocusRepository(db, calendar: calendar),
+        owners: owners,
+        clock: clock,
+        generateId: () => 'unused-reminder-focus',
+      );
+      final calls = <String>[];
+      var allowed = false;
+      var responses = 0;
+      String? saved;
+      const channel = MethodChannel('com.lexiquest.app/study_reminder');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        calls.add(call.method);
+        if (call.method == 'reconcile') return null;
+        if (call.method == 'enable') {
+          expect(allowed, isTrue);
+          saved = call.arguments['preset'] as String;
+        }
+        if (call.method == 'disable') saved = null;
+        return {'allowed': allowed, 'preset': saved};
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        ),
+      );
+      final owner = (await tester.runAsync(owners.getOrCreateActiveOwner))!;
+      final deps = AppDependencies(
+        runtimeStatus: const AppRuntimeStatus(
+          localData: RuntimeAvailability.ready,
+          firebase: RuntimeAvailability.unavailable,
+          supabase: RuntimeAvailability.unavailable,
+          backends: RuntimeAvailability.unavailable,
+        ),
+        config: null,
+        guestSessionService: _GuestSession(),
+        database: db,
+        localOwners: owners,
+        focus: focus,
+        studyReminders: StudyReminders(
+          databasePath: '/synthetic/lexiquest.sqlite',
+          activeOwner: () async => owner.id,
+          requestPermission: () async => allowed = ++responses == 2,
+        ),
+        progress: ProgressUseCases(
+          owners: owners,
+          queries: DriftProgressQueries(db),
+          nowUtc: () => clock.now,
+        ),
+      );
+      try {
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: deps,
+            child: MaterialApp(
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: child!,
+              ),
+              home: const MasteryDashboardScreen(),
+            ),
+          ),
+        );
+        await _tap(tester, 'วางแผนการฝึก');
+        await _tap(tester, 'เตือนให้กลับมาฝึก', inPlanner: true);
+        final weekday = find.text('จันทร์ถึงศุกร์ เวลา 19:00 น.');
+        await _waitFor(tester, weekday);
+        final preset = find
+            .ancestor(
+              of: weekday,
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is ChoiceChip ||
+                    widget is ListTile ||
+                    widget is ButtonStyleButton,
+              ),
+            )
+            .first;
+        await tester.ensureVisible(preset);
+        await tester.tap(preset);
+        await tester.pumpAndSettle();
+        expect(responses, 0);
+        Future<void> tapReminder(String label) async {
+          await tester.scrollUntilVisible(
+            find.text(label),
+            170,
+            scrollable: _planner(find.byType(Scrollable)).last,
+          );
+          await _tap(tester, label);
+        }
+
+        await tapReminder('อนุญาตให้เตือน');
+        await _pumpUntil(tester, () => responses == 1, 'initial denial');
+        expect(saved, isNull);
+        expect(calls, isNot(contains('enable')));
+        await tapReminder('อนุญาตให้เตือน');
+        await _pumpUntil(tester, () => saved == 'weekdaysEvening', 'enable');
+        expect(saved, 'weekdaysEvening');
+        await tapReminder('ปิดการเตือน');
+        await _pumpUntil(tester, () => calls.contains('disable'), 'cancel');
+        expect(saved, isNull);
+        await tapReminder('กลับไปแผนฝึก');
+        await _waitFor(tester, find.text('จับเวลาฝึก'));
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        var closed = false;
+        final closing = focus
+            .dispose()
+            .then((_) => db.close())
+            .whenComplete(() => closed = true);
+        unawaited(closing.then<void>((_) {}, onError: (Object _) {}));
+        await _pumpUntil(tester, () => closed, 'reminder fixture close');
+        await closing;
+      }
+    },
+  );
 
   testWidgets('Mastery focus week separates active portions from a pause', (
     tester,

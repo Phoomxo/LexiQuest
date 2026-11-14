@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 import 'package:timezone/data/latest_all.dart' as timezone_data;
@@ -77,6 +78,7 @@ import '../features/motivation/application/focus_use_cases.dart';
 import '../features/motivation/data/drift_focus_repository.dart';
 import '../features/motivation/domain/focus_models.dart';
 import '../services/guest_session_service.dart';
+import '../services/study_reminders.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
@@ -176,6 +178,7 @@ final class AppBootstrap {
     this.features = const BuildFeatureRegistry.fieldDefaults(),
     this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
     this.questCatalogFactory,
+    this.enableAndroidStudyReminders = false,
   });
 
   factory AppBootstrap.production({
@@ -205,6 +208,7 @@ final class AppBootstrap {
       watchGeminiSessions: () =>
           FirebaseAuth.instance.userChanges().map(_geminiAuthSession),
       researchAuthorizer: researchAuthorizer,
+      enableAndroidStudyReminders: Platform.isAndroid,
     );
   }
 
@@ -225,6 +229,7 @@ final class AppBootstrap {
   final FeatureRegistry features;
   final FieldFeatureRegistry fieldFeatures;
   final QuestAnswerCatalogFactory? questCatalogFactory;
+  final bool enableAndroidStudyReminders;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -260,6 +265,31 @@ final class AppBootstrap {
       }
     }
     final supabase = await _availability(initializeSupabase);
+    final reminderDatabase = enableAndroidStudyReminders
+        ? (await database.customSelect('PRAGMA database_list').get())
+              .where((row) => row.read<String>('name') == 'main')
+              .singleOrNull
+              ?.read<String>('file')
+        : null;
+    final reminders = reminderDatabase == null || reminderDatabase.isEmpty
+        ? null
+        : StudyReminders(
+            databasePath: reminderDatabase,
+            activeOwner: () async {
+              final rows =
+                  await (database.select(database.localOwners)
+                        ..where((row) => row.isActive.equals(true))
+                        ..limit(2))
+                      .get();
+              return rows.singleOrNull?.id;
+            },
+            requestPermission: () async {
+              await Permission.notification.request();
+            },
+          );
+    if (reminders != null) {
+      unawaited(reminders.reconcile().catchError((Object _) {}));
+    }
     final config = _loadConfig();
     final syncStore = DriftSyncStore(database);
     SyncEngine? syncEngine;
@@ -503,17 +533,22 @@ final class AppBootstrap {
         geminiTutor.invalidateScope();
       },
     );
-    // Query snapshots can coalesce ABA transitions; every owner-table commit fences AI.
+    // Query snapshots can coalesce ABA transitions, so fence pending requests on writes.
     final geminiOwnerUpdatesSubscription = database
         .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
         .listen(
           (_) {
             geminiTutor.invalidateScope();
             notifyProgress();
+            if (reminders != null && !disposed) {
+              reminders.invalidateScope();
+              unawaited(reminders.reconcile().catchError((Object _) {}));
+            }
           },
           onError: (Object _) {
             geminiOwner = null;
             geminiTutor.invalidateScope();
+            reminders?.invalidateScope();
           },
         );
     StreamSubscription<AccountSession?>? geminiAuthSubscription;
@@ -584,6 +619,7 @@ final class AppBootstrap {
         nowUtc: () => DateTime.now().toUtc(),
       ),
       focus: focus,
+      studyReminders: reminders,
       deviceModels: deviceModels,
       account: account,
       researchConsent: researchConsent,
@@ -593,6 +629,7 @@ final class AppBootstrap {
       speechPractice: speechPractice,
       disposeResources: () async {
         disposed = true;
+        reminders?.invalidateScope();
         progressUpdates.dispose();
         await geminiAuthSubscription?.cancel();
         await geminiOwnerUpdatesSubscription.cancel();

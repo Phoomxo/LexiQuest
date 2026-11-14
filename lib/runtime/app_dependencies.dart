@@ -31,6 +31,7 @@ import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
+import '../services/study_reminders.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
 import 'field_feature_registry.dart';
@@ -67,6 +68,7 @@ final class AppDependencies {
     this.localContentReports,
     this.studyPreferences,
     this.focus,
+    this.studyReminders,
     this.deviceModels,
     this.account,
     this.accountDeletion,
@@ -109,6 +111,7 @@ final class AppDependencies {
   final DriftLocalContentReportRepository? localContentReports;
   final DriftStudyPreferencesRepository? studyPreferences;
   final FocusUseCases? focus;
+  final StudyReminders? studyReminders;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
 

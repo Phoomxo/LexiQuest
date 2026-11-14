@@ -87,6 +87,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
     if (state == AppLifecycleState.resumed) {
       unawaited(_recoverStreak(widget.dependencies));
+      final reminders = widget.dependencies.studyReminders;
+      if (reminders != null) {
+        unawaited(reminders.reconcile().catchError((Object _) {}));
+      }
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.appResume));
