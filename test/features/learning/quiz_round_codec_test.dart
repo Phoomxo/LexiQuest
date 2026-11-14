@@ -6,6 +6,131 @@ import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
 
 void main() {
   test(
+    'f16 typed settings preserve defaults and reject plan count mismatch',
+    () {
+      const settings = QuizRoundSettings(questionCount: 1);
+      expect(settings.questionCount, 1);
+      expect(settings.listenAndRead, isFalse);
+      expect(settings.fiveMinuteGuide, isFalse);
+      final loaded = decodeQuizPlan(
+        encodeQuizPlan(_definitionPlan(settings: settings)),
+      );
+      expect(loaded.settings!.questionCount, 1);
+      expect(loaded.settings!.listenAndRead, isFalse);
+      expect(loaded.settings!.fiveMinuteGuide, isFalse);
+      expect(
+        () => _definitionPlan(
+          settings: const QuizRoundSettings(questionCount: 2),
+        ),
+        throwsFormatException,
+      );
+    },
+  );
+
+  test('f16 persists all round settings in a strict v2 plan', () {
+    final legacy =
+        jsonDecode(encodeQuizPlan(_definitionPlan())) as Map<String, dynamic>;
+    for (final listen in [false, true]) {
+      for (final guide in [false, true]) {
+        final stored = jsonEncode({
+          ...legacy,
+          'v': 2,
+          'settings': {
+            'questionCount': 1,
+            'listenAndRead': listen,
+            'fiveMinuteGuide': guide,
+          },
+        });
+        final loaded = decodeQuizPlan(stored);
+        expect(encodeQuizPlan(loaded), stored);
+        expect(loaded.settings!.questionCount, 1);
+        expect(loaded.settings!.listenAndRead, listen);
+        expect(loaded.settings!.fiveMinuteGuide, guide);
+        expect(loaded.questions.single.word.id, 'platform');
+        expect(loaded.questions.single.sourcePin, 'synthetic-source@4');
+      }
+    }
+  });
+
+  test('f16 keeps the exact legacy v1 plan shape without settings', () {
+    final original = encodeQuizPlan(_definitionPlan());
+    final decoded = jsonDecode(original) as Map<String, dynamic>;
+    expect(decoded['v'], 1);
+    expect(decoded.keys, [
+      'v',
+      'origin',
+      'categoryName',
+      'returnLabel',
+      'questions',
+    ]);
+    expect(encodeQuizPlan(decodeQuizPlan(original)), original);
+    expect(decodeQuizPlan(original).settings, isNull);
+    expect(
+      () => decodeQuizPlan(jsonEncode({...decoded, 'settings': null})),
+      throwsFormatException,
+    );
+  });
+
+  test('f16 accepts a full hundred-question configured plan', () {
+    final legacy =
+        jsonDecode(encodeQuizPlan(_definitionPlan())) as Map<String, dynamic>;
+    final question = (legacy['questions'] as List<dynamic>).single;
+    final stored = jsonEncode({
+      ...legacy,
+      'v': 2,
+      'questions': List.filled(100, question),
+      'settings': {
+        'questionCount': 100,
+        'listenAndRead': false,
+        'fiveMinuteGuide': true,
+      },
+    });
+    expect(encodeQuizPlan(decodeQuizPlan(stored)), stored);
+  });
+
+  test('f16 rejects malformed or mismatched persisted settings', () {
+    final legacy =
+        jsonDecode(encodeQuizPlan(_definitionPlan())) as Map<String, dynamic>;
+    const valid = {
+      'questionCount': 1,
+      'listenAndRead': false,
+      'fiveMinuteGuide': false,
+    };
+    for (final settings in <Object?>[
+      null,
+      [],
+      {...valid, 'questionCount': 0},
+      {...valid, 'questionCount': 101},
+      {...valid, 'questionCount': 2},
+      {...valid, 'questionCount': 1.0},
+      {...valid, 'questionCount': '1'},
+      {...valid, 'listenAndRead': 0},
+      {...valid, 'fiveMinuteGuide': null},
+      {'questionCount': 1, 'listenAndRead': false},
+      {...valid, 'autoFinish': true},
+    ]) {
+      expect(
+        () => decodeQuizPlan(
+          jsonEncode({...legacy, 'v': 2, 'settings': settings}),
+        ),
+        throwsFormatException,
+        reason:
+            'Invalid settings must not reinterpret a saved round: $settings',
+      );
+    }
+    expect(
+      () => decodeQuizPlan(
+        jsonEncode({...legacy, 'v': 2, 'settings': valid, 'extra': true}),
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => decodeQuizPlan(jsonEncode({...legacy, 'v': 3, 'settings': valid})),
+      throwsFormatException,
+    );
+  });
+
+  test(
     'plan freezes exact question order, lexical pins and source feedback',
     () {
       final meaningOptions = ['สถานี', 'ชานชาลา'];
@@ -178,7 +303,8 @@ const _station = QuizWord(
   localRevision: 2,
 );
 
-QuizPlan _definitionPlan() => QuizPlan(
+QuizPlan _definitionPlan({QuizRoundSettings? settings}) => QuizPlan(
+  settings: settings,
   origin: QuizOrigin(
     route: 'source',
     promptKind: QuizPromptKind.definitionChoice,

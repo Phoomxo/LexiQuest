@@ -8,6 +8,7 @@
 /// in tests.
 library;
 
+import '../../../voice/native_tts_provider.dart';
 import '../../../voice/voice_models.dart';
 import '../../../voice/voice_provider.dart';
 import '../../../voice/voice_service_factory.dart';
@@ -24,6 +25,9 @@ final class VoiceUseCases {
   /// Used by screens when no provider was injected via [AppDependencies].
   factory VoiceUseCases.createDefault() =>
       VoiceUseCases(VoiceServiceFactory.create());
+
+  factory VoiceUseCases.createOnDevice() =>
+      VoiceUseCases(NativeTtsProvider(FlutterTtsAdapter()));
 
   final VoiceProvider _provider;
 

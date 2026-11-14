@@ -5,9 +5,16 @@ import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../runtime/app_dependencies.dart';
 
 class SelectCategoryForQuiz extends StatefulWidget {
-  const SelectCategoryForQuiz({super.key, this.vocabulary});
+  const SelectCategoryForQuiz({
+    super.key,
+    this.vocabulary,
+    this.onSelect,
+    this.expectedOwnerId,
+  });
 
   final VocabularyUseCases? vocabulary;
+  final Future<void> Function(BuildContext, VocabularyCategory)? onSelect;
+  final String? expectedOwnerId;
 
   @override
   State<SelectCategoryForQuiz> createState() => _SelectCategoryForQuizState();
@@ -15,6 +22,34 @@ class SelectCategoryForQuiz extends StatefulWidget {
 
 class _SelectCategoryForQuizState extends State<SelectCategoryForQuiz> {
   var _retryEpoch = 0;
+  bool _opening = false;
+  Stream<String?>? _ownerChanges;
+  AppDependencies? _dependencies;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!identical(dependencies, _dependencies)) {
+      _dependencies = dependencies;
+      _ownerChanges = dependencies?.watchActiveOwnerId();
+    }
+  }
+
+  Future<void> _select(VocabularyCategory category) async {
+    final onSelect = widget.onSelect;
+    if (onSelect == null) {
+      Navigator.pop(context, category.id);
+      return;
+    }
+    if (_opening) return;
+    _opening = true;
+    try {
+      await onSelect(context, category);
+    } finally {
+      _opening = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,52 +57,78 @@ class _SelectCategoryForQuizState extends State<SelectCategoryForQuiz> {
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกหมวดหมู่')),
-      body: vocabulary == null
-          ? const _CategoryMessage('ไม่สามารถเปิดคลังคำศัพท์ในเครื่องได้')
-          : StreamBuilder<List<VocabularyCategory>>(
-              key: ValueKey<int>(_retryEpoch),
-              stream: vocabulary.watchCategories(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return _CategoryFailure(
-                    onRetry: () => setState(() => _retryEpoch++),
-                  );
-                }
-                if (!snapshot.hasData) {
+      body: _ownerChanges != null && widget.expectedOwnerId != null
+          ? StreamBuilder<String?>(
+              key: ObjectKey(_ownerChanges),
+              stream: _ownerChanges,
+              builder: (context, owner) {
+                if (owner.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                      semanticsLabel: 'กำลังตรวจบัญชีผู้เรียน',
                     ),
                   );
                 }
-                final categories = snapshot.data!;
-                if (categories.isEmpty) {
-                  return _CategoryMessage(
-                    'ยังไม่มีหมวดหมู่ เพิ่มคำศัพท์จากแท็บคำศัพท์ก่อนเริ่มแบบทดสอบ',
-                    actionLabel: 'กลับไปหน้าเรียน',
-                    onAction: () => Navigator.maybePop(context),
-                  );
+                if (owner.data != widget.expectedOwnerId) {
+                  return const _CategoryMessage('เปลี่ยนผู้ใช้แล้ว');
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: categories.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.folder_outlined),
-                        title: Text(category.name),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.pop(context, category.id),
-                      ),
-                    );
-                  },
-                );
+                return _categories(vocabulary);
               },
-            ),
+            )
+          : _categories(vocabulary),
     );
   }
+
+  Widget _categories(VocabularyUseCases? vocabulary) => vocabulary == null
+      ? const _CategoryMessage('ไม่สามารถเปิดคลังคำศัพท์ในเครื่องได้')
+      : StreamBuilder<List<VocabularyCategory>>(
+          key: ValueKey<int>(_retryEpoch),
+          stream: vocabulary.watchCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return _CategoryFailure(
+                onRetry: () => setState(() => _retryEpoch++),
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                ),
+              );
+            }
+            final categories = snapshot.data!
+                .where(
+                  (category) =>
+                      widget.expectedOwnerId == null ||
+                      category.ownerId == widget.expectedOwnerId,
+                )
+                .toList(growable: false);
+            if (categories.isEmpty) {
+              return _CategoryMessage(
+                'ยังไม่มีหมวดหมู่ เพิ่มคำศัพท์จากแท็บคำศัพท์ก่อนเริ่มแบบทดสอบ',
+                actionLabel: 'กลับไปหน้าเรียน',
+                onAction: () => Navigator.maybePop(context),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: categories.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.folder_outlined),
+                    title: Text(category.name),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _select(category),
+                  ),
+                );
+              },
+            );
+          },
+        );
 }
 
 class _CategoryFailure extends StatelessWidget {

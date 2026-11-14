@@ -164,6 +164,10 @@ void main() {
           expect(find.text(savedSpelling), findsOneWidget);
           expect(find.text('banana'), findsNothing);
           await tester.tap(find.text('ฝึกจากชุดนี้'));
+          await _pumpUntil(tester, find.text('เริ่มฝึก'));
+          await tester.ensureVisible(find.text('เริ่มฝึก'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('เริ่มฝึก'));
           final meanings = {savedSpelling: savedMeaning, 'ticket': 'ตั๋ว'};
           final practiced = <String>{};
           for (var index = 0; index < 2; index++) {

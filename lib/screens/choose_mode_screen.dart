@@ -451,6 +451,60 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           !identical(learning, _learning)) {
         return;
       }
+      if (kind == QuizPromptKind.meaningChoice &&
+          scope != null &&
+          vocabulary != null &&
+          learning.supportsDurableQuiz) {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'learning/category-selector',
+            builder: (_) => SelectCategoryForQuiz(
+              vocabulary: vocabulary,
+              expectedOwnerId: owner.id,
+              onSelect: (selectorContext, category) async {
+                if (category.ownerId != owner.id) return;
+                try {
+                  final current = await learning.owners
+                      .getOrCreateActiveOwner();
+                  if (!selectorContext.mounted ||
+                      current.id != owner.id ||
+                      ModalRoute.of(selectorContext)?.isCurrent != true ||
+                      !identical(
+                        scope,
+                        AppDependenciesScope.maybeOf(selectorContext),
+                      ) ||
+                      !_features.isVisible(FieldFeature.quiz)) {
+                    return;
+                  }
+                  await _push(
+                    selectorContext,
+                    QuizScreen(
+                      categoryId: category.id,
+                      categoryName: category.name,
+                      returnLabel: 'กลับไปเลือกชุดคำ',
+                      learning: learning,
+                      featureRegistry: _features,
+                      expectedOwnerId: owner.id,
+                      configureRound: true,
+                    ),
+                  );
+                } on Object {
+                  if (!selectorContext.mounted) return;
+                  ScaffoldMessenger.of(selectorContext).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'ยังเปิดแบบฝึกจากชุดคำนี้ไม่ได้ กรุณาลองอีกครั้ง',
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+        return;
+      }
       final categoryId = await AppNavigator.pushPage<String>(
         context,
         AppPage<String>(

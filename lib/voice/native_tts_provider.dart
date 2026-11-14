@@ -27,34 +27,45 @@ final class FlutterTtsAdapter implements NativeTtsAdapter {
 
   @override
   Future<void> setLanguage(String language) async {
-    await _flutterTts.setLanguage(language);
+    _requireAccepted(await _flutterTts.setLanguage(language));
   }
 
   @override
   Future<void> setSpeechRate(double rate) async {
-    await _flutterTts.setSpeechRate(rate);
+    _requireAccepted(await _flutterTts.setSpeechRate(rate));
   }
 
   @override
   Future<void> setVolume(double volume) async {
-    await _flutterTts.setVolume(volume);
+    _requireAccepted(await _flutterTts.setVolume(volume));
   }
 
   @override
   Future<void> setPitch(double pitch) async {
-    await _flutterTts.setPitch(pitch);
+    _requireAccepted(await _flutterTts.setPitch(pitch));
   }
 
   @override
   Future<void> speak(String text) async {
-    await _flutterTts.speak(text);
+    _requireAccepted(await _flutterTts.speak(text));
   }
 
   @override
   Future<void> stop() async {
-    await _flutterTts.stop();
+    _requireAccepted(await _flutterTts.stop());
+  }
+
+  void _requireAccepted(Object? result) {
+    if (result == 0) {
+      throw StateError('Native speech request was rejected');
+    }
   }
 }
+
+const _nativeCancelled = VoiceFailure(
+  category: VoiceFailureCategory.cancelled,
+  message: 'On-device speech request was cancelled.',
+);
 
 const _nativeSynthesisFailure = VoiceFailure(
   category: VoiceFailureCategory.synthesis,
@@ -73,15 +84,22 @@ final class NativeTtsProvider implements VoiceProvider {
   NativeTtsProvider(this._adapter);
 
   final NativeTtsAdapter _adapter;
+  int _stopGeneration = 0;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    final generation = _stopGeneration;
     try {
       await _adapter.setLanguage(_languageTagFor(request.language));
+      _requireCurrent(generation);
       await _adapter.setSpeechRate(request.speed / 2);
+      _requireCurrent(generation);
       await _adapter.setVolume(1.0);
+      _requireCurrent(generation);
       await _adapter.setPitch(1.0);
+      _requireCurrent(generation);
       await _adapter.speak(request.text);
+      _requireCurrent(generation);
       return VoicePlaybackResult(
         requestedEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
         actualEngine: VoiceEngine.nativeTts,
@@ -89,12 +107,22 @@ final class NativeTtsProvider implements VoiceProvider {
         cacheHit: false,
       );
     } on Object {
+      if (generation != _stopGeneration) {
+        throw _nativeCancelled;
+      }
       throw _nativeSynthesisFailure;
+    }
+  }
+
+  void _requireCurrent(int generation) {
+    if (generation != _stopGeneration) {
+      throw _nativeCancelled;
     }
   }
 
   @override
   Future<void> stop() async {
+    _stopGeneration++;
     try {
       await _adapter.stop();
     } on Object {

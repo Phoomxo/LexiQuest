@@ -327,15 +327,19 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                       snapshot.hasError || allWords.isEmpty
                                       ? null
                                       : () async {
-                                          if (await _currentOwner(
-                                                category,
-                                                expectedOwnerId:
-                                                    allWords.first.ownerId,
-                                              ) ==
-                                              null) {
+                                          final ownerId = await _currentOwner(
+                                            category,
+                                            expectedOwnerId:
+                                                allWords.first.ownerId,
+                                          );
+                                          if (ownerId == null ||
+                                              !context.mounted ||
+                                              ModalRoute.of(
+                                                    context,
+                                                  )?.isCurrent !=
+                                                  true) {
                                             return;
                                           }
-                                          if (!context.mounted) return;
                                           await AppNavigator.pushPage<void>(
                                             context,
                                             AppPage<void>(
@@ -344,6 +348,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                                 categoryId: category.id,
                                                 categoryName: category.name,
                                                 learning: learning,
+                                                expectedOwnerId: ownerId,
+                                                configureRound: true,
                                               ),
                                             ),
                                           );

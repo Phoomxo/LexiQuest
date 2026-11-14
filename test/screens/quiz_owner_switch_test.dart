@@ -4,8 +4,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -71,6 +74,103 @@ void main() {
           );
         });
       } finally {
+        await fixture.close(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'owner switch during configured start allows Back without saving a round',
+    (tester) async {
+      final fixture = await _Fixture.create(tester);
+      _HeldOwnerRead? heldRead;
+      try {
+        await fixture.open(
+          tester,
+          Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  await Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const QuizScreen(
+                        categoryId: 'category-a',
+                        categoryName: 'ชุดคำส่วนตัว A',
+                        expectedOwnerId: _ownerA,
+                        configureRound: true,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('เปิดการฝึกจากชุดคำ'),
+              ),
+            ),
+          ),
+        );
+        final entry = find.text('เปิดการฝึกจากชุดคำ');
+        await tester.tap(entry);
+        await _wait(
+          tester,
+          () => find.text('ตั้งค่าก่อนฝึก').evaluate().isNotEmpty,
+          'round setup',
+        );
+        final start = find.widgetWithText(FilledButton, 'เริ่มฝึก');
+        await tester.scrollUntilVisible(
+          start,
+          200,
+          scrollable: find.descendant(
+            of: find.byType(QuizScreen),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final pending = fixture.learningOwners.holdNextRead();
+        heldRead = pending;
+        await tester.tap(start);
+        await _wait(tester, () => pending.entered.isCompleted, 'held start');
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        expect(find.byType(QuizScreen), findsOneWidget);
+
+        await fixture.switchOwner(tester);
+        await _wait(
+          tester,
+          () => find.text('บัญชีผู้เรียนเปลี่ยนแล้ว').evaluate().isNotEmpty,
+          'owner-change message',
+        );
+        expect(find.text('ชุดคำส่วนตัว A'), findsNothing);
+        expect(pending.finished.isCompleted, isFalse);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(entry.hitTestable(), findsOneWidget);
+        expect(find.byType(QuizScreen), findsNothing);
+
+        pending.release.complete();
+        await _wait(tester, () => pending.finished.isCompleted, 'late start');
+        await tester.pumpAndSettle();
+        expect(entry.hitTestable(), findsOneWidget);
+        expect(find.byType(ScoreScreen), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.runAsync(() async {
+          expect(
+            await fixture.database
+                .select(fixture.database.learningSessions)
+                .get(),
+            isEmpty,
+          );
+          expect(
+            await fixture.database
+                .select(fixture.database.answerAttempts)
+                .get(),
+            isEmpty,
+          );
+        });
+      } finally {
+        if (heldRead != null && !heldRead.release.isCompleted) {
+          heldRead.release.complete();
+        }
         await fixture.close(tester);
       }
     },
@@ -158,9 +258,10 @@ const _ticket = QuizWord(
 );
 
 final class _Fixture {
-  _Fixture(this.database, this.dependencies);
+  _Fixture(this.database, this.dependencies, this.learningOwners);
   final AppDatabase database;
   final AppDependencies dependencies;
+  final _OwnerReads learningOwners;
 
   static Future<_Fixture> create(WidgetTester tester) async =>
       (await tester.runAsync(() async {
@@ -215,6 +316,7 @@ final class _Fixture {
           generateId: () => throw StateError('Synthetic owner missing'),
           nowUtc: () => now,
         );
+        final learningOwners = _OwnerReads(owners);
         return _Fixture(
           database,
           AppDependencies(
@@ -229,13 +331,14 @@ final class _Fixture {
             database: database,
             localOwners: owners,
             learning: LearningUseCases(
-              owners: owners,
+              owners: learningOwners,
               repository: DriftLearningRepository(database),
               generateId: () => 'synthetic-owner-switch-round',
               nowUtc: () => now,
               buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
             ),
           ),
+          learningOwners,
         );
       }))!;
 
@@ -264,6 +367,40 @@ final class _Fixture {
     await tester.pump();
     await _drive(tester, database.close(), 'database close');
   }
+}
+
+final class _HeldOwnerRead {
+  final entered = Completer<void>();
+  final release = Completer<void>();
+  final finished = Completer<void>();
+}
+
+final class _OwnerReads implements LocalOwnerRepository {
+  _OwnerReads(this._owners);
+
+  final LocalOwnerRepository _owners;
+  _HeldOwnerRead? _nextRead;
+
+  _HeldOwnerRead holdNextRead() => _nextRead = _HeldOwnerRead();
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    final held = _nextRead;
+    _nextRead = null;
+    if (held == null) return _owners.getOrCreateActiveOwner();
+
+    held.entered.complete();
+    await held.release.future;
+    try {
+      return await _owners.getOrCreateActiveOwner();
+    } finally {
+      held.finished.complete();
+    }
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      _owners.bindFirebaseUid(ownerId, firebaseUid);
 }
 
 Future<void> _drive(

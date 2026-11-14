@@ -8,6 +8,12 @@ final class QuizVocabularyChanged extends StateError {
     : super('Original quiz vocabulary is no longer current');
 }
 
+final class QuizRoundShortage implements Exception {
+  const QuizRoundShortage(this.available);
+
+  final int available;
+}
+
 final class QuizOrigin {
   QuizOrigin({
     required this.route,
@@ -64,12 +70,25 @@ final class QuizOrigin {
   );
 }
 
+final class QuizRoundSettings {
+  const QuizRoundSettings({
+    required this.questionCount,
+    this.listenAndRead = false,
+    this.fiveMinuteGuide = false,
+  }) : assert(questionCount >= 1 && questionCount <= 100);
+
+  final int questionCount;
+  final bool listenAndRead;
+  final bool fiveMinuteGuide;
+}
+
 final class QuizPlan {
   QuizPlan({
     required this.origin,
     required Iterable<QuizQuestion> questions,
     this.categoryName,
     this.returnLabel,
+    this.settings,
   }) : questions = List.unmodifiable([
          for (final q in questions)
            if (q.kind == QuizPromptKind.meaningChoice)
@@ -81,6 +100,15 @@ final class QuizPlan {
     _requireText(returnLabel ?? '', allowEmpty: true);
     if (this.questions.isEmpty || this.questions.length > _maxQuestions) {
       throw const FormatException('Invalid quiz question count');
+    }
+    if (settings case final settings?) {
+      if (settings.questionCount < 1 ||
+          settings.questionCount > _maxQuestions ||
+          settings.questionCount != this.questions.length) {
+        throw const FormatException(
+          'Quiz settings do not match question count',
+        );
+      }
     }
     final requestedIds = origin.wordIds?.toSet();
     for (final q in this.questions) {
@@ -98,6 +126,7 @@ final class QuizPlan {
   final List<QuizQuestion> questions;
   final String? categoryName;
   final String? returnLabel;
+  final QuizRoundSettings? settings;
 }
 
 enum QuizPhase { awaitingAnswer, feedback, finished }
@@ -161,7 +190,7 @@ const _maxPlanBytes = 4 * 1024 * 1024;
 const _maxSmallBytes = 4096;
 
 String encodeQuizPlan(QuizPlan plan) => _encode({
-  'v': _version,
+  'v': plan.settings == null ? _version : 2,
   'origin': {
     'route': plan.origin.route,
     'promptKind': plan.origin.promptKind.name,
@@ -172,6 +201,12 @@ String encodeQuizPlan(QuizPlan plan) => _encode({
   'categoryName': plan.categoryName,
   'returnLabel': plan.returnLabel,
   'questions': plan.questions.map(_questionJson).toList(),
+  if (plan.settings case final settings?)
+    'settings': {
+      'questionCount': settings.questionCount,
+      'listenAndRead': settings.listenAndRead,
+      'fiveMinuteGuide': settings.fiveMinuteGuide,
+    },
 }, _maxPlanBytes);
 
 QuizPlan decodeQuizPlan(String raw) {
@@ -184,17 +219,33 @@ QuizPlan decodeQuizPlan(String raw) {
         'returnLabel': final String? returnLabel,
         'questions': final List<dynamic> questions,
       }
-      when version == _version &&
-          json.length == 5 &&
+      when ((version == _version && json.length == 5) ||
+              (version == 2 && json.length == 6)) &&
           questions.length <= _maxQuestions) {
     return QuizPlan(
       origin: _decodeOrigin(origin),
       questions: questions.map(_decodeQuestion),
       categoryName: categoryName,
       returnLabel: returnLabel,
+      settings: version == 2 ? _decodeSettings(json['settings']) : null,
     );
   }
   throw const FormatException('Invalid quiz plan');
+}
+
+QuizRoundSettings _decodeSettings(Object? json) {
+  if (json case {
+    'questionCount': final int count,
+    'listenAndRead': final bool listen,
+    'fiveMinuteGuide': final bool guide,
+  } when json.length == 3 && count >= 1 && count <= _maxQuestions) {
+    return QuizRoundSettings(
+      questionCount: count,
+      listenAndRead: listen,
+      fiveMinuteGuide: guide,
+    );
+  }
+  throw const FormatException('Invalid quiz round settings');
 }
 
 QuizOrigin _decodeOrigin(Map<String, dynamic> json) {

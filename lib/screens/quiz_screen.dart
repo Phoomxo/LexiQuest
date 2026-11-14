@@ -10,11 +10,13 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/learning_evidence_contract.dart';
 import '../features/learning/domain/quiz_round.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import '../voice/voice_models.dart';
 import 'score_screen.dart';
 import 'add_vocab_screen.dart';
 import 'categories_page.dart';
@@ -35,6 +37,8 @@ class QuizScreen extends StatefulWidget {
     this.promptKind = QuizPromptKind.meaningChoice,
     this.expectedOwnerId,
     this.originParentId,
+    this.configureRound = false,
+    this.voice,
   });
 
   final String? categoryId;
@@ -47,6 +51,8 @@ class QuizScreen extends StatefulWidget {
   final QuizPromptKind promptKind;
   final String? expectedOwnerId;
   final String? originParentId;
+  final bool configureRound;
+  final VoiceUseCases? voice;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -54,7 +60,20 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   LearningUseCases? _learning;
-  Future<QuizSession>? _load;
+  Future<QuizSession?>? _load;
+  int? _availableQuestions;
+  int? _questionCount;
+  bool _listenAndRead = false;
+  bool _fiveMinuteGuide = false;
+  bool _starting = false;
+  bool _configureRound = false;
+  bool _skipUnavailable = false;
+  Timer? _guideTimer;
+  bool _guideElapsed = false;
+  VoiceUseCases? _promptVoice;
+  bool _startingVoice = false;
+  bool _voiceFailed = false;
+  int _voiceGeneration = 0;
   QuizSession? _session;
   QuizRound? _round;
   final _questionClock = Stopwatch();
@@ -109,8 +128,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       _features.isVisible(FieldFeature.quiz);
 
   String get _returnLabel =>
-      _round?.plan.returnLabel ??
       widget.returnLabel ??
+      (widget.configureRound && widget.categoryName != null
+          ? 'กลับไปที่ชุดคำ'
+          : _round?.plan.returnLabel) ??
       (widget.categoryName == null ? 'กลับไปเลือกกิจกรรม' : 'กลับไปที่ชุดคำ');
 
   @override
@@ -123,6 +144,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_ownerChanges?.cancel());
+    _guideTimer?.cancel();
+    _stopPromptVoice();
     _questionClock.stop();
     super.dispose();
   }
@@ -130,6 +153,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) return;
+    setState(_stopPromptVoice);
     _questionClock.stop();
     if (_round == null || _round!.isPaused || _round!.summary != null) return;
     if (_saving || (_attemptId != null && !_answered)) {
@@ -151,7 +175,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _bindLearning();
   }
 
-  void _bindLearning({bool reload = false, bool skipUnavailable = false}) {
+  void _bindLearning({
+    bool reload = false,
+    bool skipUnavailable = false,
+    QuizRoundSettings? settings,
+  }) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     if (dependencies != null) _wasScoped = true;
     final learning = _currentLearning;
@@ -164,6 +192,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         widget.selectionMode == _selectionMode &&
         widget.promptKind == _promptKind &&
         widget.originParentId == _originParentId &&
+        widget.configureRound == _configureRound &&
         widget.expectedOwnerId == _expectedOwnerId) {
       return;
     }
@@ -178,7 +207,19 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _promptKind = widget.promptKind;
     _expectedOwnerId = widget.expectedOwnerId;
     _originParentId = widget.originParentId;
+    _configureRound = widget.configureRound;
+    _skipUnavailable = skipUnavailable;
     final generation = ++_generation;
+    _stopPromptVoice();
+    _guideTimer?.cancel();
+    _guideElapsed = false;
+    _availableQuestions = null;
+    _starting = settings != null;
+    if (!reload) {
+      _questionCount = null;
+      _listenAndRead = false;
+      _fiveMinuteGuide = false;
+    }
     _ownerId = null;
     if (scopeChanged || _ownerChanges == null) {
       unawaited(_ownerChanges?.cancel());
@@ -216,7 +257,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _hintVisible = false;
     _revealed = false;
     _mistakes.clear();
-    _load = _startSession(learning, generation, skipUnavailable);
+    _load = _startSession(learning, generation, skipUnavailable, settings)
+        .whenComplete(() {
+          if (_current(generation)) _starting = false;
+        });
     _load!.ignore();
   }
 
@@ -231,24 +275,29 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       widget.selectionMode == _selectionMode &&
       widget.promptKind == _promptKind &&
       widget.originParentId == _originParentId &&
+      widget.configureRound == _configureRound &&
       widget.expectedOwnerId == _expectedOwnerId;
 
   void _hideForOwnerChange() {
     if (!mounted || _ownerChanged) return;
     _questionClock.stop();
+    _guideTimer?.cancel();
+    _stopPromptVoice();
     setState(() {
       _ownerChanged = true;
       _generation++;
       _session = null;
       _round = null;
       _saving = false;
+      _starting = false;
     });
   }
 
-  Future<QuizSession> _startSession(
+  Future<QuizSession?> _startSession(
     LearningUseCases? learning,
     int generation,
     bool skipUnavailable,
+    QuizRoundSettings? settings,
   ) async {
     if (learning == null) {
       throw StateError('local learning dependency unavailable');
@@ -278,40 +327,173 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             parentId: _originParentId,
           )
         : null;
-    final session = _wordIds == null
-        ? await learning.startQuiz(
-            categoryId: _categoryId,
-            kind: widget.promptKind,
-            expectedOwnerId: owner.id,
-            origin: origin,
-            skipUnavailable: skipUnavailable,
-            categoryName: widget.categoryName,
-            returnLabel: _returnLabel,
-          )
-        : _selectionMode == QuizWordSelectionMode.sourcePractice
-        ? await learning.startSourcePracticeForWords(
-            wordIds: _wordIds!,
-            kind: widget.promptKind,
-            expectedOwnerId: owner.id,
-            origin: origin,
-            skipUnavailable: skipUnavailable,
-            categoryName: widget.categoryName,
-            returnLabel: _returnLabel,
-          )
-        : await learning.startWeaknessPractice(
-            wordIds: _wordIds!,
-            kind: widget.promptKind,
-            expectedOwnerId: owner.id,
-            origin: origin,
-            skipUnavailable: skipUnavailable,
-            categoryName: widget.categoryName,
-            returnLabel: _returnLabel,
-          );
+    final configure =
+        _configureRound &&
+        _categoryId != null &&
+        _wordIds == null &&
+        origin != null;
+    if (configure && settings == null) {
+      final setup = await learning.prepareCategoryQuiz(
+        origin: origin,
+        expectedOwnerId: owner.id,
+        skipUnavailable: skipUnavailable,
+      );
+      await _requireSessionOwner(learning, generation, owner.id);
+      _availableQuestions = setup.available;
+      return setup.existing;
+    }
+    final QuizSession session;
+    try {
+      session = _wordIds == null
+          ? await learning.startQuiz(
+              categoryId: _categoryId,
+              kind: widget.promptKind,
+              expectedOwnerId: owner.id,
+              origin: origin,
+              skipUnavailable: skipUnavailable,
+              categoryName: widget.categoryName,
+              returnLabel: _returnLabel,
+              settings: settings,
+            )
+          : _selectionMode == QuizWordSelectionMode.sourcePractice
+          ? await learning.startSourcePracticeForWords(
+              wordIds: _wordIds!,
+              kind: widget.promptKind,
+              expectedOwnerId: owner.id,
+              origin: origin,
+              skipUnavailable: skipUnavailable,
+              categoryName: widget.categoryName,
+              returnLabel: _returnLabel,
+            )
+          : await learning.startWeaknessPractice(
+              wordIds: _wordIds!,
+              kind: widget.promptKind,
+              expectedOwnerId: owner.id,
+              origin: origin,
+              skipUnavailable: skipUnavailable,
+              categoryName: widget.categoryName,
+              returnLabel: _returnLabel,
+            );
+    } on QuizRoundShortage catch (shortage) {
+      await _requireSessionOwner(learning, generation, owner.id);
+      _availableQuestions = shortage.available;
+      return null;
+    }
+    await _requireSessionOwner(learning, generation, owner.id);
+    return session;
+  }
+
+  Future<void> _requireSessionOwner(
+    LearningUseCases learning,
+    int generation,
+    String ownerId,
+  ) async {
     final currentOwner = await learning.owners.getOrCreateActiveOwner();
-    if (!_current(generation) || currentOwner.id != owner.id) {
+    if (!_current(generation) || currentOwner.id != ownerId) {
       throw StateError('quiz context changed');
     }
-    return session;
+  }
+
+  void _startConfiguredRound(int count, int generation) {
+    if (_starting ||
+        !_current(generation) ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    setState(
+      () => _bindLearning(
+        reload: true,
+        skipUnavailable: _skipUnavailable,
+        settings: QuizRoundSettings(
+          questionCount: count,
+          listenAndRead: _listenAndRead,
+          fiveMinuteGuide: _fiveMinuteGuide,
+        ),
+      ),
+    );
+  }
+
+  void _startGuide(QuizRound round) {
+    if (round.plan.settings?.fiveMinuteGuide != true) return;
+    final remaining = round.startedAtUtc
+        .add(const Duration(minutes: 5))
+        .difference(_learning!.nowUtc());
+    _guideElapsed = remaining <= Duration.zero;
+    if (!_guideElapsed) {
+      _guideTimer = Timer(remaining, () {
+        if (mounted) setState(() => _guideElapsed = true);
+      });
+    }
+  }
+
+  void _stopPromptVoice() {
+    _voiceGeneration++;
+    _startingVoice = false;
+    _voiceFailed = false;
+    final voice = _promptVoice;
+    if (voice != null) unawaited(voice.stop().catchError((Object _) {}));
+  }
+
+  bool _canSpeak(QuizQuestion question, int generation) {
+    final round = _round;
+    final session = _session;
+    return _current(generation) &&
+        !_saving &&
+        round != null &&
+        !round.isPaused &&
+        round.summary == null &&
+        round.plan.settings?.listenAndRead == true &&
+        session != null &&
+        identical(session.questions[_index], question) &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+  }
+
+  Future<void> _speakPrompt(QuizQuestion question) async {
+    final generation = _generation;
+    if (_startingVoice || !_canSpeak(question, generation)) return;
+    final requestGeneration = ++_voiceGeneration;
+    setState(() {
+      _startingVoice = true;
+      _voiceFailed = false;
+    });
+    var failed = false;
+    try {
+      final learning = _learning!;
+      final owner = await learning.owners.getOrCreateActiveOwner();
+      if (requestGeneration != _voiceGeneration ||
+          !_canSpeak(question, generation)) {
+        return;
+      }
+      if (owner.id != _ownerId) {
+        _hideForOwnerChange();
+        return;
+      }
+      final voice = _promptVoice ??=
+          widget.voice ?? VoiceUseCases.createOnDevice();
+      await voice.speak(
+        VoiceRequest.create(
+          text: question.promptText,
+          language: question.kind == QuizPromptKind.spellingChoice
+              ? 'th'
+              : 'en',
+          voiceId: 'native-default',
+          speed: 1,
+          contentId: question.word.id,
+          contentType: 'quiz_prompt',
+          mode: VoiceMode.practice,
+        ),
+      );
+    } on Object {
+      failed = true;
+    } finally {
+      if (_current(generation) && requestGeneration == _voiceGeneration) {
+        setState(() {
+          _startingVoice = false;
+          _voiceFailed = failed;
+        });
+      }
+    }
   }
 
   bool _hasChoiceContrast(QuizSession session) => session.questions.every(
@@ -366,6 +548,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     if (step == QuizStep.pause) _questionClock.stop();
     setState(() {
+      _stopPromptVoice();
       _roundError = null;
       _saving = true;
     });
@@ -504,7 +687,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         _title.runes.length > 18 ||
         MediaQuery.textScalerOf(context).scale(1) >= 2;
     return PopScope(
-      canPop: !_saving,
+      canPop: !_saving && !_starting,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: usesAdaptiveTitle
@@ -522,7 +705,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   actionLabel: _returnLabel,
                   onAction: () => Navigator.maybePop(context),
                 )
-              : FutureBuilder<QuizSession>(
+              : FutureBuilder<QuizSession?>(
                   key: ValueKey(_generation),
                   future: _load,
                   builder: (context, snapshot) {
@@ -551,6 +734,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                         actionLabel: 'กลับไปเลือกกิจกรรม',
                         onAction: () => Navigator.maybePop(context),
                       );
+                    }
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        _availableQuestions != null &&
+                        !snapshot.hasData) {
+                      return _buildRoundSetup(_availableQuestions!);
                     }
                     if (!snapshot.hasData) {
                       return const Center(
@@ -583,6 +771,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                       final round = session.durableRound;
                       if (round != null) {
                         _applyRound(round);
+                        _startGuide(round);
                       } else {
                         _questionStartedAt = DateTime.now();
                       }
@@ -612,6 +801,98 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       : widget.selectionMode == QuizWordSelectionMode.sourcePractice
       ? 'แบบทดสอบจากเนื้อหานี้'
       : 'ฝึกคำที่ผิด';
+
+  Widget _buildRoundSetup(int available) {
+    final count = _questionCount ?? (available == 0 ? 1 : available);
+    final generation = _generation;
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text('ตั้งค่าก่อนฝึก', style: Theme.of(context).textTheme.titleLarge),
+          if (widget.categoryName case final name?) Text(name),
+          const SizedBox(height: 16),
+          const Text('จำนวนคำ'),
+          DropdownButton<int>(
+            value: count,
+            isExpanded: true,
+            onChanged: (value) => setState(() => _questionCount = value),
+            items: [
+              for (var count = 1; count <= 10; count++)
+                DropdownMenuItem(value: count, child: Text('$count คำ')),
+            ],
+          ),
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              available == 0
+                  ? 'รอบนี้ยังไม่มีความหมายอื่นให้เลือก'
+                  : count > available
+                  ? 'คำไม่พอสำหรับรอบนี้ เลือกได้สูงสุด $available คำ'
+                  : 'ฝึกได้ $available คำ',
+            ),
+          ),
+          if (available == 0 &&
+              _features.isVisible(FieldFeature.vocabulary) &&
+              _dependencies?.vocabulary != null)
+            OutlinedButton.icon(
+              key: const ValueKey('quiz-add-word'),
+              onPressed: _addingWords ? null : _addWords,
+              icon: const Icon(Icons.add),
+              label: const Text('เพิ่มคำในชุดนี้'),
+            ),
+          const SizedBox(height: 16),
+          const Text('วิธีรับโจทย์'),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('ฝึกแบบอ่านเอง'),
+                selected: !_listenAndRead,
+                onSelected: (_) => setState(() => _listenAndRead = false),
+              ),
+              ChoiceChip(
+                label: const Text('ฟังและอ่าน'),
+                selected: _listenAndRead,
+                onSelected: (_) => setState(() => _listenAndRead = true),
+              ),
+            ],
+          ),
+          if (_listenAndRead) const Text('ใช้เสียงจากระบบเมื่อกดฟังคำนี้'),
+          const SizedBox(height: 12),
+          const Text('จังหวะฝึก'),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('ฝึกตามจังหวะของฉัน'),
+                selected: !_fiveMinuteGuide,
+                onSelected: (_) => setState(() => _fiveMinuteGuide = false),
+              ),
+              ChoiceChip(
+                label: const Text('ใช้เวลาเป็นแนวทาง'),
+                selected: _fiveMinuteGuide,
+                onSelected: (_) => setState(() => _fiveMinuteGuide = true),
+              ),
+            ],
+          ),
+          if (_fiveMinuteGuide)
+            const Text('5 นาทีจากเริ่มรอบ · ครบเวลาแล้วยังตอบต่อได้'),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: count > available || _addingWords
+                ? null
+                : () => _startConfiguredRound(count, generation),
+            child: const Text('เริ่มฝึก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.maybePop(context),
+            child: const Text('ยกเลิกก่อนเริ่ม'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildOneChoiceFallback() {
     final canAdd =
@@ -669,6 +950,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
+    final settings = _round?.plan.settings;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -686,6 +968,17 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               'คำถาม ${_index + 1} จาก ${session.questions.length}',
               style: Theme.of(context).textTheme.labelLarge,
             ),
+            if (settings != null)
+              Semantics(
+                liveRegion: settings.fiveMinuteGuide && _guideElapsed,
+                child: Text(
+                  settings.fiveMinuteGuide
+                      ? (_guideElapsed
+                            ? 'ครบ 5 นาทีแล้ว · ยังตอบต่อได้'
+                            : '5 นาที · ไม่มีการตัดจบ')
+                      : 'ไม่จับเวลา',
+                ),
+              ),
             if (_round != null)
               Align(
                 alignment: AlignmentDirectional.centerStart,
@@ -718,6 +1011,22 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            if (settings?.listenAndRead == true) ...[
+              OutlinedButton.icon(
+                onPressed: _startingVoice || _saving
+                    ? null
+                    : () => _speakPrompt(question),
+                icon: const Icon(Icons.volume_up_outlined),
+                label: Text(_startingVoice ? 'กำลังเตรียมเสียง' : 'ฟังคำนี้'),
+              ),
+              if (_voiceFailed)
+                Semantics(
+                  liveRegion: true,
+                  child: const Text(
+                    'เล่นเสียงไม่ได้ ลองอ่านโจทย์แล้วตอบต่อได้',
+                  ),
+                ),
+            ],
             const SizedBox(height: 4),
             if (_hintVisible || _answered)
               Text(
@@ -891,6 +1200,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               .inMilliseconds;
     _attemptId ??= 'attempt:${const Uuid().v4()}';
     setState(() {
+      _stopPromptVoice();
       _saving = true;
     });
     try {

@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_re
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
@@ -70,6 +71,64 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'configured start rechecks availability before creating a round',
+    () async {
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      final origin = QuizOrigin(
+        route: 'category',
+        categoryId: 'category-1',
+        promptKind: QuizPromptKind.meaningChoice,
+      );
+      final preview = await useCases.prepareCategoryQuiz(
+        origin: origin,
+        expectedOwnerId: owner.id,
+      );
+      expect(preview.available, 4);
+      expect(preview.existing, isNull);
+      await (database.update(database.vocabularyWords)
+            ..where((row) => row.id.isNotIn(['word-1', 'word-2'])))
+          .write(const VocabularyWordsCompanion(isDeleted: Value(true)));
+      await expectLater(
+        useCases.startQuiz(
+          categoryId: origin.categoryId,
+          origin: origin,
+          expectedOwnerId: owner.id,
+          settings: const QuizRoundSettings(questionCount: 3),
+        ),
+        throwsA(
+          isA<QuizRoundShortage>().having(
+            (failure) => failure.available,
+            'available',
+            2,
+          ),
+        ),
+      );
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      final oneQuestion = await useCases.startQuiz(
+        categoryId: origin.categoryId,
+        origin: origin,
+        expectedOwnerId: owner.id,
+        settings: const QuizRoundSettings(questionCount: 1),
+      );
+      expect(
+        oneQuestion.questions.single.options,
+        unorderedEquals(['สถานี', 'ตั๋ว']),
+      );
+      expect(oneQuestion.durableRound?.plan.settings?.questionCount, 1);
+      final reopened = await useCases.prepareCategoryQuiz(
+        origin: origin,
+        expectedOwnerId: owner.id,
+      );
+      expect(reopened.existing?.id, oneQuestion.id);
+      expect(
+        reopened.existing?.durableRound?.plan.settings?.listenAndRead,
+        isFalse,
+      );
+    },
+  );
 
   for (final activity in ['weakness', 'source']) {
     Future<QuizSession> targeted(

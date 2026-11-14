@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/native_tts_provider.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -70,6 +74,112 @@ Future<VoiceFailure> _captureStopFailure(Object failure) async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('on-device facade uses the native plugin without a fallback', () async {
+    const channel = MethodChannel('flutter_tts');
+    final calls = <String>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call.method);
+      return 1;
+    });
+    try {
+      final voice = VoiceUseCases.createOnDevice();
+      expect(voice.provider, isA<NativeTtsProvider>());
+      final result = await voice.speak(_validRequest());
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(result.usedFallback, isFalse);
+      expect(calls, contains('speak'));
+      await voice.stop();
+      expect(calls.last, 'stop');
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+    }
+  });
+
+  for (final blockedCall in [_TtsCall.setLanguage, _TtsCall.setPitch]) {
+    test('stop cancels speech waiting for ${blockedCall.name}', () async {
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final adapter = _RecordingTtsAdapter(
+        blockedCall: blockedCall,
+        entered: entered,
+        release: release,
+      );
+      final provider = NativeTtsProvider(adapter);
+      final pending = provider.speak(_validRequest(text: 'Old question.'));
+      await entered.future;
+      final cancelled = expectLater(
+        pending,
+        throwsA(
+          isA<VoiceFailure>().having(
+            (failure) => failure.category,
+            'category',
+            VoiceFailureCategory.cancelled,
+          ),
+        ),
+      );
+      await provider.stop();
+      release.complete();
+      await cancelled;
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.speak),
+        isEmpty,
+      );
+
+      final next = await provider.speak(_validRequest(text: 'New question.'));
+      expect(next.actualEngine, VoiceEngine.nativeTts);
+      expect(adapter.invocations.where((call) => call.call == _TtsCall.speak), [
+        const _TtsInvocation(_TtsCall.speak, 'New question.'),
+      ]);
+    });
+  }
+
+  for (final failedMethod in [
+    'setLanguage',
+    'setSpeechRate',
+    'setVolume',
+    'setPitch',
+    'speak',
+    'stop',
+  ]) {
+    test('native plugin zero from $failedMethod is not success', () async {
+      const channel = MethodChannel('flutter_tts');
+      final calls = <String>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        return call.method == failedMethod ? 0 : 1;
+      });
+      try {
+        final provider = NativeTtsProvider(FlutterTtsAdapter());
+        await expectLater(
+          failedMethod == 'stop'
+              ? provider.stop()
+              : provider.speak(_validRequest()),
+          throwsA(
+            isA<VoiceFailure>().having(
+              (failure) => failure.category,
+              'category',
+              failedMethod == 'stop'
+                  ? VoiceFailureCategory.playback
+                  : VoiceFailureCategory.synthesis,
+            ),
+          ),
+        );
+        expect(calls, contains(failedMethod));
+        if (failedMethod != 'speak' && failedMethod != 'stop') {
+          expect(calls, isNot(contains('speak')));
+        }
+      } finally {
+        messenger.setMockMethodCallHandler(channel, null);
+      }
+    });
+  }
+
   group('language mapping', () {
     test('maps English to en-US', () async {
       final adapter = _RecordingTtsAdapter();
@@ -238,17 +348,32 @@ class _TtsInvocation {
 }
 
 class _RecordingTtsAdapter implements NativeTtsAdapter {
-  _RecordingTtsAdapter({this.failingCall, this.failure});
+  _RecordingTtsAdapter({
+    this.failingCall,
+    this.failure,
+    this.blockedCall,
+    this.entered,
+    this.release,
+  });
 
   final List<_TtsInvocation> invocations = [];
   final _TtsCall? failingCall;
   final Object? failure;
+  final _TtsCall? blockedCall;
+  final Completer<void>? entered;
+  final Completer<void>? release;
+  bool _blockedOnce = false;
 
   Future<void> _invoke(_TtsCall call, [Object? argument]) async {
     if (failingCall == call && failure != null) {
       throw failure!;
     }
     invocations.add(_TtsInvocation(call, argument));
+    if (call == blockedCall && !_blockedOnce) {
+      _blockedOnce = true;
+      entered!.complete();
+      await release!.future;
+    }
   }
 
   @override

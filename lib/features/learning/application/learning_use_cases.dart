@@ -57,9 +57,10 @@ final class LearningUseCases {
     bool skipUnavailable = false,
     String? categoryName,
     String? returnLabel,
+    QuizRoundSettings? settings,
   }) => _startVocabularySession(
     categoryId,
-    limit,
+    settings?.questionCount ?? limit,
     'quiz',
     expectedOwnerId: expectedOwnerId,
     kind: kind,
@@ -67,7 +68,35 @@ final class LearningUseCases {
     skipUnavailable: skipUnavailable,
     categoryName: categoryName,
     returnLabel: returnLabel,
+    settings: settings,
   );
+
+  Future<({QuizSession? existing, int available})> prepareCategoryQuiz({
+    required QuizOrigin origin,
+    required String expectedOwnerId,
+    bool skipUnavailable = false,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    if (origin.categoryId == null || !supportsDurableQuiz) {
+      throw StateError('Configured category quiz unavailable');
+    }
+    _checkOrigin(
+      origin,
+      kind: origin.promptKind,
+      categoryId: origin.categoryId,
+    );
+    final open = await _openRound(owner.id, origin, skipUnavailable);
+    if (open != null) return (existing: _quizSession(open), available: 0);
+    final questions = await _categoryQuizQuestions(
+      owner.id,
+      origin.categoryId,
+      origin.promptKind,
+      10,
+      configured: true,
+    );
+    return (existing: null, available: questions.length);
+  }
 
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
@@ -92,6 +121,7 @@ final class LearningUseCases {
     bool skipUnavailable = false,
     String? categoryName,
     String? returnLabel,
+    QuizRoundSettings? settings,
   }) async {
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
@@ -99,12 +129,44 @@ final class LearningUseCases {
     final owner = await owners.getOrCreateActiveOwner();
     _requireExpectedOwner(owner.id, expectedOwnerId);
     _checkOrigin(origin, kind: kind, categoryId: categoryId);
+    if (settings != null &&
+        (origin == null || categoryId == null || !supportsDurableQuiz)) {
+      throw StateError('Configured category quiz unavailable');
+    }
     final open = await _openRound(owner.id, origin, skipUnavailable);
     if (open != null) return _quizSession(open);
+    final questions = await _categoryQuizQuestions(
+      owner.id,
+      categoryId,
+      kind,
+      limit,
+      configured: settings != null,
+    );
+    if (settings != null && questions.length < limit) {
+      throw QuizRoundShortage(questions.length);
+    }
+    return _startQuestions(
+      owner.id,
+      activityType,
+      questions,
+      origin: origin,
+      categoryName: categoryName,
+      returnLabel: returnLabel,
+      settings: settings,
+    );
+  }
+
+  Future<List<QuizQuestion>> _categoryQuizQuestions(
+    String ownerId,
+    String? categoryId,
+    QuizPromptKind kind,
+    int limit, {
+    required bool configured,
+  }) async {
     final words = await repository.listQuizWords(
-      ownerId: owner.id,
+      ownerId: ownerId,
       categoryId: _optionalId(categoryId, 'categoryId'),
-      limit: kind == QuizPromptKind.meaningChoice ? limit : null,
+      limit: kind == QuizPromptKind.meaningChoice && !configured ? limit : null,
       normalizedSpellings: kind == QuizPromptKind.definitionChoice
           ? QuizPromptPolicy.definitionSpellings
           : null,
@@ -117,14 +179,10 @@ final class LearningUseCases {
       kind: kind,
       limit: limit,
     );
-    return _startQuestions(
-      owner.id,
-      activityType,
-      questions,
-      origin: origin,
-      categoryName: categoryName,
-      returnLabel: returnLabel,
-    );
+    if (!configured) return questions;
+    return questions
+        .where((question) => question.options.toSet().length >= 2)
+        .toList(growable: false);
   }
 
   Future<QuizSession> startDueReview({
@@ -327,6 +385,7 @@ final class LearningUseCases {
     QuizOrigin? origin,
     String? categoryName,
     String? returnLabel,
+    QuizRoundSettings? settings,
   }) async {
     if (questions.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
@@ -341,6 +400,7 @@ final class LearningUseCases {
             questions: questions,
             categoryName: categoryName,
             returnLabel: returnLabel,
+            settings: settings,
           )
         : null;
     final now = _now();

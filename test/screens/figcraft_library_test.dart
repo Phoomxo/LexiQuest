@@ -455,6 +455,10 @@ void main() {
       await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('ฝึกจากชุดนี้'));
+      await _pumpUntil(tester, find.text('เริ่มฝึก'));
+      await tester.ensureVisible(find.text('เริ่มฝึก'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เริ่มฝึก'));
       await _pumpUntil(
         tester,
         find.descendant(
