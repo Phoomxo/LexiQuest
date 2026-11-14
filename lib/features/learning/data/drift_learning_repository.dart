@@ -10,6 +10,7 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/quiz_round.dart';
+import '../domain/scramble_prompt_policy.dart';
 import '../domain/srs_policy.dart';
 import '../domain/answer_motivation_evidence.dart';
 
@@ -550,28 +551,86 @@ final class DriftLearningRepository implements DurableQuizRepository {
   }
 
   @override
-  Future<QuizRound> openOrStartClozeRound(
+  Future<QuizRound> openOrStartAuthoredRound(
     LearningSessionDraft draft, {
     required bool skipUnavailable,
   }) => database.transaction(() async {
     final plan = draft.quizPlan;
-    if (draft.activityType != 'cloze' ||
-        plan == null ||
-        plan.origin.route != 'cloze' ||
-        !plan.origin.promptKind.isCloze) {
-      throw ArgumentError('Expected a pinned cloze draft');
+    if (plan == null) {
+      throw ArgumentError('Expected a pinned authored quiz draft');
+    }
+    final origin = plan.origin;
+    final admitted = switch (draft.activityType) {
+      'cloze' => origin.route == 'cloze' && origin.promptKind.isCloze,
+      'wordScramble' || 'sentenceScramble' =>
+        origin.route == 'word-games' &&
+            origin.promptKind.name == draft.activityType,
+      _ => false,
+    };
+    if (!admitted) {
+      throw ArgumentError('Expected a pinned authored quiz draft');
+    }
+    if (origin.promptKind.isScramble && origin.parentId != null) {
+      await _requireScrambleParent(draft.ownerId, plan);
     }
     final existing = await findOpenQuizRound(
       ownerId: draft.ownerId,
-      origin: plan.origin,
+      origin: origin,
       skipUnavailable: skipUnavailable,
     );
     if (existing != null) return existing;
     await startSession(draft);
     final saved = await _session(draft.ownerId, draft.id);
-    if (saved == null) throw StateError('Saved cloze round is missing');
+    if (saved == null) throw StateError('Saved authored round is missing');
     return (await _readRound(saved))!;
   });
+
+  Future<void> _requireScrambleParent(String ownerId, QuizPlan child) async {
+    final origin = child.origin;
+    if (origin.promptKind != QuizPromptKind.sentenceScramble ||
+        child.questions.length != 1 ||
+        origin.wordIds?.length != 1) {
+      throw StateError('Invalid sentence source link');
+    }
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, origin.parentId!);
+    if (row == null || row.legacyEvidenceDisposition != null) {
+      throw StateError('Sentence source round is unavailable');
+    }
+    final parent = await _readRound(row);
+    if (parent == null) {
+      throw StateError('Sentence source round is unavailable');
+    }
+    final parentOrigin = parent.plan.origin;
+    final admitted = switch (row.activityType) {
+      'cloze' =>
+        parentOrigin.route == 'cloze' &&
+            parentOrigin.promptKind.isCloze &&
+            !parent.isPaused,
+      'wordScramble' =>
+        parentOrigin.route == 'word-games' &&
+            parentOrigin.promptKind == QuizPromptKind.wordScramble &&
+            parent.cursor.phase == QuizPhase.finished,
+      _ => false,
+    };
+    final source = parent.plan.questions[parent.cursor.slot];
+    final target = child.questions.single;
+    final example = ScramblePromptPolicy.sentenceFor(source.word);
+    if (!admitted ||
+        parent.feedback?.isCorrectFor(source) != true ||
+        origin.wordIds!.single != source.word.id ||
+        origin.categoryId != source.word.categoryId ||
+        target.word.localRevision != source.word.localRevision ||
+        target.word.spelling != source.word.spelling ||
+        target.word.meaning != source.word.meaning ||
+        target.word.partOfSpeech != source.word.partOfSpeech ||
+        example == null ||
+        target.correctAnswer != example.sentence ||
+        target.promptText != example.meaning ||
+        target.sourcePin != example.pin) {
+      throw StateError('Sentence source answer is unavailable');
+    }
+  }
 
   @override
   Future<Set<String>> loadCompletedQuizMistakeIds({

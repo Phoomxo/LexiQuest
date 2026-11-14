@@ -7,6 +7,7 @@ import '../domain/learning_repository.dart';
 import '../domain/cloze_prompt_policy.dart';
 import '../domain/quiz_prompt_policy.dart';
 import '../domain/quiz_round.dart';
+import '../domain/scramble_prompt_policy.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -111,11 +112,96 @@ final class LearningUseCases {
     if (question == null) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
-    final round = await durable.openOrStartClozeRound(
+    final round = await durable.openOrStartAuthoredRound(
       LearningSessionDraft(
         id: 'session:${_nextId()}',
         ownerId: owner.id,
         activityType: 'cloze',
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+        quizPlan: QuizPlan(
+          origin: origin,
+          questions: [question],
+          categoryName: categoryName,
+          returnLabel: returnLabel,
+        ),
+      ),
+      skipUnavailable: skipUnavailable,
+    );
+    return _quizSession(round);
+  }
+
+  Future<QuizSession> startScramble({
+    required QuizPromptKind kind,
+    required String expectedOwnerId,
+    required String? categoryId,
+    String? wordId,
+    String? parentSessionId,
+    String? categoryName,
+    String? returnLabel,
+    bool skipUnavailable = false,
+  }) async {
+    if (!kind.isScramble) throw ArgumentError.value(kind, 'kind');
+    final durable = repository;
+    if (durable is! DurableQuizRepository) {
+      throw StateError('Durable practice unavailable');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final origin = QuizOrigin(
+      route: 'word-games',
+      promptKind: kind,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      wordIds: wordId == null ? null : [_requiredId(wordId, 'wordId')],
+      parentId: _optionalId(parentSessionId, 'parentSessionId'),
+    );
+    QuizWord? parentWord;
+    if (origin.parentId case final parentId?) {
+      final parent = await durable.loadQuizRound(
+        ownerId: owner.id,
+        sessionId: parentId,
+      );
+      if (kind != QuizPromptKind.sentenceScramble ||
+          parent == null ||
+          !(parent.plan.origin.promptKind.isCloze ||
+              parent.plan.origin.promptKind == QuizPromptKind.wordScramble)) {
+        throw StateError('Sentence source round is unavailable');
+      }
+      final question = parent.plan.questions[parent.cursor.slot];
+      if (question.word.id != origin.wordIds?.single ||
+          question.word.categoryId != origin.categoryId ||
+          parent.feedback?.isCorrectFor(question) != true) {
+        throw StateError('Sentence source answer is unavailable');
+      }
+      parentWord = question.word;
+    }
+    if (parentWord == null) {
+      final open = await _openRound(owner.id, origin, skipUnavailable);
+      if (open != null) return _quizSession(open);
+    }
+    final words = await repository.listQuizWords(
+      ownerId: owner.id,
+      categoryId: origin.categoryId,
+      wordIds: origin.wordIds,
+      normalizedSpellings: kind == QuizPromptKind.sentenceScramble
+          ? const ['ticket', 'platform']
+          : null,
+      limit: null,
+    );
+    final question = ScramblePromptPolicy.first(words, kind);
+    if (parentWord != null &&
+        question?.word.localRevision != parentWord.localRevision) {
+      throw QuizVocabularyChanged();
+    }
+    if (question == null) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final round = await durable.openOrStartAuthoredRound(
+      LearningSessionDraft(
+        id: 'session:${_nextId()}',
+        ownerId: owner.id,
+        activityType: kind.name,
         startedAtUtc: _now(),
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,

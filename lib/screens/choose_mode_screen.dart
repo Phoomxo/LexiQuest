@@ -20,6 +20,7 @@ import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
 import 'srs_flashcards_screen.dart';
 import 'weakness_clinic_screen.dart';
+import 'word_games_screen.dart';
 
 class ChooseModeScreen extends StatefulWidget {
   const ChooseModeScreen({
@@ -358,6 +359,15 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         ),
       ],
       if (all && _wordPracticeVisible) ...[
+        if (_learning?.supportsDurableQuiz == true &&
+            AppDependenciesScope.maybeOf(context)?.vocabulary != null)
+          _LearningTile(
+            icon: Icons.extension_outlined,
+            title: 'เกมฝึกคำ',
+            subtitle: 'เรียงตัวอักษรหรือเรียงคำจากชุดของคุณ',
+            onTap: () =>
+                _push(context, WordGamesScreen(featureRegistry: _features)),
+          ),
         if (_learning?.supportsDurableQuiz == true)
           for (final (kind, title) in [
             (QuizPromptKind.clozeChoice, 'เติมคำในประโยคแบบเลือก'),

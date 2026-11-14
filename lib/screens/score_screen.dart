@@ -26,6 +26,7 @@ class ScoreScreen extends StatefulWidget {
     this.showOriginalHistory = false,
     this.originalAnswers,
     this.expectedOwnerId,
+    this.onOpenSentence,
   });
 
   final int correctAnswers;
@@ -39,6 +40,7 @@ class ScoreScreen extends StatefulWidget {
   final bool showOriginalHistory;
   final List<OriginalQuizAnswer>? originalAnswers;
   final String? expectedOwnerId;
+  final ValueChanged<BuildContext>? onOpenSentence;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -217,6 +219,13 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   icon: Icons.dataset_outlined,
                 ),
                 const SizedBox(height: 24),
+                if (widget.onOpenSentence case final openSentence?)
+                  OutlinedButton(
+                    onPressed: () {
+                      if (_canAct) openSentence(context);
+                    },
+                    child: const Text('ลองเรียงประโยค'),
+                  ),
                 if (widget.showOriginalHistory) ...[
                   Text(
                     'คำตอบจากรอบเดิม',

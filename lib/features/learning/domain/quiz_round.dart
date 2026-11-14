@@ -104,6 +104,10 @@ final class QuizPlan {
     if (origin.promptKind.isCloze && settings != null) {
       throw const FormatException('Cloze plans cannot contain quiz settings');
     }
+    if (origin.promptKind.isScramble &&
+        (settings != null || origin.route != 'word-games')) {
+      throw const FormatException('Invalid word games plan');
+    }
     if (settings case final settings?) {
       if (settings.questionCount < 1 ||
           settings.questionCount > _maxQuestions ||
@@ -152,6 +156,9 @@ sealed class QuizResponse {
   String? answerFor(QuizQuestion question) {
     switch (this) {
       case QuizChoiceResponse(:final selectedOption):
+        if (question.kind.isScramble) {
+          throw const FormatException('Scramble requires an ordered answer');
+        }
         if (selectedOption == null) {
           return null;
         }
@@ -167,6 +174,17 @@ sealed class QuizResponse {
         }
         normalizeQuizClozeAnswer(text);
         return text.trim();
+      case QuizOrderResponse(:final indexes):
+        final tokens = question.scrambleTokens;
+        if (!question.kind.isScramble ||
+            indexes.length != tokens.length ||
+            indexes.toSet().length != indexes.length ||
+            indexes.any((index) => index < 0 || index >= tokens.length)) {
+          throw const FormatException('Invalid scramble response order');
+        }
+        return indexes
+            .map((index) => tokens[index])
+            .join(question.kind == QuizPromptKind.wordScramble ? '' : ' ');
     }
   }
 
@@ -212,6 +230,26 @@ final class QuizTextResponse extends QuizResponse {
 
   @override
   int get hashCode => Object.hash(QuizTextResponse, slot, text);
+}
+
+final class QuizOrderResponse extends QuizResponse {
+  QuizOrderResponse({required super.slot, required Iterable<int> indexes})
+    : indexes = List.unmodifiable(indexes);
+
+  final List<int> indexes;
+
+  @override
+  bool operator ==(Object other) =>
+      other is QuizOrderResponse &&
+      slot == other.slot &&
+      indexes.length == other.indexes.length &&
+      Iterable<int>.generate(
+        indexes.length,
+      ).every((index) => indexes[index] == other.indexes[index]);
+
+  @override
+  int get hashCode =>
+      Object.hash(QuizOrderResponse, slot, Object.hashAll(indexes));
 }
 
 typedef QuizAdmission = ({int expectedRevision, QuizResponse response});
@@ -261,9 +299,11 @@ const _maxPlanBytes = 4 * 1024 * 1024;
 const _maxSmallBytes = 4096;
 
 String encodeQuizPlan(QuizPlan plan) => _encode({
-  'v': plan.origin.promptKind.isCloze
-      ? 3
-      : (plan.settings == null ? _version : 2),
+  'v': switch (plan.origin.promptKind) {
+    QuizPromptKind.clozeChoice || QuizPromptKind.clozeTyped => 3,
+    QuizPromptKind.wordScramble || QuizPromptKind.sentenceScramble => 4,
+    _ => plan.settings == null ? _version : 2,
+  },
   'origin': {
     'route': plan.origin.route,
     'promptKind': plan.origin.promptKind.name,
@@ -294,10 +334,11 @@ QuizPlan decodeQuizPlan(String raw) {
       }
       when ((version == _version && json.length == 5) ||
               (version == 2 && json.length == 6) ||
-              (version == 3 && json.length == 5)) &&
+              ((version == 3 || version == 4) && json.length == 5)) &&
           questions.length <= _maxQuestions) {
     final decodedOrigin = _decodeOrigin(origin);
-    if (decodedOrigin.promptKind.isCloze != (version == 3)) {
+    if (decodedOrigin.promptKind.isCloze != (version == 3) ||
+        decodedOrigin.promptKind.isScramble != (version == 4)) {
       throw const FormatException('Quiz plan version does not match its kind');
     }
     return QuizPlan(
@@ -393,6 +434,11 @@ String encodeQuizResponse(QuizResponse response, {required QuizPlan plan}) {
       'slot': slot,
       'text': text.trim(),
     },
+    QuizOrderResponse(:final slot, :final indexes) => {
+      'v': 3,
+      'slot': slot,
+      'indexes': indexes,
+    },
   }, _maxSmallBytes);
 }
 
@@ -420,32 +466,80 @@ QuizResponse decodeQuizResponse(String raw, {required QuizPlan plan}) {
     _validateResponse(response, plan);
     return response;
   }
+  if (json
+      case {
+        'v': final int version,
+        'slot': final int slot,
+        'indexes': final List<dynamic> indexes,
+      }
+      when version == 3 &&
+          json.length == 3 &&
+          indexes.length <= QuizQuestion.maxScrambleTokens) {
+    if (indexes.any((index) => index is! int)) {
+      throw const FormatException('Invalid scramble tile index');
+    }
+    final response = QuizOrderResponse(
+      slot: slot,
+      indexes: indexes.cast<int>(),
+    );
+    _validateResponse(response, plan);
+    return response;
+  }
   throw const FormatException('Invalid quiz answer evidence');
 }
 
-Map<String, Object?> _questionJson(QuizQuestion q) => {
-  'word': _wordJson(q.word),
-  'kind': q.kind.name,
-  'promptText': q.promptText,
-  'options': q.options,
-  'correctOption': q.options.indexOf(q.correctAnswer),
-  'optionWords': q.optionWords == null
-      ? null
-      : {
-          for (final option in q.options)
-            option: _wordJson(q.optionWords![option]!),
+Map<String, Object?> _questionJson(QuizQuestion q) => q.kind.isScramble
+    ? {
+        'word': _wordJson(q.word),
+        'kind': q.kind.name,
+        'promptText': q.promptText,
+        'scrambleTokens': q.scrambleTokens,
+        'correctAnswer': q.correctAnswer,
+        'sourcePin': q.sourcePin,
+      }
+    : {
+        'word': _wordJson(q.word),
+        'kind': q.kind.name,
+        'promptText': q.promptText,
+        'options': q.options,
+        'correctOption': q.options.indexOf(q.correctAnswer),
+        'optionWords': q.optionWords == null
+            ? null
+            : {
+                for (final option in q.options)
+                  option: _wordJson(q.optionWords![option]!),
+              },
+        'optionExplanations': q.optionExplanations == null
+            ? null
+            : {
+                for (final option in q.options)
+                  option: q.optionExplanations![option],
+              },
+        'sourcePin': q.sourcePin,
+        if (q.kind.isCloze) ...{
+          'clozeTranslation': q.clozeTranslation,
+          'acceptedAnswers': q.acceptedAnswers,
         },
-  'optionExplanations': q.optionExplanations == null
-      ? null
-      : {for (final option in q.options) option: q.optionExplanations![option]},
-  'sourcePin': q.sourcePin,
-  if (q.kind.isCloze) ...{
-    'clozeTranslation': q.clozeTranslation,
-    'acceptedAnswers': q.acceptedAnswers,
-  },
-};
+      };
 
 QuizQuestion _decodeQuestion(Object? value) {
+  if (value case {
+    'word': final Object? target,
+    'kind': final String kind,
+    'promptText': final String prompt,
+    'scrambleTokens': final List<dynamic> tokens,
+    'correctAnswer': final String answer,
+    'sourcePin': final String sourcePin,
+  } when value.length == 6) {
+    return QuizQuestion.scramble(
+      word: _decodeWord(target),
+      kind: _named(QuizPromptKind.values, kind),
+      prompt: prompt,
+      tokens: _strings(tokens, QuizQuestion.maxScrambleTokens),
+      correctAnswer: answer,
+      sourcePin: sourcePin,
+    );
+  }
   if (value case {
     'word': final Object? target,
     'kind': final String kind,
@@ -557,7 +651,7 @@ void _validateQuestion(QuizQuestion q) {
   _validateWord(q.word);
   _requireText(q.promptText);
   final options = q.options.toSet();
-  if (q.kind == QuizPromptKind.clozeTyped) {
+  if (q.kind == QuizPromptKind.clozeTyped || q.kind.isScramble) {
     return;
   }
   if (options.length < 2 ||

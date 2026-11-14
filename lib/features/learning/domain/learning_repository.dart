@@ -40,7 +40,7 @@ abstract interface class LearningRepository {
 }
 
 abstract interface class DurableQuizRepository implements LearningRepository {
-  Future<QuizRound> openOrStartClozeRound(
+  Future<QuizRound> openOrStartAuthoredRound(
     LearningSessionDraft draft, {
     required bool skipUnavailable,
   });

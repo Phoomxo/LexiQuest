@@ -535,7 +535,11 @@ final class DriftProgressQueries {
         'การพูด (ความตรงของข้อความ)',
         {'pronunciation', 'shadowing', 'pronunciationTranscript'},
       ),
-      ('spelling', 'การสะกดคำ', {'spelling', 'dictation', 'ghostSpelling'}),
+      (
+        'spelling',
+        'การสะกดคำ',
+        {'spelling', 'dictation', 'ghostSpelling', 'wordScramble'},
+      ),
       (
         'retention',
         'การจำและเรียกคืน',

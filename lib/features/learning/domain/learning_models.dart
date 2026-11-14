@@ -23,9 +23,12 @@ enum QuizPromptKind {
   spellingChoice,
   definitionChoice,
   clozeChoice,
-  clozeTyped;
+  clozeTyped,
+  wordScramble,
+  sentenceScramble;
 
   bool get isCloze => this == clozeChoice || this == clozeTyped;
+  bool get isScramble => this == wordScramble || this == sentenceScramble;
 }
 
 String normalizeQuizClozeAnswer(String value) {
@@ -45,7 +48,9 @@ final class QuizQuestion {
       optionExplanations = null,
       sourcePin = null,
       clozeTranslation = null,
-      acceptedAnswers = const [];
+      acceptedAnswers = const [],
+      scrambleTokens = const [],
+      _scrambleAnswer = null;
 
   QuizQuestion.spellingChoice({
     required this.word,
@@ -58,7 +63,9 @@ final class QuizQuestion {
        optionExplanations = null,
        sourcePin = null,
        clozeTranslation = null,
-       acceptedAnswers = const [];
+       acceptedAnswers = const [],
+       scrambleTokens = const [],
+       _scrambleAnswer = null;
 
   QuizQuestion.definitionChoice({
     required this.word,
@@ -72,7 +79,9 @@ final class QuizQuestion {
        optionWords = Map.unmodifiable(optionWords),
        optionExplanations = Map.unmodifiable(optionExplanations),
        clozeTranslation = null,
-       acceptedAnswers = const [];
+       acceptedAnswers = const [],
+       scrambleTokens = const [],
+       _scrambleAnswer = null;
 
   QuizQuestion.cloze({
     required this.word,
@@ -88,6 +97,8 @@ final class QuizQuestion {
        optionExplanations = null,
        clozeTranslation = translation,
        acceptedAnswers = List.unmodifiable(acceptedAnswers),
+       scrambleTokens = const [],
+       _scrambleAnswer = null,
        sourcePin = sourcePin {
     if (!kind.isCloze ||
         prompt.split('____').length != 2 ||
@@ -121,6 +132,62 @@ final class QuizQuestion {
     }
   }
 
+  QuizQuestion.scramble({
+    required this.word,
+    required this.kind,
+    required String prompt,
+    required List<String> tokens,
+    required String correctAnswer,
+    required String sourcePin,
+  }) : options = const [],
+       _definition = prompt,
+       optionWords = null,
+       optionExplanations = null,
+       clozeTranslation = null,
+       acceptedAnswers = const [],
+       scrambleTokens = List.unmodifiable(tokens),
+       _scrambleAnswer = correctAnswer,
+       sourcePin = sourcePin {
+    if (!kind.isScramble ||
+        !_scrambleText(prompt, 4096) ||
+        !_scrambleText(correctAnswer, 4096) ||
+        !_scrambleText(sourcePin, 4096) ||
+        scrambleTokens.length < 2 ||
+        scrambleTokens.length > maxScrambleTokens ||
+        scrambleTokens.any(
+          (tile) => !_scrambleText(tile, 120) || RegExp(r'\s').hasMatch(tile),
+        )) {
+      throw const FormatException('Invalid scramble question');
+    }
+    final spelling = kind == QuizPromptKind.wordScramble;
+    if (spelling &&
+        (word.spelling != correctAnswer ||
+            !RegExp(r'^[A-Za-z]+$').hasMatch(correctAnswer))) {
+      throw const FormatException('Invalid scramble spelling');
+    }
+    final solution = spelling
+        ? correctAnswer.split('')
+        : correctAnswer.split(' ');
+    final separator = spelling ? '' : ' ';
+    if (solution.length != scrambleTokens.length ||
+        scrambleTokens.join(separator) == correctAnswer) {
+      throw const FormatException('Invalid scramble tile order');
+    }
+    final remaining = scrambleTokens.toList();
+    for (final tile in solution) {
+      if (!remaining.remove(tile)) {
+        throw const FormatException('Scramble tiles do not match the answer');
+      }
+    }
+  }
+
+  static const maxScrambleTokens = 24;
+
+  static bool _scrambleText(String value, int maxLength) =>
+      value.trim().isNotEmpty &&
+      value.length <= maxLength &&
+      !RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(value);
+
   final QuizWord word;
   final List<String> options;
   final QuizPromptKind kind;
@@ -130,15 +197,23 @@ final class QuizQuestion {
   final String? sourcePin;
   final String? clozeTranslation;
   final List<String> acceptedAnswers;
+  final List<String> scrambleTokens;
+  final String? _scrambleAnswer;
 
-  String get correctAnswer =>
-      kind == QuizPromptKind.meaningChoice ? word.meaning : word.spelling;
+  String get correctAnswer => switch (kind) {
+    QuizPromptKind.meaningChoice => word.meaning,
+    QuizPromptKind.wordScramble ||
+    QuizPromptKind.sentenceScramble => _scrambleAnswer!,
+    _ => word.spelling,
+  };
   String get promptText => switch (kind) {
     QuizPromptKind.meaningChoice => word.spelling,
     QuizPromptKind.spellingChoice => word.meaning,
     QuizPromptKind.definitionChoice ||
     QuizPromptKind.clozeChoice ||
-    QuizPromptKind.clozeTyped => _definition!,
+    QuizPromptKind.clozeTyped ||
+    QuizPromptKind.wordScramble ||
+    QuizPromptKind.sentenceScramble => _definition!,
   };
 }
 

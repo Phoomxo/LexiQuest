@@ -577,6 +577,8 @@ class _DashboardBody extends StatelessWidget {
               'weaknessPractice' => 'ฝึกคำที่ผิด',
               'sourcePractice' => 'ฝึกจากเนื้อหา',
               'associativeReading' => 'อ่านและนึกคำ',
+              'wordScramble' => 'เรียงตัวอักษร',
+              'sentenceScramble' => 'เรียงประโยค',
               _ => 'รอบฝึก',
             }),
             subtitle: Text(

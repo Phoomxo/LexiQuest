@@ -11,6 +11,7 @@ import '../features/learning/domain/cloze_prompt_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/learning_evidence_contract.dart';
 import '../features/learning/domain/quiz_round.dart';
+import '../features/learning/domain/scramble_prompt_policy.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
@@ -19,6 +20,7 @@ import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import '../voice/voice_models.dart';
 import 'score_screen.dart';
+import 'scramble_tiles.dart';
 import 'add_vocab_screen.dart';
 import 'categories_page.dart';
 import '../navigation/app_routes.dart';
@@ -101,6 +103,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _revealed = false;
   bool _responseCorrect = false;
   final _typedAnswer = TextEditingController();
+  List<int> _scrambleOrder = const [];
   AppDependencies? _dependencies;
   bool _wasScoped = false;
   String? _ownerId;
@@ -264,6 +267,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     _revealed = false;
     _responseCorrect = false;
     _typedAnswer.clear();
+    _scrambleOrder = const [];
     _mistakes.clear();
     _load = _startSession(learning, generation, skipUnavailable, settings)
         .whenComplete(() {
@@ -352,7 +356,18 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     final QuizSession session;
     try {
-      session = widget.promptKind.isCloze
+      session = widget.promptKind.isScramble
+          ? await learning.startScramble(
+              categoryId: _categoryId,
+              kind: widget.promptKind,
+              expectedOwnerId: owner.id,
+              wordId: _wordIds?.single,
+              parentSessionId: _originParentId,
+              skipUnavailable: skipUnavailable,
+              categoryName: widget.categoryName,
+              returnLabel: _returnLabel,
+            )
+          : widget.promptKind.isCloze
           ? await learning.startCloze(
               categoryId: _categoryId,
               kind: widget.promptKind,
@@ -517,6 +532,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _hasChoiceContrast(QuizSession session) => session.questions.every(
     (question) =>
         question.kind == QuizPromptKind.clozeTyped ||
+        question.kind.isScramble ||
         question.options.toSet().length >= 2,
   );
 
@@ -545,6 +561,14 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           previous?.cursor.phase == QuizPhase.feedback) {
         _typedAnswer.clear();
       }
+    }
+    if (response case QuizOrderResponse(:final indexes)) {
+      _scrambleOrder = indexes;
+    } else if (question.kind.isScramble &&
+        (previous?.sessionId != round.sessionId ||
+            previous?.cursor.slot != round.cursor.slot ||
+            previous?.cursor.phase == QuizPhase.feedback)) {
+      _scrambleOrder = const [];
     }
     _activeElapsedMs = round.cursor.activeResponseMs;
     _questionClock
@@ -793,6 +817,10 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                           QuizPromptKind.clozeChoice ||
                           QuizPromptKind.clozeTyped =>
                             'ยังไม่มีประโยคสำหรับคำนี้ในชุดฝึก',
+                          QuizPromptKind.wordScramble =>
+                            'ยังไม่มีคำภาษาอังกฤษที่ใช้เรียงตัวอักษรได้ในชุดนี้',
+                          QuizPromptKind.sentenceScramble =>
+                            'ชุดนี้ยังไม่มีคำที่มีประโยคฝึกที่รองรับ',
                         },
                         actionLabel: widget.promptKind.isCloze
                             ? 'กลับ'
@@ -833,7 +861,11 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     );
   }
 
-  String get _title => widget.promptKind.isCloze
+  String get _title => widget.promptKind == QuizPromptKind.wordScramble
+      ? 'เรียงตัวอักษร'
+      : widget.promptKind == QuizPromptKind.sentenceScramble
+      ? 'เรียงคำให้จบประโยค'
+      : widget.promptKind.isCloze
       ? 'เติมคำในประโยค'
       : widget.wordIds == null
       ? 'แบบทดสอบคำศัพท์'
@@ -990,6 +1022,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
     final isCloze = question.kind.isCloze;
+    final isScramble = question.kind.isScramble;
+    final isSentence = question.kind == QuizPromptKind.sentenceScramble;
     final settings = _round?.plan.settings;
     return SafeArea(
       child: SingleChildScrollView(
@@ -1046,6 +1080,8 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               QuizPromptKind.definitionChoice => 'โจทย์นิยามภาษาอังกฤษ',
               QuizPromptKind.clozeChoice => 'เลือกคำที่หายไป',
               QuizPromptKind.clozeTyped => 'พิมพ์คำที่หายไป',
+              QuizPromptKind.wordScramble => 'เรียงตัวอักษรให้ตรงกับความหมาย',
+              QuizPromptKind.sentenceScramble => 'เรียงคำให้ตรงกับความหมาย',
             }),
             const SizedBox(height: 12),
             Text(
@@ -1053,6 +1089,18 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            if (isScramble) ...[
+              const SizedBox(height: 16),
+              ScrambleTiles(
+                tokens: question.scrambleTokens,
+                order: _scrambleOrder,
+                isSentence: isSentence,
+                onChanged: _answered || _saving || _attemptId != null
+                    ? null
+                    : (order) => setState(() => _scrambleOrder = order),
+                onCheck: () => _record(question, null),
+              ),
+            ],
             if (isCloze &&
                 (_answered || question.kind == QuizPromptKind.clozeChoice))
               Text(question.clozeTranslation!, textAlign: TextAlign.center),
@@ -1103,7 +1151,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             if (!_answered) ...[
-              if (!isCloze && question.word.partOfSpeech.isNotEmpty)
+              if (!isCloze &&
+                  !isScramble &&
+                  question.word.partOfSpeech.isNotEmpty)
                 TextButton(
                   onPressed: _saving || _attemptId != null
                       ? null
@@ -1111,7 +1161,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
                   child: Text(_hintVisible ? 'ซ่อนคำใบ้' : 'ดูคำใบ้'),
                 ),
-              if (!isCloze)
+              if (!isCloze && !isScramble)
                 TextButton(
                   onPressed: _saving || _attemptId != null
                       ? null
@@ -1160,7 +1210,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _responseCorrect
+                      isScramble
+                          ? _scrambleFeedback(isSentence)
+                          : _responseCorrect
                           ? (isCloze ? 'เติมคำได้ถูกต้อง' : 'ถูกต้อง')
                           : (isCloze
                                 ? 'ยังไม่ถูก ลองดูคำใบ้'
@@ -1175,10 +1227,16 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                       Text(question.promptText.replaceFirst('____', _selected!))
                     else if (isCloze)
                       Text('คำใบ้ · ${question.word.meaning}')
-                    else
+                    else if (!isScramble)
                       Text(
                         '${question.word.spelling} — ${question.word.meaning}',
                       ),
+                    if (isScramble && !_responseCorrect)
+                      Text(_scrambleHint(question, isSentence)),
+                    if (isScramble && _responseCorrect && !isSentence)
+                      if (ScramblePromptPolicy.sentenceFor(question.word)
+                          case final authored?)
+                        Text(authored.sentence),
                     if (question.optionWords?[_selected]
                         case final selectedWord?)
                       if (_selected != question.correctAnswer)
@@ -1205,12 +1263,29 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 onPressed: _saving ? null : _retryQuestion,
                 child: Text(isCloze ? 'ลองตอบอีกครั้ง' : 'ลองข้อเดิม'),
               ),
+            if (isCloze &&
+                _answered &&
+                _responseCorrect &&
+                ScramblePromptPolicy.sentenceFor(question.word) != null)
+              OutlinedButton(
+                onPressed: _saving
+                    ? null
+                    : () => _openSentence(
+                        context,
+                        session.id,
+                        question.word,
+                        'กลับไปดูผลเติมคำ',
+                      ),
+                child: const Text('ลองเรียงประโยค'),
+              ),
             if (_answered && (!isCloze || _responseCorrect))
               FilledButton(
                 onPressed: _saving ? null : _next,
                 child: Text(
                   isCloze
                       ? _returnLabel
+                      : isScramble
+                      ? 'ดูผลการฝึก'
                       : _index == session.questions.length - 1
                       ? 'ดูผลการเรียน'
                       : 'คำถามถัดไป',
@@ -1220,6 +1295,51 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  String _scrambleFeedback(bool sentence) => _responseCorrect
+      ? (sentence ? 'เรียงได้ถูกต้อง' : 'สะกดถูกแล้ว')
+      : (sentence ? 'ลองสลับตำแหน่งคำ' : 'ลองอีกตัวหนึ่ง');
+
+  void _openSentence(
+    BuildContext from,
+    String parentId,
+    QuizWord word,
+    String returnLabel,
+  ) {
+    final owner = _ownerId;
+    if (owner == null ||
+        !_current(_generation) ||
+        ModalRoute.of(from)?.isCurrent != true) {
+      return;
+    }
+    unawaited(
+      AppNavigator.pushPage<void>(
+        from,
+        AppPage<void>(
+          name: 'learning/word-games/sentence-from-feedback',
+          builder: (_) => QuizScreen(
+            categoryId: word.categoryId,
+            categoryName: widget.categoryName,
+            wordIds: [word.id],
+            expectedOwnerId: owner,
+            promptKind: QuizPromptKind.sentenceScramble,
+            originParentId: parentId,
+            returnLabel: returnLabel,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _scrambleHint(QuizQuestion question, bool sentence) {
+    final correct = question.correctAnswer.split(sentence ? ' ' : '');
+    for (final (position, index) in _scrambleOrder.indexed) {
+      if (question.scrambleTokens[index] != correct[position]) {
+        return '${sentence ? 'คำ' : 'ตัวอักษร'}ลำดับที่ ${position + 1} ยังสลับอยู่';
+      }
+    }
+    return 'ตรวจลำดับอีกครั้ง';
   }
 
   ({Color background, Color foreground})? _answerColors(
@@ -1277,7 +1397,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       _selected = option;
       _revealed = reveal;
     }
-    final response = question.kind == QuizPromptKind.clozeTyped && !_revealed
+    final response = question.kind.isScramble
+        ? QuizOrderResponse(slot: _index, indexes: _scrambleOrder)
+        : question.kind == QuizPromptKind.clozeTyped && !_revealed
         ? QuizTextResponse(slot: _index, text: _selected!)
         : QuizChoiceResponse(
             slot: _index,
@@ -1450,7 +1572,14 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       final returnLabel = _returnLabel;
       final promptKind = widget.promptKind;
       final expectedOwnerId = _ownerId;
-      final canPracticeMistakes = _canPracticeMistakes;
+      final canPracticeMistakes =
+          _canPracticeMistakes && !promptKind.isScramble;
+      final solved = finished?.plan.questions.last.word;
+      final canOrderSentence =
+          promptKind == QuizPromptKind.wordScramble &&
+          _responseCorrect &&
+          solved != null &&
+          ScramblePromptPolicy.sentenceFor(solved) != null;
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
@@ -1464,6 +1593,14 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             expectedOwnerId: expectedOwnerId,
             returnLabel: returnLabel,
             mistakes: mistakes,
+            onOpenSentence: canOrderSentence
+                ? (from) => _openSentence(
+                    from,
+                    summary.id,
+                    solved,
+                    'กลับไปดูผลสะกดคำ',
+                  )
+                : null,
             onPracticeMistakes: mistakes.isEmpty || !canPracticeMistakes
                 ? null
                 : () => _practiceMistakes(

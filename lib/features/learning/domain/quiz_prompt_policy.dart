@@ -11,8 +11,8 @@ abstract final class QuizPromptPolicy {
     List<QuizWord> optionWords = const [],
     Set<String>? targetWordIds,
   }) {
-    if (kind.isCloze) {
-      throw ArgumentError.value(kind, 'kind', 'Requires authored cloze');
+    if (kind.isCloze || kind.isScramble) {
+      throw ArgumentError.value(kind, 'kind', 'Requires authored practice');
     }
     if (limit < 0) throw ArgumentError.value(limit, 'limit');
     if (limit == 0 || words.isEmpty) return const [];
