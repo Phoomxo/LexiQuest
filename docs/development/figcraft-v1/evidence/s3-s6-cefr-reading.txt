@@ -77,3 +77,8 @@ Sample card ratings and station sentences remain in memory. The existing
 first-study reading and generated reading remain accessible. Full visual
 parity, Android speech audio, native 200% text, physical TalkBack and
 signed-device acceptance require evidence.
+
+Exact PR head 975f06eaeab27e136e8a0dd897fc21e8924a26e1, CI 43629160829,
+passed Flutter 2,334, CPU backend 267, Firestore and Supabase policies,
+analysis, and Android debug APK. Raw log SHA-256
+22b2544d5d586fd01aac35147cc05d492a2f95cc974acd61e00fb2fac45bc438.

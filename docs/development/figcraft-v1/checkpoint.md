@@ -1,5 +1,22 @@
 # Continuous execution checkpoint
 
+## S2 Library JSON practice and CSV review
+
+- Source `6d2c5af694ce0be29b27653b48ea8ac9f6fbb5aa` wires temporary JSON
+  practice from Library and the selected-set import menu. A malformed
+  list remains editable, and a missing bracket can be repaired in memory.
+  File and pasted-table saves use the existing owner-scoped confirmation.
+- Windows 72, analysis, format and independent review passed. Android
+  API 35 offline matched the built APK, used the actual picker, repaired
+  a two-word file, retried the same card, returned to the same preview
+  and empty Library and reopened without a draft. Explicit CSV
+  confirmation saved one synthetic word in the chosen set.
+  [Evidence and APK hash](evidence/s2-wordbook-json.txt).
+- Screens 48 now 8 fail and 40 unverified. Signed-device and TalkBack
+  require separate evidence. Next is S4 word detail as the shared entry
+  for Phonetic Explorer and Dictation, from the Library's existing
+  selected word. Keep explicit edit and saved owner data intact.
+
 ## S3/S6 CEFR samples and authored reading
 
 - Source `5f3119e8fb644fe3ffce60c2aef352ae937ab9af`. The recurring
@@ -21,6 +38,10 @@
   Add preview and repair for the JSON practice draft and contextual exits.
   Verify absence of durable learning or vocabulary changes and fence any
   owner switch during file selection or practice.
+- [Exact CEFR CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43629160829)
+  passed at `975f06ea` with Flutter 2,334, CPU backend 267, both policies,
+  analysis and Android debug build. Raw log SHA-256
+  `22b2544d5d586fd01aac35147cc05d492a2f95cc974acd61e00fb2fac45bc438`.
 
 ## S6 Word Games
 
