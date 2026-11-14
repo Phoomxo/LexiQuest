@@ -18,6 +18,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   Stream<List<VocabularyCategorySummary>> watchLibrary(String ownerId) {
     final categories = database.vocabularyCategories;
     final words = database.vocabularyWords;
+    final cefrLevel = words.cefrLevel.trim().upper();
     final query =
         database.select(categories).join([
             leftOuterJoin(
@@ -28,7 +29,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
               useColumns: false,
             ),
           ])
-          ..addColumns([words.spelling])
+          ..addColumns([words.spelling, cefrLevel])
           ..where(
             categories.ownerId.equals(ownerId) &
                 categories.isDeleted.equals(false),
@@ -42,21 +43,31 @@ final class DriftVocabularyRepository implements VocabularyRepository {
           ]);
     return query.watch().map((rows) {
       final grouped =
-          <String, ({VocabularyCategory category, List<String> spellings})>{};
+          <
+            String,
+            ({
+              VocabularyCategory category,
+              List<String> spellings,
+              Set<String> levels,
+            })
+          >{};
       for (final row in rows) {
         final category = _categoryToDomain(row.readTable(categories));
         final entry = grouped.putIfAbsent(
           category.id,
-          () => (category: category, spellings: []),
+          () => (category: category, spellings: [], levels: {}),
         );
         final spelling = row.read(words.spelling);
         if (spelling != null) entry.spellings.add(spelling);
+        final level = row.read(cefrLevel);
+        if (level != null) entry.levels.add(level);
       }
       return [
         for (final entry in grouped.values)
           VocabularyCategorySummary(
             category: entry.category,
             wordCount: entry.spellings.length,
+            cefrLevels: Set.unmodifiable(entry.levels),
             previewSpellings: List.unmodifiable(
               entry.spellings.toSet().take(3),
             ),
@@ -68,8 +79,9 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   @override
   Stream<List<VocabularyWord>> searchWords(
     String ownerId,
-    String normalizedQuery,
-  ) {
+    String normalizedQuery, {
+    String? cefrLevel,
+  }) {
     if (normalizedQuery.isEmpty) return Stream.value(const []);
     final words = database.vocabularyWords;
     final categories = database.vocabularyCategories;
@@ -99,6 +111,9 @@ final class DriftVocabularyRepository implements VocabularyRepository {
             OrderingTerm.asc(words.id),
           ])
           ..limit(searchWordLimit);
+    if (cefrLevel != null) {
+      query.where(words.cefrLevel.trim().upper().equals(cefrLevel));
+    }
     return query.watch().map(
       (rows) => rows
           .map((row) => _wordToDomain(row.readTable(words)))

@@ -34,6 +34,7 @@ class VocabListScreen extends StatefulWidget {
     super.key,
     required this.categoryId,
     required this.categoryName,
+    this.expectedOwnerId,
     this.vocabulary,
     this.importer,
     this.startAdding = false,
@@ -42,6 +43,7 @@ class VocabListScreen extends StatefulWidget {
 
   final String categoryId;
   final String categoryName;
+  final String? expectedOwnerId;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? importer;
   final bool startAdding;
@@ -92,7 +94,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
   @override
   void didUpdateWidget(covariant VocabListScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.categoryId != widget.categoryId) {
+    if (oldWidget.categoryId != widget.categoryId ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
       _dependencies = AppDependenciesScope.maybeOf(context);
       _dependenciesCaptured = true;
       _invalidated = false;
@@ -112,10 +115,11 @@ class _VocabListScreenState extends State<VocabListScreen> {
     _ownerSubscription = dependencies?.watchActiveOwnerId()?.listen(
       (active) {
         if (!mounted || !identical(dependencies, _dependencies)) return;
-        if (_routeOwnerId == null && active != null) {
-          _routeOwnerId = active;
-        } else if (_routeOwnerId != null && _routeOwnerId != active) {
+        final expected = _routeOwnerId ?? widget.expectedOwnerId;
+        if (expected != null && expected != active) {
           setState(() => _invalidated = true);
+        } else if (_routeOwnerId == null && active != null) {
+          setState(() => _routeOwnerId = active);
         }
       },
       onError: (Object _) {
@@ -133,6 +137,9 @@ class _VocabListScreenState extends State<VocabListScreen> {
         : dependencies.vocabulary;
     if (_invalidated ||
         !_dependenciesCaptured ||
+        (_ownerSubscription != null &&
+            widget.expectedOwnerId != null &&
+            _routeOwnerId == null) ||
         !identical(_dependencies, dependencies) ||
         vocabulary == null ||
         (dependencies != null &&

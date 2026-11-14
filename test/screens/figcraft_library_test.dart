@@ -59,6 +59,7 @@ void main() {
       ),
       config: null,
       guestSessionService: _GuestSession(),
+      database: database,
       vocabulary: vocabulary,
       progress: ProgressUseCases(
         owners: owners,
@@ -86,6 +87,7 @@ void main() {
     WidgetTester tester, {
     double scale = 1,
     bool travelContrast = false,
+    bool withLevels = false,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
@@ -103,6 +105,7 @@ void main() {
             spelling: spelling,
             meaning: meaning,
             partOfSpeech: 'noun',
+            cefrLevel: withLevels ? (name == 'การเดินทาง' ? 'A2' : 'A1') : null,
           ),
         );
         if (travelContrast && name == 'การเดินทาง') {
@@ -141,6 +144,58 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   }
 
+  testWidgets(
+    'library filters existing sets by level and restores after clear',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, withLevels: true, scale: 2);
+        final levelFilter = find.byKey(const ValueKey('library-level-filter'));
+        await tester.tap(levelFilter);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('A2'));
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+        await tester.tap(find.text('การเดินทาง'));
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'apple');
+        await _pumpUntil(tester, find.text('ไม่พบคำหรือชุดที่ค้นหา'));
+        expect(find.text('เลือกระดับภาษา · A2'), findsOneWidget);
+        await tester.enterText(search, '');
+        await tester.pumpAndSettle();
+        await tester.tap(levelFilter);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('C2'));
+        await tester.pumpAndSettle();
+        expect(find.text('ไม่พบชุดที่มีคำระดับ C2'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsNothing);
+        await tester.tap(find.text('ล้างตัวกรอง'));
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('อาหาร'),
+          180,
+          scrollable: find.byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          ),
+        );
+        expect(find.text('อาหาร'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
   testWidgets('set and word searches keep their context after returning', (
     tester,
   ) async {
@@ -178,6 +233,84 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('station'), findsNothing);
       expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('an open level picker cannot carry A results into owner B', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, withLevels: true);
+      final levelFilter = find.byKey(const ValueKey('library-level-filter'));
+      final openFromA = tester.widget<OutlinedButton>(levelFilter).onPressed!;
+      final setA = (await tester.runAsync(
+        () => vocabulary.watchCategories().first,
+      ))!.singleWhere((category) => category.name == 'การเดินทาง');
+      await tester.tap(levelFilter);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A2'));
+      await tester.pumpAndSettle();
+      expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+      await tester.tap(levelFilter);
+      await tester.pumpAndSettle();
+
+      var switched = false;
+      final switching = (() async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      })().whenComplete(() => switched = true);
+      unawaited(switching.then<void>((_) {}, onError: (Object _) {}));
+      for (var index = 0; index < 50 && !switched; index++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+      }
+      expect(switched, isTrue, reason: 'the active owner switch must finish');
+      await switching;
+      await tester.tap(find.text('A1'));
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.text('ชุดของบัญชี B'));
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(find.text('อาหาร'), findsNothing);
+      expect(find.text('เลือกระดับภาษา'), findsOneWidget);
+      expect(find.text('ล้างตัวกรอง'), findsNothing);
+      openFromA();
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(
+            home: VocabListScreen(
+              categoryId: setA.id,
+              categoryName: setA.name,
+              expectedOwnerId: setA.ownerId,
+            ),
+          ),
+        ),
+      );
+      await _pumpUntil(
+        tester,
+        find.text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(find.text('station'), findsNothing);
     } finally {
       await disposeLibrary(tester);
     }

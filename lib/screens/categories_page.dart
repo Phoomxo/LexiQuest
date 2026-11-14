@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../ai/ai_models.dart' show CefrLevel;
 import '../config/m3_theme.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
@@ -23,6 +26,12 @@ class CategoriesPage extends StatefulWidget {
 class _CategoriesPageState extends State<CategoriesPage> {
   final _searchController = TextEditingController();
   String _query = '';
+  String? _cefrLevel;
+  AppDependencies? _dependencies;
+  StreamSubscription<String?>? _ownerSubscription;
+  String? _ownerId;
+  bool _waitingForOwner = false;
+  Object _libraryContext = Object();
   VocabularyUseCases? _vocabulary;
   Stream<List<VocabularyCategorySummary>>? _categories;
   Stream<List<VocabularyWord>>? _matches;
@@ -30,7 +39,43 @@ class _CategoriesPageState extends State<CategoriesPage> {
   bool _hadScope = false;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (identical(_dependencies, dependencies)) return;
+    _dependencies = dependencies;
+    _ownerId = null;
+    _vocabulary = null;
+    _cefrLevel = null;
+    _libraryContext = Object();
+    unawaited(_ownerSubscription?.cancel());
+    final ownerChanges = dependencies?.watchActiveOwnerId();
+    _waitingForOwner = ownerChanges != null;
+    _ownerSubscription = ownerChanges?.listen(
+      (ownerId) => _changeOwner(dependencies, ownerId),
+      onError: (Object _) => _changeOwner(dependencies, null),
+    );
+  }
+
+  void _changeOwner(AppDependencies? dependencies, String? ownerId) {
+    if (!mounted || !identical(_dependencies, dependencies)) return;
+    final alreadyWatching = !_waitingForOwner;
+    setState(() {
+      _waitingForOwner = false;
+      _ownerId = ownerId;
+      _vocabulary = null;
+      _cefrLevel = null;
+      _libraryContext = Object();
+      if (alreadyWatching) {
+        _query = '';
+        _searchController.clear();
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    unawaited(_ownerSubscription?.cancel());
     _searchController.dispose();
     super.dispose();
   }
@@ -47,14 +92,27 @@ class _CategoriesPageState extends State<CategoriesPage> {
   bool _isCurrent(VocabularyUseCases useCases) =>
       mounted && identical(_useCases(context), useCases);
 
+  Stream<List<VocabularyWord>> _searchWords(VocabularyUseCases useCases) =>
+      useCases.searchWords(
+        _query,
+        cefrLevel: _cefrLevel,
+        expectedOwnerId: _ownerId,
+      );
+
   @override
   Widget build(BuildContext context) {
-    final useCases = _useCases(context);
+    final scopedVocabulary = _useCases(context);
+    final useCases = _ownerSubscription != null && _ownerId == null
+        ? null
+        : scopedVocabulary;
     if (!identical(useCases, _vocabulary)) {
       _vocabulary = useCases;
-      _categories = useCases?.watchLibrary();
-      _matches = useCases?.searchWords(_query);
+      _cefrLevel = null;
+      _libraryContext = Object();
+      _categories = useCases?.watchLibrary(expectedOwnerId: _ownerId);
+      _matches = useCases == null ? null : _searchWords(useCases);
     }
+    final libraryContext = _libraryContext;
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
     final addWord = useCases == null
         ? null
@@ -102,7 +160,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
         ],
       ),
       body: AdaptiveContentPane(
-        child: useCases == null
+        child: _waitingForOwner
+            ? const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังโหลดคลังคำศัพท์',
+                ),
+              )
+            : useCases == null
             ? const _LocalDataUnavailable()
             : CustomScrollView(
                 key: const PageStorageKey('vocabulary-categories'),
@@ -118,7 +182,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       ),
                     ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
                     sliver: SliverToBoxAdapter(
                       child: SearchBar(
                         key: const ValueKey('category-search'),
@@ -142,12 +206,42 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         ),
                         leading: const Icon(Icons.search),
                         onChanged: (value) {
-                          if (!_isCurrent(useCases)) return;
+                          if (!identical(libraryContext, _libraryContext) ||
+                              !_isCurrent(useCases)) {
+                            return;
+                          }
                           setState(() {
                             _query = normalizeVocabularyText(value);
-                            _matches = useCases.searchWords(_query);
+                            _matches = _searchWords(useCases);
                           });
                         },
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                    sliver: SliverToBoxAdapter(
+                      child: Wrap(
+                        spacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            key: const ValueKey('library-level-filter'),
+                            onPressed: () =>
+                                _chooseLevel(context, useCases, libraryContext),
+                            icon: const Icon(Icons.filter_list),
+                            label: Text(
+                              _cefrLevel == null
+                                  ? 'เลือกระดับภาษา'
+                                  : 'เลือกระดับภาษา · $_cefrLevel',
+                            ),
+                          ),
+                          if (_cefrLevel != null)
+                            TextButton(
+                              onPressed: () =>
+                                  _setLevel(useCases, libraryContext, null),
+                              child: const Text('ล้างตัวกรอง'),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -184,7 +278,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                     sliver: StreamBuilder<List<VocabularyCategorySummary>>(
-                      key: ValueKey((useCases, 'library')),
+                      key: ValueKey(libraryContext),
                       stream: _categories,
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
@@ -192,9 +286,17 @@ class _CategoriesPageState extends State<CategoriesPage> {
                             hasScrollBody: false,
                             child: _FailureState(
                               onRetry: () {
-                                if (!_isCurrent(useCases)) return;
+                                if (!identical(
+                                      libraryContext,
+                                      _libraryContext,
+                                    ) ||
+                                    !_isCurrent(useCases)) {
+                                  return;
+                                }
                                 setState(
-                                  () => _categories = useCases.watchLibrary(),
+                                  () => _categories = useCases.watchLibrary(
+                                    expectedOwnerId: _ownerId,
+                                  ),
                                 );
                               },
                             ),
@@ -210,7 +312,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                             ),
                           );
                         }
-                        if (snapshot.data!.isEmpty) {
+                        final level = _cefrLevel;
+                        if (snapshot.requireData.isEmpty && level == null) {
                           return const SliverFillRemaining(
                             hasScrollBody: false,
                             child: Center(
@@ -221,7 +324,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
                             ),
                           );
                         }
-                        final summaries = snapshot.requireData;
+                        final summaries = snapshot.requireData
+                            .where(
+                              (entry) =>
+                                  level == null ||
+                                  entry.cefrLevels.contains(level),
+                            )
+                            .toList(growable: false);
                         final categories = summaries
                             .where(
                               (entry) => entry.category.normalizedName.contains(
@@ -229,11 +338,36 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               ),
                             )
                             .toList(growable: false);
+                        if (level != null && _query.isEmpty) {
+                          return SliverMainAxisGroup(
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    'ระดับภาษา · $level · พบ ${summaries.length} ชุด',
+                                  ),
+                                ),
+                              ),
+                              if (summaries.isEmpty)
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 24,
+                                    ),
+                                    child: Text('ไม่พบชุดที่มีคำระดับ $level'),
+                                  ),
+                                )
+                              else
+                                _libraryList(context, useCases, categories),
+                            ],
+                          );
+                        }
                         if (_query.isEmpty) {
                           return _libraryList(context, useCases, categories);
                         }
                         return StreamBuilder<List<VocabularyWord>>(
-                          key: ValueKey((useCases, _query)),
+                          key: ValueKey((useCases, _query, level)),
                           stream: _matches,
                           builder: (context, matches) {
                             if (matches.hasError) {
@@ -241,11 +375,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                 hasScrollBody: false,
                                 child: _FailureState(
                                   onRetry: () {
-                                    if (!_isCurrent(useCases)) return;
+                                    if (!identical(
+                                          libraryContext,
+                                          _libraryContext,
+                                        ) ||
+                                        !_isCurrent(useCases)) {
+                                      return;
+                                    }
                                     setState(
-                                      () => _matches = useCases.searchWords(
-                                        _query,
-                                      ),
+                                      () => _matches = _searchWords(useCases),
                                     );
                                   },
                                 ),
@@ -325,6 +463,52 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
+  Future<void> _chooseLevel(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    Object libraryContext,
+  ) async {
+    if (!identical(libraryContext, _libraryContext) || !_isCurrent(useCases)) {
+      return;
+    }
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('ระดับภาษา')),
+            for (final level in CefrLevel.values)
+              if (level != CefrLevel.unknown)
+                ListTile(
+                  title: Text(level.name.toUpperCase()),
+                  selected: _cefrLevel == level.name.toUpperCase(),
+                  onTap: () =>
+                      Navigator.pop(sheetContext, level.name.toUpperCase()),
+                ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) _setLevel(useCases, libraryContext, selected);
+  }
+
+  void _setLevel(
+    VocabularyUseCases useCases,
+    Object libraryContext,
+    String? level,
+  ) {
+    if (!identical(libraryContext, _libraryContext) ||
+        !_isCurrent(useCases) ||
+        _cefrLevel == level) {
+      return;
+    }
+    setState(() {
+      _cefrLevel = level;
+      _matches = _searchWords(useCases);
+    });
+  }
+
   Widget _libraryList(
     BuildContext context,
     VocabularyUseCases useCases,
@@ -379,19 +563,26 @@ class _CategoriesPageState extends State<CategoriesPage> {
     VocabularyCategory category, {
     bool startAdding = false,
     String initialQuery = '',
-  }) => AppNavigator.pushPage<void>(
-    context,
-    AppPage<void>(
-      name: 'vocabulary/category',
-      builder: (_) => VocabListScreen(
-        categoryId: category.id,
-        categoryName: category.name,
-        vocabulary: useCases,
-        startAdding: startAdding,
-        initialQuery: initialQuery,
+  }) async {
+    if (!_isCurrent(useCases) ||
+        (_ownerSubscription != null && _ownerId != category.ownerId)) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/category',
+        builder: (_) => VocabListScreen(
+          categoryId: category.id,
+          categoryName: category.name,
+          expectedOwnerId: category.ownerId,
+          vocabulary: useCases,
+          startAdding: startAdding,
+          initialQuery: initialQuery,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Future<void> _chooseDestination(
     BuildContext context,

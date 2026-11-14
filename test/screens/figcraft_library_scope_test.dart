@@ -719,15 +719,20 @@ final class _Repository extends Fake implements VocabularyRepository {
   }
 
   @override
-  Stream<List<VocabularyWord>> searchWords(String ownerId, String query) {
+  Stream<List<VocabularyWord>> searchWords(
+    String ownerId,
+    String query, {
+    String? cefrLevel,
+  }) {
     searchQueries.add((ownerId, query));
     return searchGate?.stream ??
         Stream.value(
           words
               .where(
                 (word) =>
-                    word.normalizedSpelling.contains(query) ||
-                    word.normalizedMeaning.contains(query),
+                    (cefrLevel == null || word.cefrLevel == cefrLevel) &&
+                    (word.normalizedSpelling.contains(query) ||
+                        word.normalizedMeaning.contains(query)),
               )
               .toList(growable: false),
         );

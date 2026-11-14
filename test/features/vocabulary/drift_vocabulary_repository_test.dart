@@ -200,20 +200,66 @@ void main() {
   );
 
   test(
-    'global search limits the complete owner result to fifty words',
+    'global search limits owner results after filtering on stored level',
     () async {
       await repository.createCategory(category());
       await repository.createCategory(
         category(id: 'set-b', name: 'Food', normalizedName: 'food'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
       );
       for (var index = 0; index < 60; index++) {
         await repository.createWord(
           word(index, categoryId: index < 30 ? 'category-1' : 'set-b'),
         );
       }
+      final matching = word(
+        99,
+        categoryId: 'set-b',
+      ).copyWith(cefrLevel: ' a2 ');
+      await repository.createWord(matching);
+      await repository.createWord(
+        word(
+          100,
+          ownerId: 'owner-2',
+          categoryId: 'other-set',
+        ).copyWith(cefrLevel: 'A2'),
+      );
       final found = await repository.searchWords('owner-1', 'word').first;
       expect(found, hasLength(50));
       expect(found.map((word) => word.id).toSet(), hasLength(50));
+      expect(found.map((word) => word.id), isNot(contains(matching.id)));
+      expect(
+        (await repository.searchWords('owner-1', 'word', cefrLevel: 'A2').first)
+            .single
+            .id,
+        matching.id,
+      );
+      final summaries = await repository.watchLibrary('owner-1').first;
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'set-b')
+            .cefrLevels,
+        {'A2'},
+      );
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'category-1')
+            .cefrLevels,
+        isEmpty,
+      );
+      final updated = repository
+          .watchLibrary('owner-1')
+          .firstWhere(
+            (items) => items.every((entry) => entry.cefrLevels.isEmpty),
+          );
+      await repository.deleteWord(
+        ownerId: 'owner-1',
+        wordId: matching.id,
+        nowUtc: createdAt,
+      );
+      expect(await updated, hasLength(2));
     },
   );
 

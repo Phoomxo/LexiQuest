@@ -73,16 +73,26 @@ final class VocabularyUseCases {
     ).asyncExpand((owner) => vocabulary.watchCategories(owner.id));
   }
 
-  Stream<List<VocabularyCategorySummary>> watchLibrary() => Stream.fromFuture(
-    owners.getOrCreateActiveOwner(),
-  ).asyncExpand((owner) => vocabulary.watchLibrary(owner.id));
+  Stream<List<VocabularyCategorySummary>> watchLibrary({
+    String? expectedOwnerId,
+  }) => Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+    (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+        ? vocabulary.watchLibrary(owner.id)
+        : Stream.value(const []),
+  );
 
-  Stream<List<VocabularyWord>> searchWords(String query) {
+  Stream<List<VocabularyWord>> searchWords(
+    String query, {
+    String? cefrLevel,
+    String? expectedOwnerId,
+  }) {
     final normalized = normalizeVocabularyText(query);
     if (normalized.isEmpty) return Stream.value(const []);
-    return Stream.fromFuture(
-      owners.getOrCreateActiveOwner(),
-    ).asyncExpand((owner) => vocabulary.searchWords(owner.id, normalized));
+    return Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+      (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+          ? vocabulary.searchWords(owner.id, normalized, cefrLevel: cefrLevel)
+          : Stream.value(const []),
+    );
   }
 
   Stream<List<VocabularyWord>> watchWords(String categoryId) {

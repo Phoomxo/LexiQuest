@@ -8,8 +8,9 @@ abstract interface class VocabularyRepository {
 
   Stream<List<VocabularyWord>> searchWords(
     String ownerId,
-    String normalizedQuery,
-  );
+    String normalizedQuery, {
+    String? cefrLevel,
+  });
 
   Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId);
 
