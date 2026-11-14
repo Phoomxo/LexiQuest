@@ -18,6 +18,15 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
+        <provider
+            android:name=".AchievementShareFileProvider"
+            android:authorities="${applicationId}.achievement-share"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/achievement_share_paths" />
+        </provider>
         <receiver android:name=".StudyReminderReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -67,8 +76,11 @@
             android:value="2" />
     </application>
 
-    <!-- Required to query activities that can process text -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="image/png" />
+        </intent>
         <intent>
             <action android:name="android.speech.RecognitionService"/>
         </intent>

@@ -6,6 +6,9 @@ import '../features/motivation/application/focus_use_cases.dart';
 import '../features/motivation/domain/focus_models.dart';
 import '../features/motivation/domain/timezone_policy.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
+import 'achievement_share_panel.dart';
 import 'study_preferences_panel.dart';
 import 'study_reminder_panel.dart';
 
@@ -462,6 +465,24 @@ class _FocusPlannerPanelState extends State<_FocusPlannerPanel>
                             expectedOwnerId: widget.ownerId,
                           ),
                     child: const Text('เตือนให้กลับมาฝึก'),
+                  ),
+                if (!running &&
+                    widget.scope.progress != null &&
+                    widget.scope.database != null &&
+                    widget.scope.fieldFeatures.isVisible(
+                      FieldFeature.achievements,
+                    ) &&
+                    widget.scope.features.isVisible(Feature.achievements) &&
+                    widget.scope.features.isVisible(Feature.mastery))
+                  TextButton(
+                    onPressed: _busy || _loading
+                        ? null
+                        : () => showAchievementShare(
+                            context,
+                            scope: widget.scope,
+                            ownerId: widget.ownerId,
+                          ),
+                    child: const Text('ภารกิจและเพื่อนฝึก'),
                   ),
               ],
             ],
