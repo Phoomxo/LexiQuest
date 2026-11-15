@@ -1,5 +1,34 @@
 # Continuous execution checkpoint
 
+## S3 Thai-to-English choice
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `a6f87136` passed
+  120 scoped Windows Flutter tests and analysis of the three changed
+  Dart files. Linux CI passed 2,450 Flutter and 267 backend CPU tests,
+  Firestore and Supabase checks, and the Android debug build.
+- The local and installed Android API 35 x64 debug APK share SHA-256
+  beginning `28d7298f`. At 200% text and offline, the empty,
+  single-word and ambiguous sets returned to activities with
+  matching SQLite snapshots.
+- After station was wrong for ชานชาลา, the real pairs explained the
+  choices. Retrying with platform stayed on the same question.
+  Answering station next gave 67% and returned to activities.
+  A new process reopened the same owned round from history. The three
+  attempts and the score matched the completed SQLite snapshot.
+  [Evidence](evidence/s3-f07-reverse-quiz.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43680369979).
+- f07 passed on the prototype, bringing totals to 17 of 44 features
+  and 14 of 64 work packages. P2.3 still needs combined acceptance.
+  All 48 delivery screens and spoken TalkBack still need checks.
+- Next complete f18 for English-to-Thai choice. On the same APK,
+  selecting ชานชาลา for station showed the selected meaning and
+  station — สถานี. The completed 50% round had `optionWords: null`.
+  The native feedback and saved plan are in
+  `build/boss-android-evidence/f18-native-preflight-feedback.txt` and
+  `f18-native-preflight-plan.json`. Ground the comparison in the owned
+  distractor and retain the answer semantics of earlier plans.
+
 ## S2 Sample pack review and catalog metadata
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
