@@ -40,7 +40,10 @@ abstract interface class VocabularyRepository {
 
   Future<VocabularyWord> createWord(VocabularyWord word);
 
-  Future<VocabularyWord> updateWord(VocabularyWord word);
+  Future<VocabularyWord> updateWord(
+    VocabularyWord word, {
+    VocabularyWord? expectedWord,
+  });
 
   Future<void> deleteWord({
     required String ownerId,

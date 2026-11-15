@@ -236,10 +236,10 @@ final class VocabularyUseCases {
 
   Future<VocabularyWord> updateWord(
     UpdateWordCommand command, {
-    String? expectedOwnerId,
+    VocabularyWord? expectedWord,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
-    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+    if (expectedWord != null && owner.id != expectedWord.ownerId) {
       throw const VocabularyNotFoundFailure();
     }
     final now = _currentUtc();
@@ -256,6 +256,7 @@ final class VocabularyUseCases {
         createdAtUtc: now,
         updatedAtUtc: now,
       ),
+      expectedWord: expectedWord,
     );
     onLocalMutation?.call();
     return updated;

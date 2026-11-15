@@ -16,6 +16,10 @@ final class VocabularyNotFoundFailure extends VocabularyFailure {
   const VocabularyNotFoundFailure();
 }
 
+final class StaleVocabularyWordFailure extends VocabularyFailure {
+  const StaleVocabularyWordFailure();
+}
+
 final class InvalidVocabularyFailure extends VocabularyFailure {
   const InvalidVocabularyFailure(this.field, this.reason);
 

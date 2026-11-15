@@ -25,6 +25,7 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
@@ -590,6 +591,79 @@ void main() {
       onVocabularyMutation = null;
       vocabularyOwners.gate = null;
       if (!ownerRead.isCompleted) ownerRead.complete();
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('a library editor rejects synced content at the same revision', (
+    tester,
+  ) async {
+    const syncedMeaning = 'ชุมทางรถไฟ';
+    const draftMeaning = 'ป้ายรถไฟ';
+    const staleWarning = 'คำนี้ถูกแก้ไขแล้ว กรุณาเปิดรายละเอียดคำใหม่';
+    try {
+      await pumpLibrary(tester);
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _tapLabel(tester, 'station', settle: false);
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
+      final meaningField = find.byKey(const ValueKey('meaning-field'));
+      await _pumpUntil(tester, meaningField);
+      await tester.enterText(meaningField, draftMeaning);
+
+      final (synced, originalRevision, originalOutbox) = await _withFrames(
+        tester,
+        () async {
+          final words = database.select(database.vocabularyWords)
+            ..where((row) => row.spelling.equals('station'));
+          final original = await words.getSingle();
+          final outbox = await database.select(database.outboxOperations).get();
+          await (database.update(
+            database.vocabularyWords,
+          )..where((row) => row.id.equals(original.id))).write(
+            VocabularyWordsCompanion(
+              meaning: const Value(syncedMeaning),
+              normalizedMeaning: const Value(syncedMeaning),
+              cloudRevision: Value(original.localRevision),
+            ),
+          );
+          return (await words.getSingle(), original.localRevision, outbox);
+        },
+      );
+      expect(synced.localRevision, originalRevision);
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AddWordScreen && widget.word?.meaning == syncedMeaning,
+        ),
+      );
+      expect(
+        tester.widget<TextField>(meaningField).controller!.text,
+        draftMeaning,
+      );
+
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == staleWarning || widget.data == 'กลับชุดคำ'),
+        ),
+      );
+      final (saved, outbox) = await _withFrames(tester, () async {
+        final saved = await (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(synced.id))).getSingle();
+        return (saved, await database.select(database.outboxOperations).get());
+      });
+      expect(saved, synced);
+      expect(outbox, originalOutbox);
+      expect(find.text(staleWarning), findsOneWidget);
+      expect(meaningField, findsOneWidget);
+    } finally {
       await disposeLibrary(tester);
     }
   });

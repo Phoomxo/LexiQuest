@@ -414,12 +414,38 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   }
 
   @override
-  Future<VocabularyWord> updateWord(VocabularyWord word) async {
+  Future<VocabularyWord> updateWord(
+    VocabularyWord word, {
+    VocabularyWord? expectedWord,
+  }) async {
     _requireUtc(word.updatedAtUtc);
     return database.transaction(() async {
       final current = await _activeWord(word.ownerId, word.id);
       if (current == null) {
         throw const VocabularyNotFoundFailure();
+      }
+      if (expectedWord != null) {
+        final active = await (database.select(
+          database.localOwners,
+        )..where((row) => row.isActive.equals(true))).get();
+        if (active.length != 1 ||
+            active.single.id != word.ownerId ||
+            expectedWord.ownerId != word.ownerId ||
+            expectedWord.id != word.id ||
+            expectedWord.categoryId != current.categoryId ||
+            expectedWord.categoryId != word.categoryId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        // A sync conflict can replace the editable fields at the same revision.
+        if (expectedWord.localRevision != current.localRevision ||
+            expectedWord.spelling != current.spelling ||
+            expectedWord.meaning != current.meaning ||
+            expectedWord.partOfSpeech != current.partOfSpeech ||
+            expectedWord.cefrLevel != current.cefrLevel ||
+            expectedWord.source != current.source ||
+            expectedWord.isGlobal != current.isGlobal) {
+          throw const StaleVocabularyWordFailure();
+        }
       }
       if (await _activeCategory(word.ownerId, word.categoryId) == null) {
         throw const VocabularyNotFoundFailure();

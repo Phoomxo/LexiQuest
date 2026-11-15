@@ -233,9 +233,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
     setState(() => _saving = true);
     final draft = widget.initialDraft;
-    final word = widget.word;
+    final word = _writeWord;
     final expectedOwnerId = word?.ownerId ?? widget.expectedOwnerId;
-    final bound = draft != null || word != null || expectedOwnerId != null;
+    final bound =
+        _writeContextCaptured ||
+        draft != null ||
+        widget.word != null ||
+        expectedOwnerId != null;
     try {
       if (bound) await _requireWriteContext(useCases, expectedOwnerId);
       if (word != null) {
@@ -249,7 +253,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             cefrLevel: word.cefrLevel,
             source: word.source,
           ),
-          expectedOwnerId: expectedOwnerId,
+          expectedWord: word,
         );
         // The guarded detail route already observes the committed revision.
         if (mounted && ModalRoute.isCurrentOf(context) == true) {
@@ -288,6 +292,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
               _formError = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
         );
       }
+    } on StaleVocabularyWordFailure {
+      if (mounted) {
+        setState(
+          () => _formError = 'คำนี้ถูกแก้ไขแล้ว กรุณาเปิดรายละเอียดคำใหม่',
+        );
+      }
     } on InvalidVocabularyFailure catch (error) {
       if (mounted) _showInvalidField(error.field);
     } on DuplicateVocabularyFailure {
@@ -303,15 +313,21 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
   }
 
-  bool _matchesOriginalWord() {
+  void _requireOriginalWord() {
     final original = _writeWord;
     final current = widget.word;
-    if (original == null || current == null) return original == current;
-    return current.id == original.id &&
-        current.ownerId == original.ownerId &&
-        current.categoryId == original.categoryId &&
-        current.localRevision == original.localRevision &&
-        !current.isDeleted;
+    if (original == null && current == null) return;
+    if (original == null ||
+        current == null ||
+        current.id != original.id ||
+        current.ownerId != original.ownerId ||
+        current.categoryId != original.categoryId ||
+        current.isDeleted) {
+      throw const VocabularyNotFoundFailure();
+    }
+    if (current.localRevision != original.localRevision) {
+      throw const StaleVocabularyWordFailure();
+    }
   }
 
   Future<void> _requireWriteContext(
@@ -324,13 +340,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
         !identical(AppDependenciesScope.maybeOf(context), _writeDependencies) ||
         _writeOwnerId != expectedOwnerId ||
         !identical(widget.initialDraft, _writeDraft) ||
-        !_matchesOriginalWord() ||
         (widget.expectedOwnerId != null &&
             widget.expectedOwnerId != expectedOwnerId) ||
         widget.categoryId != _writeCategoryId ||
         (_writeDraft != null && _writeDraft!.categoryId != widget.categoryId)) {
       throw const VocabularyNotFoundFailure();
     }
+    _requireOriginalWord();
     final dependencies = _writeDependencies;
     final currentVocabulary = dependencies?.vocabulary;
     if (currentVocabulary != null && !identical(currentVocabulary, useCases)) {
@@ -342,12 +358,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
         owner.id != expectedOwnerId ||
         !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
         !identical(widget.initialDraft, _writeDraft) ||
-        !_matchesOriginalWord() ||
         widget.categoryId != _writeCategoryId ||
         (widget.expectedOwnerId != null &&
             widget.expectedOwnerId != expectedOwnerId)) {
       throw const VocabularyNotFoundFailure();
     }
+    _requireOriginalWord();
   }
 
   String? _requiredError(String value, String message) =>

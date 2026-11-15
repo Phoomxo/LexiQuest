@@ -367,6 +367,119 @@ void main() {
   );
 
   test(
+    'a pinned edit cannot overwrite a newer word or append another mutation',
+    () async {
+      await database.customStatement(
+        'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+        ['owner-2'],
+      );
+      await repository.createCategory(category());
+      final original = await repository.createWord(word(1));
+      final winner = await repository.updateWord(
+        original.copyWith(
+          meaning: 'New meaning',
+          normalizedMeaning: 'new meaning',
+          updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+        ),
+      );
+      final winningRow = await database
+          .select(database.vocabularyWords)
+          .getSingle();
+
+      await expectLater(
+        repository.updateWord(
+          original.copyWith(
+            meaning: 'Stale meaning',
+            normalizedMeaning: 'stale meaning',
+            updatedAtUtc: createdAt.add(const Duration(minutes: 2)),
+          ),
+          expectedWord: original,
+        ),
+        throwsA(isA<StaleVocabularyWordFailure>()),
+      );
+      expect(winner.localRevision, 2);
+      expect(winningRow.meaning, 'New meaning');
+      expect(
+        await database.select(database.vocabularyWords).getSingle(),
+        winningRow,
+      );
+      final wordWrites = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityId.equals(original.id))).get();
+      expect(
+        wordWrites.map((row) => row.operationId),
+        unorderedEquals(['word:word-1:1', 'word:word-1:2']),
+      );
+    },
+  );
+
+  test(
+    'a pinned edit cannot overwrite synced content at the same revision',
+    () async {
+      await database.customStatement(
+        'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+        ['owner-2'],
+      );
+      await repository.createCategory(category());
+      final original = await repository.createWord(word(1));
+      await database.customStatement(
+        'UPDATE vocabulary_words '
+        'SET meaning = ?, normalized_meaning = ?, cloud_revision = local_revision '
+        'WHERE id = ?',
+        ['Synced meaning', 'synced meaning', original.id],
+      );
+      final synced = await database
+          .select(database.vocabularyWords)
+          .getSingle();
+      expect(synced.localRevision, original.localRevision);
+      expect(synced.meaning, 'Synced meaning');
+      final outbox = await database.select(database.outboxOperations).get();
+
+      await expectLater(
+        repository.updateWord(
+          original.copyWith(
+            meaning: 'Stale meaning',
+            normalizedMeaning: 'stale meaning',
+            updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+          ),
+          expectedWord: original,
+        ),
+        throwsA(isA<StaleVocabularyWordFailure>()),
+      );
+      expect(
+        await database.select(database.vocabularyWords).getSingle(),
+        synced,
+      );
+      expect(await database.select(database.outboxOperations).get(), outbox);
+    },
+  );
+
+  test('a pinned edit cannot write after its owner goes inactive', () async {
+    await repository.createCategory(category());
+    final original = await repository.createWord(word(1));
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+      [original.ownerId],
+    );
+    final before = await database.select(database.vocabularyWords).getSingle();
+    final outbox = await database.select(database.outboxOperations).get();
+
+    await expectLater(
+      repository.updateWord(
+        original.copyWith(
+          meaning: 'Stale owner meaning',
+          normalizedMeaning: 'stale owner meaning',
+          updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+        ),
+        expectedWord: original,
+      ),
+      throwsA(isA<VocabularyFailure>()),
+    );
+    expect(await database.select(database.vocabularyWords).getSingle(), before);
+    expect(await database.select(database.outboxOperations).get(), outbox);
+  });
+
+  test(
     'every accepted mutation appends one deterministic outbox row',
     () async {
       await repository.createCategory(category());
