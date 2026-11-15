@@ -112,9 +112,18 @@ final class VocabularyUseCases {
     );
   }
 
-  Stream<List<VocabularyWord>> watchBookmarkedWords() => Stream.fromFuture(
-    owners.getOrCreateActiveOwner(),
-  ).asyncExpand((owner) => vocabulary.watchBookmarkedWords(owner.id));
+  /// Explicit owner reads are used inside an active-owner route fence.
+  Stream<List<VocabularyWord>> watchBookmarkedWords({String? expectedOwnerId}) {
+    if (expectedOwnerId != null) {
+      return vocabulary.watchBookmarkedWords(expectedOwnerId);
+    }
+    return Stream.fromFuture(
+      owners.getOrCreateActiveOwner(),
+    ).asyncExpand((owner) => vocabulary.watchBookmarkedWords(owner.id));
+  }
+
+  Stream<List<VocabularyCategory>> watchPinnedCategories(String ownerId) =>
+      vocabulary.watchCategories(ownerId);
 
   Future<void> setBookmarked({
     required String expectedOwnerId,

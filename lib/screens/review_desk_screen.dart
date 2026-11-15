@@ -11,6 +11,8 @@ import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import '../widgets/local_content_report_queue.dart';
+import 'bookmarked_vocabulary_screen.dart';
 import 'srs_flashcards_screen.dart';
 import 'weakness_clinic_screen.dart';
 
@@ -34,9 +36,10 @@ class ReviewDeskScreen extends StatefulWidget {
 
   static bool available(AppDependencies? scope) =>
       scope != null &&
-      scope.learning?.supportsReviewLadder == true &&
-      _visible(scope, Feature.vocabulary, FieldFeature.vocabulary) &&
-      _visible(scope, Feature.srs, FieldFeature.srs);
+      scope.database != null &&
+      scope.learning != null &&
+      scope.vocabulary != null &&
+      _visible(scope, Feature.vocabulary, FieldFeature.vocabulary);
 
   static bool _visible(
     AppDependencies scope,
@@ -67,10 +70,18 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
 
   bool get _current => mounted && !_invalidated;
   bool get _ready => _current && !_busy && _pending == null;
+  bool get _srsAvailable {
+    final scope = _dependencies;
+    return scope != null &&
+        ReviewDeskScreen._visible(scope, Feature.srs, FieldFeature.srs);
+  }
+
   bool get _canPractice {
     final scope = _dependencies;
     return scope != null &&
         ReviewDeskScreen.available(scope) &&
+        widget.learning.supportsReviewLadder &&
+        _srsAvailable &&
         ReviewDeskScreen._visible(scope, Feature.quiz, FieldFeature.quiz);
   }
 
@@ -78,7 +89,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final scope = AppDependenciesScope.maybeOf(context);
-    if (_desk != null) {
+    if (_dependencies != null) {
       if (!identical(scope, _dependencies)) _invalidated = true;
       return;
     }
@@ -122,6 +133,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
   }
 
   void _loadDesk() {
+    if (!_srsAvailable || !widget.learning.supportsReviewLadder) return;
     final load = widget.learning.loadReviewDesk(
       expectedOwnerId: widget.expectedOwnerId,
     );
@@ -179,10 +191,13 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
         ),
       );
       if (_current) _loadDesk();
-    });
+    }, errorMessage: 'เปิดรายการทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง');
   }
 
-  Future<void> _run(Future<void> Function() operation) async {
+  Future<void> _run(
+    Future<void> Function() operation, {
+    String errorMessage = 'บันทึกรอบทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง',
+  }) async {
     setState(() {
       _busy = true;
       _error = null;
@@ -190,7 +205,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
     try {
       await operation();
     } on Object {
-      if (_current) _error = 'บันทึกรอบทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง';
+      if (_current) _error = errorMessage;
     } finally {
       if (_current) setState(() => _busy = false);
     }
@@ -294,30 +309,17 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
                 : _phaseTitle(round),
           ),
         ),
-        bottomNavigationBar:
-            !_invalidated &&
-                round?.phase == ReviewLadderPhase.result &&
-                _finished
-            ? SafeArea(
-                top: false,
-                child: Center(
-                  heightFactor: 1,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: AdaptiveContentPane.formMaxWidth,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: _button(
-                          'กลับไปเลือกสิ่งที่จะทบทวน',
-                          _ready ? _returnToDesk : null,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+        bottomNavigationBar: _invalidated
+            ? null
+            : round == null
+            ? _returnBar(
+                'กลับคลังคำ',
+                _ready ? () => Navigator.maybePop(context) : null,
+              )
+            : round.phase == ReviewLadderPhase.result && _finished
+            ? _returnBar(
+                'กลับไปเลือกสิ่งที่จะทบทวน',
+                _ready ? _returnToDesk : null,
               )
             : null,
         body: AdaptiveContentPane(
@@ -326,23 +328,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
             child: _invalidated
                 ? _contextChangedMessage
                 : round == null
-                ? FutureBuilder<ReviewDeskData>(
-                    future: _desk,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return _list([
-                          const Text('เปิดศูนย์ทบทวนไม่สำเร็จ'),
-                          TextButton(
-                            onPressed: () => setState(_loadDesk),
-                            child: const Text('ลองอีกครั้ง'),
-                          ),
-                        ]);
-                      }
-                      return snapshot.hasData
-                          ? _deskContent(snapshot.requireData)
-                          : const Center(child: CircularProgressIndicator());
-                    },
-                  )
+                ? _deskContent()
                 : _roundContent(round),
           ),
         ),
@@ -350,10 +336,10 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
     );
   }
 
-  Widget _deskContent(ReviewDeskData data) {
+  Widget _deskContent() {
     final scope = _dependencies!;
     return _list([
-      if (ReviewDeskScreen.available(scope))
+      if (_srsAvailable)
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.style_outlined),
@@ -382,18 +368,115 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
                 )
               : null,
         ),
-      if (_canPractice)
-        if (data.pair case final pair?)
-          _button('ฝึกให้จำได้ด้วยตัวเอง', _ready ? () => _open(pair) : null)
-        else
-          const Text('ทบทวนคำด้วยบัตรคำก่อนเพื่อเริ่มฝึกให้นึกคำได้เอง'),
-      if (data.latest case final round?)
-        OutlinedButton(
-          onPressed: _ready ? () => _openHistory(round) : null,
-          child: const Text('ดูผลรอบล่าสุด'),
+      if (scope.vocabulary != null)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.bookmark_outline),
+          title: const Text('เก็บไว้อ่านอีกครั้ง'),
+          onTap: _ready
+              ? () => _openActivity(
+                  'learning/review-bookmarks',
+                  BookmarkedVocabularyScreen(
+                    scope: scope,
+                    expectedOwnerId: widget.expectedOwnerId,
+                  ),
+                )
+              : null,
+        ),
+      if (scope.localContentReports case final reports?)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.inbox_outlined),
+          title: const Text('รายงานที่รอส่ง'),
+          onTap: !_ready
+              ? null
+              : () {
+                  final rows = reports.watchReports(widget.expectedOwnerId);
+                  _openActivity(
+                    'learning/review-reports',
+                    Builder(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(
+                          toolbarHeight: M3Theme.appBarToolbarHeight(context),
+                          title: M3Theme.appBarTitle(context, 'รายงานที่รอส่ง'),
+                        ),
+                        body: AdaptiveContentPane(
+                          maxWidth: AdaptiveContentPane.formMaxWidth,
+                          child: LocalContentReportQueue(reports: rows),
+                        ),
+                        bottomNavigationBar: _returnBar(
+                          'กลับศูนย์ทบทวน',
+                          () => Navigator.maybePop(context),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+        ),
+      if (_desk != null)
+        FutureBuilder<ReviewDeskData>(
+          future: _desk,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Column(
+                children: [
+                  const Text('อ่านผลฝึกให้นึกคำไม่สำเร็จ'),
+                  TextButton(
+                    onPressed: () => setState(_loadDesk),
+                    child: const Text('ลองอีกครั้ง'),
+                  ),
+                ],
+              );
+            }
+            if (!snapshot.hasData) {
+              return const LinearProgressIndicator(
+                semanticsLabel: 'กำลังอ่านประวัติทบทวน',
+              );
+            }
+            final data = snapshot.requireData;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_canPractice)
+                  if (data.pair case final pair?)
+                    _button(
+                      'ฝึกให้จำได้ด้วยตัวเอง',
+                      _ready ? () => _open(pair) : null,
+                    )
+                  else
+                    const Text(
+                      'ทบทวนคำด้วยบัตรคำก่อนเพื่อเริ่มฝึกให้นึกคำได้เอง',
+                    ),
+                if (data.latest case final round?)
+                  OutlinedButton(
+                    onPressed: _ready ? () => _openHistory(round) : null,
+                    child: const Text('ดูผลรอบล่าสุด'),
+                  ),
+              ],
+            );
+          },
         ),
     ]);
   }
+
+  Widget _returnBar(String label, VoidCallback? onPressed) => SafeArea(
+    top: false,
+    child: Center(
+      heightFactor: 1,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AdaptiveContentPane.formMaxWidth,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: _button(label, onPressed),
+          ),
+        ),
+      ),
+    ),
+  );
 
   String _phaseTitle(ReviewLadderRound round) => switch (round.phase) {
     ReviewLadderPhase.intro => 'ฝึกให้นึกคำได้เอง',

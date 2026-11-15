@@ -21,12 +21,16 @@ class VocabularyWordDetailScreen extends StatelessWidget {
     required this.categoryName,
     required this.vocabulary,
     required this.scope,
+    this.bookmarkedOnly = false,
+    this.returnLabel = 'กลับชุดคำ',
   });
 
   final VocabularyWord word;
   final String categoryName;
   final VocabularyUseCases vocabulary;
   final AppDependencies? scope;
+  final bool bookmarkedOnly;
+  final String returnLabel;
 
   bool get _speechVisible =>
       (scope?.fieldFeatures.isVisible(FieldFeature.speechPractice) ?? true) &&
@@ -47,6 +51,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
           word: word,
           vocabulary: vocabulary,
           scope: scope,
+          bookmarkedOnly: bookmarkedOnly,
           builder: (_, current) => !speech || _speechVisible
               ? KeyedSubtree(
                   key: ValueKey(speech ? current.localRevision : current.id),
@@ -63,6 +68,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
     word: word,
     vocabulary: vocabulary,
     scope: scope,
+    bookmarkedOnly: bookmarkedOnly,
     builder: (context, current) {
       final theme = Theme.of(context);
       final station =
@@ -139,7 +145,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () => Navigator.maybePop(context),
-                  child: const Text('กลับชุดคำ'),
+                  child: Text(returnLabel),
                 ),
               ],
             ),
@@ -157,12 +163,14 @@ class OwnedVocabularyWordRoute extends StatefulWidget {
     required this.vocabulary,
     required this.scope,
     required this.builder,
+    this.bookmarkedOnly = false,
   });
 
   final VocabularyWord word;
   final VocabularyUseCases vocabulary;
   final AppDependencies? scope;
   final Widget Function(BuildContext, VocabularyWord) builder;
+  final bool bookmarkedOnly;
 
   @override
   State<OwnedVocabularyWordRoute> createState() => _OwnedWordRouteState();
@@ -196,24 +204,34 @@ class _OwnedWordRouteState extends State<OwnedVocabularyWordRoute> {
     final word = widget.word;
     final scope = widget.scope;
     try {
-      if (_owners != null && await scope?.readActiveOwnerId() != word.ownerId) {
+      if ((widget.bookmarkedOnly || _owners != null) &&
+          await scope?.readActiveOwnerId() != word.ownerId) {
         _invalidate();
         return;
       }
       if (!mounted || _unavailable) return;
-      _words = widget.vocabulary
-          .watchWords(word.categoryId, expectedOwnerId: word.ownerId)
-          .listen((words) {
-            if (!mounted || _unavailable) return;
-            final current = words
-                .where((item) => item.id == word.id)
-                .firstOrNull;
-            if (current == null) {
-              _invalidate();
-              return;
-            }
-            setState(() => _current = current);
-          }, onError: (Object _) => _invalidate());
+      final words = widget.bookmarkedOnly
+          ? widget.vocabulary.watchBookmarkedWords(
+              expectedOwnerId: word.ownerId,
+            )
+          : widget.vocabulary.watchWords(
+              word.categoryId,
+              expectedOwnerId: word.ownerId,
+            );
+      _words = words.listen((words) {
+        if (!mounted || _unavailable) return;
+        final current = words
+            .where(
+              (item) =>
+                  item.id == word.id && item.categoryId == word.categoryId,
+            )
+            .firstOrNull;
+        if (current == null) {
+          _invalidate();
+          return;
+        }
+        setState(() => _current = current);
+      }, onError: (Object _) => _invalidate());
     } catch (_) {
       _invalidate();
     }

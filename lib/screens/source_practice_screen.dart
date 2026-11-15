@@ -13,6 +13,7 @@ import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/local_content_report_queue.dart';
 import 'ai_tutor_screen.dart';
 import 'associative_reading_session_screen.dart';
 import 'quiz_screen.dart';
@@ -405,7 +406,8 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
     try {
       final owners = vocabulary.owners;
       final owner = await owners.getOrCreateActiveOwner();
-      final rows = await reports.watchReports(owner.id).first;
+      final rows = reports.watchReports(owner.id);
+      final activeOwner = reports.watchOwnerActive(owner.id);
       if ((await owners.getOrCreateActiveOwner()).id != owner.id ||
           !mounted ||
           !current()) {
@@ -418,32 +420,31 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         builder: (sheetContext) {
           AppDependenciesScope.maybeOf(sheetContext);
           return StreamBuilder<bool>(
-            stream: reports.watchOwnerActive(owner.id),
+            stream: activeOwner,
             builder: (sheetContext, active) => SafeArea(
               child: FractionallySizedBox(
                 heightFactor: 0.7,
-                child: ListView(
-                  padding: const EdgeInsets.all(24),
+                child: Column(
                   children: [
-                    Text(
-                      'รายงานที่รอส่ง',
-                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Text(
+                        'รายงานที่รอส่ง',
+                        style: Theme.of(sheetContext).textTheme.titleLarge,
+                      ),
                     ),
-                    if (!current() || active.data != true)
-                      Text(
-                        active.connectionState == ConnectionState.waiting
-                            ? 'กำลังตรวจบัญชี'
-                            : 'บัญชีผู้เรียนเปลี่ยนแล้ว',
-                      )
-                    else ...[
-                      const Text('บันทึกในเครื่อง · ยังไม่ส่ง'),
-                      if (rows.isEmpty) const Text('ยังไม่มีรายงาน'),
-                      for (final row in rows)
-                        ListTile(
-                          title: Text('${row.spelling} · ${row.meaning}'),
-                          subtitle: Text(_reportReason(row.reason)),
-                        ),
-                    ],
+                    Expanded(
+                      child: current() && active.data == true
+                          ? LocalContentReportQueue(reports: rows)
+                          : Center(
+                              child: Text(
+                                active.connectionState ==
+                                        ConnectionState.waiting
+                                    ? 'กำลังตรวจบัญชี'
+                                    : 'บัญชีผู้เรียนเปลี่ยนแล้ว',
+                              ),
+                            ),
+                    ),
                   ],
                 ),
               ),
@@ -1364,7 +1365,7 @@ class _ReportReviewState extends State<_ReportReview> {
                           reason ==
                               LocalContentReportReason.translationMismatch)
                         ChoiceChip(
-                          label: Text(_reportReason(reason)),
+                          label: Text(localContentReportReasonLabel(reason)),
                           selected: reason == _reason,
                           onSelected: (_) => setState(() => _reason = reason),
                         ),
@@ -1405,11 +1406,6 @@ String? _reportSentence(String passage, String spelling) {
   }
   return null;
 }
-
-String _reportReason(LocalContentReportReason reason) => switch (reason) {
-  LocalContentReportReason.translationMismatch => 'คำแปลไม่ตรง',
-  LocalContentReportReason.exampleSpellingError => 'ประโยคตัวอย่างสะกดผิด',
-};
 
 final class _SourceResultContext {
   _SourceResultContext({
