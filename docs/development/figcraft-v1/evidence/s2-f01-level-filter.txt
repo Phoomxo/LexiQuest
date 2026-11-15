@@ -42,3 +42,33 @@ build/s2-f01-analyze.txt SHA-256:
 8ed2b2c9678c372ef30fd170f13c837adfe24d937d16d205e3d3a4bd4ba41f68
 
 Delivery APK and spoken TalkBack for this change remain unverified.
+
+Android API 35 offline verification on 283f8f6685c3c5b6a425ed01edc1f462fe2e6f08
+
+The installed x64 debug APK matches the local SHA-256
+0c628ee39627b0a4e9e8903d55b2b5b0363d1154e26b61e15e63234e7df0afd7.
+The isolated emulator kept font scale 2.0 and the guest declined research.
+The native database initially held no assigned CEFR levels. With the
+app stopped, a transaction checked the sole active local guest and
+inserted two isolated fixtures. F01-Travel-A2 holds station at A2 and
+F01-Food-A1 holds apple at A1. The original A and B remained separate.
+
+Library > เลือกระดับภาษา > A2 shows ระดับภาษา · A2 · พบ 1 ชุด and
+only F01-Travel-A2. Opening the result shows station and its meaning.
+Android Back returns to the same A2 filter and one-set result. Select C2
+to see zero sets and the explicit empty state. Clearing the filter
+restores both staged sets. The SQLite snapshots before browsing and
+after clearing match byte-for-byte, including sessions, answer attempts,
+outbox counts, the original A/B contents and zero research rows.
+
+Native records under build/boss-android-evidence, SHA-256
+f01-level-fixture.sql d0f8f04c802e5528a3bc5c88a2f514b49cc7775063da3b9cb5913873053b8d3b
+f01-native-a2-count.txt and f01-native-a2-restored.txt
+9368b25274197853ac77a04474d837fc19a4553dfc7c83594b177bf4fdedee8d
+f01-native-a2-set.txt 2fb87b6ece233341e33c07a6030904574b87d8f16530dadec3d3c7097c466589
+f01-native-c2-empty.txt da205a46d73da2a64a87bf57f0d9f32169e9f6b54d994d20487ce44beefcb5e4
+f01-native-reset.txt f78c1feea6a591f37d00c68006318d04bb39c7a8992fb15eb7e841895b7fcf01
+f01-native-reset-food.txt and f01-native-reset-travel.txt
+04c48a9d638fa74ddd548eaebd687ac81a3745744d7fe0c26959cd2fee469073
+f01-native-db-seed.json and f01-native-db-after.json
+4a6986119230337ae1f6213661e6b656eee87e8f12d6bbdf0ff1585c58a059ba

@@ -1,5 +1,37 @@
 # Continuous execution checkpoint
 
+## S3 Source recall, guided correction and cold resume
+
+- Worktree `figcraft-flutter-v1/LexiQuest`, branch
+  `codex/figcraft-flutter-prototype`, application `283f8f66`.
+  Windows Flutter 250 and analysis of the 19 changed Dart files passed.
+  Review exercised retry, Back, same-revision word edits, owner
+  changes, guest cue merge, and exact answer replay through Sync.
+- Android x64 debug APK `0c628ee3` installed with a matching hash.
+  The isolated API 35 emulator at font 2.0 reopened after process
+  restart. Selecting the same local file restored stat and the
+  independent ctation. Native English and Thai entry worked. The
+  original session finished at 0/1 with one canonical attempt,
+  removed its draft, and returned to the same Source. f11 passes
+  this prototype scope. Signed keyboard and spoken focus remain
+  unverified. [Evidence](evidence/s3-f11-source-recall.txt).
+- [CI for 283f8f66](https://github.com/Phoomxo/LexiQuest/actions/runs/43661494356)
+  passed Flutter 2,410, backend CPU 267, Firestore, Supabase, analysis
+  and Android debug build. [CI for 35649233](https://github.com/Phoomxo/LexiQuest/actions/runs/43659021365)
+  completed successfully as well.
+
+## S2 Library level filtering
+
+- The same offline API 35 APK at font 2.0 selected A2 and opened the
+  only matching set. Back retained A2. C2 showed zero sets and the
+  empty message. Clear restored both synthetic sets. SQLite browsing
+  snapshots matched after inserting two isolated level fixtures.
+  f01 passes the prototype scope. [Evidence](evidence/s2-f01-level-filter.txt).
+- The isolated emulator `emulator-5592` remains in the unfiltered
+  Library on application `283f8f66`. Next ground f15 from the Review
+  Desk and actual practice history. The ladder must preserve the
+  meaning-choice attempts separately from the later unaided recall.
+
 ## S2 Atomic vocabulary edit and return
 
 - Worktree `figcraft-flutter-v1/LexiQuest`, branch
@@ -29,15 +61,6 @@
   category chooser. f16 passes this prototype scope. Signed system
   audio and TalkBack still need verification.
   [Evidence](evidence/s3-f16-round-setup.txt).
-- The isolated emulator `emulator-5592` remains at the category chooser
-  on application `d5df2850`. The delivery device is outside this run.
-  Next card f11 uses the Source associative-reading path. An uncommitted
-  widget regression in `test/screens/associative_reading_session_screen_test.dart`
-  reaches the recall field and fails at the missing explicit check.
-  `build/s3-f11-source-guided-recall-red.txt` SHA-256
-  `474627b6440fc622d8e39002763dfb3bae83dfbaf6e3d09584fe2560183c7672`.
-  Implement the check and guided correction while preserving the
-  original attempt and score when the guided answer is correct.
 
 ## S3 Original flashcard result and linked repair
 
