@@ -1,5 +1,24 @@
 # Continuous execution checkpoint
 
+## S3 Review from a completed flashcard answer
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `9120384f` passed 307
+  Windows Flutter tests and analysis of all 15 changed Dart files.
+  Review resolved account scope on child routes and Quiz visibility.
+- The x64 debug APK SHA-256 starts with `6a2dee19` and matches the
+  installed package. On the isolated API 35 emulator at font 2.0, the
+  learner chose the wrong meaning, retried after the comparison, and
+  typed station. The round returned to the same Review Desk. After a
+  cold restart, the desk reopened the original 0/1 with both later
+  checks. SQLite confirmed one newly scored attempt and an unchanged
+  completed-round snapshot. [Evidence](evidence/s3-f15-review-ladder.txt).
+- The feature ledger records 12 of 44 passing in the prototype. The
+  work-package ledger remains 11 of 64. Signed delivery checks remain
+  open for all 48 screens. [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43665367048).
+- Next ground f22 at the existing Review Desk. Reuse the local report
+  queue with the captured owner and verify the return to the same Library.
+
 ## S3 Source recall, guided correction and cold resume
 
 - Worktree `figcraft-flutter-v1/LexiQuest`, branch
