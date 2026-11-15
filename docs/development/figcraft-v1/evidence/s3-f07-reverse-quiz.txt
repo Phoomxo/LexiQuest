@@ -1,0 +1,68 @@
+f07 Thai-to-English choice and the saved retry
+
+Application a6f871363bab06c17ab873b8e650cf39d0436193 on the FigCraft prototype branch.
+The pinned 21b34eaa design defines the reverse-choice journey in
+feature_tasks_a.py task 7.
+
+The previous Android APK opened the one-word fallback and left an
+active quiz with zero answers after Back. The row was created inside
+LearningUseCases before QuizScreen tested whether a choice contrast
+existed. The current application returns the candidate for the
+fallback before a durable quiz plan or session row is created.
+Originless callers continue to use the existing learning API.
+
+The missing-contrast regression first failed because SQLite contained
+an active session for a single meaning, duplicate meanings in the
+usual direction, and a single reverse-choice word. Reverse choice
+already excluded a pair with the same Thai meaning.
+All four checks then passed. Windows passed 120 scoped Flutter cases
+including learning, durable quiz, Quiz, owner switch and the history
+journey. Analysis passed for the three changed Dart files.
+
+Linux CI 43680369979 on application a6f87136 passed 2,450 Flutter
+tests, 267 backend CPU tests, Firestore and Supabase policy checks,
+static analysis, and the Android debug build.
+The raw log build/s3-f07-source-ci-43680369979.txt has SHA-256
+a0e0f1c3945d7c1c934485def4f43efb2e1de693bc415a8f56fbb39822e81093.
+
+The installed and host Android API 35 x64 debug APK SHA-256 is
+28d7298f7e5b2ef776c06cdade00ea6ceee2203355e5649866ff5740b18dabe0.
+The isolated emulator used font scale 2.0, airplane mode, Wi-Fi off
+and an unbound local guest.
+
+From ดูแบบฝึกทั้งหมด, open เลือกคำอังกฤษจากความหมายไทย and
+select the empty, single-word and ambiguous-meaning sets. The
+empty and ambiguous sets show no clear choice. The single-word
+set offers to add a different meaning. Back returns to the activity
+list in each case. The before and after SQLite snapshots match across
+all three at SHA-256
+93d33011d7554ff087896a0fb8c07eb60df5a8232e02b9dd6f1305eb846d1101.
+They include vocabulary, sessions, attempts, points, rewards and the
+outbox. The earlier synthetic baseline row is included in the digest.
+
+The contrast set displayed ชานชาลา with platform and station as
+choices. Its ticket and pass share one Thai meaning and were excluded.
+Selecting station displayed the real pairs platform — ชานชาลา and
+station — สถานี. ลองข้อเดิม returned to question 1 of 2. Selecting
+platform and answering station for question 2 led to 67%. Back to
+activities opened the activity list with the reverse-choice mode.
+
+SQLite had one completed spellingChoice round for this set, app build
+and owner. There were three distinct attempt IDs at slots 0, 0 and 1
+with choices station, platform and station. Two were correct and one
+was wrong. Research events, consents and outbox operations all held
+at zero.
+
+Android reported a cold launch and the app PID changed from 29772 to
+31206. The Progress history showed the same set with 2 of 3 correct
+and 67%. Reopening Score showed the earlier station and platform
+choices under คำตอบจากรอบเดิม. The completed and reopened SQLite
+snapshots matched at SHA-256
+a38ca8f0cab4dfc81f08ff66acd7ca890b3bb9bdfd72d393c49bd38a919bf2cc.
+
+The local traces are in build/boss-android-evidence/f07-native-*.txt
+and f07-native-db-*.json. The result and reopened result images have
+SHA-256 3bee0e5ae067e9b4ba24d8bcdc08cf71461e15dbfeae7dbeb011e8ebae317fd8
+and 1e88563fdb50e055232dde297636480f01239f2328f58d7b0168e8822e01fa41.
+
+Delivery APK and spoken TalkBack checks are pending.

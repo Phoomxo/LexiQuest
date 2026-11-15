@@ -1,173 +1,170 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:vocab_learning_app/data/local/app_database.dart' as db;
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
-import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
 
-// ── Fake owner ────────────────────────────────────────────────────────────────
+final _time = DateTime.utc(2026, 8, 4, 10);
 
-class _FakeOwners implements LocalOwnerRepository {
-  final LocalOwner _owner;
-  _FakeOwners(this._owner);
+class _Owners implements LocalOwnerRepository {
+  _Owners(this.owner);
+  LocalOwner owner;
+  LocalOwner? switchAfterFirst;
+  int reads = 0;
   @override
-  Future<LocalOwner> getOrCreateActiveOwner() async => _owner;
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    reads++;
+    final result = owner;
+    if (reads == 1 && switchAfterFirst != null) owner = switchAfterFirst!;
+    return result;
+  }
+
   @override
-  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async =>
-      _owner;
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async => owner;
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
   setUpAll(tz.initializeTimeZones);
-
-  late db.AppDatabase database;
-  late StreakUseCases useCases;
-  late LocalOwner owner;
+  late AppDatabase db;
+  late _Owners owners;
   late DateTime clock;
-
-  const timezoneId = 'Asia/Bangkok';
+  late StreakUseCases useCases;
 
   setUp(() async {
-    clock = DateTime.utc(
-      2026,
-      8,
-      4,
-      10,
-      0,
-    ); // Mon 04 Aug 2026 10:00 UTC = 17:00 BKK
-    database = db.AppDatabase(NativeDatabase.memory());
-    owner = LocalOwner(
-      id: 'owner-streak',
-      createdAtUtc: DateTime.utc(2026, 8, 4),
+    db = AppDatabase(NativeDatabase.memory());
+    await db.customStatement(
+      "INSERT INTO local_owners(id,created_at_utc_ms,is_active) VALUES ('a',1,1),('b',1,0)",
     );
-
-    await database.customInsert(
-      "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
-      "VALUES ('owner-streak', 'localGuest', 1722758400000)",
+    owners = _Owners(
+      LocalOwner(
+        id: 'a',
+        createdAtUtc: DateTime.fromMillisecondsSinceEpoch(1, isUtc: true),
+      ),
     );
-
+    clock = _time;
     useCases = StreakUseCases(
-      repository: DriftStreakRepository(database),
-      owners: _FakeOwners(owner),
+      repository: DriftStreakRepository(db, calendarVisible: () => true),
+      owners: owners,
       nowUtc: () => clock,
-      timezoneId: timezoneId,
     );
   });
+  tearDown(() => db.close());
 
-  tearDown(() async => database.close());
-
-  group('StreakUseCases — D7.2', () {
-    // ── First session ────────────────────────────────────────────────────────
-
-    test('first session starts streak at 1', () async {
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.started);
-      expect(update.after.currentStreakDays, 1);
-    });
-
-    test('getCurrentStreak before any session returns 0', () async {
-      final state = await useCases.getCurrentStreak();
-      expect(state.currentStreakDays, 0);
-    });
-
-    // ── Consecutive days ─────────────────────────────────────────────────────
-
-    test('consecutive day extends streak', () async {
-      await useCases.recordLearningDay(); // Day 1
-      clock = DateTime.utc(2026, 8, 5, 10, 0); // Day 2
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.extended);
-      expect(update.after.currentStreakDays, 2);
-    });
-
-    test('three consecutive days reaches streak of 3', () async {
-      await useCases.recordLearningDay(); // Day 1
-      clock = DateTime.utc(2026, 8, 5, 10, 0);
-      await useCases.recordLearningDay(); // Day 2
-      clock = DateTime.utc(2026, 8, 6, 10, 0);
-      final update = await useCases.recordLearningDay(); // Day 3
-      expect(update.after.currentStreakDays, 3);
-      expect(update.after.longestStreakDays, 3);
-    });
-
-    // ── Same day idempotency ──────────────────────────────────────────────────
-
-    test('calling twice on the same day is a no-op', () async {
-      await useCases.recordLearningDay();
-      clock = DateTime.utc(2026, 8, 4, 14, 0); // same day, later
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.sameDay);
-      expect(update.after.currentStreakDays, 1);
-
-      // LearningDayLog should have exactly one entry.
-      final days = await DriftStreakRepository(
-        database,
-      ).getLearningDays('owner-streak');
-      expect(days, hasLength(1));
-    });
-
-    // ── Streak reset ─────────────────────────────────────────────────────────
-
-    test('missing two days resets streak', () async {
-      await useCases.recordLearningDay(); // Day 1
-      clock = DateTime.utc(2026, 8, 7, 10, 0); // Day 4 — missed 2+3
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.reset);
-      expect(update.after.currentStreakDays, 1);
-    });
-
-    // ── Freeze tokens ─────────────────────────────────────────────────────────
-
-    test('freeze token protects streak on one missed day', () async {
-      await useCases.recordLearningDay(); // Day 1
-      await useCases.grantFreezeTokens(1);
-
-      clock = DateTime.utc(2026, 8, 6, 10, 0); // Day 3 — skipped day 2
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.froze);
-      expect(update.after.currentStreakDays, 1); // streak preserved
-      expect(update.after.freezeCount, 0); // token consumed
-    });
-
-    test('useFreezeToken returns false when no tokens', () async {
-      final used = await useCases.useFreezeToken();
-      expect(used, isFalse);
-    });
-
-    test('useFreezeToken returns true and decrements count', () async {
-      await useCases.grantFreezeTokens(2);
-      final used = await useCases.useFreezeToken();
-      expect(used, isTrue);
-      final state = await useCases.getCurrentStreak();
-      expect(state.freezeCount, 1);
-    });
-
-    // ── Longest streak ────────────────────────────────────────────────────────
-
-    test('longestStreakDays tracks all-time high', () async {
-      // Build streak of 3.
-      await useCases.recordLearningDay();
-      clock = DateTime.utc(2026, 8, 5, 10, 0);
-      await useCases.recordLearningDay();
-      clock = DateTime.utc(2026, 8, 6, 10, 0);
-      await useCases.recordLearningDay();
-
-      // Break streak.
-      clock = DateTime.utc(2026, 8, 9, 10, 0);
-      await useCases.recordLearningDay();
-
-      final state = await useCases.getCurrentStreak();
-      expect(state.currentStreakDays, 1);
-      expect(
-        state.longestStreakDays,
-        3,
-        reason: 'all-time best never decreases',
-      );
-    });
+  test('calendar load is owner bound, UTC by default, and read-only', () async {
+    final view = await useCases.loadCalendar();
+    expect(view.ownerId, 'a');
+    expect(view.current.ianaId, 'UTC');
+    expect(view.pending, isNull);
+    expect(await db.select(db.ownerCalendarEpochs).get(), isEmpty);
   });
+
+  test(
+    'calendar selection retains current rule and shows pending region',
+    () async {
+      final selected = await useCases.selectHomeTimezone(
+        expectedOwnerId: 'a',
+        ianaId: 'Asia/Bangkok',
+      );
+      final view = await useCases.loadCalendar();
+      expect(view.current.ianaId, 'UTC');
+      expect(view.pending?.ianaId, 'Asia/Bangkok');
+      expect(view.pending?.ruleId, selected.ruleId);
+      expect(
+        view.pending!.effectiveUtcUs,
+        greaterThan(clock.microsecondsSinceEpoch),
+      );
+    },
+  );
+
+  test(
+    'wrong owner and invalid local clock fail before calendar writes',
+    () async {
+      await expectLater(
+        useCases.selectHomeTimezone(
+          expectedOwnerId: 'b',
+          ianaId: 'Asia/Bangkok',
+        ),
+        throwsStateError,
+      );
+      expect(await db.select(db.ownerCalendarEpochs).get(), isEmpty);
+      clock = DateTime(2026, 8, 4);
+      await expectLater(
+        useCases.selectHomeTimezone(
+          expectedOwnerId: 'a',
+          ianaId: 'Asia/Bangkok',
+        ),
+        throwsArgumentError,
+      );
+      expect(await db.select(db.ownerCalendarEpochs).get(), isEmpty);
+    },
+  );
+
+  test('owner change while loading calendar suppresses stale result', () async {
+    owners.switchAfterFirst = LocalOwner(
+      id: 'b',
+      createdAtUtc: DateTime.fromMillisecondsSinceEpoch(1, isUtc: true),
+    );
+    await expectLater(useCases.loadCalendar(), throwsStateError);
+    expect(await db.select(db.ownerCalendarEpochs).get(), isEmpty);
+  });
+
+  test(
+    'manual debit checks owner, replays after clock changes and cannot underflow',
+    () async {
+      await db.customStatement(
+        'INSERT INTO streak_baselines(origin_owner_id,owner_id,cutoff_utc_ms,current_streak_days,longest_streak_days,freeze_count,last_learned_at_utc_ms,updated_at_utc_ms,controls_continuity) VALUES (?,?,?,?,?,?,?,?,?)',
+        ['a', 'a', 1, 0, 0, 1, null, 1, 1],
+      );
+      expect(
+        await useCases.useFreezeToken(
+          expectedOwnerId: 'a',
+          commandId: 'synthetic-debit',
+        ),
+        isTrue,
+      );
+      clock = clock.add(const Duration(days: 1));
+      expect(
+        await useCases.useFreezeToken(
+          expectedOwnerId: 'a',
+          commandId: 'synthetic-debit',
+        ),
+        isTrue,
+      );
+      expect(
+        await useCases.useFreezeToken(
+          expectedOwnerId: 'a',
+          commandId: 'synthetic-debit-2',
+        ),
+        isFalse,
+      );
+      final rows = await db.select(db.streakTokenAdjustments).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.kind, 'manualDebit');
+      expect(rows.single.occurredAtUtcMs, _time.millisecondsSinceEpoch);
+    },
+  );
+
+  test(
+    'settlement and answer notification reject stale owner before writes',
+    () async {
+      await expectLater(
+        useCases.settle(expectedOwnerId: 'b'),
+        throwsStateError,
+      );
+      await expectLater(
+        useCases.afterAnswerCommitted(
+          ownerId: 'b',
+          attemptId: 'fake',
+          occurredAtUtcMs: _time.millisecondsSinceEpoch,
+        ),
+        throwsStateError,
+      );
+      expect(await db.select(db.learningDayLog).get(), isEmpty);
+      expect(await db.select(db.streakTokenAdjustments).get(), isEmpty);
+    },
+  );
 }

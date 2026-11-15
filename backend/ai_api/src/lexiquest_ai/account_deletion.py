@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from lexiquest_ai.auth import AuthenticatedUser
 
-ACCOUNT_DELETION_SCOPES = frozenset(
+CLOUD_DELETION_SCOPES = frozenset(
     {
         "research_consents",
         "vocabulary_categories",
@@ -48,6 +48,23 @@ ACCOUNT_DELETION_SCOPES = frozenset(
     }
 )
 
+EXPORT_V11_SCOPES = CLOUD_DELETION_SCOPES | frozenset(
+    {
+        "owner_calendar_epochs",
+        "quest_claim_receipts",
+        "streak_baselines",
+        "streak_token_adjustments",
+        "quest_definitions",
+        "quest_definition_revisions",
+    }
+)
+
+EXPORT_V12_SCOPES = EXPORT_V11_SCOPES | frozenset(
+    {"local_content_reports", "focus_sessions", "learning_preferences"}
+)
+
+EXPORT_V26_SCOPES = EXPORT_V12_SCOPES | frozenset({"archived_v25_records"})
+
 _KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{16,128}$")
 _OWNER_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
@@ -65,12 +82,19 @@ class FullExportReceipt(BaseModel):
     covered_scopes: frozenset[str] = Field(alias="coveredScopes")
     completed_at_utc: datetime = Field(alias="completedAtUtc")
 
-    @field_validator("covered_scopes")
-    @classmethod
-    def _require_complete_scope(cls, value: frozenset[str]) -> frozenset[str]:
-        if value != ACCOUNT_DELETION_SCOPES:
+    @model_validator(mode="after")
+    def _require_complete_scope(self) -> FullExportReceipt:
+        expected = (
+            CLOUD_DELETION_SCOPES
+            if self.schema_version <= 10
+            else EXPORT_V11_SCOPES if self.schema_version == 11
+            else EXPORT_V12_SCOPES if self.schema_version == 12
+            else EXPORT_V26_SCOPES if self.schema_version == 26
+            else None
+        )
+        if self.covered_scopes != expected:
             raise ValueError("export must cover the complete account scope")
-        return value
+        return self
 
     @field_validator("completed_at_utc")
     @classmethod
@@ -223,7 +247,7 @@ class AccountDeletionService:
             owner_id=request.owner_id,
             firebase_uid=user.uid,
             idempotency_key=request.idempotency_key,
-            scopes=ACCOUNT_DELETION_SCOPES,
+            scopes=CLOUD_DELETION_SCOPES,
             requested_at_utc=now,
         )
         operation = self._store.claim(candidate)
@@ -231,7 +255,7 @@ class AccountDeletionService:
             operation.firebase_uid != user.uid
             or operation.idempotency_key != request.idempotency_key
             or operation.owner_id != request.owner_id
-            or operation.scopes != ACCOUNT_DELETION_SCOPES
+            or operation.scopes != CLOUD_DELETION_SCOPES
         ):
             raise AccountDeletionConflict
         if operation.receipt is not None:

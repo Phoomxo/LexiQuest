@@ -1868,6 +1868,21 @@ class $VocabularyWordsTable extends VocabularyWords
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isBookmarkedMeta = const VerificationMeta(
+    'isBookmarked',
+  );
+  @override
+  late final GeneratedColumn<bool> isBookmarked = GeneratedColumn<bool>(
+    'is_bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_bookmarked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1888,6 +1903,7 @@ class $VocabularyWordsTable extends VocabularyWords
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
+    isBookmarked,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2053,6 +2069,15 @@ class $VocabularyWordsTable extends VocabularyWords
     } else if (isInserting) {
       context.missing(_updatedAtUtcMsMeta);
     }
+    if (data.containsKey('is_bookmarked')) {
+      context.handle(
+        _isBookmarkedMeta,
+        isBookmarked.isAcceptableOrUnknown(
+          data['is_bookmarked']!,
+          _isBookmarkedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2138,6 +2163,10 @@ class $VocabularyWordsTable extends VocabularyWords
         DriftSqlType.int,
         data['${effectivePrefix}updated_at_utc_ms'],
       )!,
+      isBookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_bookmarked'],
+      )!,
     );
   }
 
@@ -2166,6 +2195,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
   final bool isDeleted;
   final int createdAtUtcMs;
   final int updatedAtUtcMs;
+  final bool isBookmarked;
   const VocabularyWord({
     required this.id,
     required this.ownerId,
@@ -2185,6 +2215,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     required this.isDeleted,
     required this.createdAtUtcMs,
     required this.updatedAtUtcMs,
+    required this.isBookmarked,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2215,6 +2246,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['is_bookmarked'] = Variable<bool>(isBookmarked);
     return map;
   }
 
@@ -2244,6 +2276,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       isDeleted: Value(isDeleted),
       createdAtUtcMs: Value(createdAtUtcMs),
       updatedAtUtcMs: Value(updatedAtUtcMs),
+      isBookmarked: Value(isBookmarked),
     );
   }
 
@@ -2277,6 +2310,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      isBookmarked: serializer.fromJson<bool>(json['isBookmarked']),
     );
   }
   @override
@@ -2303,6 +2337,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'isBookmarked': serializer.toJson<bool>(isBookmarked),
     };
   }
 
@@ -2325,6 +2360,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     bool? isDeleted,
     int? createdAtUtcMs,
     int? updatedAtUtcMs,
+    bool? isBookmarked,
   }) => VocabularyWord(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -2348,6 +2384,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     isDeleted: isDeleted ?? this.isDeleted,
     createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    isBookmarked: isBookmarked ?? this.isBookmarked,
   );
   VocabularyWord copyWithCompanion(VocabularyWordsCompanion data) {
     return VocabularyWord(
@@ -2389,6 +2426,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       updatedAtUtcMs: data.updatedAtUtcMs.present
           ? data.updatedAtUtcMs.value
           : this.updatedAtUtcMs,
+      isBookmarked: data.isBookmarked.present
+          ? data.isBookmarked.value
+          : this.isBookmarked,
     );
   }
 
@@ -2412,7 +2452,8 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
-          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('isBookmarked: $isBookmarked')
           ..write(')'))
         .toString();
   }
@@ -2437,6 +2478,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
+    isBookmarked,
   );
   @override
   bool operator ==(Object other) =>
@@ -2459,7 +2501,8 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
           other.isDeleted == this.isDeleted &&
           other.createdAtUtcMs == this.createdAtUtcMs &&
-          other.updatedAtUtcMs == this.updatedAtUtcMs);
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.isBookmarked == this.isBookmarked);
 }
 
 class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
@@ -2481,6 +2524,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
   final Value<bool> isDeleted;
   final Value<int> createdAtUtcMs;
   final Value<int> updatedAtUtcMs;
+  final Value<bool> isBookmarked;
   final Value<int> rowid;
   const VocabularyWordsCompanion({
     this.id = const Value.absent(),
@@ -2501,6 +2545,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.isDeleted = const Value.absent(),
     this.createdAtUtcMs = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
+    this.isBookmarked = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VocabularyWordsCompanion.insert({
@@ -2522,6 +2567,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.isDeleted = const Value.absent(),
     required int createdAtUtcMs,
     required int updatedAtUtcMs,
+    this.isBookmarked = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -2552,6 +2598,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Expression<bool>? isDeleted,
     Expression<int>? createdAtUtcMs,
     Expression<int>? updatedAtUtcMs,
+    Expression<bool>? isBookmarked,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2575,6 +2622,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (isBookmarked != null) 'is_bookmarked': isBookmarked,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2598,6 +2646,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Value<bool>? isDeleted,
     Value<int>? createdAtUtcMs,
     Value<int>? updatedAtUtcMs,
+    Value<bool>? isBookmarked,
     Value<int>? rowid,
   }) {
     return VocabularyWordsCompanion(
@@ -2620,6 +2669,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       isDeleted: isDeleted ?? this.isDeleted,
       createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2685,6 +2735,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     if (updatedAtUtcMs.present) {
       map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
     }
+    if (isBookmarked.present) {
+      map['is_bookmarked'] = Variable<bool>(isBookmarked.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2712,6 +2765,7 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4068,6 +4122,39 @@ class $LearningSessionsTable extends LearningSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _questionPlanJsonMeta = const VerificationMeta(
+    'questionPlanJson',
+  );
+  @override
+  late final GeneratedColumn<String> questionPlanJson = GeneratedColumn<String>(
+    'question_plan_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _continuationJsonMeta = const VerificationMeta(
+    'continuationJson',
+  );
+  @override
+  late final GeneratedColumn<String> continuationJson = GeneratedColumn<String>(
+    'continuation_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _legacyEvidenceDispositionMeta =
+      const VerificationMeta('legacyEvidenceDisposition');
+  @override
+  late final GeneratedColumn<String> legacyEvidenceDisposition =
+      GeneratedColumn<String>(
+        'legacy_evidence_disposition',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4081,6 +4168,9 @@ class $LearningSessionsTable extends LearningSessions
     score,
     appVersion,
     buildId,
+    questionPlanJson,
+    continuationJson,
+    legacyEvidenceDisposition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4183,6 +4273,33 @@ class $LearningSessionsTable extends LearningSessions
     } else if (isInserting) {
       context.missing(_buildIdMeta);
     }
+    if (data.containsKey('question_plan_json')) {
+      context.handle(
+        _questionPlanJsonMeta,
+        questionPlanJson.isAcceptableOrUnknown(
+          data['question_plan_json']!,
+          _questionPlanJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('continuation_json')) {
+      context.handle(
+        _continuationJsonMeta,
+        continuationJson.isAcceptableOrUnknown(
+          data['continuation_json']!,
+          _continuationJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('legacy_evidence_disposition')) {
+      context.handle(
+        _legacyEvidenceDispositionMeta,
+        legacyEvidenceDisposition.isAcceptableOrUnknown(
+          data['legacy_evidence_disposition']!,
+          _legacyEvidenceDispositionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4236,6 +4353,18 @@ class $LearningSessionsTable extends LearningSessions
         DriftSqlType.string,
         data['${effectivePrefix}build_id'],
       )!,
+      questionPlanJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question_plan_json'],
+      ),
+      continuationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}continuation_json'],
+      ),
+      legacyEvidenceDisposition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}legacy_evidence_disposition'],
+      ),
     );
   }
 
@@ -4257,6 +4386,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
   final int? score;
   final String appVersion;
   final String buildId;
+  final String? questionPlanJson;
+  final String? continuationJson;
+  final String? legacyEvidenceDisposition;
   const LearningSession({
     required this.id,
     required this.ownerId,
@@ -4269,6 +4401,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     this.score,
     required this.appVersion,
     required this.buildId,
+    this.questionPlanJson,
+    this.continuationJson,
+    this.legacyEvidenceDisposition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4288,6 +4423,17 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     }
     map['app_version'] = Variable<String>(appVersion);
     map['build_id'] = Variable<String>(buildId);
+    if (!nullToAbsent || questionPlanJson != null) {
+      map['question_plan_json'] = Variable<String>(questionPlanJson);
+    }
+    if (!nullToAbsent || continuationJson != null) {
+      map['continuation_json'] = Variable<String>(continuationJson);
+    }
+    if (!nullToAbsent || legacyEvidenceDisposition != null) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition,
+      );
+    }
     return map;
   }
 
@@ -4308,6 +4454,16 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           : Value(score),
       appVersion: Value(appVersion),
       buildId: Value(buildId),
+      questionPlanJson: questionPlanJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(questionPlanJson),
+      continuationJson: continuationJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(continuationJson),
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legacyEvidenceDisposition),
     );
   }
 
@@ -4328,6 +4484,11 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       score: serializer.fromJson<int?>(json['score']),
       appVersion: serializer.fromJson<String>(json['appVersion']),
       buildId: serializer.fromJson<String>(json['buildId']),
+      questionPlanJson: serializer.fromJson<String?>(json['questionPlanJson']),
+      continuationJson: serializer.fromJson<String?>(json['continuationJson']),
+      legacyEvidenceDisposition: serializer.fromJson<String?>(
+        json['legacyEvidenceDisposition'],
+      ),
     );
   }
   @override
@@ -4345,6 +4506,11 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       'score': serializer.toJson<int?>(score),
       'appVersion': serializer.toJson<String>(appVersion),
       'buildId': serializer.toJson<String>(buildId),
+      'questionPlanJson': serializer.toJson<String?>(questionPlanJson),
+      'continuationJson': serializer.toJson<String?>(continuationJson),
+      'legacyEvidenceDisposition': serializer.toJson<String?>(
+        legacyEvidenceDisposition,
+      ),
     };
   }
 
@@ -4360,6 +4526,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     Value<int?> score = const Value.absent(),
     String? appVersion,
     String? buildId,
+    Value<String?> questionPlanJson = const Value.absent(),
+    Value<String?> continuationJson = const Value.absent(),
+    Value<String?> legacyEvidenceDisposition = const Value.absent(),
   }) => LearningSession(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -4372,6 +4541,15 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score: score.present ? score.value : this.score,
     appVersion: appVersion ?? this.appVersion,
     buildId: buildId ?? this.buildId,
+    questionPlanJson: questionPlanJson.present
+        ? questionPlanJson.value
+        : this.questionPlanJson,
+    continuationJson: continuationJson.present
+        ? continuationJson.value
+        : this.continuationJson,
+    legacyEvidenceDisposition: legacyEvidenceDisposition.present
+        ? legacyEvidenceDisposition.value
+        : this.legacyEvidenceDisposition,
   );
   LearningSession copyWithCompanion(LearningSessionsCompanion data) {
     return LearningSession(
@@ -4398,6 +4576,15 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ? data.appVersion.value
           : this.appVersion,
       buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      questionPlanJson: data.questionPlanJson.present
+          ? data.questionPlanJson.value
+          : this.questionPlanJson,
+      continuationJson: data.continuationJson.present
+          ? data.continuationJson.value
+          : this.continuationJson,
+      legacyEvidenceDisposition: data.legacyEvidenceDisposition.present
+          ? data.legacyEvidenceDisposition.value
+          : this.legacyEvidenceDisposition,
     );
   }
 
@@ -4414,7 +4601,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ..write('wrongCount: $wrongCount, ')
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
-          ..write('buildId: $buildId')
+          ..write('buildId: $buildId, ')
+          ..write('questionPlanJson: $questionPlanJson, ')
+          ..write('continuationJson: $continuationJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition')
           ..write(')'))
         .toString();
   }
@@ -4432,6 +4622,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score,
     appVersion,
     buildId,
+    questionPlanJson,
+    continuationJson,
+    legacyEvidenceDisposition,
   );
   @override
   bool operator ==(Object other) =>
@@ -4447,7 +4640,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           other.wrongCount == this.wrongCount &&
           other.score == this.score &&
           other.appVersion == this.appVersion &&
-          other.buildId == this.buildId);
+          other.buildId == this.buildId &&
+          other.questionPlanJson == this.questionPlanJson &&
+          other.continuationJson == this.continuationJson &&
+          other.legacyEvidenceDisposition == this.legacyEvidenceDisposition);
 }
 
 class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
@@ -4462,6 +4658,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
   final Value<int?> score;
   final Value<String> appVersion;
   final Value<String> buildId;
+  final Value<String?> questionPlanJson;
+  final Value<String?> continuationJson;
+  final Value<String?> legacyEvidenceDisposition;
   final Value<int> rowid;
   const LearningSessionsCompanion({
     this.id = const Value.absent(),
@@ -4475,6 +4674,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     this.appVersion = const Value.absent(),
     this.buildId = const Value.absent(),
+    this.questionPlanJson = const Value.absent(),
+    this.continuationJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningSessionsCompanion.insert({
@@ -4489,6 +4691,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     required String appVersion,
     required String buildId,
+    this.questionPlanJson = const Value.absent(),
+    this.continuationJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -4509,6 +4714,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Expression<int>? score,
     Expression<String>? appVersion,
     Expression<String>? buildId,
+    Expression<String>? questionPlanJson,
+    Expression<String>? continuationJson,
+    Expression<String>? legacyEvidenceDisposition,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4523,6 +4731,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       if (score != null) 'score': score,
       if (appVersion != null) 'app_version': appVersion,
       if (buildId != null) 'build_id': buildId,
+      if (questionPlanJson != null) 'question_plan_json': questionPlanJson,
+      if (continuationJson != null) 'continuation_json': continuationJson,
+      if (legacyEvidenceDisposition != null)
+        'legacy_evidence_disposition': legacyEvidenceDisposition,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4539,6 +4751,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Value<int?>? score,
     Value<String>? appVersion,
     Value<String>? buildId,
+    Value<String?>? questionPlanJson,
+    Value<String?>? continuationJson,
+    Value<String?>? legacyEvidenceDisposition,
     Value<int>? rowid,
   }) {
     return LearningSessionsCompanion(
@@ -4553,6 +4768,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       score: score ?? this.score,
       appVersion: appVersion ?? this.appVersion,
       buildId: buildId ?? this.buildId,
+      questionPlanJson: questionPlanJson ?? this.questionPlanJson,
+      continuationJson: continuationJson ?? this.continuationJson,
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition ?? this.legacyEvidenceDisposition,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4593,6 +4812,17 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     if (buildId.present) {
       map['build_id'] = Variable<String>(buildId.value);
     }
+    if (questionPlanJson.present) {
+      map['question_plan_json'] = Variable<String>(questionPlanJson.value);
+    }
+    if (continuationJson.present) {
+      map['continuation_json'] = Variable<String>(continuationJson.value);
+    }
+    if (legacyEvidenceDisposition.present) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4613,6 +4843,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
           ..write('buildId: $buildId, ')
+          ..write('questionPlanJson: $questionPlanJson, ')
+          ..write('continuationJson: $continuationJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4743,6 +4976,50 @@ class $AnswerAttemptsTable extends AnswerAttempts
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _calendarEvidenceMeta = const VerificationMeta(
+    'calendarEvidence',
+  );
+  @override
+  late final GeneratedColumn<String> calendarEvidence = GeneratedColumn<String>(
+    'calendar_evidence',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _questIntentMeta = const VerificationMeta(
+    'questIntent',
+  );
+  @override
+  late final GeneratedColumn<String> questIntent = GeneratedColumn<String>(
+    'quest_intent',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _answerEvidenceJsonMeta =
+      const VerificationMeta('answerEvidenceJson');
+  @override
+  late final GeneratedColumn<String> answerEvidenceJson =
+      GeneratedColumn<String>(
+        'answer_evidence_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _legacyEvidenceDispositionMeta =
+      const VerificationMeta('legacyEvidenceDisposition');
+  @override
+  late final GeneratedColumn<String> legacyEvidenceDisposition =
+      GeneratedColumn<String>(
+        'legacy_evidence_disposition',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4755,6 +5032,10 @@ class $AnswerAttemptsTable extends AnswerAttempts
     attemptNumber,
     occurredAtUtcMs,
     providerProvenance,
+    calendarEvidence,
+    questIntent,
+    answerEvidenceJson,
+    legacyEvidenceDisposition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4853,6 +5134,42 @@ class $AnswerAttemptsTable extends AnswerAttempts
         ),
       );
     }
+    if (data.containsKey('calendar_evidence')) {
+      context.handle(
+        _calendarEvidenceMeta,
+        calendarEvidence.isAcceptableOrUnknown(
+          data['calendar_evidence']!,
+          _calendarEvidenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quest_intent')) {
+      context.handle(
+        _questIntentMeta,
+        questIntent.isAcceptableOrUnknown(
+          data['quest_intent']!,
+          _questIntentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('answer_evidence_json')) {
+      context.handle(
+        _answerEvidenceJsonMeta,
+        answerEvidenceJson.isAcceptableOrUnknown(
+          data['answer_evidence_json']!,
+          _answerEvidenceJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('legacy_evidence_disposition')) {
+      context.handle(
+        _legacyEvidenceDispositionMeta,
+        legacyEvidenceDisposition.isAcceptableOrUnknown(
+          data['legacy_evidence_disposition']!,
+          _legacyEvidenceDispositionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4902,6 +5219,22 @@ class $AnswerAttemptsTable extends AnswerAttempts
         DriftSqlType.string,
         data['${effectivePrefix}provider_provenance'],
       ),
+      calendarEvidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calendar_evidence'],
+      ),
+      questIntent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quest_intent'],
+      ),
+      answerEvidenceJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}answer_evidence_json'],
+      ),
+      legacyEvidenceDisposition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}legacy_evidence_disposition'],
+      ),
     );
   }
 
@@ -4922,6 +5255,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
   final int attemptNumber;
   final int occurredAtUtcMs;
   final String? providerProvenance;
+  final String? calendarEvidence;
+  final String? questIntent;
+  final String? answerEvidenceJson;
+  final String? legacyEvidenceDisposition;
   const AnswerAttempt({
     required this.id,
     required this.ownerId,
@@ -4933,6 +5270,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     required this.attemptNumber,
     required this.occurredAtUtcMs,
     this.providerProvenance,
+    this.calendarEvidence,
+    this.questIntent,
+    this.answerEvidenceJson,
+    this.legacyEvidenceDisposition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4950,6 +5291,20 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
     if (!nullToAbsent || providerProvenance != null) {
       map['provider_provenance'] = Variable<String>(providerProvenance);
+    }
+    if (!nullToAbsent || calendarEvidence != null) {
+      map['calendar_evidence'] = Variable<String>(calendarEvidence);
+    }
+    if (!nullToAbsent || questIntent != null) {
+      map['quest_intent'] = Variable<String>(questIntent);
+    }
+    if (!nullToAbsent || answerEvidenceJson != null) {
+      map['answer_evidence_json'] = Variable<String>(answerEvidenceJson);
+    }
+    if (!nullToAbsent || legacyEvidenceDisposition != null) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition,
+      );
     }
     return map;
   }
@@ -4970,6 +5325,19 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: providerProvenance == null && nullToAbsent
           ? const Value.absent()
           : Value(providerProvenance),
+      calendarEvidence: calendarEvidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(calendarEvidence),
+      questIntent: questIntent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(questIntent),
+      answerEvidenceJson: answerEvidenceJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(answerEvidenceJson),
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legacyEvidenceDisposition),
     );
   }
 
@@ -4991,6 +5359,14 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: serializer.fromJson<String?>(
         json['providerProvenance'],
       ),
+      calendarEvidence: serializer.fromJson<String?>(json['calendarEvidence']),
+      questIntent: serializer.fromJson<String?>(json['questIntent']),
+      answerEvidenceJson: serializer.fromJson<String?>(
+        json['answerEvidenceJson'],
+      ),
+      legacyEvidenceDisposition: serializer.fromJson<String?>(
+        json['legacyEvidenceDisposition'],
+      ),
     );
   }
   @override
@@ -5007,6 +5383,12 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       'attemptNumber': serializer.toJson<int>(attemptNumber),
       'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
       'providerProvenance': serializer.toJson<String?>(providerProvenance),
+      'calendarEvidence': serializer.toJson<String?>(calendarEvidence),
+      'questIntent': serializer.toJson<String?>(questIntent),
+      'answerEvidenceJson': serializer.toJson<String?>(answerEvidenceJson),
+      'legacyEvidenceDisposition': serializer.toJson<String?>(
+        legacyEvidenceDisposition,
+      ),
     };
   }
 
@@ -5021,6 +5403,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     int? attemptNumber,
     int? occurredAtUtcMs,
     Value<String?> providerProvenance = const Value.absent(),
+    Value<String?> calendarEvidence = const Value.absent(),
+    Value<String?> questIntent = const Value.absent(),
+    Value<String?> answerEvidenceJson = const Value.absent(),
+    Value<String?> legacyEvidenceDisposition = const Value.absent(),
   }) => AnswerAttempt(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -5036,6 +5422,16 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     providerProvenance: providerProvenance.present
         ? providerProvenance.value
         : this.providerProvenance,
+    calendarEvidence: calendarEvidence.present
+        ? calendarEvidence.value
+        : this.calendarEvidence,
+    questIntent: questIntent.present ? questIntent.value : this.questIntent,
+    answerEvidenceJson: answerEvidenceJson.present
+        ? answerEvidenceJson.value
+        : this.answerEvidenceJson,
+    legacyEvidenceDisposition: legacyEvidenceDisposition.present
+        ? legacyEvidenceDisposition.value
+        : this.legacyEvidenceDisposition,
   );
   AnswerAttempt copyWithCompanion(AnswerAttemptsCompanion data) {
     return AnswerAttempt(
@@ -5059,6 +5455,18 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: data.providerProvenance.present
           ? data.providerProvenance.value
           : this.providerProvenance,
+      calendarEvidence: data.calendarEvidence.present
+          ? data.calendarEvidence.value
+          : this.calendarEvidence,
+      questIntent: data.questIntent.present
+          ? data.questIntent.value
+          : this.questIntent,
+      answerEvidenceJson: data.answerEvidenceJson.present
+          ? data.answerEvidenceJson.value
+          : this.answerEvidenceJson,
+      legacyEvidenceDisposition: data.legacyEvidenceDisposition.present
+          ? data.legacyEvidenceDisposition.value
+          : this.legacyEvidenceDisposition,
     );
   }
 
@@ -5074,7 +5482,11 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           ..write('responseTimeMs: $responseTimeMs, ')
           ..write('attemptNumber: $attemptNumber, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
-          ..write('providerProvenance: $providerProvenance')
+          ..write('providerProvenance: $providerProvenance, ')
+          ..write('calendarEvidence: $calendarEvidence, ')
+          ..write('questIntent: $questIntent, ')
+          ..write('answerEvidenceJson: $answerEvidenceJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition')
           ..write(')'))
         .toString();
   }
@@ -5091,6 +5503,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     attemptNumber,
     occurredAtUtcMs,
     providerProvenance,
+    calendarEvidence,
+    questIntent,
+    answerEvidenceJson,
+    legacyEvidenceDisposition,
   );
   @override
   bool operator ==(Object other) =>
@@ -5105,7 +5521,11 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           other.responseTimeMs == this.responseTimeMs &&
           other.attemptNumber == this.attemptNumber &&
           other.occurredAtUtcMs == this.occurredAtUtcMs &&
-          other.providerProvenance == this.providerProvenance);
+          other.providerProvenance == this.providerProvenance &&
+          other.calendarEvidence == this.calendarEvidence &&
+          other.questIntent == this.questIntent &&
+          other.answerEvidenceJson == this.answerEvidenceJson &&
+          other.legacyEvidenceDisposition == this.legacyEvidenceDisposition);
 }
 
 class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
@@ -5119,6 +5539,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
   final Value<int> attemptNumber;
   final Value<int> occurredAtUtcMs;
   final Value<String?> providerProvenance;
+  final Value<String?> calendarEvidence;
+  final Value<String?> questIntent;
+  final Value<String?> answerEvidenceJson;
+  final Value<String?> legacyEvidenceDisposition;
   final Value<int> rowid;
   const AnswerAttemptsCompanion({
     this.id = const Value.absent(),
@@ -5131,6 +5555,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     this.attemptNumber = const Value.absent(),
     this.occurredAtUtcMs = const Value.absent(),
     this.providerProvenance = const Value.absent(),
+    this.calendarEvidence = const Value.absent(),
+    this.questIntent = const Value.absent(),
+    this.answerEvidenceJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AnswerAttemptsCompanion.insert({
@@ -5144,6 +5572,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     required int attemptNumber,
     required int occurredAtUtcMs,
     this.providerProvenance = const Value.absent(),
+    this.calendarEvidence = const Value.absent(),
+    this.questIntent = const Value.absent(),
+    this.answerEvidenceJson = const Value.absent(),
+    this.legacyEvidenceDisposition = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -5164,6 +5596,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Expression<int>? attemptNumber,
     Expression<int>? occurredAtUtcMs,
     Expression<String>? providerProvenance,
+    Expression<String>? calendarEvidence,
+    Expression<String>? questIntent,
+    Expression<String>? answerEvidenceJson,
+    Expression<String>? legacyEvidenceDisposition,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5177,6 +5613,12 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       if (attemptNumber != null) 'attempt_number': attemptNumber,
       if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
       if (providerProvenance != null) 'provider_provenance': providerProvenance,
+      if (calendarEvidence != null) 'calendar_evidence': calendarEvidence,
+      if (questIntent != null) 'quest_intent': questIntent,
+      if (answerEvidenceJson != null)
+        'answer_evidence_json': answerEvidenceJson,
+      if (legacyEvidenceDisposition != null)
+        'legacy_evidence_disposition': legacyEvidenceDisposition,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5192,6 +5634,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Value<int>? attemptNumber,
     Value<int>? occurredAtUtcMs,
     Value<String?>? providerProvenance,
+    Value<String?>? calendarEvidence,
+    Value<String?>? questIntent,
+    Value<String?>? answerEvidenceJson,
+    Value<String?>? legacyEvidenceDisposition,
     Value<int>? rowid,
   }) {
     return AnswerAttemptsCompanion(
@@ -5205,6 +5651,11 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       attemptNumber: attemptNumber ?? this.attemptNumber,
       occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
       providerProvenance: providerProvenance ?? this.providerProvenance,
+      calendarEvidence: calendarEvidence ?? this.calendarEvidence,
+      questIntent: questIntent ?? this.questIntent,
+      answerEvidenceJson: answerEvidenceJson ?? this.answerEvidenceJson,
+      legacyEvidenceDisposition:
+          legacyEvidenceDisposition ?? this.legacyEvidenceDisposition,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5242,6 +5693,20 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     if (providerProvenance.present) {
       map['provider_provenance'] = Variable<String>(providerProvenance.value);
     }
+    if (calendarEvidence.present) {
+      map['calendar_evidence'] = Variable<String>(calendarEvidence.value);
+    }
+    if (questIntent.present) {
+      map['quest_intent'] = Variable<String>(questIntent.value);
+    }
+    if (answerEvidenceJson.present) {
+      map['answer_evidence_json'] = Variable<String>(answerEvidenceJson.value);
+    }
+    if (legacyEvidenceDisposition.present) {
+      map['legacy_evidence_disposition'] = Variable<String>(
+        legacyEvidenceDisposition.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5261,6 +5726,10 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
           ..write('attemptNumber: $attemptNumber, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
           ..write('providerProvenance: $providerProvenance, ')
+          ..write('calendarEvidence: $calendarEvidence, ')
+          ..write('questIntent: $questIntent, ')
+          ..write('answerEvidenceJson: $answerEvidenceJson, ')
+          ..write('legacyEvidenceDisposition: $legacyEvidenceDisposition, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -14326,6 +14795,907 @@ class QuestDefinitionsCompanion extends UpdateCompanion<QuestDefinition> {
   }
 }
 
+class $OwnerCalendarEpochsTable extends OwnerCalendarEpochs
+    with TableInfo<$OwnerCalendarEpochsTable, OwnerCalendarEpoch> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OwnerCalendarEpochsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ruleIdMeta = const VerificationMeta('ruleId');
+  @override
+  late final GeneratedColumn<String> ruleId = GeneratedColumn<String>(
+    'rule_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _effectiveUtcUsMeta = const VerificationMeta(
+    'effectiveUtcUs',
+  );
+  @override
+  late final GeneratedColumn<int> effectiveUtcUs = GeneratedColumn<int>(
+    'effective_utc_us',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresUtcUsMeta = const VerificationMeta(
+    'expiresUtcUs',
+  );
+  @override
+  late final GeneratedColumn<int> expiresUtcUs = GeneratedColumn<int>(
+    'expires_utc_us',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ianaIdMeta = const VerificationMeta('ianaId');
+  @override
+  late final GeneratedColumn<String> ianaId = GeneratedColumn<String>(
+    'iana_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tzdbRevisionMeta = const VerificationMeta(
+    'tzdbRevision',
+  );
+  @override
+  late final GeneratedColumn<String> tzdbRevision = GeneratedColumn<String>(
+    'tzdb_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isSelectedMeta = const VerificationMeta(
+    'isSelected',
+  );
+  @override
+  late final GeneratedColumn<bool> isSelected = GeneratedColumn<bool>(
+    'is_selected',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_selected" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ruleId,
+    ownerId,
+    originOwnerId,
+    effectiveUtcUs,
+    expiresUtcUs,
+    ianaId,
+    tzdbRevision,
+    isSelected,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'owner_calendar_epochs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OwnerCalendarEpoch> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('rule_id')) {
+      context.handle(
+        _ruleIdMeta,
+        ruleId.isAcceptableOrUnknown(data['rule_id']!, _ruleIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ruleIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('effective_utc_us')) {
+      context.handle(
+        _effectiveUtcUsMeta,
+        effectiveUtcUs.isAcceptableOrUnknown(
+          data['effective_utc_us']!,
+          _effectiveUtcUsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveUtcUsMeta);
+    }
+    if (data.containsKey('expires_utc_us')) {
+      context.handle(
+        _expiresUtcUsMeta,
+        expiresUtcUs.isAcceptableOrUnknown(
+          data['expires_utc_us']!,
+          _expiresUtcUsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('iana_id')) {
+      context.handle(
+        _ianaIdMeta,
+        ianaId.isAcceptableOrUnknown(data['iana_id']!, _ianaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ianaIdMeta);
+    }
+    if (data.containsKey('tzdb_revision')) {
+      context.handle(
+        _tzdbRevisionMeta,
+        tzdbRevision.isAcceptableOrUnknown(
+          data['tzdb_revision']!,
+          _tzdbRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_tzdbRevisionMeta);
+    }
+    if (data.containsKey('is_selected')) {
+      context.handle(
+        _isSelectedMeta,
+        isSelected.isAcceptableOrUnknown(data['is_selected']!, _isSelectedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isSelectedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ruleId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {originOwnerId, effectiveUtcUs},
+  ];
+  @override
+  OwnerCalendarEpoch map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OwnerCalendarEpoch(
+      ruleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rule_id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      effectiveUtcUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}effective_utc_us'],
+      )!,
+      expiresUtcUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expires_utc_us'],
+      ),
+      ianaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}iana_id'],
+      )!,
+      tzdbRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tzdb_revision'],
+      )!,
+      isSelected: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_selected'],
+      )!,
+    );
+  }
+
+  @override
+  $OwnerCalendarEpochsTable createAlias(String alias) {
+    return $OwnerCalendarEpochsTable(attachedDatabase, alias);
+  }
+}
+
+class OwnerCalendarEpoch extends DataClass
+    implements Insertable<OwnerCalendarEpoch> {
+  final String ruleId;
+  final String ownerId;
+  final String originOwnerId;
+  final int effectiveUtcUs;
+  final int? expiresUtcUs;
+  final String ianaId;
+  final String tzdbRevision;
+  final bool isSelected;
+  const OwnerCalendarEpoch({
+    required this.ruleId,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.effectiveUtcUs,
+    this.expiresUtcUs,
+    required this.ianaId,
+    required this.tzdbRevision,
+    required this.isSelected,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['rule_id'] = Variable<String>(ruleId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['effective_utc_us'] = Variable<int>(effectiveUtcUs);
+    if (!nullToAbsent || expiresUtcUs != null) {
+      map['expires_utc_us'] = Variable<int>(expiresUtcUs);
+    }
+    map['iana_id'] = Variable<String>(ianaId);
+    map['tzdb_revision'] = Variable<String>(tzdbRevision);
+    map['is_selected'] = Variable<bool>(isSelected);
+    return map;
+  }
+
+  OwnerCalendarEpochsCompanion toCompanion(bool nullToAbsent) {
+    return OwnerCalendarEpochsCompanion(
+      ruleId: Value(ruleId),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      effectiveUtcUs: Value(effectiveUtcUs),
+      expiresUtcUs: expiresUtcUs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresUtcUs),
+      ianaId: Value(ianaId),
+      tzdbRevision: Value(tzdbRevision),
+      isSelected: Value(isSelected),
+    );
+  }
+
+  factory OwnerCalendarEpoch.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OwnerCalendarEpoch(
+      ruleId: serializer.fromJson<String>(json['ruleId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      effectiveUtcUs: serializer.fromJson<int>(json['effectiveUtcUs']),
+      expiresUtcUs: serializer.fromJson<int?>(json['expiresUtcUs']),
+      ianaId: serializer.fromJson<String>(json['ianaId']),
+      tzdbRevision: serializer.fromJson<String>(json['tzdbRevision']),
+      isSelected: serializer.fromJson<bool>(json['isSelected']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ruleId': serializer.toJson<String>(ruleId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'effectiveUtcUs': serializer.toJson<int>(effectiveUtcUs),
+      'expiresUtcUs': serializer.toJson<int?>(expiresUtcUs),
+      'ianaId': serializer.toJson<String>(ianaId),
+      'tzdbRevision': serializer.toJson<String>(tzdbRevision),
+      'isSelected': serializer.toJson<bool>(isSelected),
+    };
+  }
+
+  OwnerCalendarEpoch copyWith({
+    String? ruleId,
+    String? ownerId,
+    String? originOwnerId,
+    int? effectiveUtcUs,
+    Value<int?> expiresUtcUs = const Value.absent(),
+    String? ianaId,
+    String? tzdbRevision,
+    bool? isSelected,
+  }) => OwnerCalendarEpoch(
+    ruleId: ruleId ?? this.ruleId,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    effectiveUtcUs: effectiveUtcUs ?? this.effectiveUtcUs,
+    expiresUtcUs: expiresUtcUs.present ? expiresUtcUs.value : this.expiresUtcUs,
+    ianaId: ianaId ?? this.ianaId,
+    tzdbRevision: tzdbRevision ?? this.tzdbRevision,
+    isSelected: isSelected ?? this.isSelected,
+  );
+  OwnerCalendarEpoch copyWithCompanion(OwnerCalendarEpochsCompanion data) {
+    return OwnerCalendarEpoch(
+      ruleId: data.ruleId.present ? data.ruleId.value : this.ruleId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      effectiveUtcUs: data.effectiveUtcUs.present
+          ? data.effectiveUtcUs.value
+          : this.effectiveUtcUs,
+      expiresUtcUs: data.expiresUtcUs.present
+          ? data.expiresUtcUs.value
+          : this.expiresUtcUs,
+      ianaId: data.ianaId.present ? data.ianaId.value : this.ianaId,
+      tzdbRevision: data.tzdbRevision.present
+          ? data.tzdbRevision.value
+          : this.tzdbRevision,
+      isSelected: data.isSelected.present
+          ? data.isSelected.value
+          : this.isSelected,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnerCalendarEpoch(')
+          ..write('ruleId: $ruleId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('effectiveUtcUs: $effectiveUtcUs, ')
+          ..write('expiresUtcUs: $expiresUtcUs, ')
+          ..write('ianaId: $ianaId, ')
+          ..write('tzdbRevision: $tzdbRevision, ')
+          ..write('isSelected: $isSelected')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ruleId,
+    ownerId,
+    originOwnerId,
+    effectiveUtcUs,
+    expiresUtcUs,
+    ianaId,
+    tzdbRevision,
+    isSelected,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OwnerCalendarEpoch &&
+          other.ruleId == this.ruleId &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.effectiveUtcUs == this.effectiveUtcUs &&
+          other.expiresUtcUs == this.expiresUtcUs &&
+          other.ianaId == this.ianaId &&
+          other.tzdbRevision == this.tzdbRevision &&
+          other.isSelected == this.isSelected);
+}
+
+class OwnerCalendarEpochsCompanion extends UpdateCompanion<OwnerCalendarEpoch> {
+  final Value<String> ruleId;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<int> effectiveUtcUs;
+  final Value<int?> expiresUtcUs;
+  final Value<String> ianaId;
+  final Value<String> tzdbRevision;
+  final Value<bool> isSelected;
+  final Value<int> rowid;
+  const OwnerCalendarEpochsCompanion({
+    this.ruleId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.effectiveUtcUs = const Value.absent(),
+    this.expiresUtcUs = const Value.absent(),
+    this.ianaId = const Value.absent(),
+    this.tzdbRevision = const Value.absent(),
+    this.isSelected = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OwnerCalendarEpochsCompanion.insert({
+    required String ruleId,
+    required String ownerId,
+    required String originOwnerId,
+    required int effectiveUtcUs,
+    this.expiresUtcUs = const Value.absent(),
+    required String ianaId,
+    required String tzdbRevision,
+    required bool isSelected,
+    this.rowid = const Value.absent(),
+  }) : ruleId = Value(ruleId),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       effectiveUtcUs = Value(effectiveUtcUs),
+       ianaId = Value(ianaId),
+       tzdbRevision = Value(tzdbRevision),
+       isSelected = Value(isSelected);
+  static Insertable<OwnerCalendarEpoch> custom({
+    Expression<String>? ruleId,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<int>? effectiveUtcUs,
+    Expression<int>? expiresUtcUs,
+    Expression<String>? ianaId,
+    Expression<String>? tzdbRevision,
+    Expression<bool>? isSelected,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ruleId != null) 'rule_id': ruleId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (effectiveUtcUs != null) 'effective_utc_us': effectiveUtcUs,
+      if (expiresUtcUs != null) 'expires_utc_us': expiresUtcUs,
+      if (ianaId != null) 'iana_id': ianaId,
+      if (tzdbRevision != null) 'tzdb_revision': tzdbRevision,
+      if (isSelected != null) 'is_selected': isSelected,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OwnerCalendarEpochsCompanion copyWith({
+    Value<String>? ruleId,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<int>? effectiveUtcUs,
+    Value<int?>? expiresUtcUs,
+    Value<String>? ianaId,
+    Value<String>? tzdbRevision,
+    Value<bool>? isSelected,
+    Value<int>? rowid,
+  }) {
+    return OwnerCalendarEpochsCompanion(
+      ruleId: ruleId ?? this.ruleId,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      effectiveUtcUs: effectiveUtcUs ?? this.effectiveUtcUs,
+      expiresUtcUs: expiresUtcUs ?? this.expiresUtcUs,
+      ianaId: ianaId ?? this.ianaId,
+      tzdbRevision: tzdbRevision ?? this.tzdbRevision,
+      isSelected: isSelected ?? this.isSelected,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ruleId.present) {
+      map['rule_id'] = Variable<String>(ruleId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (effectiveUtcUs.present) {
+      map['effective_utc_us'] = Variable<int>(effectiveUtcUs.value);
+    }
+    if (expiresUtcUs.present) {
+      map['expires_utc_us'] = Variable<int>(expiresUtcUs.value);
+    }
+    if (ianaId.present) {
+      map['iana_id'] = Variable<String>(ianaId.value);
+    }
+    if (tzdbRevision.present) {
+      map['tzdb_revision'] = Variable<String>(tzdbRevision.value);
+    }
+    if (isSelected.present) {
+      map['is_selected'] = Variable<bool>(isSelected.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnerCalendarEpochsCompanion(')
+          ..write('ruleId: $ruleId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('effectiveUtcUs: $effectiveUtcUs, ')
+          ..write('expiresUtcUs: $expiresUtcUs, ')
+          ..write('ianaId: $ianaId, ')
+          ..write('tzdbRevision: $tzdbRevision, ')
+          ..write('isSelected: $isSelected, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuestDefinitionRevisionsTable extends QuestDefinitionRevisions
+    with TableInfo<$QuestDefinitionRevisionsTable, QuestDefinitionRevision> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuestDefinitionRevisionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _questIdMeta = const VerificationMeta(
+    'questId',
+  );
+  @override
+  late final GeneratedColumn<String> questId = GeneratedColumn<String>(
+    'quest_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _catalogVersionMeta = const VerificationMeta(
+    'catalogVersion',
+  );
+  @override
+  late final GeneratedColumn<int> catalogVersion = GeneratedColumn<int>(
+    'catalog_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _definitionDigestMeta = const VerificationMeta(
+    'definitionDigest',
+  );
+  @override
+  late final GeneratedColumn<String> definitionDigest = GeneratedColumn<String>(
+    'definition_digest',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _canonicalDefinitionMeta =
+      const VerificationMeta('canonicalDefinition');
+  @override
+  late final GeneratedColumn<String> canonicalDefinition =
+      GeneratedColumn<String>(
+        'canonical_definition',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    questId,
+    catalogVersion,
+    definitionDigest,
+    canonicalDefinition,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quest_definition_revisions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuestDefinitionRevision> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('quest_id')) {
+      context.handle(
+        _questIdMeta,
+        questId.isAcceptableOrUnknown(data['quest_id']!, _questIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questIdMeta);
+    }
+    if (data.containsKey('catalog_version')) {
+      context.handle(
+        _catalogVersionMeta,
+        catalogVersion.isAcceptableOrUnknown(
+          data['catalog_version']!,
+          _catalogVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_catalogVersionMeta);
+    }
+    if (data.containsKey('definition_digest')) {
+      context.handle(
+        _definitionDigestMeta,
+        definitionDigest.isAcceptableOrUnknown(
+          data['definition_digest']!,
+          _definitionDigestMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_definitionDigestMeta);
+    }
+    if (data.containsKey('canonical_definition')) {
+      context.handle(
+        _canonicalDefinitionMeta,
+        canonicalDefinition.isAcceptableOrUnknown(
+          data['canonical_definition']!,
+          _canonicalDefinitionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_canonicalDefinitionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {questId, catalogVersion};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {questId, catalogVersion, definitionDigest},
+  ];
+  @override
+  QuestDefinitionRevision map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuestDefinitionRevision(
+      questId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quest_id'],
+      )!,
+      catalogVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}catalog_version'],
+      )!,
+      definitionDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_digest'],
+      )!,
+      canonicalDefinition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}canonical_definition'],
+      )!,
+    );
+  }
+
+  @override
+  $QuestDefinitionRevisionsTable createAlias(String alias) {
+    return $QuestDefinitionRevisionsTable(attachedDatabase, alias);
+  }
+}
+
+class QuestDefinitionRevision extends DataClass
+    implements Insertable<QuestDefinitionRevision> {
+  final String questId;
+  final int catalogVersion;
+  final String definitionDigest;
+  final String canonicalDefinition;
+  const QuestDefinitionRevision({
+    required this.questId,
+    required this.catalogVersion,
+    required this.definitionDigest,
+    required this.canonicalDefinition,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['quest_id'] = Variable<String>(questId);
+    map['catalog_version'] = Variable<int>(catalogVersion);
+    map['definition_digest'] = Variable<String>(definitionDigest);
+    map['canonical_definition'] = Variable<String>(canonicalDefinition);
+    return map;
+  }
+
+  QuestDefinitionRevisionsCompanion toCompanion(bool nullToAbsent) {
+    return QuestDefinitionRevisionsCompanion(
+      questId: Value(questId),
+      catalogVersion: Value(catalogVersion),
+      definitionDigest: Value(definitionDigest),
+      canonicalDefinition: Value(canonicalDefinition),
+    );
+  }
+
+  factory QuestDefinitionRevision.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuestDefinitionRevision(
+      questId: serializer.fromJson<String>(json['questId']),
+      catalogVersion: serializer.fromJson<int>(json['catalogVersion']),
+      definitionDigest: serializer.fromJson<String>(json['definitionDigest']),
+      canonicalDefinition: serializer.fromJson<String>(
+        json['canonicalDefinition'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'questId': serializer.toJson<String>(questId),
+      'catalogVersion': serializer.toJson<int>(catalogVersion),
+      'definitionDigest': serializer.toJson<String>(definitionDigest),
+      'canonicalDefinition': serializer.toJson<String>(canonicalDefinition),
+    };
+  }
+
+  QuestDefinitionRevision copyWith({
+    String? questId,
+    int? catalogVersion,
+    String? definitionDigest,
+    String? canonicalDefinition,
+  }) => QuestDefinitionRevision(
+    questId: questId ?? this.questId,
+    catalogVersion: catalogVersion ?? this.catalogVersion,
+    definitionDigest: definitionDigest ?? this.definitionDigest,
+    canonicalDefinition: canonicalDefinition ?? this.canonicalDefinition,
+  );
+  QuestDefinitionRevision copyWithCompanion(
+    QuestDefinitionRevisionsCompanion data,
+  ) {
+    return QuestDefinitionRevision(
+      questId: data.questId.present ? data.questId.value : this.questId,
+      catalogVersion: data.catalogVersion.present
+          ? data.catalogVersion.value
+          : this.catalogVersion,
+      definitionDigest: data.definitionDigest.present
+          ? data.definitionDigest.value
+          : this.definitionDigest,
+      canonicalDefinition: data.canonicalDefinition.present
+          ? data.canonicalDefinition.value
+          : this.canonicalDefinition,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestDefinitionRevision(')
+          ..write('questId: $questId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('definitionDigest: $definitionDigest, ')
+          ..write('canonicalDefinition: $canonicalDefinition')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    questId,
+    catalogVersion,
+    definitionDigest,
+    canonicalDefinition,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuestDefinitionRevision &&
+          other.questId == this.questId &&
+          other.catalogVersion == this.catalogVersion &&
+          other.definitionDigest == this.definitionDigest &&
+          other.canonicalDefinition == this.canonicalDefinition);
+}
+
+class QuestDefinitionRevisionsCompanion
+    extends UpdateCompanion<QuestDefinitionRevision> {
+  final Value<String> questId;
+  final Value<int> catalogVersion;
+  final Value<String> definitionDigest;
+  final Value<String> canonicalDefinition;
+  final Value<int> rowid;
+  const QuestDefinitionRevisionsCompanion({
+    this.questId = const Value.absent(),
+    this.catalogVersion = const Value.absent(),
+    this.definitionDigest = const Value.absent(),
+    this.canonicalDefinition = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuestDefinitionRevisionsCompanion.insert({
+    required String questId,
+    required int catalogVersion,
+    required String definitionDigest,
+    required String canonicalDefinition,
+    this.rowid = const Value.absent(),
+  }) : questId = Value(questId),
+       catalogVersion = Value(catalogVersion),
+       definitionDigest = Value(definitionDigest),
+       canonicalDefinition = Value(canonicalDefinition);
+  static Insertable<QuestDefinitionRevision> custom({
+    Expression<String>? questId,
+    Expression<int>? catalogVersion,
+    Expression<String>? definitionDigest,
+    Expression<String>? canonicalDefinition,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (questId != null) 'quest_id': questId,
+      if (catalogVersion != null) 'catalog_version': catalogVersion,
+      if (definitionDigest != null) 'definition_digest': definitionDigest,
+      if (canonicalDefinition != null)
+        'canonical_definition': canonicalDefinition,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuestDefinitionRevisionsCompanion copyWith({
+    Value<String>? questId,
+    Value<int>? catalogVersion,
+    Value<String>? definitionDigest,
+    Value<String>? canonicalDefinition,
+    Value<int>? rowid,
+  }) {
+    return QuestDefinitionRevisionsCompanion(
+      questId: questId ?? this.questId,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      definitionDigest: definitionDigest ?? this.definitionDigest,
+      canonicalDefinition: canonicalDefinition ?? this.canonicalDefinition,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (questId.present) {
+      map['quest_id'] = Variable<String>(questId.value);
+    }
+    if (catalogVersion.present) {
+      map['catalog_version'] = Variable<int>(catalogVersion.value);
+    }
+    if (definitionDigest.present) {
+      map['definition_digest'] = Variable<String>(definitionDigest.value);
+    }
+    if (canonicalDefinition.present) {
+      map['canonical_definition'] = Variable<String>(canonicalDefinition.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestDefinitionRevisionsCompanion(')
+          ..write('questId: $questId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('definitionDigest: $definitionDigest, ')
+          ..write('canonicalDefinition: $canonicalDefinition, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $QuestInstancesTable extends QuestInstances
     with TableInfo<$QuestInstancesTable, QuestInstance> {
   @override
@@ -14424,6 +15794,98 @@ class $QuestInstancesTable extends QuestInstances
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _periodKeyMeta = const VerificationMeta(
+    'periodKey',
+  );
+  @override
+  late final GeneratedColumn<String> periodKey = GeneratedColumn<String>(
+    'period_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _calendarRuleIdMeta = const VerificationMeta(
+    'calendarRuleId',
+  );
+  @override
+  late final GeneratedColumn<String> calendarRuleId = GeneratedColumn<String>(
+    'calendar_rule_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _civilLabelMeta = const VerificationMeta(
+    'civilLabel',
+  );
+  @override
+  late final GeneratedColumn<String> civilLabel = GeneratedColumn<String>(
+    'civil_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _segmentsJsonMeta = const VerificationMeta(
+    'segmentsJson',
+  );
+  @override
+  late final GeneratedColumn<String> segmentsJson = GeneratedColumn<String>(
+    'segments_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _definitionDigestMeta = const VerificationMeta(
+    'definitionDigest',
+  );
+  @override
+  late final GeneratedColumn<String> definitionDigest = GeneratedColumn<String>(
+    'definition_digest',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _canonicalInstanceIdMeta =
+      const VerificationMeta('canonicalInstanceId');
+  @override
+  late final GeneratedColumn<String> canonicalInstanceId =
+      GeneratedColumn<String>(
+        'canonical_instance_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES quest_instances (instance_id)',
+        ),
+      );
+  static const VerificationMeta _recordKindMeta = const VerificationMeta(
+    'recordKind',
+  );
+  @override
+  late final GeneratedColumn<String> recordKind = GeneratedColumn<String>(
+    'record_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('legacy'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     instanceId,
@@ -14434,6 +15896,14 @@ class $QuestInstancesTable extends QuestInstances
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    originOwnerId,
+    periodKey,
+    calendarRuleId,
+    civilLabel,
+    segmentsJson,
+    definitionDigest,
+    canonicalInstanceId,
+    recordKind,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -14519,15 +15989,74 @@ class $QuestInstancesTable extends QuestInstances
         ),
       );
     }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('period_key')) {
+      context.handle(
+        _periodKeyMeta,
+        periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
+      );
+    }
+    if (data.containsKey('calendar_rule_id')) {
+      context.handle(
+        _calendarRuleIdMeta,
+        calendarRuleId.isAcceptableOrUnknown(
+          data['calendar_rule_id']!,
+          _calendarRuleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('civil_label')) {
+      context.handle(
+        _civilLabelMeta,
+        civilLabel.isAcceptableOrUnknown(data['civil_label']!, _civilLabelMeta),
+      );
+    }
+    if (data.containsKey('segments_json')) {
+      context.handle(
+        _segmentsJsonMeta,
+        segmentsJson.isAcceptableOrUnknown(
+          data['segments_json']!,
+          _segmentsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('definition_digest')) {
+      context.handle(
+        _definitionDigestMeta,
+        definitionDigest.isAcceptableOrUnknown(
+          data['definition_digest']!,
+          _definitionDigestMeta,
+        ),
+      );
+    }
+    if (data.containsKey('canonical_instance_id')) {
+      context.handle(
+        _canonicalInstanceIdMeta,
+        canonicalInstanceId.isAcceptableOrUnknown(
+          data['canonical_instance_id']!,
+          _canonicalInstanceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('record_kind')) {
+      context.handle(
+        _recordKindMeta,
+        recordKind.isAcceptableOrUnknown(data['record_kind']!, _recordKindMeta),
+      );
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {instanceId};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {ownerId, questId},
-  ];
   @override
   QuestInstance map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -14564,6 +16093,38 @@ class $QuestInstancesTable extends QuestInstances
         DriftSqlType.int,
         data['${effectivePrefix}expired_at_utc_ms'],
       ),
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      ),
+      periodKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_key'],
+      ),
+      calendarRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calendar_rule_id'],
+      ),
+      civilLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}civil_label'],
+      ),
+      segmentsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segments_json'],
+      ),
+      definitionDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_digest'],
+      ),
+      canonicalInstanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}canonical_instance_id'],
+      ),
+      recordKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}record_kind'],
+      )!,
     );
   }
 
@@ -14585,6 +16146,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
   final String state;
   final int? completedAtUtcMs;
   final int? expiredAtUtcMs;
+  final String? originOwnerId;
+  final String? periodKey;
+  final String? calendarRuleId;
+  final String? civilLabel;
+  final String? segmentsJson;
+  final String? definitionDigest;
+  final String? canonicalInstanceId;
+  final String recordKind;
   const QuestInstance({
     required this.instanceId,
     required this.questId,
@@ -14594,6 +16163,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     required this.state,
     this.completedAtUtcMs,
     this.expiredAtUtcMs,
+    this.originOwnerId,
+    this.periodKey,
+    this.calendarRuleId,
+    this.civilLabel,
+    this.segmentsJson,
+    this.definitionDigest,
+    this.canonicalInstanceId,
+    required this.recordKind,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -14610,6 +16187,28 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     if (!nullToAbsent || expiredAtUtcMs != null) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs);
     }
+    if (!nullToAbsent || originOwnerId != null) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId);
+    }
+    if (!nullToAbsent || periodKey != null) {
+      map['period_key'] = Variable<String>(periodKey);
+    }
+    if (!nullToAbsent || calendarRuleId != null) {
+      map['calendar_rule_id'] = Variable<String>(calendarRuleId);
+    }
+    if (!nullToAbsent || civilLabel != null) {
+      map['civil_label'] = Variable<String>(civilLabel);
+    }
+    if (!nullToAbsent || segmentsJson != null) {
+      map['segments_json'] = Variable<String>(segmentsJson);
+    }
+    if (!nullToAbsent || definitionDigest != null) {
+      map['definition_digest'] = Variable<String>(definitionDigest);
+    }
+    if (!nullToAbsent || canonicalInstanceId != null) {
+      map['canonical_instance_id'] = Variable<String>(canonicalInstanceId);
+    }
+    map['record_kind'] = Variable<String>(recordKind);
     return map;
   }
 
@@ -14627,6 +16226,28 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: expiredAtUtcMs == null && nullToAbsent
           ? const Value.absent()
           : Value(expiredAtUtcMs),
+      originOwnerId: originOwnerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originOwnerId),
+      periodKey: periodKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodKey),
+      calendarRuleId: calendarRuleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(calendarRuleId),
+      civilLabel: civilLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(civilLabel),
+      segmentsJson: segmentsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(segmentsJson),
+      definitionDigest: definitionDigest == null && nullToAbsent
+          ? const Value.absent()
+          : Value(definitionDigest),
+      canonicalInstanceId: canonicalInstanceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(canonicalInstanceId),
+      recordKind: Value(recordKind),
     );
   }
 
@@ -14644,6 +16265,16 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       state: serializer.fromJson<String>(json['state']),
       completedAtUtcMs: serializer.fromJson<int?>(json['completedAtUtcMs']),
       expiredAtUtcMs: serializer.fromJson<int?>(json['expiredAtUtcMs']),
+      originOwnerId: serializer.fromJson<String?>(json['originOwnerId']),
+      periodKey: serializer.fromJson<String?>(json['periodKey']),
+      calendarRuleId: serializer.fromJson<String?>(json['calendarRuleId']),
+      civilLabel: serializer.fromJson<String?>(json['civilLabel']),
+      segmentsJson: serializer.fromJson<String?>(json['segmentsJson']),
+      definitionDigest: serializer.fromJson<String?>(json['definitionDigest']),
+      canonicalInstanceId: serializer.fromJson<String?>(
+        json['canonicalInstanceId'],
+      ),
+      recordKind: serializer.fromJson<String>(json['recordKind']),
     );
   }
   @override
@@ -14658,6 +16289,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       'state': serializer.toJson<String>(state),
       'completedAtUtcMs': serializer.toJson<int?>(completedAtUtcMs),
       'expiredAtUtcMs': serializer.toJson<int?>(expiredAtUtcMs),
+      'originOwnerId': serializer.toJson<String?>(originOwnerId),
+      'periodKey': serializer.toJson<String?>(periodKey),
+      'calendarRuleId': serializer.toJson<String?>(calendarRuleId),
+      'civilLabel': serializer.toJson<String?>(civilLabel),
+      'segmentsJson': serializer.toJson<String?>(segmentsJson),
+      'definitionDigest': serializer.toJson<String?>(definitionDigest),
+      'canonicalInstanceId': serializer.toJson<String?>(canonicalInstanceId),
+      'recordKind': serializer.toJson<String>(recordKind),
     };
   }
 
@@ -14670,6 +16309,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     String? state,
     Value<int?> completedAtUtcMs = const Value.absent(),
     Value<int?> expiredAtUtcMs = const Value.absent(),
+    Value<String?> originOwnerId = const Value.absent(),
+    Value<String?> periodKey = const Value.absent(),
+    Value<String?> calendarRuleId = const Value.absent(),
+    Value<String?> civilLabel = const Value.absent(),
+    Value<String?> segmentsJson = const Value.absent(),
+    Value<String?> definitionDigest = const Value.absent(),
+    Value<String?> canonicalInstanceId = const Value.absent(),
+    String? recordKind,
   }) => QuestInstance(
     instanceId: instanceId ?? this.instanceId,
     questId: questId ?? this.questId,
@@ -14683,6 +16330,22 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     expiredAtUtcMs: expiredAtUtcMs.present
         ? expiredAtUtcMs.value
         : this.expiredAtUtcMs,
+    originOwnerId: originOwnerId.present
+        ? originOwnerId.value
+        : this.originOwnerId,
+    periodKey: periodKey.present ? periodKey.value : this.periodKey,
+    calendarRuleId: calendarRuleId.present
+        ? calendarRuleId.value
+        : this.calendarRuleId,
+    civilLabel: civilLabel.present ? civilLabel.value : this.civilLabel,
+    segmentsJson: segmentsJson.present ? segmentsJson.value : this.segmentsJson,
+    definitionDigest: definitionDigest.present
+        ? definitionDigest.value
+        : this.definitionDigest,
+    canonicalInstanceId: canonicalInstanceId.present
+        ? canonicalInstanceId.value
+        : this.canonicalInstanceId,
+    recordKind: recordKind ?? this.recordKind,
   );
   QuestInstance copyWithCompanion(QuestInstancesCompanion data) {
     return QuestInstance(
@@ -14704,6 +16367,28 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: data.expiredAtUtcMs.present
           ? data.expiredAtUtcMs.value
           : this.expiredAtUtcMs,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      calendarRuleId: data.calendarRuleId.present
+          ? data.calendarRuleId.value
+          : this.calendarRuleId,
+      civilLabel: data.civilLabel.present
+          ? data.civilLabel.value
+          : this.civilLabel,
+      segmentsJson: data.segmentsJson.present
+          ? data.segmentsJson.value
+          : this.segmentsJson,
+      definitionDigest: data.definitionDigest.present
+          ? data.definitionDigest.value
+          : this.definitionDigest,
+      canonicalInstanceId: data.canonicalInstanceId.present
+          ? data.canonicalInstanceId.value
+          : this.canonicalInstanceId,
+      recordKind: data.recordKind.present
+          ? data.recordKind.value
+          : this.recordKind,
     );
   }
 
@@ -14717,7 +16402,15 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
-          ..write('expiredAtUtcMs: $expiredAtUtcMs')
+          ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('calendarRuleId: $calendarRuleId, ')
+          ..write('civilLabel: $civilLabel, ')
+          ..write('segmentsJson: $segmentsJson, ')
+          ..write('definitionDigest: $definitionDigest, ')
+          ..write('canonicalInstanceId: $canonicalInstanceId, ')
+          ..write('recordKind: $recordKind')
           ..write(')'))
         .toString();
   }
@@ -14732,6 +16425,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    originOwnerId,
+    periodKey,
+    calendarRuleId,
+    civilLabel,
+    segmentsJson,
+    definitionDigest,
+    canonicalInstanceId,
+    recordKind,
   );
   @override
   bool operator ==(Object other) =>
@@ -14744,7 +16445,15 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           other.assignedAtUtcMs == this.assignedAtUtcMs &&
           other.state == this.state &&
           other.completedAtUtcMs == this.completedAtUtcMs &&
-          other.expiredAtUtcMs == this.expiredAtUtcMs);
+          other.expiredAtUtcMs == this.expiredAtUtcMs &&
+          other.originOwnerId == this.originOwnerId &&
+          other.periodKey == this.periodKey &&
+          other.calendarRuleId == this.calendarRuleId &&
+          other.civilLabel == this.civilLabel &&
+          other.segmentsJson == this.segmentsJson &&
+          other.definitionDigest == this.definitionDigest &&
+          other.canonicalInstanceId == this.canonicalInstanceId &&
+          other.recordKind == this.recordKind);
 }
 
 class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
@@ -14756,6 +16465,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
   final Value<String> state;
   final Value<int?> completedAtUtcMs;
   final Value<int?> expiredAtUtcMs;
+  final Value<String?> originOwnerId;
+  final Value<String?> periodKey;
+  final Value<String?> calendarRuleId;
+  final Value<String?> civilLabel;
+  final Value<String?> segmentsJson;
+  final Value<String?> definitionDigest;
+  final Value<String?> canonicalInstanceId;
+  final Value<String> recordKind;
   final Value<int> rowid;
   const QuestInstancesCompanion({
     this.instanceId = const Value.absent(),
@@ -14766,6 +16483,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     this.state = const Value.absent(),
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.calendarRuleId = const Value.absent(),
+    this.civilLabel = const Value.absent(),
+    this.segmentsJson = const Value.absent(),
+    this.definitionDigest = const Value.absent(),
+    this.canonicalInstanceId = const Value.absent(),
+    this.recordKind = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuestInstancesCompanion.insert({
@@ -14777,6 +16502,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     required String state,
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.calendarRuleId = const Value.absent(),
+    this.civilLabel = const Value.absent(),
+    this.segmentsJson = const Value.absent(),
+    this.definitionDigest = const Value.absent(),
+    this.canonicalInstanceId = const Value.absent(),
+    this.recordKind = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : instanceId = Value(instanceId),
        questId = Value(questId),
@@ -14793,6 +16526,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Expression<String>? state,
     Expression<int>? completedAtUtcMs,
     Expression<int>? expiredAtUtcMs,
+    Expression<String>? originOwnerId,
+    Expression<String>? periodKey,
+    Expression<String>? calendarRuleId,
+    Expression<String>? civilLabel,
+    Expression<String>? segmentsJson,
+    Expression<String>? definitionDigest,
+    Expression<String>? canonicalInstanceId,
+    Expression<String>? recordKind,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -14804,6 +16545,15 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       if (state != null) 'state': state,
       if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
       if (expiredAtUtcMs != null) 'expired_at_utc_ms': expiredAtUtcMs,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (periodKey != null) 'period_key': periodKey,
+      if (calendarRuleId != null) 'calendar_rule_id': calendarRuleId,
+      if (civilLabel != null) 'civil_label': civilLabel,
+      if (segmentsJson != null) 'segments_json': segmentsJson,
+      if (definitionDigest != null) 'definition_digest': definitionDigest,
+      if (canonicalInstanceId != null)
+        'canonical_instance_id': canonicalInstanceId,
+      if (recordKind != null) 'record_kind': recordKind,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -14817,6 +16567,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Value<String>? state,
     Value<int?>? completedAtUtcMs,
     Value<int?>? expiredAtUtcMs,
+    Value<String?>? originOwnerId,
+    Value<String?>? periodKey,
+    Value<String?>? calendarRuleId,
+    Value<String?>? civilLabel,
+    Value<String?>? segmentsJson,
+    Value<String?>? definitionDigest,
+    Value<String?>? canonicalInstanceId,
+    Value<String>? recordKind,
     Value<int>? rowid,
   }) {
     return QuestInstancesCompanion(
@@ -14828,6 +16586,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       state: state ?? this.state,
       completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
       expiredAtUtcMs: expiredAtUtcMs ?? this.expiredAtUtcMs,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      periodKey: periodKey ?? this.periodKey,
+      calendarRuleId: calendarRuleId ?? this.calendarRuleId,
+      civilLabel: civilLabel ?? this.civilLabel,
+      segmentsJson: segmentsJson ?? this.segmentsJson,
+      definitionDigest: definitionDigest ?? this.definitionDigest,
+      canonicalInstanceId: canonicalInstanceId ?? this.canonicalInstanceId,
+      recordKind: recordKind ?? this.recordKind,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -14859,6 +16625,32 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     if (expiredAtUtcMs.present) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs.value);
     }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (periodKey.present) {
+      map['period_key'] = Variable<String>(periodKey.value);
+    }
+    if (calendarRuleId.present) {
+      map['calendar_rule_id'] = Variable<String>(calendarRuleId.value);
+    }
+    if (civilLabel.present) {
+      map['civil_label'] = Variable<String>(civilLabel.value);
+    }
+    if (segmentsJson.present) {
+      map['segments_json'] = Variable<String>(segmentsJson.value);
+    }
+    if (definitionDigest.present) {
+      map['definition_digest'] = Variable<String>(definitionDigest.value);
+    }
+    if (canonicalInstanceId.present) {
+      map['canonical_instance_id'] = Variable<String>(
+        canonicalInstanceId.value,
+      );
+    }
+    if (recordKind.present) {
+      map['record_kind'] = Variable<String>(recordKind.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -14876,6 +16668,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
           ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('calendarRuleId: $calendarRuleId, ')
+          ..write('civilLabel: $civilLabel, ')
+          ..write('segmentsJson: $segmentsJson, ')
+          ..write('definitionDigest: $definitionDigest, ')
+          ..write('canonicalInstanceId: $canonicalInstanceId, ')
+          ..write('recordKind: $recordKind, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15336,6 +17136,551 @@ class QuestObjectiveProgressCompanion
   }
 }
 
+class $QuestClaimReceiptsTable extends QuestClaimReceipts
+    with TableInfo<$QuestClaimReceiptsTable, QuestClaimReceipt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuestClaimReceiptsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instanceIdMeta = const VerificationMeta(
+    'instanceId',
+  );
+  @override
+  late final GeneratedColumn<String> instanceId = GeneratedColumn<String>(
+    'instance_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES quest_instances (instance_id)',
+    ),
+  );
+  static const VerificationMeta _issuedAtUtcMsMeta = const VerificationMeta(
+    'issuedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> issuedAtUtcMs = GeneratedColumn<int>(
+    'issued_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtUtcMsMeta = const VerificationMeta(
+    'completedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> completedAtUtcMs = GeneratedColumn<int>(
+    'completed_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _xpAmountMeta = const VerificationMeta(
+    'xpAmount',
+  );
+  @override
+  late final GeneratedColumn<int> xpAmount = GeneratedColumn<int>(
+    'xp_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _evidenceJsonMeta = const VerificationMeta(
+    'evidenceJson',
+  );
+  @override
+  late final GeneratedColumn<String> evidenceJson = GeneratedColumn<String>(
+    'evidence_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    originOwnerId,
+    instanceId,
+    issuedAtUtcMs,
+    completedAtUtcMs,
+    xpAmount,
+    evidenceJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quest_claim_receipts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuestClaimReceipt> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('instance_id')) {
+      context.handle(
+        _instanceIdMeta,
+        instanceId.isAcceptableOrUnknown(data['instance_id']!, _instanceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_instanceIdMeta);
+    }
+    if (data.containsKey('issued_at_utc_ms')) {
+      context.handle(
+        _issuedAtUtcMsMeta,
+        issuedAtUtcMs.isAcceptableOrUnknown(
+          data['issued_at_utc_ms']!,
+          _issuedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_issuedAtUtcMsMeta);
+    }
+    if (data.containsKey('completed_at_utc_ms')) {
+      context.handle(
+        _completedAtUtcMsMeta,
+        completedAtUtcMs.isAcceptableOrUnknown(
+          data['completed_at_utc_ms']!,
+          _completedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtUtcMsMeta);
+    }
+    if (data.containsKey('xp_amount')) {
+      context.handle(
+        _xpAmountMeta,
+        xpAmount.isAcceptableOrUnknown(data['xp_amount']!, _xpAmountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_xpAmountMeta);
+    }
+    if (data.containsKey('evidence_json')) {
+      context.handle(
+        _evidenceJsonMeta,
+        evidenceJson.isAcceptableOrUnknown(
+          data['evidence_json']!,
+          _evidenceJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_evidenceJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {instanceId},
+  ];
+  @override
+  QuestClaimReceipt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuestClaimReceipt(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      instanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instance_id'],
+      )!,
+      issuedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}issued_at_utc_ms'],
+      )!,
+      completedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at_utc_ms'],
+      )!,
+      xpAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}xp_amount'],
+      )!,
+      evidenceJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_json'],
+      )!,
+    );
+  }
+
+  @override
+  $QuestClaimReceiptsTable createAlias(String alias) {
+    return $QuestClaimReceiptsTable(attachedDatabase, alias);
+  }
+}
+
+class QuestClaimReceipt extends DataClass
+    implements Insertable<QuestClaimReceipt> {
+  final String id;
+  final String ownerId;
+  final String originOwnerId;
+  final String instanceId;
+  final int issuedAtUtcMs;
+  final int completedAtUtcMs;
+  final int xpAmount;
+  final String evidenceJson;
+  const QuestClaimReceipt({
+    required this.id,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.instanceId,
+    required this.issuedAtUtcMs,
+    required this.completedAtUtcMs,
+    required this.xpAmount,
+    required this.evidenceJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['instance_id'] = Variable<String>(instanceId);
+    map['issued_at_utc_ms'] = Variable<int>(issuedAtUtcMs);
+    map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs);
+    map['xp_amount'] = Variable<int>(xpAmount);
+    map['evidence_json'] = Variable<String>(evidenceJson);
+    return map;
+  }
+
+  QuestClaimReceiptsCompanion toCompanion(bool nullToAbsent) {
+    return QuestClaimReceiptsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      instanceId: Value(instanceId),
+      issuedAtUtcMs: Value(issuedAtUtcMs),
+      completedAtUtcMs: Value(completedAtUtcMs),
+      xpAmount: Value(xpAmount),
+      evidenceJson: Value(evidenceJson),
+    );
+  }
+
+  factory QuestClaimReceipt.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuestClaimReceipt(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      instanceId: serializer.fromJson<String>(json['instanceId']),
+      issuedAtUtcMs: serializer.fromJson<int>(json['issuedAtUtcMs']),
+      completedAtUtcMs: serializer.fromJson<int>(json['completedAtUtcMs']),
+      xpAmount: serializer.fromJson<int>(json['xpAmount']),
+      evidenceJson: serializer.fromJson<String>(json['evidenceJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'instanceId': serializer.toJson<String>(instanceId),
+      'issuedAtUtcMs': serializer.toJson<int>(issuedAtUtcMs),
+      'completedAtUtcMs': serializer.toJson<int>(completedAtUtcMs),
+      'xpAmount': serializer.toJson<int>(xpAmount),
+      'evidenceJson': serializer.toJson<String>(evidenceJson),
+    };
+  }
+
+  QuestClaimReceipt copyWith({
+    String? id,
+    String? ownerId,
+    String? originOwnerId,
+    String? instanceId,
+    int? issuedAtUtcMs,
+    int? completedAtUtcMs,
+    int? xpAmount,
+    String? evidenceJson,
+  }) => QuestClaimReceipt(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    instanceId: instanceId ?? this.instanceId,
+    issuedAtUtcMs: issuedAtUtcMs ?? this.issuedAtUtcMs,
+    completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
+    xpAmount: xpAmount ?? this.xpAmount,
+    evidenceJson: evidenceJson ?? this.evidenceJson,
+  );
+  QuestClaimReceipt copyWithCompanion(QuestClaimReceiptsCompanion data) {
+    return QuestClaimReceipt(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      instanceId: data.instanceId.present
+          ? data.instanceId.value
+          : this.instanceId,
+      issuedAtUtcMs: data.issuedAtUtcMs.present
+          ? data.issuedAtUtcMs.value
+          : this.issuedAtUtcMs,
+      completedAtUtcMs: data.completedAtUtcMs.present
+          ? data.completedAtUtcMs.value
+          : this.completedAtUtcMs,
+      xpAmount: data.xpAmount.present ? data.xpAmount.value : this.xpAmount,
+      evidenceJson: data.evidenceJson.present
+          ? data.evidenceJson.value
+          : this.evidenceJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestClaimReceipt(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('instanceId: $instanceId, ')
+          ..write('issuedAtUtcMs: $issuedAtUtcMs, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('xpAmount: $xpAmount, ')
+          ..write('evidenceJson: $evidenceJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    originOwnerId,
+    instanceId,
+    issuedAtUtcMs,
+    completedAtUtcMs,
+    xpAmount,
+    evidenceJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuestClaimReceipt &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.instanceId == this.instanceId &&
+          other.issuedAtUtcMs == this.issuedAtUtcMs &&
+          other.completedAtUtcMs == this.completedAtUtcMs &&
+          other.xpAmount == this.xpAmount &&
+          other.evidenceJson == this.evidenceJson);
+}
+
+class QuestClaimReceiptsCompanion extends UpdateCompanion<QuestClaimReceipt> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<String> instanceId;
+  final Value<int> issuedAtUtcMs;
+  final Value<int> completedAtUtcMs;
+  final Value<int> xpAmount;
+  final Value<String> evidenceJson;
+  final Value<int> rowid;
+  const QuestClaimReceiptsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.instanceId = const Value.absent(),
+    this.issuedAtUtcMs = const Value.absent(),
+    this.completedAtUtcMs = const Value.absent(),
+    this.xpAmount = const Value.absent(),
+    this.evidenceJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuestClaimReceiptsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String originOwnerId,
+    required String instanceId,
+    required int issuedAtUtcMs,
+    required int completedAtUtcMs,
+    required int xpAmount,
+    required String evidenceJson,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       instanceId = Value(instanceId),
+       issuedAtUtcMs = Value(issuedAtUtcMs),
+       completedAtUtcMs = Value(completedAtUtcMs),
+       xpAmount = Value(xpAmount),
+       evidenceJson = Value(evidenceJson);
+  static Insertable<QuestClaimReceipt> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<String>? instanceId,
+    Expression<int>? issuedAtUtcMs,
+    Expression<int>? completedAtUtcMs,
+    Expression<int>? xpAmount,
+    Expression<String>? evidenceJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (instanceId != null) 'instance_id': instanceId,
+      if (issuedAtUtcMs != null) 'issued_at_utc_ms': issuedAtUtcMs,
+      if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
+      if (xpAmount != null) 'xp_amount': xpAmount,
+      if (evidenceJson != null) 'evidence_json': evidenceJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuestClaimReceiptsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<String>? instanceId,
+    Value<int>? issuedAtUtcMs,
+    Value<int>? completedAtUtcMs,
+    Value<int>? xpAmount,
+    Value<String>? evidenceJson,
+    Value<int>? rowid,
+  }) {
+    return QuestClaimReceiptsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      instanceId: instanceId ?? this.instanceId,
+      issuedAtUtcMs: issuedAtUtcMs ?? this.issuedAtUtcMs,
+      completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
+      xpAmount: xpAmount ?? this.xpAmount,
+      evidenceJson: evidenceJson ?? this.evidenceJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (instanceId.present) {
+      map['instance_id'] = Variable<String>(instanceId.value);
+    }
+    if (issuedAtUtcMs.present) {
+      map['issued_at_utc_ms'] = Variable<int>(issuedAtUtcMs.value);
+    }
+    if (completedAtUtcMs.present) {
+      map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs.value);
+    }
+    if (xpAmount.present) {
+      map['xp_amount'] = Variable<int>(xpAmount.value);
+    }
+    if (evidenceJson.present) {
+      map['evidence_json'] = Variable<String>(evidenceJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestClaimReceiptsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('instanceId: $instanceId, ')
+          ..write('issuedAtUtcMs: $issuedAtUtcMs, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('xpAmount: $xpAmount, ')
+          ..write('evidenceJson: $evidenceJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $StreakStatesTable extends StreakStates
     with TableInfo<$StreakStatesTable, StreakState> {
   @override
@@ -15534,16 +17879,15 @@ class $StreakStatesTable extends StreakStates
 class StreakState extends DataClass implements Insertable<StreakState> {
   final String ownerId;
 
-  /// Number of consecutive learning days including today (or the last
-  /// active day).  Reset to 0 if the learner missed a full day without
-  /// using a freeze token.
+  /// Consecutive learning days at the latest settled studied date. The
+  /// current headline can expire independently of this last-event state.
   final int currentStreakDays;
 
   /// All-time maximum streak — never decremented.
   final int longestStreakDays;
 
-  /// Remaining freeze tokens.  Incremented by daily/milestone rewards;
-  /// decremented by [StreakUseCases.useFreezeToken].
+  /// Cached balance reconstructed from sealed origin assets and immutable
+  /// token adjustments; this projection is not a token issuer.
   final int freezeCount;
 
   /// UTC timestamp of the most recent session that counted toward the
@@ -15943,7 +18287,7 @@ class LearningDayLogData extends DataClass
   final String ownerId;
 
   /// ISO-8601 date in the learner's local timezone: `'YYYY-MM-DD'`.
-  /// Computed by [TimezonePolicy.getLearningDay].
+  /// Preserves the original civil label; legacy entries can be UTC-only.
   final String learningDay;
 
   /// UTC timestamp of the first session on this day.
@@ -16130,6 +18474,1154 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
           ..write('ownerId: $ownerId, ')
           ..write('learningDay: $learningDay, ')
           ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StreakBaselinesTable extends StreakBaselines
+    with TableInfo<$StreakBaselinesTable, StreakBaseline> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakBaselinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _cutoffUtcMsMeta = const VerificationMeta(
+    'cutoffUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> cutoffUtcMs = GeneratedColumn<int>(
+    'cutoff_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currentStreakDaysMeta = const VerificationMeta(
+    'currentStreakDays',
+  );
+  @override
+  late final GeneratedColumn<int> currentStreakDays = GeneratedColumn<int>(
+    'current_streak_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _longestStreakDaysMeta = const VerificationMeta(
+    'longestStreakDays',
+  );
+  @override
+  late final GeneratedColumn<int> longestStreakDays = GeneratedColumn<int>(
+    'longest_streak_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _freezeCountMeta = const VerificationMeta(
+    'freezeCount',
+  );
+  @override
+  late final GeneratedColumn<int> freezeCount = GeneratedColumn<int>(
+    'freeze_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastLearnedAtUtcMsMeta =
+      const VerificationMeta('lastLearnedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastLearnedAtUtcMs = GeneratedColumn<int>(
+    'last_learned_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _controlsContinuityMeta =
+      const VerificationMeta('controlsContinuity');
+  @override
+  late final GeneratedColumn<bool> controlsContinuity = GeneratedColumn<bool>(
+    'controls_continuity',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("controls_continuity" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    originOwnerId,
+    ownerId,
+    cutoffUtcMs,
+    currentStreakDays,
+    longestStreakDays,
+    freezeCount,
+    lastLearnedAtUtcMs,
+    updatedAtUtcMs,
+    controlsContinuity,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_baselines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakBaseline> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('cutoff_utc_ms')) {
+      context.handle(
+        _cutoffUtcMsMeta,
+        cutoffUtcMs.isAcceptableOrUnknown(
+          data['cutoff_utc_ms']!,
+          _cutoffUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_cutoffUtcMsMeta);
+    }
+    if (data.containsKey('current_streak_days')) {
+      context.handle(
+        _currentStreakDaysMeta,
+        currentStreakDays.isAcceptableOrUnknown(
+          data['current_streak_days']!,
+          _currentStreakDaysMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currentStreakDaysMeta);
+    }
+    if (data.containsKey('longest_streak_days')) {
+      context.handle(
+        _longestStreakDaysMeta,
+        longestStreakDays.isAcceptableOrUnknown(
+          data['longest_streak_days']!,
+          _longestStreakDaysMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_longestStreakDaysMeta);
+    }
+    if (data.containsKey('freeze_count')) {
+      context.handle(
+        _freezeCountMeta,
+        freezeCount.isAcceptableOrUnknown(
+          data['freeze_count']!,
+          _freezeCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_freezeCountMeta);
+    }
+    if (data.containsKey('last_learned_at_utc_ms')) {
+      context.handle(
+        _lastLearnedAtUtcMsMeta,
+        lastLearnedAtUtcMs.isAcceptableOrUnknown(
+          data['last_learned_at_utc_ms']!,
+          _lastLearnedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('controls_continuity')) {
+      context.handle(
+        _controlsContinuityMeta,
+        controlsContinuity.isAcceptableOrUnknown(
+          data['controls_continuity']!,
+          _controlsContinuityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_controlsContinuityMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {originOwnerId};
+  @override
+  StreakBaseline map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakBaseline(
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      cutoffUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cutoff_utc_ms'],
+      )!,
+      currentStreakDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_streak_days'],
+      )!,
+      longestStreakDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}longest_streak_days'],
+      )!,
+      freezeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}freeze_count'],
+      )!,
+      lastLearnedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_learned_at_utc_ms'],
+      ),
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      controlsContinuity: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}controls_continuity'],
+      )!,
+    );
+  }
+
+  @override
+  $StreakBaselinesTable createAlias(String alias) {
+    return $StreakBaselinesTable(attachedDatabase, alias);
+  }
+}
+
+class StreakBaseline extends DataClass implements Insertable<StreakBaseline> {
+  final String originOwnerId;
+  final String ownerId;
+  final int cutoffUtcMs;
+  final int currentStreakDays;
+  final int longestStreakDays;
+  final int freezeCount;
+  final int? lastLearnedAtUtcMs;
+  final int updatedAtUtcMs;
+  final bool controlsContinuity;
+  const StreakBaseline({
+    required this.originOwnerId,
+    required this.ownerId,
+    required this.cutoffUtcMs,
+    required this.currentStreakDays,
+    required this.longestStreakDays,
+    required this.freezeCount,
+    this.lastLearnedAtUtcMs,
+    required this.updatedAtUtcMs,
+    required this.controlsContinuity,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['cutoff_utc_ms'] = Variable<int>(cutoffUtcMs);
+    map['current_streak_days'] = Variable<int>(currentStreakDays);
+    map['longest_streak_days'] = Variable<int>(longestStreakDays);
+    map['freeze_count'] = Variable<int>(freezeCount);
+    if (!nullToAbsent || lastLearnedAtUtcMs != null) {
+      map['last_learned_at_utc_ms'] = Variable<int>(lastLearnedAtUtcMs);
+    }
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['controls_continuity'] = Variable<bool>(controlsContinuity);
+    return map;
+  }
+
+  StreakBaselinesCompanion toCompanion(bool nullToAbsent) {
+    return StreakBaselinesCompanion(
+      originOwnerId: Value(originOwnerId),
+      ownerId: Value(ownerId),
+      cutoffUtcMs: Value(cutoffUtcMs),
+      currentStreakDays: Value(currentStreakDays),
+      longestStreakDays: Value(longestStreakDays),
+      freezeCount: Value(freezeCount),
+      lastLearnedAtUtcMs: lastLearnedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastLearnedAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      controlsContinuity: Value(controlsContinuity),
+    );
+  }
+
+  factory StreakBaseline.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakBaseline(
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      cutoffUtcMs: serializer.fromJson<int>(json['cutoffUtcMs']),
+      currentStreakDays: serializer.fromJson<int>(json['currentStreakDays']),
+      longestStreakDays: serializer.fromJson<int>(json['longestStreakDays']),
+      freezeCount: serializer.fromJson<int>(json['freezeCount']),
+      lastLearnedAtUtcMs: serializer.fromJson<int?>(json['lastLearnedAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      controlsContinuity: serializer.fromJson<bool>(json['controlsContinuity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'cutoffUtcMs': serializer.toJson<int>(cutoffUtcMs),
+      'currentStreakDays': serializer.toJson<int>(currentStreakDays),
+      'longestStreakDays': serializer.toJson<int>(longestStreakDays),
+      'freezeCount': serializer.toJson<int>(freezeCount),
+      'lastLearnedAtUtcMs': serializer.toJson<int?>(lastLearnedAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'controlsContinuity': serializer.toJson<bool>(controlsContinuity),
+    };
+  }
+
+  StreakBaseline copyWith({
+    String? originOwnerId,
+    String? ownerId,
+    int? cutoffUtcMs,
+    int? currentStreakDays,
+    int? longestStreakDays,
+    int? freezeCount,
+    Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+    int? updatedAtUtcMs,
+    bool? controlsContinuity,
+  }) => StreakBaseline(
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    ownerId: ownerId ?? this.ownerId,
+    cutoffUtcMs: cutoffUtcMs ?? this.cutoffUtcMs,
+    currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+    longestStreakDays: longestStreakDays ?? this.longestStreakDays,
+    freezeCount: freezeCount ?? this.freezeCount,
+    lastLearnedAtUtcMs: lastLearnedAtUtcMs.present
+        ? lastLearnedAtUtcMs.value
+        : this.lastLearnedAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    controlsContinuity: controlsContinuity ?? this.controlsContinuity,
+  );
+  StreakBaseline copyWithCompanion(StreakBaselinesCompanion data) {
+    return StreakBaseline(
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      cutoffUtcMs: data.cutoffUtcMs.present
+          ? data.cutoffUtcMs.value
+          : this.cutoffUtcMs,
+      currentStreakDays: data.currentStreakDays.present
+          ? data.currentStreakDays.value
+          : this.currentStreakDays,
+      longestStreakDays: data.longestStreakDays.present
+          ? data.longestStreakDays.value
+          : this.longestStreakDays,
+      freezeCount: data.freezeCount.present
+          ? data.freezeCount.value
+          : this.freezeCount,
+      lastLearnedAtUtcMs: data.lastLearnedAtUtcMs.present
+          ? data.lastLearnedAtUtcMs.value
+          : this.lastLearnedAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      controlsContinuity: data.controlsContinuity.present
+          ? data.controlsContinuity.value
+          : this.controlsContinuity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakBaseline(')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('cutoffUtcMs: $cutoffUtcMs, ')
+          ..write('currentStreakDays: $currentStreakDays, ')
+          ..write('longestStreakDays: $longestStreakDays, ')
+          ..write('freezeCount: $freezeCount, ')
+          ..write('lastLearnedAtUtcMs: $lastLearnedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('controlsContinuity: $controlsContinuity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    originOwnerId,
+    ownerId,
+    cutoffUtcMs,
+    currentStreakDays,
+    longestStreakDays,
+    freezeCount,
+    lastLearnedAtUtcMs,
+    updatedAtUtcMs,
+    controlsContinuity,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakBaseline &&
+          other.originOwnerId == this.originOwnerId &&
+          other.ownerId == this.ownerId &&
+          other.cutoffUtcMs == this.cutoffUtcMs &&
+          other.currentStreakDays == this.currentStreakDays &&
+          other.longestStreakDays == this.longestStreakDays &&
+          other.freezeCount == this.freezeCount &&
+          other.lastLearnedAtUtcMs == this.lastLearnedAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.controlsContinuity == this.controlsContinuity);
+}
+
+class StreakBaselinesCompanion extends UpdateCompanion<StreakBaseline> {
+  final Value<String> originOwnerId;
+  final Value<String> ownerId;
+  final Value<int> cutoffUtcMs;
+  final Value<int> currentStreakDays;
+  final Value<int> longestStreakDays;
+  final Value<int> freezeCount;
+  final Value<int?> lastLearnedAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<bool> controlsContinuity;
+  final Value<int> rowid;
+  const StreakBaselinesCompanion({
+    this.originOwnerId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.cutoffUtcMs = const Value.absent(),
+    this.currentStreakDays = const Value.absent(),
+    this.longestStreakDays = const Value.absent(),
+    this.freezeCount = const Value.absent(),
+    this.lastLearnedAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.controlsContinuity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StreakBaselinesCompanion.insert({
+    required String originOwnerId,
+    required String ownerId,
+    required int cutoffUtcMs,
+    required int currentStreakDays,
+    required int longestStreakDays,
+    required int freezeCount,
+    this.lastLearnedAtUtcMs = const Value.absent(),
+    required int updatedAtUtcMs,
+    required bool controlsContinuity,
+    this.rowid = const Value.absent(),
+  }) : originOwnerId = Value(originOwnerId),
+       ownerId = Value(ownerId),
+       cutoffUtcMs = Value(cutoffUtcMs),
+       currentStreakDays = Value(currentStreakDays),
+       longestStreakDays = Value(longestStreakDays),
+       freezeCount = Value(freezeCount),
+       updatedAtUtcMs = Value(updatedAtUtcMs),
+       controlsContinuity = Value(controlsContinuity);
+  static Insertable<StreakBaseline> custom({
+    Expression<String>? originOwnerId,
+    Expression<String>? ownerId,
+    Expression<int>? cutoffUtcMs,
+    Expression<int>? currentStreakDays,
+    Expression<int>? longestStreakDays,
+    Expression<int>? freezeCount,
+    Expression<int>? lastLearnedAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<bool>? controlsContinuity,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (cutoffUtcMs != null) 'cutoff_utc_ms': cutoffUtcMs,
+      if (currentStreakDays != null) 'current_streak_days': currentStreakDays,
+      if (longestStreakDays != null) 'longest_streak_days': longestStreakDays,
+      if (freezeCount != null) 'freeze_count': freezeCount,
+      if (lastLearnedAtUtcMs != null)
+        'last_learned_at_utc_ms': lastLearnedAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (controlsContinuity != null) 'controls_continuity': controlsContinuity,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StreakBaselinesCompanion copyWith({
+    Value<String>? originOwnerId,
+    Value<String>? ownerId,
+    Value<int>? cutoffUtcMs,
+    Value<int>? currentStreakDays,
+    Value<int>? longestStreakDays,
+    Value<int>? freezeCount,
+    Value<int?>? lastLearnedAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<bool>? controlsContinuity,
+    Value<int>? rowid,
+  }) {
+    return StreakBaselinesCompanion(
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      ownerId: ownerId ?? this.ownerId,
+      cutoffUtcMs: cutoffUtcMs ?? this.cutoffUtcMs,
+      currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+      longestStreakDays: longestStreakDays ?? this.longestStreakDays,
+      freezeCount: freezeCount ?? this.freezeCount,
+      lastLearnedAtUtcMs: lastLearnedAtUtcMs ?? this.lastLearnedAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      controlsContinuity: controlsContinuity ?? this.controlsContinuity,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (cutoffUtcMs.present) {
+      map['cutoff_utc_ms'] = Variable<int>(cutoffUtcMs.value);
+    }
+    if (currentStreakDays.present) {
+      map['current_streak_days'] = Variable<int>(currentStreakDays.value);
+    }
+    if (longestStreakDays.present) {
+      map['longest_streak_days'] = Variable<int>(longestStreakDays.value);
+    }
+    if (freezeCount.present) {
+      map['freeze_count'] = Variable<int>(freezeCount.value);
+    }
+    if (lastLearnedAtUtcMs.present) {
+      map['last_learned_at_utc_ms'] = Variable<int>(lastLearnedAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (controlsContinuity.present) {
+      map['controls_continuity'] = Variable<bool>(controlsContinuity.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakBaselinesCompanion(')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('cutoffUtcMs: $cutoffUtcMs, ')
+          ..write('currentStreakDays: $currentStreakDays, ')
+          ..write('longestStreakDays: $longestStreakDays, ')
+          ..write('freezeCount: $freezeCount, ')
+          ..write('lastLearnedAtUtcMs: $lastLearnedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('controlsContinuity: $controlsContinuity, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StreakTokenAdjustmentsTable extends StreakTokenAdjustments
+    with TableInfo<$StreakTokenAdjustmentsTable, StreakTokenAdjustment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakTokenAdjustmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _commandIdMeta = const VerificationMeta(
+    'commandId',
+  );
+  @override
+  late final GeneratedColumn<String> commandId = GeneratedColumn<String>(
+    'command_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _occurredAtUtcMsMeta = const VerificationMeta(
+    'occurredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> occurredAtUtcMs = GeneratedColumn<int>(
+    'occurred_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deltaMeta = const VerificationMeta('delta');
+  @override
+  late final GeneratedColumn<int> delta = GeneratedColumn<int>(
+    'delta',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protectedDayMeta = const VerificationMeta(
+    'protectedDay',
+  );
+  @override
+  late final GeneratedColumn<String> protectedDay = GeneratedColumn<String>(
+    'protected_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    originOwnerId,
+    commandId,
+    occurredAtUtcMs,
+    kind,
+    delta,
+    protectedDay,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_token_adjustments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakTokenAdjustment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('command_id')) {
+      context.handle(
+        _commandIdMeta,
+        commandId.isAcceptableOrUnknown(data['command_id']!, _commandIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_commandIdMeta);
+    }
+    if (data.containsKey('occurred_at_utc_ms')) {
+      context.handle(
+        _occurredAtUtcMsMeta,
+        occurredAtUtcMs.isAcceptableOrUnknown(
+          data['occurred_at_utc_ms']!,
+          _occurredAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtUtcMsMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('delta')) {
+      context.handle(
+        _deltaMeta,
+        delta.isAcceptableOrUnknown(data['delta']!, _deltaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deltaMeta);
+    }
+    if (data.containsKey('protected_day')) {
+      context.handle(
+        _protectedDayMeta,
+        protectedDay.isAcceptableOrUnknown(
+          data['protected_day']!,
+          _protectedDayMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {originOwnerId, commandId},
+  ];
+  @override
+  StreakTokenAdjustment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakTokenAdjustment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      commandId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}command_id'],
+      )!,
+      occurredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}occurred_at_utc_ms'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      delta: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}delta'],
+      )!,
+      protectedDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protected_day'],
+      ),
+    );
+  }
+
+  @override
+  $StreakTokenAdjustmentsTable createAlias(String alias) {
+    return $StreakTokenAdjustmentsTable(attachedDatabase, alias);
+  }
+}
+
+class StreakTokenAdjustment extends DataClass
+    implements Insertable<StreakTokenAdjustment> {
+  final String id;
+  final String ownerId;
+  final String originOwnerId;
+  final String commandId;
+  final int occurredAtUtcMs;
+  final String kind;
+  final int delta;
+  final String? protectedDay;
+  const StreakTokenAdjustment({
+    required this.id,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.commandId,
+    required this.occurredAtUtcMs,
+    required this.kind,
+    required this.delta,
+    this.protectedDay,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['command_id'] = Variable<String>(commandId);
+    map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
+    map['kind'] = Variable<String>(kind);
+    map['delta'] = Variable<int>(delta);
+    if (!nullToAbsent || protectedDay != null) {
+      map['protected_day'] = Variable<String>(protectedDay);
+    }
+    return map;
+  }
+
+  StreakTokenAdjustmentsCompanion toCompanion(bool nullToAbsent) {
+    return StreakTokenAdjustmentsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      commandId: Value(commandId),
+      occurredAtUtcMs: Value(occurredAtUtcMs),
+      kind: Value(kind),
+      delta: Value(delta),
+      protectedDay: protectedDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(protectedDay),
+    );
+  }
+
+  factory StreakTokenAdjustment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakTokenAdjustment(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      commandId: serializer.fromJson<String>(json['commandId']),
+      occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
+      kind: serializer.fromJson<String>(json['kind']),
+      delta: serializer.fromJson<int>(json['delta']),
+      protectedDay: serializer.fromJson<String?>(json['protectedDay']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'commandId': serializer.toJson<String>(commandId),
+      'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
+      'kind': serializer.toJson<String>(kind),
+      'delta': serializer.toJson<int>(delta),
+      'protectedDay': serializer.toJson<String?>(protectedDay),
+    };
+  }
+
+  StreakTokenAdjustment copyWith({
+    String? id,
+    String? ownerId,
+    String? originOwnerId,
+    String? commandId,
+    int? occurredAtUtcMs,
+    String? kind,
+    int? delta,
+    Value<String?> protectedDay = const Value.absent(),
+  }) => StreakTokenAdjustment(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    commandId: commandId ?? this.commandId,
+    occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+    kind: kind ?? this.kind,
+    delta: delta ?? this.delta,
+    protectedDay: protectedDay.present ? protectedDay.value : this.protectedDay,
+  );
+  StreakTokenAdjustment copyWithCompanion(
+    StreakTokenAdjustmentsCompanion data,
+  ) {
+    return StreakTokenAdjustment(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      commandId: data.commandId.present ? data.commandId.value : this.commandId,
+      occurredAtUtcMs: data.occurredAtUtcMs.present
+          ? data.occurredAtUtcMs.value
+          : this.occurredAtUtcMs,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      delta: data.delta.present ? data.delta.value : this.delta,
+      protectedDay: data.protectedDay.present
+          ? data.protectedDay.value
+          : this.protectedDay,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakTokenAdjustment(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('commandId: $commandId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('kind: $kind, ')
+          ..write('delta: $delta, ')
+          ..write('protectedDay: $protectedDay')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    originOwnerId,
+    commandId,
+    occurredAtUtcMs,
+    kind,
+    delta,
+    protectedDay,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakTokenAdjustment &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.commandId == this.commandId &&
+          other.occurredAtUtcMs == this.occurredAtUtcMs &&
+          other.kind == this.kind &&
+          other.delta == this.delta &&
+          other.protectedDay == this.protectedDay);
+}
+
+class StreakTokenAdjustmentsCompanion
+    extends UpdateCompanion<StreakTokenAdjustment> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<String> commandId;
+  final Value<int> occurredAtUtcMs;
+  final Value<String> kind;
+  final Value<int> delta;
+  final Value<String?> protectedDay;
+  final Value<int> rowid;
+  const StreakTokenAdjustmentsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.commandId = const Value.absent(),
+    this.occurredAtUtcMs = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.delta = const Value.absent(),
+    this.protectedDay = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StreakTokenAdjustmentsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String originOwnerId,
+    required String commandId,
+    required int occurredAtUtcMs,
+    required String kind,
+    required int delta,
+    this.protectedDay = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       commandId = Value(commandId),
+       occurredAtUtcMs = Value(occurredAtUtcMs),
+       kind = Value(kind),
+       delta = Value(delta);
+  static Insertable<StreakTokenAdjustment> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<String>? commandId,
+    Expression<int>? occurredAtUtcMs,
+    Expression<String>? kind,
+    Expression<int>? delta,
+    Expression<String>? protectedDay,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (commandId != null) 'command_id': commandId,
+      if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
+      if (kind != null) 'kind': kind,
+      if (delta != null) 'delta': delta,
+      if (protectedDay != null) 'protected_day': protectedDay,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StreakTokenAdjustmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<String>? commandId,
+    Value<int>? occurredAtUtcMs,
+    Value<String>? kind,
+    Value<int>? delta,
+    Value<String?>? protectedDay,
+    Value<int>? rowid,
+  }) {
+    return StreakTokenAdjustmentsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      commandId: commandId ?? this.commandId,
+      occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+      kind: kind ?? this.kind,
+      delta: delta ?? this.delta,
+      protectedDay: protectedDay ?? this.protectedDay,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (commandId.present) {
+      map['command_id'] = Variable<String>(commandId.value);
+    }
+    if (occurredAtUtcMs.present) {
+      map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (delta.present) {
+      map['delta'] = Variable<int>(delta.value);
+    }
+    if (protectedDay.present) {
+      map['protected_day'] = Variable<String>(protectedDay.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakTokenAdjustmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('commandId: $commandId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('kind: $kind, ')
+          ..write('delta: $delta, ')
+          ..write('protectedDay: $protectedDay, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17206,6 +20698,2364 @@ class AssociativeMemoryStatesCompanion
   }
 }
 
+class $LocalContentReportsTable extends LocalContentReports
+    with TableInfo<$LocalContentReportsTable, LocalContentReport> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalContentReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _sourceKindMeta = const VerificationMeta(
+    'sourceKind',
+  );
+  @override
+  late final GeneratedColumn<String> sourceKind = GeneratedColumn<String>(
+    'source_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRevisionMeta = const VerificationMeta(
+    'sourceRevision',
+  );
+  @override
+  late final GeneratedColumn<int> sourceRevision = GeneratedColumn<int>(
+    'source_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _spellingMeta = const VerificationMeta(
+    'spelling',
+  );
+  @override
+  late final GeneratedColumn<String> spelling = GeneratedColumn<String>(
+    'spelling',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _meaningMeta = const VerificationMeta(
+    'meaning',
+  );
+  @override
+  late final GeneratedColumn<String> meaning = GeneratedColumn<String>(
+    'meaning',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sentenceMeta = const VerificationMeta(
+    'sentence',
+  );
+  @override
+  late final GeneratedColumn<String> sentence = GeneratedColumn<String>(
+    'sentence',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    sourceKind,
+    sourceId,
+    sourceRevision,
+    spelling,
+    meaning,
+    sentence,
+    reason,
+    createdAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_content_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalContentReport> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('source_kind')) {
+      context.handle(
+        _sourceKindMeta,
+        sourceKind.isAcceptableOrUnknown(data['source_kind']!, _sourceKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceKindMeta);
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('source_revision')) {
+      context.handle(
+        _sourceRevisionMeta,
+        sourceRevision.isAcceptableOrUnknown(
+          data['source_revision']!,
+          _sourceRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRevisionMeta);
+    }
+    if (data.containsKey('spelling')) {
+      context.handle(
+        _spellingMeta,
+        spelling.isAcceptableOrUnknown(data['spelling']!, _spellingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_spellingMeta);
+    }
+    if (data.containsKey('meaning')) {
+      context.handle(
+        _meaningMeta,
+        meaning.isAcceptableOrUnknown(data['meaning']!, _meaningMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_meaningMeta);
+    }
+    if (data.containsKey('sentence')) {
+      context.handle(
+        _sentenceMeta,
+        sentence.isAcceptableOrUnknown(data['sentence']!, _sentenceMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalContentReport map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalContentReport(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      sourceKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_kind'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      sourceRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}source_revision'],
+      )!,
+      spelling: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}spelling'],
+      )!,
+      meaning: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meaning'],
+      )!,
+      sentence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sentence'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalContentReportsTable createAlias(String alias) {
+    return $LocalContentReportsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalContentReport extends DataClass
+    implements Insertable<LocalContentReport> {
+  final String id;
+  final String ownerId;
+  final String sourceKind;
+  final String sourceId;
+  final int sourceRevision;
+  final String spelling;
+  final String meaning;
+  final String? sentence;
+  final String reason;
+  final int createdAtUtcMs;
+  const LocalContentReport({
+    required this.id,
+    required this.ownerId,
+    required this.sourceKind,
+    required this.sourceId,
+    required this.sourceRevision,
+    required this.spelling,
+    required this.meaning,
+    this.sentence,
+    required this.reason,
+    required this.createdAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['source_kind'] = Variable<String>(sourceKind);
+    map['source_id'] = Variable<String>(sourceId);
+    map['source_revision'] = Variable<int>(sourceRevision);
+    map['spelling'] = Variable<String>(spelling);
+    map['meaning'] = Variable<String>(meaning);
+    if (!nullToAbsent || sentence != null) {
+      map['sentence'] = Variable<String>(sentence);
+    }
+    map['reason'] = Variable<String>(reason);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    return map;
+  }
+
+  LocalContentReportsCompanion toCompanion(bool nullToAbsent) {
+    return LocalContentReportsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sourceKind: Value(sourceKind),
+      sourceId: Value(sourceId),
+      sourceRevision: Value(sourceRevision),
+      spelling: Value(spelling),
+      meaning: Value(meaning),
+      sentence: sentence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sentence),
+      reason: Value(reason),
+      createdAtUtcMs: Value(createdAtUtcMs),
+    );
+  }
+
+  factory LocalContentReport.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalContentReport(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sourceKind: serializer.fromJson<String>(json['sourceKind']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      sourceRevision: serializer.fromJson<int>(json['sourceRevision']),
+      spelling: serializer.fromJson<String>(json['spelling']),
+      meaning: serializer.fromJson<String>(json['meaning']),
+      sentence: serializer.fromJson<String?>(json['sentence']),
+      reason: serializer.fromJson<String>(json['reason']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sourceKind': serializer.toJson<String>(sourceKind),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'sourceRevision': serializer.toJson<int>(sourceRevision),
+      'spelling': serializer.toJson<String>(spelling),
+      'meaning': serializer.toJson<String>(meaning),
+      'sentence': serializer.toJson<String?>(sentence),
+      'reason': serializer.toJson<String>(reason),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+    };
+  }
+
+  LocalContentReport copyWith({
+    String? id,
+    String? ownerId,
+    String? sourceKind,
+    String? sourceId,
+    int? sourceRevision,
+    String? spelling,
+    String? meaning,
+    Value<String?> sentence = const Value.absent(),
+    String? reason,
+    int? createdAtUtcMs,
+  }) => LocalContentReport(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sourceKind: sourceKind ?? this.sourceKind,
+    sourceId: sourceId ?? this.sourceId,
+    sourceRevision: sourceRevision ?? this.sourceRevision,
+    spelling: spelling ?? this.spelling,
+    meaning: meaning ?? this.meaning,
+    sentence: sentence.present ? sentence.value : this.sentence,
+    reason: reason ?? this.reason,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+  );
+  LocalContentReport copyWithCompanion(LocalContentReportsCompanion data) {
+    return LocalContentReport(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sourceKind: data.sourceKind.present
+          ? data.sourceKind.value
+          : this.sourceKind,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      sourceRevision: data.sourceRevision.present
+          ? data.sourceRevision.value
+          : this.sourceRevision,
+      spelling: data.spelling.present ? data.spelling.value : this.spelling,
+      meaning: data.meaning.present ? data.meaning.value : this.meaning,
+      sentence: data.sentence.present ? data.sentence.value : this.sentence,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalContentReport(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('sourceRevision: $sourceRevision, ')
+          ..write('spelling: $spelling, ')
+          ..write('meaning: $meaning, ')
+          ..write('sentence: $sentence, ')
+          ..write('reason: $reason, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    sourceKind,
+    sourceId,
+    sourceRevision,
+    spelling,
+    meaning,
+    sentence,
+    reason,
+    createdAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalContentReport &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sourceKind == this.sourceKind &&
+          other.sourceId == this.sourceId &&
+          other.sourceRevision == this.sourceRevision &&
+          other.spelling == this.spelling &&
+          other.meaning == this.meaning &&
+          other.sentence == this.sentence &&
+          other.reason == this.reason &&
+          other.createdAtUtcMs == this.createdAtUtcMs);
+}
+
+class LocalContentReportsCompanion extends UpdateCompanion<LocalContentReport> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sourceKind;
+  final Value<String> sourceId;
+  final Value<int> sourceRevision;
+  final Value<String> spelling;
+  final Value<String> meaning;
+  final Value<String?> sentence;
+  final Value<String> reason;
+  final Value<int> createdAtUtcMs;
+  final Value<int> rowid;
+  const LocalContentReportsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sourceKind = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.sourceRevision = const Value.absent(),
+    this.spelling = const Value.absent(),
+    this.meaning = const Value.absent(),
+    this.sentence = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalContentReportsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sourceKind,
+    required String sourceId,
+    required int sourceRevision,
+    required String spelling,
+    required String meaning,
+    this.sentence = const Value.absent(),
+    required String reason,
+    required int createdAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sourceKind = Value(sourceKind),
+       sourceId = Value(sourceId),
+       sourceRevision = Value(sourceRevision),
+       spelling = Value(spelling),
+       meaning = Value(meaning),
+       reason = Value(reason),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<LocalContentReport> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sourceKind,
+    Expression<String>? sourceId,
+    Expression<int>? sourceRevision,
+    Expression<String>? spelling,
+    Expression<String>? meaning,
+    Expression<String>? sentence,
+    Expression<String>? reason,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sourceKind != null) 'source_kind': sourceKind,
+      if (sourceId != null) 'source_id': sourceId,
+      if (sourceRevision != null) 'source_revision': sourceRevision,
+      if (spelling != null) 'spelling': spelling,
+      if (meaning != null) 'meaning': meaning,
+      if (sentence != null) 'sentence': sentence,
+      if (reason != null) 'reason': reason,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalContentReportsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sourceKind,
+    Value<String>? sourceId,
+    Value<int>? sourceRevision,
+    Value<String>? spelling,
+    Value<String>? meaning,
+    Value<String?>? sentence,
+    Value<String>? reason,
+    Value<int>? createdAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LocalContentReportsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sourceKind: sourceKind ?? this.sourceKind,
+      sourceId: sourceId ?? this.sourceId,
+      sourceRevision: sourceRevision ?? this.sourceRevision,
+      spelling: spelling ?? this.spelling,
+      meaning: meaning ?? this.meaning,
+      sentence: sentence ?? this.sentence,
+      reason: reason ?? this.reason,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sourceKind.present) {
+      map['source_kind'] = Variable<String>(sourceKind.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (sourceRevision.present) {
+      map['source_revision'] = Variable<int>(sourceRevision.value);
+    }
+    if (spelling.present) {
+      map['spelling'] = Variable<String>(spelling.value);
+    }
+    if (meaning.present) {
+      map['meaning'] = Variable<String>(meaning.value);
+    }
+    if (sentence.present) {
+      map['sentence'] = Variable<String>(sentence.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalContentReportsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('sourceRevision: $sourceRevision, ')
+          ..write('spelling: $spelling, ')
+          ..write('meaning: $meaning, ')
+          ..write('sentence: $sentence, ')
+          ..write('reason: $reason, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FocusSessionsTable extends FocusSessions
+    with TableInfo<$FocusSessionsTable, FocusSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FocusSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetMsMeta = const VerificationMeta(
+    'targetMs',
+  );
+  @override
+  late final GeneratedColumn<int> targetMs = GeneratedColumn<int>(
+    'target_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtUtcMsMeta = const VerificationMeta(
+    'startedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtUtcMs = GeneratedColumn<int>(
+    'started_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startRuleIdMeta = const VerificationMeta(
+    'startRuleId',
+  );
+  @override
+  late final GeneratedColumn<String> startRuleId = GeneratedColumn<String>(
+    'start_rule_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES owner_calendar_epochs (rule_id)',
+    ),
+  );
+  static const VerificationMeta _startCivilWeekMeta = const VerificationMeta(
+    'startCivilWeek',
+  );
+  @override
+  late final GeneratedColumn<String> startCivilWeek = GeneratedColumn<String>(
+    'start_civil_week',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _spansJsonMeta = const VerificationMeta(
+    'spansJson',
+  );
+  @override
+  late final GeneratedColumn<String> spansJson = GeneratedColumn<String>(
+    'spans_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtUtcMsMeta = const VerificationMeta(
+    'endedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> endedAtUtcMs = GeneratedColumn<int>(
+    'ended_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    originOwnerId,
+    targetMs,
+    startedAtUtcMs,
+    startRuleId,
+    startCivilWeek,
+    state,
+    revision,
+    spansJson,
+    endedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'focus_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FocusSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('target_ms')) {
+      context.handle(
+        _targetMsMeta,
+        targetMs.isAcceptableOrUnknown(data['target_ms']!, _targetMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetMsMeta);
+    }
+    if (data.containsKey('started_at_utc_ms')) {
+      context.handle(
+        _startedAtUtcMsMeta,
+        startedAtUtcMs.isAcceptableOrUnknown(
+          data['started_at_utc_ms']!,
+          _startedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMsMeta);
+    }
+    if (data.containsKey('start_rule_id')) {
+      context.handle(
+        _startRuleIdMeta,
+        startRuleId.isAcceptableOrUnknown(
+          data['start_rule_id']!,
+          _startRuleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('start_civil_week')) {
+      context.handle(
+        _startCivilWeekMeta,
+        startCivilWeek.isAcceptableOrUnknown(
+          data['start_civil_week']!,
+          _startCivilWeekMeta,
+        ),
+      );
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('spans_json')) {
+      context.handle(
+        _spansJsonMeta,
+        spansJson.isAcceptableOrUnknown(data['spans_json']!, _spansJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_spansJsonMeta);
+    }
+    if (data.containsKey('ended_at_utc_ms')) {
+      context.handle(
+        _endedAtUtcMsMeta,
+        endedAtUtcMs.isAcceptableOrUnknown(
+          data['ended_at_utc_ms']!,
+          _endedAtUtcMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FocusSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FocusSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      targetMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_ms'],
+      )!,
+      startedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_utc_ms'],
+      )!,
+      startRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_rule_id'],
+      ),
+      startCivilWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_civil_week'],
+      ),
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      spansJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}spans_json'],
+      )!,
+      endedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at_utc_ms'],
+      ),
+    );
+  }
+
+  @override
+  $FocusSessionsTable createAlias(String alias) {
+    return $FocusSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class FocusSession extends DataClass implements Insertable<FocusSession> {
+  final String id;
+  final String ownerId;
+  final String originOwnerId;
+  final int targetMs;
+  final int startedAtUtcMs;
+  final String? startRuleId;
+  final String? startCivilWeek;
+  final String state;
+  final int revision;
+  final String spansJson;
+  final int? endedAtUtcMs;
+  const FocusSession({
+    required this.id,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.targetMs,
+    required this.startedAtUtcMs,
+    this.startRuleId,
+    this.startCivilWeek,
+    required this.state,
+    required this.revision,
+    required this.spansJson,
+    this.endedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['target_ms'] = Variable<int>(targetMs);
+    map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs);
+    if (!nullToAbsent || startRuleId != null) {
+      map['start_rule_id'] = Variable<String>(startRuleId);
+    }
+    if (!nullToAbsent || startCivilWeek != null) {
+      map['start_civil_week'] = Variable<String>(startCivilWeek);
+    }
+    map['state'] = Variable<String>(state);
+    map['revision'] = Variable<int>(revision);
+    map['spans_json'] = Variable<String>(spansJson);
+    if (!nullToAbsent || endedAtUtcMs != null) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs);
+    }
+    return map;
+  }
+
+  FocusSessionsCompanion toCompanion(bool nullToAbsent) {
+    return FocusSessionsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      targetMs: Value(targetMs),
+      startedAtUtcMs: Value(startedAtUtcMs),
+      startRuleId: startRuleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startRuleId),
+      startCivilWeek: startCivilWeek == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startCivilWeek),
+      state: Value(state),
+      revision: Value(revision),
+      spansJson: Value(spansJson),
+      endedAtUtcMs: endedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAtUtcMs),
+    );
+  }
+
+  factory FocusSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FocusSession(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      targetMs: serializer.fromJson<int>(json['targetMs']),
+      startedAtUtcMs: serializer.fromJson<int>(json['startedAtUtcMs']),
+      startRuleId: serializer.fromJson<String?>(json['startRuleId']),
+      startCivilWeek: serializer.fromJson<String?>(json['startCivilWeek']),
+      state: serializer.fromJson<String>(json['state']),
+      revision: serializer.fromJson<int>(json['revision']),
+      spansJson: serializer.fromJson<String>(json['spansJson']),
+      endedAtUtcMs: serializer.fromJson<int?>(json['endedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'targetMs': serializer.toJson<int>(targetMs),
+      'startedAtUtcMs': serializer.toJson<int>(startedAtUtcMs),
+      'startRuleId': serializer.toJson<String?>(startRuleId),
+      'startCivilWeek': serializer.toJson<String?>(startCivilWeek),
+      'state': serializer.toJson<String>(state),
+      'revision': serializer.toJson<int>(revision),
+      'spansJson': serializer.toJson<String>(spansJson),
+      'endedAtUtcMs': serializer.toJson<int?>(endedAtUtcMs),
+    };
+  }
+
+  FocusSession copyWith({
+    String? id,
+    String? ownerId,
+    String? originOwnerId,
+    int? targetMs,
+    int? startedAtUtcMs,
+    Value<String?> startRuleId = const Value.absent(),
+    Value<String?> startCivilWeek = const Value.absent(),
+    String? state,
+    int? revision,
+    String? spansJson,
+    Value<int?> endedAtUtcMs = const Value.absent(),
+  }) => FocusSession(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    targetMs: targetMs ?? this.targetMs,
+    startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+    startRuleId: startRuleId.present ? startRuleId.value : this.startRuleId,
+    startCivilWeek: startCivilWeek.present
+        ? startCivilWeek.value
+        : this.startCivilWeek,
+    state: state ?? this.state,
+    revision: revision ?? this.revision,
+    spansJson: spansJson ?? this.spansJson,
+    endedAtUtcMs: endedAtUtcMs.present ? endedAtUtcMs.value : this.endedAtUtcMs,
+  );
+  FocusSession copyWithCompanion(FocusSessionsCompanion data) {
+    return FocusSession(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      targetMs: data.targetMs.present ? data.targetMs.value : this.targetMs,
+      startedAtUtcMs: data.startedAtUtcMs.present
+          ? data.startedAtUtcMs.value
+          : this.startedAtUtcMs,
+      startRuleId: data.startRuleId.present
+          ? data.startRuleId.value
+          : this.startRuleId,
+      startCivilWeek: data.startCivilWeek.present
+          ? data.startCivilWeek.value
+          : this.startCivilWeek,
+      state: data.state.present ? data.state.value : this.state,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      spansJson: data.spansJson.present ? data.spansJson.value : this.spansJson,
+      endedAtUtcMs: data.endedAtUtcMs.present
+          ? data.endedAtUtcMs.value
+          : this.endedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusSession(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('targetMs: $targetMs, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('startRuleId: $startRuleId, ')
+          ..write('startCivilWeek: $startCivilWeek, ')
+          ..write('state: $state, ')
+          ..write('revision: $revision, ')
+          ..write('spansJson: $spansJson, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    originOwnerId,
+    targetMs,
+    startedAtUtcMs,
+    startRuleId,
+    startCivilWeek,
+    state,
+    revision,
+    spansJson,
+    endedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FocusSession &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.targetMs == this.targetMs &&
+          other.startedAtUtcMs == this.startedAtUtcMs &&
+          other.startRuleId == this.startRuleId &&
+          other.startCivilWeek == this.startCivilWeek &&
+          other.state == this.state &&
+          other.revision == this.revision &&
+          other.spansJson == this.spansJson &&
+          other.endedAtUtcMs == this.endedAtUtcMs);
+}
+
+class FocusSessionsCompanion extends UpdateCompanion<FocusSession> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<int> targetMs;
+  final Value<int> startedAtUtcMs;
+  final Value<String?> startRuleId;
+  final Value<String?> startCivilWeek;
+  final Value<String> state;
+  final Value<int> revision;
+  final Value<String> spansJson;
+  final Value<int?> endedAtUtcMs;
+  final Value<int> rowid;
+  const FocusSessionsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.targetMs = const Value.absent(),
+    this.startedAtUtcMs = const Value.absent(),
+    this.startRuleId = const Value.absent(),
+    this.startCivilWeek = const Value.absent(),
+    this.state = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.spansJson = const Value.absent(),
+    this.endedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FocusSessionsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String originOwnerId,
+    required int targetMs,
+    required int startedAtUtcMs,
+    this.startRuleId = const Value.absent(),
+    this.startCivilWeek = const Value.absent(),
+    required String state,
+    this.revision = const Value.absent(),
+    required String spansJson,
+    this.endedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       targetMs = Value(targetMs),
+       startedAtUtcMs = Value(startedAtUtcMs),
+       state = Value(state),
+       spansJson = Value(spansJson);
+  static Insertable<FocusSession> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<int>? targetMs,
+    Expression<int>? startedAtUtcMs,
+    Expression<String>? startRuleId,
+    Expression<String>? startCivilWeek,
+    Expression<String>? state,
+    Expression<int>? revision,
+    Expression<String>? spansJson,
+    Expression<int>? endedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (targetMs != null) 'target_ms': targetMs,
+      if (startedAtUtcMs != null) 'started_at_utc_ms': startedAtUtcMs,
+      if (startRuleId != null) 'start_rule_id': startRuleId,
+      if (startCivilWeek != null) 'start_civil_week': startCivilWeek,
+      if (state != null) 'state': state,
+      if (revision != null) 'revision': revision,
+      if (spansJson != null) 'spans_json': spansJson,
+      if (endedAtUtcMs != null) 'ended_at_utc_ms': endedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FocusSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<int>? targetMs,
+    Value<int>? startedAtUtcMs,
+    Value<String?>? startRuleId,
+    Value<String?>? startCivilWeek,
+    Value<String>? state,
+    Value<int>? revision,
+    Value<String>? spansJson,
+    Value<int?>? endedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return FocusSessionsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      targetMs: targetMs ?? this.targetMs,
+      startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+      startRuleId: startRuleId ?? this.startRuleId,
+      startCivilWeek: startCivilWeek ?? this.startCivilWeek,
+      state: state ?? this.state,
+      revision: revision ?? this.revision,
+      spansJson: spansJson ?? this.spansJson,
+      endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (targetMs.present) {
+      map['target_ms'] = Variable<int>(targetMs.value);
+    }
+    if (startedAtUtcMs.present) {
+      map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs.value);
+    }
+    if (startRuleId.present) {
+      map['start_rule_id'] = Variable<String>(startRuleId.value);
+    }
+    if (startCivilWeek.present) {
+      map['start_civil_week'] = Variable<String>(startCivilWeek.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (spansJson.present) {
+      map['spans_json'] = Variable<String>(spansJson.value);
+    }
+    if (endedAtUtcMs.present) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('targetMs: $targetMs, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('startRuleId: $startRuleId, ')
+          ..write('startCivilWeek: $startCivilWeek, ')
+          ..write('state: $state, ')
+          ..write('revision: $revision, ')
+          ..write('spansJson: $spansJson, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningPreferencesTable extends LearningPreferences
+    with TableInfo<$LearningPreferencesTable, LearningPreference> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningPreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _onboardingStateMeta = const VerificationMeta(
+    'onboardingState',
+  );
+  @override
+  late final GeneratedColumn<String> onboardingState = GeneratedColumn<String>(
+    'onboarding_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unset'),
+  );
+  static const VerificationMeta _purposeMeta = const VerificationMeta(
+    'purpose',
+  );
+  @override
+  late final GeneratedColumn<String> purpose = GeneratedColumn<String>(
+    'purpose',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _plannedMinutesMeta = const VerificationMeta(
+    'plannedMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> plannedMinutes = GeneratedColumn<int>(
+    'planned_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _learningMethodMeta = const VerificationMeta(
+    'learningMethod',
+  );
+  @override
+  late final GeneratedColumn<String> learningMethod = GeneratedColumn<String>(
+    'learning_method',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _goalCivilDateMeta = const VerificationMeta(
+    'goalCivilDate',
+  );
+  @override
+  late final GeneratedColumn<String> goalCivilDate = GeneratedColumn<String>(
+    'goal_civil_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _goalStateMeta = const VerificationMeta(
+    'goalState',
+  );
+  @override
+  late final GeneratedColumn<String> goalState = GeneratedColumn<String>(
+    'goal_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unset'),
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    onboardingState,
+    purpose,
+    plannedMinutes,
+    learningMethod,
+    goalCivilDate,
+    goalState,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningPreference> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('onboarding_state')) {
+      context.handle(
+        _onboardingStateMeta,
+        onboardingState.isAcceptableOrUnknown(
+          data['onboarding_state']!,
+          _onboardingStateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('purpose')) {
+      context.handle(
+        _purposeMeta,
+        purpose.isAcceptableOrUnknown(data['purpose']!, _purposeMeta),
+      );
+    }
+    if (data.containsKey('planned_minutes')) {
+      context.handle(
+        _plannedMinutesMeta,
+        plannedMinutes.isAcceptableOrUnknown(
+          data['planned_minutes']!,
+          _plannedMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learning_method')) {
+      context.handle(
+        _learningMethodMeta,
+        learningMethod.isAcceptableOrUnknown(
+          data['learning_method']!,
+          _learningMethodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('goal_civil_date')) {
+      context.handle(
+        _goalCivilDateMeta,
+        goalCivilDate.isAcceptableOrUnknown(
+          data['goal_civil_date']!,
+          _goalCivilDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('goal_state')) {
+      context.handle(
+        _goalStateMeta,
+        goalState.isAcceptableOrUnknown(data['goal_state']!, _goalStateMeta),
+      );
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  LearningPreference map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningPreference(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      onboardingState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}onboarding_state'],
+      )!,
+      purpose: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purpose'],
+      ),
+      plannedMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_minutes'],
+      ),
+      learningMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_method'],
+      ),
+      goalCivilDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal_civil_date'],
+      ),
+      goalState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal_state'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningPreferencesTable createAlias(String alias) {
+    return $LearningPreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class LearningPreference extends DataClass
+    implements Insertable<LearningPreference> {
+  final String ownerId;
+  final String onboardingState;
+  final String? purpose;
+  final int? plannedMinutes;
+  final String? learningMethod;
+  final String? goalCivilDate;
+  final String goalState;
+  final int updatedAtUtcMs;
+  const LearningPreference({
+    required this.ownerId,
+    required this.onboardingState,
+    this.purpose,
+    this.plannedMinutes,
+    this.learningMethod,
+    this.goalCivilDate,
+    required this.goalState,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['onboarding_state'] = Variable<String>(onboardingState);
+    if (!nullToAbsent || purpose != null) {
+      map['purpose'] = Variable<String>(purpose);
+    }
+    if (!nullToAbsent || plannedMinutes != null) {
+      map['planned_minutes'] = Variable<int>(plannedMinutes);
+    }
+    if (!nullToAbsent || learningMethod != null) {
+      map['learning_method'] = Variable<String>(learningMethod);
+    }
+    if (!nullToAbsent || goalCivilDate != null) {
+      map['goal_civil_date'] = Variable<String>(goalCivilDate);
+    }
+    map['goal_state'] = Variable<String>(goalState);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  LearningPreferencesCompanion toCompanion(bool nullToAbsent) {
+    return LearningPreferencesCompanion(
+      ownerId: Value(ownerId),
+      onboardingState: Value(onboardingState),
+      purpose: purpose == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purpose),
+      plannedMinutes: plannedMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plannedMinutes),
+      learningMethod: learningMethod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learningMethod),
+      goalCivilDate: goalCivilDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalCivilDate),
+      goalState: Value(goalState),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory LearningPreference.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningPreference(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      onboardingState: serializer.fromJson<String>(json['onboardingState']),
+      purpose: serializer.fromJson<String?>(json['purpose']),
+      plannedMinutes: serializer.fromJson<int?>(json['plannedMinutes']),
+      learningMethod: serializer.fromJson<String?>(json['learningMethod']),
+      goalCivilDate: serializer.fromJson<String?>(json['goalCivilDate']),
+      goalState: serializer.fromJson<String>(json['goalState']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'onboardingState': serializer.toJson<String>(onboardingState),
+      'purpose': serializer.toJson<String?>(purpose),
+      'plannedMinutes': serializer.toJson<int?>(plannedMinutes),
+      'learningMethod': serializer.toJson<String?>(learningMethod),
+      'goalCivilDate': serializer.toJson<String?>(goalCivilDate),
+      'goalState': serializer.toJson<String>(goalState),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  LearningPreference copyWith({
+    String? ownerId,
+    String? onboardingState,
+    Value<String?> purpose = const Value.absent(),
+    Value<int?> plannedMinutes = const Value.absent(),
+    Value<String?> learningMethod = const Value.absent(),
+    Value<String?> goalCivilDate = const Value.absent(),
+    String? goalState,
+    int? updatedAtUtcMs,
+  }) => LearningPreference(
+    ownerId: ownerId ?? this.ownerId,
+    onboardingState: onboardingState ?? this.onboardingState,
+    purpose: purpose.present ? purpose.value : this.purpose,
+    plannedMinutes: plannedMinutes.present
+        ? plannedMinutes.value
+        : this.plannedMinutes,
+    learningMethod: learningMethod.present
+        ? learningMethod.value
+        : this.learningMethod,
+    goalCivilDate: goalCivilDate.present
+        ? goalCivilDate.value
+        : this.goalCivilDate,
+    goalState: goalState ?? this.goalState,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  LearningPreference copyWithCompanion(LearningPreferencesCompanion data) {
+    return LearningPreference(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      onboardingState: data.onboardingState.present
+          ? data.onboardingState.value
+          : this.onboardingState,
+      purpose: data.purpose.present ? data.purpose.value : this.purpose,
+      plannedMinutes: data.plannedMinutes.present
+          ? data.plannedMinutes.value
+          : this.plannedMinutes,
+      learningMethod: data.learningMethod.present
+          ? data.learningMethod.value
+          : this.learningMethod,
+      goalCivilDate: data.goalCivilDate.present
+          ? data.goalCivilDate.value
+          : this.goalCivilDate,
+      goalState: data.goalState.present ? data.goalState.value : this.goalState,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPreference(')
+          ..write('ownerId: $ownerId, ')
+          ..write('onboardingState: $onboardingState, ')
+          ..write('purpose: $purpose, ')
+          ..write('plannedMinutes: $plannedMinutes, ')
+          ..write('learningMethod: $learningMethod, ')
+          ..write('goalCivilDate: $goalCivilDate, ')
+          ..write('goalState: $goalState, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    onboardingState,
+    purpose,
+    plannedMinutes,
+    learningMethod,
+    goalCivilDate,
+    goalState,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningPreference &&
+          other.ownerId == this.ownerId &&
+          other.onboardingState == this.onboardingState &&
+          other.purpose == this.purpose &&
+          other.plannedMinutes == this.plannedMinutes &&
+          other.learningMethod == this.learningMethod &&
+          other.goalCivilDate == this.goalCivilDate &&
+          other.goalState == this.goalState &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class LearningPreferencesCompanion extends UpdateCompanion<LearningPreference> {
+  final Value<String> ownerId;
+  final Value<String> onboardingState;
+  final Value<String?> purpose;
+  final Value<int?> plannedMinutes;
+  final Value<String?> learningMethod;
+  final Value<String?> goalCivilDate;
+  final Value<String> goalState;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const LearningPreferencesCompanion({
+    this.ownerId = const Value.absent(),
+    this.onboardingState = const Value.absent(),
+    this.purpose = const Value.absent(),
+    this.plannedMinutes = const Value.absent(),
+    this.learningMethod = const Value.absent(),
+    this.goalCivilDate = const Value.absent(),
+    this.goalState = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningPreferencesCompanion.insert({
+    required String ownerId,
+    this.onboardingState = const Value.absent(),
+    this.purpose = const Value.absent(),
+    this.plannedMinutes = const Value.absent(),
+    this.learningMethod = const Value.absent(),
+    this.goalCivilDate = const Value.absent(),
+    this.goalState = const Value.absent(),
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearningPreference> custom({
+    Expression<String>? ownerId,
+    Expression<String>? onboardingState,
+    Expression<String>? purpose,
+    Expression<int>? plannedMinutes,
+    Expression<String>? learningMethod,
+    Expression<String>? goalCivilDate,
+    Expression<String>? goalState,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (onboardingState != null) 'onboarding_state': onboardingState,
+      if (purpose != null) 'purpose': purpose,
+      if (plannedMinutes != null) 'planned_minutes': plannedMinutes,
+      if (learningMethod != null) 'learning_method': learningMethod,
+      if (goalCivilDate != null) 'goal_civil_date': goalCivilDate,
+      if (goalState != null) 'goal_state': goalState,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningPreferencesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? onboardingState,
+    Value<String?>? purpose,
+    Value<int?>? plannedMinutes,
+    Value<String?>? learningMethod,
+    Value<String?>? goalCivilDate,
+    Value<String>? goalState,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningPreferencesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      onboardingState: onboardingState ?? this.onboardingState,
+      purpose: purpose ?? this.purpose,
+      plannedMinutes: plannedMinutes ?? this.plannedMinutes,
+      learningMethod: learningMethod ?? this.learningMethod,
+      goalCivilDate: goalCivilDate ?? this.goalCivilDate,
+      goalState: goalState ?? this.goalState,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (onboardingState.present) {
+      map['onboarding_state'] = Variable<String>(onboardingState.value);
+    }
+    if (purpose.present) {
+      map['purpose'] = Variable<String>(purpose.value);
+    }
+    if (plannedMinutes.present) {
+      map['planned_minutes'] = Variable<int>(plannedMinutes.value);
+    }
+    if (learningMethod.present) {
+      map['learning_method'] = Variable<String>(learningMethod.value);
+    }
+    if (goalCivilDate.present) {
+      map['goal_civil_date'] = Variable<String>(goalCivilDate.value);
+    }
+    if (goalState.present) {
+      map['goal_state'] = Variable<String>(goalState.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPreferencesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('onboardingState: $onboardingState, ')
+          ..write('purpose: $purpose, ')
+          ..write('plannedMinutes: $plannedMinutes, ')
+          ..write('learningMethod: $learningMethod, ')
+          ..write('goalCivilDate: $goalCivilDate, ')
+          ..write('goalState: $goalState, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ArchivedV25RecordsTable extends ArchivedV25Records
+    with TableInfo<$ArchivedV25RecordsTable, ArchivedV25Record> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ArchivedV25RecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _originOwnerIdMeta = const VerificationMeta(
+    'originOwnerId',
+  );
+  @override
+  late final GeneratedColumn<String> originOwnerId = GeneratedColumn<String>(
+    'origin_owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceTableMeta = const VerificationMeta(
+    'sourceTable',
+  );
+  @override
+  late final GeneratedColumn<String> sourceTable = GeneratedColumn<String>(
+    'source_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRowKeyMeta = const VerificationMeta(
+    'sourceRowKey',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRowKey = GeneratedColumn<String>(
+    'source_row_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadBlobMeta = const VerificationMeta(
+    'payloadBlob',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> payloadBlob =
+      GeneratedColumn<Uint8List>(
+        'payload_blob',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    originOwnerId,
+    sourceTable,
+    sourceRowKey,
+    payloadJson,
+    payloadBlob,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'archived_v25_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ArchivedV25Record> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('origin_owner_id')) {
+      context.handle(
+        _originOwnerIdMeta,
+        originOwnerId.isAcceptableOrUnknown(
+          data['origin_owner_id']!,
+          _originOwnerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_originOwnerIdMeta);
+    }
+    if (data.containsKey('source_table')) {
+      context.handle(
+        _sourceTableMeta,
+        sourceTable.isAcceptableOrUnknown(
+          data['source_table']!,
+          _sourceTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTableMeta);
+    }
+    if (data.containsKey('source_row_key')) {
+      context.handle(
+        _sourceRowKeyMeta,
+        sourceRowKey.isAcceptableOrUnknown(
+          data['source_row_key']!,
+          _sourceRowKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRowKeyMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('payload_blob')) {
+      context.handle(
+        _payloadBlobMeta,
+        payloadBlob.isAcceptableOrUnknown(
+          data['payload_blob']!,
+          _payloadBlobMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ArchivedV25Record map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ArchivedV25Record(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      originOwnerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_owner_id'],
+      )!,
+      sourceTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_table'],
+      )!,
+      sourceRowKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_row_key'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      payloadBlob: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}payload_blob'],
+      ),
+    );
+  }
+
+  @override
+  $ArchivedV25RecordsTable createAlias(String alias) {
+    return $ArchivedV25RecordsTable(attachedDatabase, alias);
+  }
+}
+
+class ArchivedV25Record extends DataClass
+    implements Insertable<ArchivedV25Record> {
+  final String id;
+  final String ownerId;
+  final String originOwnerId;
+  final String sourceTable;
+  final String sourceRowKey;
+  final String payloadJson;
+  final Uint8List? payloadBlob;
+  const ArchivedV25Record({
+    required this.id,
+    required this.ownerId,
+    required this.originOwnerId,
+    required this.sourceTable,
+    required this.sourceRowKey,
+    required this.payloadJson,
+    this.payloadBlob,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['origin_owner_id'] = Variable<String>(originOwnerId);
+    map['source_table'] = Variable<String>(sourceTable);
+    map['source_row_key'] = Variable<String>(sourceRowKey);
+    map['payload_json'] = Variable<String>(payloadJson);
+    if (!nullToAbsent || payloadBlob != null) {
+      map['payload_blob'] = Variable<Uint8List>(payloadBlob);
+    }
+    return map;
+  }
+
+  ArchivedV25RecordsCompanion toCompanion(bool nullToAbsent) {
+    return ArchivedV25RecordsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      originOwnerId: Value(originOwnerId),
+      sourceTable: Value(sourceTable),
+      sourceRowKey: Value(sourceRowKey),
+      payloadJson: Value(payloadJson),
+      payloadBlob: payloadBlob == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadBlob),
+    );
+  }
+
+  factory ArchivedV25Record.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ArchivedV25Record(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      originOwnerId: serializer.fromJson<String>(json['originOwnerId']),
+      sourceTable: serializer.fromJson<String>(json['sourceTable']),
+      sourceRowKey: serializer.fromJson<String>(json['sourceRowKey']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      payloadBlob: serializer.fromJson<Uint8List?>(json['payloadBlob']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'originOwnerId': serializer.toJson<String>(originOwnerId),
+      'sourceTable': serializer.toJson<String>(sourceTable),
+      'sourceRowKey': serializer.toJson<String>(sourceRowKey),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'payloadBlob': serializer.toJson<Uint8List?>(payloadBlob),
+    };
+  }
+
+  ArchivedV25Record copyWith({
+    String? id,
+    String? ownerId,
+    String? originOwnerId,
+    String? sourceTable,
+    String? sourceRowKey,
+    String? payloadJson,
+    Value<Uint8List?> payloadBlob = const Value.absent(),
+  }) => ArchivedV25Record(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    originOwnerId: originOwnerId ?? this.originOwnerId,
+    sourceTable: sourceTable ?? this.sourceTable,
+    sourceRowKey: sourceRowKey ?? this.sourceRowKey,
+    payloadJson: payloadJson ?? this.payloadJson,
+    payloadBlob: payloadBlob.present ? payloadBlob.value : this.payloadBlob,
+  );
+  ArchivedV25Record copyWithCompanion(ArchivedV25RecordsCompanion data) {
+    return ArchivedV25Record(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      originOwnerId: data.originOwnerId.present
+          ? data.originOwnerId.value
+          : this.originOwnerId,
+      sourceTable: data.sourceTable.present
+          ? data.sourceTable.value
+          : this.sourceTable,
+      sourceRowKey: data.sourceRowKey.present
+          ? data.sourceRowKey.value
+          : this.sourceRowKey,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      payloadBlob: data.payloadBlob.present
+          ? data.payloadBlob.value
+          : this.payloadBlob,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedV25Record(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRowKey: $sourceRowKey, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('payloadBlob: $payloadBlob')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    originOwnerId,
+    sourceTable,
+    sourceRowKey,
+    payloadJson,
+    $driftBlobEquality.hash(payloadBlob),
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ArchivedV25Record &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.originOwnerId == this.originOwnerId &&
+          other.sourceTable == this.sourceTable &&
+          other.sourceRowKey == this.sourceRowKey &&
+          other.payloadJson == this.payloadJson &&
+          $driftBlobEquality.equals(other.payloadBlob, this.payloadBlob));
+}
+
+class ArchivedV25RecordsCompanion extends UpdateCompanion<ArchivedV25Record> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> originOwnerId;
+  final Value<String> sourceTable;
+  final Value<String> sourceRowKey;
+  final Value<String> payloadJson;
+  final Value<Uint8List?> payloadBlob;
+  final Value<int> rowid;
+  const ArchivedV25RecordsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.originOwnerId = const Value.absent(),
+    this.sourceTable = const Value.absent(),
+    this.sourceRowKey = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.payloadBlob = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ArchivedV25RecordsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String originOwnerId,
+    required String sourceTable,
+    required String sourceRowKey,
+    required String payloadJson,
+    this.payloadBlob = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       originOwnerId = Value(originOwnerId),
+       sourceTable = Value(sourceTable),
+       sourceRowKey = Value(sourceRowKey),
+       payloadJson = Value(payloadJson);
+  static Insertable<ArchivedV25Record> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? originOwnerId,
+    Expression<String>? sourceTable,
+    Expression<String>? sourceRowKey,
+    Expression<String>? payloadJson,
+    Expression<Uint8List>? payloadBlob,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (originOwnerId != null) 'origin_owner_id': originOwnerId,
+      if (sourceTable != null) 'source_table': sourceTable,
+      if (sourceRowKey != null) 'source_row_key': sourceRowKey,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (payloadBlob != null) 'payload_blob': payloadBlob,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ArchivedV25RecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? originOwnerId,
+    Value<String>? sourceTable,
+    Value<String>? sourceRowKey,
+    Value<String>? payloadJson,
+    Value<Uint8List?>? payloadBlob,
+    Value<int>? rowid,
+  }) {
+    return ArchivedV25RecordsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      originOwnerId: originOwnerId ?? this.originOwnerId,
+      sourceTable: sourceTable ?? this.sourceTable,
+      sourceRowKey: sourceRowKey ?? this.sourceRowKey,
+      payloadJson: payloadJson ?? this.payloadJson,
+      payloadBlob: payloadBlob ?? this.payloadBlob,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (originOwnerId.present) {
+      map['origin_owner_id'] = Variable<String>(originOwnerId.value);
+    }
+    if (sourceTable.present) {
+      map['source_table'] = Variable<String>(sourceTable.value);
+    }
+    if (sourceRowKey.present) {
+      map['source_row_key'] = Variable<String>(sourceRowKey.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (payloadBlob.present) {
+      map['payload_blob'] = Variable<Uint8List>(payloadBlob.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedV25RecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('originOwnerId: $originOwnerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('sourceRowKey: $sourceRowKey, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('payloadBlob: $payloadBlob, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17254,15 +23104,33 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuestDefinitionsTable questDefinitions = $QuestDefinitionsTable(
     this,
   );
+  late final $OwnerCalendarEpochsTable ownerCalendarEpochs =
+      $OwnerCalendarEpochsTable(this);
+  late final $QuestDefinitionRevisionsTable questDefinitionRevisions =
+      $QuestDefinitionRevisionsTable(this);
   late final $QuestInstancesTable questInstances = $QuestInstancesTable(this);
   late final $QuestObjectiveProgressTable questObjectiveProgress =
       $QuestObjectiveProgressTable(this);
+  late final $QuestClaimReceiptsTable questClaimReceipts =
+      $QuestClaimReceiptsTable(this);
   late final $StreakStatesTable streakStates = $StreakStatesTable(this);
   late final $LearningDayLogTable learningDayLog = $LearningDayLogTable(this);
+  late final $StreakBaselinesTable streakBaselines = $StreakBaselinesTable(
+    this,
+  );
+  late final $StreakTokenAdjustmentsTable streakTokenAdjustments =
+      $StreakTokenAdjustmentsTable(this);
   late final $AssociationRecordsTable associationRecords =
       $AssociationRecordsTable(this);
   late final $AssociativeMemoryStatesTable associativeMemoryStates =
       $AssociativeMemoryStatesTable(this);
+  late final $LocalContentReportsTable localContentReports =
+      $LocalContentReportsTable(this);
+  late final $FocusSessionsTable focusSessions = $FocusSessionsTable(this);
+  late final $LearningPreferencesTable learningPreferences =
+      $LearningPreferencesTable(this);
+  late final $ArchivedV25RecordsTable archivedV25Records =
+      $ArchivedV25RecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17291,12 +23159,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     modelDownloads,
     eventsV2,
     questDefinitions,
+    ownerCalendarEpochs,
+    questDefinitionRevisions,
     questInstances,
     questObjectiveProgress,
+    questClaimReceipts,
     streakStates,
     learningDayLog,
+    streakBaselines,
+    streakTokenAdjustments,
     associationRecords,
     associativeMemoryStates,
+    localContentReports,
+    focusSessions,
+    learningPreferences,
+    archivedV25Records,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -17719,6 +23596,30 @@ final class $$LocalOwnersTableReferences
     );
   }
 
+  static MultiTypedResultKey<
+    $OwnerCalendarEpochsTable,
+    List<OwnerCalendarEpoch>
+  >
+  _ownerCalendarEpochsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.ownerCalendarEpochs,
+        aliasName: 'local_owners__id__owner_calendar_epochs__owner_id',
+      );
+
+  $$OwnerCalendarEpochsTableProcessedTableManager get ownerCalendarEpochsRefs {
+    final manager = $$OwnerCalendarEpochsTableTableManager(
+      $_db,
+      $_db.ownerCalendarEpochs,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _ownerCalendarEpochsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$QuestInstancesTable, List<QuestInstance>>
   _questInstancesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.questInstances,
@@ -17732,6 +23633,27 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_questInstancesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuestClaimReceiptsTable, List<QuestClaimReceipt>>
+  _questClaimReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.questClaimReceipts,
+        aliasName: 'local_owners__id__quest_claim_receipts__owner_id',
+      );
+
+  $$QuestClaimReceiptsTableProcessedTableManager get questClaimReceiptsRefs {
+    final manager = $$QuestClaimReceiptsTableTableManager(
+      $_db,
+      $_db.questClaimReceipts,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _questClaimReceiptsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17768,6 +23690,51 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_learningDayLogRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StreakBaselinesTable, List<StreakBaseline>>
+  _streakBaselinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.streakBaselines,
+    aliasName: 'local_owners__id__streak_baselines__owner_id',
+  );
+
+  $$StreakBaselinesTableProcessedTableManager get streakBaselinesRefs {
+    final manager = $$StreakBaselinesTableTableManager(
+      $_db,
+      $_db.streakBaselines,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _streakBaselinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StreakTokenAdjustmentsTable,
+    List<StreakTokenAdjustment>
+  >
+  _streakTokenAdjustmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.streakTokenAdjustments,
+        aliasName: 'local_owners__id__streak_token_adjustments__owner_id',
+      );
+
+  $$StreakTokenAdjustmentsTableProcessedTableManager
+  get streakTokenAdjustmentsRefs {
+    final manager = $$StreakTokenAdjustmentsTableTableManager(
+      $_db,
+      $_db.streakTokenAdjustments,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _streakTokenAdjustmentsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17813,6 +23780,93 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _associativeMemoryStatesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LocalContentReportsTable,
+    List<LocalContentReport>
+  >
+  _localContentReportsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.localContentReports,
+        aliasName: 'local_owners__id__local_content_reports__owner_id',
+      );
+
+  $$LocalContentReportsTableProcessedTableManager get localContentReportsRefs {
+    final manager = $$LocalContentReportsTableTableManager(
+      $_db,
+      $_db.localContentReports,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _localContentReportsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FocusSessionsTable, List<FocusSession>>
+  _focusSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.focusSessions,
+    aliasName: 'local_owners__id__focus_sessions__owner_id',
+  );
+
+  $$FocusSessionsTableProcessedTableManager get focusSessionsRefs {
+    final manager = $$FocusSessionsTableTableManager(
+      $_db,
+      $_db.focusSessions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_focusSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearningPreferencesTable,
+    List<LearningPreference>
+  >
+  _learningPreferencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningPreferences,
+        aliasName: 'local_owners__id__learning_preferences__owner_id',
+      );
+
+  $$LearningPreferencesTableProcessedTableManager get learningPreferencesRefs {
+    final manager = $$LearningPreferencesTableTableManager(
+      $_db,
+      $_db.learningPreferences,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningPreferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ArchivedV25RecordsTable, List<ArchivedV25Record>>
+  _archivedV25RecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.archivedV25Records,
+        aliasName: 'local_owners__id__archived_v25_records__owner_id',
+      );
+
+  $$ArchivedV25RecordsTableProcessedTableManager get archivedV25RecordsRefs {
+    final manager = $$ArchivedV25RecordsTableTableManager(
+      $_db,
+      $_db.archivedV25Records,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _archivedV25RecordsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -18310,6 +24364,31 @@ class $$LocalOwnersTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> ownerCalendarEpochsRefs(
+    Expression<bool> Function($$OwnerCalendarEpochsTableFilterComposer f) f,
+  ) {
+    final $$OwnerCalendarEpochsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ownerCalendarEpochs,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnerCalendarEpochsTableFilterComposer(
+            $db: $db,
+            $table: $db.ownerCalendarEpochs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> questInstancesRefs(
     Expression<bool> Function($$QuestInstancesTableFilterComposer f) f,
   ) {
@@ -18326,6 +24405,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$QuestInstancesTableFilterComposer(
             $db: $db,
             $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> questClaimReceiptsRefs(
+    Expression<bool> Function($$QuestClaimReceiptsTableFilterComposer f) f,
+  ) {
+    final $$QuestClaimReceiptsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.questClaimReceipts,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestClaimReceiptsTableFilterComposer(
+            $db: $db,
+            $table: $db.questClaimReceipts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -18385,6 +24489,57 @@ class $$LocalOwnersTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> streakBaselinesRefs(
+    Expression<bool> Function($$StreakBaselinesTableFilterComposer f) f,
+  ) {
+    final $$StreakBaselinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.streakBaselines,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StreakBaselinesTableFilterComposer(
+            $db: $db,
+            $table: $db.streakBaselines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> streakTokenAdjustmentsRefs(
+    Expression<bool> Function($$StreakTokenAdjustmentsTableFilterComposer f) f,
+  ) {
+    final $$StreakTokenAdjustmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.streakTokenAdjustments,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StreakTokenAdjustmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.streakTokenAdjustments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<bool> associationRecordsRefs(
     Expression<bool> Function($$AssociationRecordsTableFilterComposer f) f,
   ) {
@@ -18433,6 +24588,106 @@ class $$LocalOwnersTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> localContentReportsRefs(
+    Expression<bool> Function($$LocalContentReportsTableFilterComposer f) f,
+  ) {
+    final $$LocalContentReportsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localContentReports,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalContentReportsTableFilterComposer(
+            $db: $db,
+            $table: $db.localContentReports,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> focusSessionsRefs(
+    Expression<bool> Function($$FocusSessionsTableFilterComposer f) f,
+  ) {
+    final $$FocusSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.focusSessions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FocusSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.focusSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningPreferencesRefs(
+    Expression<bool> Function($$LearningPreferencesTableFilterComposer f) f,
+  ) {
+    final $$LearningPreferencesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPreferences,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPreferencesTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPreferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> archivedV25RecordsRefs(
+    Expression<bool> Function($$ArchivedV25RecordsTableFilterComposer f) f,
+  ) {
+    final $$ArchivedV25RecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.archivedV25Records,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ArchivedV25RecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.archivedV25Records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -18969,6 +25224,32 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> ownerCalendarEpochsRefs<T extends Object>(
+    Expression<T> Function($$OwnerCalendarEpochsTableAnnotationComposer a) f,
+  ) {
+    final $$OwnerCalendarEpochsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.ownerCalendarEpochs,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$OwnerCalendarEpochsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.ownerCalendarEpochs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> questInstancesRefs<T extends Object>(
     Expression<T> Function($$QuestInstancesTableAnnotationComposer a) f,
   ) {
@@ -18991,6 +25272,32 @@ class $$LocalOwnersTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<T> questClaimReceiptsRefs<T extends Object>(
+    Expression<T> Function($$QuestClaimReceiptsTableAnnotationComposer a) f,
+  ) {
+    final $$QuestClaimReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.questClaimReceipts,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$QuestClaimReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.questClaimReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -19041,6 +25348,57 @@ class $$LocalOwnersTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<T> streakBaselinesRefs<T extends Object>(
+    Expression<T> Function($$StreakBaselinesTableAnnotationComposer a) f,
+  ) {
+    final $$StreakBaselinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.streakBaselines,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StreakBaselinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.streakBaselines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> streakTokenAdjustmentsRefs<T extends Object>(
+    Expression<T> Function($$StreakTokenAdjustmentsTableAnnotationComposer a) f,
+  ) {
+    final $$StreakTokenAdjustmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.streakTokenAdjustments,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StreakTokenAdjustmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.streakTokenAdjustments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -19096,6 +25454,109 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> localContentReportsRefs<T extends Object>(
+    Expression<T> Function($$LocalContentReportsTableAnnotationComposer a) f,
+  ) {
+    final $$LocalContentReportsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.localContentReports,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LocalContentReportsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.localContentReports,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> focusSessionsRefs<T extends Object>(
+    Expression<T> Function($$FocusSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$FocusSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.focusSessions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FocusSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.focusSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> learningPreferencesRefs<T extends Object>(
+    Expression<T> Function($$LearningPreferencesTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPreferencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningPreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPreferencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> archivedV25RecordsRefs<T extends Object>(
+    Expression<T> Function($$ArchivedV25RecordsTableAnnotationComposer a) f,
+  ) {
+    final $$ArchivedV25RecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.archivedV25Records,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ArchivedV25RecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.archivedV25Records,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -19130,11 +25591,19 @@ class $$LocalOwnersTableTableManager
             bool syncCheckpointsRefs,
             bool syncConflictsRefs,
             bool eventsV2Refs,
+            bool ownerCalendarEpochsRefs,
             bool questInstancesRefs,
+            bool questClaimReceiptsRefs,
             bool streakStatesRefs,
             bool learningDayLogRefs,
+            bool streakBaselinesRefs,
+            bool streakTokenAdjustmentsRefs,
             bool associationRecordsRefs,
             bool associativeMemoryStatesRefs,
+            bool localContentReportsRefs,
+            bool focusSessionsRefs,
+            bool learningPreferencesRefs,
+            bool archivedV25RecordsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -19212,11 +25681,19 @@ class $$LocalOwnersTableTableManager
                 syncCheckpointsRefs = false,
                 syncConflictsRefs = false,
                 eventsV2Refs = false,
+                ownerCalendarEpochsRefs = false,
                 questInstancesRefs = false,
+                questClaimReceiptsRefs = false,
                 streakStatesRefs = false,
                 learningDayLogRefs = false,
+                streakBaselinesRefs = false,
+                streakTokenAdjustmentsRefs = false,
                 associationRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
+                localContentReportsRefs = false,
+                focusSessionsRefs = false,
+                learningPreferencesRefs = false,
+                archivedV25RecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -19239,11 +25716,19 @@ class $$LocalOwnersTableTableManager
                     if (syncCheckpointsRefs) db.syncCheckpoints,
                     if (syncConflictsRefs) db.syncConflicts,
                     if (eventsV2Refs) db.eventsV2,
+                    if (ownerCalendarEpochsRefs) db.ownerCalendarEpochs,
                     if (questInstancesRefs) db.questInstances,
+                    if (questClaimReceiptsRefs) db.questClaimReceipts,
                     if (streakStatesRefs) db.streakStates,
                     if (learningDayLogRefs) db.learningDayLog,
+                    if (streakBaselinesRefs) db.streakBaselines,
+                    if (streakTokenAdjustmentsRefs) db.streakTokenAdjustments,
                     if (associationRecordsRefs) db.associationRecords,
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
+                    if (localContentReportsRefs) db.localContentReports,
+                    if (focusSessionsRefs) db.focusSessions,
+                    if (learningPreferencesRefs) db.learningPreferences,
+                    if (archivedV25RecordsRefs) db.archivedV25Records,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -19626,6 +26111,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (ownerCalendarEpochsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          OwnerCalendarEpoch
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._ownerCalendarEpochsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ownerCalendarEpochsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (questInstancesRefs)
                         await $_getPrefetchedData<
                           LocalOwner,
@@ -19641,6 +26147,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).questInstancesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (questClaimReceiptsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          QuestClaimReceipt
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._questClaimReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).questClaimReceiptsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -19689,6 +26216,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (streakBaselinesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StreakBaseline
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._streakBaselinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).streakBaselinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (streakTokenAdjustmentsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StreakTokenAdjustment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._streakTokenAdjustmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).streakTokenAdjustmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (associationRecordsRefs)
                         await $_getPrefetchedData<
                           LocalOwner,
@@ -19725,6 +26294,90 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).associativeMemoryStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (localContentReportsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LocalContentReport
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._localContentReportsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localContentReportsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (focusSessionsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          FocusSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._focusSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).focusSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (learningPreferencesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningPreference
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningPreferencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPreferencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (archivedV25RecordsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ArchivedV25Record
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._archivedV25RecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).archivedV25RecordsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -19770,11 +26423,19 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool syncCheckpointsRefs,
         bool syncConflictsRefs,
         bool eventsV2Refs,
+        bool ownerCalendarEpochsRefs,
         bool questInstancesRefs,
+        bool questClaimReceiptsRefs,
         bool streakStatesRefs,
         bool learningDayLogRefs,
+        bool streakBaselinesRefs,
+        bool streakTokenAdjustmentsRefs,
         bool associationRecordsRefs,
         bool associativeMemoryStatesRefs,
+        bool localContentReportsRefs,
+        bool focusSessionsRefs,
+        bool learningPreferencesRefs,
+        bool archivedV25RecordsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -20834,6 +27495,7 @@ typedef $$VocabularyWordsTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       required int createdAtUtcMs,
       required int updatedAtUtcMs,
+      Value<bool> isBookmarked,
       Value<int> rowid,
     });
 typedef $$VocabularyWordsTableUpdateCompanionBuilder =
@@ -20856,6 +27518,7 @@ typedef $$VocabularyWordsTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<int> createdAtUtcMs,
       Value<int> updatedAtUtcMs,
+      Value<bool> isBookmarked,
       Value<int> rowid,
     });
 
@@ -21026,6 +27689,11 @@ class $$VocabularyWordsTableFilterComposer
 
   ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21215,6 +27883,11 @@ class $$VocabularyWordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -21335,6 +28008,11 @@ class $$VocabularyWordsTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => column,
   );
 
@@ -21489,6 +28167,7 @@ class $$VocabularyWordsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<int> createdAtUtcMs = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<bool> isBookmarked = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VocabularyWordsCompanion(
                 id: id,
@@ -21509,6 +28188,7 @@ class $$VocabularyWordsTableTableManager
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
+                isBookmarked: isBookmarked,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21531,6 +28211,7 @@ class $$VocabularyWordsTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 required int createdAtUtcMs,
                 required int updatedAtUtcMs,
+                Value<bool> isBookmarked = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VocabularyWordsCompanion.insert(
                 id: id,
@@ -21551,6 +28232,7 @@ class $$VocabularyWordsTableTableManager
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
+                isBookmarked: isBookmarked,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -22774,6 +29456,9 @@ typedef $$LearningSessionsTableCreateCompanionBuilder =
       Value<int?> score,
       required String appVersion,
       required String buildId,
+      Value<String?> questionPlanJson,
+      Value<String?> continuationJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 typedef $$LearningSessionsTableUpdateCompanionBuilder =
@@ -22789,6 +29474,9 @@ typedef $$LearningSessionsTableUpdateCompanionBuilder =
       Value<int?> score,
       Value<String> appVersion,
       Value<String> buildId,
+      Value<String?> questionPlanJson,
+      Value<String?> continuationJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 
@@ -22893,6 +29581,21 @@ class $$LearningSessionsTableFilterComposer
 
   ColumnFilters<String> get buildId => $composableBuilder(
     column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get questionPlanJson => $composableBuilder(
+    column: $table.questionPlanJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get continuationJson => $composableBuilder(
+    column: $table.continuationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23004,6 +29707,21 @@ class $$LearningSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get questionPlanJson => $composableBuilder(
+    column: $table.questionPlanJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get continuationJson => $composableBuilder(
+    column: $table.continuationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -23078,6 +29796,21 @@ class $$LearningSessionsTableAnnotationComposer
 
   GeneratedColumn<String> get buildId =>
       $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<String> get questionPlanJson => $composableBuilder(
+    column: $table.questionPlanJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get continuationJson => $composableBuilder(
+    column: $table.continuationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => column,
+  );
 
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
@@ -23169,6 +29902,9 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 Value<String> appVersion = const Value.absent(),
                 Value<String> buildId = const Value.absent(),
+                Value<String?> questionPlanJson = const Value.absent(),
+                Value<String?> continuationJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion(
                 id: id,
@@ -23182,6 +29918,9 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                questionPlanJson: questionPlanJson,
+                continuationJson: continuationJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -23197,6 +29936,9 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 required String appVersion,
                 required String buildId,
+                Value<String?> questionPlanJson = const Value.absent(),
+                Value<String?> continuationJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion.insert(
                 id: id,
@@ -23210,6 +29952,9 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                questionPlanJson: questionPlanJson,
+                continuationJson: continuationJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -23318,6 +30063,10 @@ typedef $$AnswerAttemptsTableCreateCompanionBuilder =
       required int attemptNumber,
       required int occurredAtUtcMs,
       Value<String?> providerProvenance,
+      Value<String?> calendarEvidence,
+      Value<String?> questIntent,
+      Value<String?> answerEvidenceJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
@@ -23332,6 +30081,10 @@ typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
       Value<int> attemptNumber,
       Value<int> occurredAtUtcMs,
       Value<String?> providerProvenance,
+      Value<String?> calendarEvidence,
+      Value<String?> questIntent,
+      Value<String?> answerEvidenceJson,
+      Value<String?> legacyEvidenceDisposition,
       Value<int> rowid,
     });
 
@@ -23438,6 +30191,26 @@ class $$AnswerAttemptsTableFilterComposer
 
   ColumnFilters<String> get providerProvenance => $composableBuilder(
     column: $table.providerProvenance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get calendarEvidence => $composableBuilder(
+    column: $table.calendarEvidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get questIntent => $composableBuilder(
+    column: $table.questIntent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get answerEvidenceJson => $composableBuilder(
+    column: $table.answerEvidenceJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23555,6 +30328,26 @@ class $$AnswerAttemptsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get calendarEvidence => $composableBuilder(
+    column: $table.calendarEvidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get questIntent => $composableBuilder(
+    column: $table.questIntent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get answerEvidenceJson => $composableBuilder(
+    column: $table.answerEvidenceJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -23662,6 +30455,26 @@ class $$AnswerAttemptsTableAnnotationComposer
 
   GeneratedColumn<String> get providerProvenance => $composableBuilder(
     column: $table.providerProvenance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get calendarEvidence => $composableBuilder(
+    column: $table.calendarEvidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get questIntent => $composableBuilder(
+    column: $table.questIntent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get answerEvidenceJson => $composableBuilder(
+    column: $table.answerEvidenceJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get legacyEvidenceDisposition => $composableBuilder(
+    column: $table.legacyEvidenceDisposition,
     builder: (column) => column,
   );
 
@@ -23775,6 +30588,10 @@ class $$AnswerAttemptsTableTableManager
                 Value<int> attemptNumber = const Value.absent(),
                 Value<int> occurredAtUtcMs = const Value.absent(),
                 Value<String?> providerProvenance = const Value.absent(),
+                Value<String?> calendarEvidence = const Value.absent(),
+                Value<String?> questIntent = const Value.absent(),
+                Value<String?> answerEvidenceJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion(
                 id: id,
@@ -23787,6 +30604,10 @@ class $$AnswerAttemptsTableTableManager
                 attemptNumber: attemptNumber,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerProvenance: providerProvenance,
+                calendarEvidence: calendarEvidence,
+                questIntent: questIntent,
+                answerEvidenceJson: answerEvidenceJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -23801,6 +30622,10 @@ class $$AnswerAttemptsTableTableManager
                 required int attemptNumber,
                 required int occurredAtUtcMs,
                 Value<String?> providerProvenance = const Value.absent(),
+                Value<String?> calendarEvidence = const Value.absent(),
+                Value<String?> questIntent = const Value.absent(),
+                Value<String?> answerEvidenceJson = const Value.absent(),
+                Value<String?> legacyEvidenceDisposition = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion.insert(
                 id: id,
@@ -23813,6 +30638,10 @@ class $$AnswerAttemptsTableTableManager
                 attemptNumber: attemptNumber,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerProvenance: providerProvenance,
+                calendarEvidence: calendarEvidence,
+                questIntent: questIntent,
+                answerEvidenceJson: answerEvidenceJson,
+                legacyEvidenceDisposition: legacyEvidenceDisposition,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -30187,6 +37016,709 @@ typedef $$QuestDefinitionsTableProcessedTableManager =
       QuestDefinition,
       PrefetchHooks Function({bool questInstancesRefs})
     >;
+typedef $$OwnerCalendarEpochsTableCreateCompanionBuilder =
+    OwnerCalendarEpochsCompanion Function({
+      required String ruleId,
+      required String ownerId,
+      required String originOwnerId,
+      required int effectiveUtcUs,
+      Value<int?> expiresUtcUs,
+      required String ianaId,
+      required String tzdbRevision,
+      required bool isSelected,
+      Value<int> rowid,
+    });
+typedef $$OwnerCalendarEpochsTableUpdateCompanionBuilder =
+    OwnerCalendarEpochsCompanion Function({
+      Value<String> ruleId,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<int> effectiveUtcUs,
+      Value<int?> expiresUtcUs,
+      Value<String> ianaId,
+      Value<String> tzdbRevision,
+      Value<bool> isSelected,
+      Value<int> rowid,
+    });
+
+final class $$OwnerCalendarEpochsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $OwnerCalendarEpochsTable,
+          OwnerCalendarEpoch
+        > {
+  $$OwnerCalendarEpochsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('owner_calendar_epochs__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$FocusSessionsTable, List<FocusSession>>
+  _focusSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.focusSessions,
+    aliasName: 'owner_calendar_epochs__rule_id__focus_sessions__start_rule_id',
+  );
+
+  $$FocusSessionsTableProcessedTableManager get focusSessionsRefs {
+    final manager = $$FocusSessionsTableTableManager($_db, $_db.focusSessions)
+        .filter(
+          (f) =>
+              f.startRuleId.ruleId.sqlEquals($_itemColumn<String>('rule_id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_focusSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$OwnerCalendarEpochsTableFilterComposer
+    extends Composer<_$AppDatabase, $OwnerCalendarEpochsTable> {
+  $$OwnerCalendarEpochsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get ruleId => $composableBuilder(
+    column: $table.ruleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get effectiveUtcUs => $composableBuilder(
+    column: $table.effectiveUtcUs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expiresUtcUs => $composableBuilder(
+    column: $table.expiresUtcUs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ianaId => $composableBuilder(
+    column: $table.ianaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tzdbRevision => $composableBuilder(
+    column: $table.tzdbRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSelected => $composableBuilder(
+    column: $table.isSelected,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> focusSessionsRefs(
+    Expression<bool> Function($$FocusSessionsTableFilterComposer f) f,
+  ) {
+    final $$FocusSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ruleId,
+      referencedTable: $db.focusSessions,
+      getReferencedColumn: (t) => t.startRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FocusSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.focusSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$OwnerCalendarEpochsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OwnerCalendarEpochsTable> {
+  $$OwnerCalendarEpochsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get ruleId => $composableBuilder(
+    column: $table.ruleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get effectiveUtcUs => $composableBuilder(
+    column: $table.effectiveUtcUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expiresUtcUs => $composableBuilder(
+    column: $table.expiresUtcUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ianaId => $composableBuilder(
+    column: $table.ianaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tzdbRevision => $composableBuilder(
+    column: $table.tzdbRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSelected => $composableBuilder(
+    column: $table.isSelected,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OwnerCalendarEpochsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OwnerCalendarEpochsTable> {
+  $$OwnerCalendarEpochsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get ruleId =>
+      $composableBuilder(column: $table.ruleId, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get effectiveUtcUs => $composableBuilder(
+    column: $table.effectiveUtcUs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expiresUtcUs => $composableBuilder(
+    column: $table.expiresUtcUs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ianaId =>
+      $composableBuilder(column: $table.ianaId, builder: (column) => column);
+
+  GeneratedColumn<String> get tzdbRevision => $composableBuilder(
+    column: $table.tzdbRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isSelected => $composableBuilder(
+    column: $table.isSelected,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> focusSessionsRefs<T extends Object>(
+    Expression<T> Function($$FocusSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$FocusSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ruleId,
+      referencedTable: $db.focusSessions,
+      getReferencedColumn: (t) => t.startRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FocusSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.focusSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$OwnerCalendarEpochsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OwnerCalendarEpochsTable,
+          OwnerCalendarEpoch,
+          $$OwnerCalendarEpochsTableFilterComposer,
+          $$OwnerCalendarEpochsTableOrderingComposer,
+          $$OwnerCalendarEpochsTableAnnotationComposer,
+          $$OwnerCalendarEpochsTableCreateCompanionBuilder,
+          $$OwnerCalendarEpochsTableUpdateCompanionBuilder,
+          (OwnerCalendarEpoch, $$OwnerCalendarEpochsTableReferences),
+          OwnerCalendarEpoch,
+          PrefetchHooks Function({bool ownerId, bool focusSessionsRefs})
+        > {
+  $$OwnerCalendarEpochsTableTableManager(
+    _$AppDatabase db,
+    $OwnerCalendarEpochsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OwnerCalendarEpochsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OwnerCalendarEpochsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OwnerCalendarEpochsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ruleId = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<int> effectiveUtcUs = const Value.absent(),
+                Value<int?> expiresUtcUs = const Value.absent(),
+                Value<String> ianaId = const Value.absent(),
+                Value<String> tzdbRevision = const Value.absent(),
+                Value<bool> isSelected = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OwnerCalendarEpochsCompanion(
+                ruleId: ruleId,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                effectiveUtcUs: effectiveUtcUs,
+                expiresUtcUs: expiresUtcUs,
+                ianaId: ianaId,
+                tzdbRevision: tzdbRevision,
+                isSelected: isSelected,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ruleId,
+                required String ownerId,
+                required String originOwnerId,
+                required int effectiveUtcUs,
+                Value<int?> expiresUtcUs = const Value.absent(),
+                required String ianaId,
+                required String tzdbRevision,
+                required bool isSelected,
+                Value<int> rowid = const Value.absent(),
+              }) => OwnerCalendarEpochsCompanion.insert(
+                ruleId: ruleId,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                effectiveUtcUs: effectiveUtcUs,
+                expiresUtcUs: expiresUtcUs,
+                ianaId: ianaId,
+                tzdbRevision: tzdbRevision,
+                isSelected: isSelected,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$OwnerCalendarEpochsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, focusSessionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (focusSessionsRefs) db.focusSessions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$OwnerCalendarEpochsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$OwnerCalendarEpochsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (focusSessionsRefs)
+                        await $_getPrefetchedData<
+                          OwnerCalendarEpoch,
+                          $OwnerCalendarEpochsTable,
+                          FocusSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$OwnerCalendarEpochsTableReferences
+                              ._focusSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$OwnerCalendarEpochsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).focusSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.startRuleId == item.ruleId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$OwnerCalendarEpochsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OwnerCalendarEpochsTable,
+      OwnerCalendarEpoch,
+      $$OwnerCalendarEpochsTableFilterComposer,
+      $$OwnerCalendarEpochsTableOrderingComposer,
+      $$OwnerCalendarEpochsTableAnnotationComposer,
+      $$OwnerCalendarEpochsTableCreateCompanionBuilder,
+      $$OwnerCalendarEpochsTableUpdateCompanionBuilder,
+      (OwnerCalendarEpoch, $$OwnerCalendarEpochsTableReferences),
+      OwnerCalendarEpoch,
+      PrefetchHooks Function({bool ownerId, bool focusSessionsRefs})
+    >;
+typedef $$QuestDefinitionRevisionsTableCreateCompanionBuilder =
+    QuestDefinitionRevisionsCompanion Function({
+      required String questId,
+      required int catalogVersion,
+      required String definitionDigest,
+      required String canonicalDefinition,
+      Value<int> rowid,
+    });
+typedef $$QuestDefinitionRevisionsTableUpdateCompanionBuilder =
+    QuestDefinitionRevisionsCompanion Function({
+      Value<String> questId,
+      Value<int> catalogVersion,
+      Value<String> definitionDigest,
+      Value<String> canonicalDefinition,
+      Value<int> rowid,
+    });
+
+class $$QuestDefinitionRevisionsTableFilterComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionRevisionsTable> {
+  $$QuestDefinitionRevisionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get questId => $composableBuilder(
+    column: $table.questId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get canonicalDefinition => $composableBuilder(
+    column: $table.canonicalDefinition,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuestDefinitionRevisionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionRevisionsTable> {
+  $$QuestDefinitionRevisionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get questId => $composableBuilder(
+    column: $table.questId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get canonicalDefinition => $composableBuilder(
+    column: $table.canonicalDefinition,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuestDefinitionRevisionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionRevisionsTable> {
+  $$QuestDefinitionRevisionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get questId =>
+      $composableBuilder(column: $table.questId, builder: (column) => column);
+
+  GeneratedColumn<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get canonicalDefinition => $composableBuilder(
+    column: $table.canonicalDefinition,
+    builder: (column) => column,
+  );
+}
+
+class $$QuestDefinitionRevisionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuestDefinitionRevisionsTable,
+          QuestDefinitionRevision,
+          $$QuestDefinitionRevisionsTableFilterComposer,
+          $$QuestDefinitionRevisionsTableOrderingComposer,
+          $$QuestDefinitionRevisionsTableAnnotationComposer,
+          $$QuestDefinitionRevisionsTableCreateCompanionBuilder,
+          $$QuestDefinitionRevisionsTableUpdateCompanionBuilder,
+          (
+            QuestDefinitionRevision,
+            BaseReferences<
+              _$AppDatabase,
+              $QuestDefinitionRevisionsTable,
+              QuestDefinitionRevision
+            >,
+          ),
+          QuestDefinitionRevision,
+          PrefetchHooks Function()
+        > {
+  $$QuestDefinitionRevisionsTableTableManager(
+    _$AppDatabase db,
+    $QuestDefinitionRevisionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuestDefinitionRevisionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$QuestDefinitionRevisionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$QuestDefinitionRevisionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> questId = const Value.absent(),
+                Value<int> catalogVersion = const Value.absent(),
+                Value<String> definitionDigest = const Value.absent(),
+                Value<String> canonicalDefinition = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestDefinitionRevisionsCompanion(
+                questId: questId,
+                catalogVersion: catalogVersion,
+                definitionDigest: definitionDigest,
+                canonicalDefinition: canonicalDefinition,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String questId,
+                required int catalogVersion,
+                required String definitionDigest,
+                required String canonicalDefinition,
+                Value<int> rowid = const Value.absent(),
+              }) => QuestDefinitionRevisionsCompanion.insert(
+                questId: questId,
+                catalogVersion: catalogVersion,
+                definitionDigest: definitionDigest,
+                canonicalDefinition: canonicalDefinition,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuestDefinitionRevisionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuestDefinitionRevisionsTable,
+      QuestDefinitionRevision,
+      $$QuestDefinitionRevisionsTableFilterComposer,
+      $$QuestDefinitionRevisionsTableOrderingComposer,
+      $$QuestDefinitionRevisionsTableAnnotationComposer,
+      $$QuestDefinitionRevisionsTableCreateCompanionBuilder,
+      $$QuestDefinitionRevisionsTableUpdateCompanionBuilder,
+      (
+        QuestDefinitionRevision,
+        BaseReferences<
+          _$AppDatabase,
+          $QuestDefinitionRevisionsTable,
+          QuestDefinitionRevision
+        >,
+      ),
+      QuestDefinitionRevision,
+      PrefetchHooks Function()
+    >;
 typedef $$QuestInstancesTableCreateCompanionBuilder =
     QuestInstancesCompanion Function({
       required String instanceId,
@@ -30197,6 +37729,14 @@ typedef $$QuestInstancesTableCreateCompanionBuilder =
       required String state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String?> originOwnerId,
+      Value<String?> periodKey,
+      Value<String?> calendarRuleId,
+      Value<String?> civilLabel,
+      Value<String?> segmentsJson,
+      Value<String?> definitionDigest,
+      Value<String?> canonicalInstanceId,
+      Value<String> recordKind,
       Value<int> rowid,
     });
 typedef $$QuestInstancesTableUpdateCompanionBuilder =
@@ -30209,6 +37749,14 @@ typedef $$QuestInstancesTableUpdateCompanionBuilder =
       Value<String> state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String?> originOwnerId,
+      Value<String?> periodKey,
+      Value<String?> calendarRuleId,
+      Value<String?> civilLabel,
+      Value<String?> segmentsJson,
+      Value<String?> definitionDigest,
+      Value<String?> canonicalInstanceId,
+      Value<String> recordKind,
       Value<int> rowid,
     });
 
@@ -30255,6 +37803,25 @@ final class $$QuestInstancesTableReferences
     );
   }
 
+  static $QuestInstancesTable _canonicalInstanceIdTable(_$AppDatabase db) =>
+      db.questInstances.createAlias(
+        'quest_instances__canonical_instance_id__quest_instances__instance_id',
+      );
+
+  $$QuestInstancesTableProcessedTableManager? get canonicalInstanceId {
+    final $_column = $_itemColumn<String>('canonical_instance_id');
+    if ($_column == null) return null;
+    final manager = $$QuestInstancesTableTableManager(
+      $_db,
+      $_db.questInstances,
+    ).filter((f) => f.instanceId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_canonicalInstanceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
   static MultiTypedResultKey<
     $QuestObjectiveProgressTable,
     List<QuestObjectiveProgressData>
@@ -30281,6 +37848,33 @@ final class $$QuestInstancesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _questObjectiveProgressRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuestClaimReceiptsTable, List<QuestClaimReceipt>>
+  _questClaimReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.questClaimReceipts,
+        aliasName:
+            'quest_instances__instance_id__quest_claim_receipts__instance_id',
+      );
+
+  $$QuestClaimReceiptsTableProcessedTableManager get questClaimReceiptsRefs {
+    final manager =
+        $$QuestClaimReceiptsTableTableManager(
+          $_db,
+          $_db.questClaimReceipts,
+        ).filter(
+          (f) => f.instanceId.instanceId.sqlEquals(
+            $_itemColumn<String>('instance_id')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _questClaimReceiptsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -30324,6 +37918,41 @@ class $$QuestInstancesTableFilterComposer
 
   ColumnFilters<int> get expiredAtUtcMs => $composableBuilder(
     column: $table.expiredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get calendarRuleId => $composableBuilder(
+    column: $table.calendarRuleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get civilLabel => $composableBuilder(
+    column: $table.civilLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get segmentsJson => $composableBuilder(
+    column: $table.segmentsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recordKind => $composableBuilder(
+    column: $table.recordKind,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30373,6 +38002,29 @@ class $$QuestInstancesTableFilterComposer
     return composer;
   }
 
+  $$QuestInstancesTableFilterComposer get canonicalInstanceId {
+    final $$QuestInstancesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.canonicalInstanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableFilterComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<bool> questObjectiveProgressRefs(
     Expression<bool> Function($$QuestObjectiveProgressTableFilterComposer f) f,
   ) {
@@ -30396,6 +38048,31 @@ class $$QuestInstancesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> questClaimReceiptsRefs(
+    Expression<bool> Function($$QuestClaimReceiptsTableFilterComposer f) f,
+  ) {
+    final $$QuestClaimReceiptsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questClaimReceipts,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestClaimReceiptsTableFilterComposer(
+            $db: $db,
+            $table: $db.questClaimReceipts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -30436,6 +38113,41 @@ class $$QuestInstancesTableOrderingComposer
 
   ColumnOrderings<int> get expiredAtUtcMs => $composableBuilder(
     column: $table.expiredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get calendarRuleId => $composableBuilder(
+    column: $table.calendarRuleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get civilLabel => $composableBuilder(
+    column: $table.civilLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get segmentsJson => $composableBuilder(
+    column: $table.segmentsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recordKind => $composableBuilder(
+    column: $table.recordKind,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30484,6 +38196,29 @@ class $$QuestInstancesTableOrderingComposer
     );
     return composer;
   }
+
+  $$QuestInstancesTableOrderingComposer get canonicalInstanceId {
+    final $$QuestInstancesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.canonicalInstanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableOrderingComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$QuestInstancesTableAnnotationComposer
@@ -30520,6 +38255,39 @@ class $$QuestInstancesTableAnnotationComposer
 
   GeneratedColumn<int> get expiredAtUtcMs => $composableBuilder(
     column: $table.expiredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get periodKey =>
+      $composableBuilder(column: $table.periodKey, builder: (column) => column);
+
+  GeneratedColumn<String> get calendarRuleId => $composableBuilder(
+    column: $table.calendarRuleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get civilLabel => $composableBuilder(
+    column: $table.civilLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get segmentsJson => $composableBuilder(
+    column: $table.segmentsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get definitionDigest => $composableBuilder(
+    column: $table.definitionDigest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recordKind => $composableBuilder(
+    column: $table.recordKind,
     builder: (column) => column,
   );
 
@@ -30569,6 +38337,29 @@ class $$QuestInstancesTableAnnotationComposer
     return composer;
   }
 
+  $$QuestInstancesTableAnnotationComposer get canonicalInstanceId {
+    final $$QuestInstancesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.canonicalInstanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> questObjectiveProgressRefs<T extends Object>(
     Expression<T> Function($$QuestObjectiveProgressTableAnnotationComposer a) f,
   ) {
@@ -30586,6 +38377,32 @@ class $$QuestInstancesTableAnnotationComposer
               }) => $$QuestObjectiveProgressTableAnnotationComposer(
                 $db: $db,
                 $table: $db.questObjectiveProgress,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> questClaimReceiptsRefs<T extends Object>(
+    Expression<T> Function($$QuestClaimReceiptsTableAnnotationComposer a) f,
+  ) {
+    final $$QuestClaimReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.instanceId,
+          referencedTable: $db.questClaimReceipts,
+          getReferencedColumn: (t) => t.instanceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$QuestClaimReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.questClaimReceipts,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -30612,7 +38429,9 @@ class $$QuestInstancesTableTableManager
           PrefetchHooks Function({
             bool questId,
             bool ownerId,
+            bool canonicalInstanceId,
             bool questObjectiveProgressRefs,
+            bool questClaimReceiptsRefs,
           })
         > {
   $$QuestInstancesTableTableManager(
@@ -30638,6 +38457,14 @@ class $$QuestInstancesTableTableManager
                 Value<String> state = const Value.absent(),
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String?> originOwnerId = const Value.absent(),
+                Value<String?> periodKey = const Value.absent(),
+                Value<String?> calendarRuleId = const Value.absent(),
+                Value<String?> civilLabel = const Value.absent(),
+                Value<String?> segmentsJson = const Value.absent(),
+                Value<String?> definitionDigest = const Value.absent(),
+                Value<String?> canonicalInstanceId = const Value.absent(),
+                Value<String> recordKind = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion(
                 instanceId: instanceId,
@@ -30648,6 +38475,14 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                originOwnerId: originOwnerId,
+                periodKey: periodKey,
+                calendarRuleId: calendarRuleId,
+                civilLabel: civilLabel,
+                segmentsJson: segmentsJson,
+                definitionDigest: definitionDigest,
+                canonicalInstanceId: canonicalInstanceId,
+                recordKind: recordKind,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -30660,6 +38495,14 @@ class $$QuestInstancesTableTableManager
                 required String state,
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String?> originOwnerId = const Value.absent(),
+                Value<String?> periodKey = const Value.absent(),
+                Value<String?> calendarRuleId = const Value.absent(),
+                Value<String?> civilLabel = const Value.absent(),
+                Value<String?> segmentsJson = const Value.absent(),
+                Value<String?> definitionDigest = const Value.absent(),
+                Value<String?> canonicalInstanceId = const Value.absent(),
+                Value<String> recordKind = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion.insert(
                 instanceId: instanceId,
@@ -30670,6 +38513,14 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                originOwnerId: originOwnerId,
+                periodKey: periodKey,
+                calendarRuleId: calendarRuleId,
+                civilLabel: civilLabel,
+                segmentsJson: segmentsJson,
+                definitionDigest: definitionDigest,
+                canonicalInstanceId: canonicalInstanceId,
+                recordKind: recordKind,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -30684,12 +38535,15 @@ class $$QuestInstancesTableTableManager
               ({
                 questId = false,
                 ownerId = false,
+                canonicalInstanceId = false,
                 questObjectiveProgressRefs = false,
+                questClaimReceiptsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (questObjectiveProgressRefs) db.questObjectiveProgress,
+                    if (questClaimReceiptsRefs) db.questClaimReceipts,
                   ],
                   addJoins:
                       <
@@ -30737,6 +38591,21 @@ class $$QuestInstancesTableTableManager
                                   )
                                   as T;
                         }
+                        if (canonicalInstanceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.canonicalInstanceId,
+                                    referencedTable:
+                                        $$QuestInstancesTableReferences
+                                            ._canonicalInstanceIdTable(db),
+                                    referencedColumn:
+                                        $$QuestInstancesTableReferences
+                                            ._canonicalInstanceIdTable(db)
+                                            .instanceId,
+                                  )
+                                  as T;
+                        }
 
                         return state;
                       },
@@ -30757,6 +38626,27 @@ class $$QuestInstancesTableTableManager
                                 table,
                                 p0,
                               ).questObjectiveProgressRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.instanceId == item.instanceId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (questClaimReceiptsRefs)
+                        await $_getPrefetchedData<
+                          QuestInstance,
+                          $QuestInstancesTable,
+                          QuestClaimReceipt
+                        >(
+                          currentTable: table,
+                          referencedTable: $$QuestInstancesTableReferences
+                              ._questClaimReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$QuestInstancesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).questClaimReceiptsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.instanceId == item.instanceId,
@@ -30786,7 +38676,9 @@ typedef $$QuestInstancesTableProcessedTableManager =
       PrefetchHooks Function({
         bool questId,
         bool ownerId,
+        bool canonicalInstanceId,
         bool questObjectiveProgressRefs,
+        bool questClaimReceiptsRefs,
       })
     >;
 typedef $$QuestObjectiveProgressTableCreateCompanionBuilder =
@@ -31156,6 +39048,494 @@ typedef $$QuestObjectiveProgressTableProcessedTableManager =
       (QuestObjectiveProgressData, $$QuestObjectiveProgressTableReferences),
       QuestObjectiveProgressData,
       PrefetchHooks Function({bool instanceId})
+    >;
+typedef $$QuestClaimReceiptsTableCreateCompanionBuilder =
+    QuestClaimReceiptsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String originOwnerId,
+      required String instanceId,
+      required int issuedAtUtcMs,
+      required int completedAtUtcMs,
+      required int xpAmount,
+      required String evidenceJson,
+      Value<int> rowid,
+    });
+typedef $$QuestClaimReceiptsTableUpdateCompanionBuilder =
+    QuestClaimReceiptsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<String> instanceId,
+      Value<int> issuedAtUtcMs,
+      Value<int> completedAtUtcMs,
+      Value<int> xpAmount,
+      Value<String> evidenceJson,
+      Value<int> rowid,
+    });
+
+final class $$QuestClaimReceiptsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $QuestClaimReceiptsTable,
+          QuestClaimReceipt
+        > {
+  $$QuestClaimReceiptsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('quest_claim_receipts__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $QuestInstancesTable _instanceIdTable(_$AppDatabase db) =>
+      db.questInstances.createAlias(
+        'quest_claim_receipts__instance_id__quest_instances__instance_id',
+      );
+
+  $$QuestInstancesTableProcessedTableManager get instanceId {
+    final $_column = $_itemColumn<String>('instance_id')!;
+
+    final manager = $$QuestInstancesTableTableManager(
+      $_db,
+      $_db.questInstances,
+    ).filter((f) => f.instanceId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_instanceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$QuestClaimReceiptsTableFilterComposer
+    extends Composer<_$AppDatabase, $QuestClaimReceiptsTable> {
+  $$QuestClaimReceiptsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get xpAmount => $composableBuilder(
+    column: $table.xpAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidenceJson => $composableBuilder(
+    column: $table.evidenceJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$QuestInstancesTableFilterComposer get instanceId {
+    final $$QuestInstancesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableFilterComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestClaimReceiptsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuestClaimReceiptsTable> {
+  $$QuestClaimReceiptsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get xpAmount => $composableBuilder(
+    column: $table.xpAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evidenceJson => $composableBuilder(
+    column: $table.evidenceJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$QuestInstancesTableOrderingComposer get instanceId {
+    final $$QuestInstancesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableOrderingComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestClaimReceiptsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuestClaimReceiptsTable> {
+  $$QuestClaimReceiptsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get xpAmount =>
+      $composableBuilder(column: $table.xpAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get evidenceJson => $composableBuilder(
+    column: $table.evidenceJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$QuestInstancesTableAnnotationComposer get instanceId {
+    final $$QuestInstancesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestClaimReceiptsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuestClaimReceiptsTable,
+          QuestClaimReceipt,
+          $$QuestClaimReceiptsTableFilterComposer,
+          $$QuestClaimReceiptsTableOrderingComposer,
+          $$QuestClaimReceiptsTableAnnotationComposer,
+          $$QuestClaimReceiptsTableCreateCompanionBuilder,
+          $$QuestClaimReceiptsTableUpdateCompanionBuilder,
+          (QuestClaimReceipt, $$QuestClaimReceiptsTableReferences),
+          QuestClaimReceipt,
+          PrefetchHooks Function({bool ownerId, bool instanceId})
+        > {
+  $$QuestClaimReceiptsTableTableManager(
+    _$AppDatabase db,
+    $QuestClaimReceiptsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuestClaimReceiptsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuestClaimReceiptsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuestClaimReceiptsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<String> instanceId = const Value.absent(),
+                Value<int> issuedAtUtcMs = const Value.absent(),
+                Value<int> completedAtUtcMs = const Value.absent(),
+                Value<int> xpAmount = const Value.absent(),
+                Value<String> evidenceJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestClaimReceiptsCompanion(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                instanceId: instanceId,
+                issuedAtUtcMs: issuedAtUtcMs,
+                completedAtUtcMs: completedAtUtcMs,
+                xpAmount: xpAmount,
+                evidenceJson: evidenceJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String originOwnerId,
+                required String instanceId,
+                required int issuedAtUtcMs,
+                required int completedAtUtcMs,
+                required int xpAmount,
+                required String evidenceJson,
+                Value<int> rowid = const Value.absent(),
+              }) => QuestClaimReceiptsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                instanceId: instanceId,
+                issuedAtUtcMs: issuedAtUtcMs,
+                completedAtUtcMs: completedAtUtcMs,
+                xpAmount: xpAmount,
+                evidenceJson: evidenceJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuestClaimReceiptsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, instanceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$QuestClaimReceiptsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$QuestClaimReceiptsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (instanceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.instanceId,
+                                referencedTable:
+                                    $$QuestClaimReceiptsTableReferences
+                                        ._instanceIdTable(db),
+                                referencedColumn:
+                                    $$QuestClaimReceiptsTableReferences
+                                        ._instanceIdTable(db)
+                                        .instanceId,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuestClaimReceiptsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuestClaimReceiptsTable,
+      QuestClaimReceipt,
+      $$QuestClaimReceiptsTableFilterComposer,
+      $$QuestClaimReceiptsTableOrderingComposer,
+      $$QuestClaimReceiptsTableAnnotationComposer,
+      $$QuestClaimReceiptsTableCreateCompanionBuilder,
+      $$QuestClaimReceiptsTableUpdateCompanionBuilder,
+      (QuestClaimReceipt, $$QuestClaimReceiptsTableReferences),
+      QuestClaimReceipt,
+      PrefetchHooks Function({bool ownerId, bool instanceId})
     >;
 typedef $$StreakStatesTableCreateCompanionBuilder =
     StreakStatesCompanion Function({
@@ -31815,6 +40195,826 @@ typedef $$LearningDayLogTableProcessedTableManager =
       $$LearningDayLogTableUpdateCompanionBuilder,
       (LearningDayLogData, $$LearningDayLogTableReferences),
       LearningDayLogData,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$StreakBaselinesTableCreateCompanionBuilder =
+    StreakBaselinesCompanion Function({
+      required String originOwnerId,
+      required String ownerId,
+      required int cutoffUtcMs,
+      required int currentStreakDays,
+      required int longestStreakDays,
+      required int freezeCount,
+      Value<int?> lastLearnedAtUtcMs,
+      required int updatedAtUtcMs,
+      required bool controlsContinuity,
+      Value<int> rowid,
+    });
+typedef $$StreakBaselinesTableUpdateCompanionBuilder =
+    StreakBaselinesCompanion Function({
+      Value<String> originOwnerId,
+      Value<String> ownerId,
+      Value<int> cutoffUtcMs,
+      Value<int> currentStreakDays,
+      Value<int> longestStreakDays,
+      Value<int> freezeCount,
+      Value<int?> lastLearnedAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<bool> controlsContinuity,
+      Value<int> rowid,
+    });
+
+final class $$StreakBaselinesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $StreakBaselinesTable, StreakBaseline> {
+  $$StreakBaselinesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('streak_baselines__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StreakBaselinesTableFilterComposer
+    extends Composer<_$AppDatabase, $StreakBaselinesTable> {
+  $$StreakBaselinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cutoffUtcMs => $composableBuilder(
+    column: $table.cutoffUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get controlsContinuity => $composableBuilder(
+    column: $table.controlsContinuity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakBaselinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StreakBaselinesTable> {
+  $$StreakBaselinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cutoffUtcMs => $composableBuilder(
+    column: $table.cutoffUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get controlsContinuity => $composableBuilder(
+    column: $table.controlsContinuity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakBaselinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StreakBaselinesTable> {
+  $$StreakBaselinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cutoffUtcMs => $composableBuilder(
+    column: $table.cutoffUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get controlsContinuity => $composableBuilder(
+    column: $table.controlsContinuity,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakBaselinesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StreakBaselinesTable,
+          StreakBaseline,
+          $$StreakBaselinesTableFilterComposer,
+          $$StreakBaselinesTableOrderingComposer,
+          $$StreakBaselinesTableAnnotationComposer,
+          $$StreakBaselinesTableCreateCompanionBuilder,
+          $$StreakBaselinesTableUpdateCompanionBuilder,
+          (StreakBaseline, $$StreakBaselinesTableReferences),
+          StreakBaseline,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$StreakBaselinesTableTableManager(
+    _$AppDatabase db,
+    $StreakBaselinesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakBaselinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StreakBaselinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StreakBaselinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> originOwnerId = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> cutoffUtcMs = const Value.absent(),
+                Value<int> currentStreakDays = const Value.absent(),
+                Value<int> longestStreakDays = const Value.absent(),
+                Value<int> freezeCount = const Value.absent(),
+                Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<bool> controlsContinuity = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StreakBaselinesCompanion(
+                originOwnerId: originOwnerId,
+                ownerId: ownerId,
+                cutoffUtcMs: cutoffUtcMs,
+                currentStreakDays: currentStreakDays,
+                longestStreakDays: longestStreakDays,
+                freezeCount: freezeCount,
+                lastLearnedAtUtcMs: lastLearnedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                controlsContinuity: controlsContinuity,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String originOwnerId,
+                required String ownerId,
+                required int cutoffUtcMs,
+                required int currentStreakDays,
+                required int longestStreakDays,
+                required int freezeCount,
+                Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+                required int updatedAtUtcMs,
+                required bool controlsContinuity,
+                Value<int> rowid = const Value.absent(),
+              }) => StreakBaselinesCompanion.insert(
+                originOwnerId: originOwnerId,
+                ownerId: ownerId,
+                cutoffUtcMs: cutoffUtcMs,
+                currentStreakDays: currentStreakDays,
+                longestStreakDays: longestStreakDays,
+                freezeCount: freezeCount,
+                lastLearnedAtUtcMs: lastLearnedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                controlsContinuity: controlsContinuity,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StreakBaselinesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$StreakBaselinesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$StreakBaselinesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StreakBaselinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StreakBaselinesTable,
+      StreakBaseline,
+      $$StreakBaselinesTableFilterComposer,
+      $$StreakBaselinesTableOrderingComposer,
+      $$StreakBaselinesTableAnnotationComposer,
+      $$StreakBaselinesTableCreateCompanionBuilder,
+      $$StreakBaselinesTableUpdateCompanionBuilder,
+      (StreakBaseline, $$StreakBaselinesTableReferences),
+      StreakBaseline,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$StreakTokenAdjustmentsTableCreateCompanionBuilder =
+    StreakTokenAdjustmentsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String originOwnerId,
+      required String commandId,
+      required int occurredAtUtcMs,
+      required String kind,
+      required int delta,
+      Value<String?> protectedDay,
+      Value<int> rowid,
+    });
+typedef $$StreakTokenAdjustmentsTableUpdateCompanionBuilder =
+    StreakTokenAdjustmentsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<String> commandId,
+      Value<int> occurredAtUtcMs,
+      Value<String> kind,
+      Value<int> delta,
+      Value<String?> protectedDay,
+      Value<int> rowid,
+    });
+
+final class $$StreakTokenAdjustmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StreakTokenAdjustmentsTable,
+          StreakTokenAdjustment
+        > {
+  $$StreakTokenAdjustmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('streak_token_adjustments__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StreakTokenAdjustmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $StreakTokenAdjustmentsTable> {
+  $$StreakTokenAdjustmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get commandId => $composableBuilder(
+    column: $table.commandId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get delta => $composableBuilder(
+    column: $table.delta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protectedDay => $composableBuilder(
+    column: $table.protectedDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakTokenAdjustmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StreakTokenAdjustmentsTable> {
+  $$StreakTokenAdjustmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get commandId => $composableBuilder(
+    column: $table.commandId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get delta => $composableBuilder(
+    column: $table.delta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protectedDay => $composableBuilder(
+    column: $table.protectedDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakTokenAdjustmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StreakTokenAdjustmentsTable> {
+  $$StreakTokenAdjustmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get commandId =>
+      $composableBuilder(column: $table.commandId, builder: (column) => column);
+
+  GeneratedColumn<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get delta =>
+      $composableBuilder(column: $table.delta, builder: (column) => column);
+
+  GeneratedColumn<String> get protectedDay => $composableBuilder(
+    column: $table.protectedDay,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakTokenAdjustmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StreakTokenAdjustmentsTable,
+          StreakTokenAdjustment,
+          $$StreakTokenAdjustmentsTableFilterComposer,
+          $$StreakTokenAdjustmentsTableOrderingComposer,
+          $$StreakTokenAdjustmentsTableAnnotationComposer,
+          $$StreakTokenAdjustmentsTableCreateCompanionBuilder,
+          $$StreakTokenAdjustmentsTableUpdateCompanionBuilder,
+          (StreakTokenAdjustment, $$StreakTokenAdjustmentsTableReferences),
+          StreakTokenAdjustment,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$StreakTokenAdjustmentsTableTableManager(
+    _$AppDatabase db,
+    $StreakTokenAdjustmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakTokenAdjustmentsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$StreakTokenAdjustmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$StreakTokenAdjustmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<String> commandId = const Value.absent(),
+                Value<int> occurredAtUtcMs = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int> delta = const Value.absent(),
+                Value<String?> protectedDay = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StreakTokenAdjustmentsCompanion(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                commandId: commandId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                kind: kind,
+                delta: delta,
+                protectedDay: protectedDay,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String originOwnerId,
+                required String commandId,
+                required int occurredAtUtcMs,
+                required String kind,
+                required int delta,
+                Value<String?> protectedDay = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StreakTokenAdjustmentsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                commandId: commandId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                kind: kind,
+                delta: delta,
+                protectedDay: protectedDay,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StreakTokenAdjustmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$StreakTokenAdjustmentsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$StreakTokenAdjustmentsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StreakTokenAdjustmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StreakTokenAdjustmentsTable,
+      StreakTokenAdjustment,
+      $$StreakTokenAdjustmentsTableFilterComposer,
+      $$StreakTokenAdjustmentsTableOrderingComposer,
+      $$StreakTokenAdjustmentsTableAnnotationComposer,
+      $$StreakTokenAdjustmentsTableCreateCompanionBuilder,
+      $$StreakTokenAdjustmentsTableUpdateCompanionBuilder,
+      (StreakTokenAdjustment, $$StreakTokenAdjustmentsTableReferences),
+      StreakTokenAdjustment,
       PrefetchHooks Function({bool ownerId})
     >;
 typedef $$AssociationRecordsTableCreateCompanionBuilder =
@@ -32617,6 +41817,1760 @@ typedef $$AssociativeMemoryStatesTableProcessedTableManager =
       AssociativeMemoryState,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$LocalContentReportsTableCreateCompanionBuilder =
+    LocalContentReportsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sourceKind,
+      required String sourceId,
+      required int sourceRevision,
+      required String spelling,
+      required String meaning,
+      Value<String?> sentence,
+      required String reason,
+      required int createdAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LocalContentReportsTableUpdateCompanionBuilder =
+    LocalContentReportsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sourceKind,
+      Value<String> sourceId,
+      Value<int> sourceRevision,
+      Value<String> spelling,
+      Value<String> meaning,
+      Value<String?> sentence,
+      Value<String> reason,
+      Value<int> createdAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LocalContentReportsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LocalContentReportsTable,
+          LocalContentReport
+        > {
+  $$LocalContentReportsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('local_content_reports__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LocalContentReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalContentReportsTable> {
+  $$LocalContentReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sourceRevision => $composableBuilder(
+    column: $table.sourceRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get spelling => $composableBuilder(
+    column: $table.spelling,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get meaning => $composableBuilder(
+    column: $table.meaning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sentence => $composableBuilder(
+    column: $table.sentence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalContentReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalContentReportsTable> {
+  $$LocalContentReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sourceRevision => $composableBuilder(
+    column: $table.sourceRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get spelling => $composableBuilder(
+    column: $table.spelling,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get meaning => $composableBuilder(
+    column: $table.meaning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sentence => $composableBuilder(
+    column: $table.sentence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalContentReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalContentReportsTable> {
+  $$LocalContentReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<int> get sourceRevision => $composableBuilder(
+    column: $table.sourceRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get spelling =>
+      $composableBuilder(column: $table.spelling, builder: (column) => column);
+
+  GeneratedColumn<String> get meaning =>
+      $composableBuilder(column: $table.meaning, builder: (column) => column);
+
+  GeneratedColumn<String> get sentence =>
+      $composableBuilder(column: $table.sentence, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LocalContentReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalContentReportsTable,
+          LocalContentReport,
+          $$LocalContentReportsTableFilterComposer,
+          $$LocalContentReportsTableOrderingComposer,
+          $$LocalContentReportsTableAnnotationComposer,
+          $$LocalContentReportsTableCreateCompanionBuilder,
+          $$LocalContentReportsTableUpdateCompanionBuilder,
+          (LocalContentReport, $$LocalContentReportsTableReferences),
+          LocalContentReport,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LocalContentReportsTableTableManager(
+    _$AppDatabase db,
+    $LocalContentReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalContentReportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalContentReportsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalContentReportsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sourceKind = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<int> sourceRevision = const Value.absent(),
+                Value<String> spelling = const Value.absent(),
+                Value<String> meaning = const Value.absent(),
+                Value<String?> sentence = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalContentReportsCompanion(
+                id: id,
+                ownerId: ownerId,
+                sourceKind: sourceKind,
+                sourceId: sourceId,
+                sourceRevision: sourceRevision,
+                spelling: spelling,
+                meaning: meaning,
+                sentence: sentence,
+                reason: reason,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sourceKind,
+                required String sourceId,
+                required int sourceRevision,
+                required String spelling,
+                required String meaning,
+                Value<String?> sentence = const Value.absent(),
+                required String reason,
+                required int createdAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalContentReportsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sourceKind: sourceKind,
+                sourceId: sourceId,
+                sourceRevision: sourceRevision,
+                spelling: spelling,
+                meaning: meaning,
+                sentence: sentence,
+                reason: reason,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LocalContentReportsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LocalContentReportsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LocalContentReportsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LocalContentReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalContentReportsTable,
+      LocalContentReport,
+      $$LocalContentReportsTableFilterComposer,
+      $$LocalContentReportsTableOrderingComposer,
+      $$LocalContentReportsTableAnnotationComposer,
+      $$LocalContentReportsTableCreateCompanionBuilder,
+      $$LocalContentReportsTableUpdateCompanionBuilder,
+      (LocalContentReport, $$LocalContentReportsTableReferences),
+      LocalContentReport,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$FocusSessionsTableCreateCompanionBuilder =
+    FocusSessionsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String originOwnerId,
+      required int targetMs,
+      required int startedAtUtcMs,
+      Value<String?> startRuleId,
+      Value<String?> startCivilWeek,
+      required String state,
+      Value<int> revision,
+      required String spansJson,
+      Value<int?> endedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$FocusSessionsTableUpdateCompanionBuilder =
+    FocusSessionsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<int> targetMs,
+      Value<int> startedAtUtcMs,
+      Value<String?> startRuleId,
+      Value<String?> startCivilWeek,
+      Value<String> state,
+      Value<int> revision,
+      Value<String> spansJson,
+      Value<int?> endedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$FocusSessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $FocusSessionsTable, FocusSession> {
+  $$FocusSessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('focus_sessions__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $OwnerCalendarEpochsTable _startRuleIdTable(_$AppDatabase db) =>
+      db.ownerCalendarEpochs.createAlias(
+        'focus_sessions__start_rule_id__owner_calendar_epochs__rule_id',
+      );
+
+  $$OwnerCalendarEpochsTableProcessedTableManager? get startRuleId {
+    final $_column = $_itemColumn<String>('start_rule_id');
+    if ($_column == null) return null;
+    final manager = $$OwnerCalendarEpochsTableTableManager(
+      $_db,
+      $_db.ownerCalendarEpochs,
+    ).filter((f) => f.ruleId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_startRuleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FocusSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetMs => $composableBuilder(
+    column: $table.targetMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startCivilWeek => $composableBuilder(
+    column: $table.startCivilWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get spansJson => $composableBuilder(
+    column: $table.spansJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$OwnerCalendarEpochsTableFilterComposer get startRuleId {
+    final $$OwnerCalendarEpochsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.startRuleId,
+      referencedTable: $db.ownerCalendarEpochs,
+      getReferencedColumn: (t) => t.ruleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnerCalendarEpochsTableFilterComposer(
+            $db: $db,
+            $table: $db.ownerCalendarEpochs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FocusSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetMs => $composableBuilder(
+    column: $table.targetMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startCivilWeek => $composableBuilder(
+    column: $table.startCivilWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get spansJson => $composableBuilder(
+    column: $table.spansJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$OwnerCalendarEpochsTableOrderingComposer get startRuleId {
+    final $$OwnerCalendarEpochsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.startRuleId,
+          referencedTable: $db.ownerCalendarEpochs,
+          getReferencedColumn: (t) => t.ruleId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$OwnerCalendarEpochsTableOrderingComposer(
+                $db: $db,
+                $table: $db.ownerCalendarEpochs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$FocusSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetMs =>
+      $composableBuilder(column: $table.targetMs, builder: (column) => column);
+
+  GeneratedColumn<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get startCivilWeek => $composableBuilder(
+    column: $table.startCivilWeek,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get spansJson =>
+      $composableBuilder(column: $table.spansJson, builder: (column) => column);
+
+  GeneratedColumn<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$OwnerCalendarEpochsTableAnnotationComposer get startRuleId {
+    final $$OwnerCalendarEpochsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.startRuleId,
+          referencedTable: $db.ownerCalendarEpochs,
+          getReferencedColumn: (t) => t.ruleId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$OwnerCalendarEpochsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.ownerCalendarEpochs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$FocusSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FocusSessionsTable,
+          FocusSession,
+          $$FocusSessionsTableFilterComposer,
+          $$FocusSessionsTableOrderingComposer,
+          $$FocusSessionsTableAnnotationComposer,
+          $$FocusSessionsTableCreateCompanionBuilder,
+          $$FocusSessionsTableUpdateCompanionBuilder,
+          (FocusSession, $$FocusSessionsTableReferences),
+          FocusSession,
+          PrefetchHooks Function({bool ownerId, bool startRuleId})
+        > {
+  $$FocusSessionsTableTableManager(_$AppDatabase db, $FocusSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FocusSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FocusSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FocusSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<int> targetMs = const Value.absent(),
+                Value<int> startedAtUtcMs = const Value.absent(),
+                Value<String?> startRuleId = const Value.absent(),
+                Value<String?> startCivilWeek = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> spansJson = const Value.absent(),
+                Value<int?> endedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FocusSessionsCompanion(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                targetMs: targetMs,
+                startedAtUtcMs: startedAtUtcMs,
+                startRuleId: startRuleId,
+                startCivilWeek: startCivilWeek,
+                state: state,
+                revision: revision,
+                spansJson: spansJson,
+                endedAtUtcMs: endedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String originOwnerId,
+                required int targetMs,
+                required int startedAtUtcMs,
+                Value<String?> startRuleId = const Value.absent(),
+                Value<String?> startCivilWeek = const Value.absent(),
+                required String state,
+                Value<int> revision = const Value.absent(),
+                required String spansJson,
+                Value<int?> endedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FocusSessionsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                targetMs: targetMs,
+                startedAtUtcMs: startedAtUtcMs,
+                startRuleId: startRuleId,
+                startCivilWeek: startCivilWeek,
+                state: state,
+                revision: revision,
+                spansJson: spansJson,
+                endedAtUtcMs: endedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FocusSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, startRuleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$FocusSessionsTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$FocusSessionsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (startRuleId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.startRuleId,
+                                referencedTable: $$FocusSessionsTableReferences
+                                    ._startRuleIdTable(db),
+                                referencedColumn: $$FocusSessionsTableReferences
+                                    ._startRuleIdTable(db)
+                                    .ruleId,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FocusSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FocusSessionsTable,
+      FocusSession,
+      $$FocusSessionsTableFilterComposer,
+      $$FocusSessionsTableOrderingComposer,
+      $$FocusSessionsTableAnnotationComposer,
+      $$FocusSessionsTableCreateCompanionBuilder,
+      $$FocusSessionsTableUpdateCompanionBuilder,
+      (FocusSession, $$FocusSessionsTableReferences),
+      FocusSession,
+      PrefetchHooks Function({bool ownerId, bool startRuleId})
+    >;
+typedef $$LearningPreferencesTableCreateCompanionBuilder =
+    LearningPreferencesCompanion Function({
+      required String ownerId,
+      Value<String> onboardingState,
+      Value<String?> purpose,
+      Value<int?> plannedMinutes,
+      Value<String?> learningMethod,
+      Value<String?> goalCivilDate,
+      Value<String> goalState,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningPreferencesTableUpdateCompanionBuilder =
+    LearningPreferencesCompanion Function({
+      Value<String> ownerId,
+      Value<String> onboardingState,
+      Value<String?> purpose,
+      Value<int?> plannedMinutes,
+      Value<String?> learningMethod,
+      Value<String?> goalCivilDate,
+      Value<String> goalState,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningPreferencesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningPreferencesTable,
+          LearningPreference
+        > {
+  $$LearningPreferencesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_preferences__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningPreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningPreferencesTable> {
+  $$LearningPreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get purpose => $composableBuilder(
+    column: $table.purpose,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plannedMinutes => $composableBuilder(
+    column: $table.plannedMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningMethod => $composableBuilder(
+    column: $table.learningMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goalCivilDate => $composableBuilder(
+    column: $table.goalCivilDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goalState => $composableBuilder(
+    column: $table.goalState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningPreferencesTable> {
+  $$LearningPreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get purpose => $composableBuilder(
+    column: $table.purpose,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get plannedMinutes => $composableBuilder(
+    column: $table.plannedMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningMethod => $composableBuilder(
+    column: $table.learningMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goalCivilDate => $composableBuilder(
+    column: $table.goalCivilDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goalState => $composableBuilder(
+    column: $table.goalState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningPreferencesTable> {
+  $$LearningPreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get onboardingState => $composableBuilder(
+    column: $table.onboardingState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get purpose =>
+      $composableBuilder(column: $table.purpose, builder: (column) => column);
+
+  GeneratedColumn<int> get plannedMinutes => $composableBuilder(
+    column: $table.plannedMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get learningMethod => $composableBuilder(
+    column: $table.learningMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get goalCivilDate => $composableBuilder(
+    column: $table.goalCivilDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get goalState =>
+      $composableBuilder(column: $table.goalState, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningPreferencesTable,
+          LearningPreference,
+          $$LearningPreferencesTableFilterComposer,
+          $$LearningPreferencesTableOrderingComposer,
+          $$LearningPreferencesTableAnnotationComposer,
+          $$LearningPreferencesTableCreateCompanionBuilder,
+          $$LearningPreferencesTableUpdateCompanionBuilder,
+          (LearningPreference, $$LearningPreferencesTableReferences),
+          LearningPreference,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LearningPreferencesTableTableManager(
+    _$AppDatabase db,
+    $LearningPreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningPreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningPreferencesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearningPreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> onboardingState = const Value.absent(),
+                Value<String?> purpose = const Value.absent(),
+                Value<int?> plannedMinutes = const Value.absent(),
+                Value<String?> learningMethod = const Value.absent(),
+                Value<String?> goalCivilDate = const Value.absent(),
+                Value<String> goalState = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPreferencesCompanion(
+                ownerId: ownerId,
+                onboardingState: onboardingState,
+                purpose: purpose,
+                plannedMinutes: plannedMinutes,
+                learningMethod: learningMethod,
+                goalCivilDate: goalCivilDate,
+                goalState: goalState,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                Value<String> onboardingState = const Value.absent(),
+                Value<String?> purpose = const Value.absent(),
+                Value<int?> plannedMinutes = const Value.absent(),
+                Value<String?> learningMethod = const Value.absent(),
+                Value<String?> goalCivilDate = const Value.absent(),
+                Value<String> goalState = const Value.absent(),
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPreferencesCompanion.insert(
+                ownerId: ownerId,
+                onboardingState: onboardingState,
+                purpose: purpose,
+                plannedMinutes: plannedMinutes,
+                learningMethod: learningMethod,
+                goalCivilDate: goalCivilDate,
+                goalState: goalState,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningPreferencesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LearningPreferencesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearningPreferencesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningPreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningPreferencesTable,
+      LearningPreference,
+      $$LearningPreferencesTableFilterComposer,
+      $$LearningPreferencesTableOrderingComposer,
+      $$LearningPreferencesTableAnnotationComposer,
+      $$LearningPreferencesTableCreateCompanionBuilder,
+      $$LearningPreferencesTableUpdateCompanionBuilder,
+      (LearningPreference, $$LearningPreferencesTableReferences),
+      LearningPreference,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$ArchivedV25RecordsTableCreateCompanionBuilder =
+    ArchivedV25RecordsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String originOwnerId,
+      required String sourceTable,
+      required String sourceRowKey,
+      required String payloadJson,
+      Value<Uint8List?> payloadBlob,
+      Value<int> rowid,
+    });
+typedef $$ArchivedV25RecordsTableUpdateCompanionBuilder =
+    ArchivedV25RecordsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> originOwnerId,
+      Value<String> sourceTable,
+      Value<String> sourceRowKey,
+      Value<String> payloadJson,
+      Value<Uint8List?> payloadBlob,
+      Value<int> rowid,
+    });
+
+final class $$ArchivedV25RecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ArchivedV25RecordsTable,
+          ArchivedV25Record
+        > {
+  $$ArchivedV25RecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('archived_v25_records__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ArchivedV25RecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ArchivedV25RecordsTable> {
+  $$ArchivedV25RecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get originOwnerId => $composableBuilder(
+    column: $table.originOwnerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceRowKey => $composableBuilder(
+    column: $table.sourceRowKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get payloadBlob => $composableBuilder(
+    column: $table.payloadBlob,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ArchivedV25RecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ArchivedV25RecordsTable,
+          ArchivedV25Record,
+          $$ArchivedV25RecordsTableFilterComposer,
+          $$ArchivedV25RecordsTableOrderingComposer,
+          $$ArchivedV25RecordsTableAnnotationComposer,
+          $$ArchivedV25RecordsTableCreateCompanionBuilder,
+          $$ArchivedV25RecordsTableUpdateCompanionBuilder,
+          (ArchivedV25Record, $$ArchivedV25RecordsTableReferences),
+          ArchivedV25Record,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ArchivedV25RecordsTableTableManager(
+    _$AppDatabase db,
+    $ArchivedV25RecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ArchivedV25RecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ArchivedV25RecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ArchivedV25RecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> originOwnerId = const Value.absent(),
+                Value<String> sourceTable = const Value.absent(),
+                Value<String> sourceRowKey = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<Uint8List?> payloadBlob = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ArchivedV25RecordsCompanion(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                sourceTable: sourceTable,
+                sourceRowKey: sourceRowKey,
+                payloadJson: payloadJson,
+                payloadBlob: payloadBlob,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String originOwnerId,
+                required String sourceTable,
+                required String sourceRowKey,
+                required String payloadJson,
+                Value<Uint8List?> payloadBlob = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ArchivedV25RecordsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                originOwnerId: originOwnerId,
+                sourceTable: sourceTable,
+                sourceRowKey: sourceRowKey,
+                payloadJson: payloadJson,
+                payloadBlob: payloadBlob,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ArchivedV25RecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$ArchivedV25RecordsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ArchivedV25RecordsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ArchivedV25RecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ArchivedV25RecordsTable,
+      ArchivedV25Record,
+      $$ArchivedV25RecordsTableFilterComposer,
+      $$ArchivedV25RecordsTableOrderingComposer,
+      $$ArchivedV25RecordsTableAnnotationComposer,
+      $$ArchivedV25RecordsTableCreateCompanionBuilder,
+      $$ArchivedV25RecordsTableUpdateCompanionBuilder,
+      (ArchivedV25Record, $$ArchivedV25RecordsTableReferences),
+      ArchivedV25Record,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32670,6 +43624,13 @@ class $AppDatabaseManager {
       $$EventsV2TableTableManager(_db, _db.eventsV2);
   $$QuestDefinitionsTableTableManager get questDefinitions =>
       $$QuestDefinitionsTableTableManager(_db, _db.questDefinitions);
+  $$OwnerCalendarEpochsTableTableManager get ownerCalendarEpochs =>
+      $$OwnerCalendarEpochsTableTableManager(_db, _db.ownerCalendarEpochs);
+  $$QuestDefinitionRevisionsTableTableManager get questDefinitionRevisions =>
+      $$QuestDefinitionRevisionsTableTableManager(
+        _db,
+        _db.questDefinitionRevisions,
+      );
   $$QuestInstancesTableTableManager get questInstances =>
       $$QuestInstancesTableTableManager(_db, _db.questInstances);
   $$QuestObjectiveProgressTableTableManager get questObjectiveProgress =>
@@ -32677,10 +43638,19 @@ class $AppDatabaseManager {
         _db,
         _db.questObjectiveProgress,
       );
+  $$QuestClaimReceiptsTableTableManager get questClaimReceipts =>
+      $$QuestClaimReceiptsTableTableManager(_db, _db.questClaimReceipts);
   $$StreakStatesTableTableManager get streakStates =>
       $$StreakStatesTableTableManager(_db, _db.streakStates);
   $$LearningDayLogTableTableManager get learningDayLog =>
       $$LearningDayLogTableTableManager(_db, _db.learningDayLog);
+  $$StreakBaselinesTableTableManager get streakBaselines =>
+      $$StreakBaselinesTableTableManager(_db, _db.streakBaselines);
+  $$StreakTokenAdjustmentsTableTableManager get streakTokenAdjustments =>
+      $$StreakTokenAdjustmentsTableTableManager(
+        _db,
+        _db.streakTokenAdjustments,
+      );
   $$AssociationRecordsTableTableManager get associationRecords =>
       $$AssociationRecordsTableTableManager(_db, _db.associationRecords);
   $$AssociativeMemoryStatesTableTableManager get associativeMemoryStates =>
@@ -32688,4 +43658,12 @@ class $AppDatabaseManager {
         _db,
         _db.associativeMemoryStates,
       );
+  $$LocalContentReportsTableTableManager get localContentReports =>
+      $$LocalContentReportsTableTableManager(_db, _db.localContentReports);
+  $$FocusSessionsTableTableManager get focusSessions =>
+      $$FocusSessionsTableTableManager(_db, _db.focusSessions);
+  $$LearningPreferencesTableTableManager get learningPreferences =>
+      $$LearningPreferencesTableTableManager(_db, _db.learningPreferences);
+  $$ArchivedV25RecordsTableTableManager get archivedV25Records =>
+      $$ArchivedV25RecordsTableTableManager(_db, _db.archivedV25Records);
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -197,6 +198,60 @@ void main() {
   );
 
   test(
+    'profile update rejects a gateway UID switch during the owner lookup',
+    () async {
+      gateway.currentSession = const AccountSession(
+        uid: 'firebase-a',
+        email: 'a@example.test',
+        isAnonymous: false,
+        emailVerified: true,
+      );
+      final heldOwners = _HeldOwnerRepository(
+        LocalOwner(
+          id: 'owner-a',
+          firebaseUid: 'firebase-a',
+          createdAtUtc: DateTime.utc(2026, 11, 14),
+        ),
+      );
+      final guarded = AccountUseCases(
+        gateway: gateway,
+        owners: heldOwners,
+        upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+      );
+      final pending = guarded
+          .updateDisplayName('draft belonging to A')
+          .then<Object?>((value) => value, onError: (Object error) => error);
+      await heldOwners.started.future;
+      gateway.currentSession = const AccountSession(
+        uid: 'firebase-b',
+        email: 'b@example.test',
+        isAnonymous: false,
+        emailVerified: true,
+      );
+      heldOwners.release.complete();
+      final outcome = await pending;
+
+      expect(
+        gateway.displayNameWriteUids,
+        isEmpty,
+        reason: 'an A draft must never write the current B provider profile',
+      );
+      expect(gateway.updateDisplayNameCalls, 0);
+      expect(gateway.currentSession?.uid, 'firebase-b');
+      expect(
+        outcome,
+        isA<AccountException>().having(
+          (error) => error.code,
+          'code',
+          AccountFailureCode.invalidCredential,
+        ),
+      );
+      expect(upgrades.upgradeCalls, 0);
+      expect(upgrades.logoutCalls, 0);
+    },
+  );
+
+  test(
     'profile update rejects unsafe display names before provider calls',
     () async {
       for (final value in ['', '   ', 'name\nwith control', 'a' * 51]) {
@@ -288,6 +343,7 @@ final class _FakeGateway implements AccountGateway, GoogleAccountGateway {
   int registerCalls = 0;
   int signOutCalls = 0;
   int updateDisplayNameCalls = 0;
+  final displayNameWriteUids = <String?>[];
   String? registerEmail;
   String? updatedDisplayName;
   Object? signOutFailure;
@@ -366,6 +422,7 @@ final class _FakeGateway implements AccountGateway, GoogleAccountGateway {
   @override
   Future<AccountSession> updateDisplayName(String displayName) async {
     updateDisplayNameCalls += 1;
+    displayNameWriteUids.add(currentSession?.uid);
     updatedDisplayName = displayName;
     return AccountSession(
       uid: 'firebase-user',
@@ -375,6 +432,25 @@ final class _FakeGateway implements AccountGateway, GoogleAccountGateway {
       emailVerified: true,
     );
   }
+}
+
+final class _HeldOwnerRepository implements LocalOwnerRepository {
+  _HeldOwnerRepository(this.owner);
+
+  final LocalOwner owner;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    started.complete();
+    await release.future;
+    return owner;
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      throw UnimplementedError();
 }
 
 final class _FakeOwnerRepository implements LocalOwnerRepository {

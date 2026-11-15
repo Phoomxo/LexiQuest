@@ -7,6 +7,8 @@ import 'package:vocab_learning_app/features/media_practice/application/device_pe
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/device_permission_center_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -40,6 +42,11 @@ void main() {
     ]) {
       await _pump(tester, _PermissionAccess(camera: state, microphone: state));
       expect(find.text(text), findsNWidgets(2), reason: state.name);
+      expect(
+        find.text('ลองตอบโดยไม่ใช้เสียง'),
+        state == MediaPermissionState.granted ? findsNothing : findsOneWidget,
+        reason: state.name,
+      );
     }
   });
 
@@ -57,6 +64,39 @@ void main() {
     expect(find.text('ตรวจสอบสถานะไม่ได้'), findsNWidgets(2));
     expect(find.textContaining('private-camera-sentinel'), findsNothing);
     expect(find.textContaining('private-microphone-sentinel'), findsNothing);
+  });
+
+  testWidgets('hidden speech flags keep permission status visible', (
+    tester,
+  ) async {
+    final access = _PermissionAccess(
+      camera: MediaPermissionState.granted,
+      microphone: MediaPermissionState.denied,
+    );
+    final key = UniqueKey();
+    final practice = find.text('ลองตอบโดยไม่ใช้เสียง');
+    await _pump(tester, null, key: key, scopeAccess: access);
+    expect(practice, findsOneWidget);
+
+    await _pump(
+      tester,
+      null,
+      key: key,
+      scopeAccess: access,
+      fieldFeatures: const BuildFieldFeatureRegistry({}),
+    );
+    expect(practice, findsNothing);
+    expect(find.text('ยังไม่อนุญาต'), findsOneWidget);
+
+    await _pump(
+      tester,
+      null,
+      key: key,
+      scopeAccess: access,
+      features: const BuildFeatureRegistry({}),
+    );
+    expect(practice, findsNothing);
+    expect(find.text('ยังไม่อนุญาต'), findsOneWidget);
   });
 
   testWidgets('permanent denial opens settings only after explicit tap', (
@@ -242,6 +282,9 @@ Future<void> _pump(
   WidgetTester tester,
   DevicePermissionAccess? access, {
   DevicePermissionAccess? scopeAccess,
+  FieldFeatureRegistry fieldFeatures =
+      const BuildFieldFeatureRegistry.fieldDefaults(),
+  FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   Key? key,
   double textScale = 1,
   ThemeMode themeMode = ThemeMode.light,
@@ -274,6 +317,8 @@ Future<void> _pump(
         config: null,
         guestSessionService: const _GuestSessionService(),
         devicePermissions: scopeAccess,
+        fieldFeatures: fieldFeatures,
+        features: features,
       ),
       child: app,
     );

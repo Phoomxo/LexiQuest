@@ -22,11 +22,11 @@ class DailyQuest {
   bool get isCompleted => currentProgress >= targetCount;
 }
 
-/// @deprecated Use [QuestUseCases] from `lib/features/quest/application/`.
+/// @deprecated Use DriftQuestProgressReader and RewardUseCases.claimQuest.
 /// Quarantined: in-memory state resets on restart, incompatible [DailyQuest]
 /// model.  Removal target: Phase 0 gate (Week 16).
 @Deprecated(
-  'Use QuestUseCases (lib/features/quest/application/quest_use_cases.dart). '
+  'Use DriftQuestProgressReader and RewardUseCases.claimQuest. '
   'Removal target: Phase 0 gate.',
 )
 class StreakAndDailyQuestService {

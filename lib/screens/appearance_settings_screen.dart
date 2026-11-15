@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_appearance_preferences.dart';
+import '../config/m3_theme.dart';
+import '../features/rewards/application/reward_use_cases.dart';
+import '../features/rewards/domain/reward_models.dart';
+import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
+import 'select_wallpaper_screen.dart';
+import 'shop_page.dart';
 
 class AppearanceSettingsScreen extends StatefulWidget {
   const AppearanceSettingsScreen({super.key, this.controller});
@@ -14,6 +23,8 @@ class AppearanceSettingsScreen extends StatefulWidget {
 
 class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   AppAppearanceController? _controller;
+  RewardUseCases? _rewards;
+  Stream<RewardAppearance>? _rewardAppearance;
   AppAppearanceMode? _selected;
   bool _saving = false;
   String? _feedback;
@@ -23,6 +34,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     super.didChangeDependencies();
     _controller ??= widget.controller ?? AppAppearanceScope.maybeOf(context);
     _selected ??= _controller?.mode ?? AppAppearanceMode.system;
+    final rewards = AppDependenciesScope.maybeOf(context)?.rewards;
+    if (!identical(rewards, _rewards)) {
+      _rewards = rewards;
+      _rewardAppearance = rewards?.watchAppearance();
+    }
   }
 
   Future<void> _save() async {
@@ -46,6 +62,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final selected = _selected ?? AppAppearanceMode.system;
+    final scope = AppDependenciesScope.maybeOf(context);
+    final hasWallpaper =
+        scope?.rewards != null &&
+        (scope?.fieldFeatures.isVisible(FieldFeature.shop) ?? false) &&
+        (scope?.features.isVisible(Feature.shop) ?? false);
     return Scaffold(
       appBar: AppBar(title: const Text('การแสดงผล')),
       body: ListView(
@@ -108,6 +129,51 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
           if (_feedback case final feedback?) ...[
             const SizedBox(height: 16),
             Semantics(liveRegion: true, child: Text(feedback)),
+          ],
+          if (hasWallpaper) ...[
+            const SizedBox(height: 16),
+            StreamBuilder<RewardAppearance>(
+              key: ObjectKey(_rewards),
+              stream: _rewardAppearance,
+              builder: (context, snapshot) {
+                final appearance = snapshot.data;
+                final wallpaper = appearance?.equippedBySlot['wallpaper'];
+                final active =
+                    RewardCatalog.byId(wallpaper ?? '') ??
+                    RewardCatalog.defaultWallpaper;
+                final theme = Theme.brightnessOf(context) == Brightness.dark
+                    ? M3Theme.darkThemeFor(wallpaperId: wallpaper)
+                    : M3Theme.lightThemeFor(wallpaperId: wallpaper);
+                return Card(
+                  color: theme.scaffoldBackgroundColor,
+                  child: ListTile(
+                    leading: const Icon(Icons.wallpaper_outlined),
+                    title: const Text('พื้นหลังหน้าฝึก'),
+                    subtitle: appearance?.ownerId == null
+                        ? null
+                        : Text('${active.name} · กำลังใช้'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => AppNavigator.pushPage<void>(
+                      context,
+                      AppPage<void>(
+                        name: 'appearance/wallpaper',
+                        builder: (_) => SelectWallpaperScreen(
+                          onOpenShop: (wallpaperContext) async {
+                            await AppNavigator.pushPage<void>(
+                              wallpaperContext,
+                              AppPage<void>(
+                                name: 'rewards/shop',
+                                builder: (_) => const ShopPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ],
       ),

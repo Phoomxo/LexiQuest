@@ -1,0 +1,78 @@
+F11 typed recall and guided spelling correction
+
+Application 283f8f6685c3c5b6a425ed01edc1f462fe2e6f08 on the FigCraft prototype
+branch. Source Reading rereads the plain passage and then hides it during
+recall. An explicit check freezes the independent text and timestamp
+before showing the comparison. The edited answer needs its own check.
+The summary and stored attempts use the first independent answer. A
+learner may also write a sentence and see it on the current Source result.
+
+The active draft uses the existing session continuation with exact source
+digest and word snapshots. The route restores acknowledged text after
+the same file is selected again. Imported passage text stays transient.
+Finalization clears the continuation. Cue publication and the transition
+to the sentence commit together. Score hides the sentence on owner switch.
+Guest upgrade preserves an existing bound-owner cue when the word and type
+match, and keeps distinct cues. Ordinary sync accepts exact prior answer
+echoes and rejects new answers targeting the completed local round.
+
+Windows Flutter 246 across architecture, owner upgrade, Learning, Sync,
+Source parsing, reading widgets and Score scope. Four additional tests
+passed on the normal Source entry and result. Analysis of all 19 changed
+Dart files passed. Review identified retry, cue and owner issues, and the
+targeted regressions passed after correction.
+
+Windows logs under build/, SHA-256
+s3-f11-source-guided-recall-red.txt 474627b6440fc622d8e39002763dfb3bae83dfbaf6e3d09584fe2560183c7672
+s3-f11-corrective-red.txt 483b8cb165e2f81dc9c04f1b61aaa39580596580ddeec28c6e6662fab7b7ea2a
+s3-f11-lost-ack-and-back-red.txt 9898e5328f138ddd904efdbea775a332283c4f9e76660f37817b023a3e94f6c3
+s3-f11-owner-render-red.txt 7a67f10beaa1274c204963fc093dbc922b89b4f9172b5580cc2900b3b536e359
+s3-f11-owner-merge-and-paste-red.txt 63152b08a3e61275d6f2aebe0e9f3f72c58e2b98197c2da6640bd225e85cb1f5
+s3-f11-final-regression.txt 551086a7d55f4d21bb572e39863fb7dff5008b721036c34070f761ba551c8065
+s3-f11-final-routes.txt 36cd02e608c229b9e1e181635a3899b43ab2ddc703c61a05fc890b3d85cea329
+s3-f11-final-analysis.txt 686d2b268c010431883c12e45119f5c3f0aac71c772b3e2b876b8c285bbd6aa7
+
+Android API 35 offline with font scale 2.0 and the guest declining
+research. The local and installed x64 debug APK share SHA-256
+0c628ee39627b0a4e9e8903d55b2b5b0363d1154e26b61e15e63234e7df0afd7.
+Build log s3-f11-android-build.txt SHA-256
+57f3670addb9f47c5472561c6622f4a42dea1b7292a60d43783e4f58d5257841.
+
+Create F11-Source-Synthetic in the Library with station / train stop.
+Select the synthetic f11-source-recall.txt using Android Downloads.
+Confirm the one matched word and open Reading. The second stage shows
+the plain passage and the recall stage hides it. Type ctation and check
+to see the first answer beside station. Enter correction and save stat.
+SQLite holds one active session at the correction phase with zero
+attempts. The exact passage digest is present and the imported sentence
+is absent from the draft JSON.
+
+Force-stop only LexiQuest and open a new process. Select the same file
+and start Reading again. The acknowledged stat draft and frozen ctation
+return; the before and after SQLite snapshots are byte-for-byte equal.
+Type Station with leading and trailing spaces and check explicitly.
+The guided correction accepts the spelling. In the sentence field,
+the bundled Gboard Thai layout inputs สถานี, and SQLite confirms the
+saved Thai text together with the unchanged first answer. Switch
+Gboard back to English and write I live near the station.
+
+The summary and Source score are 0/1 and 0% and show the sentence.
+ฝึกคำจากข้อความต่อ returns to the same confirmed Source. Read-only
+SQLite confirms one wrong associativeRecall attempt on the original
+session with the first check timestamp, cleared continuation, and
+zero research consents and events.
+
+Native records under build/boss-android-evidence, SHA-256
+f11-native-apk.txt 0118daca1e51270b410d95e61b5a9689a82f4bc9c1a709c5cc278e89028fd440
+f11-native-first-check.txt 652fc5e2db2816009f0d13dc118c15dbd34bf776bf34537d41564cceaa347ffe
+f11-native-db-draft.json and f11-native-db-reopened.json
+e4b026e19a36d1f59e3763dfbd567926bdba3e4086e11e76221c21ab0a7ed1db
+f11-native-restart-pid.txt 6c8c0a15e8fc2fdc744a1a107b0bd93b5e5fd7c0ecc839abe574062e516426fb
+f11-native-trim-case.txt 41812f26d987fca9eb6f232d3ea44e4e2d50e904db83a366c20c008afcdb9ffe
+f11-native-thai-entered.png 04cbcd61cb78fc179e90e154cd8df55f8ad9a86dc81a4fdc83b4c27a7aa27b60
+f11-native-thai-db.txt 7c352e50941546cf2857f85b48050327191326d5d113932ebedee733ce1757d5
+f11-native-score.txt e7e74e652652f6a3157c0c362890ef2263c77557afdd46d4f34974d5b47c366f
+f11-native-return.txt b0ffefd7a967850d3337801ec4a2c714231c96b11c324b7d320878e001ab6a90
+f11-native-db-completed.json 8fe0011dddf772452345ec0bc332b9f2abf42eba740b359d5e733011dc9f3b81
+
+Signed delivery keyboard and spoken accessibility remain unverified.

@@ -9,10 +9,12 @@ class AccountDeletionScreen extends StatefulWidget {
     super.key,
     required this.useCases,
     this.idempotencyKey,
+    this.expectedFirebaseUid,
   });
 
   final AccountDeletionUseCases useCases;
   final String? idempotencyKey;
+  final String? expectedFirebaseUid;
 
   @override
   State<AccountDeletionScreen> createState() => _AccountDeletionScreenState();
@@ -43,7 +45,10 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
     try {
       final pending = _cloudReceipt;
       if (pending == null) {
-        await widget.useCases.deleteAccount(idempotencyKey: _idempotencyKey);
+        await widget.useCases.deleteAccount(
+          idempotencyKey: _idempotencyKey,
+          expectedFirebaseUid: widget.expectedFirebaseUid,
+        );
       } else {
         await widget.useCases.resumeLocalDeletion(pending);
       }

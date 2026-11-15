@@ -67,24 +67,87 @@ final class VocabularyUseCases {
   final VocabularyUtcNow nowUtc;
   final LocalMutationNotifier? onLocalMutation;
 
-  Stream<List<VocabularyCategory>> watchCategories() {
-    return Stream.fromFuture(
-      owners.getOrCreateActiveOwner(),
-    ).asyncExpand((owner) => vocabulary.watchCategories(owner.id));
+  Stream<List<VocabularyCategory>> watchCategories({String? expectedOwnerId}) =>
+      Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+        (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+            ? vocabulary.watchCategories(owner.id)
+            : Stream.value(const []),
+      );
+
+  Stream<List<VocabularyCategorySummary>> watchLibrary({
+    String? expectedOwnerId,
+  }) => Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+    (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+        ? vocabulary.watchLibrary(owner.id)
+        : Stream.value(const []),
+  );
+
+  Stream<List<VocabularyWord>> searchWords(
+    String query, {
+    String? cefrLevel,
+    String? expectedOwnerId,
+  }) {
+    final normalized = normalizeVocabularyText(query);
+    if (normalized.isEmpty) return Stream.value(const []);
+    return Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
+      (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+          ? vocabulary.searchWords(owner.id, normalized, cefrLevel: cefrLevel)
+          : Stream.value(const []),
+    );
   }
 
-  Stream<List<VocabularyWord>> watchWords(String categoryId) {
+  Stream<List<VocabularyWord>> watchWords(
+    String categoryId, {
+    String? expectedOwnerId,
+  }) {
     final canonicalCategoryId = _required(
       categoryId,
       'categoryId',
       maxLength: 256,
     );
     return Stream.fromFuture(owners.getOrCreateActiveOwner()).asyncExpand(
-      (owner) => vocabulary.watchWords(owner.id, canonicalCategoryId),
+      (owner) => expectedOwnerId == null || owner.id == expectedOwnerId
+          ? vocabulary.watchWords(owner.id, canonicalCategoryId)
+          : Stream.value(const []),
     );
   }
 
-  Future<VocabularyCategory> createCategory(String name) async {
+  /// Explicit owner reads are used inside an active-owner route fence.
+  Stream<List<VocabularyWord>> watchBookmarkedWords({String? expectedOwnerId}) {
+    if (expectedOwnerId != null) {
+      return vocabulary.watchBookmarkedWords(expectedOwnerId);
+    }
+    return Stream.fromFuture(
+      owners.getOrCreateActiveOwner(),
+    ).asyncExpand((owner) => vocabulary.watchBookmarkedWords(owner.id));
+  }
+
+  Stream<List<VocabularyCategory>> watchPinnedCategories(String ownerId) =>
+      vocabulary.watchCategories(ownerId);
+
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+    await vocabulary.setBookmarked(
+      expectedOwnerId: owner.id,
+      wordId: _required(wordId, 'wordId', maxLength: 256),
+      bookmarked: bookmarked,
+    );
+    if ((await owners.getOrCreateActiveOwner()).id != expectedOwnerId) {
+      throw StateError('Vocabulary owner changed');
+    }
+  }
+
+  Future<VocabularyCategory> createCategory(
+    String name, {
+    String? expectedOwnerId,
+  }) async {
     final canonicalName = _required(
       name,
       'categoryName',
@@ -92,6 +155,9 @@ final class VocabularyUseCases {
     );
     final now = _currentUtc();
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final created = await vocabulary.createCategory(
       VocabularyCategory(
         id: 'category:${_nextId()}',
@@ -150,8 +216,14 @@ final class VocabularyUseCases {
     onLocalMutation?.call();
   }
 
-  Future<VocabularyWord> createWord(CreateWordCommand command) async {
+  Future<VocabularyWord> createWord(
+    CreateWordCommand command, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final now = _currentUtc();
     final created = await vocabulary.createWord(
       _wordFromInput(
@@ -171,8 +243,14 @@ final class VocabularyUseCases {
     return created;
   }
 
-  Future<VocabularyWord> updateWord(UpdateWordCommand command) async {
+  Future<VocabularyWord> updateWord(
+    UpdateWordCommand command, {
+    VocabularyWord? expectedWord,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedWord != null && owner.id != expectedWord.ownerId) {
+      throw const VocabularyNotFoundFailure();
+    }
     final now = _currentUtc();
     final updated = await vocabulary.updateWord(
       _wordFromInput(
@@ -187,6 +265,7 @@ final class VocabularyUseCases {
         createdAtUtc: now,
         updatedAtUtc: now,
       ),
+      expectedWord: expectedWord,
     );
     onLocalMutation?.call();
     return updated;

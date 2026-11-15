@@ -15,6 +15,7 @@ final class VocabularyWord {
     required this.createdAtUtc,
     required this.updatedAtUtc,
     this.cefrLevel,
+    this.isBookmarked = false,
   });
 
   final String id;
@@ -28,6 +29,7 @@ final class VocabularyWord {
   final String? cefrLevel;
   final String source;
   final bool isGlobal;
+  final bool isBookmarked;
   final int localRevision;
   final bool isDeleted;
   final DateTime createdAtUtc;
@@ -43,6 +45,7 @@ final class VocabularyWord {
     String? cefrLevel,
     String? source,
     bool? isGlobal,
+    bool? isBookmarked,
     int? localRevision,
     bool? isDeleted,
     DateTime? updatedAtUtc,
@@ -59,6 +62,7 @@ final class VocabularyWord {
       cefrLevel: cefrLevel ?? this.cefrLevel,
       source: source ?? this.source,
       isGlobal: isGlobal ?? this.isGlobal,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       localRevision: localRevision ?? this.localRevision,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAtUtc: createdAtUtc,

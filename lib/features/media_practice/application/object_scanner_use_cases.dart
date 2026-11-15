@@ -32,7 +32,11 @@ abstract interface class ObjectScannerController {
     ModelCancellation? cancellation,
   });
 
-  Future<VocabularyWord> accept(ObjectScanResult result);
+  Future<VocabularyWord> accept(
+    ObjectScanResult result, {
+    String? categoryId,
+    String? expectedOwnerId,
+  });
 
   Future<void> pause();
 
@@ -201,14 +205,24 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   }
 
   @override
-  Future<VocabularyWord> accept(ObjectScanResult result) async {
+  Future<VocabularyWord> accept(
+    ObjectScanResult result, {
+    String? categoryId,
+    String? expectedOwnerId,
+  }) async {
     _checkNotDisposed();
     final mapped = result.vocabulary;
     if (mapped == null) {
       throw const CameraPracticeException(CameraFailureCode.unavailable);
     }
-    final category = await _findOrCreateCategory(mapped.category);
+    final ownerId = await _requireOwner(expectedOwnerId);
+    final category = await _findOrCreateCategory(
+      mapped.category,
+      categoryId: categoryId,
+      expectedOwnerId: ownerId,
+    );
     final words = await vocabulary.watchWords(category.id).first;
+    await _requireOwner(ownerId);
     final normalizedSpelling = normalizeVocabularyText(mapped.englishWord);
     final normalizedMeaning = normalizeVocabularyText(mapped.thaiTranslation);
     for (final word in words) {
@@ -218,7 +232,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
       }
     }
     try {
-      return await vocabulary.createWord(
+      final word = await vocabulary.createWord(
         CreateWordCommand(
           categoryId: category.id,
           spelling: mapped.englishWord,
@@ -227,9 +241,13 @@ final class ObjectScannerUseCases implements ObjectScannerController {
           cefrLevel: mapped.cefrLevel,
           source: 'object-scanner:${result.modelId}@${result.modelVersion}',
         ),
+        expectedOwnerId: ownerId,
       );
+      await _requireOwner(ownerId);
+      return word;
     } on DuplicateVocabularyFailure {
       final refreshed = await vocabulary.watchWords(category.id).first;
+      await _requireOwner(ownerId);
       return refreshed.firstWhere(
         (word) =>
             word.normalizedSpelling == normalizedSpelling &&
@@ -238,20 +256,44 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     }
   }
 
-  Future<VocabularyCategory> _findOrCreateCategory(String name) async {
+  Future<VocabularyCategory> _findOrCreateCategory(
+    String name, {
+    String? categoryId,
+    required String expectedOwnerId,
+  }) async {
     final normalized = normalizeVocabularyText(name);
     final categories = await vocabulary.watchCategories().first;
+    await _requireOwner(expectedOwnerId);
     for (final category in categories) {
-      if (category.normalizedName == normalized) return category;
+      if (categoryId == null
+          ? category.normalizedName == normalized
+          : category.id == categoryId) {
+        return category;
+      }
     }
+    if (categoryId != null) throw const VocabularyNotFoundFailure();
     try {
-      return await vocabulary.createCategory(name);
+      final category = await vocabulary.createCategory(
+        name,
+        expectedOwnerId: expectedOwnerId,
+      );
+      await _requireOwner(expectedOwnerId);
+      return category;
     } on DuplicateVocabularyFailure {
       final refreshed = await vocabulary.watchCategories().first;
+      await _requireOwner(expectedOwnerId);
       return refreshed.firstWhere(
         (category) => category.normalizedName == normalized,
       );
     }
+  }
+
+  Future<String> _requireOwner(String? expectedOwnerId) async {
+    final owner = await vocabulary.owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const VocabularyNotFoundFailure();
+    }
+    return owner.id;
   }
 
   @override

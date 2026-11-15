@@ -1,208 +1,174 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
-import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
-import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
-import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_progress_reader.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_progress_models.dart';
+import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
-// ── Fakes ─────────────────────────────────────────────────────────────────────
-
-class _FakeOwners implements LocalOwnerRepository {
-  final LocalOwner _owner;
-  _FakeOwners(this._owner);
+class _Owners implements LocalOwnerRepository {
+  _Owners(this.owner);
+  final LocalOwner owner;
   @override
-  Future<LocalOwner> getOrCreateActiveOwner() async => _owner;
+  Future<LocalOwner> getOrCreateActiveOwner() async => owner;
   @override
-  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async =>
-      _owner;
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async => owner;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const _ownerId = 'owner-qi';
-int _seq = 0;
-
-QuestDefinition _quizDef({int targetCount = 1}) => QuestDefinition(
-  questId: 'q-quiz-correct',
-  catalogVersion: 1,
-  title: 'Answer Correctly',
-  description: 'Answer $targetCount question(s) correctly',
-  type: QuestType.daily,
-  objectives: [
-    QuestObjective(
-      objectiveId: 'obj-correct',
-      description: 'Correct answers',
-      targetCount: targetCount,
-      criteria: const ObjectiveCriteria(
-        eventType: 'QuizCompleted',
-        filters: {'correct': true},
-      ),
-    ),
-  ],
-  reward: const RewardSpec(xpAmount: 50),
-);
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
-
 void main() {
-  late db.AppDatabase database;
-  late LearningUseCases learningUseCases;
-  late QuestUseCases questUseCases;
-  late DriftQuestRepository questRepo;
-  late LocalOwner owner;
-  int idCount = 0;
-
-  setUp(() async {
-    _seq = 0;
-    idCount = 0;
-    database = db.AppDatabase(NativeDatabase.memory());
-    owner = LocalOwner(id: _ownerId, createdAtUtc: DateTime.utc(2026, 8, 4));
-
-    // Seed owner + category + word.
-    await database.customInsert(
-      "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
-      "VALUES ('$_ownerId', 'localGuest', 1722758400000)",
+  setUpAll(tz.initializeTimeZones);
+  test('real answers determine daily Quest and explicit claim once', () async {
+    final database = db.AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final now = DateTime.utc(2026, 8, 4, 10);
+    final owners = _Owners(
+      LocalOwner(id: 'owner-qi', createdAtUtc: DateTime.utc(2026)),
     );
-    await database.customInsert(
-      "INSERT INTO vocabulary_categories "
-      "(id, owner_id, name, normalized_name, sort_order, local_revision, "
-      "cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms) "
-      "VALUES ('cat-1', '$_ownerId', 'Test', 'test', 0, 1, 0, 0, 10, 10)",
+    await _seed(database);
+    final catalog = await DriftQuestRepository(database).installAnswerCatalog();
+    var sequence = 0;
+    final learning = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(
+        database,
+        questCatalog: catalog,
+        questVisible: () => true,
+      ),
+      generateId: () => '${++sequence}',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: 'synthetic', buildId: 'synthetic'),
     );
-    await database.customInsert(
-      "INSERT INTO vocabulary_words "
-      "(id, owner_id, category_id, spelling, normalized_spelling, meaning, "
-      "normalized_meaning, part_of_speech, source, is_global, local_revision, "
-      "cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms) "
-      "VALUES ('word-1', '$_ownerId', 'cat-1', 'hello', 'hello', "
-      "'สวัสดี', 'สวัสดี', 'interjection', 'manual', 0, 1, 0, 0, 10, 10)",
+    final reader = DriftQuestProgressReader(database, catalog: catalog);
+    final rewardRepo = DriftRewardRepository(
+      database,
+      questCatalog: catalog,
+      questVisible: () => true,
+      nowUtc: () => now,
     );
-
-    questRepo = DriftQuestRepository(database);
-    questUseCases = QuestUseCases(
-      repository: questRepo,
-      owners: _FakeOwners(owner),
-      generateId: () => 'qid-${++idCount}',
-      nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-      timezoneId: 'Asia/Bangkok',
+    final rewards = RewardUseCases(
+      owners: owners,
+      repository: rewardRepo,
+      generateId: () => 'unused',
+      nowUtc: () => now,
     );
+    final session = await learning.startQuiz();
+    Future<void> answer(String id, bool correct, int number) async {
+      await learning.recordAnswer(
+        sessionId: session.id,
+        wordId: 'word',
+        promptMode: 'meaningChoice',
+        isCorrect: correct,
+        responseTimeMs: 100,
+        attemptNumber: number,
+        attemptId: id,
+        occurredAtUtc: now,
+      );
+    }
 
-    final adapter = EventV1ToV2Adapter(appVersion: '1.0', buildId: 'sha-test');
+    Future<QuestProgressCard> daily() async => (await reader.load(
+      ownerId: 'owner-qi',
+      asOfUtc: now,
+    )).current.singleWhere((card) => card.cadence == QuestType.daily);
 
-    // Wire QuestEventSink: forward V2 events to questUseCases.processEvent.
-    final catalog = [_quizDef()];
-    learningUseCases = LearningUseCases(
-      owners: _FakeOwners(owner),
-      repository: DriftLearningRepository(database),
-      generateId: () => 'lid-${++_seq}',
-      nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-      buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
-      eventAdapter: adapter,
-      questEventSink: (EventEnvelopeV2 event) =>
-          questUseCases.processEvent(event, catalog).then((_) {}),
+    final empty = await daily();
+    expect((empty.correctCount, empty.targetCount, empty.xpAmount), (0, 5, 50));
+    expect((await daily()).instanceId, empty.instanceId);
+    await answer('wrong', false, 1);
+    expect((await daily()).correctCount, 0);
+    for (var i = 0; i < 5; i++) {
+      await answer('correct-$i', true, i + 1);
+    }
+    await answer('correct-0', true, 1);
+    final complete = await daily();
+    expect(
+      (complete.correctCount, complete.state),
+      (5, QuestProgressState.completedUnclaimed),
     );
-
-    // Start learning session.
-    await learningUseCases.startQuiz(limit: 10);
+    expect(await database.select(database.questClaimReceipts).get(), isEmpty);
+    final receipt = await rewards.claimQuest(
+      expectedOwnerId: 'owner-qi',
+      instanceId: complete.instanceId,
+    );
+    expect((receipt.xpAmount, receipt.replayed), (50, false));
+    final retry = await rewards.claimQuest(
+      expectedOwnerId: 'owner-qi',
+      instanceId: complete.instanceId,
+    );
+    expect((retry.receiptId, retry.replayed), (receipt.receiptId, true));
+    expect(
+      (await DriftProgressQueries(
+        database,
+      ).load(ownerId: 'owner-qi', nowUtc: now)).totalXp,
+      55,
+    );
+    expect((await rewardRepo.load('owner-qi')).balance, 5);
+    expect(await database.select(database.eventsV2).get(), isEmpty);
+    expect(await database.select(database.researchConsents).get(), isEmpty);
   });
 
-  tearDown(() async => database.close());
-
-  group('QuestEventSink — D7.1 Quest-Learning integration', () {
-    test('correct answer advances matching quest objective', () async {
-      // targetCount: 2 so quest advances but does not complete after 1 answer.
-      await questUseCases.startQuest(_quizDef(targetCount: 2));
-      final session = await learningUseCases.startQuiz(limit: 10);
-      expect(session.questions, isNotEmpty);
-
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
-        responseTimeMs: 300,
-        attemptNumber: 1,
+  test(
+    'hidden Quest still records ordinary learning without Quest intent',
+    () async {
+      final database = db.AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime.utc(2026, 8, 4, 10);
+      final owners = _Owners(
+        LocalOwner(id: 'owner-qi', createdAtUtc: DateTime.utc(2026)),
       );
-
-      // Quest still active; counter advanced to 1/2.
-      final active = await questUseCases.getActiveInstances();
-      expect(active, hasLength(1));
-      expect(
-        active.first.progress.first.currentCount,
-        1,
-        reason: 'correct answer must advance quest counter',
-      );
-    });
-
-    test('incorrect answer does NOT advance quest', () async {
-      await questUseCases.startQuest(_quizDef());
-      final session = await learningUseCases.startQuiz(limit: 10);
-
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
-        responseTimeMs: 500,
-        attemptNumber: 1,
-      );
-
-      final active = await questUseCases.getActiveInstances();
-      expect(active, hasLength(1));
-      expect(
-        active.first.progress.first.currentCount,
-        0,
-        reason: 'incorrect answer must not advance quest counter',
-      );
-    });
-
-    test('quest completes when target count reached', () async {
-      await questUseCases.startQuest(_quizDef(targetCount: 1));
-      final session = await learningUseCases.startQuiz(limit: 10);
-
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
-        responseTimeMs: 300,
-        attemptNumber: 1,
-      );
-
-      final active = await questUseCases.getActiveInstances();
-      expect(active, isEmpty, reason: 'completed quest must leave active list');
-    });
-
-    test('questEventSink null = no crash (feature flag off)', () async {
-      // Rebuild LearningUseCases without questEventSink.
-      final useCasesNoQuest = LearningUseCases(
-        owners: _FakeOwners(owner),
+      await _seed(database);
+      var sequence = 0;
+      final learning = LearningUseCases(
+        owners: owners,
         repository: DriftLearningRepository(database),
-        generateId: () => 'nq-${++_seq}',
-        nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
-        buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
-        // questEventSink intentionally absent
-      );
-      final session = await useCasesNoQuest.startQuiz(limit: 10);
-      // Must not throw even without questEventSink (feature flag off).
-      await expectLater(
-        useCasesNoQuest.recordAnswer(
-          sessionId: session.id,
-          wordId: 'word-1',
-          promptMode: 'meaningChoice',
-          isCorrect: true,
-          responseTimeMs: 300,
-          attemptNumber: 1,
+        generateId: () => '${++sequence}',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(
+          version: 'synthetic',
+          buildId: 'synthetic',
         ),
-        completes,
       );
-    });
-  });
+      final session = await learning.startQuiz();
+      await learning.recordAnswer(
+        sessionId: session.id,
+        wordId: 'word',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 100,
+        attemptNumber: 1,
+      );
+      expect(
+        (await database.select(database.answerAttempts).getSingle())
+            .questIntent,
+        isNull,
+      );
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.researchConsents).get(), isEmpty);
+    },
+  );
+}
+
+Future<void> _seed(db.AppDatabase database) async {
+  await database.customStatement(
+    "INSERT INTO local_owners(id,created_at_utc_ms,is_active) VALUES ('owner-qi',1,1)",
+  );
+  await database.customStatement(
+    "INSERT INTO vocabulary_categories(id,owner_id,name,normalized_name,created_at_utc_ms,updated_at_utc_ms) VALUES ('cat','owner-qi','Test','test',1,1)",
+  );
+  await database.customStatement(
+    "INSERT INTO vocabulary_words(id,owner_id,category_id,spelling,normalized_spelling,meaning,normalized_meaning,part_of_speech,created_at_utc_ms,updated_at_utc_ms) VALUES ('word','owner-qi','cat','hello','hello','hi','hi','noun',1,1)",
+  );
 }

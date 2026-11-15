@@ -1,26 +1,7 @@
 import 'package:drift/drift.dart';
 import 'identity_tables.dart';
 
-/// Persistent storage for the V2 Quest domain contracts.
-///
-/// Schema v8 — added in Phase 0 Week 10-11.
-///
-/// Three tables mirror the frozen domain types from
-/// [quest_models.dart]:
-///   - [QuestDefinitions]      — catalog authored content (no owner FK)
-///   - [QuestInstances]        — per-learner active/completed instances
-///   - [QuestObjectiveProgress] — per-objective counters keyed by instance
-///
-/// All migrations are additive.  Downgrading from v8 to v7 is safe because
-/// only new tables are added.
-
-// ─── QuestDefinitions ────────────────────────────────────────────────────────
-
-/// Authored quest catalog entry.
-///
-/// Catalog rows are not owner-scoped — they are shared data shipped with the
-/// app or downloaded as content updates.  They are never mutated at runtime
-/// and are therefore excluded from [ownerUpgradeInventory].
+/// Shared v8 catalog identity and historical content.
 class QuestDefinitions extends Table {
   /// Primary key: matches [QuestDefinition.questId].
   TextColumn get questId => text()();
@@ -50,16 +31,23 @@ class QuestDefinitions extends Table {
   Set<Column> get primaryKey => {questId};
 }
 
-// ─── QuestInstances ───────────────────────────────────────────────────────────
+/// A pinned catalog body used to verify an issued occurrence.
+class QuestDefinitionRevisions extends Table {
+  TextColumn get questId => text()();
+  IntColumn get catalogVersion => integer()();
+  TextColumn get definitionDigest => text()();
+  TextColumn get canonicalDefinition => text()();
 
-/// A learner's live progress record for one [QuestDefinition].
-///
-/// Owner-scoped; included in [ownerUpgradeInventory] so guest→user upgrade
-/// carries quest progress forward.
-///
-/// The unique constraint on `(owner_id, quest_id)` prevents duplicate active
-/// instances for the same quest.  When a quest is completed/expired it remains
-/// in the table with a terminal state so history is preserved.
+  @override
+  Set<Column> get primaryKey => {questId, catalogVersion};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {questId, catalogVersion, definitionDigest},
+  ];
+}
+
+/// One historical record or pinned occurrence of a recurring Quest.
 class QuestInstances extends Table {
   /// Primary key: matches [QuestInstance.instanceId].
   TextColumn get instanceId => text()();
@@ -77,14 +65,60 @@ class QuestInstances extends Table {
 
   IntColumn get completedAtUtcMs => integer().nullable()();
   IntColumn get expiredAtUtcMs => integer().nullable()();
+  TextColumn get originOwnerId => text().nullable()();
+  TextColumn get periodKey => text().nullable()();
+  TextColumn get calendarRuleId => text().nullable()();
+  TextColumn get civilLabel => text().nullable()();
+  TextColumn get segmentsJson => text().nullable()();
+  TextColumn get definitionDigest => text().nullable()();
+  TextColumn get canonicalInstanceId =>
+      text().nullable().references(QuestInstances, #instanceId)();
+  TextColumn get recordKind => text().withDefault(const Constant('legacy'))();
 
   @override
   Set<Column> get primaryKey => {instanceId};
 
-  /// One active instance per quest per owner.
+  @override
+  List<String> get customConstraints => [
+    'FOREIGN KEY (quest_id, catalog_version, definition_digest) '
+        'REFERENCES quest_definition_revisions '
+        '(quest_id, catalog_version, definition_digest)',
+    "CHECK ((record_kind = 'legacy' AND origin_owner_id IS NULL "
+        'AND period_key IS NULL AND calendar_rule_id IS NULL '
+        'AND civil_label IS NULL AND segments_json IS NULL '
+        'AND definition_digest IS NULL AND canonical_instance_id IS NULL) '
+        "OR (record_kind IN ('canonical', 'alias', 'conflict') "
+        "AND COALESCE(origin_owner_id, '') <> '' AND COALESCE(period_key, '') <> '' "
+        "AND COALESCE(calendar_rule_id, '') <> '' AND COALESCE(civil_label, '') <> '' "
+        "AND COALESCE(segments_json, '') <> '' AND COALESCE(definition_digest, '') <> '' "
+        "AND ((record_kind = 'alias' AND canonical_instance_id IS NOT NULL "
+        'AND canonical_instance_id <> instance_id) '
+        "OR (record_kind <> 'alias' AND canonical_instance_id IS NULL))))",
+  ];
+}
+
+/// Immutable evidence of one explicit local XP claim.
+class QuestClaimReceipts extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get originOwnerId => text()();
+  TextColumn get instanceId => text().references(QuestInstances, #instanceId)();
+  IntColumn get issuedAtUtcMs => integer()();
+  IntColumn get completedAtUtcMs => integer()();
+  IntColumn get xpAmount => integer()();
+  TextColumn get evidenceJson => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
   @override
   List<Set<Column>> get uniqueKeys => [
-    {ownerId, questId},
+    {instanceId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (xp_amount > 0 AND length(evidence_json) > 0)',
   ];
 }
 

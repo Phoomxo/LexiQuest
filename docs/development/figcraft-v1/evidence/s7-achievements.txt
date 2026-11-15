@@ -1,0 +1,104 @@
+S7 f31: retained achievement evidence and truthful collection
+2026-11-14; branch codex/figcraft-flutter-prototype; parent9371b434.
+The commit containing this receipt identifies its source.
+
+Verification on frozen Windows working-file bytes:
+  Touched learning/identity/sync/progress/account-deletion/UI and callers:
+    354 PASS, 00:28, including retired delivery-identity regressions.
+  flutter analyze --no-pub: no issues, exit0, 6.8s.
+  dart format --output=none --set-exit-if-changed lib test:
+    514 files, zero changes, exit0, 4.74s.
+  Full flutter test --no-pub --reporter expanded:2176 PASS, exit0,09:18.
+  Final560-input before SHA256:
+    e7a07908753d394c4ad342c06ea1aeae6c4a89e8540efba85ab0eab594900041
+  All560 declared inputs identical before/after; s7-achievements-inputs.tsv.
+  Full raw log build/s7-achievements-verified-full-regression.txt
+  SHA256 7721280d0abe226736739d99ea47f4ba0c53a02be6ee3a4086a7fcafb203d6b7
+
+Implemented and exercised:
+  One existing learning projection issuer now handles the same five v1 keys.
+  Answer badges count actual attempts, including deliberate retries, not unique
+  words. New session badges require a completed round with actual answer facts;
+  perfect requires no wrong attempt. Empty rounds cannot mint either badge.
+  Existing owner/key/version rows retain physical ID/source/date/version,
+  including opaque, unknown and historical empty-round awards. Rebuild, earlier
+  facts, finish retry, reopen and owner merge do not rewrite those records.
+  A legal legacy row occupying a canonical physical ID cannot roll back a new
+  answer: collision-checked UUID fallback uses the already-installed dependency.
+  Logical identity pins the selected new ID on replay/reopen. No dependency,
+  schema, XP/coin issuer or research contract was added.
+  Retired outbox entity IDs and reserved operation IDs also remain occupied,
+  across every owner/state. A historical ACK cannot suppress a new grant or be
+  repurposed to describe another award. The fresh outbox insert fails atomically
+  on an unexpected collision instead of silently ignoring it.
+  Only new local rows queue the existing achievementUnlock protocol. Both pulled
+  attempt branches explicitly suppress echo. Guest duplicate actionable messages
+  are superseded before source-row removal; retained guest/target ACK snapshots
+  survive and no claimable message refers to a missing badge.
+  Attempt-first restore with an alternate badge ID checks logical immutability:
+  identical evidence is benign; divergent cloud and local payloads are preserved
+  in existing quarantine instead of silently discarding cloud evidence. The
+  original local award remains authoritative, not automatically replaced.
+  New logical-conflict identity is an encoded owner/cloud-ID/revision tuple;
+  two owners cannot lose each other's quarantine. Existing physical-ID conflict
+  identities remain unchanged. Another owner's occupied physical ID rejects the
+  whole pull transaction without advancing its checkpoint or touching that owner.
+  The existing collection names all five keys and current locked conditions,
+  displays actual stored dates, uses neutral unknown-version/key copy and labels
+  recognized earned conditions as current. It invents neither progress zero nor
+  historical evidence. Owner/loader/scope/notifier replacement hides stale data.
+  Reading the actual SQLite screen changes no persisted table.
+
+Observed RED and recovery:
+  Initial new semantic cases failed before implementation. Review regressions
+  reproduced missing duplicate retirement, physical-ID SQLite1555, missing legacy
+  condition label, silent alternate-ID evidence loss, wrong-owner silent drop and
+  one conflict instead of two owners. Current354 integration covers their fixes,
+  including two retired-ACK identity cases observed RED before the last fix.
+  First frozen full run:2168 PASS/6 FAIL,09:10, all560 inputs unchanged at
+  0bf62916a0be9eb56bd71cb5a1f09a6dc1ca0fc1c99a6a79fbb5e9cea3032192.
+  Independent review traced all six to obsolete outbox expectations. Updated
+  tests assert the exact answer quartet and preserve every pre-finish operation's
+  full JSON; only two backed session-award operations may be added. Existing
+  Quest/research-zero, answer/ACK/retry, SRS, XP/coin and owner assertions remain.
+  A second full run passed2174 in09:22 with560 unchanged inputs at
+  5a32d16e71dfd3e0cabb5b2a4a5b982ae1896f00881a0cc7112bd5cb84d76a95.
+  This predates the retired-delivery-ID fix and is not its final full proof.
+  Test-only import, claim-limit and installed ensureVisible API errors were
+  corrected; assertions were not skipped or relaxed to accept unknown messages.
+
+Artifacts and scope:
+  Raw logs build/s7-achievements-verified-integration.txt,
+  build/s7-achievements-verified-analyze.txt,
+  build/s7-achievements-verified-format.txt and
+  build/s7-achievements-verified-full-regression.txt.
+  SHA256 evidence files under build/:
+    s7-achievements-verified-analyze.txt
+      360d7bc0a4f7230a12b023abed00edd13e28a601c47035b12f34c9d498601fe5
+    s7-achievements-verified-format.txt
+      e8e3a89b43e080f08e6888c692ae9047e661bee10db2319f5c0367eb77ce273b
+    s7-achievements-verified-integration.txt
+      b3c748e7286fffe71d4bc5c0224bbc5d74c98e6156d23d3a57f2ef41430b79d0
+    s7-achievements-final-core-review.md
+      6fe4e2d64afe129e3050dd21bf40b038616762f7a7779570d3e6afc028fefa3b
+    s7-achievements-final-sync-review.md
+      6eac7dbe0e6bb5fb51b2d1c5e232fe239bcad9e904d8fbc4b0ca2907ddc5b553
+    s7-achievements-final-ui-review.md
+      239b42678409ad15b212a0efaacae0fb5ecae30f24cb8bc8ee4d2fd630a769c4
+    s7-achievements-id-reuse-review.md
+      aa6e65f3c9d045e6e518f0a50e584156d3eb92b3b02fedd38f8d6831189fb289
+    s7-achievements-legacy-assertion-review.md
+      f22908f237680658b3a1e583c7267313d4cea10fba8d503b1722566d95f6ff5c
+  Independent final core/sync/UI reviews and legacy-assertion review are retained
+  in build/s7-achievements-*-review.md. Findings were resolved before integration;
+  reviewers inspected current source and exact logs, not native/cloud operation.
+  s7-achievements-200.png is an actual Windows360x640 Thai200% earned-card render.
+  SHA256 d31d76889181e8fdc13d90a603b31048c894a57c5541a99e97165faee1dbe488
+  Current condition, full requirement, original date and Back were inspected.
+
+No current-source native/TalkBack or real cloud claim follows from widget tests.
+Native v29 is earlier-source evidence. Known-object camera accuracy remains
+not_checked because the user cannot arrange an object; no repeat request.
+Schema remains11; the next persistence plan is documented but v12 unreserved.
+Goal remains active for48/44/64, current APK/hash/native/CI and remaining journeys.
+No merge/deploy/publication, real enrollment/upload or live deletion authorized.

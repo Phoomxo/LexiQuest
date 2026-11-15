@@ -1,0 +1,49 @@
+S4 Sentence shadowing and the no-microphone path
+
+Application source 3ceb7e16018866516bab263430d5fc825e94ead5. FigCraft
+21b34eaa learn_frames.py listening row and pack_routes.py speaking row.
+Practice → all activities → Listening and Speaking → พูดตามประโยค.
+The hub uses the same example sentence as the existing first-study Speaking
+route. Starting mic is explicit. The no-mic path keeps the sentence and
+returns to the same speaking route and hub. It displays the same sentence
+for reading aloud independently without recognition or pronunciation scoring.
+
+Windows focused Flutter 40 passed. The actual hub at 390×844/200% requests
+no permission until the learner taps the microphone. One fake denial does
+not start recognition. The silent route opens with the TTS stop still
+pending, and returning keeps both original widget states. The fixture's
+learning sessions, attempts, events and outbox all remain empty. Independent
+review caught the audio-stop await gap and current-route guard. An Android
+permission dialog had discarded the denial result during inactive state.
+The focused regression reproduced it, then passed when the start request
+survived inactive. Paused, hidden and detached still stop the session.
+Regression before the fix, SHA-256:
+fd115836c2c9fb5d10fd9fc5deb480686ff746bfc767d14d13a82a5e3dacf47e
+build/s4-shadowing-lifecycle-final.txt SHA-256:
+34e613140b8d820eae2f950b7f0add42285ccd7dd1ffff7b714fd6927d27f3a6
+Clean static analysis SHA-256:
+feec6cbb4bc04ae088029e810dd45431a2f2000f909340266a7c206c522636c3
+
+Android API 35 x86_64, isolated offline guest at system font scale 2.0.
+Installed and host APK SHA-256:
+da0d7e1989a78a16612b19b856bad1b39a93ca5037cb5c07421000abac3bb59d
+build/s4-shadowing-3ceb7e16-android.txt SHA-256:
+ced3ba9b43bfe56dc09c4bb0321807af4cf0f7894b7af2d54f139dfc50c745b2
+Android displayed its record-audio prompt after the explicit mic tap.
+After Don't allow, the app displayed ไม่ได้รับสิทธิ์ใช้ไมโครโฟน.
+ฝึกโดยไม่ใช้ไมค์ showed Which platform does the train leave from? and the
+read-aloud instruction. Back via กลับไปฝึกพูด kept the same sentence and
+denial, then กลับไปเลือกแบบฝึกฟัง returned to the original hub. Android
+reported RECORD_AUDIO granted=false with USER_SET.
+
+Raw UI dumps in build/boss-android-evidence, SHA-256:
+shadow-lifecycle-denied.txt 041603e0d3420ac9bde42f346da60999c219e3837f0d4aa3f413c72ebf5c8630
+shadow-lifecycle-no-mic.txt 2df85fe83bc63cf73f100cb36c0348c80338fa1ecf4d4da352f3ce445bed4965
+shadow-lifecycle-return-speech.txt 041603e0d3420ac9bde42f346da60999c219e3837f0d4aa3f413c72ebf5c8630
+shadow-lifecycle-return-hub.txt 7851c6aa3cff7bba2823b5dbe1b758ff4c2e0d8202ba3a00eccb0cda7c6a981f
+Read-only SQLite aggregates before and after were 8 sessions, 18 attempts,
+35 outbox operations and 0 events_v2 rows. Both files had SHA-256:
+a7bf2b0c82e76487c831687e80b5ff96ed061609d8e7015036b740ab2789f4ff
+
+Open: Settings typed alternative and device capability states, granted mic,
+unavailable synthesis and audible TalkBack on current signed hardware.

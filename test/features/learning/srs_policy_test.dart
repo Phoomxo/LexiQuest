@@ -47,6 +47,7 @@ void main() {
     expect(next.intervalDays, 1);
     expect(next.repetitions, 0);
     expect(next.lapses, 3);
+    expect(next.dueAtUtc, DateTime.utc(2026, 7, 31, 10));
     expect(next.difficulty, greaterThan(previous.difficulty));
   });
 

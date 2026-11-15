@@ -606,6 +606,28 @@ describe('field sync ownership and atomic revision contract', () => {
     });
   }
 
+  it('accepts only zero-cost equip for the built-in wallpaper', async () => {
+    const db = authDb();
+    const standard = {
+      transactionType: 'equip',
+      amount: 0,
+      itemId: 'wallpaper_default',
+      slot: 'wallpaper',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: 4000,
+    };
+    const write = (id, overrides = {}) => writeFieldRewardTransaction(db, {
+      entityId: id,
+      operationId: id,
+      payload: { ...standard, idempotencyKey: id, ...overrides },
+    });
+    await assertSucceeds(write('equip-wallpaper-default'));
+    await assertFails(write('purchase-wallpaper-default', { transactionType: 'purchase' }));
+    await assertFails(write('charge-wallpaper-default', { amount: -1 }));
+    await assertFails(write('wrong-slot-wallpaper-default', { slot: 'theme' }));
+  });
+
   it('rejects reward transactions with a client-invented price or slot', async () => {
     const db = authDb();
     await assertFails(

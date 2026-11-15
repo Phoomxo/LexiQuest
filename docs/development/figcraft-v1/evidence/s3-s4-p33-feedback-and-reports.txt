@@ -1,0 +1,52 @@
+P3.3 Feedback, hint, bookmark and local content report
+
+Application 2261454fe3487d3a835d9e920db336cd7202ef0b. Each native path
+ran on the same Android API 35 offline debug APK at font scale 2.0
+with a single unbound local guest. Host and installed APK SHA-256 is
+43c0e4a433289fc3dfd2ae278599eecd35785c93b70f0afa1d6c69e72f30fa5f.
+
+f18 on this APK compares the chosen and expected word pairs when the
+English-to-Thai correct option changes positions. f19 uses the
+saved station and authored sentence when Android has no TTS service.
+See s3-f18-meaning-feedback.txt and s4-f19-dictation-hint.txt.
+
+The F18-Contrast-Synthetic set has station and platform. Under
+จัดการคำนี้ station, เก็บไว้อ่านอีกครั้ง added only station to
+คำที่เก็บไว้. SQLite verified a single bookmark flag change and
+the original revision and update time. Removing the bookmark
+emptied the filter. คำทั้งหมด showed the existing word again.
+The final word records match the two records before the bookmark.
+
+From the same set, ฝึกจากไฟล์ opened f11-source-recall.txt. The
+report reviewed the actual sentence Meet me at the station. Cancel
+left the local report list unchanged. Choosing
+ประโยคตัวอย่างสะกดผิด and confirming บันทึกรายงานในเครื่อง added
+one report with the owned source ID and revision. The queue showed
+ออฟไลน์ · เก็บในเครื่อง and ยังไม่ส่งถึงผู้จัดทำ. Back from the
+queue returned to Source and Back again returned to the same set.
+An earlier synthetic report was present and remained unchanged.
+Android then opened a fresh app process, changing from PID 4891
+to 6983. The queue opened again from Source without picking a file.
+The new report still appeared once in SQLite with the same data and
+the queue hierarchy matched at SHA-256
+6a7b3097960048ba9c7e9d0f0807d80b1124b9201fdcfc773e7ee96169fffc5a.
+
+The protected SQLite digest across sessions, attempts, points,
+rewards and outbox matched across bookmark and report at
+ad765065e0ca0f4750ac7455ad28f5dbe8c1b5edf258b031ed1e2ca6108188a7.
+Research rows and research outbox remained zero.
+
+The raw artifacts in build/boss-android-evidence/ include:
+  p33-native-bookmarked.txt, p33-native-bookmark-cleared.txt
+  p33-native-run-bookmark.txt, p33-native-bookmark-data.txt
+  p33-native-report-queue.txt, p33-native-report-data.json
+  p33-native-run-report.txt, p33-native-reopened-report.txt
+
+The Windows suite passed 132 supporting tests including real Drift
+bookmark persistence, cancel and local report reopen. The log SHA-256
+is 6f0b29c4c2ce73947708d938ad7664530d000cc0b9d82ec18255e62cf432c138.
+Exact-source Linux CI 43682172257 passed 2,452 Flutter and 267 backend tests,
+Firestore and Supabase checks, analysis and Android debug build.
+
+Signed delivery and spoken TalkBack remain pending. The report
+acceptance covers the on-device queue.

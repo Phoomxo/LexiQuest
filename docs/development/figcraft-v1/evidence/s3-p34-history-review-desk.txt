@@ -1,0 +1,85 @@
+P3.4 Review the mistakes from a saved round
+
+Application c9f3125fcde16d2cdd90496ed82e1c2b034fb73d on the FigCraft
+prototype branch. The saved Score opens the Review Desk with the round
+ID and owner captured from Progress. The desk reads current vocabulary
+for mistakes in that round and starts a Quiz with the original ID as
+its parent. The child uses exactly its eligible mistake targets. Its
+Score returns to the desk, and the desk returns to the original Score.
+
+History reads pin the expected owner. The query excludes deleted words
+and sets and returns the latest word revisions. The Drift transaction
+checks that the parent is completed, belongs to the same active owner,
+and has a false attempt for every requested or planned target. It
+validates the link again on reopen and resume. Compatible base-v25
+ordinary errors can supply targets for a new round.
+
+The first screen test found clipped skill rows at text scale 2.0.
+The skill card now constrains the no-data caption so it can wrap.
+Owner-write tests cover A to B to A in one transaction. Both direct
+history practice and the original result suppress stale data. Route
+builders check the captured owner state before displaying a new page.
+
+Windows Flutter 309 passed across architecture, Learning, Progress,
+Sync, Quiz, Score, Mastery, and Review Desk. The integration test
+completed an ordinary 50% quiz at text scale 2.0, repaired its sole
+miss at 100%, and returned to the same Score. The original session
+and attempt rows matched, and the child held the exact parent and word
+IDs. Analysis passed on all ten changed Dart files.
+
+Windows records under build/, SHA-256
+s3-p34-boundaries-red.txt bae96538df0aacd010c31388da1b7406406a6aced4186d4ec6f90000e0edcc29
+s3-p34-cta-red.txt dac06ee6985cbaf9df70d03448622635859cfbef993919027443556644d8d9e8
+s3-p34-direct-owner-red.txt b0970b1205bbf90cc8e2c254c84510055c117621cece6377f85093421bdd51f8
+s3-p34-verified.txt aa213bb073703b765db2c4245ac1722636aa8088ce18ac6316244794f68ab7b4
+s3-p34-verified-analysis.txt 2ffba78daa4423b4ea68bae841c6e706ea2f06030357087fa69e15db065ee1a8
+s3-p34-android-build.txt 9063edd273576b3ebe137230da17d635e423c0a0e92437239cd7327f4246a66b
+
+Linux CI 43671998237 on application c9f3125f completed successfully.
+It passed 2,443 Flutter tests, 267 backend CPU tests, Firestore and
+Supabase policy checks, static analysis, and the Android debug build.
+The raw CI log under build/ is s3-p34-source-ci-43671998237.txt.
+Its SHA-256 is 7c1815ef3b1ed6837200d3f0ce78a0273ec45fc3eec7249c57fe93be738f17a4.
+
+The local and installed x64 debug APK share SHA-256
+aeb38bb852315fcd516711180efb6e3b822c800c4c337214e0eb27d2956b77bd.
+The isolated Android API 35 emulator used airplane mode, Wi-Fi off,
+system font 2.0, and a local guest. The fixture added
+A-P34-History-Synthetic with station and platform and zero answers.
+
+Start a two-word Quiz from the set. Choose ชานชาลา for station
+and for platform. The first answer is wrong and the second is
+correct. The app stores a 50% Score and both choices. Open the
+same set's original round through Progress history.
+
+From that Score, open เปิดศูนย์ทบทวน and ฝึกคำที่ผิดจากรอบนี้ (1).
+The new round has station as its only question. Answer สถานี and
+finish at 100%. Return through กลับศูนย์ทบทวน and กลับไปดูผลเดิม.
+The original Score is 50% and displays both original choices.
+
+SQLite confirms that the original session and both answer rows
+match the pre-repair snapshot. The new completed session has
+the original session ID as its parent and exactly one answer for
+station. Each snapshot records zero research rows and research
+outbox operations. A cold start replaced PID 16771 with PID
+18413. Progress history reopened the same original 50% Score.
+The completed and reopened database snapshots match byte for byte.
+
+Android records under build/boss-android-evidence, SHA-256
+p34-installed-sha256.txt bd582d4124ebf62e65c6acb8798df12fe1c52804342841ce2fed32219eed96cf
+p34-history-fixture.sql eb1952c899555c2b17f03bed3572e5dd8e498d93918985e7dc6869ecdff41675
+p34-native-ordinary-setup.txt 70f156e6e58f31076569c07ed3765814e954d93ca2285feaa407eaf3a918edf2
+p34-native-ordinary-score.txt 8c9d0d96aadd6ef093b793eb1053b03397e16cbe0cefed17d54e238d76e13e8e
+p34-native-history-row.txt 2173280da43c5848314cbcc205e9a7fc63a6276b2bb3185ee2c4ba88c9ada8d1
+p34-native-history-original.png a8a915556ecb642e92d1595f3917177e60c5317401ea39528299a1d1a6297b62
+p34-native-history-desk.png 94d66f793056614241809658efb938525354750cf97c214bdc57464a5101c73c
+p34-native-practice-single.txt fd25432634a20e1a193a8a51e27afccb2e3331f8006e5d37e6ad77fc9b07d0b0
+p34-native-practice-score.txt 0fce0ee224d650d53ebc74d04a82880a5e53ce4854e9e931725b82fb61f482dd
+p34-native-history-return.txt ed4d5b3010be278fa6e67ebf12d9bee2534398045f102ee30ed7c9d981114b88
+p34-native-cold-pids.txt 9175d81467a69e732a66795b25b054e9d7bff50e44d50e3e0acfae24fab6963c
+p34-native-history-reopened.png 9691d26cf76c495e0df3906430cb499c4cda77572da4a58e59e527e85670ed55
+p34-native-db-baseline.json 59ae7a8c5e9b29a0081b511ea4ae07fff10c8e47a1870a9f45f807132f6baed1
+p34-native-db-completed.json and p34-native-db-reopened.json
+3fdccd07afbdab40c94347e068b6e8f43c4be31b5c88c850282fe0f1fd032c26
+
+Delivery APK and spoken TalkBack checks are pending.

@@ -38,7 +38,7 @@ void main() {
       tester
           .widgetList<NavigationDestination>(find.byType(NavigationDestination))
           .map((destination) => destination.label),
-      <String>['เรียน', 'คำศัพท์', 'ก้าวหน้า', 'โปรไฟล์'],
+      <String>['ฝึกภาษา', 'คลังคำศัพท์', 'ความก้าวหน้า', 'บัญชี'],
     );
 
     await tester.tap(find.byType(NavigationDestination).at(2));
@@ -73,7 +73,7 @@ void main() {
     final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
     expect(
       rail.destinations.map((destination) => (destination.label as Text).data),
-      <String>['เรียน', 'คำศัพท์', 'ก้าวหน้า', 'โปรไฟล์'],
+      <String>['ฝึกภาษา', 'คลังคำศัพท์', 'ความก้าวหน้า', 'บัญชี'],
     );
     expect(
       tester.state<State>(find.byType(ChooseModeScreen)),
@@ -169,7 +169,7 @@ void main() {
     final menu = find.byKey(const ValueKey<String>('shell-drawer-button'));
     final firstLabel = find.descendant(
       of: find.byType(NavigationRail),
-      matching: find.text('เรียน'),
+      matching: find.text('ฝึกภาษา'),
     );
     expect(tester.getRect(menu).overlaps(tester.getRect(firstLabel)), isFalse);
 
@@ -200,7 +200,7 @@ void main() {
       expect(find.byType(FloatingActionButton), findsNothing);
       expect(menuSize.width, greaterThanOrEqualTo(48));
       expect(menuSize.height, greaterThanOrEqualTo(48));
-      final title = find.text('เลือกแบบฝึก');
+      final title = find.text('ฝึกภาษา').first;
       final titleParagraph = tester.renderObject<RenderParagraph>(title);
       expect(titleParagraph.didExceedMaxLines, isFalse, reason: '$size');
       expect(
@@ -276,7 +276,7 @@ void main() {
       tester
           .widgetList<NavigationDestination>(find.byType(NavigationDestination))
           .map((destination) => destination.label),
-      <String>['เรียน', 'คำศัพท์', 'ก้าวหน้า', 'โปรไฟล์'],
+      <String>['ฝึกภาษา', 'คลังคำศัพท์', 'ความก้าวหน้า', 'บัญชี'],
     );
     await tester.tap(find.byKey(const ValueKey<String>('shell-drawer-button')));
     await tester.pumpAndSettle();

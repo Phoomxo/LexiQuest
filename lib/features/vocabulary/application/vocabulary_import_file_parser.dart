@@ -7,6 +7,8 @@ import 'vocabulary_use_cases.dart';
 const int maxVocabularyImportBytes = 1024 * 1024;
 const int maxVocabularyImportRows = 500;
 
+typedef VocabularyImportPracticeWord = ({String word, String meaning});
+
 enum VocabularyImportPreviewStatus { ready, needsEdit, duplicate }
 
 final class VocabularyImportFileFailure implements Exception {
@@ -60,21 +62,7 @@ VocabularyImportPreview parseVocabularyImportFile({
   Iterable<Map<String, String>> existingRows = const [],
 }) {
   final extension = _validatedExtension(fileName, mimeType);
-  if (bytes.isEmpty) throw const VocabularyImportFileFailure('emptyFile');
-  if (bytes.length > maxVocabularyImportBytes) {
-    throw const VocabularyImportFileFailure('fileTooLarge');
-  }
-
-  late final String text;
-  try {
-    text = utf8.decode(bytes).replaceFirst('\ufeff', '');
-  } on FormatException {
-    throw const VocabularyImportFileFailure('invalidEncoding');
-  }
-  if (text.trim().isEmpty) {
-    throw const VocabularyImportFileFailure('emptyFile');
-  }
-
+  final text = _readVocabularyImportText(bytes).replaceFirst('\ufeff', '');
   final rows = extension == 'csv' ? _csvRows(text) : _jsonRows(text);
   if (rows.isEmpty) throw const VocabularyImportFileFailure('emptyFile');
   if (rows.length > maxVocabularyImportRows) {
@@ -84,6 +72,61 @@ VocabularyImportPreview parseVocabularyImportFile({
     sourceName: fileName,
     rows: reviewVocabularyImportRows(rows, existingRows: existingRows),
   );
+}
+
+String readVocabularyImportDraft({
+  required String fileName,
+  required Uint8List bytes,
+  String? mimeType,
+}) {
+  if (_validatedExtension(fileName, mimeType) != 'json') {
+    throw const VocabularyImportFileFailure('unsupportedType');
+  }
+  return _readVocabularyImportText(bytes);
+}
+
+List<VocabularyImportPracticeWord> parseVocabularyImportPractice(String text) {
+  if (text.length > maxVocabularyImportBytes ||
+      utf8.encode(text).length > maxVocabularyImportBytes) {
+    throw const VocabularyImportFileFailure('fileTooLarge');
+  }
+  if (text.trim().isEmpty) {
+    throw const VocabularyImportFileFailure('emptyFile');
+  }
+
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(text);
+  } on FormatException {
+    throw const VocabularyImportFileFailure('malformedJson');
+  }
+  if (decoded is! List) {
+    throw const VocabularyImportFileFailure('invalidPracticeList');
+  }
+  if (decoded.isEmpty) throw const VocabularyImportFileFailure('emptyFile');
+  if (decoded.length > maxVocabularyImportRows) {
+    throw const VocabularyImportFileFailure('tooManyRows');
+  }
+
+  final words = <VocabularyImportPracticeWord>[];
+  for (final row in decoded) {
+    if (row is! Map<String, dynamic>) {
+      throw const VocabularyImportFileFailure('invalidPracticeRow');
+    }
+    final word = row['word'];
+    final meaning = row.containsKey('meaning')
+        ? row['meaning']
+        : row['translation'];
+    if (word is! String || meaning is! String) {
+      throw const VocabularyImportFileFailure('invalidPracticeRow');
+    }
+    final practiceWord = (word: word.trim(), meaning: meaning.trim());
+    if (practiceWord.word.isEmpty || practiceWord.meaning.isEmpty) {
+      throw const VocabularyImportFileFailure('invalidPracticeRow');
+    }
+    words.add(practiceWord);
+  }
+  return List.unmodifiable(words);
 }
 
 List<VocabularyImportPreviewRow> reviewVocabularyImportRows(
@@ -115,6 +158,22 @@ List<VocabularyImportPreviewRow> reviewVocabularyImportRows(
   return List.unmodifiable(reviewed);
 }
 
+String _readVocabularyImportText(Uint8List bytes) {
+  if (bytes.length > maxVocabularyImportBytes) {
+    throw const VocabularyImportFileFailure('fileTooLarge');
+  }
+  final String text;
+  try {
+    text = utf8.decode(bytes);
+  } on FormatException {
+    throw const VocabularyImportFileFailure('invalidEncoding');
+  }
+  if (text.trim().isEmpty) {
+    throw const VocabularyImportFileFailure('emptyFile');
+  }
+  return text;
+}
+
 String _validatedExtension(String fileName, String? mimeType) {
   final dot = fileName.lastIndexOf('.');
   final extension = dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
@@ -130,7 +189,7 @@ String _validatedExtension(String fileName, String? mimeType) {
     return extension;
   }
   final allowed = extension == 'csv'
-      ? const {'text/csv', 'application/csv'}
+      ? const {'text/csv', 'application/csv', 'text/comma-separated-values'}
       : const {'application/json', 'text/json'};
   if (!allowed.contains(mime)) {
     throw const VocabularyImportFileFailure('unsupportedType');

@@ -1,9 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner;
 import 'package:vocab_learning_app/config/app_appearance_preferences.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/features/account/application/account_use_cases.dart';
@@ -15,9 +23,14 @@ import 'package:vocab_learning_app/features/device_model/application/model_downl
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_manifest.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/media_practice/application/device_permission_access.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
+import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
+import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_status.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -25,8 +38,10 @@ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
 import 'package:vocab_learning_app/screens/device_permission_center_screen.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/appearance_settings_screen.dart';
 import 'package:vocab_learning_app/screens/gemini_settings_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
@@ -37,8 +52,305 @@ const _syncStatusKey = ValueKey<String>('settings-sync-status');
 const _syncQueueStatusKey = ValueKey<String>('settings-sync-queue-status');
 const _withdrawKey = ValueKey<String>('settings-research-withdraw');
 const _modelActionKey = ValueKey<String>('settings-device-model-action');
+const _calendarKey = ValueKey<String>('settings-home-calendar');
+const _calendarCurrentKey = ValueKey<String>('settings-home-calendar-current');
+const _calendarPendingKey = ValueKey<String>('settings-home-calendar-pending');
+const _calendarInputKey = ValueKey<String>('settings-home-calendar-input');
+const _calendarSaveKey = ValueKey<String>('settings-home-calendar-save');
+const _calendarErrorKey = ValueKey<String>('settings-home-calendar-error');
 
 void main() {
+  setUpAll(tz.initializeTimeZones);
+
+  testWidgets(
+    'home calendar loads default UTC read-only even when Quest is hidden',
+    (tester) async {
+      final calendar = await _CalendarHarness.create();
+      addTearDown(calendar.close);
+      final before = await calendar.rows();
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: _calendarFeatures,
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(_calendarKey),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('ปฏิทินการเรียน'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(_calendarCurrentKey)).data,
+        contains('UTC'),
+      );
+      expect(find.byKey(_calendarPendingKey), findsNothing);
+      expect(calendar.clockReads, greaterThan(0));
+      expect(await calendar.rows(), before);
+    },
+  );
+
+  testWidgets(
+    'home calendar schedules and replaces only the pending zone while current UTC stays visible',
+    (tester) async {
+      final calendar = await _CalendarHarness.create();
+      addTearDown(calendar.close);
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: _calendarFeatures,
+      );
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(_calendarCurrentKey)).data,
+        contains('UTC'),
+      );
+      expect(
+        tester.widget<Text>(find.byKey(_calendarPendingKey)).data,
+        contains('Asia/Bangkok'),
+      );
+      expect(
+        tester.widget<Text>(find.byKey(_calendarPendingKey)).data,
+        contains('2026'),
+      );
+      final first = await calendar.db
+          .select(calendar.db.ownerCalendarEpochs)
+          .get();
+      final pending = first.singleWhere(
+        (r) => r.effectiveUtcUs == _calendarBoundary.microsecondsSinceEpoch,
+      );
+      await _enterHomeZone(tester, 'America/New_York');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      final after = await calendar.db
+          .select(calendar.db.ownerCalendarEpochs)
+          .get();
+      expect(after, hasLength(2));
+      expect(
+        after.singleWhere((r) => r.ruleId == pending.ruleId).ianaId,
+        'America/New_York',
+      );
+      expect(
+        tester.widget<Text>(find.byKey(_calendarCurrentKey)).data,
+        contains('UTC'),
+      );
+      expect(
+        tester.widget<Text>(find.byKey(_calendarPendingKey)).data,
+        contains('America/New_York'),
+      );
+      expect(await calendar.db.select(calendar.db.eventsV2).get(), isEmpty);
+      expect(
+        await calendar.db.select(calendar.db.outboxOperations).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'invalid IANA and a stale displayed owner show honest errors without scheduling',
+    (tester) async {
+      final calendar = await _CalendarHarness.create();
+      addTearDown(calendar.close);
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: _calendarFeatures,
+      );
+      final before = await calendar.rows();
+      await _enterHomeZone(tester, 'Invalid/Unknown');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_calendarErrorKey), findsOneWidget);
+      expect(await calendar.rows(), before);
+      await calendar.activate('calendar-b');
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_calendarErrorKey), findsOneWidget);
+      expect(
+        await calendar.db.select(calendar.db.ownerCalendarEpochs).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'home calendar disables duplicate selection while the real SQLite transaction is in flight',
+    (tester) async {
+      final boundary = _CalendarBoundary();
+      final calendar = await _CalendarHarness.create(boundary: boundary);
+      addTearDown(calendar.close);
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: _calendarFeatures,
+      );
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      boundary.armed = true;
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pump();
+      expect(
+        tester.widget<FilledButton>(find.byKey(_calendarSaveKey)).onPressed,
+        isNull,
+      );
+      expect(
+        tester.widget<TextField>(find.byKey(_calendarInputKey)).enabled,
+        isFalse,
+      );
+      boundary.release.complete();
+      await tester.pumpAndSettle();
+      expect(
+        await calendar.db.select(calendar.db.ownerCalendarEpochs).get(),
+        hasLength(2),
+      );
+      expect(boundary.entered, isTrue);
+    },
+  );
+
+  testWidgets(
+    'late selection from a replaced dependency cannot paint its pending zone into the new owner',
+    (tester) async {
+      final boundary = _CalendarBoundary();
+      final old = await _CalendarHarness.create(boundary: boundary);
+      final current = await _CalendarHarness.create();
+      addTearDown(old.close);
+      addTearDown(current.close);
+      const key = ValueKey<String>('stable-settings-calendar');
+      await _pumpSettings(
+        tester,
+        streak: old.facade,
+        features: _calendarFeatures,
+        screenKey: key,
+      );
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      boundary.armed = true;
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pump();
+      await _pumpSettings(
+        tester,
+        streak: current.facade,
+        features: _calendarFeatures,
+        screenKey: key,
+        settle: false,
+      );
+      boundary.release.complete();
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(_calendarCurrentKey)).data,
+        contains('UTC'),
+      );
+      expect(find.byKey(_calendarPendingKey), findsNothing);
+      expect(
+        await current.db.select(current.db.ownerCalendarEpochs).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'owner progress notification reloads the owner-bound calendar and clears the previous pending display',
+    (tester) async {
+      final calendar = await _CalendarHarness.create();
+      final updates = ValueNotifier<int>(0);
+      addTearDown(calendar.close);
+      addTearDown(updates.dispose);
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        progressUpdates: updates,
+        features: _calendarFeatures,
+      );
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_calendarPendingKey), findsOneWidget);
+      await calendar.activate('calendar-b');
+      updates.value++;
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(_calendarCurrentKey)).data,
+        contains('UTC'),
+      );
+      expect(find.byKey(_calendarPendingKey), findsNothing);
+      await _enterHomeZone(tester, 'America/New_York');
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      final next = await calendar.db
+          .select(calendar.db.ownerCalendarEpochs)
+          .get();
+      expect(next.where((r) => r.ownerId == 'calendar-b'), hasLength(2));
+    },
+  );
+
+  for (final hidden in ['mastery', 'host']) {
+    testWidgets('hidden $hidden never loads or presents the home calendar', (
+      tester,
+    ) async {
+      final calendar = await _CalendarHarness.create();
+      addTearDown(calendar.close);
+      final before = await calendar.rows();
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: BuildFeatureRegistry({
+          Feature.mastery: hidden == 'mastery'
+              ? FeatureState.hidden
+              : FeatureState.enabled,
+        }),
+        fieldFeatures: BuildFieldFeatureRegistry({
+          FieldFeature.mastery: hidden == 'host'
+              ? FieldFeatureState.hidden
+              : FieldFeatureState.enabled,
+        }),
+      );
+      expect(find.byKey(_calendarKey), findsNothing);
+      expect(calendar.clockReads, 0);
+      expect(await calendar.rows(), before);
+    });
+  }
+
+  testWidgets(
+    'Thai 200 percent calendar controls remain reachable with the IME open',
+    (tester) async {
+      final calendar = await _CalendarHarness.create();
+      addTearDown(calendar.close);
+      tester.view
+        ..physicalSize = const Size(390, 844)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      await _pumpSettings(
+        tester,
+        streak: calendar.facade,
+        features: _calendarFeatures,
+        textScale: 2,
+      );
+      await _enterHomeZone(tester, 'Asia/Bangkok');
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byKey(_calendarSaveKey)).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(
+        tester.getRect(find.byKey(_calendarSaveKey)).bottom,
+        lessThanOrEqualTo(544),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(_calendarSaveKey));
+      await tester.pumpAndSettle();
+      expect(
+        await calendar.db.select(calendar.db.ownerCalendarEpochs).get(),
+        hasLength(2),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('settings exposes a plain-Thai appearance destination', (
     tester,
   ) async {
@@ -743,6 +1055,93 @@ void main() {
     expect(find.text('สิทธิ์กล้องและไมโครโฟน'), findsWidgets);
   });
 
+  testWidgets(
+    'permission center can practice spelling without requesting access',
+    (tester) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      const permissionChannel = MethodChannel(
+        'flutter.baseflow.com/permissions/methods',
+      );
+      final messenger = tester.binding.defaultBinaryMessenger;
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(permissionChannel, (call) async {
+        calls.add(call.method);
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(permissionChannel, null),
+      );
+      final permissions = _DeniedDevicePermissions();
+      await _pumpSettings(tester, devicePermissions: permissions, textScale: 2);
+
+      Future<void> reveal(Finder target) async {
+        if (target.evaluate().isEmpty) {
+          await tester.scrollUntilVisible(
+            target,
+            180,
+            scrollable: find.byType(Scrollable).hitTestable().last,
+          );
+        }
+        await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> tap(Finder target) async {
+        await reveal(target);
+        await tester.tap(target.hitTestable());
+        await tester.pumpAndSettle();
+      }
+
+      void expectNoAudioControls() {
+        expect(find.text('ฟังด้วยความเร็วปกติ'), findsNothing);
+        expect(find.text('ฟังช้าลง'), findsNothing);
+        expect(find.text('ลองฟังคำนี้อีกครั้ง'), findsNothing);
+      }
+
+      final center = find.byType(DevicePermissionCenterScreen);
+      await tap(
+        find.byKey(const ValueKey<String>('settings-permission-center')),
+      );
+      final initialCenter = tester.state(center);
+      expect(permissions.microphoneReads, greaterThan(0));
+      await tap(find.text('ลองตอบโดยไม่ใช้เสียง'));
+      expect(find.byType(DictationQuizScreen), findsOneWidget);
+      expect(find.text('สถานี'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('ลองเขียนคำ'));
+
+      Future<void> submit(String answer) async {
+        final field = find.byType(TextField);
+        await reveal(field);
+        await tester.enterText(field, answer);
+        await tap(find.text('ตรวจคำตอบ'));
+      }
+
+      expectNoAudioControls();
+      await submit('staton');
+      final hint = find.textContaining('ยังขาดตัว i');
+      await reveal(hint);
+      expect(hint.hitTestable(), findsOneWidget);
+      await tap(find.text('แก้คำตอบ'));
+      await submit('station');
+      expect(find.text('สะกดถูกแล้ว'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('ลองเขียนอีกครั้ง'));
+      expect(find.text('เขียนจากคำใบ้'), findsOneWidget);
+      expectNoAudioControls();
+      await tap(find.text('กลับไปดูเครื่องมือ'));
+      expect(tester.state(center), same(initialCenter));
+      expect(permissions.settingsOpens, 0);
+      expect(calls, isNot(contains('requestPermissions')));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('device model reports absent, downloading, active and failed', (
     tester,
   ) async {
@@ -917,6 +1316,10 @@ Future<void> _pumpSettings(
   SyncTrigger? syncTrigger,
   SyncStatusSource? syncStatus,
   DeviceModelUseCases? deviceModels,
+  DevicePermissionAccess? devicePermissions,
+  StreakUseCases? streak,
+  ValueListenable<int>? progressUpdates,
+  FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   AppAppearanceController? appearance,
   Future<ModelDownloadRecord> Function()? deviceModelDownload,
   FieldFeatureRegistry fieldFeatures =
@@ -938,6 +1341,10 @@ Future<void> _pumpSettings(
     syncTrigger: syncTrigger,
     syncStatus: syncStatus,
     deviceModels: deviceModels,
+    devicePermissions: devicePermissions,
+    streak: streak,
+    progressUpdates: progressUpdates,
+    features: features,
     fieldFeatures: fieldFeatures,
   );
   final app = AppDependenciesScope(
@@ -969,6 +1376,27 @@ Future<void> _pumpSettings(
     await tester.pumpAndSettle();
   } else {
     await tester.pump();
+  }
+}
+
+final class _DeniedDevicePermissions implements DevicePermissionAccess {
+  int microphoneReads = 0;
+  int settingsOpens = 0;
+
+  @override
+  Future<MediaPermissionState> cameraStatus() async =>
+      MediaPermissionState.denied;
+
+  @override
+  Future<MediaPermissionState> microphoneStatus() async {
+    microphoneReads++;
+    return MediaPermissionState.denied;
+  }
+
+  @override
+  Future<bool> openAndroidSettings() async {
+    settingsOpens++;
+    return true;
   }
 }
 
@@ -1281,6 +1709,102 @@ final class _GuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
       const GuestSessionStarted(uid: 'synthetic-guest');
+}
+
+final _calendarNow = DateTime.utc(2026, 10, 20, 12);
+final _calendarBoundary = DateTime.utc(2026, 10, 26);
+const _calendarFeatures = BuildFeatureRegistry({
+  Feature.mastery: FeatureState.enabled,
+  Feature.questV2: FeatureState.hidden,
+});
+
+Future<void> _enterHomeZone(WidgetTester tester, String zone) async {
+  await tester.scrollUntilVisible(
+    find.byKey(_calendarInputKey),
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.enterText(find.byKey(_calendarInputKey), zone);
+  await tester.ensureVisible(find.byKey(_calendarSaveKey));
+  await tester.pumpAndSettle();
+}
+
+final class _CalendarHarness {
+  _CalendarHarness(this.db, this.boundary);
+  final AppDatabase db;
+  final _CalendarBoundary? boundary;
+  late final StreakUseCases facade;
+  int clockReads = 0;
+
+  static Future<_CalendarHarness> create({_CalendarBoundary? boundary}) async {
+    final db = AppDatabase(
+      boundary == null
+          ? NativeDatabase.memory()
+          : NativeDatabase.memory().interceptWith(boundary),
+    );
+    await db.customStatement(
+      "INSERT INTO local_owners(id,created_at_utc_ms,is_active) VALUES ('calendar-a',1000,1),('calendar-b',1000,0)",
+    );
+    final harness = _CalendarHarness(db, boundary);
+    harness.facade = StreakUseCases(
+      repository: DriftStreakRepository(db, calendarVisible: () => true),
+      owners: DriftLocalOwnerRepository(
+        db,
+        generateId: () => 'unused-calendar-owner',
+        nowUtc: () => _calendarNow,
+      ),
+      nowUtc: () {
+        harness.clockReads++;
+        return _calendarNow;
+      },
+    );
+    return harness;
+  }
+
+  Future<void> activate(String owner) => db.customStatement(
+    'UPDATE local_owners SET is_active=CASE WHEN id=? THEN 1 ELSE 0 END',
+    [owner],
+  );
+
+  Future<String> rows() async => jsonEncode({
+    for (final t in db.allTables)
+      t.actualTableName: [
+        for (final r
+            in await db
+                .customSelect(
+                  'SELECT * FROM ${t.actualTableName} ORDER BY rowid',
+                )
+                .get())
+          r.data,
+      ],
+  });
+
+  Future<void> close() async {
+    if (boundary != null && !boundary!.release.isCompleted) {
+      boundary!.release.complete();
+    }
+    await db.close();
+  }
+}
+
+final class _CalendarBoundary extends QueryInterceptor {
+  bool armed = false, entered = false;
+  final release = Completer<void>();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    final rows = await executor.runSelect(statement, args);
+    if (armed && statement.toLowerCase().contains('owner_calendar_epochs')) {
+      armed = false;
+      entered = true;
+      await release.future;
+    }
+    return rows;
+  }
 }
 
 final class _SyncStatusSource implements SyncStatusSource {

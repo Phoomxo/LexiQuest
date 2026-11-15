@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart' show TableUpdateQuery;
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
@@ -7,6 +11,7 @@ import '../features/account_deletion/application/account_deletion_use_cases.dart
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
+import '../features/export/domain/export_contracts.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -16,7 +21,6 @@ import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
-import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
@@ -24,10 +28,14 @@ import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/source_practice.dart';
+import '../features/vocabulary/data/drift_local_content_report_repository.dart';
+import '../features/motivation/data/drift_study_preferences_repository.dart';
+import '../features/motivation/application/focus_use_cases.dart';
 import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
+import '../services/study_reminders.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
 import 'field_feature_registry.dart';
@@ -35,6 +43,13 @@ import 'registries/consent_registry.dart';
 import 'registries/entitlement_registry.dart';
 import 'registries/experiment_registry.dart';
 import 'registries/feature_registry.dart';
+
+typedef SaveAchievementCard =
+    Future<ExportSaveResult> Function(
+      Uint8List bytes, {
+      required ExportCancellation cancellation,
+      required ExportWriteRevalidator revalidateBeforeWrite,
+    });
 
 final class AppDependencies {
   AppDependencies({
@@ -55,22 +70,27 @@ final class AppDependencies {
     this.syncStatus,
     this.learning,
     this.progress,
+    this.progressUpdates,
     this.rewards,
     this.vocabulary,
     this.vocabularyImporter,
     this.vocabularyImportFilePicker,
     this.sourcePracticeFilePicker,
+    this.localContentReports,
+    this.studyPreferences,
+    this.focus,
+    this.studyReminders,
     this.deviceModels,
     this.account,
     this.accountDeletion,
     this.researchConsent,
     this.exports,
+    this.saveAchievementCard,
     this.geminiTutor,
     this.objectScanner,
     this.devicePermissions,
     this.speechPractice,
     this.voice,
-    this.quest,
     this.streak,
     this.associativeLearning,
     this.disposeResources,
@@ -94,27 +114,59 @@ final class AppDependencies {
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
+  final ValueListenable<int>? progressUpdates;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final VocabularyImportFilePicker? vocabularyImportFilePicker;
   final SourcePracticeFilePicker? sourcePracticeFilePicker;
+  final DriftLocalContentReportRepository? localContentReports;
+  final DriftStudyPreferencesRepository? studyPreferences;
+  final FocusUseCases? focus;
+  final StudyReminders? studyReminders;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
+
+  Future<String?> readActiveOwnerId() async {
+    final db = database;
+    if (db == null) return null;
+    final owners =
+        await (db.select(db.localOwners)
+              ..where((row) => row.isActive.equals(true))
+              ..limit(2))
+            .get();
+    return owners.length == 1 ? owners.single.id : null;
+  }
+
+  Stream<void>? watchLocalOwnerWrites() {
+    final db = database;
+    if (db == null) return null;
+    // Writes fence A→B→A even if the owner snapshots coalesce.
+    return db
+        .tableUpdates(TableUpdateQuery.onTable(db.localOwners))
+        .map((_) {});
+  }
+
+  Stream<String?>? watchActiveOwnerId() {
+    final db = database;
+    if (db == null) return null;
+    return (db.select(db.localOwners)
+          ..where((row) => row.isActive.equals(true)))
+        .watch()
+        .map((rows) => rows.length == 1 ? rows.single.id : null)
+        .distinct();
+  }
 
   /// Present only when the privileged deletion backend is configured.
   final AccountDeletionUseCases? accountDeletion;
   final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
+  final SaveAchievementCard? saveAchievementCard;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
   final DevicePermissionAccess? devicePermissions;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
-
-  /// V2 Quest pipeline — wired when [Feature.questV2] is enabled.
-  /// Null when the feature flag is off (hidden state).
-  final QuestUseCases? quest;
 
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;

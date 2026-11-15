@@ -1,0 +1,112 @@
+f04 Inspect the source of an authored learning pack
+
+FigCraft baseline 21b34eaa, feature_tasks_a.py task 4. The Library
+opens the sample catalog, the kitchen pack opens its source, and
+both return actions preserve the prior Library context.
+
+Application 642909355ef6641291be134b4845b96427bc5ca9. The Library
+app-bar action has the accessible label เลือกชุดคำศัพท์. It opens
+two bundled sample packs for the travel and kitchen examples.
+Each word list and source page uses the same immutable pack.
+The SHA-256 input is the ordered list of spelling and meaning
+separated by tabs, one word per line, encoded in UTF-8.
+
+The draft author, revision and status are visible. This route reads
+bundled examples and creates no personal vocabulary, learning,
+outbox, or research records.
+
+Windows Flutter passed 149 architecture, vocabulary, Library,
+app-shell and Review Desk tests. Analysis passed for the three
+changed Dart files. The initial layout placed the action below
+search. At 200% it pushed the filtered set counts and existing
+set rows below the viewport. Moving the action to the app bar
+restored the three affected local checks.
+
+Linux CI 43676491715 on application 64290935 passed 2,446 Flutter
+tests, 267 backend CPU tests, Firestore and Supabase policy checks,
+static analysis, and the Android debug build. The raw CI log
+under build/ is s3-f04-source-ci-43676491715.txt. Its SHA-256 is
+769f1692a1d4f1bbe2bd3fa8c2d6c8eec963a74a61a34c42abeb7a59de2dc632.
+
+Android API 35 x64 debug APK local and installed SHA-256
+fe4b718bae93912be26814f4b6eb02a4c598f915ded031d69bc265114a0402bb.
+The isolated emulator used airplane mode, Wi-Fi off, system
+font 2.0 and an unbound local guest.
+
+From the Library with search A-F03, open เลือกชุดคำศัพท์.
+Choose ของใช้ในครัว and inspect 2 words. The Android hierarchy
+shows cup / ถ้วย followed by spoon / ช้อน. The independent
+hash calculation from those visible rows matches the source:
+77807e0bf6e991165334bb464d52b90324b848a1048c094f091f936c504e2f56
+The source shows LQ-KT-01, the LexiQuest design-example author,
+and the draft publication status.
+
+Return to the same A1 kitchen pack and the catalog. The travel
+pack shows LQ-TR-01 and a separate word digest:
+718b6ef56016e6764b0e8521cf7ac75ece9d8f87726e18c533660ef19c15f8f9
+Return from the travel source using the app bar, then to the
+catalog and the Library. The A-F03 search is still present.
+
+Cold launch replaced PID 23012 with 24101. Reopening the kitchen
+source showed the same revision and digest. At 200% text the
+complete digest and contextual return action are visible after
+scrolling. The SQLite snapshots before the journey, after the
+journey, after cold launch and after the word readback match.
+Each contains zero research events, consents and outbox rows.
+
+P3.2 combines this pack source with the f03 manual-form journey
+recorded in s2-f03-lexical-details.txt. On the f04 APK, the Library
+reopened turnstile with meaning rotating gate. SQLite returned the
+same local word, set, owner, and revision 2 as the f03 reopen.
+
+Windows records under build/, SHA-256
+s3-f04-red.txt 3c5d0068f2935f3e5516c22587f4d57224639ae7cf08620e02e0fa06b2db3892
+s3-f04-layout-regression.txt 3114d441d9da237f4edec201936aede5e65f76e2ba9211558977f8524700a62b
+s3-f04-verified.txt f7422a51821110aa0ad5a7876fb0a505a7a48c97f08e14a09e6eac494aa22f82
+s3-f04-analysis.txt 9b7bf91dd3b2303545d067a503189ce5eb87fb25df9c89f39c28aeec970080bb
+s3-f04-android-build.txt 262d33e2f0ea7131b0679545f7f0017fdf52939835952a69018e653ac7faa2eb
+
+Android records under build/boss-android-evidence, SHA-256
+f04-installed-sha256.txt cea14a0239fc6d7b594ff1b0bf48e9fbf8248bff060e67ca423b9bd236c35e04
+f04-native-library-entry.png 0cbd1689121da18d7e79ef6d759d6c9c119f4266a14a3cc85d900d3268de77c8
+f04-native-catalog.txt 991398b07d69645dfd215980a160546ce61907a146aeb3d0a7a3cbe4bbb53596
+f04-native-kitchen-words.txt 2e8649840080ddbd469e6aef3371fef3acba2db58f301b5c00a44aef25c21014
+f04-native-kitchen-source.txt ac105a99ebadd557e4003afb5a9910001cd9dfa81418a530d9ef379332849529
+f04-native-kitchen-source.png 114f1511292d578e2133d8535fd33224db31957cb23aa05c591060b8c68cc640
+f04-native-travel-source.txt a51ca63c7587ca6b288e12149d94acb51be612b1465ffd6f96248a0a289c6d65
+f04-native-travel-source.png db9c2fd09482bb321740e2b18f40aa8eda25ea701eae64eb63768a978c11c4d7
+f04-native-return-pack.txt c273aa4e36b7176b2f27c8cee4227dd0b545ba63566f820483561c851853ad4b
+f04-native-return-library.txt e47e711caf2d8031a8fde04d04c6d5c3b7a8dcefb21df1aac8d596937721690f
+f04-native-cold-pids.txt 913f7eb52f898a86205e70f8113f07828aec5899b0a5c292d51383647248ae6c
+f04-native-cold-source.txt ac105a99ebadd557e4003afb5a9910001cd9dfa81418a530d9ef379332849529
+f04-native-cold-full-digest.png 9edbae8cd9c8b7e0598bdb65757e1e784c066146ea6b0c74eb3a0ee7a3f8898f
+f04-native-cold-full-digest.txt 07e1df42d6f87a7ab0a246f5dec574493856ac94d0e56cd63e0661deb608bce8
+f04-native-p32-word.png d6a88a5529ee26aacf7274a98982966b9b1806f47785f97b9c3f1fac077ab8c1
+f04-native-p32-word.txt 99faa8e218a7f31c14f17e91ccc5b2e0f3cbf01b0b267164c63d4b71957100f4
+f04-native-db-baseline.json 812d03745863ee01b34e152ae5110b441614262e89210443123b7be3e3b210a5
+
+f04-native-db-read.json, f04-native-db-cold.json and
+f04-native-db-p32.json match f04-native-db-baseline.json.
+
+The kitchen source was also readable in emulator dark mode at
+200% text. The entire digest and return action were visible at the
+bottom of the page. The system night mode was restored to no.
+
+Dark-mode Android records under build/boss-android-evidence, SHA-256
+f04-native-dark-full-digest.png de2647d37165ae835aeef4403dba03602fe34f010f1fdd234655a2083cdf0047
+f04-native-dark-full-digest.txt 07e1df42d6f87a7ab0a246f5dec574493856ac94d0e56cd63e0661deb608bce8
+f04-native-night-restored.txt f39de9736201a53a86972f75bfa5eaf44961e5d3c2953631cda8c9fa4d202685
+
+After the four read-only observations, the regular Add Set form saved
+A-F03-Empty-Synthetic for the local guest. The set displayed the
+empty vocabulary message and the prerequisite to add a word before
+practice. SQLite confirmed zero words and the same total number of
+learning sessions before and after. Returning preserved A-F03.
+The f02 review journey remains open for P3.1.
+
+P3.1 supplementary Android records under build/boss-android-evidence
+f04-native-p31-empty-set.txt c088a75e7019398e8b5e0a442f13f8a72b897c1ca04678ed3d1807db29dad47b
+f04-native-p31-empty-set.png 33ca4ac7baa56175fa9bd043a903cd4f1574dba74781ec66bc3a3a73fbafd49f
+f04-native-p31-empty-db.json 8b750a5f58a0458aa56c4159e8199cffc24b8578ff3b12891c1e938a482d5af4
+
+Delivery APK and spoken TalkBack checks are pending.

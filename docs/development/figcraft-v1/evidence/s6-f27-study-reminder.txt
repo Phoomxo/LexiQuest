@@ -1,0 +1,59 @@
+F27 opt-in Android study reminder
+
+Source 77e7dcdffde8fd8aa6c9c46c5dccee5dcee9f552.
+Design 21b34eaa:docs/design/2026-11-13-design-reset/feature_tasks_b.py:149-164.
+Observed 2026-11-15 host date. Android API 35 Google APIs x86_64, task-owned
+emulator-5592, isolated synthetic guest, no Wi-Fi or mobile data, Asia/Bangkok.
+The device date was advanced before each trial. It ticked normally during each
+scheduled delivery window. No research consent was granted.
+
+Built the committed source with Flutter debug, android-x64, --no-pub and
+LEXIQUEST_CLOUD_SYNC_ENABLED=false. Host candidate and installed base SHA-256:
+93686a11b4461a1d809a8a4048d792a1bd87cfa6dc35c5a4dc7a61aa185cda54
+
+1. Opened ความก้าวหน้า > วางแผนการฝึก > เตือนให้กลับมาฝึก. Selected weekday
+   19:00 and tapped the explicit opt-in. Denied the Android prompt. The panel
+   read ยังไม่ได้รับอนุญาตให้แจ้งเตือน and Android had zero study alarms.
+2. Explicitly retried, allowed and saw weekday 19:00 saved. Android scheduled
+   2026-11-16 19:00:00 local. Pressed Home and used background am kill. By
+   18:59:45 the test app had no PID and the system launcher was resumed.
+   Android started StudyReminderReceiver at 19:00:22.034. At 19:00:26,
+   Android listed one private notification, ID 2701 on study_reminders.
+   The shade showed LexiQuest / ถึงเวลาทบทวนคำศัพท์. The next scheduled
+   weekday was 2026-11-17 19:00:00. Reopening as the same local guest
+   showed the saved weekday time.
+3. Selected weekend 09:00 and confirmed. The scheduler recorded 2026-11-21
+   09:00:00, window 32.436 seconds. Disabled at 08:59:28.177, removing the
+   pending alarm and delivered notification. No new notification or pending
+   study alarm at 09:00:13 or 09:00:36 with the app in the background.
+   Reopened with settings still off. Returned by Planner and Mastery to
+   the normal language practice tab.
+
+The first cancellation filter counted Android's historical alarm_cancelled
+snapshot as pending. The rerun matched only active alarm tags and confirmed
+zero. The cancellation history explicitly records the same study tag.
+
+Build logs and raw Android observations are local under build/.
+SHA-256:
+  s6-f27-red.txt                         6cce1b668410a98ccd5b908bafbd42392f597221569d20bbb64a2707671a9c42
+  s6-f27-planner-red.txt                 7a18752df8bd20d87f19862960bfc5ccb37c7368490aa39f39df4791f30d7089
+  s6-f27-regression.txt                  420e49f0dcf1f23007a7ff727fd9ad9c4ede3d3dd423d3174c4607186a6a684c
+  s6-f27-analyze-final.txt               d3369ff82399b9429b13a69c048372a68fb1fec513f764ae971fc9d86315efce
+  s6-f27-android-final.txt               6f9b520d9c0e4508a169701bb96e99a87eed8d982c7b83507a3e919627d2d48b
+  f27-android-evidence/denied-ui.txt      6c60c8401ae0fc5595c4e96a329c84e25af28f0c4404989921ed8709bd2af975
+  f27-android-evidence/delivery-check.txt 09ee314e05bd497b97f35399b42fff8aacc0bf9164249e5887c54e16b972ce2d
+  f27-android-evidence/receiver-start.txt 216b34dff751d6f92de0339987bba436799a30b071c94580c455227ce2882c00
+  f27-android-evidence/cancel-trial.txt    29c62bfa16005fdb6b90788fd72b8b299b2a94971253b2be52fd3b28e1100b30
+
+Windows Flutter focused regression passed 58. Analysis passed and format
+reported 8 files unchanged. Tests cover permission grant/denial, stale owner
+including A→B→A during permission, scheduler failure in status and the real
+Mastery entry/return at 390×844 and 200% text. Final independent source review
+accepted the scoped change. Drift and cloud data contracts are unchanged.
+
+This is a local inexact Android alarm governed by Android power management.
+Reference: https://developer.android.com/develop/background-work/services/alarms
+Physical vivo delivery, TalkBack audio, reboot/zone-change delivery and
+runtime permission revocation from Settings were not exercised. The worker
+restores from package and system events in source. Force stop is outside the
+verified delivery condition. The physical-device delivery APK remains pending.

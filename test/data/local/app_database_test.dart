@@ -21,7 +21,7 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 10);
+    expect(database.schemaVersion, 26);
     expect(
       tableNames,
       containsAll(<String>[
@@ -45,6 +45,10 @@ void main() {
         'sync_checkpoints',
         'sync_conflicts',
         'model_downloads',
+        'local_content_reports',
+        'focus_sessions',
+        'learning_preferences',
+        'archived_v25_records',
       ]),
     );
   });

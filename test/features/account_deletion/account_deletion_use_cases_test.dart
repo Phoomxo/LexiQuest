@@ -90,6 +90,24 @@ void main() {
   });
 
   test(
+    'rejects a confirmation opened for another account before export',
+    () async {
+      await expectLater(
+        useCases().deleteAccount(
+          idempotencyKey: key,
+          expectedFirebaseUid: 'previous-owner',
+        ),
+        throwsA(_failure(AccountDeletionFailureCode.ownerChanged)),
+      );
+
+      expect(exporter.calls, 0);
+      expect(reauthenticator.calls, 0);
+      expect(cloud.calls, 0);
+      expect(local.calls, 0);
+    },
+  );
+
+  test(
     'requires a complete export before reauthentication or deletion',
     () async {
       exporter.receipt = _exportReceipt(
@@ -123,6 +141,28 @@ void main() {
     expect(cloud.calls, 0);
     expect(local.calls, 0);
   });
+
+  for (final schemaVersion in [10, 11, 12, 13, 25, 27]) {
+    test(
+      'rejects schema $schemaVersion with current complete export scopes before reauth or deletion',
+      () async {
+        exporter.receipt = _exportReceipt(now, schemaVersion: schemaVersion);
+        expect(exporter.receipt.coveredScopes, hasLength(36));
+        expect(exporter.receipt.coveredScopes, requiredFullAccountExportScopes);
+
+        await expectLater(
+          useCases().deleteAccount(idempotencyKey: key),
+          throwsA(_failure(AccountDeletionFailureCode.fullExportRequired)),
+        );
+
+        expect(exporter.calls, 1);
+        expect(reauthenticator.calls, 0);
+        expect(cloud.calls, 0);
+        expect(local.calls, 0);
+        expect(journal.entry, isNull);
+      },
+    );
+  }
 
   test(
     'rejects owner changes after export without touching cloud data',
@@ -335,12 +375,13 @@ AccountSession _session({
 FullAccountExportReceipt _exportReceipt(
   DateTime now, {
   Set<String> scopes = requiredFullAccountExportScopes,
+  int schemaVersion = currentFullAccountExportSchemaVersion,
 }) => FullAccountExportReceipt(
   ownerId: 'owner-a',
   artifactId: 'export-artifact-1',
   artifactSha256: 'a' * 64,
   bytesWritten: 4096,
-  schemaVersion: 10,
+  schemaVersion: schemaVersion,
   coveredScopes: scopes,
   completedAtUtc: now.subtract(const Duration(minutes: 2)),
 );

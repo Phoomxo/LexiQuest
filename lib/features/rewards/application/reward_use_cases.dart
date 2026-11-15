@@ -39,6 +39,20 @@ final class RewardUseCases implements RewardShopOperations {
   final RewardUtcNow nowUtc;
   final void Function()? onLocalMutation;
 
+  Future<QuestClaimResult> claimQuest({
+    required String expectedOwnerId,
+    required String instanceId,
+  }) async {
+    final ownerId = await _requireActiveOwner(expectedOwnerId);
+    final result = await repository.claimQuest(
+      expectedOwnerId: ownerId,
+      instanceId: instanceId,
+    );
+    await _requireActiveOwner(ownerId);
+    if (!result.replayed) onLocalMutation?.call();
+    return result;
+  }
+
   Future<RewardAccount> load() async {
     return (await loadSession()).account;
   }
@@ -65,7 +79,7 @@ final class RewardUseCases implements RewardShopOperations {
     required String idempotencyKey,
   }) async {
     final item = RewardCatalog.byId(itemId);
-    if (item == null) {
+    if (item == null || !item.purchasable) {
       throw const RewardException(RewardFailureCode.unknownItem);
     }
     if (catalogVersion != RewardCatalog.version ||
@@ -110,6 +124,7 @@ final class RewardUseCases implements RewardShopOperations {
       idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
+      requireActiveOwner: true,
     );
     if (result.status == EquipStatus.equipped) onLocalMutation?.call();
     await _requireActiveOwner(ownerId);

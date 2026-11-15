@@ -1,0 +1,72 @@
+S4 listening menu and saved-set playlist
+
+Source 718ba6f02f5481351c04277199dbccf539039f34.
+FigCraft 21b34eaa, learn_frames.py:173–179, finish_routes_b.py:226–247,
+and detached-b.md:11. Practice → all activities → ฟังและพูด opens IPA,
+dictation from an owned word, or the actual set for playback. Playlist
+also opens from ฟังคำในชุดนี้ on the normal Library set.
+
+The set snapshot uses actual saved spelling/meaning in the Library's
+stable order. Filtering the parent list leaves the full selected set
+in the listening session. Player requests on-device speech completion,
+advances only after the current utterance returns successfully, and
+shows only completed playback in its summary. Next may skip the
+current utterance. Pause/background or leaving the page stops the
+session and retains the expected UI position until explicit restart.
+Timeout and rejected stop cases remain fenced until the platform call
+settles. The UI offers retry and avoids claiming failed words completed.
+
+113 focused Flutter tests passed, including queue timing, stop followed
+by restart, late stop, app background and return, platform failure,
+actual completion callback handling, hub origin, and SQLite comparison
+over 13 tables in the selected-set journey. The widget layout cases
+include 390×844 at 200%. Flutter analyze showed no issues.
+build/s4-playlist-113-final.txt SHA-256
+1ca04d417b7a962227f2018214342a5e10d731c798a4606c8a2065aa75319b6e.
+build/s4-playlist-analyze-final.txt SHA-256
+feec6cbb4bc04ae088029e810dd45431a2f2000f909340266a7c206c522636c3.
+Review found a late platform stop and foreground issue, both addressed
+in the verified snapshot. Dart format 13 files and git show --check passed.
+
+Android API 35 x86_64, 1080×1920 at default font scale, isolated offline
+emulator-5592. The guest chose to continue without research enrollment.
+The installed base matches the host debug APK SHA-256
+253a1084523940be671fdd89568cb2f08a65cba5e760099bef5ba74eb9b644d6.
+Android debug build log SHA-256
+1adb67caef87554f87f043ddd6b2ce6871e9ebb5a4636b2d07d54bec4ff3a014.
+Initial cold launch hit an Android process attach timeout. Relaunch
+finished without reinstalling or clearing the synthetic data.
+
+The selected set opened on carriage, waited for the explicit Play tap,
+and advanced through station. Platform completion returned for both
+words and the summary listed both with stored meanings. Returning to the
+set restored the same UI and showed no saved learning result. Pressing
+Android Home during a new run stopped playback on word 2 of 2. On resume
+the screen showed the parked station and offered restart from the first
+word. Practice → all activities → ฟังและพูด → ฟังชุดคำ opened the same
+saved set and its playlist with no autoplay.
+
+Raw native UI captures in build/playlist-android-evidence/:
+  set-entry.txt / set-return.txt
+    815074e28c38e02bae78a0653041d789ba14254bead780aa7c7ead55aad448dd
+  playlist-ready.txt
+    15c55de772f3d08a473f6c065a04399d7e224e893028947f11547e6c4dd6daff
+  playlist-after-request.txt
+    0a4838183d5074d19fb8b8929695cf27c2c47878f2c2ed9b99b3c51d620f20f0
+  playlist-summary.txt
+    1e48b2aeec572804ade9282b39d0e36b19bd4791409cfbdd768a9c6c90f78b16
+  background-stopped.txt
+    9336593cdc97a52697265df49a54a303d1aa9162b7e97efbb1c2b44b51d63417
+  listening-hub.txt
+    34238899c1ef477b5a323bac9bfc8b899127627d956e5096171fe12d19a43f46
+
+Audible timing, physical TalkBack, native 200% and signed APKs need
+separate verification. The listening hub has no microphone entry in
+this unit. The sentence-speaking, source and mic-denial origins are open.
+
+Exact playlist PR head 7ea0e33a5e6b20da4aba159c22df428a45dd232f passed
+GitHub CI 43635040561. Flutter 2,365, backend CPU 267, Firestore and Supabase
+checks, static analysis, and Android debug APK all passed.
+Raw CI log SHA-256:
+7acb5dbc36f4df77614f35f07dc7b125a6616cd200357091edfb2b2484570b22.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43635040561

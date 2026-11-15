@@ -8,6 +8,7 @@
 /// in tests.
 library;
 
+import '../../../voice/native_tts_provider.dart';
 import '../../../voice/voice_models.dart';
 import '../../../voice/voice_provider.dart';
 import '../../../voice/voice_service_factory.dart';
@@ -24,6 +25,11 @@ final class VoiceUseCases {
   /// Used by screens when no provider was injected via [AppDependencies].
   factory VoiceUseCases.createDefault() =>
       VoiceUseCases(VoiceServiceFactory.create());
+
+  factory VoiceUseCases.createOnDevice({bool awaitCompletion = false}) =>
+      VoiceUseCases(
+        NativeTtsProvider(FlutterTtsAdapter(awaitCompletion: awaitCompletion)),
+      );
 
   final VoiceProvider _provider;
 
@@ -42,7 +48,7 @@ final class VoiceUseCases {
   /// the provider is not a [ManagedVoiceService].
   void disposeIfOwned(bool owns) {
     if (owns && _provider is ManagedVoiceService) {
-      _provider.dispose();
+      _provider.dispose().ignore();
     }
   }
 

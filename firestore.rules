@@ -197,6 +197,9 @@ service cloud.firestore {
                 && payload.slot == 'wallpaper'
                 && (payload.transactionType == 'equip'
                     || payload.amount == -60))
+            || (payload.itemId == 'wallpaper_default'
+                && payload.slot == 'wallpaper'
+                && payload.transactionType == 'equip')
             || (payload.itemId == 'headgear_ipa'
                 && payload.slot == 'headgear'
                 && (payload.transactionType == 'equip'

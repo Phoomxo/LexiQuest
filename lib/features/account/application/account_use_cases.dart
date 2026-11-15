@@ -83,9 +83,14 @@ final class AccountUseCases {
       throw const AccountException(AccountFailureCode.invalidDisplayName);
     }
     final session = currentSession;
-    if (session == null ||
-        session.isAnonymous ||
-        (await owners.getOrCreateActiveOwner()).firebaseUid != session.uid) {
+    if (session == null || session.isAnonymous) {
+      throw const AccountException(AccountFailureCode.invalidCredential);
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    final current = currentSession;
+    if (owner.firebaseUid != session.uid ||
+        current?.uid != session.uid ||
+        current?.isAnonymous != false) {
       throw const AccountException(AccountFailureCode.invalidCredential);
     }
     return gateway.updateDisplayName(name);

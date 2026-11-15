@@ -1,0 +1,64 @@
+Camera permission path observed after vivo v33
+
+Source f4915750cd9d3b164726921a41161da6681f49b9, Android 13 vivo V2041:
+A > Add Word > Camera > deny. Android immediately displayed a second
+permission dialog before the scanner's failure text. A second denial
+reached the scanner, whose resume error replaced the explicit reason.
+The system Back action returned to A with all four words and 75%.
+No photo, vocabulary change or answer was recorded in this check.
+
+The Android permission dialog changes the app lifecycle before the
+initializer completes. The scanner must not resume while its own
+initializer is in flight. It should also retain denial until explicit
+retry. Source correction 04d2a19962a3501ba5d1ec676ca26b8ec97e1fe0.
+
+RED real behavior contract in object_scanner_screen_test.dart:
+resumeCalls expected 0, observed 1. Log SHA256
+1aaf2aa3268a2a0689b5b3e325d0d657c908b49f04ac9badc3e8847f836f3a78.
+GREEN object scanner screen, camera-to-A journey and media practice:
+71 tests passed. Log SHA256
+82b5f1559a40c137056bee7b2878a2811c8ba56e22059537afe19cc80e0b05b2.
+Flutter analyze --no-pub: no issues. Log SHA256
+1476d2a7bfbf575dba50d745cf91a337cda49e0bac4947960343802116f3feec.
+
+Signed arm64 v34 built from source 04d2a19962a3501ba5d1ec676ca26b8ec97e1fe0,
+APK SHA256 5c1d7bd0a515d9586d88ff0380dce170bc6a978beb2e21c73bf6309668f9c05d.
+Installed with the same signer, versionCode 34, unchanged firstInstallTime
+and verified installed base hash. Cloud sync false and research deny-all.
+One Android deny tap now reaches the explicit failure text and the manual
+retry button. No second permission dialog. Android Back returns to A with
+four words and the 75% score. The app's test permission remains denied.
+
+Raw denial hierarchy SHA256
+4c3d560d08b9774042ea71f1105be601811cffe2e209b0859bd528250e18556c.
+Return-to-A XML SHA256
+64671d063d5b1064fe83cfb9544549e4c871fcd8f652e1b5fc1b03f20dd61a76.
+
+At the same v34 APK, bookmarked the synthetic notebook in A. It remained
+the only saved word after a cold offline launch. Unbookmark removed it
+from the filter, and the real word and 75% score remained in All Words.
+Restored the original Wi-Fi, font, theme and screen state.
+Offline bookmarked XML SHA256
+c578ae32ba2312ad8ed7c538a5222b91d32dbe2799bd3fada40ec7ca6c14d33b.
+
+After exercising one-time permission, v34 displayed the live preview and
+enabled Capture. Back retained A. Reopening Score on v34 yielded the same
+v33 corrected hierarchy (SHA256 1c336197e124ce235f3ac5d16ba6cbf2afb83aafe10534aa8a0eb422048a9b1b).
+Restored the camera to no permission with the prior one-time flag still
+recorded. Cold launch then returned to A4/75% with the same final XML.
+
+Repeated the complete delivery journey on the same signed v34:
+A4 > Add > camera > one-time grant > actual photo > no confident result >
+reviewed synthetic pencil / writing tool / noun > Save once in A >
+five distinct Quiz words, four correct and one wrong > 80% > Back to A.
+After process-cold restart with Wi-Fi and mobile data off, A had five
+words including pencil and the saved 80% result. B still had zero words.
+Score reopened with the five historical answer rows. Android Back
+returned A, Wi-Fi restored to 1 and no camera permission remained granted.
+The test does not identify a real object or measure model accuracy.
+
+Actual hashes in build/figcraft-04d2a199:
+30-delivery-score.xml 1ad09afe2b3e8094d775138457245866bd98c48d55795854c9ea8abb8e31b222
+33-delivery-offline-library.xml 4650bff281fde1fbdd8aa69fdc585019d7c2e861c2599fdf1b5f841df0a70baa
+35-delivery-offline-score.xml 893772fdbae4b4dadb2792af71033cbea94d53bbcad118b245372093b6016a22
+36-delivery-final-a.xml a4f8a673a1c62bcef8294e121dbbdc569fc3829f7411e08cbcb2db2310930f01

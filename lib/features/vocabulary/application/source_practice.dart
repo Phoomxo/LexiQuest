@@ -35,6 +35,7 @@ final class SourcePracticePreview {
     required this.unknownWords,
     required this.documentId,
     required this.documentRevision,
+    required this.passageDigest,
   });
 
   final String sourceName;
@@ -43,6 +44,7 @@ final class SourcePracticePreview {
   final List<String> unknownWords;
   final String documentId;
   final int documentRevision;
+  final String passageDigest;
 }
 
 SourcePracticePreview parseSourcePracticeFile({
@@ -126,12 +128,13 @@ SourcePracticePreview reviewSourcePracticeText({
   final nameHash = sha256
       .convert(utf8.encode(canonicalName.toLowerCase()))
       .toString();
-  final contentDigest = sha256.convert(utf8.encode(passage)).bytes;
+  final contentDigest = sha256.convert(utf8.encode(passage));
+  final digestBytes = contentDigest.bytes;
   var revision =
-      ((contentDigest[0] & 0x7f) << 24) |
-      (contentDigest[1] << 16) |
-      (contentDigest[2] << 8) |
-      contentDigest[3];
+      ((digestBytes[0] & 0x7f) << 24) |
+      (digestBytes[1] << 16) |
+      (digestBytes[2] << 8) |
+      digestBytes[3];
   if (revision == 0) revision = 1;
   return SourcePracticePreview(
     sourceName: canonicalName,
@@ -140,6 +143,7 @@ SourcePracticePreview reviewSourcePracticeText({
     unknownWords: List.unmodifiable(unknown),
     documentId: 'local-source:$nameHash',
     documentRevision: revision,
+    passageDigest: contentDigest.toString(),
   );
 }
 

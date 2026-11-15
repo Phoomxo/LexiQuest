@@ -15,6 +15,7 @@ class ExportCenterScreen extends StatefulWidget {
 }
 
 class _ExportCenterScreenState extends State<ExportCenterScreen> {
+  AppDependencies? _dependencies;
   ExportUseCases? _exports;
   ExportFormat _format = ExportFormat.csv;
   bool _vocabulary = true;
@@ -28,14 +29,40 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _exports ??=
-        widget.exports ?? AppDependenciesScope.maybeOf(context)?.exports;
+    _resolveExports();
+  }
+
+  @override
+  void didUpdateWidget(covariant ExportCenterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _resolveExports();
+  }
+
+  void _resolveExports() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final exports = dependencies == null
+        ? widget.exports
+        : dependencies.exports;
+    if (identical(dependencies, _dependencies) &&
+        identical(exports, _exports)) {
+      return;
+    }
+    _cancellation?.cancel();
+    _dependencies = dependencies;
+    _exports = exports;
+    _status = null;
   }
 
   Future<void> _export() async {
     final exports = _exports;
     if (exports == null || _busy) return;
+    final dependencies = _dependencies;
     final cancellation = ExportCancellation();
+    bool current() =>
+        mounted &&
+        identical(_dependencies, dependencies) &&
+        identical(_exports, exports) &&
+        identical(_cancellation, cancellation);
     setState(() {
       _busy = true;
       _cancellation = cancellation;
@@ -52,15 +79,15 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         ),
         cancellation: cancellation,
       );
-      if (!mounted) return;
+      if (!current() || cancellation.isCancelled) return;
       setState(() {
         _status = 'บันทึกแล้ว ${result.bytesWritten} ไบต์\n${result.path}';
       });
     } on ExportException catch (error) {
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _status = _failureText(error.code));
     } finally {
-      if (mounted) {
+      if (mounted && identical(_cancellation, cancellation)) {
         setState(() {
           _busy = false;
           _cancellation = null;
@@ -89,6 +116,10 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_exports == null) ...[
+              const Text('ระบบบันทึกไฟล์ไม่พร้อมใช้งาน'),
+              const SizedBox(height: 16),
+            ],
             Text(
               'เลือกรูปแบบไฟล์',
               style: Theme.of(context).textTheme.titleMedium,
@@ -191,7 +222,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                     )
                   : FilledButton.icon(
                       key: const ValueKey<String>('export-create'),
-                      onPressed: _export,
+                      onPressed: _exports == null ? null : _export,
                       icon: const Icon(Icons.save_alt_outlined),
                       label: const Text('สร้างและบันทึกไฟล์'),
                     ),

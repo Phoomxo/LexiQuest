@@ -1,0 +1,106 @@
+f03 Open the detailed word card from the Library
+
+FigCraft baseline 21b34eaa, feature_tasks_a.py task 3 and
+focused_library.py. The selected word card opens the lexical reader
+and returns to that card, set, and Library.
+
+Application 005ff46bf7e25b5a53bb1e2959f009872907480f on the FigCraft
+prototype branch. The reader uses the existing owned word route.
+It reads the current revision of the same word and preserves the
+bookmark restriction when opened from the saved words list.
+Known CEFR levels come from the stored word field. Missing or unknown
+values are labeled as unspecified. The authored expressions cover
+the noun station with the Thai meaning สถานี in a travel context.
+The reader adds no database or network operation for generating details.
+
+The two new widget tests first failed on the missing reader action.
+They then verified the stored A2 level, related words, returning to
+both existing searches at 200% text, and the current word after editing
+its meaning to สถานีวิทยุ. The edited revision keeps the original
+word, owner, and set IDs. The old vocabulary example and contextual
+terms disappear. Reading by itself leaves local rows unchanged.
+
+Windows Flutter passed 123 tests across architecture, vocabulary,
+Library, offline vocabulary, and both Review Desk journeys.
+Static analysis passed on both changed Dart files.
+
+Linux CI 43673909602 on application 005ff46b passed 2,445 Flutter
+tests, 267 backend CPU tests, Firestore and Supabase policy checks,
+static analysis, and the Android debug build. The raw CI log under
+build/ is s2-f03-source-ci-43673909602.txt. Its SHA-256 is
+30a368299a9408038484c64528d5b7fc4b4246cdff54ae3215ea29101da10440.
+
+The local and installed Android API 35 x64 debug APK share SHA-256
+22cc751e4d9f05a4778b6e48282cba62b3b59d675bd7453647568408a478ea2c.
+The isolated emulator used airplane mode, Wi-Fi off, system font 2.0,
+and an unbound guest. The synthetic A-F03-Travel-Synthetic set starts
+with station / สถานี at A2 and ticket without a stored level.
+
+The Library search A-F03 opened the selected set. Its search stat
+opened the station card. The reader displayed A2, railway station,
+bus station, stop, and the absence of a common antonym. All appeared
+on the captured Thai screen along with the return action.
+Back returned to the card and the set with search stat. The Library
+kept its A-F03 search. SQLite snapshots before and after the reader
+match byte for byte, including revision, outbox, and research counts.
+
+The ticket card showed an unspecified CEFR level and no authored
+relations. In the station card, the usual edit form saved the new
+meaning broadcast station. The reopened reader showed A2 and the new
+meaning, with the travel expressions removed. SQLite retained the
+exact word, owner and set IDs. The word advanced from revision 1 to 2
+and queued one normal vocabulary update. Practice, the contrast word,
+and research remained unchanged. Research events, consents and outbox
+counts were zero.
+
+The cold launch replaced PID 19101 with 21100. Reopening the same set,
+card and reader showed the edited meaning and the same A2 level. The
+edited and reopened SQLite snapshots match byte for byte.
+
+Windows records under build/, SHA-256
+s2-f03-reader-red.txt f700027e8e9373c5a57e3b13d27868b4d85df9ab3f13c11356ed3180a56f23c4
+s2-f03-verified.txt c0119c8da0ddfc650e107d729e384822217c6a7c2977a4ecee31d50cabd91c2f
+s2-f03-verified-analysis.txt 067dc7e66f5a56a4b8e3e826990362480f2b5b2a59496b0bf4c95f036ae37c39
+s2-f03-android-build.txt b1d1b9eeb6e56d9d0b6e2efd16f2578d7276f0e02397359035da21316840742f
+
+Android records under build/boss-android-evidence, SHA-256
+f03-lexical-fixture.sql 45b89870d5ed01e028e0a04907100c65571cbca24fe0019d857c7531461b3f25
+f03-installed-sha256.txt df53a1d9a6db982239f466d206457d2116583046c4ee3da3294a1e8e08b1256c
+f03-native-station-level.txt f013f3e269868139842af90804c78590441624e74d1ec3a70b649ee96b56e31e
+f03-native-station-level.png 838dd5ea99aaef7e7b2517d327d35f570a34f3f2c7ebc6503f8300cc9845555f
+f03-native-return-set.txt bc97f00dc1ee64b0452c4cd26529273413925a05a421cee5f2f0231ca686c868
+f03-native-return-library.txt 3856fbe2f87cf98e5acca78c8c95fdd239b64080523b12553d4cccf4d93e7eb2
+f03-native-ticket-unknown.txt 45403de7b48d57f3890ceb74b29b6ca2a212cad5cc9be9aae7456c77f7ae4405
+f03-native-edited-sense.txt 33ece1648586bce92f9fc2c78a37c36f670d7ce701ccb9d91769f6c3e9dcef65
+f03-native-reopened-sense.txt 33ece1648586bce92f9fc2c78a37c36f670d7ce701ccb9d91769f6c3e9dcef65
+f03-native-reopened-sense.png 6faf5a4bddf345e52b128e104cd2d222f167858e8070c5b8c287dc7e6af9e84f
+f03-native-cold-pids.txt c3f2da299e61ced71a7a55aeeda33070193e024753c58cb8a5fd79dbca689f5a
+f03-native-cold-launch.txt b866852d65bde6264dfebeac55ac400ed421ea9e24e42a1a86f8480cd0683e5d
+f03-native-db-baseline.json aaa21f660bd002fe651fb7bab4612a38b11f0fd2cc9092e585338b0a390499c0
+f03-native-db-edited.json 684e46ee08562c6f77ddf84f032ad496e1bf258752629978382a191086bafe1c
+
+f03-native-db-read.json has the baseline hash.
+f03-native-db-reopened.json has the edited hash.
+
+P3.2 word creation and editing observation
+
+In the same APK and set, add turnstile using the regular manual form.
+Read gate that turns from the new card and edit its meaning to rotating
+gate. The edited reader and a cold re-open both show the new meaning.
+The local word, owner and set IDs match the created row. The revision
+and normal vocabulary outbox count advance from one to two. The edited
+and reopened snapshots match. The new process replaced PID 21100 with
+22451. Research events, consents and outbox counts were zero.
+P3.2 also links the f04 content provenance journey.
+
+Android records under build/boss-android-evidence, SHA-256
+p32-native-add-filled.txt 559b83e4af72e2be986ce7f273ed869924511e3aabb811dac7622483a54b3e0e
+p32-native-added-reader.txt 277efaf373c049a598e2f3c86f4a26b4d1a2763450636a97c51b4a8d62311799
+p32-native-reopened-reader.txt 99faa8e218a7f31c14f17e91ccc5b2e0f3cbf01b0b267164c63d4b71957100f4
+p32-native-cold-pids.txt 054611cd06b91842e976f7d36dd4ea9378aaa7c4eebf9447de14431da60a6108
+p32-native-word-created.json d9865d9ea740b413737b53130dcdb47bf98ba38b3ecdf9483fa4a0f247e7ddb1
+p32-native-word-edited.json 86a3ed13adac2ebd3f9d82024eb744b173a8cfe27961e3da9b67f43f5d5327b9
+
+p32-native-word-reopened.json has the edited hash.
+
+Delivery APK and spoken TalkBack checks are pending.

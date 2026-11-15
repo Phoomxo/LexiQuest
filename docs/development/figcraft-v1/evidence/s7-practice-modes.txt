@@ -1,0 +1,88 @@
+S7 local practice unit: f07/f08/f12/f33
+2026-11-14; branch codex/figcraft-flutter-prototype; parent026be405.
+The commit containing this receipt identifies the verified source.
+
+Final frozen verification (Windows working-file bytes):
+  flutter analyze --no-pub: no issues, exit0, 8.5s.
+  dart format --output=none --set-exit-if-changed lib test:
+    514 files, zero changes, exit0, 4.84s.
+  Touched core/Quiz/SRS/ChooseMode/handwriting:159 PASS, 00:34.
+  Full flutter test --no-pub --reporter expanded:2150 PASS, exit0, 09:19.
+  All560 declared inputs identical before/after; s7-practice-inputs.tsv.
+  SHA256 377679c5a2fff8eed71ee86aa9ac828fc7547bda051496525d4f4e080d4e9e5d
+  Raw full log build/s7-practice-full-regression.txt
+  SHA256 e4c26dcc0037afcf1c91c253df9dd74726a1ef5149ade4ab6ab9890f89a49d11
+  Analysis build/s7-practice-final-analyze.txt
+  SHA256 8e5ce09ba8d5f4eaedc8d8eeb21202c83e28abba2d88452a32891a4e7cb4ce51
+  Format build/s7-practice-final-format.txt
+  SHA256 ac3be45cfa30a151f4932fad1496950b79e96287f1ed9f846b8df3da610ad7b5
+  Focused build/s7-practice-components-green.txt
+  SHA256 2ce8612085d7f08064b2cceee5e059b0b793f609790c0d85533ccc1c8020dfeb
+
+Implemented and exercised locally:
+  Existing menu/category/Quiz support Thai-to-English spelling choice and
+  one repository-authored English definition item pinned to21b34eaa.
+  Definition eligibility requires actual owner/category platform/ticket IDs,
+  original Thai travel senses and noun POS; unsupported material is explicit.
+  Complete candidate pools establish ambiguity before requested IDs/limits;
+  a conflicting101st row cannot silently qualify either new prompt mode.
+  One canonical prompt builder preserves legacy meaning/SRS option behavior.
+  Existing answer/session/XP issuer remains authoritative; new prompt kinds
+  persist as ordinary promptMode. Exact transport retry retains ID/time/ordinal;
+  an intentional same-question retry creates a distinct immutable attempt.
+  Quiz records original word identity and preserves mode/owner through repair.
+  Answer-save errors are inline so the retry remains accessible.
+  Owner expectation fences rehomed IDs at application entry; start/finish and
+  answer replay/rebuild check active owner inside their SQLite transaction.
+  Existing SRS offers optional factual companion help only after acknowledged
+  durable miss. Opening/skipping help adds no fact or reward; retry opens a new
+  recall session for the original word/owner and preserves the original result.
+  Failed/lost ACK, stale owner/scope, hidden gates and large Thai text covered.
+  Existing ChooseMode hosts category-bound handwriting/self-comparison with
+  strokes, dots, undo, clear and typed alternative. Drafts are transient;
+  same-owner unrelated updates retain them, owner/word revision changes clear
+  them. Drawing/reveal/self-assessment leave every SQLite table unchanged.
+  Both owner-lookup error boundaries show unavailable feedback without leaks.
+
+Observed negative evidence, before implementation/correction:
+  Initial prompt/scratchpad stubs:1PASS/8FAIL.
+  Owner foundation:7PASS/7FAIL; targeted mode stubs:11 semantic failures.
+  f33 UI:1PASS/12FAIL; genuine handwriting entry:2PASS/3FAIL.
+  Truncated candidate pool:0PASS/2FAIL,
+    build/s7-prompt-truncation-red.txt
+    SHA256 f0165c3a4c17c20740253f11e6456618a8521f22ffcb59fc7b2a0abd944f2e9c
+  Inactive exact replay:0PASS/1FAIL, build/s7-inactive-replay-red.txt
+    SHA256 873614f7ca9e7d17b1d374db83c4dd1464c6bb6c2ac0dabbbc28e8b9db607798
+  Stale failure SnackBar obscured SRS offer; corrected and13 new cases passed.
+  Handwriting owner lookup failures escaped before the narrow handler catch.
+  Test-driver-only pauses/closures/raw Back-await were corrected with bounded
+  real/fake pumping and an actual scoped Back tap; no assertions weakened.
+  Exact synthetic Flutter process trees2380/19412 were reconciled and stopped;
+  no VM/ADB/native or live database process was touched. Logs retained.
+
+Review and visual disposition:
+  Independent final core/Quiz/SRS and f12/menu reviews found no remaining
+  concrete P1/P2; prior owner replay, truncation and handler findings resolved.
+  Raw review build/s7-practice-final-review.md
+  SHA256 9e7fcead20631e16e1d64f85063eb8bb43d5547c85cd14452e0d14d14e722dc5
+  Raw f12 review build/s7-practice-final-f12-review.md
+  SHA256 062ee318a0ae8e44a39b0254fd74d1b528eff81c2218496fa30b41678be0c778
+  Full-run Thai200% Windows widget renders inspected after completion:
+    s7-definition-200.png
+    SHA256 f1807190fc435a10ad3d46b2274ce1686189fe7afc242d85c7ba1c3a4adb1a4f
+    s7-definition-feedback-200.png
+    SHA256 d415ef94bc6f48a7d406ae33b673477eba8dbd3df9b1d5929e480f46773c982c
+  Long text scrolls and the actual retry control remains reachable at48px+.
+  These are desktop synthetic renders, not Android/native/TalkBack evidence.
+
+Limits and continued work:
+  No schema/backend/dependency/frozen research contract change in this unit.
+  Schema11 remains current; v12 is unreserved. Prior exact-head CI success is
+  recorded in ci-026be405.txt. New-head CI still required after this commit.
+  This unit does not accept all48 screens/44 features/64 work packages.
+  Other catalogue gaps, f31 authority/metadata, later persistence and final
+  current APK/native/accessibility remain. f44 is offline camera-model
+  management, not learning-session deletion. No separate Pair Matching task.
+  Known-object camera accuracy stays not_checked without another user request;
+  emulator1837 installation ACK remains uncertain with no duplicate write.
+  No merge, deploy, real enrollment/upload or live account deletion.

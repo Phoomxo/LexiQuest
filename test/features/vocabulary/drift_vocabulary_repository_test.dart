@@ -95,6 +95,174 @@ void main() {
     expect((await words).single.spelling, 'Word 1');
   });
 
+  test(
+    'library summaries count active owner words and retain empty sets',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'empty-set', name: 'Empty', normalizedName: 'empty'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
+      );
+      for (var index = 1; index <= 4; index++) {
+        await repository.createWord(word(index));
+      }
+      await repository.createWord(
+        word(99, ownerId: 'owner-2', categoryId: 'other-set'),
+      );
+      final summaries = await repository.watchLibrary('owner-1').first;
+      expect(summaries, hasLength(2));
+      final travel = summaries.singleWhere(
+        (entry) => entry.category.id == 'category-1',
+      );
+      expect(travel.wordCount, 4);
+      expect(travel.previewSpellings, ['Word 1', 'Word 2', 'Word 3']);
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'empty-set')
+            .wordCount,
+        0,
+      );
+      final changed = repository
+          .watchLibrary('owner-1')
+          .firstWhere(
+            (entries) => entries.any(
+              (entry) =>
+                  entry.category.id == 'category-1' && entry.wordCount == 3,
+            ),
+          );
+      await repository.deleteWord(
+        ownerId: 'owner-1',
+        wordId: 'word-1',
+        nowUtc: createdAt,
+      );
+      expect(
+        (await changed)
+            .singleWhere((entry) => entry.category.id == 'category-1')
+            .previewSpellings,
+        ['Word 2', 'Word 3', 'Word 4'],
+      );
+    },
+  );
+
+  test(
+    'global search spans sets, excludes other owners and treats wildcards literally',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'set-b', name: 'Food', normalizedName: 'food'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
+      );
+      await repository.createWord(word(1));
+      await repository.createWord(word(2, categoryId: 'set-b'));
+      await repository.createWord(
+        word(3, ownerId: 'owner-2', categoryId: 'other-set'),
+      );
+      await repository.createWord(
+        word(
+          4,
+        ).copyWith(spelling: '100%_safe', normalizedSpelling: '100%_safe'),
+      );
+      expect(
+        (await repository.searchWords('owner-1', 'word').first).map(
+          (word) => word.id,
+        ),
+        ['word-1', 'word-2'],
+      );
+      expect(
+        (await repository.searchWords('owner-1', 'meaning 2').first)
+            .single
+            .categoryId,
+        'set-b',
+      );
+      expect(
+        (await repository.searchWords('owner-1', '%').first).single.id,
+        'word-4',
+      );
+      expect(
+        (await repository.searchWords('owner-1', '_').first).single.id,
+        'word-4',
+      );
+      expect(await repository.searchWords('owner-1', '').first, isEmpty);
+      await repository.deleteCategory(
+        ownerId: 'owner-1',
+        categoryId: 'set-b',
+        nowUtc: createdAt,
+      );
+      expect(
+        await repository.searchWords('owner-1', 'meaning 2').first,
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'global search limits owner results after filtering on stored level',
+    () async {
+      await repository.createCategory(category());
+      await repository.createCategory(
+        category(id: 'set-b', name: 'Food', normalizedName: 'food'),
+      );
+      await repository.createCategory(
+        category(id: 'other-set', ownerId: 'owner-2'),
+      );
+      for (var index = 0; index < 60; index++) {
+        await repository.createWord(
+          word(index, categoryId: index < 30 ? 'category-1' : 'set-b'),
+        );
+      }
+      final matching = word(
+        99,
+        categoryId: 'set-b',
+      ).copyWith(cefrLevel: ' a2 ');
+      await repository.createWord(matching);
+      await repository.createWord(
+        word(
+          100,
+          ownerId: 'owner-2',
+          categoryId: 'other-set',
+        ).copyWith(cefrLevel: 'A2'),
+      );
+      final found = await repository.searchWords('owner-1', 'word').first;
+      expect(found, hasLength(50));
+      expect(found.map((word) => word.id).toSet(), hasLength(50));
+      expect(found.map((word) => word.id), isNot(contains(matching.id)));
+      expect(
+        (await repository.searchWords('owner-1', 'word', cefrLevel: 'A2').first)
+            .single
+            .id,
+        matching.id,
+      );
+      final summaries = await repository.watchLibrary('owner-1').first;
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'set-b')
+            .cefrLevels,
+        {'A2'},
+      );
+      expect(
+        summaries
+            .singleWhere((entry) => entry.category.id == 'category-1')
+            .cefrLevels,
+        isEmpty,
+      );
+      final updated = repository
+          .watchLibrary('owner-1')
+          .firstWhere(
+            (items) => items.every((entry) => entry.cefrLevels.isEmpty),
+          );
+      await repository.deleteWord(
+        ownerId: 'owner-1',
+        wordId: matching.id,
+        nowUtc: createdAt,
+      );
+      expect(await updated, hasLength(2));
+    },
+  );
+
   test('repository reconstruction reads persisted vocabulary', () async {
     await repository.createCategory(category());
     await repository.createWord(word(1));
@@ -197,6 +365,119 @@ void main() {
       expect(storedWord.localRevision, 3);
     },
   );
+
+  test(
+    'a pinned edit cannot overwrite a newer word or append another mutation',
+    () async {
+      await database.customStatement(
+        'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+        ['owner-2'],
+      );
+      await repository.createCategory(category());
+      final original = await repository.createWord(word(1));
+      final winner = await repository.updateWord(
+        original.copyWith(
+          meaning: 'New meaning',
+          normalizedMeaning: 'new meaning',
+          updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+        ),
+      );
+      final winningRow = await database
+          .select(database.vocabularyWords)
+          .getSingle();
+
+      await expectLater(
+        repository.updateWord(
+          original.copyWith(
+            meaning: 'Stale meaning',
+            normalizedMeaning: 'stale meaning',
+            updatedAtUtc: createdAt.add(const Duration(minutes: 2)),
+          ),
+          expectedWord: original,
+        ),
+        throwsA(isA<StaleVocabularyWordFailure>()),
+      );
+      expect(winner.localRevision, 2);
+      expect(winningRow.meaning, 'New meaning');
+      expect(
+        await database.select(database.vocabularyWords).getSingle(),
+        winningRow,
+      );
+      final wordWrites = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityId.equals(original.id))).get();
+      expect(
+        wordWrites.map((row) => row.operationId),
+        unorderedEquals(['word:word-1:1', 'word:word-1:2']),
+      );
+    },
+  );
+
+  test(
+    'a pinned edit cannot overwrite synced content at the same revision',
+    () async {
+      await database.customStatement(
+        'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+        ['owner-2'],
+      );
+      await repository.createCategory(category());
+      final original = await repository.createWord(word(1));
+      await database.customStatement(
+        'UPDATE vocabulary_words '
+        'SET meaning = ?, normalized_meaning = ?, cloud_revision = local_revision '
+        'WHERE id = ?',
+        ['Synced meaning', 'synced meaning', original.id],
+      );
+      final synced = await database
+          .select(database.vocabularyWords)
+          .getSingle();
+      expect(synced.localRevision, original.localRevision);
+      expect(synced.meaning, 'Synced meaning');
+      final outbox = await database.select(database.outboxOperations).get();
+
+      await expectLater(
+        repository.updateWord(
+          original.copyWith(
+            meaning: 'Stale meaning',
+            normalizedMeaning: 'stale meaning',
+            updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+          ),
+          expectedWord: original,
+        ),
+        throwsA(isA<StaleVocabularyWordFailure>()),
+      );
+      expect(
+        await database.select(database.vocabularyWords).getSingle(),
+        synced,
+      );
+      expect(await database.select(database.outboxOperations).get(), outbox);
+    },
+  );
+
+  test('a pinned edit cannot write after its owner goes inactive', () async {
+    await repository.createCategory(category());
+    final original = await repository.createWord(word(1));
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+      [original.ownerId],
+    );
+    final before = await database.select(database.vocabularyWords).getSingle();
+    final outbox = await database.select(database.outboxOperations).get();
+
+    await expectLater(
+      repository.updateWord(
+        original.copyWith(
+          meaning: 'Stale owner meaning',
+          normalizedMeaning: 'stale owner meaning',
+          updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+        ),
+        expectedWord: original,
+      ),
+      throwsA(isA<VocabularyFailure>()),
+    );
+    expect(await database.select(database.vocabularyWords).getSingle(), before);
+    expect(await database.select(database.outboxOperations).get(), outbox);
+  });
 
   test(
     'every accepted mutation appends one deterministic outbox row',

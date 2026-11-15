@@ -7,6 +7,149 @@ import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_im
 void main() {
   Uint8List bytes(String value) => Uint8List.fromList(utf8.encode(value));
 
+  Matcher fileFailure(String code) => throwsA(
+    isA<VocabularyImportFileFailure>().having(
+      (error) => error.code,
+      'code',
+      code,
+    ),
+  );
+
+  test('practice draft keeps invalid JSON editable until repaired', () {
+    const unfinished = '[{"word":"pencil","meaning":"ดินสอ"}\n';
+    final draft = readVocabularyImportDraft(
+      fileName: 'ของในกระเป๋า.JSON',
+      mimeType: 'application/json; charset=utf-8',
+      bytes: bytes('\ufeff$unfinished'),
+    );
+
+    expect(draft, unfinished);
+    expect(
+      () => parseVocabularyImportPractice(draft),
+      fileFailure('malformedJson'),
+    );
+    expect(parseVocabularyImportPractice('$draft]'), [
+      (word: 'pencil', meaning: 'ดินสอ'),
+    ]);
+  });
+
+  test(
+    'practice keeps order and display text and accepts legacy translation',
+    () {
+      expect(
+        parseVocabularyImportPractice(
+          '[{"word":" Pencil  Case ","meaning":" กล่องดินสอ ",'
+          '"translation":"ignored","partOfSpeech":23},'
+          '{"word":"wallet","translation":"กระเป๋าสตางค์"}]',
+        ),
+        [
+          (word: 'Pencil  Case', meaning: 'กล่องดินสอ'),
+          (word: 'wallet', meaning: 'กระเป๋าสตางค์'),
+        ],
+      );
+    },
+  );
+
+  test('practice draft validates file type, byte limit, and encoding', () {
+    for (final fixture in [
+      (
+        name: 'words.csv',
+        mime: 'text/csv',
+        data: bytes('[]'),
+        code: 'unsupportedType',
+      ),
+      (
+        name: 'words.json',
+        mime: 'image/png',
+        data: bytes('[]'),
+        code: 'unsupportedType',
+      ),
+      (name: 'words.json', mime: null, data: bytes(' \n'), code: 'emptyFile'),
+      (
+        name: 'words.json',
+        mime: null,
+        data: Uint8List(maxVocabularyImportBytes + 1),
+        code: 'fileTooLarge',
+      ),
+      (
+        name: 'words.json',
+        mime: null,
+        data: Uint8List.fromList([0xff]),
+        code: 'invalidEncoding',
+      ),
+    ]) {
+      expect(
+        () => readVocabularyImportDraft(
+          fileName: fixture.name,
+          mimeType: fixture.mime,
+          bytes: fixture.data,
+        ),
+        fileFailure(fixture.code),
+        reason: fixture.code,
+      );
+    }
+  });
+
+  test('practice rejects invalid shapes and incomplete rows as a whole', () {
+    expect(() => parseVocabularyImportPractice('[]'), fileFailure('emptyFile'));
+    expect(
+      () => parseVocabularyImportPractice('{}'),
+      fileFailure('invalidPracticeList'),
+    );
+    const firstRow = '{"word":"pencil","meaning":"ดินสอ"}';
+    for (final invalidRow in [
+      '1',
+      '{"word":17,"meaning":"กระเป๋าสตางค์"}',
+      '{"word":"wallet","meaning":4,"translation":"กระเป๋าสตางค์"}',
+      '{"word":"wallet","meaning":" "}',
+      '{"word":"wallet"}',
+    ]) {
+      expect(
+        () => parseVocabularyImportPractice('[$firstRow,$invalidRow]'),
+        fileFailure('invalidPracticeRow'),
+        reason: invalidRow,
+      );
+    }
+  });
+
+  test('edited practice text enforces UTF-8 byte and row limits', () {
+    const row = '{"word":"pencil","meaning":"ดินสอ"}';
+    final allowedRows = List.filled(maxVocabularyImportRows, row).join(',');
+    expect(
+      parseVocabularyImportPractice('[$allowedRows]'),
+      hasLength(maxVocabularyImportRows),
+    );
+    expect(
+      () => parseVocabularyImportPractice('[$allowedRows,$row]'),
+      fileFailure('tooManyRows'),
+    );
+    final largeMeaning = 'ก' * (maxVocabularyImportBytes ~/ 3);
+    expect(
+      () => parseVocabularyImportPractice(
+        '[{"word":"pencil","meaning":"$largeMeaning"}]',
+      ),
+      fileFailure('fileTooLarge'),
+    );
+  });
+
+  test(
+    'legacy translation alone still requires correction for saved imports',
+    () {
+      final preview = parseVocabularyImportFile(
+        fileName: 'words.json',
+        bytes: bytes(
+          '[{"word":"pencil","translation":"ดินสอ","partOfSpeech":"noun"}]',
+        ),
+      );
+
+      expect(
+        preview.rows.single.status,
+        VocabularyImportPreviewStatus.needsEdit,
+      );
+      expect(preview.rows.single.failureCode, 'missingMeaning');
+    },
+  );
+
   test('CSV keeps quoted commas and escaped quotes', () {
     final preview = parseVocabularyImportFile(
       fileName: 'travel.csv',
@@ -40,6 +183,26 @@ void main() {
 
     expect(preview.rows.single.word, 'station');
     expect(preview.rows.single.status, VocabularyImportPreviewStatus.ready);
+  });
+
+  test('Android DocumentsUI CSV MIME previews the actual Thai fixture', () {
+    final selectedBytes = bytes(
+      'word,meaning,partOfSpeech\r\n'
+      'station,สถานี,noun\r\n'
+      'ticket,ตั๋ว,noun\r\n',
+    );
+    expect(selectedBytes, hasLength(83));
+    final preview = parseVocabularyImportFile(
+      fileName: 'FigCraft-A-20261114.csv',
+      mimeType: 'text/comma-separated-values',
+      bytes: selectedBytes,
+    );
+
+    expect(preview.readyCount, 2);
+    expect(preview.needsEditCount, 0);
+    expect(preview.duplicateCount, 0);
+    expect(preview.rows.map((row) => row.word), ['station', 'ticket']);
+    expect(preview.rows.map((row) => row.meaning), ['สถานี', 'ตั๋ว']);
   });
 
   test('preview separates invalid and duplicate rows', () {

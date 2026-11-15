@@ -30,6 +30,7 @@ final class ImportVocabulary {
     required String categoryId,
     required List<Map<String, String>> rows,
     required String sourceName,
+    String? expectedOwnerId,
     bool Function()? isCancelled,
   }) async {
     final cancellation = isCancelled ?? _neverCancelled;
@@ -41,6 +42,10 @@ final class ImportVocabulary {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
     final owner = await owners.getOrCreateActiveOwner();
+    if ((expectedOwnerId != null && expectedOwnerId != owner.id) ||
+        cancellation()) {
+      throw const VocabularyImportCancelled();
+    }
     final canonicalCategoryId = categoryId.trim();
     if (canonicalCategoryId.isEmpty) {
       throw ArgumentError.value(categoryId, 'categoryId', 'must not be blank');

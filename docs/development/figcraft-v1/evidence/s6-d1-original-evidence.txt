@@ -1,0 +1,66 @@
+S6-D1 original-answer evidence,2026-11-14. Integration parent65c2719c86fa0f772838b107cb7f768005aba5bd.
+Worktree C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
+Branch codex/figcraft-flutter-prototype. Flutter3.44.7/Dart3.12.2, Windows.
+
+Final frozen source: flutter test --no-pub --reporter expanded:1999 PASS.
+flutter analyze --no-pub: no issues,11.9s. Fifteen Dart files formatted unchanged.
+547 declared inputs stayed identical before/after, including all current source/tests.
+s6-d1-inputs.tsv SHA256 4cb1c2a9cac499a0b5198eaa99db5d7b6c663b93ef62687f92995fa84b3c0c3e
+Replay with python tool/figcraft/fingerprint_inputs.py build/replay.tsv.
+
+Verified behavior:
+- Existing public recordAnswer API/commands/results unchanged. Original NEW local
+  answer captures bounded versioned calendar/Quest columns in its learning transaction.
+  Replay returns before capture/gates/resolution and preserves exact bytes or NULL.
+  Actual file SQLite commit, close/reopen and catalog-less replay keep one fact/grant.
+- Original stored milliseconds select the calendar rule, including microsecond epoch
+  bounds and same-ms retry. Exact UTC segment unions, civil day/Monday, offset,
+  original origin/rule/tzdb/policy and independent cadence pins are retained.
+  Codec enforces canonical JSON, strict keys/types/versions, duplicate-key rejection,
+  64KiB UTF8 per column, exact integer/half-open membership and cross-column identity.
+  Historical captured evidence does not require today's timezone database.
+- Default UTC rule is created once for that owner only at new-answer collection.
+  Retired/future/gapped/overlapping/wrong-origin/unknown authority fails closed for
+  motivation. Rule insertion uses an actual nested SQLite savepoint; core SRS failure
+  rolls back answer/default epoch/base XP/coins/outbox, while optional failure preserves learning.
+- Original enabled intent becomes pending only after a durable original rule and
+  exact archived initial pins are provable. Pending requires epoch>=0 and occurrence
+  in that lower bound, one authored activation0 revision per cadence and same DB.
+  Unknown/ambiguous references and invalid windows are unavailable, never retrofitted.
+- Catalog snapshots complete authored canonical bytes/digest before await, archives
+  insert-if-absent and verifies exact contents; no legacy replacement/instance seed.
+  Daily5/XP50 and weekly20/XP200 remain the existing authored definitions. Daily/weekly
+  families must differ; revisions activate at FIRST original period segment start.
+- Bootstrap shares exact registry objects and checks QuestV2, V2 Mastery and host
+  Mastery before constructing/installing the catalog. LIMITED stays visible. Hidden
+  gates produce no Quest factory/archive/intent/grants/research and permit learning.
+  Visible catalog failure records unavailable eligibility and still permits learning.
+- New-answer collection fences inactive owners; historical fixture now switches to
+  each real owner while recording and restores previous flags transactionally.
+- Real captured stamps traverse current-row outbox serialization as core-only data.
+  Incoming camel/snake metadata copies are discarded, including on a new remote
+  answer; exact local replay retains its original bytes. No remote entitlement,
+  claim/receipt/Quest instance/research rows or new outbox kinds are produced.
+
+Independent final review accepted D1 scope; raw failure evidence retained:
+primitives41pass28fail, learning9pass9fail, bootstrap0pass5fail, pending15pass3fail,
+catalog boundaries18pass2fail, late calendar39pass1fail, existing callers174pass2fail.
+Focused GREEN: touched subsystems243; real typed sync/codec/catalog43; callers/widgets95.
+The pre-epoch -1microsecond test passed unchanged; no unnecessary DateTime patch.
+
+Raw log SHA256:
+s6-d1-full-regression.txt 5732c824d97687e68c25299d629e54e624d240eee4992cace54ba6f2dba4f40a
+s6-d1-final-analyze.txt a7ffde3716b18fb5ed608df5805ae494363361c74b76a8a884ff39a7951c1d7a
+s6-d1-primitives-red.txt 09f024203f79c92265c98c89f1de31ecb61e4e2819459432820710484c9172c8
+s6-d1-learning-red.txt b7569c9b449fcff434c7f414eb8dd95492d12bfaecd904e85828481d34f1498e
+s6-d1-bootstrap-red.txt 48297a0d2a7c7dcb3bd0d6b12830d3132e76b9434cb3d78aa139d0b3a7317805
+s6-d1-catalog-boundaries-red.txt 2657d2e273d9dfada9d4b02f1e0963d92acf47df227f085648b2811582aa79f7
+s6-d1-late-calendar-and-epoch.txt 50003b30b14564cb350863814ab37ed765bdf03974ee7df40aa4a70acddc69ee
+s6-d1-typed-sync-green.txt 89606a831ed736dfaaa120810f885fe60dcf614bd9c824f77ea8fbcbe4559843
+
+Limits: D2 reconstruction/public claim/receipt+XP recovery, D3 Streak assets/zone
+scheduling and D4 Mastery/Profile integration remain required. No claim/research
+efficacy, current-source native APK/device validation or full48/44/64 acceptance.
+CI65c2719c is earlier source, not this dirty D1. No schema/backend/dependency change,
+deployment, enrollment, real upload or live deletion. Known-object camera accuracy
+remains not_checked; emulator install acknowledgement remains uncertain.

@@ -20,12 +20,14 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.voice,
     this.speechPractice,
     this.learning,
+    this.returnLabel,
   });
 
   final String? referenceSentence;
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
+  final String? returnLabel;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -118,7 +120,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_starting) return;
+    if (_starting || ModalRoute.isCurrentOf(context) != true) return;
     if (_listening) {
       await _speech?.stop();
       if (mounted) setState(() => _listening = false);
@@ -225,7 +227,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
+    // Android's own permission prompt makes the app inactive during startup.
+    if ((state == AppLifecycleState.inactive && !_starting) ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
@@ -249,9 +252,48 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     _speechEpoch += 1;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());
-    unawaited(_voice.stop());
-    _voice.disposeIfOwned(_ownsVoice);
+    if (_ownsVoice) {
+      _voice.disposeIfOwned(true);
+    } else {
+      _voice.stop().ignore();
+    }
     super.dispose();
+  }
+
+  Future<void> _openSilentPractice(String reference) async {
+    final route = ModalRoute.of(context);
+    if (_starting || _listening || route?.isCurrent != true) return;
+    _voice.stop().ignore();
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'practice/shadowing/no-mic',
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            toolbarHeight: M3Theme.appBarToolbarHeight(context),
+            title: M3Theme.appBarTitle(context, 'ฝึกโดยไม่ใช้ไมค์'),
+          ),
+          body: AdaptiveContentPane(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Text(
+                  reference,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 12),
+                const Text('ลองอ่านประโยคออกเสียงด้วยตัวเอง'),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: const Text('กลับไปฝึกพูด'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -366,6 +408,18 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                   ),
                 ],
               ],
+              if (reference != null)
+                OutlinedButton(
+                  onPressed: _listening || _starting
+                      ? null
+                      : () => _openSilentPractice(reference),
+                  child: const Text('ฝึกโดยไม่ใช้ไมค์'),
+                ),
+              if (widget.returnLabel case final label?)
+                TextButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(label),
+                ),
             ],
           ),
         ),

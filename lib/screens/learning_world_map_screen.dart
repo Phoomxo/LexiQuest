@@ -20,7 +20,9 @@ class CampaignNode {
 }
 
 class LearningWorldMapScreen extends StatelessWidget {
-  const LearningWorldMapScreen({super.key});
+  const LearningWorldMapScreen({super.key, this.sampleDeck = false});
+
+  final bool sampleDeck;
 
   final List<CampaignNode> _nodes = const [
     CampaignNode(
@@ -67,15 +69,25 @@ class LearningWorldMapScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
-        title: M3Theme.appBarTitle(context, 'แผนที่การเรียนรู้'),
+        title: M3Theme.appBarTitle(
+          context,
+          sampleDeck ? 'เลือกคำตามระดับ' : 'แผนที่การเรียนรู้',
+        ),
         centerTitle: true,
       ),
       body: AdaptiveContentPane(
         child: ListView.builder(
           padding: const EdgeInsets.all(20),
-          itemCount: _nodes.length,
+          itemCount: _nodes.length + (sampleDeck ? 1 : 0),
           itemBuilder: (context, index) {
+            if (index == _nodes.length) {
+              return OutlinedButton(
+                onPressed: () => Navigator.maybePop(context),
+                child: const Text('กลับไปเลือกบทเรียน'),
+              );
+            }
             final node = _nodes[index];
+            final sample = CefrSelectionScreen.samples[node.level];
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
@@ -92,8 +104,10 @@ class LearningWorldMapScreen extends StatelessWidget {
                         context,
                         AppPage<void>(
                           name: 'learning/cefr',
-                          builder: (_) =>
-                              CefrSelectionScreen(initialLevel: node.level),
+                          builder: (_) => CefrSelectionScreen(
+                            initialLevel: node.level,
+                            sampleDeck: sampleDeck,
+                          ),
                         ),
                       ),
                       child: Padding(
@@ -115,14 +129,18 @@ class LearningWorldMapScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    node.title,
+                                    sampleDeck && sample != null
+                                        ? '${node.level} · ${sample.topic}'
+                                        : node.title,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.titleMedium,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    node.description,
+                                    sampleDeck && sample != null
+                                        ? '${sample.word} · บัตรคำตัวอย่าง'
+                                        : node.description,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodySmall,
@@ -137,7 +155,7 @@ class LearningWorldMapScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (index < _nodes.length - 1)
+                  if (!sampleDeck && index < _nodes.length - 1)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 4),
                       child: Icon(Icons.arrow_downward),

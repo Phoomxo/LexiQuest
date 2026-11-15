@@ -1,0 +1,43 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart
+00:00 +0: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:01 +1: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +2: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +3: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +4: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +5: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +6: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +7: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +8: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +9: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +10: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +11: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +12: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +13: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +14: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +15: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +16: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:02 +17: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +18: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +19: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +20: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +21: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +22: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:03 +23: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:03 +24: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:03 +25: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: due review returns to the same shell with its saved result
+00:03 +26: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: due review returns to the same shell with its saved result
+00:04 +27: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: due review returns to the same shell with its saved result
+00:04 +28: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: field destinations switch the persistent IndexedStack
+00:04 +29: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: field destinations switch the persistent IndexedStack
+00:04 +30: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: field destinations switch the persistent IndexedStack
+00:04 +31: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: shell controls remain usable at 200 percent text scale
+00:04 +32: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer keeps completed local features during cloud outage
+00:04 +33: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer keeps completed local features during cloud outage
+00:05 +34: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer keeps completed local features during cloud outage
+00:05 +35: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: field composition exposes completed field destinations
+00:05 +36: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer vocabulary item keeps the category workspace selected
+00:05 +37: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: limited features explain requirements and offer setup actions
+00:05 +38: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: limited features explain requirements and offer setup actions
+00:05 +39: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: enabled features do not show limited-state disclosure
+00:05 +40: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: limited disclosures remain usable at 200 percent text scale
+00:06 +41: All tests passed!

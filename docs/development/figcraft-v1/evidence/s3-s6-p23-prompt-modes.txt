@@ -1,0 +1,105 @@
+P2.3 Meaning, authored definition and typed recall
+
+Application 2261454fe3487d3a835d9e920db336cd7202ef0b. Android ran
+the API 35 x86_64 debug APK at font scale 2.0, with airplane mode,
+Wi-Fi off and a single unbound local guest. Host and installed
+APK SHA-256 equal
+43c0e4a433289fc3dfd2ae278599eecd35785c93b70f0afa1d6c69e72f30fa5f.
+The pinned design at 21b34eaa lists f08 in feature_tasks_a.py and
+f17 in feature_tasks_b.py.
+
+f08 Authored definition
+
+From ดูแบบฝึกทั้งหมด, choose อ่านนิยามแล้วหาคำ. One fixture maps
+platform to เวที. Another has platform and ticket plus a second
+word with ตั๋ว. Both show ยังไม่มีคู่นิยามที่รองรับ and return to
+the activities. The before and after SQLite digest is
+97376659b9e2cc2816618c821020d9fc3ab5afe6c3421fbdc977140a77c45ea2.
+It covers sessions, answers, points, rewards and outbox.
+
+The Cloze-Synthetic set contains the owned noun pair
+platform — ชานชาลา and ticket — ตั๋ว. The quiz displays the
+pinned English railway definition. Choosing ticket displays the
+real pair and หลักฐานที่ใช้โดยสาร. ลองข้อเดิม returns to the
+same question. Choosing platform explains that it is the place
+where passengers wait for a train. Score shows 50% from two
+attempts. Back to activities shows the definition mode again.
+
+SQLite recorded one incorrect ticket attempt and one correct
+platform attempt, both attached to the original platform word
+and slot. The plan retains both owned word snapshots and the
+exam_routes.py pin. One correct-answer point and one quiz reward
+were linked to the correct attempt.
+
+f17 Save and retry
+
+From F17-Save-Retry-Synthetic in Library, configure one question
+and select ชานชาลา for platform. A bounded empty SQLite writer
+transaction on the isolated emulator held BEGIN IMMEDIATE. A
+second connection independently returned SQLITE_BUSY (5).
+While the writer was held, the genuine APK showed
+บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง and ลองบันทึกอีกครั้ง.
+Correct feedback was absent. The before and during SQLite digest
+matched at da9801818b5e99ead92f2a699b571fb7bbd7d74de88b5a878e57a9d5e1ea6883.
+
+The empty transaction rolled back and a new writer acquired and
+released the lock. Tapping ลองบันทึกอีกครั้ง committed the existing
+choice and displayed ถูกต้อง with platform — ชานชาลา. Score showed
+100% (1 of 1) and returned to the original set with the same
+latest result. SQLite recorded one answer, one point and one
+quiz reward. Research events, consents and research outbox were zero.
+
+The Windows tests use the same real Drift repository with controlled
+errors before the commit and after the commit, including the lost
+acknowledgement case. Until acknowledgement, the UI shows save failure
+and holds the answer. Retry sends the same command and leaves one
+answer, one point and one coin. A deliberate answer retry receives
+a distinct attempt and does not replay the previous cursor transition.
+
+The other P2.3 modes on the same APK
+
+For English from Thai, open the reverse mode and F07-Contrast-Synthetic.
+Selecting station for ชานชาลา displayed both actual word pairs.
+Retrying the same question with platform and then answering station
+produced 67% with two correct choices across three attempts.
+SQLite retained three spellingChoice attempts. Score returned
+to the activities.
+
+For typed recall, open ฝึกจากไฟล์ in the owned set and confirm
+f11-source-recall.txt. The original text is Meet me at the station.
+After two readings, the recall step hid the passage. Typing staton
+showed the original answer and station from the passage. Editing
+it to ` Station ` advanced to the next step after trimming and
+case normalization. The learner wrote I live near the station.
+Score showed 0% for the one original recall attempt and retained
+the written sentence. SQLite recorded one associativeRecall
+attempt for the owned station. The explicit return reopened the
+same Source and Android Back returned to the same set.
+
+Cold reopen and artifact checks
+
+Android reported a cold launch with PID 7694 changing to 11637.
+History reopened the definition at 50% and the saved retry at
+100%. Both retained the original responses. The completed and
+reopened snapshots have matching SHA-256:
+  f08 c44ddc257798cc11f25197865529fbeda467c020022798e080f167d5269e4f4d
+  f17 724d28611efd822ae89ea58b26b7d6d2d5c50400857a033e4e0d40dcfc19aa1d
+
+The matching result evidence under build/boss-android-evidence/
+includes p23-native-f08-*.txt, p23-native-f17-*.txt and the
+completed/reopened JSON files. The other completed snapshot hashes
+are:
+  reverse 53f3c777ca6f7c32ff56d4f8bf876075ba7becb731b3e06de64ac1883f63aa33
+  typed   08acfd65d6dcc40ee94539ec72d71dd74fbd2a9d8b4e51296b68bc4f59e42b7c
+
+Windows and CI
+
+Windows passed 106 cases covering the quiz policy, round codec,
+real Drift answer handling, normal UI and typed recall. The raw
+build/s3-s6-p23-focused.txt log has SHA-256
+cb7f9bf49871f11e1a9da3e3797597eadd443f9f7304d6483c56ab8a21527034.
+The exact application CI run 43682172257 passed 2,452 Flutter
+and 267 backend tests, both databases' contract checks, analysis
+and Android debug build.
+
+Signed Android and spoken TalkBack remain pending.

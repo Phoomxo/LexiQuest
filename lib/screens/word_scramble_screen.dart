@@ -58,7 +58,8 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
             context,
             AppPage<void>(
               name: 'learning/fill-blanks',
-              builder: (context) => FillInTheBlanksScreen(word: widget.word),
+              builder: (context) =>
+                  LegacySentenceOrderingScreen(word: widget.word),
             ),
             replace: true,
           );

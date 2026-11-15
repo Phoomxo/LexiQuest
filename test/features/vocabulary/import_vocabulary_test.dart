@@ -280,6 +280,23 @@ void main() {
     );
   });
 
+  test('a reviewed import rejects a destination from a new owner', () async {
+    final category = await vocabulary.createCategory('Travel');
+    await expectLater(
+      importer(
+        categoryId: category.id,
+        sourceName: 'travel.csv',
+        expectedOwnerId: 'local:previous-owner',
+        rows: const [
+          {'word': 'station', 'meaning': 'สถานี', 'partOfSpeech': 'noun'},
+        ],
+      ),
+      throwsA(isA<VocabularyImportCancelled>()),
+    );
+    expect(await database.select(database.vocabularyImports).get(), isEmpty);
+    expect(await database.select(database.vocabularyWords).get(), isEmpty);
+  });
+
   test('reopen keeps imported words and replays the same import', () async {
     await database.close();
     databaseClosed = true;

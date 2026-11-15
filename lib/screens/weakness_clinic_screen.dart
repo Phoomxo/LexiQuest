@@ -6,6 +6,7 @@ import '../runtime/app_dependencies.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
@@ -18,11 +19,13 @@ class WeaknessClinicScreen extends StatefulWidget {
     this.loader,
     this.learning,
     this.featureRegistry,
+    this.expectedOwnerId,
   });
 
   final ProgressLoader? loader;
   final LearningUseCases? learning;
   final FieldFeatureRegistry? featureRegistry;
+  final String? expectedOwnerId;
 
   @override
   State<WeaknessClinicScreen> createState() => _WeaknessClinicScreenState();
@@ -30,23 +33,42 @@ class WeaknessClinicScreen extends StatefulWidget {
 
 class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
   Future<ProgressSnapshot>? _load;
+  AppDependencies? _dependencies;
+  ProgressLoader? _resolvedLoader;
+  LearningUseCases? _learning;
+  bool _hadScope = false;
+  int _generation = 0;
 
-  ProgressLoader? get _loader =>
-      widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+  ProgressLoader? get _loader {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    return dependencies == null
+        ? (_hadScope ? null : widget.loader)
+        : dependencies.progress?.load;
+  }
+
+  LearningUseCases? get _currentLearning {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    return dependencies == null
+        ? (_hadScope ? null : widget.learning)
+        : dependencies.learning;
+  }
 
   Future<ProgressSnapshot> _loadProgress() {
-    final loader = _loader;
-    return loader == null
+    final loader = _resolvedLoader;
+    final next = loader == null
         ? Future<ProgressSnapshot>.error(
             StateError('progress dependency unavailable'),
           )
         : Future<ProgressSnapshot>.sync(loader);
+    next.ignore();
+    return next;
   }
 
   void _retry() {
     if (!mounted) return;
     final next = _loadProgress();
     setState(() {
+      _generation++;
       _load = next;
     });
   }
@@ -54,12 +76,43 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_load != null) return;
-    _load = _loadProgress();
+    _bindSources();
   }
 
   @override
+  void didUpdateWidget(covariant WeaknessClinicScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindSources();
+  }
+
+  void _bindSources() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (dependencies != null) _hadScope = true;
+    final loader = _loader;
+    final learning = _currentLearning;
+    if (_load != null &&
+        identical(dependencies, _dependencies) &&
+        loader == _resolvedLoader &&
+        identical(learning, _learning)) {
+      return;
+    }
+    _dependencies = dependencies;
+    _resolvedLoader = loader;
+    _learning = learning;
+    _generation++;
+    _load = _loadProgress();
+  }
+
+  bool _current(int generation) =>
+      mounted &&
+      generation == _generation &&
+      identical(AppDependenciesScope.maybeOf(context), _dependencies) &&
+      _loader == _resolvedLoader &&
+      identical(_currentLearning, _learning);
+
+  @override
   Widget build(BuildContext context) {
+    final generation = _generation;
     final features =
         widget.featureRegistry ??
         AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
@@ -71,6 +124,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
       ),
       body: AdaptiveContentPane(
         child: FutureBuilder<ProgressSnapshot>(
+          key: ValueKey(_generation),
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -100,11 +154,12 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
             }
             return _WeaknessBody(
               progress,
-              learning: widget.learning,
-              canQuiz: features.isVisible(FieldFeature.quiz),
-              canReview: features.isVisible(FieldFeature.srs),
+              learning: _learning,
+              features: features,
+              expectedOwnerId: widget.expectedOwnerId,
+              isCurrent: () => _current(generation),
               onReturn: () {
-                if (!mounted) return;
+                if (!_current(generation)) return;
                 _retry();
               },
             );
@@ -119,20 +174,33 @@ class _WeaknessBody extends StatelessWidget {
   const _WeaknessBody(
     this.progress, {
     this.learning,
-    required this.canQuiz,
-    required this.canReview,
+    required this.features,
+    this.expectedOwnerId,
+    required this.isCurrent,
     required this.onReturn,
   });
 
   final ProgressSnapshot progress;
   final LearningUseCases? learning;
-  final bool canQuiz;
-  final bool canReview;
+  final FieldFeatureRegistry features;
+  final String? expectedOwnerId;
+  final bool Function() isCurrent;
   final VoidCallback onReturn;
 
   @override
   Widget build(BuildContext context) {
     final practiceWords = progress.weaknesses.take(20).toList(growable: false);
+    final capabilities =
+        AppDependenciesScope.maybeOf(context)?.features ??
+        const BuildFeatureRegistry.fieldDefaults();
+    final canQuiz =
+        features.isVisible(FieldFeature.quiz) &&
+        features.isVisible(FieldFeature.vocabulary) &&
+        capabilities.isVisible(Feature.quiz) &&
+        capabilities.isVisible(Feature.vocabulary);
+    final canReview =
+        features.isVisible(FieldFeature.srs) &&
+        capabilities.isVisible(Feature.srs);
     return Column(
       children: [
         Padding(
@@ -171,6 +239,7 @@ class _WeaknessBody extends StatelessWidget {
               if (canQuiz)
                 FilledButton.icon(
                   onPressed: () async {
+                    if (!isCurrent()) return;
                     await AppNavigator.pushPage<void>(
                       context,
                       AppPage<void>(
@@ -180,6 +249,8 @@ class _WeaknessBody extends StatelessWidget {
                               .map((item) => item.wordId)
                               .toList(),
                           learning: learning,
+                          featureRegistry: features,
+                          expectedOwnerId: expectedOwnerId,
                         ),
                       ),
                     );
@@ -193,14 +264,20 @@ class _WeaknessBody extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: progress.dueReviewCount == 0
                       ? null
-                      : () => AppNavigator.pushPage<void>(
-                          context,
-                          AppPage<void>(
-                            name: 'learning/weakness-srs',
-                            builder: (_) =>
-                                SrsFlashcardsScreen(learning: learning),
-                          ),
-                        ).then((_) => onReturn()),
+                      : () async {
+                          if (!isCurrent()) return;
+                          await AppNavigator.pushPage<void>(
+                            context,
+                            AppPage<void>(
+                              name: 'learning/weakness-srs',
+                              builder: (_) => SrsFlashcardsScreen(
+                                learning: learning,
+                                expectedOwnerId: expectedOwnerId,
+                              ),
+                            ),
+                          );
+                          onReturn();
+                        },
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                   ),

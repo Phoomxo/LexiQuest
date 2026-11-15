@@ -10,8 +10,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
@@ -48,7 +50,11 @@ import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/motivation/application/streak_use_cases.dart';
+import '../features/motivation/data/drift_streak_repository.dart';
 import '../features/progress/data/drift_progress_queries.dart';
+import '../features/quest/data/drift_quest_repository.dart';
+import '../features/quest/data/drift_quest_progress_reader.dart';
 import '../features/research/domain/research_operation_authorizer.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
@@ -66,10 +72,19 @@ import '../features/vocabulary/data/file_selector_vocabulary_import_file_picker.
 import '../features/vocabulary/data/file_selector_source_practice_file_picker.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
+import '../features/vocabulary/data/drift_local_content_report_repository.dart';
+import '../features/motivation/data/drift_study_preferences_repository.dart';
+import '../features/motivation/application/focus_use_cases.dart';
+import '../features/motivation/data/drift_focus_repository.dart';
+import '../features/motivation/domain/focus_models.dart';
 import '../services/guest_session_service.dart';
+import '../services/study_reminders.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'field_feature_registry.dart';
+import 'field_feature.dart';
+import 'registries/feature_registry.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -77,6 +92,8 @@ typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
+typedef QuestAnswerCatalogFactory =
+    Future<TrustedQuestAnswerCatalog> Function(AppDatabase database);
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -158,6 +175,10 @@ final class AppBootstrap {
     this.geminiSettingsStoreFactory,
     this.geminiGatewayFactory,
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
+    this.features = const BuildFeatureRegistry.fieldDefaults(),
+    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
+    this.questCatalogFactory,
+    this.enableAndroidStudyReminders = false,
   });
 
   factory AppBootstrap.production({
@@ -187,6 +208,7 @@ final class AppBootstrap {
       watchGeminiSessions: () =>
           FirebaseAuth.instance.userChanges().map(_geminiAuthSession),
       researchAuthorizer: researchAuthorizer,
+      enableAndroidStudyReminders: Platform.isAndroid,
     );
   }
 
@@ -204,6 +226,10 @@ final class AppBootstrap {
   final GeminiSettingsStore Function()? geminiSettingsStoreFactory;
   final GeminiGateway Function()? geminiGatewayFactory;
   final ResearchOperationAuthorizer researchAuthorizer;
+  final FeatureRegistry features;
+  final FieldFeatureRegistry fieldFeatures;
+  final QuestAnswerCatalogFactory? questCatalogFactory;
+  final bool enableAndroidStudyReminders;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -239,6 +265,31 @@ final class AppBootstrap {
       }
     }
     final supabase = await _availability(initializeSupabase);
+    final reminderDatabase = enableAndroidStudyReminders
+        ? (await database.customSelect('PRAGMA database_list').get())
+              .where((row) => row.read<String>('name') == 'main')
+              .singleOrNull
+              ?.read<String>('file')
+        : null;
+    final reminders = reminderDatabase == null || reminderDatabase.isEmpty
+        ? null
+        : StudyReminders(
+            databasePath: reminderDatabase,
+            activeOwner: () async {
+              final rows =
+                  await (database.select(database.localOwners)
+                        ..where((row) => row.isActive.equals(true))
+                        ..limit(2))
+                      .get();
+              return rows.singleOrNull?.id;
+            },
+            requestPermission: () async {
+              await Permission.notification.request();
+            },
+          );
+    if (reminders != null) {
+      unawaited(reminders.reconcile().catchError((Object _) {}));
+    }
     final config = _loadConfig();
     final syncStore = DriftSyncStore(database);
     SyncEngine? syncEngine;
@@ -264,7 +315,19 @@ final class AppBootstrap {
       );
       syncTrigger = SyncTrigger(syncEngine.run);
     }
+    final progressUpdates = ValueNotifier<int>(0);
+    var disposed = false;
+    void notifyProgress() {
+      if (!disposed) {
+        progressUpdates.value++;
+      }
+    }
+
     void notifyLocalMutation() {
+      if (disposed) {
+        return;
+      }
+      notifyProgress();
       final trigger = syncTrigger;
       if (trigger != null) {
         unawaited(trigger.request(SyncTriggerReason.localMutation));
@@ -298,17 +361,66 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    try {
+      timezone_data.initializeTimeZones();
+    } on Object {
+      // Original-answer capture records missing calendar authority independently.
+    }
+    bool masteryVisible() =>
+        features.isVisible(Feature.mastery) &&
+        fieldFeatures.isVisible(FieldFeature.mastery);
+    bool questVisible() =>
+        features.isVisible(Feature.questV2) && masteryVisible();
+    final streakRepository = DriftStreakRepository(
+      database,
+      calendarVisible: masteryVisible,
+    );
+    final streak = StreakUseCases(
+      repository: streakRepository,
+      owners: localOwners,
+      nowUtc: () => DateTime.now().toUtc(),
+      onSettled: notifyProgress,
+    );
+    final focus = FocusUseCases(
+      repository: DriftFocusRepository(database, calendar: streakRepository),
+      owners: localOwners,
+      clock: MonotonicFocusClock(continuityId: idGenerator.v4()),
+      generateId: idGenerator.v4,
+      onChanged: notifyProgress,
+    );
+    TrustedQuestAnswerCatalog? answerCatalog;
+    if (questVisible()) {
+      try {
+        answerCatalog =
+            await (questCatalogFactory?.call(database) ??
+                DriftQuestRepository(database).installAnswerCatalog());
+      } on Object {
+        // Catalog failure cannot prevent ordinary local practice.
+      }
+    }
     final learning = LearningUseCases(
       owners: localOwners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        questCatalog: answerCatalog,
+        questVisible: questVisible,
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
+      onAnswerCommitted: streak.afterAnswerCommitted,
     );
     final progress = ProgressUseCases(
       owners: localOwners,
-      queries: DriftProgressQueries(database),
+      queries: DriftProgressQueries(
+        database,
+        streakRepository: streakRepository,
+        questReader: questVisible()
+            ? DriftQuestProgressReader(database, catalog: answerCatalog)
+            : null,
+        questVisible: questVisible,
+      ),
       nowUtc: () => DateTime.now().toUtc(),
     );
     final researchConsent = ResearchConsentUseCases(
@@ -318,15 +430,21 @@ final class AppBootstrap {
     );
     final rewards = RewardUseCases(
       owners: localOwners,
-      repository: DriftRewardRepository(database),
+      repository: DriftRewardRepository(
+        database,
+        questCatalog: answerCatalog,
+        questVisible: questVisible,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    const exportStore = FileSelectorExportStore();
     final exports = ExportUseCases(
       owners: localOwners,
       reader: DriftExportReader(database),
-      store: const FileSelectorExportStore(),
+      store: exportStore,
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
@@ -416,14 +534,22 @@ final class AppBootstrap {
         geminiTutor.invalidateScope();
       },
     );
-    // Query snapshots can coalesce ABA transitions; every owner-table commit fences AI.
+    // Query snapshots can coalesce ABA transitions, so fence pending requests on writes.
     final geminiOwnerUpdatesSubscription = database
         .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
         .listen(
-          (_) => geminiTutor.invalidateScope(),
+          (_) {
+            geminiTutor.invalidateScope();
+            notifyProgress();
+            if (reminders != null && !disposed) {
+              reminders.invalidateScope();
+              unawaited(reminders.reconcile().catchError((Object _) {}));
+            }
+          },
           onError: (Object _) {
             geminiOwner = null;
             geminiTutor.invalidateScope();
+            reminders?.invalidateScope();
           },
         );
     StreamSubscription<AccountSession?>? geminiAuthSubscription;
@@ -469,6 +595,8 @@ final class AppBootstrap {
       config: config,
       guestSessionService: exposedGuestSession,
       buildInfo: const AppBuildInfo.fromEnvironment(),
+      features: features,
+      fieldFeatures: fieldFeatures,
       database: database,
       localOwners: localOwners,
       upgradeGuestOwner: upgradeGuestOwner,
@@ -476,14 +604,24 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       syncStatus: syncStore,
       learning: learning,
+      streak: streak,
+      progressUpdates: progressUpdates,
       associativeLearning: DriftAssociativeLearningAdapter(database),
       progress: progress,
       rewards: rewards,
       exports: exports,
+      saveAchievementCard: exportStore.saveAchievementCard,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       vocabularyImportFilePicker: FileSelectorVocabularyImportFilePicker().pick,
       sourcePracticeFilePicker: FileSelectorSourcePracticeFilePicker().pick,
+      localContentReports: DriftLocalContentReportRepository(database),
+      studyPreferences: DriftStudyPreferencesRepository(
+        database,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
+      focus: focus,
+      studyReminders: reminders,
       deviceModels: deviceModels,
       account: account,
       researchConsent: researchConsent,
@@ -492,6 +630,9 @@ final class AppBootstrap {
       devicePermissions: const PluginDevicePermissionAccess(),
       speechPractice: speechPractice,
       disposeResources: () async {
+        disposed = true;
+        reminders?.invalidateScope();
+        progressUpdates.dispose();
         await geminiAuthSubscription?.cancel();
         await geminiOwnerUpdatesSubscription.cancel();
         await geminiOwnerSubscription.cancel();
@@ -500,6 +641,7 @@ final class AppBootstrap {
         await objectScanner.dispose();
         await speechPractice.dispose();
         await deviceModels.dispose();
+        await focus.dispose();
         modelByteSource.close();
         await database.close();
       },

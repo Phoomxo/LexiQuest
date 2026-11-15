@@ -1,0 +1,95 @@
+S4 f41 typed practice from the Settings permission center
+
+Application source 05c7576061ed0c4e2bfbb0837d4aa277c5a6795d.
+Settings → สิทธิ์กล้องและไมโครโฟน → ลองตอบโดยไม่ใช้เสียง.
+The permission center reads the OS state and displays the action for a
+denied, restricted, permanently denied or unavailable microphone while
+speech practice is visible in both registries. It reuses Dictation's
+existing correction and answer handling with the authored station clue.
+The hint-only path stays silent when retried.
+
+Windows Flutter 63 passed across Settings, permission center, Dictation,
+Shadowing and the Listening journey. The 390×844 / 200% Settings widget
+case typed staton, corrected it to station, retried in hint-only mode and
+returned to the same permission center. The permission handler received no
+request. The permission center tests covered each status and verified that
+each hidden flag removes the practice action while preserving status.
+Review identified a stale inherited flag in the Settings route argument.
+The final route forwards an explicit override only and reads live scope.
+
+Raw Windows logs in build/, SHA-256:
+s4-settings-typed-red.txt e0909c00a1086ac11a578ef02aa9fb0978bed2d20a7a521acdb33786c88abc0b
+s4-settings-typed-recheck.txt e85b0f3f7e25f4b112fded6694e598eead918d7b388cb53d209bd8b87facb37a
+s4-settings-typed-analyze.txt c6f78f77ce976cb9e4eeec23a7deddf08081570bda9fb2bfb5bf11dedad6b348
+
+Android x86_64 debug build at the same source succeeded.
+build/s4-settings-typed-android.txt SHA-256:
+7af0e85c5ccdee4399a4d4e0914935c4662cdaa09d0aeb0ab59cffcc64b9bc7c
+The host APK and installed APK matched SHA-256:
+5654793fc07f58a261d69f5b6a090c40782ff592162f25642613aeae90a749f7
+Host copy is build/boss-android-evidence/lexiquest-permission-typed-05c75760-api35-x64.apk.
+The offline API 35 AVD had an initialization timeout after installation.
+Android first recorded failed process attachment while starting the
+reminder receiver with the activity pending. A separate activity start
+ended with an ANR before the app completed startup in that session.
+build/boss-android-evidence/permission-typed-start-exit.txt SHA-256:
+98746a9e2afc835bf6b3f7156982dcbfddc49e73a5f8f9eb6e40340262e98439
+The Android system Settings launch also timed out. The guest reboot
+request timed out and the subsequent uptime showed the old session.
+build/boss-android-evidence/permission-typed-avd-health.txt SHA-256:
+1cad91ea39cb7fca0b5be699afe1407f9908dc9c6277295a827d79c4c178c3d7
+
+A cold host restart of only the isolated AVD preserved the fixture.
+Android Settings and LexiQuest opened with the same installed SHA-256.
+System font scale 2.0, airplane mode enabled and Wi-Fi off were checked.
+Declining the optional research prompt let the local guest continue.
+From the normal drawer Settings route, the center showed no microphone
+permission. Typing staton gave the missing i and -tion clues. After typing
+station, the correct screen showed station and สถานี. Retry returned to
+the silent hint and the explicit back button returned to the same center
+with its microphone status still denied. No audio controls were present.
+Read-only SQLite counts before and after were 8 sessions, 18 attempts,
+35 outbox operations, 0 EventEnvelopeV2 rows and 0 research consents.
+The two count snapshots were byte-for-byte equal.
+
+Raw logs under build/boss-android-evidence, SHA-256:
+permission-typed-cold-start.txt cdfc3186ce2c6bf1baa8f792a07243473f5d2cafaeb5a297379a5f5b637aa4e4
+permission-typed-recovered-wrong.txt f55721b483a6d4e391061520aba0be4d9a622596205403d7bb0916f8886591d0
+permission-typed-recovered-correct.txt 1035c281903052b053ca3c2a5944e033f6ad9c5cf9c0948f4413387aab8ebf2e
+permission-typed-recovered-retry.txt 5906c7f640528b65cc492144b2805fddc23839822c8b3d1c2558b5c271a6c0ce
+permission-typed-recovered-permissions.txt and permission-typed-recovered-return.txt:
+d08c158cfe2ac6e30f86b24b69889c89250e9c06c9b054cd9114664131fe1380
+permission-typed-recovered-before-db.txt and permission-typed-recovered-after-db.txt:
+180dd99ad6a139c58707f2928bb1ef28cadcefc205f1c3d18e59fef88c5e6323
+
+Current signed hardware, unavailable service behavior, permanent denial
+and audible TalkBack remain open.
+The earlier offline shadowing denial shares the fixture and is recorded
+separately in s4-shadowing-no-mic.txt.
+
+Full CI 43646850397 at 0be8f86f exposed a 200% library integration test
+that assumed the IPA row was visible after adding Shadowing. The same
+failure reproduced locally. Source 4f3278f5 makes the test scroll to IPA
+before tapping and preserves its audio and return assertions. Windows
+Settings, media practice and library focused tests passed 81 cases.
+Build log SHA-256:
+s4-listening-hub-ci-red.txt 0d96cf60f8775454df35052957dbcd7d371af1237f5ce9293f9139a570e60d47
+s4-listening-hub-ci-final.txt a5b733f469777799ad38e7589b400b564d38bb00a28d5c73ca18e298f9b2e437
+https://github.com/Phoomxo/LexiQuest/actions/runs/43646850397
+
+At draft head e4d032adacd1e8df71ff422330a0e29d06dd0a43, Windows Flutter
+passed all 2,384 cases with the IPA scroll correction and both new paths.
+All eight changed Dart files passed focused analysis.
+build/e4d032ad-flutter-full.txt SHA-256:
+11a74a6fd4ee304b714b8abe50f0da1d3f40e7ca8aba90f171b437714a7097aa
+build/s4-e4d032ad-analysis.txt SHA-256:
+60b59cb1f24d3ad062b9097b46d5fc50c0eda5fecf99ee9d1a69f028d08d3440
+GitHub CI at the same head passed Flutter 2,384, backend CPU 267,
+Firestore, Supabase, static analysis and Android debug build.
+build/ci-e4d032ad-43648099047.txt SHA-256:
+ddd5a874075b93d711eed29293a9088f6ed2136696963defafb028d31b5ab65b
+https://github.com/Phoomxo/LexiQuest/actions/runs/43648099047
+
+The pinned FigCraft flow has a choice exercise at a different Settings
+subpath. This implementation uses actual text entry from the existing
+permission center as specified by the Flutter acceptance register.

@@ -4,7 +4,23 @@ import 'vocabulary_word.dart';
 abstract interface class VocabularyRepository {
   Stream<List<VocabularyCategory>> watchCategories(String ownerId);
 
+  Stream<List<VocabularyCategorySummary>> watchLibrary(String ownerId);
+
+  Stream<List<VocabularyWord>> searchWords(
+    String ownerId,
+    String normalizedQuery, {
+    String? cefrLevel,
+  });
+
   Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId);
+
+  Stream<List<VocabularyWord>> watchBookmarkedWords(String ownerId);
+
+  Future<void> setBookmarked({
+    required String expectedOwnerId,
+    required String wordId,
+    required bool bookmarked,
+  });
 
   Future<VocabularyCategory> createCategory(VocabularyCategory category);
 
@@ -24,7 +40,10 @@ abstract interface class VocabularyRepository {
 
   Future<VocabularyWord> createWord(VocabularyWord word);
 
-  Future<VocabularyWord> updateWord(VocabularyWord word);
+  Future<VocabularyWord> updateWord(
+    VocabularyWord word, {
+    VocabularyWord? expectedWord,
+  });
 
   Future<void> deleteWord({
     required String ownerId,

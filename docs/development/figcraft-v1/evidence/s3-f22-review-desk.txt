@@ -1,0 +1,90 @@
+F22 Review Desk with owned local data
+
+Application 85d497814417d760f9e657af3245f9604aba6b53 on the FigCraft
+prototype branch. The Library opens the Review Desk for the current
+owner. The desk opens due cards, previous mistakes, saved words, and
+local content reports. The report and bookmark panels load separately
+from the staged recall history.
+
+Both report entries use the same view of existing report rows. The
+report keeps the original word, reason, and reviewed sentence, and
+shows that it has not reached the content author. The bookmarks view
+uses the existing bookmark and category streams. It opens the normal
+word detail with a return label for the bookmark list. The owner fence
+hides a list or detail when the account changes. The detail's bookmark
+query also hides words whose category is deleted or bookmark removed.
+
+Flutter 298 passed on Windows across the architecture, vocabulary,
+progress, Library, Review Desk, Source, flashcards, and weakness
+screens. The four new route tests cover Library A2 and search retention,
+two real local report owners, an empty queue, and saved words from two
+sets. The Source report test confirmed the existing create and cancel
+flow. Analysis passed on all seven changed Dart files.
+
+Windows records under build/, SHA-256
+s3-f22-report-red.txt 0a4f9e0a0c6263a721d3aa85285da60c9a7461b3bdc810a57dbf70fd48add9a2
+s3-f22-focused-green.txt 6b12b4d68f0144e81348c4a6f72409b808c55daae879e3d8deca2445f3323999
+s3-f22-final.txt 538efd6b0f4ccb07921362b44c0c1055ed01ee285a28d4e861b1491ead459920
+s3-f22-analysis.txt 66eec4a7f0b20da2037e7f25c2d152b7e967fd1ee10cf5734aeac7668afdec9c
+s3-f22-android-build.txt b0591d1cf48352432fd32ff6ec8137a5dc25cc48be8f9e40381c50f7cb233043
+
+The local and installed x64 debug APK share SHA-256
+ca6a02336be217914e9f7efef36db4afee64cb55e0acd0bdf4f784354e661d85.
+The isolated Android API 35 emulator ran with airplane mode on, Wi-Fi
+off, system font 2.0, and a local guest who declined research.
+
+On the prior prototype, the learner bookmarked station in the existing
+F15-Review-Synthetic set and saved an example spelling report through
+the Source form. SQLite confirms the report reason, reviewed sentence,
+and source revision. The learner had two prior wrong station attempts.
+The isolated fixture adds an overdue compass with no prior answer, so
+the two Review Desk practice routes can show distinct real data.
+
+Android reported an input-dispatch timeout during the first pass.
+Waiting briefly returned to the desk, and the timeout dialog came
+back. A fresh app process recovered using the same emulator and storage.
+
+Type F15-Review-Synthetic in the Library. Open the desk and the report
+queue. The report displays station, the saved reason, the original
+sentence, and ยังไม่ส่งถึงผู้จัดทำ. Return to the same desk. Open
+เก็บไว้อ่านอีกครั้ง and the saved station detail, then return through
+the list and desk to the original Library. Android restored the search
+keyboard. After hiding it, the same query and set were visible.
+
+After the passive reads, SQLite matched the baseline. Start a new app
+process and open the same report from the desk. The second read returned
+the same report and unchanged database snapshot. These snapshots also
+check the saved word and the counts for answers, sessions, SRS, outbox,
+rewards, and research.
+
+The due-card route loaded compass as the sole due word. Reveal the
+translation, mark the word remembered, and finish at 100% with one
+answer. Return to the desk and reopen due cards. The queue is empty.
+The Weakness Clinic still shows station with two wrong answers.
+Open ฝึกคำที่ผิด. The persisted plan uses station and four other
+previous mistakes. Compass is absent from the question targets. Back
+returns through the Weakness Clinic to the same desk, with zero new
+answers in the opened weakness round.
+
+Android records under build/boss-android-evidence, SHA-256
+f22-installed-sha256.txt 598c02d8dda8e9ad138f455640379bb0d2f04b582178f37bd51d344d16c3976f
+f22-native-before-recovery-2.txt 27bbb216ccbd09c0a18797085fc39e8628ebc9393aaf0bef270d539e56768ae3
+f22-native-recovery-pid.txt 0c6a143697214ef4bdc9d8a0718aff72a23aa20ea1ab563db194e56b89578977
+f22-native-recorded-from-source.txt a27cb9bdc922a26f86e1ad2e5fdfe69e3129021db981662082b802c9af637d65
+f22-native-saved-from-set.txt 05fbd386a2400b0a84810c1d9fd9879523d38b4fd99e986397c557fbf6320d48
+f22-native-report-queue.png f97bbac69788af3789e2100727a8329b40782f140400d8a9f8f2e8ef7e2e0a8d
+f22-native-saved-words.png 80bda2fe2fae8c73ef2e7d7aec2ea69d9e7957002cf17cd96f20035bb62caca5
+f22-native-return-same-filtered-library.txt 268d97c6b3bd013542827cf078b6bac15d4a741d17e9f3246046c01e415bb390
+f22-native-db-baseline.json, f22-native-db-checked.json, and f22-native-db-cold.json
+319d2c09e78819cb02ca296f02008d95dc271e490662199af26320dac8bbddf4
+f22-native-reopened-report-queue.png 9360f3a0b73fd9f4945cc67de370b1a2d2b691322cdad976a1cc346c05e20757
+f22-native-cold-pid.txt 4d8f060c5e05c99014f6a709a2b963c7fb4f8ff89f62c8ba8d4029150e49bbbf
+f22-native-due-score.txt 9b224d708ef831289ed1436e7c4c6636b925c2ffdb78d643d56a6126bb04b60f
+f22-native-due-empty.txt 44108ea875d83d7b2e47dc4289b78e5e179c8ec8e4b8faa6f8e066b8a8547d3b
+f22-native-actual-weakness.txt ceb81fad9134139fae622de7424d3dc9bb75401b485003dd685f2932bb0cf5aa
+f22-native-weakness-practice.txt b30ded12e20456f281cdc732acdbcd5473836e78be04f96593a36e49fa0afa78
+f22-native-practice-db.json 330cd988a10d3bb6499776279cafbf0bac1cdc3b9bc6d726da9655da4c0f5d86
+
+Delivery APK and spoken TalkBack checks are pending. Work package P3.4
+also requires the original Score from Progress history as a route to
+the desk and practice of that round's missed words.

@@ -1,0 +1,1781 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:drift/drift.dart' show DatabaseConnection, Value;
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as owner_domain;
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/import_vocabulary.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_import_file_picker.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
+import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/listening_practice_menu_screen.dart';
+import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
+import 'package:vocab_learning_app/screens/smart_audio_playlist_screen.dart';
+import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
+import 'package:vocab_learning_app/screens/vocabulary_word_detail_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+final class _GuestSession extends Fake implements GuestSessionService {}
+
+final class _LibraryVoice implements VoiceProvider {
+  static const played = VoicePlaybackResult(
+    requestedEngine: VoiceEngine.nativeTts,
+    actualEngine: VoiceEngine.nativeTts,
+    usedFallback: false,
+    cacheHit: false,
+  );
+
+  final requests = <VoiceRequest>[];
+  Completer<VoicePlaybackResult>? pending;
+  int stops = 0;
+
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    requests.add(request);
+    final playback = pending;
+    return playback == null ? played : await playback.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+  }
+}
+
+const _bagItems = '''[
+  {"word":"pencil","meaning":"ดินสอ","partOfSpeech":"noun"},
+  {"word":"wallet","meaning":"กระเป๋าสตางค์","partOfSpeech":"noun"}
+''';
+
+VocabularyImportFile _jsonFile(String name, String content) =>
+    VocabularyImportFile(
+      name: name,
+      mimeType: 'application/json',
+      bytes: Uint8List.fromList(utf8.encode(content)),
+    );
+
+void main() {
+  late AppDatabase database;
+  late AppDependencies dependencies;
+  late VocabularyUseCases vocabulary;
+  late _DelayedOwners vocabularyOwners;
+  VoidCallback? onVocabularyMutation;
+  late VocabularyImportFilePicker pickImportFile;
+  late _LibraryVoice voice;
+  var nextId = 0;
+
+  setUp(() {
+    database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    nextId = 0;
+    onVocabularyMutation = null;
+    pickImportFile = () async => null;
+    voice = _LibraryVoice();
+    final now = DateTime.utc(2026, 11, 13);
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'synthetic-library-owner',
+      nowUtc: () => now,
+    );
+    vocabularyOwners = _DelayedOwners(owners);
+    vocabulary = VocabularyUseCases(
+      owners: vocabularyOwners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'synthetic-${++nextId}',
+      nowUtc: () => now,
+      onLocalMutation: () => onVocabularyMutation?.call(),
+    );
+    dependencies = AppDependencies(
+      runtimeStatus: const AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
+        firebase: RuntimeAvailability.unavailable,
+        supabase: RuntimeAvailability.unavailable,
+        backends: RuntimeAvailability.unavailable,
+      ),
+      config: null,
+      guestSessionService: _GuestSession(),
+      database: database,
+      vocabulary: vocabulary,
+      voice: VoiceUseCases(voice),
+      progress: ProgressUseCases(
+        owners: owners,
+        queries: DriftProgressQueries(database),
+        nowUtc: () => now,
+      ),
+      learning: LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'synthetic-learning-${++nextId}',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      ),
+      vocabularyImporter: ImportVocabulary(
+        owners: owners,
+        repository: DriftVocabularyImportRepository(database),
+        generateId: () => 'synthetic-import-${++nextId}',
+        nowUtc: () => now,
+      ),
+      vocabularyImportFilePicker: () => pickImportFile(),
+    );
+  });
+
+  Future<void> pumpLibrary(
+    WidgetTester tester, {
+    double scale = 1,
+    bool travelContrast = false,
+    bool withLevels = false,
+    bool startAtPractice = false,
+  }) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.runAsync(() async {
+      for (final (name, spelling, meaning) in [
+        ('การเดินทาง', 'station', 'สถานี'),
+        ('อาหาร', 'apple', 'แอปเปิล'),
+      ]) {
+        final category = await vocabulary.createCategory(name);
+        await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: spelling,
+            meaning: meaning,
+            partOfSpeech: 'noun',
+            cefrLevel: withLevels ? (name == 'การเดินทาง' ? 'A2' : 'A1') : null,
+          ),
+        );
+        if (travelContrast && name == 'การเดินทาง') {
+          await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'ticket',
+              meaning: 'ตั๋ว',
+              partOfSpeech: 'noun',
+            ),
+          );
+        }
+      }
+    });
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: dependencies,
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
+          home: startAtPractice
+              ? const ChooseModeScreen()
+              : const CategoriesPage(),
+        ),
+      ),
+    );
+    await _pumpUntil(
+      tester,
+      find.text(startAtPractice ? 'ฝึกภาษา' : 'การเดินทาง'),
+    );
+  }
+
+  Future<void> disposeLibrary(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.runAsync(database.close);
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+
+  testWidgets(
+    'library filters existing sets by level and restores after clear',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, withLevels: true, scale: 2);
+        final libraryScroll = find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        );
+        final levelFilter = find.byKey(const ValueKey('library-level-filter'));
+        await tester.tap(levelFilter);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('A2'));
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+        await _tapLabel(tester, 'การเดินทาง', scroll: true);
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.scrollUntilVisible(
+          search,
+          -160,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        await tester.enterText(search, 'apple');
+        await _pumpUntil(tester, find.text('ไม่พบคำหรือชุดที่ค้นหา'));
+        expect(find.text('เลือกระดับภาษา · A2'), findsOneWidget);
+        await tester.enterText(search, '');
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'เลือกระดับภาษา · A2');
+        await _tapLabel(tester, 'C2', scroll: true);
+        await _pumpUntil(tester, find.text('เลือกระดับภาษา · C2'));
+        await tester.scrollUntilVisible(
+          find.text('ไม่พบชุดที่มีคำระดับ C2'),
+          120,
+          scrollable: libraryScroll,
+        );
+        expect(find.text('ไม่พบชุดที่มีคำระดับ C2'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsNothing);
+        await tester.scrollUntilVisible(
+          find.text('ล้างตัวกรอง'),
+          -120,
+          scrollable: libraryScroll,
+        );
+        await _tapLabel(tester, 'ล้างตัวกรอง');
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('การเดินทาง'),
+          120,
+          scrollable: libraryScroll,
+        );
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('อาหาร'),
+          180,
+          scrollable: find.byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          ),
+        );
+        expect(find.text('อาหาร'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'library sample pack shows provenance of its ordered words and returns',
+    (tester) async {
+      const kitchenDigest =
+          '77807e0bf6e991165334bb464d52b90324b848a1048c094f091f936c504e2f56';
+      const travelDigest =
+          '718b6ef56016e6764b0e8521cf7ac75ece9d8f87726e18c533660ef19c15f8f9';
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final library = tester.state(find.byType(CategoriesPage));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'แอปเปิล');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'ของใช้ในครัว');
+        expect(find.text('A1 · 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'คำศัพท์ในชุด');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        expect(find.text('ช้อน'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน');
+
+        await _tapLabel(tester, 'ที่มาของชุดเรียน');
+        expect(find.text('ของใช้ในครัว · LQ-KT-01'), findsOneWidget);
+        expect(
+          find.text('ตัวอย่างประกอบการออกแบบของ LexiQuest'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('ร่างตัวอย่าง ยังไม่เผยแพร่ให้ผู้เรียน'),
+          findsOneWidget,
+        );
+        final fingerprint = find.text(kitchenDigest);
+        await tester.scrollUntilVisible(
+          fingerprint,
+          150,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        await tester.pumpAndSettle();
+        expect(fingerprint.hitTestable(), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน', scroll: true);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+
+        await _tapLabel(tester, 'การเดินทาง');
+        await _tapLabel(tester, 'ที่มาของชุดเรียน');
+        expect(find.text('การเดินทาง · LQ-TR-01'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text(travelDigest),
+          150,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(find.text(kitchenDigest), findsNothing);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+        await _tapLabel(tester, 'กลับคลังคำ');
+        expect(tester.state(find.byType(CategoriesPage)), same(library));
+        expect(tester.widget<SearchBar>(search).controller!.text, 'แอปเปิล');
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'sample catalog filters actual metadata and keeps the level on Back',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        const chooseFilter = 'เลือกตามระดับหรือสิ่งที่อยากฝึก';
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ระดับภาษา');
+        await _tapLabel(tester, 'A2', scroll: true);
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsNothing);
+        await _tapLabel(tester, 'การเดินทาง');
+        expect(find.text('A2 · 2 คำ'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ระดับภาษา');
+        await _tapLabel(tester, 'C2', scroll: true);
+        expect(find.text('ระดับภาษา · C2 · พบ 0 ชุด'), findsOneWidget);
+        expect(find.text('ไม่พบชุดตัวอย่างที่ตรงกับตัวกรอง'), findsOneWidget);
+        await _tapLabel(tester, 'ล้างตัวกรอง');
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ทักษะ');
+        await _tapLabel(tester, 'นึกความหมาย');
+        expect(find.text('ทักษะ · นึกความหมาย · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsNothing);
+        await _tapLabel(tester, 'กลับคลังคำ', scroll: true);
+        expect(find.byType(CategoriesPage), findsOneWidget);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'sample pack counts distinct revealed cards only after a completed review',
+    (tester) async {
+      const progress = 'เปิดทบทวนแล้ว 2 จาก 2 คำ';
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final library = tester.state(find.byType(CategoriesPage));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'แอปเปิล');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'ของใช้ในครัว');
+        expect(find.text('A1 · 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'คำศัพท์ในชุด');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน');
+
+        await _tapLabel(tester, 'เลือกวิธีฝึก');
+        await _tapLabel(tester, 'ทบทวนด้วยบัตรคำ');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ถ้วย'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text(progress), findsNothing);
+
+        await _tapLabel(tester, 'เลือกวิธีฝึก');
+        await _tapLabel(tester, 'ทบทวนด้วยบัตรคำ');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'ลองนึกอีกครั้ง');
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'ทบทวนคำถัดไป');
+        expect(find.text('spoon'), findsOneWidget);
+        expect(find.text('ช้อน'), findsNothing);
+        expect(find.text('จบการทบทวน'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ช้อน'), findsOneWidget);
+        await _tapLabel(tester, 'จบการทบทวน');
+        expect(find.text('ทบทวนครบ 2 คำแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดที่เพิ่งฝึก');
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text(progress), findsOneWidget);
+        await _tapLabel(tester, 'ดูคำที่เพิ่งทบทวน');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูผลการทบทวน');
+        await _tapLabel(tester, 'เลือกชุดอื่น', scroll: true);
+
+        await _tapLabel(tester, 'การเดินทาง');
+        expect(find.text(progress), findsNothing);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+        await _tapLabel(tester, 'กลับคลังคำ');
+        expect(tester.state(find.byType(CategoriesPage)), same(library));
+        expect(tester.widget<SearchBar>(search).controller!.text, 'แอปเปิล');
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(voice.requests, isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'station opens its library detail and sound practice at 200% text',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2, travelContrast: true);
+        final before = await tester.runAsync(() => _localRecords(database));
+        await _tapLabel(tester, 'การเดินทาง');
+        final wordSearch = find.descendant(
+          of: find.byType(VocabListScreen),
+          matching: find.byType(SearchBar),
+        );
+        await _pumpUntil(tester, wordSearch);
+        await tester.ensureVisible(wordSearch);
+        await tester.enterText(wordSearch, 'stat');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'station');
+        await _pumpUntil(tester, find.text('แก้ไขคำ'));
+        expect(find.text('station'), findsWidgets);
+        expect(find.text('สถานี'), findsOneWidget);
+        expect(find.byKey(const ValueKey('word-field')), findsNothing);
+
+        await _tapLabel(tester, 'ฟังและฝึกพูด');
+        await _pumpUntil(tester, find.byType(PhoneticExplorerScreen));
+        await _tapLabel(tester, 'ลองเสียง /ʃ/ ในคำว่า she');
+        expect(voice.requests.last.text, 'she');
+        expect(voice.requests.last.speed, 0.8);
+        expect(voice.requests.last.mode, VoiceMode.practice);
+        await _tapLabel(tester, 'กลับไปดูคำเดิม');
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await _tapLabel(tester, 'ฝึกฟังแล้วเขียน');
+        await _pumpUntil(tester, find.byType(DictationQuizScreen));
+        await _tapLabel(tester, 'ฟังด้วยความเร็วปกติ');
+        expect(voice.requests.last.text, 'station');
+        expect(voice.requests.last.speed, 1);
+        await _tapLabel(tester, 'ฟังช้าลง');
+        expect(voice.requests.last.text, 'station');
+        expect(voice.requests.last.speed, 0.75);
+        await _tapLabel(tester, 'ลองเขียนคำที่ได้ยิน');
+        final answer = find.byType(TextField);
+        await _pumpUntil(tester, answer);
+        await tester.ensureVisible(answer);
+        await tester.enterText(answer, 'staton');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _tapLabel(tester, 'ตรวจคำตอบ');
+        expect(find.text('ยังขาดตัว i'), findsOneWidget);
+        await _tapLabel(tester, 'แก้คำตอบ');
+        expect(tester.widget<TextField>(answer).controller!.text, 'staton');
+        await tester.enterText(answer, 'station');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _tapLabel(tester, 'ตรวจคำตอบ');
+        expect(find.text('สะกดถูกแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูคำเดิม');
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await _pumpUntil(tester, wordSearch);
+        expect(tester.widget<SearchBar>(wordSearch).controller!.text, 'stat');
+        expect(find.text('ticket'), findsNothing);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'station reader shows its saved level and returns to both searches',
+    (tester) async {
+      try {
+        await pumpLibrary(
+          tester,
+          scale: 2,
+          withLevels: true,
+          travelContrast: true,
+        );
+        final before = await tester.runAsync(() => _localRecords(database));
+        final librarySearch = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(librarySearch, 'เดินทาง');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'การเดินทาง', scroll: true);
+
+        final setSearch = find.descendant(
+          of: find.byType(VocabListScreen),
+          matching: find.byType(SearchBar),
+        );
+        await _pumpUntil(tester, setSearch);
+        await tester.enterText(setSearch, 'stat');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'station', scroll: true);
+        await _pumpUntil(tester, find.text('สถานี'));
+        await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง', scroll: true);
+        await _pumpUntil(tester, find.text('รู้จักคำว่า station'));
+        expect(find.text('ระดับคำ CEFR · A2'), findsOneWidget);
+        expect(find.text('railway station · สถานีรถไฟ'), findsOneWidget);
+        expect(find.text('bus station · สถานีขนส่ง'), findsOneWidget);
+        final nearTerm = find.text('stop · จุดจอด');
+        await tester.scrollUntilVisible(
+          nearTerm,
+          180,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(nearTerm.hitTestable(), findsOneWidget);
+        expect(find.text('station ไม่มีคำตรงข้ามที่ใช้ทั่วไป'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปที่บัตรคำ', scroll: true);
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await _pumpUntil(tester, setSearch);
+        expect(tester.widget<SearchBar>(setSearch).controller!.text, 'stat');
+        expect(find.text('ticket'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+        await tester.scrollUntilVisible(
+          librarySearch,
+          -180,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(find.text('เดินทาง'), findsOneWidget);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(voice.requests, isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('same word reader hides old sense content after a meaning edit', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester);
+      final original = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.spelling.equals('station'))).getSingle(),
+      ))!;
+      await _tapLabel(tester, 'การเดินทาง');
+      await _tapLabel(tester, 'station');
+      await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง');
+      await _pumpUntil(tester, find.text('ยังไม่ระบุระดับ CEFR'));
+      expect(find.text('stop · จุดจอด'), findsOneWidget);
+      await _tapLabel(tester, 'กลับไปที่บัตรคำ');
+      await _tapLabel(tester, 'แก้ไขคำ');
+      await tester.enterText(
+        find.byKey(const ValueKey('meaning-field')),
+        'สถานีวิทยุ',
+      );
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await _pumpUntil(tester, find.text('สถานีวิทยุ'));
+      await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง');
+      await _pumpUntil(tester, find.text('ยังไม่ระบุระดับ CEFR'));
+      expect(find.text('สถานีวิทยุ'), findsOneWidget);
+      expect(find.text('ยังไม่มีคำใกล้เคียงสำหรับความหมายนี้'), findsOneWidget);
+      expect(find.text('stop · จุดจอด'), findsNothing);
+      expect(find.text('railway station · สถานีรถไฟ'), findsNothing);
+      await _tapLabel(tester, 'กลับไปที่บัตรคำ');
+      expect(find.text('Meet me at the station.'), findsNothing);
+
+      final revised = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(original.id))).getSingle(),
+      ))!;
+      expect(revised.ownerId, original.ownerId);
+      expect(revised.categoryId, original.categoryId);
+      expect(revised.localRevision, original.localRevision + 1);
+      expect(revised.spelling, original.spelling);
+      expect(revised.meaning, 'สถานีวิทยุ');
+      expect(revised.cefrLevel, isNull);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('listening hub opens IPA and a saved dictation word', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2, startAtPractice: true);
+      await _tapLabel(tester, 'ดูแบบฝึกทั้งหมด', scroll: true);
+      await _tapLabel(tester, 'ฟังและพูด', scroll: true);
+      final hub = tester.state(find.byType(ListeningPracticeMenuScreen));
+      await _tapLabel(tester, 'ฝึกเสียงทีละคำ', scroll: true);
+      await _tapLabel(tester, '/ʃ/ she');
+      await _tapLabel(tester, 'ลองเสียง /ʃ/ ในคำว่า she');
+      expect(voice.requests.single.text, 'she');
+      await _tapLabel(tester, 'กลับไปเลือกแบบฝึกฟัง');
+      expect(tester.state(find.byType(ListeningPracticeMenuScreen)), same(hub));
+
+      await _tapLabel(tester, 'เขียนตามเสียง', settle: false);
+      await _pumpUntil(tester, find.text('เลือกหมวดหมู่'));
+      await _pumpUntil(tester, find.text('การเดินทาง'));
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _pumpUntil(tester, find.text('เลือกคำที่จะเขียนตามเสียง'));
+      await _pumpUntil(tester, find.text('station'));
+      await _tapLabel(tester, 'station', settle: false);
+      await _pumpUntil(tester, find.byType(DictationQuizScreen));
+      expect(voice.requests, hasLength(1));
+      await _tapLabel(tester, 'ฟังด้วยความเร็วปกติ');
+      expect(voice.requests.last.text, 'station');
+      await _tapLabel(tester, 'กลับไปเลือกแบบฝึกฟัง');
+      expect(tester.state(find.byType(ListeningPracticeMenuScreen)), same(hub));
+      expect(find.text('เลือกหมวดหมู่'), findsNothing);
+      expect(find.text('เลือกคำที่จะเขียนตามเสียง'), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('selected set plays both saved words and returns to its search', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2, travelContrast: true);
+      final before = await tester.runAsync(() => _localRecords(database));
+      await _tapLabel(tester, 'การเดินทาง');
+      final search = find.descendant(
+        of: find.byType(VocabListScreen),
+        matching: find.byType(SearchBar),
+      );
+      await _pumpUntil(tester, search);
+      await tester.ensureVisible(search);
+      await tester.enterText(search, 'stat');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await _tapLabel(tester, 'ฟังคำในชุดนี้', settle: false);
+      await _pumpUntil(tester, find.byType(SmartAudioPlaylistScreen));
+      await tester.pumpAndSettle();
+      expect(find.text('ฟังคำในชุด'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expect(voice.requests, isEmpty);
+      await _tapLabel(tester, 'ฟังคำแรก');
+      await _tapLabel(tester, 'จบการฟังชุดนี้');
+      expect(find.text('ฟังจบชุดแล้ว'), findsOneWidget);
+      expect(voice.requests.map((request) => request.text), [
+        'station',
+        'ticket',
+      ]);
+      expect(find.text('station'), findsOneWidget);
+      expect(find.text('ticket'), findsOneWidget);
+      await _tapLabel(tester, 'กลับไปดูชุดการเดินทาง');
+      await _pumpUntil(tester, search);
+      expect(tester.widget<SearchBar>(search).controller!.text, 'stat');
+      expect(find.text('ticket'), findsNothing);
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('owner change stops pending audio and hides the old word', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      await _tapLabel(tester, 'การเดินทาง');
+      await _tapLabel(tester, 'station');
+      await _tapLabel(tester, 'ฝึกฟังแล้วเขียน');
+      final pending = voice.pending = Completer<VoicePlaybackResult>();
+      final listen = find.text('ฟังด้วยความเร็วปกติ');
+      await _pumpUntil(tester, listen);
+      await tester.ensureVisible(listen);
+      await tester.tap(listen);
+      await tester.pump();
+      expect(voice.requests.last.text, 'station');
+      final stopsBeforeSwitch = voice.stops;
+
+      await _withFrames(tester, () async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      });
+      final unavailable = find.text(
+        'คำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกคำใหม่',
+      );
+      await _pumpUntil(tester, unavailable);
+      expect(voice.stops, greaterThan(stopsBeforeSwitch));
+      pending.complete(_LibraryVoice.played);
+      await tester.pumpAndSettle();
+      expect(find.byType(DictationQuizScreen), findsNothing);
+      expect(find.text('station'), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, unavailable);
+      expect(find.text('สถานี'), findsNothing);
+      expect(find.text('แก้ไขคำ'), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('set and word searches keep their context after returning', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester);
+      final setSearch = find.byKey(const ValueKey('category-search'));
+      await tester.enterText(setSearch, 'การเดิน');
+      await tester.pumpAndSettle();
+      expect(find.text('อาหาร'), findsNothing);
+      await tester.tap(find.text('การเดินทาง'));
+      await _pumpUntil(tester, find.text('station'));
+      await tester.pumpAndSettle();
+      final wordSearch = find.descendant(
+        of: find.byType(VocabListScreen),
+        matching: find.byType(SearchBar),
+      );
+      await tester.enterText(wordSearch, 'stat');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('station'));
+      await _pumpUntil(tester, find.text('แก้ไขคำ'));
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
+      await _pumpUntil(tester, find.byKey(const ValueKey('word-field')));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await _tapLabel(tester, 'กลับชุดคำ');
+      await _pumpUntil(tester, find.text('station'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<SearchBar>(wordSearch).controller!.text, 'stat');
+      await tester.pageBack();
+      await _pumpUntil(tester, setSearch);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SearchBar>(setSearch).controller!.text, 'การเดิน');
+      expect(find.text('อาหาร'), findsNothing);
+      await tester.enterText(setSearch, 'อาหาร');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'อาหาร'));
+      await _pumpUntil(tester, find.text('apple'));
+      await tester.pumpAndSettle();
+      expect(find.text('station'), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('editing a library word returns to its updated detail', (
+    tester,
+  ) async {
+    final committed = Completer<void>();
+    final ownerRead = Completer<void>();
+    const editedSpelling = 'railway station';
+    const staleWarning = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่';
+    try {
+      await pumpLibrary(tester);
+      final original = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.spelling.equals('station'))).getSingle(),
+      ))!;
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _tapLabel(tester, 'station', settle: false);
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
+      final wordField = find.byKey(const ValueKey('word-field'));
+      await _pumpUntil(tester, wordField);
+      await tester.enterText(wordField, editedSpelling);
+      await tester.enterText(
+        find.byKey(const ValueKey('meaning-field')),
+        'สถานีรถไฟ',
+      );
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      onVocabularyMutation = () {
+        vocabularyOwners.gate = ownerRead;
+        committed.complete();
+      };
+      await tester.tap(save);
+      await _withFrames(tester, () => committed.future);
+      final editedDetail = find.descendant(
+        of: find.byType(VocabularyWordDetailScreen, skipOffstage: false),
+        matching: find.text(editedSpelling, skipOffstage: false),
+        skipOffstage: false,
+      );
+      await _pumpUntil(tester, editedDetail);
+
+      await tester.runAsync(() async {
+        final saved = await (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(original.id))).getSingle();
+        expect(saved.ownerId, original.ownerId);
+        expect(saved.categoryId, original.categoryId);
+        expect(saved.localRevision, 2);
+        expect(saved.spelling, editedSpelling);
+        expect(saved.meaning, 'สถานีรถไฟ');
+        final wordWrites = await (database.select(
+          database.outboxOperations,
+        )..where((row) => row.entityId.equals(original.id))).get();
+        expect(
+          wordWrites.map((row) => row.operationId),
+          unorderedEquals(['word:${original.id}:1', 'word:${original.id}:2']),
+        );
+      });
+      ownerRead.complete();
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == 'กลับชุดคำ' || widget.data == staleWarning),
+        ),
+      );
+      expect(find.text(staleWarning), findsNothing);
+      expect(wordField, findsNothing);
+      expect(find.text(editedSpelling), findsOneWidget);
+      expect(find.text('สถานีรถไฟ'), findsOneWidget);
+    } finally {
+      onVocabularyMutation = null;
+      vocabularyOwners.gate = null;
+      if (!ownerRead.isCompleted) ownerRead.complete();
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('a library editor rejects synced content at the same revision', (
+    tester,
+  ) async {
+    const syncedMeaning = 'ชุมทางรถไฟ';
+    const draftMeaning = 'ป้ายรถไฟ';
+    const staleWarning = 'คำนี้ถูกแก้ไขแล้ว กรุณาเปิดรายละเอียดคำใหม่';
+    try {
+      await pumpLibrary(tester);
+      await _tapLabel(tester, 'การเดินทาง', settle: false);
+      await _tapLabel(tester, 'station', settle: false);
+      await _tapLabel(tester, 'แก้ไขคำ', settle: false);
+      final meaningField = find.byKey(const ValueKey('meaning-field'));
+      await _pumpUntil(tester, meaningField);
+      await tester.enterText(meaningField, draftMeaning);
+
+      final (synced, originalRevision, originalOutbox) = await _withFrames(
+        tester,
+        () async {
+          final words = database.select(database.vocabularyWords)
+            ..where((row) => row.spelling.equals('station'));
+          final original = await words.getSingle();
+          final outbox = await database.select(database.outboxOperations).get();
+          await (database.update(
+            database.vocabularyWords,
+          )..where((row) => row.id.equals(original.id))).write(
+            VocabularyWordsCompanion(
+              meaning: const Value(syncedMeaning),
+              normalizedMeaning: const Value(syncedMeaning),
+              cloudRevision: Value(original.localRevision),
+            ),
+          );
+          return (await words.getSingle(), original.localRevision, outbox);
+        },
+      );
+      expect(synced.localRevision, originalRevision);
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AddWordScreen && widget.word?.meaning == syncedMeaning,
+        ),
+      );
+      expect(
+        tester.widget<TextField>(meaningField).controller!.text,
+        draftMeaning,
+      );
+
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await _pumpUntil(
+        tester,
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == staleWarning || widget.data == 'กลับชุดคำ'),
+        ),
+      );
+      final (saved, outbox) = await _withFrames(tester, () async {
+        final saved = await (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(synced.id))).getSingle();
+        return (saved, await database.select(database.outboxOperations).get());
+      });
+      expect(saved, synced);
+      expect(outbox, originalOutbox);
+      expect(find.text(staleWarning), findsOneWidget);
+      expect(meaningField, findsOneWidget);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('an open level picker cannot carry A results into owner B', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, withLevels: true);
+      final levelFilter = find.byKey(const ValueKey('library-level-filter'));
+      final openFromA = tester.widget<OutlinedButton>(levelFilter).onPressed!;
+      final setA = (await tester.runAsync(
+        () => vocabulary.watchCategories().first,
+      ))!.singleWhere((category) => category.name == 'การเดินทาง');
+      await tester.tap(levelFilter);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A2'));
+      await tester.pumpAndSettle();
+      expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+      await tester.tap(levelFilter);
+      await tester.pumpAndSettle();
+
+      var switched = false;
+      final switching = (() async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      })().whenComplete(() => switched = true);
+      unawaited(switching.then<void>((_) {}, onError: (Object _) {}));
+      for (var index = 0; index < 50 && !switched; index++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+      }
+      expect(switched, isTrue, reason: 'the active owner switch must finish');
+      await switching;
+      await tester.tap(find.text('A1'));
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.text('ชุดของบัญชี B'));
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(find.text('อาหาร'), findsNothing);
+      expect(find.text('เลือกระดับภาษา'), findsOneWidget);
+      expect(find.text('ล้างตัวกรอง'), findsNothing);
+      openFromA();
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(
+            home: VocabListScreen(
+              categoryId: setA.id,
+              categoryName: setA.name,
+              expectedOwnerId: setA.ownerId,
+            ),
+          ),
+        ),
+      );
+      await _pumpUntil(
+        tester,
+        find.text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(find.text('station'), findsNothing);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets(
+    'global add selects its destination before the existing manual form',
+    (tester) async {
+      try {
+        await pumpLibrary(tester);
+        await tester.tap(find.byKey(const ValueKey('library-add-word')));
+        await _pumpUntil(tester, find.text('เลือกชุดที่จะเพิ่มคำ'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('อาหาร').last);
+        await _pumpUntil(tester, find.text('พิมพ์คำศัพท์'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('พิมพ์คำศัพท์'));
+        await _pumpUntil(tester, find.byKey(const ValueKey('word-field')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('word-field')),
+          'banana',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('meaning-field')),
+          'กล้วย',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('part-of-speech-field')),
+          'noun',
+        );
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntil(tester, find.text('banana'));
+        await tester.pumpAndSettle();
+        expect(find.text('อาหาร'), findsOneWidget);
+        expect(find.text('station'), findsNothing);
+        await tester.runAsync(() async {
+          final categories = await database
+              .select(database.vocabularyCategories)
+              .get();
+          final food = categories.singleWhere(
+            (category) => category.name == 'อาหาร',
+          );
+          final word = (await database.select(database.vocabularyWords).get())
+              .singleWhere((word) => word.spelling == 'banana');
+          expect(word.categoryId, food.id);
+        });
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'global word search opens B and preserves its query on return to A',
+    (tester) async {
+      try {
+        await pumpLibrary(tester);
+        await tester.tap(find.text('การเดินทาง'));
+        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'apple');
+        final hit = find.widgetWithText(ListTile, 'apple');
+        await _pumpUntil(tester, hit);
+        await tester.pumpAndSettle();
+        expect(find.text('อาหาร'), findsOneWidget);
+        await tester.tap(hit);
+        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+        await tester.pumpAndSettle();
+        expect(find.text('อาหาร'), findsOneWidget);
+        expect(find.text('station'), findsNothing);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(tester.widget<SearchBar>(search).controller!.text, 'apple');
+        await tester.enterText(search, 'การเดินทาง');
+        final setA = find.widgetWithText(ListTile, 'การเดินทาง');
+        await _pumpUntil(tester, setA);
+        await tester.pumpAndSettle();
+        await tester.tap(setA);
+        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+        await tester.pumpAndSettle();
+        expect(find.text('station'), findsOneWidget);
+        expect(find.text('apple'), findsNothing);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'global add can create a destination and cancel before adding a word',
+    (tester) async {
+      try {
+        await pumpLibrary(tester);
+        await tester.tap(find.byKey(const ValueKey('library-add-word')));
+        await _pumpUntil(tester, find.text('เลือกชุดที่จะเพิ่มคำ'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('สร้างชุดคำศัพท์ใหม่'));
+        await _pumpUntil(
+          tester,
+          find.byKey(const ValueKey('category-name-field')),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('category-name-field')),
+          'ชุดใหม่สังเคราะห์',
+        );
+        await tester.tap(find.byKey(const ValueKey('save-category')));
+        await _pumpUntil(tester, find.text('พิมพ์คำศัพท์'));
+        await tester.pumpAndSettle();
+        expect(find.text('เพิ่มคำใน ชุดใหม่สังเคราะห์'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('ชุดใหม่สังเคราะห์'), findsOneWidget);
+        expect(
+          await tester.runAsync(
+            () => database.select(database.vocabularyWords).get(),
+          ),
+          hasLength(2),
+        );
+        expect(
+          await tester.runAsync(
+            () => database.select(database.vocabularyCategories).get(),
+          ),
+          hasLength(3),
+        );
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('selected set reads and reopens its persisted latest result', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, travelContrast: true);
+      await tester.tap(find.text('การเดินทาง'));
+      await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ฝึกจากชุดนี้'));
+      await _pumpUntil(tester, find.text('เริ่มฝึก'));
+      await tester.ensureVisible(find.text('เริ่มฝึก'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เริ่มฝึก'));
+      await _pumpUntil(
+        tester,
+        find.descendant(
+          of: find.byType(QuizScreen),
+          matching: find.text('station'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'สถานี'));
+      await _pumpUntil(tester, find.text('คำถามถัดไป'));
+      await tester.ensureVisible(find.text('คำถามถัดไป'));
+      await tester.tap(find.text('คำถามถัดไป'));
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'ตั๋ว'));
+      await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
+      await _pumpUntil(tester, find.text('ดูผลการเรียน'));
+      await tester.ensureVisible(find.text('ดูผลการเรียน'));
+      await tester.tap(find.text('ดูผลการเรียน'));
+      await _pumpUntil(tester, find.byType(ScoreScreen));
+      await tester.pumpAndSettle();
+      final firstScore = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+      final sessionId = firstScore.sessionId;
+      expect(sessionId, isNotNull);
+      expect(firstScore.correctAnswers, 2);
+      expect(firstScore.wrongAnswers, 0);
+      final savedSession = (await tester.runAsync(
+        () => database.select(database.learningSessions).getSingle(),
+      ))!;
+      final savedAttempts = (await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ))!;
+      expect(savedSession.id, sessionId);
+      expect(savedSession.state, 'completed');
+      expect(savedSession.correctCount, 2);
+      expect(savedSession.wrongCount, 0);
+      expect(savedSession.score, 100);
+      expect(savedAttempts, hasLength(2));
+      await tester.ensureVisible(find.text('กลับไปที่ชุดคำ'));
+      await tester.tap(find.text('กลับไปที่ชุดคำ'));
+      await _pumpUntil(tester, find.text('ดูผลล่าสุด'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('ดูผลล่าสุด'));
+      await tester.tap(find.text('ดูผลล่าสุด'));
+      await _pumpUntil(tester, find.byType(ScoreScreen));
+      await tester.pumpAndSettle();
+      final reopened = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+      expect(reopened.sessionId, sessionId);
+      expect(reopened.correctAnswers, 2);
+      expect(reopened.wrongAnswers, 0);
+      expect(find.text('100%'), findsOneWidget);
+      expect(find.text('การเดินทาง'), findsOneWidget);
+      expect(
+        await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ),
+        savedAttempts,
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.learningSessions).getSingle(),
+        ),
+        savedSession,
+      );
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  for (final changeCategory in [false, true]) {
+    testWidgets(
+      'pending latest result rejects a changed ${changeCategory ? 'category' : 'progress scope'}',
+      (tester) async {
+        try {
+          await pumpLibrary(tester);
+          final ids = await tester.runAsync(() async {
+            final categories = await database
+                .select(database.vocabularyCategories)
+                .get();
+            final a = categories.singleWhere(
+              (category) => category.name == 'การเดินทาง',
+            );
+            final b = categories.singleWhere(
+              (category) => category.name == 'อาหาร',
+            );
+            final word = (await database.select(database.vocabularyWords).get())
+                .singleWhere((word) => word.categoryId == a.id);
+            final now = DateTime.utc(2026, 11, 13).millisecondsSinceEpoch;
+            await database
+                .into(database.learningSessions)
+                .insert(
+                  LearningSessionsCompanion.insert(
+                    id: 'synthetic-held-session',
+                    ownerId: a.ownerId,
+                    activityType: 'quiz',
+                    state: 'completed',
+                    startedAtUtcMs: now,
+                    endedAtUtcMs: Value(now),
+                    correctCount: const Value(1),
+                    score: const Value(100),
+                    appVersion: 'test',
+                    buildId: 'test',
+                  ),
+                );
+            await database
+                .into(database.answerAttempts)
+                .insert(
+                  AnswerAttemptsCompanion.insert(
+                    id: 'synthetic-held-attempt',
+                    ownerId: a.ownerId,
+                    sessionId: 'synthetic-held-session',
+                    wordId: word.id,
+                    promptMode: 'meaningChoice',
+                    isCorrect: true,
+                    attemptNumber: 1,
+                    occurredAtUtcMs: now,
+                  ),
+                );
+            return (a: a.id, b: b.id);
+          });
+          final owners = dependencies.learning!.owners;
+          final delayed = _DelayedOwners(owners);
+          final first = ProgressUseCases(
+            owners: delayed,
+            queries: DriftProgressQueries(database),
+            nowUtc: () => DateTime.utc(2026, 11, 14),
+          );
+          Widget app(
+            String categoryId,
+            String categoryName,
+            ProgressUseCases progress,
+          ) => AppDependenciesScope(
+            dependencies: AppDependencies(
+              runtimeStatus: dependencies.runtimeStatus,
+              config: null,
+              guestSessionService: _GuestSession(),
+              vocabulary: vocabulary,
+              learning: dependencies.learning,
+              progress: progress,
+            ),
+            child: MaterialApp(
+              home: VocabListScreen(
+                categoryId: categoryId,
+                categoryName: categoryName,
+              ),
+            ),
+          );
+          await tester.pumpWidget(app(ids!.a, 'การเดินทาง', first));
+          await _pumpUntil(tester, find.text('ดูผลล่าสุด'));
+          await tester.pumpAndSettle();
+          delayed.gate = Completer<void>();
+          await tester.tap(find.text('ดูผลล่าสุด'));
+          await tester.pump();
+          expect(delayed.waits, greaterThan(0));
+          final replacement = changeCategory
+              ? first
+              : ProgressUseCases(
+                  owners: owners,
+                  queries: DriftProgressQueries(database),
+                  nowUtc: () => DateTime.utc(2026, 11, 14),
+                );
+          await tester.pumpWidget(
+            app(
+              changeCategory ? ids.b : ids.a,
+              changeCategory ? 'อาหาร' : 'การเดินทาง',
+              replacement,
+            ),
+          );
+          await tester.pump();
+          if (changeCategory) {
+            expect(find.textContaining('ผลล่าสุด ·'), findsNothing);
+          }
+          delayed.gate!.complete();
+          await _pumpUntil(
+            tester,
+            find.text('อ่านผลล่าสุดไม่สำเร็จ กรุณาลองใหม่'),
+          );
+          expect(find.byType(ScoreScreen), findsNothing);
+        } finally {
+          await disposeLibrary(tester);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'library corrects and practices a picked JSON file at 200% text',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.ensureVisible(search);
+        await tester.enterText(search, 'การเดิน');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'นำเข้าชุดคำ');
+
+        var picks = 0;
+        pickImportFile = () async =>
+            ++picks == 1 ? null : _jsonFile('ของที่เลือก.json', _bagItems);
+        await _tapLabel(tester, 'ฝึกจากรายการ JSON');
+        expect(picks, 1);
+        expect(find.text('ตรวจรายการจากไฟล์'), findsNothing);
+        await _tapLabel(tester, 'ฝึกจากรายการ JSON');
+        expect(picks, 2);
+        expect(find.text('ตรวจรายการจากไฟล์'), findsOneWidget);
+        final draft = find.byType(TextField);
+        expect(
+          tester.widget<TextField>(draft).controller!.text.trimRight(),
+          _bagItems.trimRight(),
+        );
+        await _tapLabel(tester, 'อ่านรายการคำ');
+        expect(find.text('ยังอ่านไฟล์นี้ไม่ได้'), findsOneWidget);
+        expect(find.text('คำที่ยังอยู่ในร่าง'), findsOneWidget);
+        await _tapLabel(tester, 'เติม ] ในร่าง');
+        final corrected = tester.widget<TextField>(draft).controller!.text;
+        expect(corrected.trimRight(), endsWith(']'));
+        expect(
+          corrected.trimRight().replaceFirst(RegExp(r'\]$'), '').trimRight(),
+          _bagItems.trimRight(),
+        );
+        await _tapLabel(tester, 'อ่านรายการคำ');
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('wallet'), findsOneWidget);
+
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('ดินสอ'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ดินสอ'), findsOneWidget);
+        await _tapLabel(tester, 'ลองนึกอีกครั้ง');
+        expect(find.text('pencil'), findsOneWidget);
+        expect(find.text('ดินสอ'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'จำได้แล้ว');
+        expect(find.text('wallet'), findsOneWidget);
+        expect(find.text('กระเป๋าสตางค์'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('กระเป๋าสตางค์'), findsOneWidget);
+        await _tapLabel(tester, 'จำได้แล้ว');
+        expect(find.text('ฝึกครบทั้งสองคำแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'ทบทวนอีกครั้ง');
+        expect(find.text('พร้อมฝึก 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'ฝึกสองคำนี้');
+        expect(find.text('pencil'), findsOneWidget);
+        for (var card = 0; card < 2; card++) {
+          await _tapLabel(tester, 'เปิดคำแปล');
+          await _tapLabel(tester, 'จำได้แล้ว');
+        }
+        await _tapLabel(tester, 'กลับคลังคำ');
+        await _pumpUntil(tester, find.text('คลังคำศัพท์'));
+        await tester.scrollUntilVisible(
+          search,
+          -160,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(tester.widget<SearchBar>(search).controller!.text, 'การเดิน');
+        expect(find.text('อาหาร'), findsNothing);
+        await _tapLabel(tester, 'นำเข้าชุดคำ');
+        expect(find.text('ฝึกจากรายการ JSON'), findsOneWidget);
+        expect(find.text('พร้อมฝึก 2 คำ'), findsNothing);
+        expect(picks, 2);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('a pending JSON picker cannot show owner A data to owner B', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      final pending = Completer<VocabularyImportFile?>();
+      var pickerOpened = false;
+      pickImportFile = () {
+        pickerOpened = true;
+        return pending.future;
+      };
+      await _tapLabel(tester, 'นำเข้าชุดคำ');
+      final chooseFile = find.text('ฝึกจากรายการ JSON');
+      await tester.ensureVisible(chooseFile);
+      await tester.tap(chooseFile);
+      for (var frame = 0; frame < 50 && !pickerOpened; frame++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(pickerOpened, isTrue);
+
+      await _withFrames(tester, () async {
+        await database.transaction(() async {
+          await database
+              .update(database.localOwners)
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'synthetic-b',
+                  createdAtUtcMs: 0,
+                ),
+              );
+        });
+        await vocabulary.createCategory('ชุดของบัญชี B');
+      });
+      final beforeReturn = await _withFrames(
+        tester,
+        () => _localRecords(database),
+      );
+      pending.complete(_jsonFile('รายการส่วนตัว A.json', '$_bagItems]'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('รายการส่วนตัว A.json'), findsNothing);
+      expect(find.text('ตรวจรายการจากไฟล์'), findsNothing);
+      expect(find.text('พร้อมฝึก 2 คำ'), findsNothing);
+      if (find.byType(CategoriesPage).evaluate().isEmpty) {
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+      }
+      await _pumpUntil(tester, find.text('ชุดของบัญชี B'));
+      expect(find.text('การเดินทาง'), findsNothing);
+      expect(
+        await _withFrames(tester, () => _localRecords(database)),
+        beforeReturn,
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets('library previews pasted table rows in the chosen set', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester, scale: 2);
+      final before = await tester.runAsync(() => _localRecords(database));
+      await _tapLabel(tester, 'นำเข้าชุดคำ');
+      await _tapLabel(tester, 'วางคำจากตาราง');
+      final sheet = find.byType(BottomSheet);
+      await _pumpUntil(tester, sheet);
+      final destination = find.descendant(
+        of: sheet,
+        matching: find.text('การเดินทาง'),
+      );
+      await tester.ensureVisible(destination);
+      await tester.pumpAndSettle();
+      await tester.tap(destination.hitTestable());
+      await tester.pumpAndSettle();
+      final pasted = find.byKey(const ValueKey('paste-import-csv'));
+      await _pumpUntil(tester, pasted);
+      await tester.ensureVisible(pasted);
+      await tester.enterText(
+        pasted,
+        'word,meaning,partOfSpeech\ncarriage,ตู้โดยสาร,noun',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await _tapLabel(tester, 'ตรวจคำจากตาราง');
+      await _pumpUntil(tester, find.text('ผ่าน 1 · ต้องแก้ 0 · ซ้ำ 0'));
+      await tester.scrollUntilVisible(
+        find.text('carriage'),
+        120,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
+      await _pumpUntil(tester, find.text('carriage'));
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('วางคำจากตาราง'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.text('การเดินทาง'));
+      expect(await tester.runAsync(() => _localRecords(database)), before);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
+  testWidgets(
+    'one add menu preserves the set when file selection is cancelled',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2);
+        await tester.tap(find.text('การเดินทาง'));
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('add-word')));
+        await tester.pumpAndSettle();
+        expect(find.text('พิมพ์คำศัพท์'), findsOneWidget);
+        expect(find.text('ถ่ายภาพ'), findsOneWidget);
+        await tester.ensureVisible(find.byKey(const ValueKey('import-words')));
+        await tester.tap(find.byKey(const ValueKey('import-words')));
+        await _tapLabel(tester, 'เพิ่มคำจากตารางเข้าคลัง');
+        await _pumpUntil(tester, find.byType(AddMultipleWordsScreen));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('choose-import-file')));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await _tapLabel(tester, 'กลับคลังคำ');
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(
+          await tester.runAsync(
+            () => database.select(database.vocabularyWords).get(),
+          ),
+          hasLength(2),
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'one-meaning practice offers Add in the selected set and returns to its words',
+    (tester) async {
+      try {
+        await pumpLibrary(tester);
+        await tester.tap(find.text('การเดินทาง'));
+        await _pumpUntil(tester, find.text('station'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ฝึกจากชุดนี้'));
+        await _pumpUntil(
+          tester,
+          find.descendant(
+            of: find.byType(QuizScreen),
+            matching: find.text('รอบนี้ยังไม่มีความหมายอื่นให้เลือก'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('quiz-add-word')), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('apple'), findsNothing);
+        expect(find.text('ดูผลการเรียน'), findsNothing);
+        await tester.pageBack();
+        await _pumpUntil(tester, find.text('ฝึกจากชุดนี้'));
+        await tester.pumpAndSettle();
+        expect(find.text('station'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+}
+
+Future<void> _tapLabel(
+  WidgetTester tester,
+  String label, {
+  bool settle = true,
+  bool scroll = false,
+}) async {
+  final item = find.text(label);
+  if (scroll && item.evaluate().isEmpty) {
+    final scrollable = find
+        .byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        )
+        .hitTestable();
+    if (scrollable.evaluate().isNotEmpty) {
+      await tester.scrollUntilVisible(item, 140, scrollable: scrollable.last);
+    }
+  }
+  await _pumpUntil(tester, item);
+  await tester.ensureVisible(item);
+  await tester.pumpAndSettle();
+  if (item.hitTestable().evaluate().isEmpty) {
+    final scrollable = find.byType(Scrollable).hitTestable();
+    await tester.scrollUntilVisible(
+      item.hitTestable(),
+      140,
+      scrollable: scrollable.last,
+    );
+  }
+  await tester.tap(item.hitTestable().first);
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
+}
+
+Future<T> _withFrames<T>(
+  WidgetTester tester,
+  Future<T> Function() action,
+) async {
+  var complete = false;
+  final future = action().whenComplete(() => complete = true);
+  unawaited(future.then<void>((_) {}, onError: (Object _) {}));
+  for (var frame = 0; frame < 80 && !complete; frame++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  expect(complete, isTrue, reason: 'local database operation must finish');
+  return future;
+}
+
+Future<List<Object>> _localRecords(AppDatabase database) async => [
+  await database.select(database.localOwners).get(),
+  await database.select(database.vocabularyCategories).get(),
+  await database.select(database.vocabularyWords).get(),
+  await database.select(database.vocabularyImports).get(),
+  await database.select(database.vocabularyImportRows).get(),
+  await database.select(database.learningSessions).get(),
+  await database.select(database.answerAttempts).get(),
+  await database.select(database.srsStates).get(),
+  await database.select(database.eventsV2).get(),
+  await database.select(database.readingEvents).get(),
+  await database.select(database.researchConsents).get(),
+  await database.select(database.rewardTransactions).get(),
+  await database.select(database.outboxOperations).get(),
+];
+
+final class _DelayedOwners extends Fake implements LocalOwnerRepository {
+  _DelayedOwners(this.delegate);
+  final LocalOwnerRepository delegate;
+  Completer<void>? gate;
+  var waits = 0;
+  @override
+  Future<owner_domain.LocalOwner> getOrCreateActiveOwner() async {
+    final pending = gate;
+    if (pending != null) {
+      waits++;
+      await pending.future;
+    }
+    return delegate.getOrCreateActiveOwner();
+  }
+}
+
+Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
+  for (var index = 0; index < 80; index++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  fail('Timed out waiting for $finder');
+}

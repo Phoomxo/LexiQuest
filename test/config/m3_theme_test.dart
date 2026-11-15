@@ -28,19 +28,20 @@ void main() {
     expect(darkOverlay?.systemNavigationBarIconBrightness, Brightness.light);
   });
 
-  test('lightTheme exposes the R11 semantic color roles', () {
+  test('lightTheme uses the pinned FigCraft palette and semantic roles', () {
     final theme = M3Theme.lightTheme;
 
-    expect(theme.colorScheme.primary, const Color(0xFF5A4CF2));
+    expect(theme.colorScheme.primary, const Color(0xFF3942AD));
     expect(theme.colorScheme.secondary, const Color(0xFF0E8176));
     expect(theme.colorScheme.tertiary, const Color(0xFFD98213));
     expect(theme.colorScheme.onTertiaryContainer, const Color(0xFF6B3E00));
     expect(theme.colorScheme.error, const Color(0xFFB3261E));
     expect(theme.colorScheme.surface, Colors.white);
-    expect(theme.colorScheme.onSurface, const Color(0xFF171A2B));
-    expect(theme.colorScheme.onSurfaceVariant, const Color(0xFF626A80));
-    expect(theme.colorScheme.outline, const Color(0xFFDDE1EC));
-    expect(theme.scaffoldBackgroundColor, const Color(0xFFF5F6FA));
+    expect(theme.colorScheme.onSurface, const Color(0xFF1F2441));
+    expect(theme.colorScheme.onSurfaceVariant, const Color(0xFF525B73));
+    expect(theme.colorScheme.outline, const Color(0xFFDADEEB));
+    expect(theme.colorScheme.primaryContainer, const Color(0xFFE8EBF8));
+    expect(theme.scaffoldBackgroundColor, const Color(0xFFFBFBFE));
   });
 
   test('semantic foreground pairs meet text contrast in light and dark', () {
@@ -50,6 +51,10 @@ void main() {
     ]) {
       expect(
         _contrast(scheme.primary, scheme.onPrimary),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(scheme.primaryContainer, scheme.onPrimaryContainer),
         greaterThanOrEqualTo(4.5),
       );
       expect(
@@ -74,6 +79,25 @@ void main() {
 
       final shape = theme.cardTheme.shape as RoundedRectangleBorder;
       expect(shape.borderRadius, BorderRadius.circular(16));
+    }
+  });
+
+  test('dark text actions remain readable against their surfaces', () {
+    for (final theme in [
+      M3Theme.darkTheme,
+      M3Theme.darkThemeFor(
+        themeId: 'theme_ocean',
+        wallpaperId: 'wallpaper_focus',
+      ),
+    ]) {
+      expect(
+        _contrast(theme.colorScheme.primary, theme.scaffoldBackgroundColor),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(theme.colorScheme.primary, theme.colorScheme.surface),
+        greaterThanOrEqualTo(4.5),
+      );
     }
   });
 

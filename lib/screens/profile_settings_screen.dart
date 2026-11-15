@@ -1,11 +1,21 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'study_preferences_panel.dart';
 
 import '../config/m3_theme.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/motivation/domain/streak_policy.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'account_deletion_screen.dart';
+import 'achievements_screen.dart';
+import 'export_center_screen.dart';
+import 'thesis_chart_screen.dart';
 
 typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
 
@@ -15,11 +25,13 @@ class ProfileSettingsScreen extends StatefulWidget {
     this.loader,
     this.account,
     this.onOpenMenu,
+    this.isActive = true,
   });
 
   final ProfileProgressLoader? loader;
   final AccountUseCases? account;
   final VoidCallback? onOpenMenu;
+  final bool isActive;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -29,6 +41,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<ProgressSnapshot>? _load;
   ProfileProgressLoader? _loader;
   AccountUseCases? _account;
+  String? _accountUid;
+  ValueListenable<int>? _progressUpdates;
+
+  AccountUseCases? get _currentAccount =>
+      widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
 
   ProfileProgressLoader? get _currentLoader =>
       widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
@@ -36,9 +53,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _account ??=
-        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
-    if (_load == null || _currentLoader != _loader) {
+    _bindSources();
+  }
+
+  void _bindSources({bool reload = false}) {
+    final updates = AppDependenciesScope.maybeOf(context)?.progressUpdates;
+    final updatesChanged = !identical(updates, _progressUpdates);
+    if (updatesChanged) {
+      _progressUpdates?.removeListener(_refresh);
+      _progressUpdates = updates;
+      updates?.addListener(_refresh);
+    }
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    final accountChanged = !identical(_account, account) || _accountUid != uid;
+    _account = account;
+    _accountUid = uid;
+    if (reload ||
+        updatesChanged ||
+        _load == null ||
+        _currentLoader != _loader ||
+        accountChanged) {
       _load = _loadProgress();
     }
   }
@@ -46,7 +81,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void didUpdateWidget(ProfileSettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loader != widget.loader) _load = _loadProgress();
+    _bindSources(reload: widget.isActive && !oldWidget.isActive);
   }
 
   Future<ProgressSnapshot> _loadProgress() {
@@ -68,15 +103,33 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _progressUpdates?.removeListener(_refresh);
+    super.dispose();
+  }
+
   Future<void> _editName() async {
-    final account = _account;
-    if (account == null) return;
+    final account = _currentAccount;
+    final uid = account?.currentSession?.uid;
+    if (account == null || uid == null) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => _EditDisplayNameDialog(account: account),
+      builder: (_) => _EditDisplayNameDialog(
+        account: account,
+        isCurrent: () =>
+            mounted &&
+            identical(_currentAccount, account) &&
+            account.currentSession?.uid == uid,
+      ),
     );
     if (mounted) setState(() {});
   }
+
+  void _openPersonalData() => AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(name: 'account/data', builder: (_) => const _PersonalData()),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +153,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       body: AdaptiveContentPane(
         maxWidth: AdaptiveContentPane.formMaxWidth,
         child: FutureBuilder<ProgressSnapshot>(
+          key: ValueKey((_account, _accountUid, _loader)),
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -116,6 +170,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       onPressed: _refresh,
                       child: const Text('ลองใหม่'),
                     ),
+                    TextButton(
+                      onPressed: _openPersonalData,
+                      child: const Text('ข้อมูลของฉัน'),
+                    ),
                   ],
                 ),
               );
@@ -128,6 +186,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               );
             }
             final progress = snapshot.data!;
+            final dependencies = AppDependenciesScope.maybeOf(context);
+            final learningDaysVisible =
+                (dependencies?.features.isVisible(Feature.mastery) ?? true) &&
+                (dependencies?.fieldFeatures.isVisible(FieldFeature.mastery) ??
+                    true);
+            final collectionVisible =
+                (dependencies?.features.isVisible(Feature.achievements) ??
+                    true) &&
+                (dependencies?.fieldFeatures.isVisible(
+                      FieldFeature.achievements,
+                    ) ??
+                    true);
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -150,6 +220,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                 ),
+                if (dependencies?.studyPreferences != null)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.flag_outlined),
+                      title: const Text('วิธีเรียนและวันเป้าหมาย'),
+                      subtitle: const Text('เลือกสิ่งที่อยากฝึก หรือข้ามได้'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => showStudyPreferences(context),
+                    ),
+                  ),
                 if (account != null)
                   TextButton.icon(
                     onPressed: _editName,
@@ -158,10 +238,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 const SizedBox(height: 8),
                 _Metric(label: 'คะแนนประสบการณ์', value: '${progress.totalXp}'),
-                _Metric(
-                  label: 'เรียนต่อเนื่อง',
-                  value: '${progress.streakDays} วัน',
-                ),
+                if (learningDaysVisible)
+                  _Metric(
+                    label: 'เรียนต่อเนื่อง',
+                    value:
+                        progress.learningDays != null &&
+                            progress.learningDays!.status !=
+                                StreakFoldStatus.ready
+                        ? 'รอตรวจวันเรียน'
+                        : '${progress.streakDays} วัน',
+                  ),
                 _Metric(
                   label: 'ระดับจากคะแนนประสบการณ์',
                   value: '${progress.gameLevel}',
@@ -176,7 +262,33 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text('แสดงเฉพาะคะแนนจากคำตอบที่บันทึกจริง'),
+                  child: Text('XP รวมคะแนนจากคำตอบและภารกิจที่รับแล้ว'),
+                ),
+                if (collectionVisible)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.emoji_events_outlined),
+                      title: const Text('ของสะสม'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'rewards/collection',
+                          builder: (_) => AchievementsScreen(
+                            loader: widget.loader,
+                            showCollection: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('ข้อมูลของฉัน'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openPersonalData,
+                  ),
                 ),
               ],
             );
@@ -187,10 +299,96 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 }
 
+class _PersonalData extends StatelessWidget {
+  const _PersonalData();
+
+  @override
+  Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final deletion = dependencies?.accountDeletion;
+    final session = dependencies?.account?.currentSession;
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'ข้อมูลของฉัน'),
+      ),
+      body: AdaptiveContentPane(
+        maxWidth: AdaptiveContentPane.formMaxWidth,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (dependencies?.exports != null &&
+                dependencies!.fieldFeatures.isVisible(FieldFeature.export))
+              ListTile(
+                leading: const Icon(Icons.file_download_outlined),
+                title: const Text('บันทึกสำเนาข้อมูล'),
+                subtitle: const Text('เลือกข้อมูลการเรียนที่ต้องการเก็บ'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'export/center',
+                    builder: (_) => const ExportCenterScreen(),
+                  ),
+                ),
+              ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart_outlined),
+              title: const Text('ข้อมูลสำหรับงานวิจัย'),
+              subtitle: const Text('ดูตัวอย่างการอ่านกราฟ'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => AppNavigator.pushPage<void>(
+                context,
+                AppPage<void>(
+                  name: 'research/sample-chart',
+                  builder: (_) => const ThesisChartScreen(
+                    returnLabel: 'กลับไปที่ข้อมูลของฉัน',
+                  ),
+                ),
+              ),
+            ),
+            if (deletion != null && session != null && !session.isAnonymous)
+              ListTile(
+                leading: Icon(
+                  Icons.delete_forever_outlined,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: const Text('ลบบัญชีและข้อมูล'),
+                subtitle: const Text('อ่านผลกระทบและขั้นตอนการลบ'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  final current = AppDependenciesScope.maybeOf(context);
+                  if (!identical(current?.accountDeletion, deletion) ||
+                      current?.account?.currentSession?.uid != session.uid) {
+                    return;
+                  }
+                  AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'account/delete',
+                      builder: (_) => AccountDeletionScreen(
+                        useCases: deletion,
+                        expectedFirebaseUid: session.uid,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _EditDisplayNameDialog extends StatefulWidget {
-  const _EditDisplayNameDialog({required this.account});
+  const _EditDisplayNameDialog({
+    required this.account,
+    required this.isCurrent,
+  });
 
   final AccountUseCases account;
+  final bool Function() isCurrent;
 
   @override
   State<_EditDisplayNameDialog> createState() => _EditDisplayNameDialogState();
@@ -205,13 +403,23 @@ class _EditDisplayNameDialogState extends State<_EditDisplayNameDialog> {
 
   Future<void> _save() async {
     if (_busy) return;
+    if (!widget.isCurrent()) {
+      setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await widget.account.updateDisplayName(_name.text);
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        if (widget.isCurrent()) {
+          Navigator.pop(context);
+        } else {
+          setState(() => _error = 'บัญชีเปลี่ยนแล้ว กรุณาปิดแล้วเปิดใหม่');
+        }
+      }
     } on AccountException catch (error) {
       if (mounted) {
         setState(
@@ -272,10 +480,16 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+    final valueText = Text(
+      value,
+      style: Theme.of(context).textTheme.titleLarge,
+    );
     return Card(
       child: ListTile(
         title: Text(label),
-        trailing: Text(value, style: Theme.of(context).textTheme.titleLarge),
+        subtitle: largeText ? valueText : null,
+        trailing: largeText ? null : valueText,
       ),
     );
   }

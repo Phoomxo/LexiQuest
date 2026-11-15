@@ -1,0 +1,930 @@
+# Continuous execution checkpoint
+
+## S3 and S6 Prompt modes and answer acknowledgement
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. The application remains
+  `2261454f`. Windows passed 106 focused Flutter cases. The
+  same source passed Linux CI with 2,452 Flutter and 267 backend
+  tests, both databases' checks, analysis and Android debug build.
+- Android API 35 offline at 200% used the installed APK beginning
+  `43c0e4a4`. f08 rejected the wrong-sense and duplicate-meaning
+  sets without a SQLite change. The supported definition explained
+  ticket, accepted platform after a deliberate retry, saved 50%,
+  and returned to the activities.
+- f17 held a bounded empty SQLite writer transaction. The APK
+  showed save failure with no committed answer or feedback.
+  Releasing the lock and retrying saved 100% with one answer,
+  one point and one coin. Windows injected both a failed commit
+  and a lost acknowledgement into the real Drift path.
+- P2.3 also verified reverse choice and typed recall on that APK.
+  Reverse choice retained 67% across three attempts. Typed recall
+  kept the original 0% after correction and returned to the
+  reviewed source and its set. After a cold launch, the 50%
+  definition and 100% saved retry reopened from History with
+  matching SQLite snapshots.
+  [Evidence](evidence/s3-s6-p23-prompt-modes.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43682172257).
+- f08, f17 and P2.3 passed on the prototype. Totals are 21 of 44
+  features and 16 of 64 work packages. The 48 delivery screens
+  remain pending with signed Android and spoken TalkBack.
+- Next check f23 and f24 with the Focus timer's measured active
+  and paused ranges, background and process restart, then compare
+  the single-session record with the weekly total. The exact-source
+  Windows Focus tests passed 12 cases.
+
+## S3 English-to-Thai feedback and S4 dictation hint
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `2261454f` passed
+  233 Windows Flutter tests and analysis of the six changed Dart files.
+  Linux CI passed 2,452 Flutter and 267 backend CPU tests, Firestore
+  and Supabase checks, and the Android debug build.
+- At 200% text and offline, the installed Android API 35 debug APK
+  beginning `43c0e4a4` showed real pairs for station and platform.
+  Correct choices occupied indexes 1 and 0. Both deliberate wrong
+  choices remained in the 0% result. Score returned to the same set,
+  and Library returned to the learn tab.
+- A cold launch reopened both that 0% round and the older 50% round
+  whose options had no stored mapping. Both SQLite snapshots matched
+  their earlier counterparts.
+  [Evidence](evidence/s3-f18-meaning-feedback.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43682172257).
+- With the emulator's TTS service unavailable, the same APK displayed
+  the error and the sentence hint for the saved station. It retained
+  staton while correcting it to station and returned to the same
+  detail and set. SQLite stayed the same and the TTS service was
+  restored to its default. Windows passed 132 supporting cases.
+  [Evidence](evidence/s4-f19-dictation-hint.txt).
+- P3.3 also exercised bookmarks and content reports on that APK.
+  Saving and removing station changed only its bookmark flag.
+  Cancel was read-only and confirmation created one source-bound
+  report in the on-device queue with no outbox item. The same
+  report and queue reopened in a new app process.
+  [Evidence](evidence/s3-s4-p33-feedback-and-reports.txt).
+- f18, f19 and P3.3 passed on the prototype. Totals are 19 of 44
+  features and 15 of 64 work packages. Signed delivery and spoken
+  TalkBack remain pending.
+- Next check f08 from all practice with the authored platform/ticket
+  pair and a wrong-sense set. Verify feedback, score and Back on
+  Android. P2.3 still needs f17's committed-feedback and retry proof.
+
+## S3 Thai-to-English choice
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `a6f87136` passed
+  120 scoped Windows Flutter tests and analysis of the three changed
+  Dart files. Linux CI passed 2,450 Flutter and 267 backend CPU tests,
+  Firestore and Supabase checks, and the Android debug build.
+- The local and installed Android API 35 x64 debug APK share SHA-256
+  beginning `28d7298f`. At 200% text and offline, the empty,
+  single-word and ambiguous sets returned to activities with
+  matching SQLite snapshots.
+- After station was wrong for ชานชาลา, the real pairs explained the
+  choices. Retrying with platform stayed on the same question.
+  Answering station next gave 67% and returned to activities.
+  A new process reopened the same owned round from history. The three
+  attempts and the score matched the completed SQLite snapshot.
+  [Evidence](evidence/s3-f07-reverse-quiz.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43680369979).
+- f07 passed on the prototype, bringing totals to 17 of 44 features
+  and 14 of 64 work packages. P2.3 still needs combined acceptance.
+  All 48 delivery screens and spoken TalkBack still need checks.
+- Next complete f18 for English-to-Thai choice. On the same APK,
+  selecting ชานชาลา for station showed the selected meaning and
+  station — สถานี. The completed 50% round had `optionWords: null`.
+  The native feedback and saved plan are in
+  `build/boss-android-evidence/f18-native-preflight-feedback.txt` and
+  `f18-native-preflight-plan.json`. Ground the comparison in the owned
+  distractor and retain the answer semantics of earlier plans.
+
+## S2 Sample pack review and catalog metadata
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `ca6bbeea` passed
+  151 Windows Flutter tests and analysis for both changed Dart files.
+- Android API 35 offline at font 2.0 used the x64 debug APK with
+  local and installed SHA-256 beginning `a98a3fd9`. The bundled
+  catalog filtered A2 to one pack and C2 to zero. Back retained A2.
+- Kitchen showed two real words. Back after the first reveal gave no
+  completed result. Completing cup and spoon returned 2 of 2 to the
+  same pack. The travel pack had its own state and the Library kept
+  the original A-F03 search.
+- Cold launch reopened the empty owned set and the same kitchen
+  source digest. The sample started again with cup. Three SQLite
+  snapshots matched, including vocabulary, rounds, points and outbox.
+  [Evidence](evidence/s2-f02-pack-review.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43678592836).
+- f02 and P3.1 passed on the prototype. Totals are 16 of 44 features
+  and 14 of 64 work packages. Delivery screens and spoken TalkBack
+  remain open.
+- Next fix f07 in the Thai-to-English choice route. The current APK
+  showed the expected empty and one-word fallbacks. The one-word
+  case nevertheless left a quiz row active after Back, with zero
+  answers, points or outbox writes. The query is recorded under
+  `build/boss-android-evidence/f07-native-edge-reconciliation.txt`.
+  Eighteen focused Windows tests passed before that observation.
+  Test contrast before `LearningUseCases._startQuestions` writes
+  the session, then exercise ambiguity, a deliberate retry, and
+  reopening the saved score.
+
+## S3 Source of the sample learning packs
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `64290935` passed
+  149 Windows Flutter tests and analysis of all three changed Dart files.
+  The Library app-bar action preserved room for owned sets at 200% text.
+- The local and installed Android API 35 x64 debug APK share SHA-256
+  beginning `fe4b718b`. The bundled kitchen draft showed `LQ-KT-01`
+  and the digest of cup and spoon in the displayed order. Travel showed
+  its own revision and digest. Returning to the Library preserved A-F03.
+- After a new process started, the kitchen revision and digest matched.
+  The app also read the manually created and edited turnstile with the
+  original owner, word ID and revision 2. Four SQLite snapshots matched.
+  [Evidence](evidence/s3-f04-pack-provenance.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43676491715).
+- f04 and P3.2 passed on the prototype. Totals are 15 of 44 features
+  and 13 of 64 work packages. All 48 delivery screens and spoken
+  TalkBack need checks.
+- Next complete f02 from the kitchen pack's two visible words through
+  sample flashcard review. Track the words actually revealed and return
+  to the same pack, catalog and Library. The same APK verified the
+  empty owned-set path for P3.1 on A-F03-Empty-Synthetic.
+
+## S2 Detailed word card from the Library
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `005ff46b` passed
+  123 Windows Flutter tests and analysis of both Dart files. The
+  lexical reader observes the existing owner and word revision.
+- The local and installed x64 debug APK share SHA-256 beginning
+  `22cc751e`. Android API 35 offline at font 2.0 showed saved A2,
+  the related travel terms, and the unspecified level for ticket.
+  Both searches survived Back. The read-only SQLite snapshots matched.
+- The station edit updated the same word from revision 1 to 2.
+  The reader removed the travel terms for the changed meaning.
+  The edited SQLite snapshot matched after a new process reopened
+  the same card. [Evidence](evidence/s2-f03-lexical-details.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43673909602).
+- The prototype has verified 14 of 44 features and 12 of 64 work
+  packages. All 48 delivery screens and spoken TalkBack need checks.
+- On the same APK, P3.2's manual form created and opened turnstile.
+  Its edited meaning reopened with the same owner and word IDs at
+  revision 2. The provenance check remains.
+- Next implement f04 through the Library's authored kitchen pack.
+  Use the pinned two-word draft and compute the SHA-256 from its actual
+  contents. Preserve the return to that pack, its list, and the Library.
+  P3.2 also links f04 and remains open.
+
+## S3 Practice a saved round's mistakes from history
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `c9f3125f` passed
+  309 Windows Flutter tests and analysis of all ten changed Dart
+  files. Review identified owner changes during navigation and
+  direct practice. The owner guards were verified on the journey.
+- The local and installed x64 debug APK share a SHA-256 that starts
+  with `aeb38bb8`. Android API 35 offline at font 2.0 completed the
+  original two-word Quiz at 50%. The saved Score opened the Review
+  Desk. A new round practiced station only and scored 100%.
+- The new Score returned through the desk to the original 50%.
+  A new process reopened the same original result from Progress.
+  SQLite proved the parent link, preserved both original answers,
+  and matched the completed snapshot after reopening.
+  [Evidence](evidence/s3-p34-history-review-desk.txt).
+- The prototype has verified 13 of 44 features and 12 of 64 work
+  packages. All 48 screens need delivery checks.
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43671998237).
+- Next verify f03 from the Library's station card. Show the saved
+  word level and the authored related terms for the station sense.
+  Return to the same card, set, and Library.
+
+## S3 Review Desk with local reports and saved words
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `85d49781` passed 298
+  Windows Flutter tests and analysis of seven changed Dart files.
+  Review accepted the report, bookmark, and word-detail owner guards.
+- The x64 debug APK SHA-256 starts with `ca6a0233` and matches the
+  installed package. Android API 35 offline at font 2.0 opened the
+  saved station and its report, returned to the original Library query,
+  and reopened the report after a cold start. Three passive database
+  snapshots match. The first pass needed an app restart after an
+  input-dispatch timeout.
+- The due queue completed compass at 100% and returned empty. The
+  Weakness Clinic opened a five-word round with station from actual
+  prior mistakes and returned to the same desk. [Evidence](evidence/s3-f22-review-desk.txt).
+- The prototype has verified 13 of 44 features and 11 of 64 work
+  packages. All 48 screens need delivery checks.
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43668604036).
+- Next test P3.4 from a normal completed round. Open the original Score
+  through Progress history, enter the desk from that Score, and
+  practice that round's missed words while retaining the original result.
+
+## S3 Review from a completed flashcard answer
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `9120384f` passed 307
+  Windows Flutter tests and analysis of all 15 changed Dart files.
+  Review resolved account scope on child routes and Quiz visibility.
+- The x64 debug APK SHA-256 starts with `6a2dee19` and matches the
+  installed package. On the isolated API 35 emulator at font 2.0, the
+  learner chose the wrong meaning, retried after the comparison, and
+  typed station. The round returned to the same Review Desk. After a
+  cold restart, the desk reopened the original 0/1 with both later
+  checks. SQLite confirmed one newly scored attempt and an unchanged
+  completed-round snapshot. [Evidence](evidence/s3-f15-review-ladder.txt).
+- The feature ledger records 12 of 44 passing in the prototype. The
+  work-package ledger remains 11 of 64. Signed delivery checks remain
+  open for all 48 screens. [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43665367048).
+- Next ground f22 at the existing Review Desk. Reuse the local report
+  queue with the captured owner and verify the return to the same Library.
+
+## S3 Source recall, guided correction and cold resume
+
+- Worktree `figcraft-flutter-v1/LexiQuest`, branch
+  `codex/figcraft-flutter-prototype`, application `283f8f66`.
+  Windows Flutter 250 and analysis of the 19 changed Dart files passed.
+  Review exercised retry, Back, same-revision word edits, owner
+  changes, guest cue merge, and exact answer replay through Sync.
+- Android x64 debug APK `0c628ee3` installed with a matching hash.
+  The isolated API 35 emulator at font 2.0 reopened after process
+  restart. Selecting the same local file restored stat and the
+  independent ctation. Native English and Thai entry worked. The
+  original session finished at 0/1 with one canonical attempt,
+  removed its draft, and returned to the same Source. f11 passes
+  this prototype scope. Signed keyboard and spoken focus remain
+  unverified. [Evidence](evidence/s3-f11-source-recall.txt).
+- [CI for 283f8f66](https://github.com/Phoomxo/LexiQuest/actions/runs/43661494356)
+  passed Flutter 2,410, backend CPU 267, Firestore, Supabase, analysis
+  and Android debug build. [CI for 35649233](https://github.com/Phoomxo/LexiQuest/actions/runs/43659021365)
+  completed successfully as well.
+
+## S2 Library level filtering
+
+- The same offline API 35 APK at font 2.0 selected A2 and opened the
+  only matching set. Back retained A2. C2 showed zero sets and the
+  empty message. Clear restored both synthetic sets. SQLite browsing
+  snapshots matched after inserting two isolated level fixtures.
+  f01 passes the prototype scope. [Evidence](evidence/s2-f01-level-filter.txt).
+- The isolated emulator `emulator-5592` remains in the unfiltered
+  Library on application `283f8f66`. Next ground f15 from the Review
+  Desk and actual practice history. The ladder must preserve the
+  meaning-choice attempts separately from the later unaided recall.
+
+## S2 Atomic vocabulary edit and return
+
+- Worktree `figcraft-flutter-v1/LexiQuest`, branch
+  `codex/figcraft-flutter-prototype`, application `d5df2850`. The editor
+  now submits the opening word snapshot to one transaction. Windows
+  Flutter 148 and seven-file analysis passed. Independent review accepted.
+- Android x64 debug APK `7342f3a9` installed with a matching hash.
+  After cold boot on the isolated API 35 emulator, the saved edit
+  returned to its live detail at font 2.0. SQLite held one new revision
+  and outbox operation, both prior learning results, and zero research
+  rows. The earlier startup timeout and ANR remain recorded.
+  [Evidence](evidence/s3-f43-srs-original-card.txt).
+- [CI for the previous head 0a947a3b](https://github.com/Phoomxo/LexiQuest/actions/runs/43655873017)
+  passed Flutter 2,393, backend CPU tests, Firestore, Supabase and the
+  Android debug build. [CI for d5df2850](https://github.com/Phoomxo/LexiQuest/actions/runs/43657394008)
+  passed Flutter 2,397, backend CPU 267, Firestore, Supabase, analysis
+  and the Android debug build.
+
+## S3 Category quiz setup
+
+- The same installed APK passed both f16 entry routes on offline API 35
+  at font 2.0. Count shortage disabled Start and cancellation did not
+  write. A two-word round resumed at its saved question after pause,
+  accepted the answer after five minutes of wall time, finished 100%
+  and reopened with both exact answers after process restart. The
+  one-word self-paced round stored both toggles off and returned to the
+  category chooser. f16 passes this prototype scope. Signed system
+  audio and TalkBack still need verification.
+  [Evidence](evidence/s3-f16-round-setup.txt).
+
+## S3 Original flashcard result and linked repair
+
+- Application `bfe5f14e`, API 35 offline APK `f75c6f26` at font 2.0.
+  A seeded ferry recall saved the original card and 0%. A normal
+  vocabulary edit changed the live spelling and gloss. SRS history
+  retained the original card and self-rating. The live edited word
+  generated one new 100% Quiz linked to the same original 0% result.
+  Both SQLite owner/session rows matched their scope. f43 passes this
+  prototype history and repair journey. [Evidence](evidence/s3-f43-srs-original-card.txt).
+- The observed edit committed but showed an incorrect context warning.
+  Source `10956cc1` resolves the post-commit refresh and preserves the
+  pre-write guard with Windows Flutter 122 and analysis. The new
+  Android debug APK `dc4281f2` built. The successor build's editor
+  return is recorded above. Signed startup reliability remains open.
+
+## S3 Due review and reopen from Progress
+
+- P1.5 checked both ratings and reveal-only on the same offline APK.
+  The reveal-only state and timestamps matched. Forget reset a seeded
+  7-day interval to one day, reset repetitions and added one lapse.
+  Remember and forget both scheduled +24 hours from their answer time.
+
+- On offline API 35 debug APK `46c8a808` at system font 2.0, one isolated
+  due word appeared on Today. Reveal left attempts empty. The single
+  self-rating produced a 100% result and due time +24h. Reopening the app
+  kept the same result and sent the empty queue action to the Library.
+- The existing flashcards, picker, policy and use case tests passed 87.
+  f06 and f14 pass the scoped journey. The original SRS prompt-text
+  snapshot and signed accessibility remain open.
+  [Evidence](evidence/s3-f06-f14-srs-reopen.txt).
+- The same installed APK reopened the original A result, kept its three
+  answer rows and the word mug, and returned to A. B retained its two
+  words and empty result. SQLite confirmed the same saved A session ID.
+  [Evidence](evidence/s7-offline-resume-bookmark.txt).
+
+## S5 Read the paired synthetic assessment
+
+- Source `1edcabbf`, offline API 35 debug APK `46c8a808`. Settings research
+  options opens the authored two-word comparison at system font 2.0.
+  The viewer opens the per-word answers, returns to the same 1/2 and 2/2,
+  then returns to the original research options. Five SQLite counts matched.
+- Windows 142 focused tests and static analysis passed. Review accepted
+  the isolated fixture and checked owner/cycle/form linkage and time order.
+  f28 passes the synthetic scope. P3.6 real evidence and signed accessibility
+  are pending. [Evidence](evidence/s5-f28-synthetic-pair.txt).
+
+## S4 Typed practice from the permission center
+
+- Settings shows an authored spelling exercise when the microphone
+  is unavailable or permission prevents its use. At 200% text the widget
+  journey stays silent through typing, correction and retry, then returns
+  to the same permission center. Both registry gates preserve the
+  diagnostic status while hiding practice.
+- Windows 81 focused tests passed after the CI-discovered IPA scroll
+  issue. Windows full Flutter passed 2,384 at draft head `e4d032ad`.
+  GitHub CI on that head passed Flutter 2,384, backend CPU 267, Firestore,
+  Supabase, analysis and Android debug build.
+  A cold host restart of the isolated API 35 AVD recovered Settings and
+  LexiQuest after the initialization timeout and ANR. Installed hash
+  `5654793f` matched. Android font scale 2.0 verified `staton` to
+  `station`, silent retry and return to the same denied permission center.
+  Five SQLite counts matched. Current signed hardware and TalkBack are pending.
+  [Evidence](evidence/s4-settings-typed.txt).
+
+## S5 Research permit expiry during validation
+
+- In source `841c66f9469e1f00895167b4233dc5dded52f75a`, the signed
+  authorizer rechecks time after signature and revocation state resolve.
+  A synthetic permit that expires during the state read returns false.
+  The default-deny production composition and paired assessment scope
+  are the same. Independent source review accepted the change.
+- Windows Flutter 94 passed across research, consent, export and bootstrap.
+  Captured SHA-256 in `build/` for `figcraft-permit-expiry-red.txt`
+  `547a31d8552ea78de28908c009e6558a1c1481c273caf45b26cae13608d253f8`,
+  `figcraft-permit-expiry-final.txt`
+  `376b0b1cee37e60216a03bb43cc6a4463cbd23e4a8544765290d6b66650972f8`,
+  and clean `figcraft-permit-expiry-analyze.txt`
+  `7bf36ac2c1cfa5e65fcbfc06603cd8f147ca880bf0d5f2dc2186c218d9353f58`.
+  Next verify synthetic owner and instrument linkage for f28/P3.6.
+
+## S4 Shadowing with Android microphone denial
+
+- Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`,
+  branch `codex/figcraft-flutter-prototype`. Offline debug APK `da0d7e19`
+  showed the real OS microphone prompt and visible denial at system font 2.0.
+  The no-mic route kept the sentence and returned to the speaking screen
+  then the original hub. Four SQLite counts matched before and after.
+- The focused regression captured Android's permission lifecycle.
+  Windows Flutter 40 and static analysis passed. Review disposition is
+  partial for the screen and related f41/P6.4 checks. Next check the granted
+  mic and unavailable service on signed hardware. [Evidence](evidence/s4-shadowing-no-mic.txt).
+
+## S7 Offline quiz resume, bookmarks and sync retry
+
+- Exact debug APK `c439d1ec` resumed A at question 2 after force stop.
+  SQLite confirmed the same completed session with three distinct answers.
+  B had no bookmark or result from A. The mug bookmark survived reopening
+  and removal left the word and score. Library search restored the prior
+  query on Back. [Evidence](evidence/s7-offline-resume-bookmark.txt).
+- Focused Windows 173 verified resume, bookmark, local consent and
+  default-off behavior. Another 83 verified Settings/Sync, including a
+  real SQLite reopen after a lost synthetic remote ACK. Analysis clean.
+- Five additional debug emulator cold starts reached the guest action.
+  The earlier recovered ANR still needs a matched signed-device baseline.
+  Follow up on live transport, audible TalkBack and remaining catalogue
+  items without enabling research or touching the vivo fixture.
+
+## S7 Current-source offline core journey
+
+- On the corrected debug APK, Android API 35 added synthetic `mug` only
+  to A after virtual-camera capture and manual confirmation. A showed
+  the original 100% with three answers after offline restart. B retained
+  its two words. The before/after SQLite aggregates, including session ID,
+  matched byte for byte. [Evidence](evidence/s7-core-offline-a87ecdf6.txt).
+- Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`,
+  branch `codex/figcraft-flutter-prototype`. Windows Flutter 2,379 passed
+  at `a87ecdf6`; the same head passed Linux Flutter 2,379, backend CPU 267,
+  policy checks, analysis and APK build. A cold-start ANR on the emulator
+  recovered on Wait.
+  The known object check on vivo is deferred. Audible TalkBack, signed
+  delivery, cold-start reliability and remaining register acceptance are open.
+
+## S3 Cloze Android input and saved history
+
+- Integrated debug APK at `77f38d27` passed both normal activity entries
+  at Android font scale 2.0. Hiding the keyboard and Home pause/resume
+  preserved the typed draft. Both modes stored separate 50% results and
+  two attempts. Typed history and return were observed.
+  [Android and focused evidence](evidence/s3-f09-cloze.txt).
+- [CI 43638623614](https://github.com/Phoomxo/LexiQuest/actions/runs/43638623614)
+  passed Flutter 2,379, CPU backend 267, Firestore, Supabase and Android.
+- Android Score repair exposed an old Quiz continuation that popped the new
+  Practice page. Source `6be1671f` fixes the route guard. Flutter 50 and
+  analysis passed, and offline APK `c439d1ec` replayed the route from Library
+  at system font scale 2.0, preserved the two 50% results and read the new
+  typed history label. The installed base matched the APK SHA-256.
+- A known object was unavailable for the vivo session. That check remains
+  `not_checked`. Resume with the current-build core journey and signed/native
+  accessibility checks. The task-owned Android emulator is `emulator-5592`.
+
+## S5/S6 Synthetic chart and owned appearance
+
+- Source `6af5a5f430614cc99e9e4fc128c7e42bc901cc2c`. The chart's three
+  production entries and return routes use a static sample. The collection
+  and appearance settings use owned rewards for preview and confirmed equip.
+  The standard wallpaper persists through the existing appearance authority.
+- Windows focused 246 and account/entry 103 (overlapping), Firestore emulator
+  34, clean integration analysis, and independent review.
+  [Evidence](evidence/s5-s6-appearance-chart.txt).
+- Android API 35 verified Collection, Shop cancel, Settings focus across a
+  cold restart, standard restore, and the Personal Data chart return.
+  Installed debug SHA-256 matches the integrated APK at `77f38d27`.
+- Every screen has a source candidate. Native 200%, spoken TalkBack and
+  signed delivery acceptance remain for these appearance and chart rows.
+
+## S6 Authored spelling stage
+
+- Source `2c85bf196da6751a3875e1529a3712e665d0a008` opens from the ordinary
+  Word Games menu. Corrections preserve the in-round state and the result
+  reflects three checked answers. The round creates no learning or reward
+  transactions. Windows 21, analysis and independent review passed.
+- Android offline API 35 confirmed typo retry, Back and stay, three correct
+  words, last-word review, identical result on return and the original game
+  menu. Host and installed debug APK SHA-256 match.
+  [Result and APK evidence](evidence/s6-boss-spelling.txt).
+- Native 200%, audible TalkBack and the signed APK remain open. Physical
+  known-object accuracy stays `not_checked` per the device session.
+
+## S4 Listening hub and playlist
+
+- Source `718ba6f02f5481351c04277199dbccf539039f34` links the actual
+  listening menu to IPA, saved-word dictation and the selected-set
+  playlist. The native completion callback drives playback. Leaving
+  the app stops playback and preserves the position.
+- Windows 113 passed, analysis and format clean. Android API 35 tested
+  both playlist entries, playback completion for two real stored words,
+  same set restoration, and Home interruption on word 2. The verified
+  APK matches the installed base. [Evidence](evidence/s4-listening-playlist.txt).
+- [Exact playlist CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43635040561)
+  passed at `7ea0e33a` with Flutter 2,365, CPU backend 267, both policies,
+  analysis and Android debug build.
+- At this checkpoint the screen register had 5 fail and 43 unverified.
+  Native audio and spoken TalkBack remain open.
+
+## S4 Saved-word detail, IPA and Dictation
+
+- Source `1ced5df447cf21314078679fbe96cd733d36bc26`. A saved word
+  opens detail and explicit Edit, or starts one-word IPA/Dictation.
+  The exact word and owner stay bound across transitions. S4 checks
+  56 Flutter cases including 200% and owner-change playback cancellation.
+  Clean analysis and Android build. [Evidence and APK](evidence/s4-saved-word-audio.txt).
+- Android API 35 offline opened station through its real set, requested
+  IPA and normal/slow dictation, used the meaning hint, retained staton
+  for correction, and returned from both activities to the same detail.
+  This confirms the Library origin. Check audible TTS, TalkBack and
+  the additional source/mic routes independently.
+- [Exact saved-word CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43632727258)
+  passed at `4baf9db4` with Flutter 2,351, CPU backend 267, both policies,
+  analysis and Android debug build.
+- The saved-word unit reduced missing screens to six at that checkpoint.
+  Physical known-object camera recognition remains `not_checked`.
+
+## S2 Library JSON practice and CSV review
+
+- Source `6d2c5af694ce0be29b27653b48ea8ac9f6fbb5aa` wires temporary JSON
+  practice from Library and the selected-set import menu. A malformed
+  list remains editable, and a missing bracket can be repaired in memory.
+  File and pasted-table saves use the existing owner-scoped confirmation.
+- Windows 72, analysis, format and independent review passed. Android
+  API 35 offline matched the built APK, used the actual picker, repaired
+  a two-word file, retried the same card, returned to the same preview
+  and empty Library and reopened without a draft. Explicit CSV
+  confirmation saved one synthetic word in the chosen set.
+  [Evidence and APK hash](evidence/s2-wordbook-json.txt).
+- [Exact Wordbook CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43631245794)
+  passed at `0ab02e37` with Flutter 2,344, CPU backend 267, both
+  policies, analysis and Android debug build.
+- Screens 48 now 8 fail and 40 unverified. Signed-device and TalkBack
+  require separate evidence. Next is S4 word detail as the shared entry
+  for Phonetic Explorer and Dictation, from the Library's existing
+  selected word. Keep explicit edit and saved owner data intact.
+
+## S3/S6 CEFR samples and authored reading
+
+- Source `5f3119e8fb644fe3ffce60c2aef352ae937ab9af`. The recurring
+  Practice route opens A1–C2 sample decks and five questions that suggest
+  a deck and story. The authored A1 ticket and A2 station routes keep
+  the previous selection and question result. The station exercise
+  retains the authored sentence and offers the matching origin exit.
+- Windows Flutter 106 including 390×844 at 200%, clean analysis,
+  format and independent review. Android API 35 offline verified
+  A2/C2 navigation, A2 empty search, same deck and 1 / 1, exact tapped
+  station sentence, phonetic text, writing result and retained 2 / 5.
+  [APK and evidence](evidence/s3-s6-cefr-reading.txt).
+- Screens 48 now 9 fail and 39 unverified. Features 44 and work packages
+  64 retain their dispositions. Signed-device, spoken TalkBack and native
+  200% checks remain pending. Known-object accuracy stays `not_checked`.
+- Next S2 slice is `wordbook_import_screen` from Library, according to
+  `21b34eaa:finish_routes_b.py:270–301` and `detached-b.md:13`.
+  Reuse the existing native file picker and keep saved import confirmation.
+  Add preview and repair for the JSON practice draft and contextual exits.
+  Verify absence of durable learning or vocabulary changes and fence any
+  owner switch during file selection or practice.
+- [Exact CEFR CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43629160829)
+  passed at `975f06ea` with Flutter 2,334, CPU backend 267, both policies,
+  analysis and Android debug build. Raw log SHA-256
+  `22b2544d5d586fd01aac35147cc05d492a2f95cc974acd61e00fb2fac45bc438`.
+
+## S6 Word Games
+
+- Source `7b24919f4d6a1169fc81ea1fadb00e715f003bcd` connects Word and
+  Sentence Scramble from Practice using the selected owner's set.
+  Same-quiz scoring stores the submitted tile order. Sentence practice
+  returns to its game chooser, word result or cloze feedback.
+  [Source and test evidence](evidence/s6-p25-word-games.txt).
+- Word and sentence screens move from missing route to unverified.
+  Current Windows 436 regression, then 35 targeted after interpolation
+  lint correction, analysis and debug APK build passed. Installed base
+  matched the APK. Emulator verified exits and both saved orders via
+  Progress after a process restart.
+  Keep remaining S1–S7 evidence, the 48/44/64 registers, vivo v34 and
+  camera recognition `not_checked`. Next after native proof is grounding
+  the missing World Map and CEFR selection/placement paths.
+- [Exact Word Games CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43626663508)
+  passed at `b352ac0e` with Flutter 2,322, CPU backend 267, Firestore,
+  Supabase policies, analysis and Android debug build. Raw log SHA-256
+  `33c52163da737e3522f8b48ebe7032308dd3f9fe6bb7f35b083207c67064f90f`.
+
+## S6 Achievement card
+
+- Source `09aa32169827df43d8d8b28a3962c7aea03975d8`. F34 reads an actual
+  owner streak, hides its date initially, and returns to the daily Quest.
+  Offline API 35 selected a synthetic receiver, canceled the Android
+  chooser and save picker, and verified the saved and received PNG hashes
+  match. Reopen retained the underlying streak and reset the draft to hidden.
+  [Evidence, APK hash and reproduction](evidence/s6-f34-achievement-share.txt).
+- Windows focused 82, clean analysis and an independent source review.
+  CI 43623076800 found two screen architecture failures. Repair commit
+  `24830588` moved database and save adapter access into application
+  composition. Both architecture checks and all five f34 journeys passed
+  in the local 36-case rerun. Exact repair CI 43624564637 passed Flutter
+  2,312, CPU backend 267, policies, analysis and Android debug build.
+  Signed delivery, vivo Sharesheet/Save and spoken TalkBack remain unverified.
+  The feature register is 3 accepted, 40 unverified and one waiting.
+
+## S6 Android study reminder
+
+- Source `77e7dcdffde8fd8aa6c9c46c5dccee5dcee9f552`. F27 Android opt-in,
+  permission denial, closed-process delivery, retained choice, cancellation
+  and return to normal practice verified on isolated offline API 35.
+  The debug APK matched the installed base SHA-256. Windows focused 58,
+  analysis, format and independent source review passed.
+  [Commands, timestamps and artifact hash](evidence/s6-f27-study-reminder.txt).
+- Requiring signed delivery and physical accessibility keeps f27 unverified
+  in the release register. Keep the vivo v34 dataset and known-object
+  recognition `not_checked`.
+- [Exact f27 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43620478717)
+  passed at `4def6931` with Flutter 2,307, CPU backend 267, Firestore,
+  Supabase, analysis and Android debug build. Raw log SHA-256
+  `809d644b388d0657fbbe5b562a568a53aa9fdfb16bbd2d9ab0d0eaeb271a5197`.
+- [Exact f09 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43617906629)
+  passed at `7190be0f` with Flutter 2,302, CPU backend 267, Firestore,
+  Supabase, analysis and Android debug build. Raw log SHA-256
+  `c9c2e6d67a9f5809196ba62eac52a50e59f8c276a80da1d8cb6ef7fe9ebe793c`.
+
+## S3 Authored contextual cloze
+
+- Source `f0574ce914509d9229c0a2ccc7636783e84eed53`. F09 works from stored
+  wrong answers and normal practice with choice and typed modes. Score
+  is preserved, the new round is owner-bound and concurrent starts converge.
+  [Focused 161, final 200% 4 and analysis](evidence/s3-f09-cloze.txt).
+- [Exact f16 CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43615563503)
+  passed at `fd371a14` with Flutter 2,289, backend CPU 267, Firestore,
+  Supabase and Android debug build. Raw CI log SHA-256
+  `5cfc6f5ac859e117cb9e0286f8c6745d942f3936e39449788a620b9be4774d0c`.
+- f09 requires delivery APK and physical accessibility checks.
+
+## S3 Category quiz setup
+
+- Source `a30abdbc63e5c44f89339b971445b288fe674ec6`. F16 setup now
+  opens from selected set and normal category practice, with a read-only
+  preview, explicit Start and persisted question count, presentation and
+  five-minute guide. Legacy quiz plan decoding and contextual Back verified.
+  [Focused 176, final route 18 and analysis](evidence/s3-f16-round-setup.txt).
+- f01 [exact CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43613581763)
+  passed Flutter 2,272, CPU backend 267, Firestore/Supabase and Android debug
+  build at `e2b550d0`. Build log SHA-256
+  `cd9b27591b4e92df9dfcfaeca017d3288712fe876bee8fe559039073b0ad331d`.
+
+## S2 Library level selection
+
+- Source `447e22f79f30413d57d3f7698e21407d403413e2` on
+  `codex/figcraft-flutter-prototype`. F01 now uses stored word levels in the
+  owner's Library. Independent source review accepted the scoped delta.
+  Windows focused 59, analysis and format passed.
+  [Reproduction and log hashes](evidence/s2-f01-level-filter.txt).
+- Retest on the next delivery APK by selecting A2, opening a set, returning
+  with its filter, checking C2 empty and clearing. Verify focus and speech
+  on TalkBack. Do not reuse the earlier v34 delivery hash for this change.
+
+## Current S7 study persistence and Android schema reconciliation
+
+- v26 bridge production revision `189fd79d89d38711b9b7bbcf708b0a4c3b1c7bf9`.
+  [Exact-head CI](evidence/ci-189fd79d.txt) passed Flutter2268/backend267,
+  Firestore/Supabase and Android debug build. Signed vivo v32 built, installed
+  and read back with the original signer and APK hash
+  `e8e04089e4e2bc821be18bec2714065fe0ff29f66dfc6a01314d6e53d6fa2154`.
+  [Device evidence](evidence/vivo-189fd79d.md) confirms retained A3/B0 and 67%
+  after update/reopen, Q2 restart, and actual photo plus manual notebook save,
+  A4/B0 and new 75% after offline reopen. 200% Score Back was tapped.
+- Independent native review found absent correct/incorrect labels on old
+  answer semantics. A minimal Score patch passed 16 targeted tests including
+  the new failing-then-passing semantics check, plus clean analysis. Current
+  vivo v32 still identifies the earlier source and spoken TalkBack remains unverified.
+- Delivery follow-ups preserve the same stored data. v33 source f4915750 exposes
+  the stored correct/wrong labels in real Android XML. Native v33 also exposed a
+  duplicate camera permission dialog. v34 source 04d2a199 fixes it with 71
+  focused cases and clean analysis. Signed v34 hash
+  `5c1d7bd0a515d9586d88ff0380dce170bc6a978beb2e21c73bf6309668f9c05d`
+  matches installed base. One denial reaches the explicit retry affordance
+  and Back returns to A4/B0 with 75%. Repeated the complete camera/manual route
+  on v34 with synthetic pencil and new score 80% (4/5). Offline reopen retained
+  A5 and its result, B0. See [Score](evidence/s7-score-semantics.txt)
+  and [camera denial](evidence/s7-camera-denial.txt).
+- Per-ID registers and the [pre-Beta report](pre-beta-readiness.md) record
+  15 missing screen routes and 5 incomplete features, evidence limits,
+  dependency advisories, service/UAT dependencies and next steps.
+
+- The owner added the [nine pre-Beta completion criteria](execution.md#pre-beta-completion-criteria-for-this-goal) to this Goal. Sequence remains v12 → per-ID 48/44/64 audit → pre-Beta verification and one linked report. Continue on the same worktree/branch/draft PR16. Goal tools expose status updates only, so this plan and checkpoint carry the added criteria.
+
+- Worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`, branch `codex/figcraft-flutter-prototype`, draft PR16 OPEN/DRAFT at pushed head `4d8fbca664bafc420e28a8e303085f30d53a4e07`, exact body verified. [CI43597933619](https://github.com/Phoomxo/LexiQuest/actions/runs/43597933619) ended with 2,240 Flutter passes and one Linux Quiz image mismatch. Root and a reviewer inspected the actual Linux image and corrected its baseline. [Exact revised-head CI](evidence/ci-4d8fbca6.txt) passed 2,241 Flutter and 247 backend cases, policy tests and Android debug build.
+- V12 was reserved before implementation. Actual v11 fixture `test/fixtures/database/v11/schema.sql` SHA256 `5590fbafc72a6ece7ef07bd823b0b8fe5a48baf4482caece8e4f9e2d1fa3406d` has34 tables/10 explicit indexes and no user rows. Capture and semantic v10-upgrade parity each passed. `execution.md` records the selected round, bookmark, report, focus and preferences plan.
+- Migration RED was 1 pass/3 expected failures. After placing the bookmark column at the end and rejecting malformed pre-existing v12 objects/columns, database and account-deletion passed 87. Local-only sync passed 16, merge/bookmark repository passed 24, and calendar pin coverage passed 29. Synthetic backend passed 41, with 35 local export scopes and the original 26 cloud scopes.
+- V12 study routes are wired to Library, Source Practice, Mastery, Profile, Settings and the verified-account Home. The final focused integration snapshot passed 612 tests in 38s, including v11 upgrade/reopen, v12 data lifecycle and sync, A/B Quiz isolation, changed-vocabulary recovery, owner-switched Quiz/Score, Focus resume and weekly totals, first reading/skip, and study-goal persistence. Log `build/s7-v12-integration-current.txt` SHA256 `ccf74c53b0cc7628c563fcd3e0a47e8f1fba68b88f1fdd11cf0a34450bba03c6`. The exact f20 widget file passed all seven. F21 live Source report confirmation/cancel/queue passed in the prior UI run. Backend schema receipt suite passed 41 cases again.
+- Static analysis is clean. The first full run exposed six callers still expecting schema11 and three widget tests leaving Drift stream timers after teardown. Both interrupted runs preserved equal input manifests and their raw logs. The six callers now check current schema12 while the v11 fixture hash is unchanged. Focused reruns passed 53 schema tests, both Quiz menu cases and both Ask Lexi cases. The Source widget fixture uses Drift's supported synchronous stream-close option. The full AI API suite passed 117.
+- Frozen Windows regression passed 2,241 in 9:17, analysis was clean, and format checked 541 Dart files. Flutter session48426 exited 0 and was consumed. The before/after manifests match across all 586 inputs. [Local v12 evidence](evidence/s7-v12-local.txt) records the commands, hashes and test boundaries. Commit a194d01a contains these 88 intended files. PR body readback is `build/figcraft-pr-readback-s7-v12.json`.
+- Signed Android v30 built from a194d01a, arm64, exit0, APK SHA256 `7183a4a2f9e5b6695aa8b7e19d0640a2eff9bb3c1a752f938900c6ce774cb7b9`. Vivo V2041 upgraded with `install -r --no-streaming` and its pulled base APK matched. Opening it stopped atomically in migration on `Unsupported legacy Quest parent shape`. Before update, the native UI showed three synthetic A words and the original 67% result. No clear, uninstall or manual database edit was performed. [Native migration evidence](evidence/s7-v12-native-migration.txt) records the lineage and limits.
+- Vivo recovery completed. Signed versionCode31 uses source196d4e22, archive SHA256 `dc2e8e5f8d7f2fd852f6207cf8271fb024011a6cb78e76515eb41ff9558495cb`; the pulled base APK matches. Cold launch reached Home. Set A after restoration has the identical pre-v30 XML SHA256 `934799e25a13a57db65e4f9ae872fe83719445ed65cd8e4a58b48dabd5044e85`, including its three synthetic words and 67% result. B is still empty. Recovery used install-r with the same signer. Session88874 exited0 and was consumed.
+- Native migration reproduced on synthetic data. The exact archived v26 APK hash points to 00d6c8ea schema25. Fresh runtime SQL captured 45 empty tables and nine indexes, SHA256 `bf56548a5fb52e1405ae6e90b944014237fa69a25699381ecc6d3e45f30c3066`. Using actual source196d4e22 then produced user_version10 while retaining twelve Quest columns. Current v12 reproduces the device guard error on a copy. Its rollback preserves a synthetic word, version10, all Quest fields and zero FK violations. The three focused runs passed, no private device DB was copied. See [native migration evidence](evidence/s7-v12-native-migration.txt).
+- The v26 bridge is implemented. Captured v25, actual v23→v25 and v25 opened by v29 share the exact catalog fingerprint. The v12 fixture from 4d8fbca6 is retained with 37 empty tables. Focused checks verify rollback/retry, reopening, both owners, original outcomes/receipts, new practice, byte-exact pack BLOB, immutable delivery and real assessment linkage. The independent reviewer accepted the latest delta after the 117-case reward/progress and 13-case lineage/owner runs. Full Windows regression and delivery APK remain in progress.
+- CPU backend passed 267 (AI137, Voice55, LM75) using frozen offline dependencies. Local demo Firestore policy passed33 and Auth passed3. Docker was unavailable locally for Supabase. Pre-Beta dependency audit found advisories on existing locks; no readiness verdict follows from the local API or policy checks.
+- [Frozen v26 Windows regression](evidence/s7-v26-bridge.txt) passed2268 in9:39. Session41898 exited0 and is consumed. All597 inputs matched before/after, and format checked546 files without changes. Source-current signed APK and exact PR-head CI require separate evidence.
+- Known-object camera accuracy remains not_checked because the owner cannot arrange an object. Preserve generated EOL noise, failure PNGs and ignored signing material. No separate Pair Matching task, live enrollment/upload, deletion, merge or deploy.
+
+## Historical S7 achievements locally verified, 2026-11-14 16:07 Bangkok
+
+- Active worktree `C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest`, branch `codex/figcraft-flutter-prototype`, pushed head `9371b4342316fb49acc89705383f2ed8f7a9e4e6`. Exact-head CI43571302282 SUCCESS: Flutter2150, analysis/format/CLI/Firestore/Supabase, backend237 and Android debug build. PR16 remains OPEN/DRAFT. This certifies the committed practice unit, not dirty f31.
+- Dirty f31 consolidates the five existing badges in the learning projection issuer, preserves retained opaque IDs/source/date/version, queues only new local grants, and suppresses inbound sync echo. Actual answer facts determine nonempty/perfect rounds. The existing read-only screen now names v1 conditions, keeps legacy dates neutral and fences owner/loader/scope changes. No schema/dependency/XP issuer change.
+- Current touched integration and caller files passed354 tests in28s, analysis clean6.8s and format514 files unchanged4.74s. Source fixes followed semantic REDs for opaque ID collision, pending duplicate guest operation, attempt-first remote restore, cross-owner physical ID, two-owner conflict identity and retired delivery-ID reuse. Retained local evidence stays immutable; divergent remote logical evidence is quarantined with an owner-scoped JSON-tuple conflict ID. Both inbound branches still suppress echo. The earned-card Thai200% image was inspected; it is desktop/widget evidence only.
+- First full session61642 terminal exit1 consumed:2168PASS/6FAIL9:10, all560 inputs unchanged at `0bf62916a0be9eb56bd71cb5a1f09a6dc1ca0fc1c99a6a79fbb5e9cea3032192`. Independent review traced exactly three bootstrap and three Ghost failures to old outbox assertions. Corrected only those two test files; exact four-message multiset and full pre-finish JSON preservation plus two backed session grants now pass57 caller tests. Quest/research-zero and answer/ACK/SRS/XP/coin/owner assertions remain.
+- Full12313 completed2174PASS9:22 with560 identical inputs `5a32d16e71dfd3e0cabb5b2a4a5b982ae1896f00881a0cc7112bd5cb84d76a95`, exit0 consumed. Final review then confirmed a reachable orphan ACK can suppress/reuse a future canonical badge identity. Two file-backed RED cases reproduced it; allocator now reserves IDs present in either unlocks or any retained achievement outbox history/reserved operation ID, and uses an ordinary atomic outbox insert. Existing logical rows and all ACK bytes remain unchanged. Latest354 integration verifies the fix.
+- Root session24033 terminal exit0 consumed:2176PASS9:18 in `build/s7-achievements-verified-full-regression.txt`, SHA256 `7721280d0abe226736739d99ea47f4ba0c53a02be6ee3a4086a7fcafb203d6b7`. All560 inputs matched before/after SHA256 `e7a07908753d394c4ad342c06ea1aeae6c4a89e8540efba85ab0eab594900041`. Current manifest/receipt and exact Thai200% PNG are in evidence/. Queue clear. Thirteen intended source/test files are staged; stage the intended docs/evidence, inspect final diff, commit/push, verify unchanged inputs and exact PR16 draft head/body, then follow new CI. Goal remains active; local f31 completion does not certify native/all catalogue work.
+- Production/test writers are frozen; independent final reviews accept current core/sync/UI/identity fixes, subject to full regression. The selected next local persistence/recovery plan is in `execution.md`;3 new owner scopes plus existing columns, no migration reservation. Actual fresh-v11 capture `build/schema_v11.sql` SHA256 `5590fbafc72a6ece7ef07bd823b0b8fe5a48baf4482caece8e4f9e2d1fa3406d` passed1 capture test and Python memory replay34 tables/10 explicit indexes/0 rows/0 FK violations. `build/capture-v11-schema.dart` parity against actual frozen v10→current11 passed1 test in `build/s7-v11-schema-parity.txt`; independent memory executors emitted only Drift's generic multi-instance warning. Fixture is not promoted; seeded upgrade/data/check constraints remain next-unit checks. Preserve seven pre-existing plugin EOL files, failure PNGs and ignored signing material. No native/VM/ADB/live database process was touched.
+- Goal remains ACTIVE for48/44/64. Next source-grounded persistence/history cards remain proposals; schema11 current/v12 unreserved. Known-object camera accuracy stays `not_checked` because the user cannot arrange an object; do not ask again. Current-source native/APK/TalkBack, remaining catalogue journeys and rollout authority remain separate unfinished work. No separate Pair Matching task, merge/deploy, real enrollment/upload or live deletion.
+
+## Historical S7 practice locally verified, 2026-11-14 14:25 Bangkok
+
+- Full source passed2150 Flutter tests in9:19, clean analysis8.5s, and format514 files with0 changes. All560 declared inputs matched SHA256 `377679c5a2fff8eed71ee86aa9ac828fc7547bda051496525d4f4e080d4e9e5d`. Local unit receipt: `evidence/s7-practice-modes.txt`. Full session60645 terminal exit0 consumed; queue clear. Focused159 PASS and current full-run Thai200% images inspected. Independent final reviews accepted corrected scope.
+- Next executable step: inspect/stage intended practice source/tests/docs/evidence, recheck manifest, commit/push, update/read exact PR16 draft head/body and follow its CI. Parent remains026be405 with successful CI43563486487. Preserve7 plugin EOL changes, failure PNGs and ignored keys. No whole-catalogue/native completion implied.
+- Current APIs now preserve original owner and prompt kind through new modes and targeted repair; complete candidate pools replace unsafe100-row ambiguity checks. Handwriting remains zero-ledger and transient; SRS companion creates only legitimate new recall attempts. Owner error paths and save feedback corrected. All findings/test-driver recoveries are recorded in the receipt, not hidden as product success.
+- Goal stays active for remaining48/44/64. Next source-grounded no-schema unit is `build/s7-achievement-authority-card.md`; then reconcile `s7-local-persistence-card.md` with `s7-session-history-card.md` before reserving any migration. Actual f44 is offline camera-model management; root's earlier session-removal inference was corrected before implementation. Schema11 current/v12 unreserved.
+- Known-object accuracy remainsnot_checked without another request; uncertain emulator1837 untouched. New current APK/native/TalkBack, remaining catalogue journeys, CI of new source and rollout-only authority remain distinct. No separate Pair Matching task, merge/deploy, real enrollment/upload or live deletion.
+
+## Historical S7 integration, 2026-11-14 13:52 Bangkok
+
+- Branch/head remain `codex/figcraft-flutter-prototype` / `026be405c510cd642911dc4dc2ba1fdc1b2a487f`; PR16 exact head/body read back OPEN/DRAFT with CI43563486487 SUCCESS. `evidence/ci-026be405.txt` is dirty for the next commit. No later push yet; S7 remains dirty and unaccepted as a whole.
+- Original-owner start/answer/finish and exact-replay transaction guards are implemented. New reverse/definition prompt policy is canonical (old `_questions` removed), with complete matching pools before ambiguity/target/round limits. Two real truncation regressions failed then passed. Core66 had no failures in combined `build/s7-core-srs-first-green.txt` (92PASS/2SRS-fail overall); standalone final whole-core proof still needs current-source integration checks.
+- Existing Quiz now renders/records typed modes, preserves owner/mode through targeted repair and separates transport replay from intentional retry at the same question. Authored definition is the pinned21b34eaa travel item, bound to actual unambiguous local IDs/senses; no general dictionary claim. Root added existing-menu/category entry for both modes. Final Quiz UI GREEN is pending.
+- Handwriting standalone3 PASS; all5 real category/word/Back/edit/delete/rehome/zero-table-mutation journeys passed in `build/s7-practice-ui-first-green.txt` (combined7PASS/4Quiz-fail). Independent review accepted the boundary shape but found uncaught owner lookup on entry/after selector. A added2 focused failure regressions; root must observe RED then add the narrow handler catch.
+- f33 existing SRS companion is implemented. Initial13 semantic cases were1PASS/12FAIL; the first full core/SRS run was92PASS/2FAIL due stale failure SnackBar covering the offer. Corrected SRS13 new cases all passed in `build/s7-prompt-companion-retry-green.txt`; that mixed run failed Quiz compilation because root used const Semantics. Root removed the invalid const. Quiz answer-save failure now uses inline accessible feedback so retry is not covered by a toast.
+- Flutter queue: root session37718 is running `build/s7-quiz-green-handwriting-error-red.txt` for6 Quiz prompt cases plus2 handwriting owner-error cases. All production writers are frozen. Consume terminal output before another Flutter command or relevant edit. B's SRS source/test are frozen; A's journey tests are frozen; C's core/policy are frozen. Ignored independent reviews: `s7-quiz-mode-review.md`, `s7-handwriting-review.md`.
+- Test-driver recovery: combined4914 observed27PASS/11 targeted-mode RED but did not reach handwriting assertions. Root reconciled exact synthetic Flutter PID2380/ancestry, stopped only that tree, and consumed4914. Fixture now preloads actual Home progress in real setup and uses bounded real/fake pumping/closure; genuine f12 semantic RED then completed2PASS/3FAIL (within combined2PASS/7FAIL). No assertions weakened, no VM/ADB/native/live database process touched.
+- Next: finish owner-error handler, rerun touched core/Quiz/SRS/ChooseMode/handwriting and compatibility callers, final analysis/format, independent disposition, frozen manifest/full regression and intended commit/push/exact-head CI. Then continue real catalogue gaps. Grounded next cards: `build/s7-achievement-authority-card.md` (fix split issuer before focus) and `s7-local-persistence-card.md`; schema11 current, v12 still unreserved.
+- Goal remains ACTIVE S1–S7/48/44/64. Preserve7 pre-existing plugin EOL changes, failure PNGs and ignored signing material. Known-object accuracy stays not_checked without another request; emulator1837 install uncertain/untouched. Native/current APK/TalkBack and all-row catalogue disposition remain open. No separate Pair Matching task, merge/deploy, real enrollment/upload or live deletion.
+
+## Historical S7 practice implementation, 2026-11-14 13:11 Bangkok
+
+- D3/D4 committed/pushed as `026be405c510cd642911dc4dc2ba1fdc1b2a487f` (36 intended files); exact PR16 read back OPEN/DRAFT. CI43563486487 SUCCESS: Flutter2089, analysis/format/CLI/Firestore/Supabase/backend237/Android debug build. Receipt `evidence/ci-026be405.txt` records the raw log hash. This CI does not certify dirty S7.
+- S7 f07/f08 domain tests plus handwriting stub produced actual1PASS/8FAIL in `build/s7-prompt-handwriting-red.txt`. Pure domain implementation passed its6 cases in the later mixed48PASS/4FAIL run; the4 remaining failures are intentionally unimplemented application-mode integration. Handwriting standalone3 tests now pass in `build/s7-handwriting-final-green.txt`; category/owner/zero-ledger integration is still required.
+- Original-owner foundation produced actual7PASS/7FAIL in `build/s7-learning-owner-red.txt`. New optional expectedOwnerId application guards and active-owner start/finish transactions passed the mixed core checks. Independent review found inactive exact replay could still rebuild projections; `build/s7-inactive-replay-red.txt` reproduced it, then moving the existing transaction guard before replay passed its focused check. Final whole foundation check/review remains required.
+- Root owns core application/data/interfaces/compatibility fakes and Quiz/ChooseMode integration. A's isolated handwriting widget/tests are frozen. C's prompt models/policy/tests are frozen. B owns only SRS screen/tests; its13-case f33 semantic RED is running in Flutter session32383, log `build/s7-f33-ui-red.txt`. It is making slow bounded progress through missing-UI failures; do not call it stalled from silence alone. All relevant source remains frozen until terminal; B may diagnose read-only.
+- Root must consume32383, then implement f33 from actual RED, finish prompt-kind integration using bounded actual sense lookup, connect category-bound transient handwriting, and run scoped checks. New lookup optional parameters were added to interface/data and existing wrappers (including B's SRS wrapper). No migration/dependency added; schema11 remains current and v12 unreserved.
+- Other S7 gaps remain in the ignored coverage/card packets listed below plus `build/s7-feature-coverage-22-44.md` and `s7-f33-card.md`. Preserve48/44/64 and all seven pre-existing platform EOL files/failure PNGs/ignored signing configuration. Camera accuracy remains not_checked without another request; uncertain emulator1837 is untouched. No separate Pair Matching task, merge/deploy, real enrollment/upload or live deletion.
+
+## Historical D3/D4 locally verified, 2026-11-14 12:49 Bangkok
+
+- D3/D4 current source passed all 2,089 Flutter tests in 9:31, clean analysis in 9.9s and formatting of 509 files with zero changes. All 555 declared inputs matched before/after SHA-256 `bfab15f050ed5501dedaa9bdb921592132b1defc457555e17d3e26f1db4a46a7`. Receipt: `evidence/s6-d3-d4-streak-surfaces.txt`. Full session 95569 completed exit0 and was consumed; Flutter queue is clear.
+- Independent final source review found no P1/P2 in the assigned Streak/calendar/owner/lifecycle/claim paths. Both font-correct Thai200% desktop renders were inspected; the scrolled Sunday card is clipped below fixed actions without actual overlap. These images do not certify native accessibility.
+- Next executable step: inspect/stage only intended D3/D4 source/tests/docs/evidence, recheck the frozen manifest, commit/push and update/read back draft PR16, then follow exact-head CI. D2 CI43554193770 is SUCCESS and recorded separately. Preserve seven plugin EOL changes, untracked failure images and ignored signing material.
+- Continue S7 after this integration unit. Ignored source-grounded cards are `build/s7-gap-a.md`, `s7-gap-b.md`, `s7-route-disposition.md`, `s7-feature-coverage-01-19.md` and `s7-f08-f12-card.md`. These expose real remaining journeys, including reverse/definition questions and handwriting; no catalogue row is accepted merely from the full test count. Schema11 remains current; v12 is unreserved.
+- The active Goal still covers S1–S7/48/44/64. Known-object camera accuracy remains `not_checked` without another request; uncertain emulator1837 is untouched. Current-source APK/native/TalkBack and complete catalogue disposition remain open. No merge, deploy, real enrollment/upload, live deletion or separate Pair Matching task.
+
+## Historical D3/D4 verification, 2026-11-14 12:29 Bangkok
+
+- D2 commit `e1d7a5e9f15a0a0bd5d267480aa2e000a56b2e3e` has exact-head CI `43554193770` SUCCESS. The raw-log receipt is `evidence/ci-e1d7a5e9.txt`; the PR body was updated and read back. No D3 commit or full D3/D4 regression exists yet.
+- D3/D4 functional implementation is in place. Core checks passed 114; the corrected lifecycle, Settings, Mastery, Profile and gate selection passed 73 in `build/s6-d3-d4-focused-green.txt`. A separate replaced-scope claim regression was observed RED then passed in `build/s6-d4-claim-replacement-{red,green}.txt`. Claim and recovery use an atomic request record with scope and token, so an old reply cannot clear a newer request. Legacy Streak hook/policy retirement was included in the focused checks; 160 earlier caller checks were partially revalidated.
+- Whole-project analysis first reported 17 style infos in `build/s6-d3-d4-first-analyze.txt`. Assigned writers are fixing only their disjoint style findings. Rerun scoped current 74 and legacy callers, final analysis, a frozen input manifest and full regression. Obtain independent final review before commit/push; current focused passes do not certify that final source.
+- `build/s6-d4-mastery-200.png` was inspected as desktop-only evidence. The test did not load MaterialIcons, so icons showed boxes; the product bundles the font. Fix the fixture and capture again before visual acceptance. No native, TalkBack or complete catalogue result is implied.
+- Three task-owned hung test process trees were identified by command and ancestry and stopped for synthetic memory tests only: 30404, 9032 and 4432. Logs remain. No unrelated VM or ADB process was stopped. Flutter queue was clear after claim GREEN; counterfactual Main was restored to SHA-256 `074c196f146a4a9e5dcfd04bf4d5dcb35493d06c0b86904794ece91e35dcfbaf`, with no restore pending.
+- Goal remains active for S1–S7 and all 48/44/64 rows. S7 gaps remain in ignored `build/figcraft-catalogue-gap-review.md`; no separate Pair Matching task is authorized. Preserve the seven plugin line-ending files and failure PNGs. Known-object camera accuracy is `not_checked` without another request; the uncertain emulator 1837 remains untouched. No merge, deploy, real enrollment/upload or live deletion.
+
+## Historical D3 implementation, 2026-11-14
+
+- D2 head remains e1d7a5e9f15a0a0bd5d267480aa2e000a56b2e3e, pushed and OPEN/DRAFT PR16 exact readback. CI43554193770 completed SUCCESS, including Flutter2021/backend237/Android debug build. Raw log/hash is recorded in evidence/ci-e1d7a5e9.txt. Root is updating the PR body; no additional push is pending until D3 is verified.
+- D3 is dirty and incomplete. Actual initial RED:14PASS/35FAIL (7 purefold,26 calendar,2 answer-signal). Purefold7 is now GREEN; calendar26 also passed in the later mixed run. Home today is supplied as a civil ordinal; UI currentStreakDays expires independently from the persisted last-event state. Reads never post tokens; only explicit settlement may propose a dated debit.
+- Mixed run build/s6-d3-calendar-signal-green-settlement-red.txt ended48PASS/11FAIL: all8 data settlement tests failed against stubs, two facade test files had LocalOwner import ambiguity, and one root answer-signal fixture expected guest instead of actual local:guest. Both fixture/import issues are corrected; semantic facade RED and callback GREEN still need the next root run. No assertion was removed or weakened.
+- A owns only data settlement implementation in drift_streak_repository.dart, preserving B's verified calendar methods; B is read-only reviewing the pure fold; C's facade and two migrated tests are frozen as stubs until compiled semantic RED. Root owns the typed answer callback, bootstrap/progress/Settings/UI integration and all Flutter commands. Old no-argument Streak hook callers are ported and the hook removed. Old repository mutators/policy methods still need retirement after replacement coverage is integrated.
+- Flutter queue is clear after60391 terminal output was consumed. Root requested a brief A write hold for the next consistent facade/callback check; wait for its acknowledgement. C settlement test is frozen and includes real reopen/race/merge/rollback and manual replay under a changed clock. Missing data APIs are now compileable stubs; no full D3 regression/analysis is certified.
+- D3 Settings/lifecycle/recovery and D4 Mastery/Profile remain required; ignored S7 gaps are in build/figcraft-catalogue-gap-review.md. All48/44/64 remain tracked and the continuous Goal stays active. Preserve seven plugin EOL files/failure PNGs, keep camera accuracy not_checked without another request, and leave the uncertain original emulator install untouched. No merge, deploy, real enrollment/upload or live account deletion.
+
+## Historical D2 pushed, 2026-11-14 10:57 Bangkok
+
+- D2 is committed and pushed as `e1d7a5e9f15a0a0bd5d267480aa2e000a56b2e3e`, with 33 intended files. PR 16 was read back as OPEN/DRAFT with that exact head. CI run `43554193770` is in progress on the same commit; inspect that run to completion before claiming CI success.
+- Final local evidence is `evidence/s6-d2-quest-claim.txt`: Flutter 2,021 passed in 9:21, analysis was clean in 8.0 seconds, and all 550 declared inputs matched before and after, SHA-256 `6564d08ec94c944ede1e45e101427f51f4ba241b8632efd3734338c4519fe8e7`. This verifies D2 engineering on that source, not completed S6 or catalogue acceptance.
+- D3 Streak and Settings and D4 Mastery/Profile remain required. Calendar capture and Streak recovery are independent of Quest visibility. Use existing `Feature.mastery` and `FieldFeature.mastery` for selection/UI; do not invent a Streak gate. Implementation is authorized and proceeds without another discussion-only cycle. The S1–S7 goal remains active.
+- Preserve the seven pre-existing plugin line-ending files and `test/screens/failures` images. Known-object camera accuracy stays `not_checked`; the user cannot arrange the object. The uncertain emulator remains untouched. No merge, deploy, real enrollment/upload or live account deletion is authorized.
+
+## Historical D2 locally verified, 2026-11-14 10:56 Bangkok
+
+- CI run 43548907646 completed SUCCESS on exact commit fd22b77818c872f65f555a4a6e180115d080b72a. The read-back log and SHA-256 are recorded in `evidence/ci-fd22b778.txt`. It records Flutter 1,999, Voice 55, AI 107, LexiQuest-LM 75, and the Android debug APK build.
+- D2 is dirty and in progress. The combined reader/claim/calendar/application/bootstrap checks passed124; final claim23 passed after all review fixes. Actual REDs reproduced three receipt/XP faults, then the polymorphic source-ID overreach before correcting it. Receipt issue time is now in canonical evidence; paid replay survives clock rollback; the existing XP issuer rejects renamed Quest grants without rejecting ordinary answer IDs. Legacy mutable Quest APIs and the disconnected Quest answer hook have been retired, with real-answer integration coverage.
+- Independent reader, claim/XP and application reviews accepted the corrected source. Initial analysis reported18 style/import diagnostics; these were corrected. Final analysis is clean8.0s and full Flutter2021PASS in9:21. Session95835 completed exit0 and was consumed; Flutter queue is clear. All550 declared inputs match before/after, SHA2566564d08ec94c944ede1e45e101427f51f4ba241b8632efd3734338c4519fe8e7. See evidence/s6-d2-quest-claim.txt and s6-d2-inputs.tsv. No compiled source changed after that check.
+- Preserve the seven pre-existing platform plugin files and `test/screens/failures` images. Known-object camera accuracy remains `not_checked`; the user cannot arrange the object and should not be asked again. Original uncertain emulator session1837 was polled read-only and still had no acknowledgement; no duplicate install, reboot, kill or clear occurred.
+- After full verification, attest and commit/push the intended D2 files, update/read back draftPR16 and exact-head CI. Then implement D3 Streak/Settings and D4 Mastery. Ignored grounding: build/architect-s6/d3-implementation-card.md, d3-settlement-proof.md, d3-callers-proof.md and forthcoming d3-calendar-proof.md. These are source-grounded proposals, not approval gates. Keep real research enrollment, upload, live account deletion, merge, and deployment disabled; the full S1–S7 Goal remains active.
+
+The following 10:04 entry is historical.
+
+## Historical handoff at10:04
+
+- D1 committed/pushed fd22b77818c872f65f555a4a6e180115d080b72a (21 intended files). Local/remote branch and PR16 exact head match, OPEN/DRAFT, base codex/current-code-20261113. Body build/figcraft-pr-body-s6-d1.md updated and exact readback verified. No extra push/reinstall was issued during the brief GitHub metadata lag.
+- CI43548907646 is in_progress on fd22b778; at10:04 the confirmed active step is Build Android debug APK. Poll this same run to terminal and inspect failures if any. CI43542185082 on65c2719cSUCCESS is preserved separately. Do not call fd22b778 overallCI/build passed yet; hold later pushes until this run resolves to avoid cancellation.
+- Final local1999PASS/clean analysis/547 unchanged input hashes are committed in evidence/s6-d1-original-evidence.txt and s6-d1-inputs.tsv. Flutter queue empty;69262 terminal exit0 consumed. All agents completed/frozen; no local build/test process left. After this handoff only checkpoint/decision prose should be dirty along with preexisting seven platform EOL files and test/screens/failures. Preserve those unrelated files.
+- Next execute D2 after reading current code and all three ignored grounding notes listed below. Scope remains shared read-only reconstruction plus atomic explicit local claim/receipt/EXISTING XP issuer; D3 Streak/zone scheduling and D4 surfaces remain required. No another approval/design-only loop: freeze concrete new domain types/read/claim signatures, disjoint test+stub write sets, observe actual RED, implement.
+- Important actual seam: RewardUseCases depends on concrete DriftRewardRepository; no RewardRepository domain interface exists. Do not invent one. New claim accepts expectedOwnerId+instanceId only. A shared fold/receipt validator must use exact trusted authored pin lookup on the same DB, not merely trust a self-hashed arbitrary archived body. Repaired pending qualifies only through retained original refs. SQLNULL/Unavailable never retrofit. Preserve known issued receipts even when only an alias carries payment; both paid origins remain raw and prevent a third grant.
+- Progress needs one owner/asOf read snapshot. Empty cards must derive a noncreating calendar preview; current calendarRuleAt may INSERT and cannot be called by a Mastery read. Captured snapshots are not recomputed under today's zone. Resolve unmaterialized3+2 merged facts, direct one-to-one compatibility, conflict/straddle handling, immutable completion ordering and LAST-segment expiry. Retire old optional postcommit hooks only after actual callers/tests migrate; frozen event/research contracts remain.
+- Whole Goal remains ACTIVE for S1–S7/48/44/64. No source-current native D1 validation, full catalogue acceptance, claim/Streak/UI readiness, merge/deploy/real enrollment/upload/live deletion is implied. Known-object camera accuracy remains unavailable/not_checked without another request. Emulator1837/client26488 install outcome still uncertain; do not duplicate install, reboot, kill, clear or reseed.
+
+Entries below are historical; this handoff takes precedence.
+
+## Historical accepted local D1 at09:51
+
+- Final D1 Flutter1999PASS and analysis clean11.9s. Fifteen Dart files formatted unchanged;547 declared inputs identical before/after:4cb1c2a9cac499a0b5198eaa99db5d7b6c663b93ef62687f92995fa84b3c0c3e. Session69262 consumed exit0; queue clear. Evidence s6-d1-original-evidence.txt and s6-d1-inputs.tsv. All agents frozen/completed. Root is preparing intended commit/push, not Goal completion.
+- Code preserves original bytes/NULL, validates before classifying captured, and keeps optional failures outside core transaction errors. Inactive-owner collection fence retained; test history uses legitimate temporary active owners. Actual typed sync proves no external metadata authority. No schema/backend/dependency/XP issuer/UI change.
+- Remote PR16 still65c2719c until push; that source's CI43542185082SUCCESS is recorded separately. D1 current-source Android build/CI/native are not yet verified. Preserve seven platform generated EOL files and untracked test/screens/failures.
+- Full read-only next-step grounds are frozen in build/architect-s6/d2-query-ground.md37lines, d2-claim-ground.md74lines, d2-surface-ground.md40-ish lines; root read all. D2: shared readonly period fold and exact authored-pin lookup, virtual empty cards, semantic3+2 merge even with no instances, receipts across whole compatible group and both-paid/no-third. Integrate progress under one owner/asOf read transaction; never call creating calendarRuleAt from a read.
+- D2 root disposition: repaired Pending facts may qualify ONLY using retained original rule/tzdb/bounds/pins; do not exclude all pending forever or select today's authority. SQLNULL and Unavailable remain permanently ineligible. Capture snapshots need no current tzdb; later scheduled expiry may close formerly open rule only without crossing accepted segments.
+- D2 needs the same trusted authored catalog at historical pin verification, shared query/claim/receipt validation and the EXISTING XP issuer. No duplicate raw-proof service or second reward balance. Narrow public claim is expectedOwnerId+instanceId, no amount/version/evidence. Receipt/XP/instance atomic, immutable replay and concurrent-file/lostACK checks; preserve both independently paid origins. Port suitable C synthetic claim fixtures through the new real API when it exists; never call current fixtures public claim E2E.
+- D3 Streak baseline/assets/adjustments/settlement and prospective LAST-week-end zone selection, D4 existing Mastery/Profile/Settings remain required. Actual Settings path lib/screens/setting_screen.dart. Retire old optional Quest/Streak postcommit hooks only after callers/tests are migrated; keep independent shadow/research contracts. No49th screen or Pair Matching task.
+- Next executable steps: inspect/stage intended D1 files, verify unchanged manifest, commit/push, update/read exact draftPR head/body and CI. Save new head/run here. Then freeze D2 domain types/signatures/write sets, add cheap real-answer REDs and implement query/claim without another discussion approval cycle. Goal remains ACTIVE for fullS1–S7/48/44/64. Known-object accuracy unavailable; no repeat request. Emulator1837/client26488 uncertain; no duplicate install/reboot/kill/clear. No merge/deploy/real research/upload/live deletion.
+
+Entries below are historical; this accepted local unit takes precedence.
+
+## Historical D1 integration at09:38
+
+- PR16 head65c2719c86fa0f772838b107cb7f768005aba5bd remains OPEN/DRAFT. CI43542185082 completed SUCCESS: Flutter1946, analysis/format/CLI/Firestore/Supabase, Voice55/AI107/LM75 and Android debug build. New evidence/ci-65c2719c.txt records raw hash; PR body updated/read back. This CI does not certify dirty D1.
+- D1 is dirty across seven production files (new typed codec, rule type/resolver, authored catalog/installer, learning capture and bootstrap). No schema/backend/dependency/XP issuer/UI changes. Writers frozen; root queue clear after97211 exit0. Final full D1 verification is next.
+- Primitive RED41pass28fail then72GREEN; pending RED15pass3fail and family/negative-epoch RED18pass2fail preceded fixes. The -1microsecond period test passed unchanged. Learning9RED/bootstrap5RED then51GREEN; wrong-window RED39pass1fail led to validation inside capture. Touched subsystems243GREEN and typed sync/codec/catalog43GREEN; full analysis clean12.5s.
+- Existing callers174pass2fail exposed synthetic collection under an inactive target. Fixture now temporarily selects each historical owner in a transaction, records real answers, then restores exact prior flags. Production fence/assertions retained. Identity/widgets/vocabulary callers95GREEN; rerun final analysis after fixture edit.
+- Independent final reviewer accepted D1 scope: replay bytes/NULL, original-ms/segments, bounded unavailable/pending, same-DB/archive authority, three gates/same registries/lazy factory and real typed sync. D2 claim/streak fold/UI remain unverified.
+- Next serialized command: fingerprint before, full analysis/regression, fingerprint after. Logs build/s6-d1-final-analyze.txt, s6-d1-full-regression.txt; maps s6-d1-full-inputs-{before,after}.tsv. Keep source frozen; parallel work may only read or write ignored build notes. Then attest/review/commit/push and read new head CI.
+- Pending requires actual epochEffectiveUtcUs>=0, occurrence>=epoch, sole activation0 revision per cadence, same DB/exact archive, and StateError after a durable rule. Format/Range failures are unavailable. Replay never re-resolves authority; captured snapshots decode without current tzdb and never confer remote entitlement.
+- Ground D2 query/atomic claim/XP plus remaining Streak/Mastery during the full wait, no source edits. Continue S6/S1–S7/48/44/64. Accuracy unavailable/not_checked; do not ask again. Emulator1837 uncertain, no reinstall/reboot/kill/clear. No merge/deploy/real research/upload/live deletion.
+
+Entries below are historical; this live integration state takes precedence.
+
+## Historical handoff state at08:50
+
+- S6-C committed/pushed:65c2719c86fa0f772838b107cb7f768005aba5bd. PR16 OPEN/DRAFT, base codex/current-code-20261113; exact head/body read back after update. Body source:build/figcraft-pr-body-s6-c.md. Local/pushed parent e432fa05 includes S6-B.
+- CI43542185082 is in_progress on exact65c2719c; latest snapshot22completed steps, Flutter unit/widget tests active. CLI/Firestore/Supabase stages precede it. Do not claim overallCI/build success until terminal result. Read status again; if failed inspect actual log, no blind repeat. Hold later push until this run resolves to avoid cancellation.
+- Local final1946/analysis/AI107 evidence and544 stable inputs committed. Post-report docs consistency39PASS, build/s6-c-doc-consistency.txt. Root queue clear:49622 and35014 consumed, no local Flutter/build process remains. Last manifest precommit stillf62db8b73908d2ab37785350734426dee4aaedb6347f7c569b7f1a27247204fc. Only new handoff/checkpoint/decision prose is dirty alongside the seven preexisting platform EOL files and untracked test/screens/failures; preserve those unrelated files.
+- All subagents completed/frozen. D1 is ready to implement, not another planning/permission cycle. Read all100lines of build/architect-s6/d1-implementation-card.md (hash recorded below) and actual code. Root correction: Quest eligibility gate must include BOTH features.isVisible(Feature.questV2) AND features.isVisible(Feature.mastery), plus fieldFeatures.isVisible(FieldFeature.mastery), with identical registry instances in bootstrap/AppDependencies. LIMITED remains visible. Actual registry path is lib/runtime/registries/feature_registry.dart; discover paths before reads.
+- Next executable unit: freeze D1 codec/calendar types and disjoint write sets, add focused REDs, then implement original-answer evidence/resolver/archive/capture/bootstrap without changing public recordAnswer APIs, schema or XP issuer. Preserve replay bytes/NULL, normalize to stored milliseconds before lookup, keep disconnected UTC segments and prospective per-cadence pins, and let ordinary learning survive optional failures. Pending requires durable original rule AND exact daily/weekly refs; unknown refs never become retrospective eligibility. Gate-hidden boot constructs no Quest factory/catalog and writes no Quest/research rows. Calendar may serve independent Streak.
+- D1 read-only test matrix from candidate-a also requires same-ms replay/epoch boundary, old hidden answer vs newly visible answer in same session, A/B rule isolation, exact file reopen/lost-ACK replay, bad catalog pins, and all three hidden gates through actual bootstrap. Be precise about active-owner semantics at the new-answer boundary; never confer B pins on an old A command. Do not fabricate constructors/helpers from the card without checking actual callers.
+- Known-object accuracy unavailable/not_checked; do not ask again. Vivo v29 narrow evidence remains accepted. Emulator install1837/client26488 uncertain, no new ADB mutation, kill/reboot/reinstall/clear. All unrelated processes/data preserved. Continuous Goal remains ACTIVE for remaining S1–S7/48/44/64, no merge/deploy/real research/upload/live deletion or Pair Matching task.
+
+All entries below are historical; this live handoff takes precedence.
+
+## Historical accepted local S6-C at08:39
+
+- Final Flutter1946PASS, full analysis clean,26 Dart files formatted unchanged; full AI API107PASS with warnings-as-errors. All544 declared inputs identical before/after (f62db8b73908d2ab37785350734426dee4aaedb6347f7c569b7f1a27247204fc). Session49622 consumed exit0; Flutter queue clear. See evidence/s6-c-persistence.txt and s6-c-inputs.tsv.
+- Migration/index, owner merge, journal and schema-gate reviews accepted. Exact real-v10 preservation/rollback, new-target continuity, alias/provenance rejection,32local-export/26cloud-delete, old/future version rejection and local-only metadata cases are included in the final run. Claims/stamp validation/streak asset folding are still unwired.
+- Root is staging only intended S6-C/schema/backend/tests/fixtures/evidence/helper/doc changes, then committing/pushing together with local S6-B. Remote PR16 remains e6019de0 until push; its CI1905 success is earlier evidence, not this source's CI. Preserve seven platform generated EOL files and test/screens/failures.
+- D1 grounding/matrix complete; candidate-b froze build/architect-s6/d1-implementation-card.md100lines, SHA256badbef8e5fb4ae4f6a442b1f3219e16a44fb6066fb3cb525bc0e0a56c8cd891e. Next read the complete card/current code, wire original-answer evidence with cheap REDs and existing public APIs; no another design/approval cycle. Keep hidden gates lazy and learning independent of optional Quest failure.
+- Native/user limits unchanged: known-object camera test unavailable/not_checked; emulator1837 install acknowledgement uncertain; no duplicate install/reboot/kill/data clear. No merge/deploy/real research/upload/live deletion. Continuous Goal and remaining S1–S7/48/44/64 remain open.
+
+All entries below are historical; this live entry takes precedence.
+
+## Historical integration state at08:28
+
+- All implementation writers are frozen. S6-C source is uncommitted schema11, based on e432fa05. Remote PR16/e6019de0 CI43528611142 remains successful1905; see evidence/ci-e6019de0.txt. No merge/deploy or new native install occurred.
+- Independent reviews accepted final migration/index provenance rejection, owner merge and journal recovery. Actual REDs proved missing constraints/new table trust, wrong SQL literal indexes, target-without-streak continuity, mismatched alias rollback and completed-journal cleanup. The fixes retain original data/receipts/assets and use existing authorities. S6-D stamp/claim/asset folding is still unwired and not certified.
+- Focused current checks: persistence/lifecycle/sync/rewards145; identity/account/screen44; final schema/policy/history86; full AI API107 with warnings-as-errors. Exact-version guard sensitivity observed both schema10/12+current32 fail under the old predicate, then restored identical production hash. No weakened assertions or real deletion/upload.
+- First frozen full regression ended1944pass/2fail, solely obsolete source-pattern schema tests. Preserved build/s6-c-full-regression-stale-schema.txt;544 before/after declared inputs identical (aa429f552056e19d97d2f7949fb79378fe032739fe9d78335c3a2807b75f4030). Those two tests now inspect real current SQLite; historical audit/schema6 and real/sparse upgrades remain. Independent review accepted; focused86 passed. Full final regression/analysis is the next serialized command; do not treat first-run1944 as full acceptance.
+- Flutter session35014 consumed exit0; queue clear before final check. Root owns the queue. Backend final log build/s6-c-ai-api-final.txt107PASS. After final verification, attest current hashes, inspect/stage only intended files, commit/push S6-C, update draftPR/readCI, then proceed to S6-D1 original-answer metadata. Do not complete the continuous Goal at this card.
+- Known-object camera accuracy remains not_checked following the user's unavailable response. Vivo v29 retained evidence remains valid narrowly. Emulator session1837/client26488 still has no install acknowledgement; root polled original session without duplicate writes. Leave uncertain transaction and unrelated VMs/data intact.
+
+The08:08 entry and all later text below are historical; this live entry takes precedence.
+
+## Historical live state at08:08
+
+- Local committed HEAD e432fa0574d209de9086c329775bf1b85716b558 (S6-B); remote PR16 head e6019de044a5a27f40136ff1f331f064cf3abd9a (S6-A). CI43528611142 completed SUCCESS on that remote head: Flutter1905, analysis/policies, Voice55/AI83/LM75 and Android debug build. This does not verify dirty schema11.
+- S6-C is uncommitted, version11 reserved before implementation. Normal Drift code generation completed. Real frozen v10 fixture, 40 migration/history/data-local checks, account-deletion43, sync12 and full AI API107 passed their focused snapshots. Local answer metadata is omitted from sync output and ignored on incoming replay; opaque synthetic tests do not prove the future stamp validator.
+- Independent migration review found two additional P1 hypotheses: preexisting new-table names may bypass constraints/provenance, and wrong-definition same-name indexes may bypass unique indexes. Four real-v10 tests are added; root is running build/s6-c-schema-spoof-red.txt in session80587. Do not alter migration inputs until that session terminates. Previous session84511 completed43GREEN and was consumed.
+- Actual owner merge RED: one wrapper passes/two synthetic merge cases fail. Existing selected-calendar uniqueness collides and conflicting Quest XP provenance was accepted. Candidate-a writes ONLY drift_owner_upgrade_repository.dart; tests/schema are frozen for that writer. Root owns all Flutter/Drift/Gradle commands.
+- Actual journal RED after import correction:24pass/twofail, completed receipt remained in preferences. Root reused the existing saveLocalReceipt cleanup path in both resume branches, preserving typed error handling; account-deletion43 now passes. Guard sensitivity counterfactual remains pending.
+- Current dirty write set: AppDatabase/generated/three table files, owner scope/repository, account export/deletion contracts/adapters/usecases, schema-aware backend receipt model/tests, migration/owner/lifecycle/sync fixtures/tests, ledger/plan/checkpoint/evidence. Preserve unrelated seven platform generated line-ending files and test/screens/failures; do not stage them.
+- Vivo v29 evidence remains accepted narrowly; user is unavailable to arrange a known camera object, so accuracy remains not_checked without another request. Emulator install session1837/client26488 still has uncertain acknowledgement; no reinstall/reboot/kill/clear/reseed is authorized by that uncertainty. Existing UI capture path exhausted its bounded recovery.
+- Next: consume schema RED, fix/review spoofed schema/index detection, validate owner merge and journal sensitivity, freeze writers, then current-source scoped analysis/full integration/evidence before committing S6-C. Continue S6-D and remaining S1–S7/48/44/64 afterward. No Goal completion, merge, deploy or real research authority is implied.
+
+Earlier entries below are historical snapshots; the live state above takes precedence.
+
+## Latest verified unit at06:45
+
+- S6-A committed/pushed as e6019de044a5a27f40136ff1f331f064cf3abd9a; its CI43528611142 is running. PR16's remote head is this commit until the next push. The complete1903 baseline remains04c19a93.
+- S6-B exact-segment primitive is now accepted: motivation38, clean scoped analysis, unchanged source hashes and independent final review. See evidence/s6-b-calendar.txt and the updated s6-architecture.md. Both former P1s are resolved; no current intentional RED remains. No production caller/migration/claim has been wired.
+- Root is committing S6-B locally, holding the push until the next integration point to avoid cancelling e6019de0 CI. Check actual local HEAD versus remote/PR head before making claims. Old live-delta details below describe the completed debugging history, not active calendar blockers.
+- All implementation writers are frozen. Candidate-a resumes ONLY read-only migration notes; candidate-b lifecycle notes are frozen; cross-judge is read-only/accepted. Latest session96752 is consumed exit0 and Flutter queue is clear. Root owns the next schema-fixture/codegen/test unit; schema10/11unreserved remains unchanged.
+
+## Live delta at06:36 (newer than historical details below)
+
+- Pushed head04c19a93b239e1843b0da1c7f4990a7acfe83356. CI43523945830 completed SUCCESS: Flutter1903, full analysis, policy/CLI checks, Voice55/AI83/LM75 and Android build. See evidence/ci-04c19a93.txt. The supersededbbb63b7c run was cancelled. PR16 remains draft/open; body was updated/read back.
+- S6-A is ready for a small commit: existing reward legacy query excludes questClaimXpV1 before source backing, and two new economy regressions preserve XP55/coins5/file reopen/B isolation/old balances. Fresh rewards44 and scoped analysis passed; source reviewer accepted. See evidence/s6-a-economy.txt. Stage only its two Dart files and intended evidence/checkpoint; preserve all other dirty work.
+- S6-B remains DIRTY/unfinished. Initial26 and then78 subsystem checks passed, but independent review exposed a false single-contiguous-UTC-interval premise. GazaRED19pass/onefail was fixed; St JohnsRED20pass/onefail now disproves the premise itself. Do not call calendar complete or use the earlierGREEN as its final evidence. Corrected Windows batch selector error was followed by actual full-fileRED, not a product/tool-wide stop.
+- Root read both whole S6 packages and chose reconstruction (judge A23/B24of30). s6-architecture.md is the new uncommitted contract. A bounded calendar reframe compared exact segments with typed refusal; root/judge chose exact segments (judge18/15of20). Date/rule/cadence identifies one reward, never a segment. Agent s6_candidate_a owns ONLY timezone_policy.dart and its test while implementing the normalized immutable segment API/full epoch clipping. Existing compatibility day methods stay untouched. Root owns docs and every Flutter/Gradle/codegen command; other agents are read-only/frozen.
+- Latest completed Flutter session53174 observed St JohnsRED then rewards44GREEN. Session90032 previously passed78/analysis but predates the St Johns test. All are consumed; figcraft_flutter_session is clear. Do not overlap new Flutter/codegen commands or run full regression while calendar writer is active.
+- Current schema remains10,11 UNRESERVED. Root used installed drift_dev schema dump BEFORE any schema edit: build/s6-schema-v10/drift_schema_v10.json,131335bytes,29entities, SHA2562562dd37d29a31d4d821fdc5719201101daf058e47ab1bc2d79b1c7f21dc3c26. Source dumps omit runtime beforeOpen indexes. No migration code/reservation or production Quest claim exists.
+- Read-only lifecycle notes frozen at build/architect-s6/v11-lifecycle-notes.txt: generic point-key merge can delete existing awards; new owner scopes require coordinated export/delete/backend scope-contract changes; local sync ignores extra fields rather than explicitly denying them; straddling windows cannot use transitive overlap aliases. CandidateA's migration notes were interrupted for calendar recovery; resume that bounded read-only card after the primitive closes. Full source verification is still required before reserving/implementing migration.
+- Vivo v29 evidence remains committed/accepted narrowly at04c19a93; all settings restored and no further phone operation occurred. Emulator session1837/client26488 still has uncertain install outcome; transfer completed517.843s but noSuccess. Read-only diagnosis found VM catch-up lag and little CPU progress, not proven current memory thrashing. See build/native-v29-emulator-diagnosis.txt. Do not reinstall/reboot/kill/clear/reseed an uncertain package transaction.
+- Root initialized computer-use sky through node_repl (NOT cua_repl). Task window returned app process:C:/LDPlayer/LDPlayer9/dnplayer.exe,id4196280,titleTCAS-1.4-QA. Capture timed out; one fresh selection/activation/capture recovery also timed out. Stop that UI path; no coordinates/input or alternative helper retries. No CUA completion_summary is pending. Unrelated instances17/19 were not controlled.
+- Next executable steps: finish/review calendar segment diff, serialize focusedGREEN+analysis, update selected architecture, then persist/test actualv10 fixture and finalize S6-C write set before reservation. Commit/push S6-A independently. Continue S1–S7/48/44/64; no approval loop, no goal completion at these subcards.
+
+## Authority and source
+
+- Worktree: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest
+- Branch: codex/figcraft-flutter-prototype
+- Verified pushed UI/CI baseline: 04c19a93b239e1843b0da1c7f4990a7acfe83356; its Android production sources equal196d4e22. S6-A is the next scoped commit described above. Inspect actual Git HEAD before any build.
+- Draft PR: https://github.com/Phoomxo/LexiQuest/pull/16, base codex/current-code-20261113.
+- The active continuous Goal includes the Android camera/set-A milestone and all approved S1–S7 work. Keep the denominators 48 screens / 44 features / 64 packages. Do not close the Goal after one card.
+- No merge, deployment, publication, real enrollment/upload, app data clearing, destructive cleanup or Codex Security workflows. Preserve generated plugin line-ending churn and ignored signing configuration. Use only the task worktree for edits.
+
+## Current source and verification
+
+- Root completed final full verification session 83069: clean analysis (19.2s), 26 changed/new Dart files formatted with zero changes, and all 1,903 Flutter tests passed in build/p2-s3-full-test-final.txt.
+- All 517 input files stayed identical. Final before/after manifests have SHA-256 0c69d935b9d228248e06279b6d82b276fe214737879a9ef4b9dfad0d4bfaf2ff. A fresh precommit comparison also found zero changes. See evidence/p2-s3-local.txt and p2-s3-inputs.tsv. Flutter3.44.7/Dart3.12.2 were read from the installed SDK.
+- The earlier full run1902/one failure exposed Source Voice's wrong return label. The original assertion stayed. Quiz now carries explicit origin labels through fallback/Score/nested repair; Source returns to activities, history returns to its saved result, and direct category practice retains its set return. Targeted9 and finalfull1903 passed; final independent review accepted.
+- The Flutter queue is currently clear. Root stores figcraft_flutter_session and checks it before every Flutter/Gradle operation. All future full checks must have frozen writers and before/after input manifests.
+
+## Active writers and next executable steps
+
+- The live delta above owns current writer/queue state. The verified UI/build snapshot is closed at04c19a93; its incomplete emulator path does not block independent S6 work. Calendar is the sole current production/test writer. Schema work still waits on its concrete fixture/write set and ledger reservation.
+- UI source reviews and corrected Linux images are accepted. CI43520187537 passed1901/failed only two old goldens, supersededbbb63b7c run43522858276 was cancelled, and04c19a93 run43523945830 passed completely. Subsequent S6 units need their own evidence; never report old CI for a changed head.
+- Commit/push only intended source/tests/goldens and evidence. Update this checkpoint, decisions, execution board and PR body around the verified result. Follow CI on that exact PR head; inspect actual Linux image artifacts before updating Linux goldens.
+- Both v29 APK builds from196d4e22 completed and are archived under build/figcraft-196d4e22. See evidence/v29-builds.txt for hashes/flags. Vivo's actual installed APK hash matches the archive. A3/latest67 and B0 survived update and offline cold restart. Root and independent reviewer accepted the captured dark100/200% Home/Library/Score states, not TalkBack. evidence/vivo-196d4e22 has28 validated raw files,14 PNG/XML pairs, including the preupdate baseline. Four A hierarchies before/after/update/offline/restoration have identical hashes. Font/Wi-Fi/keyboard/accessibility settings are restored. No new answer/word/camera operation in this retest.
+- Emulator install-r session1837, task-owned client PID26488, has no acknowledgement/log output. Last readonly get-state returns device; shell ps times out and host instance18 remains running. Do not duplicate install, kill a possible package transaction, reboot, clear or reseed to force progress. Stop affected writes and continue independent work; inspect/reconcile actual version/install state when responsive. New P2 comparison images remain pending on that path.
+- Continue remaining S3/S5/S6/S7 work and reconcile every ledger row. Static ledgers are a cache at67a68518, not current acceptance evidence. No separate Pair Matching task is authorized.
+
+## Accepted local cards in the dirty UI slice
+
+- Theme/Home/Library: pinned FigCraft light palette and typography, 104/160dp root headers, growable controls and one lazy scrollable library body. Ocean/dark roles remain composed from their seed. The corrected Windows Home and Quiz feedback renders were opened before normal golden updates. A raw button TextStyle dropped the Thai font; it now inherits the Thai label style.
+- Library scope/landscape/stale actions: 23 checks GREEN. Selected routes fail closed after scope replacement; root library follows current authority; stale add/delete/retry/search callbacks cannot restore A. The constant scroll-view key avoids re-listening to a single-subscription library stream when query text changes.
+- Quiz: honest one-choice fallback, normal Add Word callback and original owner/category pin; no fake score/reward or B distractor. Formula, SRS and Shadowing domain behavior remain unchanged. Edit forms reject changed owner/scope before writes. Scope/generation guards and frozen repair fields prevent stale Score callbacks and disposed Quiz getter access.
+- Shared Score: original dependency scope is pinned; a replacement/removal removes old artifacts and guards rendered repair/return actions by current scope and route. Direct nine-case RED plus standalone control preceded implementation. Same-provider owner changes without a scope event are not generally claimed covered.
+- Weakness: seven new checks GREEN and independently accepted. Rebind current scoped sources, clear prior FutureBuilder data, reject old callbacks/late futures, preserve standalone injection.
+- Profile freshness: real SRS practice → account tab → two saved metric updates; ordinary rebuilds do not duplicate reads. The focused account/profile/shell set passed 23. Refined feature-collapse behavior passed unchanged production; the proposed clamp bug was disproven, so no clamp fix was made.
+- Actual logout navigation: clean RED exposed Back during pending signOut leaving A visible. An eight-line Settings fix uses existing busy state for PopScope/AppBar Back, keeping the route alive until success/reset or failure/rollback. Actual MyApp + real Drift tests preserve A and empty guest invariants. Final logout/Profile set: five GREEN, independently accepted.
+- Recovery focus: seven GREEN in build/p2-s3-recovery-focused.txt, including saved Score scope changes, exact latest result, source nested/nested-burst and shell scroll. Earlier broad run 84815 was partial (232 passed, seven failed, two did not complete); its blocked synthetic Quiz process was identified and stopped. Logout fixture's first blocked process was likewise identified and stopped. Both fixture zone/cleanup issues were corrected; neither aborted run is product acceptance.
+- S5 full-account export is already committed at 069ab015: 76 tests, final eight-test rerun, clean scoped analysis and independent approval. evidence/s5-full-export-local.txt records source hashes. It saves actual synthetic JSON bytes before issuing a receipt; ordinary export cannot claim full-account coverage. Live deletion UI/bootstrap/reauthentication remains disabled.
+- Earlier S5 scope commit cd45d6a5 passed 377 focused checks and 47 final account checks. CI 43502724423 on 069ab015 failed the old Mastery owner-read-count fixture. Its behavior-based readiness correction is in the current dirty slice and passed all 26 Mastery tests. Do not represent old CI as current-head GREEN.
+
+## Native evidence and device state
+
+- Native milestone source 08ce39bcca697d903ec79ca15c52d9ac66b0d391: full local 1,821/1,821 and clean analysis; signed arm64 v28 APK SHA-256 34a614b7fc9bd49ac743a4cc551099c649aa23636791417c43240fb6cbe4546f, archived under build/figcraft-08ce39bc/. Debug x64 SHA-256 25b76cb6e177616c42c7855d103d612bdd009ad62bca7e69beef38a69c8c7528.
+- Vivo actual capture returned no confident proposal. Manual synthetic mug/แก้ว/noun was explicitly saved into A, practiced with station/ticket, produced 67% (2/3), returned to A and reopened offline with the same words/result. B remained empty. No native session UUID or model-accuracy claim. The user cannot position a known object; do not ask again.
+- Committed evidence/vivo-08ce39bc contains 64 raw files (62 acceptance, two excluded startup diagnostics). Four core images were shown in chat. Earlier 984e6164 JSON fallback is separate and must never be called camera-save success.
+- Committed evidence/android-08ce39bc contains two actual FigCraft/Android comparisons, metadata/manifests and the independent 28/40 critique. Shown in chat. P2 native visual alignment, TalkBack, and unobserved empty/error/new-owner states remain pending.
+- Vivo serial 9582188822004C6 is root-owned; last idle on A with three words/latest67. Last restored: font1.0, Wi-Fi1, mobile0, accessibility off, Gboard. Read current state before next device mutations and restore that state afterward.
+- Emulator emulator-5590 is root-owned; last restored physical1280x720, density240, no overrides, font null, night no/accessibility off. Synthetic state: two sets, three words, platform due1, consent/session/attempt/outbox zero. Preserve it; no reseed/uninstall/clear. Two corrective reboots resolved its earlier system-server stall; no blind new reboot.
+- tool/figcraft/capture_android.py validates fresh XML/PNG and refuses existing evidence prefixes. tool/figcraft/compare_android.py uses actual pixels. CUA has not been initialized.
+
+## S6 grounded next card, not implementation
+
+- Root read the actual ledger and schema: current v10, v11 unreserved. No schema reservation or S6 source edit has occurred.
+- P4.4/f29/f30 map to the existing Mastery screen; do not add a 49th canonical screen.
+- Before wiring: Quest recurrence is blocked by UNIQUE(owner_id, quest_id); replay evidence and atomic progress need stable immutable attempt IDs. Streak hooks must carry the committed owner/time; current progress uses UTC-day streaks and no learner IANA authority exists. Do not infer IANA from timeZoneName.
+- A complete card needs recurrence/history migration safety, atomic replay, owner/time/zone boundaries and real UI/reopen behavior. Quest XP must use the existing reward authority and must not become accidental coins through legacy positive-XP carry. Keep Pair Matching untouched.
+- Grounding references: evidence/s5-impact.md and s6-impact.md. Synthetic/emulator implementation may continue despite missing external research authority; real enrollment/upload stays default-off.

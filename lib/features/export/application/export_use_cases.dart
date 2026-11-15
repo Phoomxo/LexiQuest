@@ -49,6 +49,9 @@ final class ExportUseCases {
     required ExportSelection selection,
     required ExportCancellation cancellation,
   }) async {
+    if (format == ExportFormat.fullAccountJson) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }
@@ -88,6 +91,9 @@ final class ExportUseCases {
       ExportFormat.anki => _anki(data),
       ExportFormat.researchJson => _researchJson(data, generatedAt),
       ExportFormat.pdf => await _pdf(data, generatedAt, cancellation),
+      ExportFormat.fullAccountJson => throw const ExportException(
+        ExportFailureCode.unavailable,
+      ),
     };
     cancellation.throwIfCancelled();
     await _requireCurrentScope(ownerId, format, cancellation);
@@ -97,7 +103,8 @@ final class ExportUseCases {
       mimeType: switch (format) {
         ExportFormat.csv => 'text/csv',
         ExportFormat.anki => 'text/tab-separated-values',
-        ExportFormat.researchJson => 'application/json',
+        ExportFormat.researchJson ||
+        ExportFormat.fullAccountJson => 'application/json',
         ExportFormat.pdf => 'application/pdf',
       },
       bytes: bytes,
@@ -481,7 +488,7 @@ final class ExportUseCases {
     final extension = switch (format) {
       ExportFormat.csv => 'csv',
       ExportFormat.anki => 'txt',
-      ExportFormat.researchJson => 'json',
+      ExportFormat.researchJson || ExportFormat.fullAccountJson => 'json',
       ExportFormat.pdf => 'pdf',
     };
     return 'lexiquest-$stamp.$extension';

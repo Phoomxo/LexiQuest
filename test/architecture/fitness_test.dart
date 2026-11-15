@@ -475,33 +475,31 @@ void main() {
   //           streak_and_daily_quest_service (Phase 0 Week 10-11)
   // ---------------------------------------------------------------------------
 
-  test(
-    'T16 — lib/features/ must not import streak_and_daily_quest_service',
-    () {
-      const quarantinedServices = [
-        'streak_and_daily_quest_service',
-        'adaptive_daily_quest_service',
-      ];
-      final violations = <String>[];
-      for (final f in _dartFiles('lib/features')) {
-        final src = f.readAsStringSync();
-        for (final service in quarantinedServices) {
-          if (src.contains(service) && !src.contains('// quarantine-ok')) {
-            violations.add(
-              '${f.path.replaceAll("\\", "/").split("lib/").last} → $service',
-            );
-          }
+  test('T16 — lib/features/ must not import streak_and_daily_quest_service', () {
+    const quarantinedServices = [
+      'streak_and_daily_quest_service',
+      'adaptive_daily_quest_service',
+    ];
+    final violations = <String>[];
+    for (final f in _dartFiles('lib/features')) {
+      final src = f.readAsStringSync();
+      for (final service in quarantinedServices) {
+        if (src.contains(service) && !src.contains('// quarantine-ok')) {
+          violations.add(
+            '${f.path.replaceAll("\\", "/").split("lib/").last} → $service',
+          );
         }
       }
-      expect(
-        violations,
-        isEmpty,
-        reason:
-            'lib/features/ must not import the quarantined legacy quest '
-            'services. Use QuestUseCases instead:\n${violations.join('\n')}',
-      );
-    },
-  );
+    }
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'lib/features/ must not import the quarantined legacy quest '
+          'services. Use DriftQuestProgressReader and RewardUseCases.claimQuest '
+          'instead:\n${violations.join('\n')}',
+    );
+  });
 
   // ---------------------------------------------------------------------------
   // Test 17 — SRS Quarantine: lib/features/ and lib/screens/ must not import

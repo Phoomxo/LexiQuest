@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 
 void main() {
@@ -312,6 +313,120 @@ void main() {
     expect(account.balance, 120);
     expect(account.ownedItemIds, contains('theme_ocean'));
     expect(account.equippedBySlot['theme'], 'theme_ocean');
+  });
+
+  test(
+    'default wallpaper equip is pushed and restores the wallpaper slot',
+    () async {
+      const standard = 'wallpaper_default';
+      final rewards = DriftRewardRepository(database);
+      await rewards.equip(
+        ownerId: 'owner-1',
+        item: RewardCatalog.byId(standard)!,
+        idempotencyKey: 'local-standard',
+        transactionId: 'local-standard',
+        occurredAtUtc: now,
+      );
+      final claim = (await syncStore.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-1',
+        limit: 10,
+        leaseToken: 'lease-standard',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      )).single;
+      expect(claim.mutation.payload['itemId'], standard);
+      expect(claim.mutation.payload['transactionType'], 'equip');
+      expect(claim.mutation.payload['amount'], 0);
+      expect(claim.mutation.payload['slot'], 'wallpaper');
+
+      for (final (id, type, amount, item, time) in [
+        ('remote-buy-focus', 'purchase', -60, 'wallpaper_focus', 1),
+        ('remote-equip-focus', 'equip', 0, 'wallpaper_focus', 2),
+        ('remote-reset-wallpaper', 'equip', 0, standard, 3),
+      ]) {
+        await syncStore.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.rewardTransactions,
+          page: _page(
+            _rewardEntity(
+              id: id,
+              idempotencyKey: id,
+              transactionType: type,
+              amount: amount,
+              itemId: item,
+              slot: 'wallpaper',
+              occurredAt: now.add(Duration(seconds: time)),
+            ),
+          ),
+        );
+      }
+      final account = await rewards.load('owner-1');
+      expect(account.equippedBySlot['wallpaper'], standard);
+      expect(account.ownedItemIds, {'wallpaper_focus'});
+      expect(account.balance, 140);
+    },
+  );
+
+  test(
+    'pulled default wallpaper purchase is rejected before storage',
+    () async {
+      await expectLater(
+        syncStore.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.rewardTransactions,
+          page: _page(
+            _rewardEntity(
+              id: 'invalid-wallpaper-purchase',
+              idempotencyKey: 'invalid-wallpaper-purchase',
+              transactionType: 'purchase',
+              amount: 0,
+              itemId: 'wallpaper_default',
+              slot: 'wallpaper',
+              occurredAt: now,
+            ),
+          ),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(await database.select(database.rewardTransactions).get(), isEmpty);
+    },
+  );
+
+  test('outbox never exports a built-in wallpaper purchase', () async {
+    await database.customInsert(
+      "INSERT INTO reward_transactions "
+      "(id, owner_id, idempotency_key, transaction_type, amount, item_id, "
+      "catalog_version, occurred_at_utc_ms) "
+      "VALUES ('accidental-default', 'owner-1', 'accidental-default', "
+      "'purchase', 0, 'wallpaper_default', 1, 2)",
+    );
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          OutboxOperationsCompanion.insert(
+            operationId: 'accidental-default',
+            ownerId: 'owner-1',
+            entityType: 'rewardTransaction',
+            entityId: 'accidental-default',
+            operationKind: 'upsert',
+            createdAtUtcMs: 2,
+          ),
+        );
+    final claims = await syncStore.claimPending(
+      ownerId: 'owner-1',
+      firebaseUid: 'firebase-1',
+      limit: 10,
+      leaseToken: 'lease-standard',
+      leaseDuration: const Duration(minutes: 5),
+      nowUtc: now,
+    );
+    expect(claims, isEmpty);
+    final rejected = await database
+        .select(database.outboxOperations)
+        .getSingle();
+    expect(rejected.state, 'permanentFailure');
+    expect(rejected.failureCode, 'invalidPayload');
   });
 
   test('concurrent duplicate purchases debit an item only once', () async {

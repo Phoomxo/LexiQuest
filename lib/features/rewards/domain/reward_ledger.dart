@@ -150,7 +150,8 @@ RewardCatalogItem? _item(RewardLedgerEntry entry) {
   if (item == null ||
       entry.catalogVersion != item.catalogVersion ||
       entry.occurredAtUtcMs < 0 ||
-      (entry.type == 'purchase' && entry.amount != -item.price) ||
+      (entry.type == 'purchase' &&
+          (!item.purchasable || entry.amount != -item.price)) ||
       (entry.type == 'equip' && entry.amount != 0)) {
     return null;
   }
