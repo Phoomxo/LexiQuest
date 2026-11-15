@@ -1,5 +1,38 @@
 # Continuous execution checkpoint
 
+## S3 and S6 Prompt modes and answer acknowledgement
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. The application remains
+  `2261454f`. Windows passed 106 focused Flutter cases. The
+  same source passed Linux CI with 2,452 Flutter and 267 backend
+  tests, both databases' checks, analysis and Android debug build.
+- Android API 35 offline at 200% used the installed APK beginning
+  `43c0e4a4`. f08 rejected the wrong-sense and duplicate-meaning
+  sets without a SQLite change. The supported definition explained
+  ticket, accepted platform after a deliberate retry, saved 50%,
+  and returned to the activities.
+- f17 held a bounded empty SQLite writer transaction. The APK
+  showed save failure with no committed answer or feedback.
+  Releasing the lock and retrying saved 100% with one answer,
+  one point and one coin. Windows injected both a failed commit
+  and a lost acknowledgement into the real Drift path.
+- P2.3 also verified reverse choice and typed recall on that APK.
+  Reverse choice retained 67% across three attempts. Typed recall
+  kept the original 0% after correction and returned to the
+  reviewed source and its set. After a cold launch, the 50%
+  definition and 100% saved retry reopened from History with
+  matching SQLite snapshots.
+  [Evidence](evidence/s3-s6-p23-prompt-modes.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43682172257).
+- f08, f17 and P2.3 passed on the prototype. Totals are 21 of 44
+  features and 16 of 64 work packages. The 48 delivery screens
+  remain pending with signed Android and spoken TalkBack.
+- Next check f23 and f24 with the Focus timer's measured active
+  and paused ranges, background and process restart, then compare
+  the single-session record with the weekly total. The exact-source
+  Windows Focus tests passed 12 cases.
+
 ## S3 English-to-Thai feedback and S4 dictation hint
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
