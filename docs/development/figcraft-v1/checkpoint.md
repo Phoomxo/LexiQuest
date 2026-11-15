@@ -1,5 +1,44 @@
 # Continuous execution checkpoint
 
+## S2 Atomic vocabulary edit and return
+
+- Worktree `figcraft-flutter-v1/LexiQuest`, branch
+  `codex/figcraft-flutter-prototype`, application `d5df2850`. The editor
+  now submits the opening word snapshot to one transaction. Windows
+  Flutter 148 and seven-file analysis passed. Independent review accepted.
+- Android x64 debug APK `7342f3a9` installed with a matching hash.
+  After cold boot on the isolated API 35 emulator, the saved edit
+  returned to its live detail at font 2.0. SQLite held one new revision
+  and outbox operation, both prior learning results, and zero research
+  rows. The earlier startup timeout and ANR remain recorded.
+  [Evidence](evidence/s3-f43-srs-original-card.txt).
+- [CI for the previous head 0a947a3b](https://github.com/Phoomxo/LexiQuest/actions/runs/43655873017)
+  passed Flutter 2,393, backend CPU tests, Firestore, Supabase and the
+  Android debug build. [CI for d5df2850](https://github.com/Phoomxo/LexiQuest/actions/runs/43657394008)
+  passed Flutter 2,397, backend CPU 267, Firestore, Supabase, analysis
+  and the Android debug build.
+
+## S3 Category quiz setup
+
+- The same installed APK passed both f16 entry routes on offline API 35
+  at font 2.0. Count shortage disabled Start and cancellation did not
+  write. A two-word round resumed at its saved question after pause,
+  accepted the answer after five minutes of wall time, finished 100%
+  and reopened with both exact answers after process restart. The
+  one-word self-paced round stored both toggles off and returned to the
+  category chooser. f16 passes this prototype scope. Signed system
+  audio and TalkBack still need verification.
+  [Evidence](evidence/s3-f16-round-setup.txt).
+- The isolated emulator `emulator-5592` remains at the category chooser
+  on application `d5df2850`. The delivery device is outside this run.
+  Next card f11 uses the Source associative-reading path. An uncommitted
+  widget regression in `test/screens/associative_reading_session_screen_test.dart`
+  reaches the recall field and fails at the missing explicit check.
+  `build/s3-f11-source-guided-recall-red.txt` SHA-256
+  `474627b6440fc622d8e39002763dfb3bae83dfbaf6e3d09584fe2560183c7672`.
+  Implement the check and guided correction while preserving the
+  original attempt and score when the guided answer is correct.
+
 ## S3 Original flashcard result and linked repair
 
 - Application `bfe5f14e`, API 35 offline APK `f75c6f26` at font 2.0.
@@ -12,8 +51,8 @@
 - The observed edit committed but showed an incorrect context warning.
   Source `10956cc1` resolves the post-commit refresh and preserves the
   pre-write guard with Windows Flutter 122 and analysis. The new
-  Android debug APK `dc4281f2` built. Next install it and recheck the
-  editor return. Signed startup reliability remains open.
+  Android debug APK `dc4281f2` built. The successor build's editor
+  return is recorded above. Signed startup reliability remains open.
 
 ## S3 Due review and reopen from Progress
 

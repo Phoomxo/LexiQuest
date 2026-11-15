@@ -97,3 +97,54 @@ The corrected editor's Android UI rerun is pending. The original
 SRS/repair native evidence above identifies its own installed build.
 Concurrent same-word writers can still win by commit order because
 the stale revision guard is evaluated before dispatch at the form.
+
+Atomic Library edit guard at d5df28500346e3a16def896c27618fce2d452442
+
+The editor submits the word snapshot captured when it opened. The write
+transaction checks the active owner, word, category, revision and original
+editable values before updating the word or adding an outbox operation.
+Sync can replace content at the same local revision. The real Library
+regression streams that replacement into the open editor, then attempts to
+save the old draft. It shows the reopen message and preserves the winning
+row and outbox. Companion repository tests cover a newer local revision
+and an owner that went inactive. Sync acknowledgement and bookmark
+metadata are outside the stale-content comparison.
+
+Windows Flutter 148 passed across Vocabulary, Library, Quiz, object
+scanner and Sync. Analysis of all seven changed Dart files passed.
+Independent source review accepted the transaction and form snapshot.
+
+Windows logs under build/, SHA-256:
+s2-editor-same-revision-red.txt 7af0e59c59514722ae1a95acc8ea0ea546df12d4e7724aae9ad15668c4c97fdd
+s2-editor-live-widget-real-red.txt 2af779f309712496aabcc18cc924ee52c6e634c52a6c65f008701bde2a06d805
+s2-editor-atomic-final.txt d6f9291791e31d344af35057effac0576e8d908b5e96acfba0ce953651cae6f7
+s2-editor-atomic-analyze.txt 00b726deaa8a4e46b649832164f423a8137ae389fb307e7868a3c78ce4758d97
+s2-editor-atomic-android.txt 61c6b323b542b190692cf2aafb5d4cdcae89f6d842b4851e922572b68a970b12
+
+Android x64 debug artifact under build/boss-android-evidence:
+lexiquest-editor-atomic-d5df2850-api35-x64.apk
+SHA-256 7342f3a9500f22f3219b901a8b866bf6d2821446eb45d716c39dcf1f9ec32c70
+
+The earlier 10956cc1 artifact installed with the expected hash, then
+the emulator recorded an initialization timeout and an ANR. A cold boot
+of LexiQuest_Wordbook_Isolated_API35 reached the login screen on
+d5df2850. The installed APK matched the host SHA-256 above. Android
+settings showed airplane mode on, Wi-Fi off and system font scale 2.0.
+
+Continue as guest and decline research. Library > ชุดทดลองทบทวน F06 >
+ferryboat > แก้ไขคำ. Save ferryvessel / crossing vessel. The form closes
+to the live word detail with both new values and the original set title.
+The same word advances from revision 2 to 3. SQLite retains both prior
+answer/session rows, including the original 0% SRS and its linked 100%
+repair, byte-for-byte. Counts stay at 13 sessions and 22 attempts.
+The outbox rises from 43 to 44 with word:figcraft-synthetic-f43-ferry:3
+as the sole new operation. Research events and consents stay at zero.
+Signed device startup and spoken accessibility remain unverified.
+
+Native records under build/boss-android-evidence, SHA-256:
+editor-atomic-apk.txt 9cb3850f03386f7d40a0acec3bd6204c076cf94fac19e9ae833980436800fc7b
+editor-atomic-launch.txt ba617a48340197819069df6fd0ba959576f8da96b4cc472e94638a00b45b0901
+editor-atomic-ready.txt 876a47e93aa08c7bc0debb2ca178e1ab2ea6e31890a402259151bbbf49e579d1
+editor-atomic-return.txt 3a5e1464643db138b84e9175e983e27dc78eb800f217c62400fcb8a8bfa50db6
+editor-atomic-db-before.json 0308ef7a40c9060cc89753d686e87eb0a1cee1834c8468dea577ea9e7ece5695
+editor-atomic-db-after.json fade08041e6438cf40afae91a89009528c9c5a268299fab5ad92ccd6a20abb55
