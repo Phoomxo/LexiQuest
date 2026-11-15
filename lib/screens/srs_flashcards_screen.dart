@@ -59,6 +59,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   final Set<String> _mistakeWordIds = {};
   bool _resultContextValid = true;
   LearningUseCases? _scopedLearning;
+  StreamSubscription<String?>? _ownerChanges;
   List<String>? _loadedWordIds;
   String? _ownerId;
   int _generation = 0;
@@ -116,6 +117,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     if (_isCompatibilityDeck) {
       _load = Future.value(_compatibilitySession(widget.wordList!));
     } else {
+      _ownerChanges = dependencies?.watchActiveOwnerId()?.listen((active) {
+        final expected = _ownerId ?? widget.expectedOwnerId;
+        if (expected != null && active != expected) _invalidateContext();
+      }, onError: (Object _) => _invalidateContext());
       _learning =
           widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
       final learning = _learning;
@@ -429,6 +434,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     if (!mounted) return;
     setState(() => _saving = false);
     final completedSummary = summary;
+    final reviewedOwnerId = _ownerId;
     if (!_isSourcePractice && completedSummary != null) {
       await AppNavigator.pushPage<void>(
         context,
@@ -439,6 +445,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
             wrongAnswers: completedSummary.wrongCount,
             score: completedSummary.score,
             sessionId: completedSummary.id,
+            expectedOwnerId: reviewedOwnerId,
           ),
         ),
       );
@@ -612,6 +619,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void dispose() {
     _generation++;
+    unawaited(_ownerChanges?.cancel());
     _controller.dispose();
     _voiceProvider.stop();
     _voiceProvider.disposeIfOwned(_ownsVoiceProvider);

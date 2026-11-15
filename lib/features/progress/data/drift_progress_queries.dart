@@ -241,6 +241,7 @@ final class DriftProgressQueries {
           '''
       $_historyProjection
       WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
+        AND $_hasScoredHistory
       GROUP BY s.id
       ORDER BY s.ended_at_utc_ms DESC, s.id DESC
       LIMIT 20
@@ -267,6 +268,7 @@ final class DriftProgressQueries {
           '''
       $_historyProjection
       WHERE s.owner_id = ? AND s.id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
+        AND $_hasScoredHistory
       GROUP BY s.id
       ''',
           variables: [Variable<String>(ownerId), Variable<String>(sessionId)],
@@ -292,6 +294,7 @@ final class DriftProgressQueries {
           '''
       $_historyProjection
       WHERE s.owner_id = ? AND s.state = 'completed' AND s.ended_at_utc_ms IS NOT NULL AND $_nonAssessment
+        AND s.activity_type <> 'reviewLadder'
       GROUP BY s.id
       HAVING COUNT(DISTINCT c.id) = 1 AND COUNT(c.id) = COUNT(a.id) AND MIN(c.id) = ?
       ORDER BY s.ended_at_utc_ms DESC, s.id DESC
@@ -485,6 +488,9 @@ final class DriftProgressQueries {
         WHERE ar.owner_id = s.owner_id AND ar.source_table = 'assessment_runs'
           AND json_extract(ar.payload_json, '\$.learning_session_id') = s.id
       )''';
+
+  static const _hasScoredHistory =
+      "(s.activity_type <> 'reviewLadder' OR s.score IS NOT NULL)";
 
   static const _eligibleAttempt = '''
       (a.legacy_evidence_disposition IS NULL OR a.legacy_evidence_disposition = 'base-v25')

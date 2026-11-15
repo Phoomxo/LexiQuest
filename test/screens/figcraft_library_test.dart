@@ -220,6 +220,11 @@ void main() {
     (tester) async {
       try {
         await pumpLibrary(tester, withLevels: true, scale: 2);
+        final libraryScroll = find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        );
         final levelFilter = find.byKey(const ValueKey('library-level-filter'));
         await tester.tap(levelFilter);
         await tester.pumpAndSettle();
@@ -227,7 +232,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
         expect(find.text('อาหาร'), findsNothing);
-        await _tapLabel(tester, 'การเดินทาง');
+        await _tapLabel(tester, 'การเดินทาง', scroll: true);
         await _pumpUntil(tester, find.text('station'));
         await tester.pumpAndSettle();
         await tester.pageBack();
@@ -246,14 +251,28 @@ void main() {
         expect(find.text('เลือกระดับภาษา · A2'), findsOneWidget);
         await tester.enterText(search, '');
         await tester.pumpAndSettle();
-        await tester.tap(levelFilter);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('C2'));
-        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'เลือกระดับภาษา · A2');
+        await _tapLabel(tester, 'C2', scroll: true);
+        await _pumpUntil(tester, find.text('เลือกระดับภาษา · C2'));
+        await tester.scrollUntilVisible(
+          find.text('ไม่พบชุดที่มีคำระดับ C2'),
+          120,
+          scrollable: libraryScroll,
+        );
         expect(find.text('ไม่พบชุดที่มีคำระดับ C2'), findsOneWidget);
         expect(find.text('การเดินทาง'), findsNothing);
-        await tester.tap(find.text('ล้างตัวกรอง'));
+        await tester.scrollUntilVisible(
+          find.text('ล้างตัวกรอง'),
+          -120,
+          scrollable: libraryScroll,
+        );
+        await _tapLabel(tester, 'ล้างตัวกรอง');
         await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('การเดินทาง'),
+          120,
+          scrollable: libraryScroll,
+        );
         expect(find.text('การเดินทาง'), findsOneWidget);
         await tester.scrollUntilVisible(
           find.text('อาหาร'),
@@ -1144,7 +1163,12 @@ void main() {
           await _tapLabel(tester, 'จำได้แล้ว');
         }
         await _tapLabel(tester, 'กลับคลังคำ');
-        await _pumpUntil(tester, search);
+        await _pumpUntil(tester, find.text('คลังคำศัพท์'));
+        await tester.scrollUntilVisible(
+          search,
+          -160,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
         expect(tester.widget<SearchBar>(search).controller!.text, 'การเดิน');
         expect(find.text('อาหาร'), findsNothing);
         await _tapLabel(tester, 'นำเข้าชุดคำ');

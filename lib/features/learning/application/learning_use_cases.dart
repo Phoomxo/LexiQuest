@@ -7,6 +7,7 @@ import '../domain/learning_repository.dart';
 import '../domain/cloze_prompt_policy.dart';
 import '../domain/quiz_prompt_policy.dart';
 import '../domain/quiz_round.dart';
+import '../domain/review_ladder.dart';
 import '../domain/scramble_prompt_policy.dart';
 import '../domain/source_reading_round.dart';
 import '../domain/srs_recall_snapshot.dart';
@@ -14,6 +15,7 @@ import '../domain/srs_recall_snapshot.dart';
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
+typedef ReviewDeskData = ({ReviewLadderPair? pair, ReviewLadderRound? latest});
 typedef AnswerCommittedSink =
     Future<void> Function({
       required String ownerId,
@@ -51,6 +53,94 @@ final class LearningUseCases {
   final EventV1ToV2Adapter? eventAdapter;
 
   bool get supportsDurableQuiz => repository is DurableQuizRepository;
+
+  bool get supportsReviewLadder => repository is ReviewLadderRepository;
+
+  ReviewLadderRepository get _reviewLadder {
+    final current = repository;
+    if (current is ReviewLadderRepository) return current;
+    throw StateError('Review ladder is unavailable');
+  }
+
+  Future<String> _reviewOwner(String expectedOwnerId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    return owner.id;
+  }
+
+  Future<ReviewDeskData> loadReviewDesk({
+    required String expectedOwnerId,
+  }) async {
+    final ownerId = await _reviewOwner(expectedOwnerId);
+    return (
+      pair: await _reviewLadder.findReviewLadderPair(ownerId: ownerId),
+      latest: await _reviewLadder.readLatestReviewLadder(ownerId: ownerId),
+    );
+  }
+
+  Future<ReviewLadderRound> openReviewLadder({
+    required String expectedOwnerId,
+    required ReviewLadderPair pair,
+  }) async {
+    final ownerId = await _reviewOwner(expectedOwnerId);
+    return _reviewLadder.openReviewLadderRound(
+      session: LearningSessionDraft(
+        id: 'session:${_nextId()}',
+        ownerId: ownerId,
+        activityType: 'reviewLadder',
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      pair: pair,
+    );
+  }
+
+  Future<ReviewLadderRound> changeReviewLadder({
+    required String expectedOwnerId,
+    required ReviewLadderRound expected,
+    required ReviewLadderAction action,
+    required DateTime atUtc,
+    int? option,
+    String? text,
+  }) async => _reviewLadder.changeReviewLadderRound(
+    ownerId: await _reviewOwner(expectedOwnerId),
+    expected: expected,
+    action: action,
+    atUtc: atUtc,
+    option: option,
+    text: text,
+  );
+
+  Future<LearningSessionSummary> finishReviewLadder({
+    required String expectedOwnerId,
+    required ReviewLadderRound round,
+  }) async {
+    if (round.phase != ReviewLadderPhase.result) {
+      throw StateError('Review ladder is not ready to finish');
+    }
+    final ownerId = await _reviewOwner(expectedOwnerId);
+    if (round.independentChoice case final first?) {
+      await recordAnswer(
+        sessionId: round.sessionId,
+        wordId: round.pair.target.id,
+        promptMode: QuizPromptKind.meaningChoice.name,
+        isCorrect: first.option == 1,
+        responseTimeMs: null,
+        attemptNumber: 1,
+        attemptId: 'attempt:${round.sessionId}:review:0',
+        occurredAtUtc: first.checkedAtUtc,
+        expectedOwnerId: expectedOwnerId,
+      );
+    }
+    final summary = await _reviewLadder.finishReviewLadderRound(
+      ownerId: ownerId,
+      expected: round,
+      endedAtUtc: _now(),
+    );
+    onLocalMutation?.call();
+    return summary;
+  }
 
   bool get supportsDurableSourceReading =>
       repository is DurableSourceReadingRepository;

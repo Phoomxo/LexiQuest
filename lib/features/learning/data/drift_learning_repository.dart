@@ -12,6 +12,7 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/quiz_round.dart';
+import '../domain/review_ladder.dart';
 import '../domain/scramble_prompt_policy.dart';
 import '../domain/source_reading_round.dart';
 import '../domain/srs_policy.dart';
@@ -27,7 +28,10 @@ typedef AnswerCalendarCapture =
     });
 
 final class DriftLearningRepository
-    implements DurableQuizRepository, DurableSourceReadingRepository {
+    implements
+        DurableQuizRepository,
+        DurableSourceReadingRepository,
+        ReviewLadderRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -46,6 +50,8 @@ final class DriftLearningRepository
   final AnswerCalendarCapture captureCalendarWindow;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
+
+  static const _reviewLadderActivity = 'reviewLadder';
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -94,6 +100,9 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
+    if (session.activityType == _reviewLadderActivity) {
+      throw ArgumentError('Review ladder requires a reviewed word pair');
+    }
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
     await database.transaction(() async {
       await _requireActiveOwner(session.ownerId);
@@ -209,11 +218,18 @@ final class DriftLearningRepository
       }
 
       final sourceReading = _readSourceReadingRound(session);
+      final reviewLadder = _readReviewLadderRound(session);
       if (sourceReading != null) {
         final pinned = _requireSourceReadingAttempt(command, sourceReading);
         await _requireQuizWord(command.ownerId, pinned, row: word);
       }
-      final round = sourceReading == null ? await _readRound(session) : null;
+      if (reviewLadder != null) {
+        _requireReviewLadderAttempt(command, reviewLadder);
+        await _requireReviewLadderPair(command.ownerId, reviewLadder.pair);
+      }
+      final round = sourceReading == null && reviewLadder == null
+          ? await _readRound(session)
+          : null;
       final admission = command.quiz;
       if (command.srsRecallSnapshot != null &&
           (round != null ||
@@ -583,7 +599,7 @@ final class DriftLearningRepository
         !_validSourceReadingTransition(reading, draft)) {
       throw StateError('Source reading round changed');
     }
-    await _writeSourceReading(
+    await _writeActiveContinuation(
       row,
       db.LearningSessionsCompanion(continuationJson: Value(encoded)),
     );
@@ -729,7 +745,7 @@ final class DriftLearningRepository
     return reading.scope.words[slot];
   }
 
-  Future<void> _writeSourceReading(
+  Future<void> _writeActiveContinuation(
     db.LearningSession row,
     db.LearningSessionsCompanion changes,
   ) async {
@@ -742,7 +758,7 @@ final class DriftLearningRepository
                   candidate.continuationJson.equals(row.continuationJson!),
             ))
             .write(changes);
-    if (updated != 1) throw StateError('Source reading round changed');
+    if (updated != 1) throw StateError('Learning continuation changed');
   }
 
   @override
@@ -795,7 +811,7 @@ final class DriftLearningRepository
       throw StateError('Source reading score differs from saved answers');
     }
     if (row.state == 'completed') return _summary(row);
-    await _writeSourceReading(
+    await _writeActiveContinuation(
       row,
       db.LearningSessionsCompanion(
         continuationJson: const Value(null),
@@ -808,9 +824,364 @@ final class DriftLearningRepository
     return _summary((await _session(ownerId, row.id))!);
   });
 
+  @override
+  Future<ReviewLadderPair?> findReviewLadderPair({required String ownerId}) =>
+      database.transaction(() async {
+        await _requireActiveOwner(ownerId);
+        for (final row in await _reviewLadderCandidates(ownerId)) {
+          final pair = await _reviewLadderPair(ownerId, row);
+          if (pair != null) return pair;
+        }
+        return null;
+      });
+
+  Future<List<TypedResult>> _reviewLadderCandidates(
+    String ownerId, {
+    String? attemptId,
+  }) {
+    final answers = database.answerAttempts;
+    final sessions = database.learningSessions;
+    final words = database.vocabularyWords;
+    final categories = database.vocabularyCategories;
+    return (database.select(answers).join([
+            innerJoin(
+              sessions,
+              sessions.id.equalsExp(answers.sessionId) &
+                  sessions.ownerId.equalsExp(answers.ownerId),
+            ),
+            innerJoin(
+              words,
+              words.id.equalsExp(answers.wordId) &
+                  words.ownerId.equalsExp(answers.ownerId),
+            ),
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equalsExp(words.ownerId),
+            ),
+          ])
+          ..where(
+            answers.ownerId.equals(ownerId) &
+                (attemptId == null
+                    ? const Constant(true)
+                    : answers.id.equals(attemptId)) &
+                answers.promptMode.equals('srsRecall') &
+                answers.answerEvidenceJson.isNotNull() &
+                answers.legacyEvidenceDisposition.isNull() &
+                sessions.activityType.isIn(['srsReview', 'sourcePractice']) &
+                sessions.state.equals('completed') &
+                sessions.endedAtUtcMs.isNotNull() &
+                sessions.legacyEvidenceDisposition.isNull() &
+                words.normalizedSpelling.equals('station') &
+                words.normalizedMeaning.equals('สถานี') &
+                words.isDeleted.equals(false) &
+                categories.isDeleted.equals(false),
+          )
+          ..orderBy([
+            OrderingTerm.desc(answers.occurredAtUtcMs),
+            OrderingTerm.desc(answers.id),
+          ]))
+        .get();
+  }
+
+  Future<ReviewLadderPair?> _reviewLadderPair(
+    String ownerId,
+    TypedResult row,
+  ) async {
+    final attempt = row.readTable(database.answerAttempts);
+    final target = row.readTable(database.vocabularyWords);
+    final category = row.readTable(database.vocabularyCategories);
+    try {
+      final original = decodeSrsRecallSnapshot(attempt.answerEvidenceJson!);
+      if (original.spelling != target.spelling ||
+          original.meaning != target.meaning ||
+          original.partOfSpeech != target.partOfSpeech) {
+        return null;
+      }
+    } on FormatException {
+      return null;
+    }
+    final candidates = await listQuizWords(
+      ownerId: ownerId,
+      categoryId: category.id,
+      normalizedSpellings: ['station', 'platform'],
+      normalizedMeanings: ['สถานี', 'ชานชาลา'],
+      limit: 3,
+    );
+    if (candidates.length != 2) return null;
+    final station = candidates
+        .where((word) => word.id == target.id)
+        .firstOrNull;
+    final platform = candidates
+        .where((word) => word.id != target.id)
+        .firstOrNull;
+    if (station == null ||
+        platform == null ||
+        station.spelling.trim().toLowerCase() != 'station' ||
+        station.meaning.trim() != 'สถานี' ||
+        station.partOfSpeech.trim().toLowerCase() != 'noun' ||
+        platform.spelling.trim().toLowerCase() != 'platform' ||
+        platform.meaning.trim() != 'ชานชาลา' ||
+        platform.partOfSpeech.trim().toLowerCase() != 'noun') {
+      return null;
+    }
+    return ReviewLadderPair(
+      target: station,
+      contrast: platform,
+      categoryName: category.name,
+      reviewAttemptId: attempt.id,
+    );
+  }
+
+  Future<void> _requireReviewLadderPair(
+    String ownerId,
+    ReviewLadderPair expected,
+  ) async {
+    final rows = await _reviewLadderCandidates(
+      ownerId,
+      attemptId: expected.reviewAttemptId,
+    );
+    final current = rows.isEmpty
+        ? null
+        : await _reviewLadderPair(ownerId, rows.single);
+    if (current == null || !current.sameAs(expected)) {
+      throw QuizVocabularyChanged();
+    }
+  }
+
+  ReviewLadderRound? _readReviewLadderRound(db.LearningSession row) {
+    if (row.activityType != _reviewLadderActivity) return null;
+    final raw = row.continuationJson;
+    if (raw == null ||
+        row.questionPlanJson != null ||
+        row.legacyEvidenceDisposition != null ||
+        (row.state != 'active' && row.state != 'completed')) {
+      throw StateError('Invalid review ladder session');
+    }
+    final round = decodeReviewLadderRound(raw, sessionId: row.id);
+    if (row.state == 'completed' &&
+        (row.endedAtUtcMs == null || round.phase != ReviewLadderPhase.result)) {
+      throw StateError('Invalid completed review ladder session');
+    }
+    return round;
+  }
+
+  @override
+  Future<ReviewLadderRound?> readLatestReviewLadder({
+    required String ownerId,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final row =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.activityType.equals(_reviewLadderActivity) &
+                    row.state.equals('completed') &
+                    row.legacyEvidenceDisposition.isNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.endedAtUtcMs),
+                (row) => OrderingTerm.desc(row.id),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    return row == null ? null : _readReviewLadderRound(row);
+  });
+
+  @override
+  Future<ReviewLadderRound> openReviewLadderRound({
+    required LearningSessionDraft session,
+    required ReviewLadderPair pair,
+  }) => database.transaction(() async {
+    if (session.activityType != _reviewLadderActivity ||
+        session.quizPlan != null) {
+      throw ArgumentError('Expected a review ladder session');
+    }
+    final ownerId = _required(session.ownerId, 'ownerId');
+    final sessionId = _required(session.id, 'id');
+    final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
+    await _requireActiveOwner(ownerId);
+    await _requireReviewLadderPair(ownerId, pair);
+    final rows =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.activityType.equals(_reviewLadderActivity) &
+                    row.state.equals('active') &
+                    row.legacyEvidenceDisposition.isNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.startedAtUtcMs),
+                (row) => OrderingTerm.desc(row.id),
+              ]))
+            .get();
+    for (final row in rows) {
+      final round = _readReviewLadderRound(row)!;
+      if (round.pair.sameAs(pair)) return round;
+    }
+    final initial = ReviewLadderRound.initial(sessionId: sessionId, pair: pair);
+    await database
+        .into(database.learningSessions)
+        .insert(
+          db.LearningSessionsCompanion.insert(
+            id: sessionId,
+            ownerId: ownerId,
+            activityType: _reviewLadderActivity,
+            state: 'active',
+            startedAtUtcMs: startedAt.millisecondsSinceEpoch,
+            appVersion: _required(session.appVersion, 'appVersion'),
+            buildId: _required(session.buildId, 'buildId'),
+            continuationJson: Value(encodeReviewLadderRound(initial)),
+          ),
+        );
+    return initial;
+  });
+
+  @override
+  Future<ReviewLadderRound> changeReviewLadderRound({
+    required String ownerId,
+    required ReviewLadderRound expected,
+    required ReviewLadderAction action,
+    required DateTime atUtc,
+    int? option,
+    String? text,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, expected.sessionId);
+    final saved = row == null ? null : _readReviewLadderRound(row);
+    if (row == null ||
+        saved == null ||
+        row.state != 'active' ||
+        !saved.pair.sameAs(expected.pair)) {
+      throw StateError('Review ladder round changed');
+    }
+    await _requireReviewLadderPair(ownerId, saved.pair);
+    final next = expected.advance(
+      action,
+      atUtc: atUtc,
+      option: option,
+      text: text,
+    );
+    final encoded = encodeReviewLadderRound(next);
+    if (encoded == row.continuationJson) return saved;
+    if (encodeReviewLadderRound(expected) != row.continuationJson) {
+      throw StateError('Review ladder round changed');
+    }
+    await _writeActiveContinuation(
+      row,
+      db.LearningSessionsCompanion(continuationJson: Value(encoded)),
+    );
+    return next;
+  });
+
+  RecordAnswerCommand? _reviewLadderAttempt(
+    String ownerId,
+    ReviewLadderRound round,
+  ) {
+    final choice = round.independentChoice;
+    if (choice == null || choice.assisted) return null;
+    return RecordAnswerCommand(
+      id: 'attempt:${round.sessionId}:review:0',
+      ownerId: ownerId,
+      sessionId: round.sessionId,
+      wordId: round.pair.target.id,
+      promptMode: 'meaningChoice',
+      isCorrect: choice.option == 1,
+      responseTimeMs: null,
+      attemptNumber: 1,
+      occurredAtUtc: choice.checkedAtUtc,
+    );
+  }
+
+  void _requireReviewLadderAttempt(
+    RecordAnswerCommand command,
+    ReviewLadderRound round,
+  ) {
+    final expected = _reviewLadderAttempt(command.ownerId, round);
+    if (round.phase != ReviewLadderPhase.result ||
+        expected == null ||
+        command.id != expected.id ||
+        command.sessionId != expected.sessionId ||
+        command.wordId != expected.wordId ||
+        command.promptMode != expected.promptMode ||
+        command.isCorrect != expected.isCorrect ||
+        command.attemptNumber != expected.attemptNumber ||
+        command.occurredAtUtc.millisecondsSinceEpoch !=
+            expected.occurredAtUtc.millisecondsSinceEpoch ||
+        command.responseTimeMs != null ||
+        command.providerProvenance != null ||
+        command.quiz != null ||
+        command.srsRecallSnapshot != null) {
+      throw StateError('Review ladder answer differs from the first check');
+    }
+  }
+
+  @override
+  Future<LearningSessionSummary> finishReviewLadderRound({
+    required String ownerId,
+    required ReviewLadderRound expected,
+    required DateTime endedAtUtc,
+  }) => database.transaction(() async {
+    _requiredUtc(endedAtUtc, 'endedAtUtc');
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, expected.sessionId);
+    final saved = row == null ? null : _readReviewLadderRound(row);
+    if (row == null ||
+        saved == null ||
+        saved.phase != ReviewLadderPhase.result ||
+        row.continuationJson != encodeReviewLadderRound(expected)) {
+      throw StateError('Review ladder round cannot finish');
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)..where(
+              (attempt) =>
+                  attempt.ownerId.equals(ownerId) &
+                  attempt.sessionId.equals(row.id),
+            ))
+            .get();
+    final command = _reviewLadderAttempt(ownerId, saved);
+    if (command == null
+        ? attempts.isNotEmpty
+        : attempts.length != 1 ||
+              attempts.single.id != command.id ||
+              attempts.single.answerEvidenceJson != null ||
+              attempts.single.legacyEvidenceDisposition != null ||
+              !_sameAttempt(attempts.single, command)) {
+      throw StateError('Review ladder answers differ from the first check');
+    }
+    final correct = command?.isCorrect == true ? 1 : 0;
+    final score = command == null ? null : _score(row);
+    if (row.correctCount != correct ||
+        row.wrongCount != attempts.length - correct ||
+        (row.state == 'completed' && row.score != score)) {
+      throw StateError('Review ladder score differs from saved answer');
+    }
+    if (row.state == 'completed') return _summary(row);
+    await _requireReviewLadderPair(ownerId, saved.pair);
+    await _writeActiveContinuation(
+      row,
+      db.LearningSessionsCompanion(
+        state: const Value('completed'),
+        endedAtUtcMs: Value(endedAtUtc.millisecondsSinceEpoch),
+        score: Value(score),
+      ),
+    );
+    if (command != null) await projections.rebuildAchievements(ownerId);
+    return _summary((await _session(ownerId, row.id))!);
+  });
+
   Future<QuizRound?> _roundForAttempt(RecordAnswerCommand command) async {
     final session = await _session(command.ownerId, command.sessionId);
     if (session == null) return null;
+    if (_readReviewLadderRound(session) case final ladder?) {
+      _requireReviewLadderAttempt(command, ladder);
+      if (session.state == 'active') {
+        await _requireReviewLadderPair(command.ownerId, ladder.pair);
+      }
+      return null;
+    }
     if (_readSourceReadingRound(session) case final reading?) {
       _requireSourceReadingAttempt(command, reading);
       return null;
@@ -822,6 +1193,7 @@ final class DriftLearningRepository
     db.LearningSession session, {
     QuizPlan? plan,
   }) async {
+    if (session.activityType == _reviewLadderActivity) return null;
     final encodedPlan = session.questionPlanJson;
     final continuation = session.continuationJson;
     if (encodedPlan == null && continuation == null) return null;

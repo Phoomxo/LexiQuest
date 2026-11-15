@@ -6,6 +6,7 @@ import '../runtime/app_dependencies.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
@@ -18,11 +19,13 @@ class WeaknessClinicScreen extends StatefulWidget {
     this.loader,
     this.learning,
     this.featureRegistry,
+    this.expectedOwnerId,
   });
 
   final ProgressLoader? loader;
   final LearningUseCases? learning;
   final FieldFeatureRegistry? featureRegistry;
+  final String? expectedOwnerId;
 
   @override
   State<WeaknessClinicScreen> createState() => _WeaknessClinicScreenState();
@@ -153,6 +156,7 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
               progress,
               learning: _learning,
               features: features,
+              expectedOwnerId: widget.expectedOwnerId,
               isCurrent: () => _current(generation),
               onReturn: () {
                 if (!_current(generation)) return;
@@ -171,6 +175,7 @@ class _WeaknessBody extends StatelessWidget {
     this.progress, {
     this.learning,
     required this.features,
+    this.expectedOwnerId,
     required this.isCurrent,
     required this.onReturn,
   });
@@ -178,14 +183,24 @@ class _WeaknessBody extends StatelessWidget {
   final ProgressSnapshot progress;
   final LearningUseCases? learning;
   final FieldFeatureRegistry features;
+  final String? expectedOwnerId;
   final bool Function() isCurrent;
   final VoidCallback onReturn;
 
   @override
   Widget build(BuildContext context) {
     final practiceWords = progress.weaknesses.take(20).toList(growable: false);
-    final canQuiz = features.isVisible(FieldFeature.quiz);
-    final canReview = features.isVisible(FieldFeature.srs);
+    final capabilities =
+        AppDependenciesScope.maybeOf(context)?.features ??
+        const BuildFeatureRegistry.fieldDefaults();
+    final canQuiz =
+        features.isVisible(FieldFeature.quiz) &&
+        features.isVisible(FieldFeature.vocabulary) &&
+        capabilities.isVisible(Feature.quiz) &&
+        capabilities.isVisible(Feature.vocabulary);
+    final canReview =
+        features.isVisible(FieldFeature.srs) &&
+        capabilities.isVisible(Feature.srs);
     return Column(
       children: [
         Padding(
@@ -235,6 +250,7 @@ class _WeaknessBody extends StatelessWidget {
                               .toList(),
                           learning: learning,
                           featureRegistry: features,
+                          expectedOwnerId: expectedOwnerId,
                         ),
                       ),
                     );
@@ -254,8 +270,10 @@ class _WeaknessBody extends StatelessWidget {
                             context,
                             AppPage<void>(
                               name: 'learning/weakness-srs',
-                              builder: (_) =>
-                                  SrsFlashcardsScreen(learning: learning),
+                              builder: (_) => SrsFlashcardsScreen(
+                                learning: learning,
+                                expectedOwnerId: expectedOwnerId,
+                              ),
                             ),
                           );
                           onReturn();

@@ -1,5 +1,6 @@
 import 'learning_models.dart';
 import 'quiz_round.dart';
+import 'review_ladder.dart';
 import 'source_reading_round.dart';
 
 abstract interface class LearningRepository {
@@ -56,6 +57,32 @@ abstract interface class DurableSourceReadingRepository
   Future<LearningSessionSummary> finishSourceReadingRound({
     required String ownerId,
     required SourceReadingRound expected,
+    required DateTime endedAtUtc,
+  });
+}
+
+abstract interface class ReviewLadderRepository implements LearningRepository {
+  Future<ReviewLadderPair?> findReviewLadderPair({required String ownerId});
+
+  Future<ReviewLadderRound?> readLatestReviewLadder({required String ownerId});
+
+  Future<ReviewLadderRound> openReviewLadderRound({
+    required LearningSessionDraft session,
+    required ReviewLadderPair pair,
+  });
+
+  Future<ReviewLadderRound> changeReviewLadderRound({
+    required String ownerId,
+    required ReviewLadderRound expected,
+    required ReviewLadderAction action,
+    required DateTime atUtc,
+    int? option,
+    String? text,
+  });
+
+  Future<LearningSessionSummary> finishReviewLadderRound({
+    required String ownerId,
+    required ReviewLadderRound expected,
     required DateTime endedAtUtc,
   });
 }

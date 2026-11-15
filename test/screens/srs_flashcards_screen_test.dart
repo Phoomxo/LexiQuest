@@ -666,6 +666,8 @@ void main() {
     );
     expect(sessions!.single.state, 'completed');
     expect(sessions.single.correctCount, 1);
+    final score = tester.widget<ScoreScreen>(find.byType(ScoreScreen));
+    expect(score.expectedOwnerId, sessions.single.ownerId);
     expect(find.text('100%'), findsOneWidget);
     await tester.tap(find.text('กลับไปเลือกกิจกรรม'));
     await tester.pumpAndSettle();

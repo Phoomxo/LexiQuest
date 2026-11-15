@@ -344,6 +344,55 @@ void main() {
   });
 
   test(
+    'an assessed review choice does not replace the latest set result',
+    () async {
+      await completeCategorySession('set-quiz', [('word-1', false)], 0);
+      await completeCategorySession('review-assessed', [('word-1', true)], 2);
+      await database.customStatement(
+        "UPDATE learning_sessions SET activity_type = 'reviewLadder' WHERE id = ?",
+        ['review-assessed'],
+      );
+
+      final latest = await progress.loadLatestSessionForCategory(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+      );
+      expect(latest?.summary.id, 'set-quiz');
+      final snapshot = await load();
+      expect(snapshot.recentSessions.first.summary.id, 'review-assessed');
+      expect(snapshot.sampleSize, 2);
+      final assessed = await progress.loadSession(
+        ownerId: 'owner-1',
+        sessionId: 'review-assessed',
+      );
+      expect(assessed?.summary.score, 100);
+    },
+  );
+
+  test(
+    'an unassessed review counts as completed without a scored history row',
+    () async {
+      await completeCategorySession('review-unassessed', [], 2);
+      await database.customStatement(
+        "UPDATE learning_sessions SET activity_type = 'reviewLadder', score = NULL WHERE id = ?",
+        ['review-unassessed'],
+      );
+
+      final snapshot = await load();
+      expect(snapshot.completedSessions, 1);
+      expect(snapshot.sampleSize, 0);
+      expect(snapshot.recentSessions, isEmpty);
+      expect(
+        await progress.loadSession(
+          ownerId: 'owner-1',
+          sessionId: 'review-unassessed',
+        ),
+        isNull,
+      );
+    },
+  );
+
+  test(
     'category context uses the current owner-matched name without rewriting a result',
     () async {
       await completeCategorySession('saved-a', [('word-1', false)], 0);

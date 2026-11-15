@@ -12,6 +12,7 @@ import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'add_multiple_words_screen.dart';
+import 'review_desk_screen.dart';
 import 'vocab_list_screen.dart';
 import 'wordbook_import_screen.dart';
 
@@ -116,6 +117,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
     final libraryContext = _libraryContext;
     final ownerId = _ownerId;
+    final learning = _dependencies?.learning;
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
     final addWord = useCases == null
         ? null
@@ -273,6 +275,31 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               ),
                               icon: const Icon(Icons.file_upload_outlined),
                               label: const Text('นำเข้าชุดคำ'),
+                            ),
+                          if (ownerId != null &&
+                              ReviewDeskScreen.available(_dependencies))
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                if (!identical(
+                                      libraryContext,
+                                      _libraryContext,
+                                    ) ||
+                                    !_isCurrent(useCases)) {
+                                  return;
+                                }
+                                AppNavigator.pushPage<void>(
+                                  context,
+                                  AppPage<void>(
+                                    name: 'learning/review-desk',
+                                    builder: (_) => ReviewDeskScreen(
+                                      learning: learning!,
+                                      expectedOwnerId: ownerId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.history),
+                              label: const Text('ทบทวนคำศัพท์'),
                             ),
                         ],
                       ),
