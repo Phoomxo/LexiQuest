@@ -1,5 +1,28 @@
 # Continuous execution checkpoint
 
+## S3 Practice a saved round's mistakes from history
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `c9f3125f` passed
+  309 Windows Flutter tests and analysis of all ten changed Dart
+  files. Review identified owner changes during navigation and
+  direct practice. The owner guards were verified on the journey.
+- The local and installed x64 debug APK share a SHA-256 that starts
+  with `aeb38bb8`. Android API 35 offline at font 2.0 completed the
+  original two-word Quiz at 50%. The saved Score opened the Review
+  Desk. A new round practiced station only and scored 100%.
+- The new Score returned through the desk to the original 50%.
+  A new process reopened the same original result from Progress.
+  SQLite proved the parent link, preserved both original answers,
+  and matched the completed snapshot after reopening.
+  [Evidence](evidence/s3-p34-history-review-desk.txt).
+- The prototype has verified 13 of 44 features and 12 of 64 work
+  packages. All 48 screens need delivery checks.
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43671998237).
+- Next verify f03 from the Library's station card. Show the saved
+  word level and the authored related terms for the station sense.
+  Return to the same card, set, and Library.
+
 ## S3 Review Desk with local reports and saved words
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
