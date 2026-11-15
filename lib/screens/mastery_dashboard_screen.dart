@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'focus_planner_panel.dart';
@@ -15,6 +17,7 @@ import '../runtime/field_feature_registry.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'achievements_screen.dart';
+import 'review_desk_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 import 'quiz_screen.dart';
@@ -45,7 +48,10 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   Future<ProgressSnapshot>? _load;
   ProgressLoader? _loader;
   String? _openingSessionId;
-  bool _practicingHistory = false;
+  bool _openingHistoryActivity = false;
+  AppDependencies? _historyScope;
+  StreamSubscription<void>? _historyOwnerWrites;
+  int _historyOwnerEpoch = 0;
   ValueListenable<int>? _progressUpdates;
   ({Object token, String instanceId, AppDependencies scope})? _claimRequest;
   ({Object token, AppDependencies scope})? _recoveryRequest;
@@ -64,6 +70,15 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!identical(_historyScope, dependencies)) {
+      _historyScope = dependencies;
+      _historyOwnerEpoch++;
+      unawaited(_historyOwnerWrites?.cancel());
+      _historyOwnerWrites = dependencies?.watchLocalOwnerWrites()?.listen(
+        (_) => _historyOwnerEpoch++,
+        onError: (Object _) => _historyOwnerEpoch++,
+      );
+    }
     if (_claimRequest != null &&
         !identical(_claimRequest!.scope, dependencies)) {
       _claimRequest = null;
@@ -115,6 +130,7 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
 
   @override
   void dispose() {
+    unawaited(_historyOwnerWrites?.cancel());
     _progressUpdates?.removeListener(_refresh);
     super.dispose();
   }
@@ -203,19 +219,29 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
     }
   }
 
-  Future<void> _openSession(String sessionId) async {
+  Future<void> _openSession(SessionHistoryEntry selected) async {
     if (_openingSessionId != null) return;
-    final progress = AppDependenciesScope.maybeOf(context)?.progress;
+    final scope = AppDependenciesScope.maybeOf(context);
+    final ownerEpoch = _historyOwnerEpoch;
+    final progress = scope?.progress;
+    final sessionId = selected.summary.id;
     setState(() => _openingSessionId = sessionId);
     try {
       if (progress == null) throw StateError('progress unavailable');
-      final entry = await progress.loadSession(sessionId);
-      if (!mounted) return;
+      final entry = await progress.loadSession(
+        sessionId,
+        expectedOwnerId: selected.ownerId,
+      );
+      if (!mounted ||
+          ownerEpoch != _historyOwnerEpoch ||
+          ModalRoute.isCurrentOf(context) != true) {
+        return;
+      }
       if (entry == null ||
-          progress != AppDependenciesScope.maybeOf(context)?.progress) {
+          !identical(scope, AppDependenciesScope.maybeOf(context))) {
         throw StateError('saved session unavailable');
       }
-      final learning = AppDependenciesScope.maybeOf(context)?.learning;
+      final learning = scope?.learning;
       final features = _features;
       final canRepair =
           features.isVisible(FieldFeature.weakness) &&
@@ -224,22 +250,34 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
         context,
         AppPage<void>(
           name: 'progress/session/$sessionId',
-          builder: (scoreContext) => ScoreScreen(
-            correctAnswers: entry.summary.correctCount,
-            wrongAnswers: entry.summary.wrongCount,
-            score: entry.summary.score,
-            sessionId: entry.summary.id,
-            expectedOwnerId: entry.ownerId,
-            categoryName: entry.categoryName,
-            returnLabel: 'กลับไปดูประวัติ',
-            showOriginalHistory: true,
-            originalAnswers: entry.originalAnswers,
-            originalRecallAnswers: entry.originalRecallAnswers,
-            mistakes: entry.mistakes,
-            onPracticeMistakes:
-                !canRepair || learning == null || entry.mistakes.isEmpty
-                ? null
-                : () => _practiceHistoryMistakes(scoreContext, entry),
+          builder: _historyBuilder(
+            scope,
+            ownerEpoch,
+            (scoreContext) => ScoreScreen(
+              correctAnswers: entry.summary.correctCount,
+              wrongAnswers: entry.summary.wrongCount,
+              score: entry.summary.score,
+              sessionId: entry.summary.id,
+              expectedOwnerId: entry.ownerId,
+              categoryName: entry.categoryName,
+              returnLabel: 'กลับไปดูประวัติ',
+              showOriginalHistory: true,
+              originalAnswers: entry.originalAnswers,
+              originalRecallAnswers: entry.originalRecallAnswers,
+              mistakes: entry.mistakes,
+              onOpenReviewDesk: ReviewDeskScreen.available(scope)
+                  ? (from) => _openHistoryDesk(from, scope!, entry, ownerEpoch)
+                  : null,
+              onPracticeMistakes:
+                  !canRepair || learning == null || entry.mistakes.isEmpty
+                  ? null
+                  : () => _practiceHistoryMistakes(
+                      scoreContext,
+                      scope!,
+                      entry,
+                      ownerEpoch,
+                    ),
+            ),
           ),
         ),
       );
@@ -257,35 +295,89 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
     }
   }
 
+  Future<void> _openHistoryDesk(
+    BuildContext from,
+    AppDependencies scope,
+    SessionHistoryEntry entry,
+    int ownerEpoch,
+  ) async {
+    if (_openingHistoryActivity || ownerEpoch != _historyOwnerEpoch) return;
+    _openingHistoryActivity = true;
+    try {
+      final ownerId = await scope.readActiveOwnerId();
+      if (!from.mounted ||
+          ownerEpoch != _historyOwnerEpoch ||
+          !identical(AppDependenciesScope.maybeOf(from), scope) ||
+          ModalRoute.isCurrentOf(from) != true) {
+        return;
+      }
+      if (ownerId != entry.ownerId) throw StateError('learning owner changed');
+      await AppNavigator.pushPage<void>(
+        from,
+        AppPage<void>(
+          name: 'progress/session/${entry.summary.id}/review',
+          builder: _historyBuilder(
+            scope,
+            ownerEpoch,
+            (_) => ReviewDeskScreen(
+              learning: scope.learning!,
+              expectedOwnerId: entry.ownerId,
+              historyEntry: entry,
+            ),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (from.mounted && ModalRoute.isCurrentOf(from) == true) {
+        ScaffoldMessenger.of(from).showSnackBar(
+          const SnackBar(content: Text('เปิดศูนย์ทบทวนจากผลเดิมไม่สำเร็จ')),
+        );
+      }
+    } finally {
+      _openingHistoryActivity = false;
+    }
+  }
+
   Future<void> _practiceHistoryMistakes(
     BuildContext scoreContext,
+    AppDependencies scope,
     SessionHistoryEntry entry,
+    int ownerEpoch,
   ) async {
-    if (_practicingHistory) return;
-    _practicingHistory = true;
+    if (_openingHistoryActivity || ownerEpoch != _historyOwnerEpoch) return;
+    _openingHistoryActivity = true;
     try {
       final features = _features;
       if (!features.isVisible(FieldFeature.weakness) ||
           !features.isVisible(FieldFeature.quiz)) {
         throw StateError('history repair unavailable');
       }
-      final learning = AppDependenciesScope.maybeOf(scoreContext)?.learning;
+      final learning = scope.learning;
       if (learning == null) throw StateError('learning unavailable');
       final owner = await learning.owners.getOrCreateActiveOwner();
-      if (!scoreContext.mounted) return;
+      if (!scoreContext.mounted ||
+          ownerEpoch != _historyOwnerEpoch ||
+          !identical(AppDependenciesScope.maybeOf(scoreContext), scope) ||
+          ModalRoute.isCurrentOf(scoreContext) != true) {
+        return;
+      }
       if (owner.id != entry.ownerId) throw StateError('learning owner changed');
       await AppNavigator.pushPage<void>(
         scoreContext,
         AppPage<void>(
           name: 'progress/session/${entry.summary.id}/practice',
-          builder: (_) => QuizScreen(
-            wordIds: entry.mistakes.map((word) => word.id).toList(),
-            originParentId: entry.summary.id,
-            expectedOwnerId: entry.ownerId,
-            categoryName: entry.categoryName,
-            returnLabel: 'กลับไปที่ผลการฝึก',
-            learning: learning,
-            featureRegistry: _features,
+          builder: _historyBuilder(
+            scope,
+            ownerEpoch,
+            (_) => QuizScreen(
+              wordIds: entry.mistakes.map((word) => word.id).toList(),
+              originParentId: entry.summary.id,
+              expectedOwnerId: entry.ownerId,
+              categoryName: entry.categoryName,
+              returnLabel: 'กลับไปที่ผลการฝึก',
+              learning: learning,
+              featureRegistry: features,
+            ),
           ),
         ),
       );
@@ -298,8 +390,28 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
         );
       }
     } finally {
-      _practicingHistory = false;
+      _openingHistoryActivity = false;
     }
+  }
+
+  WidgetBuilder _historyBuilder(
+    AppDependencies? scope,
+    int ownerEpoch,
+    WidgetBuilder buildPage,
+  ) {
+    bool? admitted;
+    return (context) {
+      // Mounted pages invalidate their own data and any activities they opened.
+      admitted ??=
+          mounted &&
+          ownerEpoch == _historyOwnerEpoch &&
+          identical(AppDependenciesScope.maybeOf(context), scope);
+      if (admitted == true) return buildPage(context);
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('กรุณากลับไปเปิดผลการฝึกอีกครั้ง')),
+      );
+    };
   }
 
   @override
@@ -488,7 +600,7 @@ class _DashboardBody extends StatelessWidget {
   });
 
   final ProgressSnapshot progress;
-  final ValueChanged<String> onOpenSession;
+  final ValueChanged<SessionHistoryEntry> onOpenSession;
   final String? openingSessionId;
   final bool showMotivation, showQuests, recoveringDays;
   final ValueChanged<QuestProgressCard>? onClaim;
@@ -598,9 +710,7 @@ class _DashboardBody extends StatelessWidget {
                     ),
                   )
                 : Text('${entry.summary.score}%'),
-            onTap: openingSessionId == null
-                ? () => onOpenSession(entry.summary.id)
-                : null,
+            onTap: openingSessionId == null ? () => onOpenSession(entry) : null,
           ),
         _sampleChartButton(context),
       ],
@@ -891,13 +1001,17 @@ class _SkillRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: Text(skill.label)),
-                Text(
-                  accuracy == null
-                      ? 'ยังไม่มีข้อมูล'
-                      : '${(accuracy * 100).toStringAsFixed(0)}%',
-                ),
+                const SizedBox(width: 8),
+                if (accuracy == null)
+                  const Flexible(
+                    child: Text('ยังไม่มีข้อมูล', textAlign: TextAlign.end),
+                  )
+                else
+                  Text('${(accuracy * 100).toStringAsFixed(0)}%'),
               ],
             ),
             const SizedBox(height: 8),

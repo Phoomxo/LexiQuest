@@ -27,6 +27,7 @@ class ScoreScreen extends StatefulWidget {
     this.originalAnswers,
     this.originalRecallAnswers,
     this.expectedOwnerId,
+    this.onOpenReviewDesk,
     this.onOpenSentence,
     this.sourceSentence,
   });
@@ -43,6 +44,7 @@ class ScoreScreen extends StatefulWidget {
   final List<OriginalQuizAnswer>? originalAnswers;
   final List<OriginalSrsRecallAnswer>? originalRecallAnswers;
   final String? expectedOwnerId;
+  final ValueChanged<BuildContext>? onOpenReviewDesk;
   final ValueChanged<BuildContext>? onOpenSentence;
   final String? sourceSentence;
 
@@ -61,6 +63,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
   bool _openingCloze = false;
   Future<bool>? _clozeAvailable;
   StreamSubscription<String?>? _ownerChanges;
+  StreamSubscription<void>? _ownerWrites;
 
   @override
   void didChangeDependencies() {
@@ -74,6 +77,10 @@ class _ScoreScreenState extends State<ScoreScreen> {
         _ownerChanges = current?.watchActiveOwnerId()?.listen((active) {
           if (active != ownerId) _hideResult();
         }, onError: (Object _) => _hideResult());
+        _ownerWrites = current?.watchLocalOwnerWrites()?.listen(
+          (_) => _hideResult(),
+          onError: (Object _) => _hideResult(),
+        );
       }
       _prepareCloze();
     } else if (!identical(current, _dependencies)) {
@@ -108,6 +115,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
   @override
   void dispose() {
     unawaited(_ownerChanges?.cancel());
+    unawaited(_ownerWrites?.cancel());
     super.dispose();
   }
 
@@ -316,6 +324,14 @@ class _ScoreScreenState extends State<ScoreScreen> {
                     ),
                   const SizedBox(height: 12),
                 ],
+                if (widget.onOpenReviewDesk case final openDesk?)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      if (_canAct) openDesk(context);
+                    },
+                    icon: const Icon(Icons.history),
+                    label: const Text('เปิดศูนย์ทบทวน'),
+                  ),
                 OutlinedButton.icon(
                   onPressed: () {
                     if (_canAct) Navigator.of(context).pop();

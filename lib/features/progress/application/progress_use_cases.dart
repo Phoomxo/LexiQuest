@@ -27,8 +27,14 @@ final class ProgressUseCases {
     return snapshot;
   }
 
-  Future<SessionHistoryEntry?> loadSession(String sessionId) async {
+  Future<SessionHistoryEntry?> loadSession(
+    String sessionId, {
+    String? expectedOwnerId,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw StateError('progress owner changed');
+    }
     final entry = await queries.loadSession(
       ownerId: owner.id,
       sessionId: sessionId,

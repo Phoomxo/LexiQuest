@@ -6,6 +6,7 @@ import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/review_ladder.dart';
+import '../features/progress/domain/progress_models.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
@@ -13,6 +14,7 @@ import '../runtime/registries/feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import '../widgets/local_content_report_queue.dart';
 import 'bookmarked_vocabulary_screen.dart';
+import 'quiz_screen.dart';
 import 'srs_flashcards_screen.dart';
 import 'weakness_clinic_screen.dart';
 
@@ -29,10 +31,12 @@ class ReviewDeskScreen extends StatefulWidget {
     super.key,
     required this.learning,
     required this.expectedOwnerId,
+    this.historyEntry,
   });
 
   final LearningUseCases learning;
   final String expectedOwnerId;
+  final SessionHistoryEntry? historyEntry;
 
   static bool available(AppDependencies? scope) =>
       scope != null &&
@@ -60,6 +64,8 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
   StreamSubscription<String?>? _ownerChanges;
   StreamSubscription<void>? _ownerWrites;
   Future<ReviewDeskData>? _desk;
+  late List<QuizWord> _historyMistakes =
+      widget.historyEntry?.mistakes ?? const [];
   ReviewLadderRound? _round;
   _ReviewSubmission? _pending;
   bool _invalidated = false;
@@ -85,6 +91,19 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
         ReviewDeskScreen._visible(scope, Feature.quiz, FieldFeature.quiz);
   }
 
+  bool get _canPracticeHistory {
+    final scope = _dependencies;
+    return scope != null &&
+        scope.progress != null &&
+        widget.learning.supportsDurableQuiz &&
+        ReviewDeskScreen._visible(scope, Feature.quiz, FieldFeature.quiz) &&
+        ReviewDeskScreen._visible(
+          scope,
+          Feature.weakness,
+          FieldFeature.weakness,
+        );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -93,7 +112,10 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
       if (!identical(scope, _dependencies)) _invalidated = true;
       return;
     }
-    if (scope == null || !identical(scope.learning, widget.learning)) {
+    if (scope == null ||
+        !identical(scope.learning, widget.learning) ||
+        (widget.historyEntry != null &&
+            widget.historyEntry!.ownerId != widget.expectedOwnerId)) {
       _invalidated = true;
       return;
     }
@@ -112,7 +134,8 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
   void didUpdateWidget(covariant ReviewDeskScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.learning, widget.learning) ||
-        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+        oldWidget.expectedOwnerId != widget.expectedOwnerId ||
+        !identical(oldWidget.historyEntry, widget.historyEntry)) {
       _invalidated = true;
     }
   }
@@ -163,12 +186,24 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
     });
   }
 
-  Future<void> _openActivity(String name, Widget page) async {
-    if (!_ready) return;
+  Future<void> _openActivity(
+    String name,
+    FutureOr<Widget?> Function() buildPage,
+  ) async {
+    final scope = _dependencies;
+    if (!_ready || scope == null) return;
     await _run(() async {
-      final ownerId = await _dependencies?.readActiveOwnerId();
+      final ownerId = await scope.readActiveOwnerId();
       if (!mounted || _invalidated || ownerId != widget.expectedOwnerId) {
         _invalidate();
+        return;
+      }
+      final page = await buildPage();
+      if (!mounted ||
+          _invalidated ||
+          !identical(AppDependenciesScope.maybeOf(context), scope) ||
+          ModalRoute.isCurrentOf(context) != true ||
+          page == null) {
         return;
       }
       await AppNavigator.pushPage<void>(
@@ -192,6 +227,26 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
       );
       if (_current) _loadDesk();
     }, errorMessage: 'เปิดรายการทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง');
+  }
+
+  Future<Widget?> _loadHistoryPractice() async {
+    if (!_canPracticeHistory || widget.historyEntry == null) return null;
+    final sessionId = widget.historyEntry!.summary.id;
+    final current = await _dependencies!.progress!.loadSession(
+      sessionId,
+      expectedOwnerId: widget.expectedOwnerId,
+    );
+    if (!_current) return null;
+    _historyMistakes = current?.mistakes ?? const [];
+    if (_historyMistakes.isEmpty) return null;
+    return QuizScreen(
+      learning: widget.learning,
+      expectedOwnerId: widget.expectedOwnerId,
+      originParentId: sessionId,
+      wordIds: _historyMistakes.take(100).map((word) => word.id).toList(),
+      categoryName: current!.categoryName,
+      returnLabel: 'กลับศูนย์ทบทวน',
+    );
   }
 
   Future<void> _run(
@@ -313,7 +368,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
             ? null
             : round == null
             ? _returnBar(
-                'กลับคลังคำ',
+                widget.historyEntry == null ? 'กลับคลังคำ' : 'กลับไปดูผลเดิม',
                 _ready ? () => Navigator.maybePop(context) : null,
               )
             : round.phase == ReviewLadderPhase.result && _finished
@@ -339,6 +394,19 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
   Widget _deskContent() {
     final scope = _dependencies!;
     return _list([
+      if (widget.historyEntry != null && _canPracticeHistory)
+        if (_historyMistakes.isEmpty)
+          const Text('ไม่มีคำที่พร้อมฝึกซ้ำจากรอบนี้')
+        else
+          _button(
+            'ฝึกคำที่ผิดจากรอบนี้ (${_historyMistakes.take(100).length})',
+            _ready
+                ? () => _openActivity(
+                    'learning/review-original-mistakes',
+                    _loadHistoryPractice,
+                  )
+                : null,
+          ),
       if (_srsAvailable)
         ListTile(
           contentPadding: EdgeInsets.zero,
@@ -347,7 +415,9 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
           onTap: _ready
               ? () => _openActivity(
                   'learning/review-due',
-                  SrsFlashcardsScreen(expectedOwnerId: widget.expectedOwnerId),
+                  () => SrsFlashcardsScreen(
+                    expectedOwnerId: widget.expectedOwnerId,
+                  ),
                 )
               : null,
         ),
@@ -364,7 +434,9 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
           onTap: _ready
               ? () => _openActivity(
                   'learning/review-weakness',
-                  WeaknessClinicScreen(expectedOwnerId: widget.expectedOwnerId),
+                  () => WeaknessClinicScreen(
+                    expectedOwnerId: widget.expectedOwnerId,
+                  ),
                 )
               : null,
         ),
@@ -376,7 +448,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
           onTap: _ready
               ? () => _openActivity(
                   'learning/review-bookmarks',
-                  BookmarkedVocabularyScreen(
+                  () => BookmarkedVocabularyScreen(
                     scope: scope,
                     expectedOwnerId: widget.expectedOwnerId,
                   ),
@@ -394,7 +466,7 @@ class _ReviewDeskScreenState extends State<ReviewDeskScreen> {
                   final rows = reports.watchReports(widget.expectedOwnerId);
                   _openActivity(
                     'learning/review-reports',
-                    Builder(
+                    () => Builder(
                       builder: (context) => Scaffold(
                         appBar: AppBar(
                           toolbarHeight: M3Theme.appBarToolbarHeight(context),

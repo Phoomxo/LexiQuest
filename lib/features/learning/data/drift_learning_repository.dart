@@ -107,6 +107,13 @@ final class DriftLearningRepository
     await database.transaction(() async {
       await _requireActiveOwner(session.ownerId);
       final plan = session.quizPlan;
+      if (plan != null) {
+        await _requireLinkedWeaknessParent(
+          session.ownerId,
+          session.activityType,
+          plan,
+        );
+      }
       final encodedPlan = plan == null ? null : encodeQuizPlan(plan);
       final existing = await _session(session.ownerId, session.id);
       if (existing?.legacyEvidenceDisposition != null) {
@@ -1381,6 +1388,53 @@ final class DriftLearningRepository
     return attempts.map((attempt) => attempt.wordId).toSet();
   });
 
+  Future<void> _requireLinkedWeaknessParent(
+    String ownerId,
+    String activityType,
+    QuizPlan plan,
+  ) async {
+    final origin = plan.origin;
+    final parentId = origin.parentId;
+    if (activityType != 'weaknessPractice' || parentId == null) return;
+    final parent = await _session(ownerId, parentId);
+    if (parent == null ||
+        parent.state != 'completed' ||
+        parent.endedAtUtcMs == null ||
+        parent.activityType == 'assessment' ||
+        parentId.startsWith('assessment-session:') ||
+        (parent.legacyEvidenceDisposition != null &&
+            parent.legacyEvidenceDisposition != 'base-v25')) {
+      throw StateError('Original weakness round is unavailable');
+    }
+    final rows = await database
+        .customSelect(
+          r'''
+          SELECT DISTINCT a.word_id
+          FROM answer_attempts a
+          WHERE a.owner_id = ? AND a.session_id = ? AND a.is_correct = 0
+            AND (a.legacy_evidence_disposition IS NULL
+              OR a.legacy_evidence_disposition = 'base-v25')
+            AND NOT EXISTS (
+              SELECT 1 FROM archived_v25_records r
+              WHERE r.owner_id = a.owner_id AND r.source_table = 'assessment_runs'
+                AND json_extract(r.payload_json, '$.learning_session_id') = a.session_id
+            )
+          ''',
+          variables: [Variable<String>(ownerId), Variable<String>(parentId)],
+          readsFrom: {database.answerAttempts, database.archivedV25Records},
+        )
+        .get();
+    final missed = rows.map((row) => row.read<String>('word_id')).toSet();
+    final requested = origin.wordIds;
+    if (requested == null ||
+        !missed.containsAll(requested) ||
+        !missed.containsAll(
+          plan.questions.map((question) => question.word.id),
+        )) {
+      throw StateError('Weakness targets differ from original mistakes');
+    }
+  }
+
   @override
   Future<QuizRound?> loadQuizRound({
     required String ownerId,
@@ -1419,6 +1473,7 @@ final class DriftLearningRepository
         continue;
       }
       if (plan.origin != origin) continue;
+      await _requireLinkedWeaknessParent(ownerId, row.activityType, plan);
       final round = (await _readRound(row, plan: plan))!;
       try {
         final cursor = round.cursor;
@@ -1476,6 +1531,11 @@ final class DriftLearningRepository
         state = 'paused';
       case QuizStep.resume:
         if (!round.isPaused) throw StateError('Quiz is not paused');
+        await _requireLinkedWeaknessParent(
+          ownerId,
+          row.activityType,
+          round.plan,
+        );
         for (final question in round.plan.questions.skip(
           slot + (feedback ? 1 : 0),
         )) {

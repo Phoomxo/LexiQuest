@@ -406,14 +406,21 @@ final class DriftProgressQueries {
     final rows = await database
         .customSelect(
           '''
-      SELECT DISTINCT w.id, w.category_id, w.spelling, w.meaning, w.part_of_speech
+      SELECT DISTINCT w.id, w.category_id, w.spelling, w.meaning, w.part_of_speech,
+        w.local_revision
       FROM answer_attempts a
       INNER JOIN vocabulary_words w ON w.id = a.word_id AND w.owner_id = a.owner_id
+      INNER JOIN vocabulary_categories c
+        ON c.id = w.category_id AND c.owner_id = w.owner_id AND c.is_deleted = 0
       WHERE a.owner_id = ? AND a.session_id = ? AND a.is_correct = 0 AND w.is_deleted = 0
       ORDER BY w.spelling ASC, w.id ASC
       ''',
           variables: [Variable<String>(ownerId), Variable<String>(sessionId)],
-          readsFrom: {database.answerAttempts, database.vocabularyWords},
+          readsFrom: {
+            database.answerAttempts,
+            database.vocabularyWords,
+            database.vocabularyCategories,
+          },
         )
         .get();
     return rows
@@ -424,6 +431,7 @@ final class DriftProgressQueries {
             spelling: word.read<String>('spelling'),
             meaning: word.read<String>('meaning'),
             partOfSpeech: word.read<String>('part_of_speech'),
+            localRevision: word.read<int>('local_revision'),
           ),
         )
         .toList(growable: false);

@@ -118,6 +118,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _observedOwner = false;
   String? _activeOwnerId;
   StreamSubscription<String?>? _ownerChanges;
+  StreamSubscription<void>? _linkedOwnerWrites;
 
   LearningUseCases? get _currentLearning {
     final dependencies = AppDependenciesScope.maybeOf(context);
@@ -152,6 +153,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_ownerChanges?.cancel());
+    unawaited(_linkedOwnerWrites?.cancel());
     _guideTimer?.cancel();
     _stopPromptVoice();
     _typedAnswer.dispose();
@@ -242,6 +244,16 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         if (expected != null && active != expected) _hideForOwnerChange();
       }, onError: (Object _) => _hideForOwnerChange());
     }
+    unawaited(_linkedOwnerWrites?.cancel());
+    _linkedOwnerWrites =
+        _expectedOwnerId != null &&
+            _originParentId != null &&
+            _selectionMode == QuizWordSelectionMode.weakness
+        ? dependencies?.watchLocalOwnerWrites()?.listen(
+            (_) => _hideForOwnerChange(),
+            onError: (Object _) => _hideForOwnerChange(),
+          )
+        : null;
     _session = null;
     _round = null;
     _roundError = null;
@@ -400,6 +412,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
             )
           : await learning.startWeaknessPractice(
               wordIds: _wordIds!,
+              limit: _originParentId == null
+                  ? 20
+                  : _wordIds!.length.clamp(1, 100),
               kind: widget.promptKind,
               expectedOwnerId: owner.id,
               origin: origin,
@@ -1572,6 +1587,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       final returnLabel = _returnLabel;
       final promptKind = widget.promptKind;
       final expectedOwnerId = _ownerId;
+      final linkedWeakness =
+          _selectionMode == QuizWordSelectionMode.weakness &&
+          _originParentId != null;
       final canPracticeMistakes =
           _canPracticeMistakes && !promptKind.isScramble;
       final solved = finished?.plan.questions.last.word;
@@ -1580,41 +1598,53 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           _responseCorrect &&
           solved != null &&
           ScramblePromptPolicy.sentenceFor(solved) != null;
+      bool? scoreAdmitted;
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
           name: 'learning/score',
-          builder: (scoreContext) => ScoreScreen(
-            correctAnswers: summary.correctCount,
-            wrongAnswers: summary.wrongCount,
-            score: summary.score,
-            categoryName: categoryName,
-            sessionId: summary.id,
-            expectedOwnerId: expectedOwnerId,
-            returnLabel: returnLabel,
-            mistakes: mistakes,
-            onOpenSentence: canOrderSentence
-                ? (from) => _openSentence(
-                    from,
-                    summary.id,
-                    solved,
-                    'กลับไปดูผลสะกดคำ',
-                  )
-                : null,
-            onPracticeMistakes: mistakes.isEmpty || !canPracticeMistakes
-                ? null
-                : () => _practiceMistakes(
-                    scoreContext,
-                    generation: generation,
-                    learning: learning,
-                    wordIds: mistakeIds,
-                    categoryId: categoryId,
-                    categoryName: categoryName,
-                    returnLabel: returnLabel,
-                    promptKind: promptKind,
-                    expectedOwnerId: expectedOwnerId,
-                  ),
-          ),
+          builder: (scoreContext) {
+            scoreAdmitted ??= !linkedWeakness || _current(generation);
+            if (scoreAdmitted == false) {
+              return Scaffold(
+                appBar: AppBar(),
+                body: const Center(
+                  child: Text('กรุณากลับไปเปิดผลการฝึกอีกครั้ง'),
+                ),
+              );
+            }
+            return ScoreScreen(
+              correctAnswers: summary.correctCount,
+              wrongAnswers: summary.wrongCount,
+              score: summary.score,
+              categoryName: categoryName,
+              sessionId: summary.id,
+              expectedOwnerId: expectedOwnerId,
+              returnLabel: returnLabel,
+              mistakes: mistakes,
+              onOpenSentence: canOrderSentence
+                  ? (from) => _openSentence(
+                      from,
+                      summary.id,
+                      solved,
+                      'กลับไปดูผลสะกดคำ',
+                    )
+                  : null,
+              onPracticeMistakes: mistakes.isEmpty || !canPracticeMistakes
+                  ? null
+                  : () => _practiceMistakes(
+                      scoreContext,
+                      generation: generation,
+                      learning: learning,
+                      wordIds: mistakeIds,
+                      categoryId: categoryId,
+                      categoryName: categoryName,
+                      returnLabel: returnLabel,
+                      promptKind: promptKind,
+                      expectedOwnerId: expectedOwnerId,
+                    ),
+            );
+          },
         ),
       );
       if (mounted &&
