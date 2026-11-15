@@ -365,6 +365,125 @@ void main() {
   );
 
   testWidgets(
+    'sample catalog filters actual metadata and keeps the level on Back',
+    (tester) async {
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        const chooseFilter = 'เลือกตามระดับหรือสิ่งที่อยากฝึก';
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ระดับภาษา');
+        await _tapLabel(tester, 'A2', scroll: true);
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsNothing);
+        await _tapLabel(tester, 'การเดินทาง');
+        expect(find.text('A2 · 2 คำ'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('ระดับภาษา · A2 · พบ 1 ชุด'), findsOneWidget);
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ระดับภาษา');
+        await _tapLabel(tester, 'C2', scroll: true);
+        expect(find.text('ระดับภาษา · C2 · พบ 0 ชุด'), findsOneWidget);
+        expect(find.text('ไม่พบชุดตัวอย่างที่ตรงกับตัวกรอง'), findsOneWidget);
+        await _tapLabel(tester, 'ล้างตัวกรอง');
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+
+        await _tapLabel(tester, chooseFilter);
+        await _tapLabel(tester, 'ทักษะ');
+        await _tapLabel(tester, 'นึกความหมาย');
+        expect(find.text('ทักษะ · นึกความหมาย · พบ 1 ชุด'), findsOneWidget);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text('การเดินทาง'), findsNothing);
+        await _tapLabel(tester, 'กลับคลังคำ', scroll: true);
+        expect(find.byType(CategoriesPage), findsOneWidget);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
+    'sample pack counts distinct revealed cards only after a completed review',
+    (tester) async {
+      const progress = 'เปิดทบทวนแล้ว 2 จาก 2 คำ';
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final library = tester.state(find.byType(CategoriesPage));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'แอปเปิล');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'ของใช้ในครัว');
+        expect(find.text('A1 · 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'คำศัพท์ในชุด');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน');
+
+        await _tapLabel(tester, 'เลือกวิธีฝึก');
+        await _tapLabel(tester, 'ทบทวนด้วยบัตรคำ');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ถ้วย'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text(progress), findsNothing);
+
+        await _tapLabel(tester, 'เลือกวิธีฝึก');
+        await _tapLabel(tester, 'ทบทวนด้วยบัตรคำ');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'ลองนึกอีกครั้ง');
+        expect(find.text('ถ้วย'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        await _tapLabel(tester, 'ทบทวนคำถัดไป');
+        expect(find.text('spoon'), findsOneWidget);
+        expect(find.text('ช้อน'), findsNothing);
+        expect(find.text('จบการทบทวน'), findsNothing);
+        await _tapLabel(tester, 'เปิดคำแปล');
+        expect(find.text('ช้อน'), findsOneWidget);
+        await _tapLabel(tester, 'จบการทบทวน');
+        expect(find.text('ทบทวนครบ 2 คำแล้ว'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดที่เพิ่งฝึก');
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        expect(find.text(progress), findsOneWidget);
+        await _tapLabel(tester, 'ดูคำที่เพิ่งทบทวน');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูผลการทบทวน');
+        await _tapLabel(tester, 'เลือกชุดอื่น', scroll: true);
+
+        await _tapLabel(tester, 'การเดินทาง');
+        expect(find.text(progress), findsNothing);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+        await _tapLabel(tester, 'กลับคลังคำ');
+        expect(tester.state(find.byType(CategoriesPage)), same(library));
+        expect(tester.widget<SearchBar>(search).controller!.text, 'แอปเปิล');
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(voice.requests, isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
     'station opens its library detail and sound practice at 200% text',
     (tester) async {
       try {
