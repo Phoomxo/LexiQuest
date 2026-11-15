@@ -1,5 +1,41 @@
 # Continuous execution checkpoint
 
+## S3 English-to-Thai feedback and S4 dictation hint
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `2261454f` passed
+  233 Windows Flutter tests and analysis of the six changed Dart files.
+  Linux CI passed 2,452 Flutter and 267 backend CPU tests, Firestore
+  and Supabase checks, and the Android debug build.
+- At 200% text and offline, the installed Android API 35 debug APK
+  beginning `43c0e4a4` showed real pairs for station and platform.
+  Correct choices occupied indexes 1 and 0. Both deliberate wrong
+  choices remained in the 0% result. Score returned to the same set,
+  and Library returned to the learn tab.
+- A cold launch reopened both that 0% round and the older 50% round
+  whose options had no stored mapping. Both SQLite snapshots matched
+  their earlier counterparts.
+  [Evidence](evidence/s3-f18-meaning-feedback.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43682172257).
+- With the emulator's TTS service unavailable, the same APK displayed
+  the error and the sentence hint for the saved station. It retained
+  staton while correcting it to station and returned to the same
+  detail and set. SQLite stayed the same and the TTS service was
+  restored to its default. Windows passed 132 supporting cases.
+  [Evidence](evidence/s4-f19-dictation-hint.txt).
+- P3.3 also exercised bookmarks and content reports on that APK.
+  Saving and removing station changed only its bookmark flag.
+  Cancel was read-only and confirmation created one source-bound
+  report in the on-device queue with no outbox item. The same
+  report and queue reopened in a new app process.
+  [Evidence](evidence/s3-s4-p33-feedback-and-reports.txt).
+- f18, f19 and P3.3 passed on the prototype. Totals are 19 of 44
+  features and 15 of 64 work packages. Signed delivery and spoken
+  TalkBack remain pending.
+- Next check f08 from all practice with the authored platform/ticket
+  pair and a wrong-sense set. Verify feedback, score and Back on
+  Android. P2.3 still needs f17's committed-feedback and retry proof.
+
 ## S3 Thai-to-English choice
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch

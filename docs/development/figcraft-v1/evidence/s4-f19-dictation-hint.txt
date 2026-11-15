@@ -1,0 +1,38 @@
+f19 Dictation with an unavailable speech engine
+
+Application 2261454fe3487d3a835d9e920db336cd7202ef0b on the FigCraft
+prototype branch. The pinned 21b34eaa design lists this path in
+feature_tasks_b.py task 19. The normal entry is a saved Library word.
+
+The isolated Android API 35 x86_64 debug APK at font 2.0 used
+airplane mode, Wi-Fi off and an unbound local guest. Host and
+installed SHA-256 equal
+43c0e4a433289fc3dfd2ae278599eecd35785c93b70f0afa1d6c69e72f30fa5f.
+
+Android's available TTS service was disabled for the emulator user.
+The service query returned no services. From the saved station in
+F18-Contrast-Synthetic, open ฝึกฟังแล้วเขียน and request normal
+speed. The UI showed ตอนนี้ฟังเสียงไม่ได้. เปิดคำใบ้แทน showed
+สถานี, the prefix st and Meet me at the ____.
+
+The AVD engine was restored to the verified default after reaching
+the write view. The same route then accepted the typed staton,
+identified the missing i and retained staton while editing. Changing
+it to station showed the correct result and Meet me at the station.
+The word detail before and after return had identical hierarchy
+SHA-256 209050b303caf9e28f80271c0933928f7fda19327d657ef0576f9f45c6ee7b11.
+Android Back at the word detail returned to its original set.
+
+The local SQLite digest across vocabulary, practice, points, rewards
+and outbox matched before and after at
+2079a1024dc9e3a1729eed17cdef786454a193220ea943083ff7c35afded8fee.
+No research events, consents or research outbox items were present.
+The original and restored engine lists had matching SHA-256
+636ad6b9d2d08599d2f0c94fb28d4e43a6ce92bdae073e4188a88bbc03df5d91.
+
+Raw device traces are in build/boss-android-evidence/f19-native-*.txt.
+The Windows suite build/s4-p33-supporting-verified.txt passed 132
+cases including the Library entry at 200%, the failing provider and
+typed retry, owner fencing, bookmarks and reviewed content reports.
+
+Audible playback, signed device and spoken TalkBack remain pending.
