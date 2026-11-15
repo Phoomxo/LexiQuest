@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
@@ -22,34 +23,41 @@ const _fallback = 'รอบนี้ยังไม่มีความหม�
 const _add = ValueKey('quiz-add-word');
 
 void main() {
-  for (final duplicate in [false, true]) {
+  for (final (kind, duplicate) in [
+    (QuizPromptKind.meaningChoice, false),
+    (QuizPromptKind.meaningChoice, true),
+    (QuizPromptKind.spellingChoice, false),
+    (QuizPromptKind.spellingChoice, true),
+  ]) {
     testWidgets(
-      'one meaning duplicate=$duplicate offers no automatic assessment or reward',
+      '${kind.name} without contrast (duplicate=$duplicate) leaves no round',
       (tester) async {
         final f = await tester.runAsync(
           () => _Fixture.create(duplicate: duplicate),
         );
         final fixture = f!;
         try {
-          final before = await tester.runAsync(fixture.evidence);
-          await _open(tester, fixture);
-          await _pumpUntil(tester, find.text(_fallback));
-          expect(find.text('ชุด A'), findsOneWidget);
+          final before = await tester.runAsync(
+            () => fixture.evidence(includeActive: true),
+          );
+          await _open(tester, fixture, kind: kind);
+          if (kind == QuizPromptKind.spellingChoice && duplicate) {
+            await _pumpUntil(
+              tester,
+              find.text('ยังไม่มีคำและความหมายที่แยกตัวเลือกได้ชัดเจน'),
+            );
+          } else {
+            await _pumpUntil(tester, find.text(_fallback));
+            expect(find.text('ชุด A'), findsOneWidget);
+          }
           expect(find.text('เฉลยคำตอบ'), findsNothing);
           expect(find.widgetWithText(FilledButton, 'สถานี'), findsNothing);
           expect(find.text('ดูผลการเรียน'), findsNothing);
           expect(find.byType(ScoreScreen), findsNothing);
-          expect(await tester.runAsync(fixture.evidence), before);
-          final sessions = await tester.runAsync(
-            () => fixture.database
-                .select(fixture.database.learningSessions)
-                .get(),
+          expect(
+            await tester.runAsync(() => fixture.evidence(includeActive: true)),
+            before,
           );
-          // The existing Back contract permits an active zero-attempt session.
-          expect(sessions, hasLength(1));
-          expect(sessions!.single.state, 'active');
-          expect(sessions.single.correctCount, 0);
-          expect(sessions.single.wrongCount, 0);
         } finally {
           await _dispose(tester, fixture);
         }
@@ -498,6 +506,7 @@ Future<void> _open(
   WidgetTester tester,
   _Fixture f, {
   FieldFeatureRegistry? features,
+  QuizPromptKind kind = QuizPromptKind.meaningChoice,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
@@ -512,6 +521,7 @@ Future<void> _open(
           categoryName: 'ชุด A',
           learning: f.learning,
           featureRegistry: features,
+          promptKind: kind,
         ),
       ),
     ),

@@ -984,8 +984,6 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     final canAdd =
         _features.isVisible(FieldFeature.vocabulary) &&
         _dependencies?.vocabulary != null;
-    // Loading retains the existing active zero-attempt session, as Back does.
-    // This fallback never records an answer or manufactures a completed result.
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

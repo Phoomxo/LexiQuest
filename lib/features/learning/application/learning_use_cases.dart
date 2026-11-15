@@ -749,18 +749,19 @@ final class LearningUseCases {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final durable = repository;
-    final plan =
-        origin != null &&
-            durable is DurableQuizRepository &&
-            questions.every((question) => question.options.toSet().length >= 2)
-        ? QuizPlan(
-            origin: origin,
-            questions: questions,
-            categoryName: categoryName,
-            returnLabel: returnLabel,
-            settings: settings,
-          )
-        : null;
+    QuizPlan? plan;
+    if (origin != null && durable is DurableQuizRepository) {
+      if (questions.any((question) => question.options.toSet().length < 2)) {
+        return QuizSession(id: '', questions: questions, startedAtUtc: null);
+      }
+      plan = QuizPlan(
+        origin: origin,
+        questions: questions,
+        categoryName: categoryName,
+        returnLabel: returnLabel,
+        settings: settings,
+      );
+    }
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
