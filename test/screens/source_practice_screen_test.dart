@@ -2090,6 +2090,54 @@ void main() {
     },
   );
 
+  testWidgets('a Source result hides its sentence when the owner changes', (
+    tester,
+  ) async {
+    const sentence = 'The station clock runs early.';
+    try {
+      await tester.pumpWidget(screen(withTutor: false));
+      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
+      final confirm = find.byKey(const ValueKey('confirm-source'));
+      await _scrollUntilFound(tester, confirm);
+      await tester.tap(confirm);
+      final startReading = find.byKey(const ValueKey('start-source-reading'));
+      await _scrollUntilFound(tester, startReading);
+      await tester.tap(startReading);
+      final reading = find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย');
+      await _pumpUntilFound(tester, reading);
+      final context = tester.element(reading);
+      Navigator.of(context).removeRoute(
+        ModalRoute.of(context)!,
+        LearningSessionResult(
+          summary: const LearningSessionSummary(
+            id: 'reading-result',
+            state: 'completed',
+            correctCount: 1,
+            wrongCount: 0,
+            score: 100,
+          ),
+          mistakeWordIds: [],
+          sourceSentence: sentence,
+        ),
+      );
+      await _pumpUntilFound(tester, find.text(sentence));
+      expect(find.text('ประโยคที่แต่ง'), findsOneWidget);
+
+      await database.transaction(() => _switchOwner(database, ownerId));
+      expect((await owners.getOrCreateActiveOwner()).id, 'local:owner-b');
+      await _pumpUntilFound(
+        tester,
+        find.text('กรุณากลับไปเปิดผลการฝึกอีกครั้ง'),
+      );
+      expect(find.text(sentence), findsNothing);
+      expect(find.text('ประโยคที่แต่ง'), findsNothing);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+  });
+
   testWidgets('Source rejects a result whose counts do not match targets', (
     tester,
   ) async {

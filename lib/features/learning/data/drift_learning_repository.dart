@@ -5,12 +5,15 @@ import '../../motivation/domain/timezone_policy.dart';
 import '../../motivation/data/drift_streak_repository.dart';
 import '../../quest/data/drift_quest_repository.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import 'drift_associative_learning_adapter.dart';
 import 'drift_learning_projection_rebuilder.dart';
+import '../application/learning_layer_adapter.dart' show AssociationRecord;
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/quiz_round.dart';
 import '../domain/scramble_prompt_policy.dart';
+import '../domain/source_reading_round.dart';
 import '../domain/srs_policy.dart';
 import '../domain/srs_recall_snapshot.dart';
 import '../domain/answer_motivation_evidence.dart';
@@ -23,7 +26,8 @@ typedef AnswerCalendarCapture =
       DateTime? epochExpiresAtUtc,
     });
 
-final class DriftLearningRepository implements DurableQuizRepository {
+final class DriftLearningRepository
+    implements DurableQuizRepository, DurableSourceReadingRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -204,7 +208,12 @@ final class DriftLearningRepository implements DurableQuizRepository {
         throw StateError('active vocabulary word not found');
       }
 
-      final round = await _readRound(session);
+      final sourceReading = _readSourceReadingRound(session);
+      if (sourceReading != null) {
+        final pinned = _requireSourceReadingAttempt(command, sourceReading);
+        await _requireQuizWord(command.ownerId, pinned, row: word);
+      }
+      final round = sourceReading == null ? await _readRound(session) : null;
       final admission = command.quiz;
       if (command.srsRecallSnapshot != null &&
           (round != null ||
@@ -470,9 +479,343 @@ final class DriftLearningRepository implements DurableQuizRepository {
     }
   }
 
+  SourceReadingRound? _readSourceReadingRound(db.LearningSession row) {
+    final raw = row.continuationJson;
+    if (row.activityType != 'associativeReading' || raw == null) return null;
+    if (row.questionPlanJson != null ||
+        row.legacyEvidenceDisposition != null ||
+        row.state != 'active') {
+      throw StateError('Invalid source reading session');
+    }
+    return decodeSourceReadingRound(raw, sessionId: row.id);
+  }
+
+  @override
+  Future<SourceReadingRound> openSourceReadingRound({
+    required LearningSessionDraft session,
+    required SourceReadingScope scope,
+  }) => database.transaction(() async {
+    if (session.activityType != 'associativeReading' ||
+        session.quizPlan != null) {
+      throw ArgumentError('Expected a source reading session');
+    }
+    final ownerId = _required(session.ownerId, 'ownerId');
+    final sessionId = _required(session.id, 'id');
+    final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
+    await _requireActiveOwner(ownerId);
+    final initial = SourceReadingRound(
+      sessionId: sessionId,
+      scope: scope,
+      revision: 0,
+      draft: SourceReadingDraft.initial(scope.words.length),
+    );
+    final encoded = encodeSourceReadingRound(initial);
+    for (final word in scope.words) {
+      await _requireQuizWord(ownerId, word);
+    }
+    final candidates =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.activityType.equals('associativeReading') &
+                    row.state.equals('active') &
+                    row.questionPlanJson.isNull() &
+                    row.continuationJson.isNotNull() &
+                    row.legacyEvidenceDisposition.isNull(),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.startedAtUtcMs),
+                (row) => OrderingTerm.desc(row.id),
+              ]))
+            .get();
+    for (final row in candidates) {
+      try {
+        final round = _readSourceReadingRound(row)!;
+        if (round.scope.sameAs(scope)) return round;
+      } on FormatException {
+        // Leave unreadable drafts intact. A different source can still open.
+      }
+    }
+    await database
+        .into(database.learningSessions)
+        .insert(
+          db.LearningSessionsCompanion.insert(
+            id: sessionId,
+            ownerId: ownerId,
+            activityType: session.activityType,
+            state: 'active',
+            startedAtUtcMs: startedAt.millisecondsSinceEpoch,
+            appVersion: _required(session.appVersion, 'appVersion'),
+            buildId: _required(session.buildId, 'buildId'),
+            continuationJson: Value(encoded),
+          ),
+        );
+    return initial;
+  });
+
+  @override
+  Future<SourceReadingRound> saveSourceReadingRound({
+    required String ownerId,
+    required SourceReadingRound expected,
+    required SourceReadingDraft draft,
+  }) => database.transaction(() async {
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, expected.sessionId);
+    final reading = row == null ? null : _readSourceReadingRound(row);
+    if (row == null ||
+        reading == null ||
+        !reading.scope.sameAs(expected.scope)) {
+      throw StateError('Source reading round changed');
+    }
+    final next = SourceReadingRound(
+      sessionId: expected.sessionId,
+      scope: expected.scope,
+      revision: expected.revision + 1,
+      draft: draft,
+    );
+    final encoded = encodeSourceReadingRound(next);
+    for (final word in reading.scope.words) {
+      await _requireQuizWord(ownerId, word);
+    }
+    if (encoded == row.continuationJson) return reading;
+    if (encodeSourceReadingRound(expected) != row.continuationJson ||
+        !_validSourceReadingTransition(reading, draft)) {
+      throw StateError('Source reading round changed');
+    }
+    await _writeSourceReading(
+      row,
+      db.LearningSessionsCompanion(continuationJson: Value(encoded)),
+    );
+    if (reading.draft.phase == SourceReadingPhase.association &&
+        draft.phase == SourceReadingPhase.sentence) {
+      final scope = reading.scope;
+      final associations = DriftAssociativeLearningAdapter(database);
+      final createdAtUtc = DateTime.now().toUtc();
+      for (final (slot, word) in scope.words.indexed) {
+        final cue = draft.cues[slot].trim();
+        if (cue.isEmpty) continue;
+        await associations.saveAssociation(
+          AssociationRecord(
+            associationId:
+                'assoc:$ownerId:${scope.documentId}:${scope.documentRevision}:'
+                '${word.id}',
+            ownerId: ownerId,
+            wordKey: word.spelling,
+            type: 'keyword',
+            content: cue,
+            createdAtUtc: createdAtUtc,
+          ),
+        );
+      }
+    }
+    return next;
+  });
+
+  bool _validSourceReadingTransition(
+    SourceReadingRound reading,
+    SourceReadingDraft next,
+  ) {
+    final current = reading.draft;
+    final first = current.first;
+    final nextFirst = next.first;
+    if (first != null &&
+        (nextFirst == null ||
+            first.checkedAtUtc != nextFirst.checkedAtUtc ||
+            !_sameSourceAnswers(first.answers, nextFirst.answers))) {
+      return false;
+    }
+    if (first == null &&
+        nextFirst != null &&
+        (current.phase != SourceReadingPhase.recall ||
+            !_sameSourceAnswers(nextFirst.answers, next.recall))) {
+      return false;
+    }
+    if (current.phase == next.phase) return true;
+    return switch (current.phase) {
+      SourceReadingPhase.supported => next.phase == SourceReadingPhase.reread,
+      SourceReadingPhase.reread => next.phase == SourceReadingPhase.recall,
+      SourceReadingPhase.recall =>
+        nextFirst != null &&
+            next.phase ==
+                (_sourceMisses(reading.scope, nextFirst.answers).isEmpty
+                    ? SourceReadingPhase.association
+                    : SourceReadingPhase.comparison),
+      SourceReadingPhase.comparison =>
+        next.phase == SourceReadingPhase.correction ||
+            next.phase == SourceReadingPhase.association,
+      SourceReadingPhase.correction =>
+        first != null &&
+            next.phase ==
+                (_sourceMisses(reading.scope, first.answers).every(
+                      (slot) => sourceRecallMatches(
+                        next.recall[slot],
+                        reading.scope.words[slot].spelling,
+                      ),
+                    )
+                    ? SourceReadingPhase.association
+                    : SourceReadingPhase.comparison),
+      SourceReadingPhase.association =>
+        next.phase == SourceReadingPhase.sentence,
+      SourceReadingPhase.sentence => next.phase == SourceReadingPhase.summary,
+      SourceReadingPhase.summary => false,
+    };
+  }
+
+  bool _sameSourceAnswers(List<String> left, List<String> right) {
+    if (left.length != right.length) return false;
+    for (var slot = 0; slot < left.length; slot++) {
+      if (left[slot] != right[slot]) return false;
+    }
+    return true;
+  }
+
+  Iterable<int> _sourceMisses(
+    SourceReadingScope scope,
+    List<String> answers,
+  ) sync* {
+    for (var slot = 0; slot < scope.words.length; slot++) {
+      if (!sourceRecallMatches(answers[slot], scope.words[slot].spelling)) {
+        yield slot;
+      }
+    }
+  }
+
+  RecordAnswerCommand _sourceReadingAttempt(
+    String ownerId,
+    SourceReadingRound reading,
+    int slot,
+  ) {
+    final first = reading.draft.first;
+    if (first == null || slot < 0 || slot >= reading.scope.words.length) {
+      throw StateError('Source reading answer was not checked');
+    }
+    final word = reading.scope.words[slot];
+    return RecordAnswerCommand(
+      id: 'attempt:${reading.sessionId}:associative:$slot',
+      ownerId: ownerId,
+      sessionId: reading.sessionId,
+      wordId: word.id,
+      promptMode: 'associativeRecall',
+      isCorrect: sourceRecallMatches(first.answers[slot], word.spelling),
+      responseTimeMs: null,
+      attemptNumber: slot + 1,
+      occurredAtUtc: first.checkedAtUtc,
+    );
+  }
+
+  QuizWord _requireSourceReadingAttempt(
+    RecordAnswerCommand command,
+    SourceReadingRound reading,
+  ) {
+    if (reading.draft.phase != SourceReadingPhase.summary) {
+      throw StateError('Source reading round is not ready to finish');
+    }
+    final slot = command.attemptNumber - 1;
+    final expected = _sourceReadingAttempt(command.ownerId, reading, slot);
+    if (command.id != expected.id ||
+        command.sessionId != expected.sessionId ||
+        command.wordId != expected.wordId ||
+        command.promptMode != expected.promptMode ||
+        command.isCorrect != expected.isCorrect ||
+        command.occurredAtUtc.millisecondsSinceEpoch !=
+            expected.occurredAtUtc.millisecondsSinceEpoch ||
+        command.responseTimeMs != null ||
+        command.providerProvenance != null ||
+        command.quiz != null ||
+        command.srsRecallSnapshot != null) {
+      throw StateError('Source reading answer differs from the first check');
+    }
+    return reading.scope.words[slot];
+  }
+
+  Future<void> _writeSourceReading(
+    db.LearningSession row,
+    db.LearningSessionsCompanion changes,
+  ) async {
+    final updated =
+        await (database.update(database.learningSessions)..where(
+              (candidate) =>
+                  candidate.id.equals(row.id) &
+                  candidate.ownerId.equals(row.ownerId) &
+                  candidate.state.equals('active') &
+                  candidate.continuationJson.equals(row.continuationJson!),
+            ))
+            .write(changes);
+    if (updated != 1) throw StateError('Source reading round changed');
+  }
+
+  @override
+  Future<LearningSessionSummary> finishSourceReadingRound({
+    required String ownerId,
+    required SourceReadingRound expected,
+    required DateTime endedAtUtc,
+  }) => database.transaction(() async {
+    _requiredUtc(endedAtUtc, 'endedAtUtc');
+    await _requireActiveOwner(ownerId);
+    final row = await _session(ownerId, expected.sessionId);
+    final encoded = encodeSourceReadingRound(expected);
+    if (row == null ||
+        row.activityType != 'associativeReading' ||
+        row.legacyEvidenceDisposition != null ||
+        row.questionPlanJson != null ||
+        expected.draft.phase != SourceReadingPhase.summary ||
+        (row.state == 'completed'
+            ? row.continuationJson != null || row.endedAtUtcMs == null
+            : row.state != 'active' || row.continuationJson != encoded)) {
+      throw StateError('Source reading round cannot finish');
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)
+              ..where(
+                (attempt) =>
+                    attempt.ownerId.equals(ownerId) &
+                    attempt.sessionId.equals(row.id),
+              )
+              ..orderBy([(attempt) => OrderingTerm.asc(attempt.attemptNumber)]))
+            .get();
+    if (attempts.length != expected.scope.words.length) {
+      throw StateError('Source reading answers are incomplete');
+    }
+    for (var slot = 0; slot < attempts.length; slot++) {
+      final attempt = attempts[slot];
+      final command = _sourceReadingAttempt(ownerId, expected, slot);
+      if (attempt.id != command.id ||
+          attempt.answerEvidenceJson != null ||
+          attempt.legacyEvidenceDisposition != null ||
+          !_sameAttempt(attempt, command)) {
+        throw StateError('Source reading answers differ from the first check');
+      }
+    }
+    final correct = attempts.where((attempt) => attempt.isCorrect).length;
+    final score = _score(row);
+    if (row.correctCount != correct ||
+        row.wrongCount != attempts.length - correct ||
+        (row.state == 'completed' && row.score != score)) {
+      throw StateError('Source reading score differs from saved answers');
+    }
+    if (row.state == 'completed') return _summary(row);
+    await _writeSourceReading(
+      row,
+      db.LearningSessionsCompanion(
+        continuationJson: const Value(null),
+        state: const Value('completed'),
+        endedAtUtcMs: Value(endedAtUtc.millisecondsSinceEpoch),
+        score: Value(score),
+      ),
+    );
+    await projections.rebuildAchievements(ownerId);
+    return _summary((await _session(ownerId, row.id))!);
+  });
+
   Future<QuizRound?> _roundForAttempt(RecordAnswerCommand command) async {
     final session = await _session(command.ownerId, command.sessionId);
-    return session == null ? null : _readRound(session);
+    if (session == null) return null;
+    if (_readSourceReadingRound(session) case final reading?) {
+      _requireSourceReadingAttempt(command, reading);
+      return null;
+    }
+    return _readRound(session);
   }
 
   Future<QuizRound?> _readRound(
@@ -482,6 +825,7 @@ final class DriftLearningRepository implements DurableQuizRepository {
     final encodedPlan = session.questionPlanJson;
     final continuation = session.continuationJson;
     if (encodedPlan == null && continuation == null) return null;
+    if (_readSourceReadingRound(session) != null) return null;
     if (encodedPlan == null || continuation == null) {
       throw StateError('Incomplete stored quiz round');
     }

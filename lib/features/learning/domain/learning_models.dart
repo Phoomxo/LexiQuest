@@ -350,10 +350,12 @@ final class LearningSessionResult {
   LearningSessionResult({
     required this.summary,
     required Iterable<String> mistakeWordIds,
+    this.sourceSentence,
   }) : mistakeWordIds = List.unmodifiable(mistakeWordIds);
 
   final LearningSessionSummary summary;
   final List<String> mistakeWordIds;
+  final String? sourceSentence;
 }
 
 final class ReadingProgressCommand {

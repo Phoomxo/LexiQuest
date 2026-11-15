@@ -1127,6 +1127,8 @@ final class DriftSyncStore implements SyncStatusSource {
         (session.ownerId != ownerId ||
             session.questionPlanJson != null ||
             session.continuationJson != null ||
+            (session.activityType == 'associativeReading' &&
+                session.state == 'completed') ||
             session.legacyEvidenceDisposition != null)) {
       throw const InvalidSyncPayloadFailure();
     }

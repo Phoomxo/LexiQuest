@@ -1,5 +1,6 @@
 import 'learning_models.dart';
 import 'quiz_round.dart';
+import 'source_reading_round.dart';
 
 abstract interface class LearningRepository {
   /// A null limit reads the complete matching pool for prompt eligibility.
@@ -37,6 +38,26 @@ abstract interface class LearningRepository {
   Future<ReadingProgressSnapshot> saveReadingProgress(
     ReadingProgressCommand command,
   );
+}
+
+abstract interface class DurableSourceReadingRepository
+    implements LearningRepository {
+  Future<SourceReadingRound> openSourceReadingRound({
+    required LearningSessionDraft session,
+    required SourceReadingScope scope,
+  });
+
+  Future<SourceReadingRound> saveSourceReadingRound({
+    required String ownerId,
+    required SourceReadingRound expected,
+    required SourceReadingDraft draft,
+  });
+
+  Future<LearningSessionSummary> finishSourceReadingRound({
+    required String ownerId,
+    required SourceReadingRound expected,
+    required DateTime endedAtUtc,
+  });
 }
 
 abstract interface class DurableQuizRepository implements LearningRepository {

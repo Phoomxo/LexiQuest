@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/source_reading_round.dart';
 import '../features/vocabulary/application/source_practice.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/local_content_report.dart';
@@ -540,6 +541,25 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
       final words = preview.matchedWords.take(_maxPracticeWords).toList();
       final resultContext = _captureResultContext(preview, words);
       if (resultContext == null) return;
+      final sourceScope = resultContext.learning.supportsDurableSourceReading
+          ? SourceReadingScope(
+              categoryId: resultContext.categoryId,
+              documentId: preview.documentId,
+              documentRevision: preview.documentRevision,
+              passageDigest: preview.passageDigest,
+              words: [
+                for (final word in words)
+                  QuizWord(
+                    id: word.id,
+                    categoryId: word.categoryId,
+                    spelling: word.spelling,
+                    meaning: word.meaning,
+                    partOfSpeech: word.partOfSpeech,
+                    localRevision: word.localRevision,
+                  ),
+              ],
+            )
+          : null;
       final result = await AppNavigator.pushPage<LearningSessionResult>(
         context,
         AppPage<LearningSessionResult>(
@@ -554,6 +574,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
             associativeLearning: widget.associativeLearning,
             targetWordIds: {for (final word in words) word.spelling: word.id},
             ownerId: resultContext.ownerId,
+            sourceScope: sourceScope,
           ),
         ),
       );
@@ -562,6 +583,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         result,
         routeName: 'learning/source-reading-result',
         repairRouteName: 'learning/source-reading-repair',
+        returnLabel: 'ฝึกคำจากข้อความต่อ',
       );
     } finally {
       if (mounted) setState(() => _working = false);
@@ -703,6 +725,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
     LearningSessionResult? result, {
     required String routeName,
     required String repairRouteName,
+    String returnLabel = 'กลับไปเลือกกิจกรรม',
   }) async {
     if (result == null) return;
     if (!_resultContextCurrent(captured)) {
@@ -793,6 +816,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
                 correctAnswers: summary.correctCount,
                 wrongAnswers: summary.wrongCount,
                 score: summary.score,
+                sourceSentence: result.sourceSentence,
+                returnLabel: returnLabel,
+                expectedOwnerId: captured.ownerId,
                 mistakes: mistakes,
                 onPracticeMistakes: mistakes.isEmpty
                     ? null

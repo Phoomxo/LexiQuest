@@ -671,6 +671,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             'target.document_revision = guest.document_revision',
       ),
       _DuplicateSpecification(
+        table: 'association_records',
+        entityType: 'association',
+        join: 'target.word_key = guest.word_key AND target.type = guest.type',
+      ),
+      _DuplicateSpecification(
         table: 'points_ledger_entries',
         entityType: 'pointsLedger',
         join: 'target.idempotency_key = guest.idempotency_key',

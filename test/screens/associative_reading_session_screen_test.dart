@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/learning/application/learning_layer_
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/source_reading_round.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 
@@ -90,6 +91,114 @@ void main() {
       expect(find.byType(TextField), findsNWidgets(2));
       expect(find.text('คำที่ 1'), findsOneWidget);
       expect(find.text('คำที่ 2'), findsOneWidget);
+    });
+
+    testWidgets('Source recall keeps the first score after a guided correction', (
+      tester,
+    ) async {
+      final setup = await _ownerScopedLearning();
+      final database = setup.database;
+      addTearDown(database.close);
+      const sentence = 'I live near the station.';
+      const next = 'เสร็จแล้ว ไปขั้นถัดไป';
+      LearningSessionResult? result;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () async {
+                result = await Navigator.of(context).push(
+                  MaterialPageRoute<LearningSessionResult>(
+                    builder: (_) => AssociativeReadingSessionScreen(
+                      cefrLevel: 'Source',
+                      targetWords: const ['station'],
+                      passageText: 'Meet me at the station.',
+                      documentId: 'local-source:typed-recall',
+                      learning: setup.learning,
+                      targetWordIds: const {'station': 'word-1'},
+                      ownerId: setup.ownerId,
+                      sourceScope: SourceReadingScope(
+                        categoryId: 'category-1',
+                        documentId: 'local-source:typed-recall',
+                        documentRevision: 1,
+                        passageDigest:
+                            '5bb1b1e1dfcd4726b6b2f412ef8f73d6407f35f2258c30b53f5f2f1ef3baf8c0',
+                        words: const [
+                          QuizWord(
+                            id: 'word-1',
+                            categoryId: 'category-1',
+                            spelling: 'station',
+                            meaning: 'สถานี',
+                            partOfSpeech: 'noun',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('อ่านแล้วลองนึกคำ'),
+            ),
+          ),
+        ),
+      );
+
+      Future<void> tap(String label) async {
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+      }
+
+      await tap('อ่านแล้วลองนึกคำ');
+      await _pumpUntilText(tester, 'ขั้นที่ 1: อ่านพร้อมตัวช่วย');
+      await tap(next);
+      await tap(next);
+      expect(find.text('ขั้นที่ 3: ทดสอบจากความจำ'), findsOneWidget);
+      final draft = find.byType(TextField).first;
+      await tester.enterText(draft, 'ctation');
+      await tap('ตรวจคำตอบ');
+      expect(find.textContaining('ctation'), findsWidgets);
+      expect(find.textContaining('station'), findsWidgets);
+
+      await tap('แก้คำตอบ');
+      expect(tester.widget<TextField>(draft).controller!.text, 'ctation');
+      await tester.enterText(draft, 'station');
+      await tester.pump();
+      expect(find.text('ลองใช้ในประโยค'), findsNothing);
+      await tap('ตรวจอีกครั้ง');
+      await tap('ลองใช้ในประโยค');
+
+      expect(find.text('ขั้นที่ 5: แต่งประโยคใหม่'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, sentence);
+      await tap(next);
+      expect(find.text('จำได้ถูกต้อง: 0 / 1 คำ'), findsOneWidget);
+      expect(find.text(sentence), findsOneWidget);
+      expect(result, isNull);
+      await tap('บันทึกและจบการฝึก');
+      expect(find.text('อ่านแล้วลองนึกคำ'), findsOneWidget);
+
+      final completed = result!;
+      expect(completed.summary.correctCount, 0);
+      expect(completed.summary.wrongCount, 1);
+      expect(completed.summary.score, 0);
+      expect(completed.mistakeWordIds, ['word-1']);
+      final attempt = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      expect(attempt.ownerId, setup.ownerId);
+      expect(attempt.sessionId, completed.summary.id);
+      expect(attempt.wordId, 'word-1');
+      expect(attempt.promptMode, 'associativeRecall');
+      expect(attempt.isCorrect, isFalse);
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      expect(session.id, completed.summary.id);
+      expect(session.state, 'completed');
+      expect(session.score, 0);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
     });
 
     // ── Stage 4 — Memory Association ──────────────────────────────────────

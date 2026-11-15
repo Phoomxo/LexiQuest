@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
+import 'package:vocab_learning_app/features/learning/domain/source_reading_round.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
@@ -812,6 +813,153 @@ void main() {
       );
     },
   );
+
+  test('completed Source accepts only the exact answer echo', () async {
+    const ownerId = 'owner-1';
+    const sessionId = 'local-source-reading-round';
+    const attemptId = 'attempt:$sessionId:associative:0';
+    final learning = DriftLearningRepository(database);
+    var round = await learning.openSourceReadingRound(
+      session: LearningSessionDraft(
+        id: sessionId,
+        ownerId: ownerId,
+        activityType: 'associativeReading',
+        startedAtUtc: now,
+        appVersion: 'test',
+        buildId: 'test',
+      ),
+      scope: SourceReadingScope(
+        categoryId: 'category-1',
+        documentId: 'local-source:sync-test',
+        documentRevision: 1,
+        passageDigest: 'a' * 64,
+        words: const [
+          QuizWord(
+            id: 'word-1',
+            categoryId: 'category-1',
+            spelling: 'station',
+            meaning: 'สถานี',
+            partOfSpeech: 'noun',
+          ),
+        ],
+      ),
+    );
+    final first = (answers: const ['ctation'], checkedAtUtc: now);
+    for (final phase in [
+      SourceReadingPhase.reread,
+      SourceReadingPhase.recall,
+      SourceReadingPhase.comparison,
+      SourceReadingPhase.association,
+      SourceReadingPhase.sentence,
+      SourceReadingPhase.summary,
+    ]) {
+      round = await learning.saveSourceReadingRound(
+        ownerId: ownerId,
+        expected: round,
+        draft: SourceReadingDraft(
+          phase: phase,
+          recall: first.answers,
+          cues: const [''],
+          sentence: '',
+          first: phase.index >= SourceReadingPhase.comparison.index
+              ? first
+              : null,
+        ),
+      );
+    }
+    await learning.recordAnswer(
+      RecordAnswerCommand(
+        id: attemptId,
+        ownerId: ownerId,
+        sessionId: sessionId,
+        wordId: 'word-1',
+        promptMode: 'associativeRecall',
+        isCorrect: false,
+        responseTimeMs: null,
+        attemptNumber: 1,
+        occurredAtUtc: now,
+      ),
+    );
+    final summary = await learning.finishSourceReadingRound(
+      ownerId: ownerId,
+      expected: round,
+      endedAtUtc: now.add(const Duration(seconds: 1)),
+    );
+    expect(
+      (summary.correctCount, summary.wrongCount, summary.score),
+      (0, 1, 0),
+    );
+    final session = await database
+        .select(database.learningSessions)
+        .getSingle();
+    final original = await database.select(database.answerAttempts).getSingle();
+    expect(session.questionPlanJson, isNull);
+    expect(session.continuationJson, isNull);
+
+    final claim = (await store.claimPending(
+      ownerId: ownerId,
+      firebaseUid: 'synthetic-uid',
+      limit: 10,
+      leaseToken: 'synthetic-source-answer-lease',
+      leaseDuration: const Duration(minutes: 5),
+      nowUtc: now,
+    )).firstWhere((row) => row.mutation.collection == SyncCollection.attempts);
+    Future<void> pull(String id, DateTime time, Map<String, Object?> payload) =>
+        store.applyPullPage(
+          ownerId: ownerId,
+          collection: SyncCollection.attempts,
+          page: _page(
+            SyncEntity(
+              collection: SyncCollection.attempts,
+              entityId: id,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: time,
+              serverUpdatedAtUtc: time.add(const Duration(seconds: 1)),
+              payload: payload,
+            ),
+          ),
+        );
+
+    await pull(attemptId, now, claim.mutation.payload);
+    expect(
+      await database.select(database.learningSessions).getSingle(),
+      session,
+    );
+    expect(
+      await database.select(database.answerAttempts).getSingle(),
+      original,
+    );
+    final outbox = await database.select(database.outboxOperations).get();
+    final echo = outbox.singleWhere((row) => row.entityId == attemptId);
+    expect(echo.state, 'conflictResolved');
+    expect(echo.failureCode, 'identicalCloudEvidence');
+    final checkpoint = await database
+        .select(database.syncCheckpoints)
+        .getSingle();
+
+    final later = now.add(const Duration(seconds: 2));
+    final failure = await pull('unseen-source-answer', later, {
+      ...claim.mutation.payload,
+      'isCorrect': true,
+      'attemptNumber': 2,
+      'occurredAtUtcMs': later.millisecondsSinceEpoch,
+    }).then<Object?>((_) => null, onError: (Object error) => error);
+    final current = await database
+        .select(database.learningSessions)
+        .getSingle();
+    expect(current.score, 0);
+    expect(failure, isA<InvalidSyncPayloadFailure>());
+    expect(current, session);
+    expect(await database.select(database.answerAttempts).get(), [original]);
+    expect(
+      await database.select(database.syncCheckpoints).getSingle(),
+      checkpoint,
+    );
+    expect(await database.select(database.outboxOperations).get(), outbox);
+    expect(await database.select(database.syncConflicts).get(), isEmpty);
+  });
 
   test('identical attempt pull repairs a missing SRS projection', () async {
     final entity = _attemptEntity(

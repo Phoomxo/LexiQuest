@@ -28,6 +28,7 @@ class ScoreScreen extends StatefulWidget {
     this.originalRecallAnswers,
     this.expectedOwnerId,
     this.onOpenSentence,
+    this.sourceSentence,
   });
 
   final int correctAnswers;
@@ -43,6 +44,7 @@ class ScoreScreen extends StatefulWidget {
   final List<OriginalSrsRecallAnswer>? originalRecallAnswers;
   final String? expectedOwnerId;
   final ValueChanged<BuildContext>? onOpenSentence;
+  final String? sourceSentence;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -221,6 +223,12 @@ class _ScoreScreenState extends State<ScoreScreen> {
                   icon: Icons.dataset_outlined,
                 ),
                 const SizedBox(height: 24),
+                if (widget.sourceSentence case final sentence?
+                    when sentence.isNotEmpty)
+                  ListTile(
+                    title: const Text('ประโยคที่แต่ง'),
+                    subtitle: Text(sentence),
+                  ),
                 if (widget.onOpenSentence case final openSentence?)
                   OutlinedButton(
                     onPressed: () {

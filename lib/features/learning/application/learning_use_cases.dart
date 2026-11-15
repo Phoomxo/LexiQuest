@@ -8,6 +8,7 @@ import '../domain/cloze_prompt_policy.dart';
 import '../domain/quiz_prompt_policy.dart';
 import '../domain/quiz_round.dart';
 import '../domain/scramble_prompt_policy.dart';
+import '../domain/source_reading_round.dart';
 import '../domain/srs_recall_snapshot.dart';
 
 typedef LearningIdGenerator = String Function();
@@ -50,6 +51,84 @@ final class LearningUseCases {
   final EventV1ToV2Adapter? eventAdapter;
 
   bool get supportsDurableQuiz => repository is DurableQuizRepository;
+
+  bool get supportsDurableSourceReading =>
+      repository is DurableSourceReadingRepository;
+
+  Future<SourceReadingRound> openSourceReadingRound({
+    required String expectedOwnerId,
+    required SourceReadingScope scope,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    return (repository as DurableSourceReadingRepository)
+        .openSourceReadingRound(
+          session: LearningSessionDraft(
+            id: 'session:${_nextId()}',
+            ownerId: owner.id,
+            activityType: 'associativeReading',
+            startedAtUtc: _now(),
+            appVersion: buildInfo.version,
+            buildId: buildInfo.buildId,
+          ),
+          scope: scope,
+        );
+  }
+
+  Future<SourceReadingRound> saveSourceReadingRound({
+    required String expectedOwnerId,
+    required SourceReadingRound expected,
+    required SourceReadingDraft draft,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    return (repository as DurableSourceReadingRepository)
+        .saveSourceReadingRound(
+          ownerId: owner.id,
+          expected: expected,
+          draft: draft,
+        );
+  }
+
+  Future<LearningSessionResult> finishSourceReadingRound({
+    required String expectedOwnerId,
+    required SourceReadingRound round,
+  }) async {
+    final first = round.draft.first;
+    if (round.draft.phase != SourceReadingPhase.summary || first == null) {
+      throw StateError('Source reading is not ready to finish');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireExpectedOwner(owner.id, expectedOwnerId);
+    final mistakeIds = <String>[];
+    for (final (slot, word) in round.scope.words.indexed) {
+      final isCorrect = sourceRecallMatches(first.answers[slot], word.spelling);
+      if (!isCorrect) mistakeIds.add(word.id);
+      await recordAnswer(
+        sessionId: round.sessionId,
+        wordId: word.id,
+        promptMode: 'associativeRecall',
+        isCorrect: isCorrect,
+        responseTimeMs: null,
+        attemptNumber: slot + 1,
+        attemptId: 'attempt:${round.sessionId}:associative:$slot',
+        occurredAtUtc: first.checkedAtUtc,
+        expectedOwnerId: expectedOwnerId,
+      );
+    }
+    final summary = await (repository as DurableSourceReadingRepository)
+        .finishSourceReadingRound(
+          ownerId: owner.id,
+          expected: round,
+          endedAtUtc: _now(),
+        );
+    onLocalMutation?.call();
+    return LearningSessionResult(
+      summary: summary,
+      mistakeWordIds: mistakeIds,
+      sourceSentence: round.draft.sentence.trim(),
+    );
+  }
 
   Future<QuizSession> startQuiz({
     String? categoryId,

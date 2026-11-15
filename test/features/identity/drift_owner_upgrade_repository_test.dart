@@ -539,6 +539,75 @@ void main() {
   });
 
   test(
+    'guest upgrade retains the bound cue for the same word and type',
+    () async {
+      for (final (id, owner, word, type, cue) in [
+        ('guest-cue', 'guest-owner', 'station', 'keyword', 'guest station cue'),
+        (
+          'bound-cue',
+          'account-owner',
+          'station',
+          'keyword',
+          'bound station cue',
+        ),
+        (
+          'guest-story',
+          'guest-owner',
+          'station',
+          'story',
+          'guest station story',
+        ),
+        (
+          'guest-ticket',
+          'guest-owner',
+          'ticket',
+          'keyword',
+          'guest ticket cue',
+        ),
+      ]) {
+        await database
+            .into(database.associationRecords)
+            .insert(
+              AssociationRecordsCompanion.insert(
+                id: id,
+                ownerId: owner,
+                wordKey: word,
+                type: type,
+                content: cue,
+                createdAtUtcMs: owner == 'guest-owner' ? 20 : 10,
+              ),
+            );
+      }
+      final before = await database.select(database.associationRecords).get();
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      expect(result.targetOwnerId, 'account-owner');
+      expect(result.conflictCount, 1);
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).getSingle();
+      expect(active.id, 'account-owner');
+
+      final retained = await database.select(database.associationRecords).get();
+      expect(
+        retained,
+        unorderedEquals([
+          for (final cue in before)
+            if (cue.id != 'guest-cue') cue.copyWith(ownerId: 'account-owner'),
+        ]),
+      );
+      expect(
+        retained.singleWhere((cue) => cue.id == 'bound-cue').content,
+        'bound station cue',
+      );
+    },
+  );
+
+  test(
     'resolves category and word collisions and remaps dependent rows',
     () async {
       await _seedCollisionGraph(database);
