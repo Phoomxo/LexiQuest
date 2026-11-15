@@ -12,6 +12,7 @@ import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'add_multiple_words_screen.dart';
+import 'learning_pack_catalog_screen.dart';
 import 'review_desk_screen.dart';
 import 'vocab_list_screen.dart';
 import 'wordbook_import_screen.dart';
@@ -155,6 +156,21 @@ class _CategoriesPageState extends State<CategoriesPage> {
         actions: [
           if (!largeText && addWord != null)
             Padding(padding: const EdgeInsets.only(right: 8), child: addWord),
+          if (useCases != null)
+            IconButton(
+              tooltip: 'เลือกชุดคำศัพท์',
+              onPressed: () {
+                if (ModalRoute.isCurrentOf(context) != true) return;
+                AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'vocabulary/learning-packs',
+                    builder: (_) => const LearningPackCatalogScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.collections_bookmark_outlined),
+            ),
           if (widget.onOpenMenu != null)
             IconButton(
               key: const ValueKey<String>('shell-drawer-button'),

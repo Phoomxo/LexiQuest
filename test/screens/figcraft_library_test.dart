@@ -292,6 +292,79 @@ void main() {
   );
 
   testWidgets(
+    'library sample pack shows provenance of its ordered words and returns',
+    (tester) async {
+      const kitchenDigest =
+          '77807e0bf6e991165334bb464d52b90324b848a1048c094f091f936c504e2f56';
+      const travelDigest =
+          '718b6ef56016e6764b0e8521cf7ac75ece9d8f87726e18c533660ef19c15f8f9';
+      try {
+        await pumpLibrary(tester, scale: 2);
+        final before = await tester.runAsync(() => _localRecords(database));
+        final library = tester.state(find.byType(CategoriesPage));
+        final search = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(search, 'แอปเปิล');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('เลือกชุดคำศัพท์'));
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'ของใช้ในครัว');
+        expect(find.text('A1 · 2 คำ'), findsOneWidget);
+        await _tapLabel(tester, 'คำศัพท์ในชุด');
+        expect(find.text('cup'), findsOneWidget);
+        expect(find.text('ถ้วย'), findsOneWidget);
+        expect(find.text('spoon'), findsOneWidget);
+        expect(find.text('ช้อน'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน');
+
+        await _tapLabel(tester, 'ที่มาของชุดเรียน');
+        expect(find.text('ของใช้ในครัว · LQ-KT-01'), findsOneWidget);
+        expect(
+          find.text('ตัวอย่างประกอบการออกแบบของ LexiQuest'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('ร่างตัวอย่าง ยังไม่เผยแพร่ให้ผู้เรียน'),
+          findsOneWidget,
+        );
+        final fingerprint = find.text(kitchenDigest);
+        await tester.scrollUntilVisible(
+          fingerprint,
+          150,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        await tester.pumpAndSettle();
+        expect(fingerprint.hitTestable(), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปดูชุดเรียน', scroll: true);
+        expect(find.text('ของใช้ในครัว'), findsOneWidget);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+
+        await _tapLabel(tester, 'การเดินทาง');
+        await _tapLabel(tester, 'ที่มาของชุดเรียน');
+        expect(find.text('การเดินทาง · LQ-TR-01'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text(travelDigest),
+          150,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(find.text(kitchenDigest), findsNothing);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        await _tapLabel(tester, 'ดูชุดเรียนทั้งหมด');
+        await _tapLabel(tester, 'กลับคลังคำ');
+        expect(tester.state(find.byType(CategoriesPage)), same(library));
+        expect(tester.widget<SearchBar>(search).controller!.text, 'แอปเปิล');
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets(
     'station opens its library detail and sound practice at 200% text',
     (tester) async {
       try {
