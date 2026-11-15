@@ -1505,6 +1505,7 @@ void main() {
       await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
       expect(find.text('ยังไม่ถูก ลองดูคำแปลอีกครั้ง'), findsOneWidget);
       expect(find.text('station — สถานี'), findsOneWidget);
+      expect(find.text('ticket — ตั๋ว'), findsOneWidget);
       await tester.tap(find.text('คำถามถัดไป'));
       await tester.pump();
       await tester.tap(find.text('ตั๋ว'));

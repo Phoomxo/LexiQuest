@@ -17,19 +17,34 @@ abstract final class QuizPromptPolicy {
     if (limit < 0) throw ArgumentError.value(limit, 'limit');
     if (limit == 0 || words.isEmpty) return const [];
     if (kind == QuizPromptKind.meaningChoice) {
-      final meanings = [
-        ...words,
-        ...optionWords,
-      ].map((word) => word.meaning).toSet().toList()..sort();
+      final meanings = <String>{};
+      final wordsByMeaning = <String, Map<String, QuizWord>>{};
+      for (final word in [...words, ...optionWords]) {
+        meanings.add(word.meaning);
+        (wordsByMeaning[_key(word.meaning)] ??= {}).putIfAbsent(
+          word.id,
+          () => word,
+        );
+      }
+      final orderedMeanings = meanings.toList()..sort();
       return List.unmodifiable(
         words.take(limit).map((word) {
           final options = [
             word.meaning,
-            ...meanings.where((value) => value != word.meaning).take(3),
+            ...orderedMeanings.where((value) => value != word.meaning).take(3),
           ];
+          final sources = {word.meaning: word};
+          for (final option in options.skip(1)) {
+            final candidates = wordsByMeaning[_key(option)]!;
+            if (candidates.length == 1) {
+              final source = candidates.values.single;
+              if (source.meaning == option) sources[option] = source;
+            }
+          }
           return QuizQuestion(
             word: word,
             options: List.unmodifiable(_rotate(options, word.id)),
+            optionWords: Map.unmodifiable(sources),
           );
         }),
       );

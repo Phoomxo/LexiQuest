@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/quiz_prompt_policy.dart';
+import 'package:vocab_learning_app/features/learning/domain/quiz_round.dart';
 
 const platform = QuizWord(
   id: 'p',
@@ -14,6 +15,13 @@ const ticket = QuizWord(
   categoryId: 'travel',
   spelling: 'ticket',
   meaning: 'ตั๋ว',
+  partOfSpeech: 'noun',
+);
+const station = QuizWord(
+  id: 's',
+  categoryId: 'travel',
+  spelling: 'station',
+  meaning: 'สถานี',
   partOfSpeech: 'noun',
 );
 
@@ -31,6 +39,69 @@ void main() {
     expect(question.correctAnswer, 'ชานชาลา');
     expect(question.options, isEmpty);
   });
+
+  test('meaning feedback keeps real pairs across rotated saved choices', () {
+    final plan = QuizPlan(
+      origin: QuizOrigin(
+        route: 'category',
+        promptKind: QuizPromptKind.meaningChoice,
+      ),
+      questions: build([station, platform], QuizPromptKind.meaningChoice),
+    );
+    final saved = decodeQuizPlan(encodeQuizPlan(plan));
+    final [first, second] = saved.questions;
+    expect(first.options, ['ชานชาลา', 'สถานี']);
+    expect(second.options, ['ชานชาลา', 'สถานี']);
+    final firstOption = const QuizChoiceResponse(slot: 0, selectedOption: 0);
+    final secondOption = const QuizChoiceResponse(slot: 1, selectedOption: 1);
+    expect(firstOption.isCorrectFor(first), isFalse);
+    expect(secondOption.isCorrectFor(second), isFalse);
+    expect(
+      first.optionWords?[firstOption.answerFor(first)]?.spelling,
+      'platform',
+    );
+    expect(
+      second.optionWords?[secondOption.answerFor(second)]?.spelling,
+      'station',
+    );
+    expect(
+      const QuizChoiceResponse(slot: 0, selectedOption: 1).isCorrectFor(first),
+      isTrue,
+    );
+    expect(
+      const QuizChoiceResponse(slot: 1, selectedOption: 0).isCorrectFor(second),
+      isTrue,
+    );
+  });
+
+  test(
+    'a shared distractor meaning keeps the choice without inventing its source',
+    () {
+      const stage = QuizWord(
+        id: 'other-platform',
+        categoryId: 'travel',
+        spelling: 'stage',
+        meaning: 'ชานชาลา',
+        partOfSpeech: 'noun',
+      );
+      final plan = QuizPlan(
+        origin: QuizOrigin(
+          route: 'category',
+          promptKind: QuizPromptKind.meaningChoice,
+        ),
+        questions: QuizPromptPolicy.build(
+          words: [station],
+          optionWords: [station, platform, stage, ticket, ticket],
+          kind: QuizPromptKind.meaningChoice,
+          limit: 1,
+        ),
+      );
+      final question = decodeQuizPlan(encodeQuizPlan(plan)).questions.single;
+      expect(question.options, contains('ชานชาลา'));
+      expect(question.optionWords, isNot(contains('ชานชาลา')));
+      expect(question.optionWords?['ตั๋ว']?.spelling, 'ticket');
+    },
+  );
 
   test(
     'reverse uses meaning prompt and spelling answer with immutable provenance',

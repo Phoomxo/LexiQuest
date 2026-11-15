@@ -42,16 +42,18 @@ String normalizeQuizClozeAnswer(String value) {
 }
 
 final class QuizQuestion {
-  const QuizQuestion({required this.word, required this.options})
-    : kind = QuizPromptKind.meaningChoice,
-      _definition = null,
-      optionWords = null,
-      optionExplanations = null,
-      sourcePin = null,
-      clozeTranslation = null,
-      acceptedAnswers = const [],
-      scrambleTokens = const [],
-      _scrambleAnswer = null;
+  const QuizQuestion({
+    required this.word,
+    required this.options,
+    this.optionWords,
+  }) : kind = QuizPromptKind.meaningChoice,
+       _definition = null,
+       optionExplanations = null,
+       sourcePin = null,
+       clozeTranslation = null,
+       acceptedAnswers = const [],
+       scrambleTokens = const [],
+       _scrambleAnswer = null;
 
   QuizQuestion.spellingChoice({
     required this.word,

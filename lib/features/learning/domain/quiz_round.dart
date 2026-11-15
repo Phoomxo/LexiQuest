@@ -92,7 +92,13 @@ final class QuizPlan {
   }) : questions = List.unmodifiable([
          for (final q in questions)
            if (q.kind == QuizPromptKind.meaningChoice)
-             QuizQuestion(word: q.word, options: List.unmodifiable(q.options))
+             QuizQuestion(
+               word: q.word,
+               options: List.unmodifiable(q.options),
+               optionWords: q.optionWords == null
+                   ? null
+                   : Map.unmodifiable(q.optionWords!),
+             )
            else
              q,
        ]) {
@@ -507,7 +513,8 @@ Map<String, Object?> _questionJson(QuizQuestion q) => q.kind.isScramble
             ? null
             : {
                 for (final option in q.options)
-                  option: _wordJson(q.optionWords![option]!),
+                  if (q.optionWords![option] case final word?)
+                    option: _wordJson(word),
               },
         'optionExplanations': q.optionExplanations == null
             ? null
@@ -580,10 +587,14 @@ QuizQuestion _decodeQuestion(Object? value) {
     final choices = _strings(options, _maxOptions);
     final question = switch (_named(QuizPromptKind.values, kind)) {
       QuizPromptKind.meaningChoice
-          when optionWords == null &&
-              optionExplanations == null &&
-              sourcePin == null =>
-        QuizQuestion(word: word, options: choices),
+          when optionExplanations == null && sourcePin == null =>
+        QuizQuestion(
+          word: word,
+          options: choices,
+          optionWords: optionWords == null
+              ? null
+              : _optionMap(optionWords, _decodeWord),
+        ),
       QuizPromptKind.spellingChoice
           when optionWords != null &&
               optionExplanations == null &&
@@ -664,20 +675,21 @@ void _validateQuestion(QuizQuestion q) {
     _requireText(option);
   }
   if (q.optionWords case final optionWords?) {
-    if (optionWords.length != options.length ||
+    final meaningChoice = q.kind == QuizPromptKind.meaningChoice;
+    if ((!meaningChoice && optionWords.length != options.length) ||
         !options.containsAll(optionWords.keys)) {
       throw const FormatException('Quiz option word is not displayed');
     }
     for (final entry in optionWords.entries) {
       _validateWord(entry.value);
-      if (entry.key != entry.value.spelling) {
-        throw const FormatException(
-          'Quiz option word differs from its spelling',
-        );
+      final label = meaningChoice ? entry.value.meaning : entry.value.spelling;
+      if (entry.key != label) {
+        throw const FormatException('Quiz option word differs from its label');
       }
     }
-    final target = optionWords[q.correctAnswer]!;
-    if (target.id != q.word.id ||
+    final target = optionWords[q.correctAnswer];
+    if (target == null ||
+        target.id != q.word.id ||
         target.categoryId != q.word.categoryId ||
         target.spelling != q.word.spelling ||
         target.meaning != q.word.meaning ||

@@ -430,6 +430,8 @@ void main() {
           await _pumpUntil(tester, find.text('station-a'));
           await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
           await _pumpUntil(tester, find.text('คำถามถัดไป'));
+          await tester.ensureVisible(find.text('คำถามถัดไป'));
+          expect(find.text('คำถามถัดไป').hitTestable(), findsOneWidget);
           await tester.tap(find.text('คำถามถัดไป'));
           await tester.pump();
           await tester.tap(find.widgetWithText(FilledButton, 'ตั๋ว'));
