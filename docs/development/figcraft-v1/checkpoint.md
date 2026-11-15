@@ -1,5 +1,30 @@
 # Continuous execution checkpoint
 
+## S2 Detailed word card from the Library
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `005ff46b` passed
+  123 Windows Flutter tests and analysis of both Dart files. The
+  lexical reader observes the existing owner and word revision.
+- The local and installed x64 debug APK share SHA-256 beginning
+  `22cc751e`. Android API 35 offline at font 2.0 showed saved A2,
+  the related travel terms, and the unspecified level for ticket.
+  Both searches survived Back. The read-only SQLite snapshots matched.
+- The station edit updated the same word from revision 1 to 2.
+  The reader removed the travel terms for the changed meaning.
+  The edited SQLite snapshot matched after a new process reopened
+  the same card. [Evidence](evidence/s2-f03-lexical-details.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43673909602).
+- The prototype has verified 14 of 44 features and 12 of 64 work
+  packages. All 48 delivery screens and spoken TalkBack need checks.
+- On the same APK, P3.2's manual form created and opened turnstile.
+  Its edited meaning reopened with the same owner and word IDs at
+  revision 2. The provenance check remains.
+- Next implement f04 through the Library's authored kitchen pack.
+  Use the pinned two-word draft and compute the SHA-256 from its actual
+  contents. Preserve the return to that pack, its list, and the Library.
+  P3.2 also links f04 and remains open.
+
 ## S3 Practice a saved round's mistakes from history
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
