@@ -1,5 +1,28 @@
 # Continuous execution checkpoint
 
+## S3 Source of the sample learning packs
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `64290935` passed
+  149 Windows Flutter tests and analysis of all three changed Dart files.
+  The Library app-bar action preserved room for owned sets at 200% text.
+- The local and installed Android API 35 x64 debug APK share SHA-256
+  beginning `fe4b718b`. The bundled kitchen draft showed `LQ-KT-01`
+  and the digest of cup and spoon in the displayed order. Travel showed
+  its own revision and digest. Returning to the Library preserved A-F03.
+- After a new process started, the kitchen revision and digest matched.
+  The app also read the manually created and edited turnstile with the
+  original owner, word ID and revision 2. Four SQLite snapshots matched.
+  [Evidence](evidence/s3-f04-pack-provenance.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43676491715).
+- f04 and P3.2 passed on the prototype. Totals are 15 of 44 features
+  and 13 of 64 work packages. All 48 delivery screens and spoken
+  TalkBack need checks.
+- Next complete f02 from the kitchen pack's two visible words through
+  sample flashcard review. Track the words actually revealed and return
+  to the same pack, catalog and Library. The same APK verified the
+  empty owned-set path for P3.1 on A-F03-Empty-Synthetic.
+
 ## S2 Detailed word card from the Library
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
