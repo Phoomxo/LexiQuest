@@ -1,5 +1,35 @@
 # Continuous execution checkpoint
 
+## S2 Sample pack review and catalog metadata
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `ca6bbeea` passed
+  151 Windows Flutter tests and analysis for both changed Dart files.
+- Android API 35 offline at font 2.0 used the x64 debug APK with
+  local and installed SHA-256 beginning `a98a3fd9`. The bundled
+  catalog filtered A2 to one pack and C2 to zero. Back retained A2.
+- Kitchen showed two real words. Back after the first reveal gave no
+  completed result. Completing cup and spoon returned 2 of 2 to the
+  same pack. The travel pack had its own state and the Library kept
+  the original A-F03 search.
+- Cold launch reopened the empty owned set and the same kitchen
+  source digest. The sample started again with cup. Three SQLite
+  snapshots matched, including vocabulary, rounds, points and outbox.
+  [Evidence](evidence/s2-f02-pack-review.txt) ·
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43678592836).
+- f02 and P3.1 passed on the prototype. Totals are 16 of 44 features
+  and 14 of 64 work packages. Delivery screens and spoken TalkBack
+  remain open.
+- Next fix f07 in the Thai-to-English choice route. The current APK
+  showed the expected empty and one-word fallbacks. The one-word
+  case nevertheless left a quiz row active after Back, with zero
+  answers, points or outbox writes. The query is recorded under
+  `build/boss-android-evidence/f07-native-edge-reconciliation.txt`.
+  Eighteen focused Windows tests passed before that observation.
+  Test contrast before `LearningUseCases._startQuestions` writes
+  the session, then exercise ambiguity, a deliberate retry, and
+  reopening the saved score.
+
 ## S3 Source of the sample learning packs
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
