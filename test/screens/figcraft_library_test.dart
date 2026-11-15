@@ -360,6 +360,124 @@ void main() {
     },
   );
 
+  testWidgets(
+    'station reader shows its saved level and returns to both searches',
+    (tester) async {
+      try {
+        await pumpLibrary(
+          tester,
+          scale: 2,
+          withLevels: true,
+          travelContrast: true,
+        );
+        final before = await tester.runAsync(() => _localRecords(database));
+        final librarySearch = find.byKey(const ValueKey('category-search'));
+        await tester.enterText(librarySearch, 'เดินทาง');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'การเดินทาง', scroll: true);
+
+        final setSearch = find.descendant(
+          of: find.byType(VocabListScreen),
+          matching: find.byType(SearchBar),
+        );
+        await _pumpUntil(tester, setSearch);
+        await tester.enterText(setSearch, 'stat');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await _tapLabel(tester, 'station', scroll: true);
+        await _pumpUntil(tester, find.text('สถานี'));
+        await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง', scroll: true);
+        await _pumpUntil(tester, find.text('รู้จักคำว่า station'));
+        expect(find.text('ระดับคำ CEFR · A2'), findsOneWidget);
+        expect(find.text('railway station · สถานีรถไฟ'), findsOneWidget);
+        expect(find.text('bus station · สถานีขนส่ง'), findsOneWidget);
+        final nearTerm = find.text('stop · จุดจอด');
+        await tester.scrollUntilVisible(
+          nearTerm,
+          180,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(nearTerm.hitTestable(), findsOneWidget);
+        expect(find.text('station ไม่มีคำตรงข้ามที่ใช้ทั่วไป'), findsOneWidget);
+        await _tapLabel(tester, 'กลับไปที่บัตรคำ', scroll: true);
+        expect(find.text('สถานี'), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await _pumpUntil(tester, setSearch);
+        expect(tester.widget<SearchBar>(setSearch).controller!.text, 'stat');
+        expect(find.text('ticket'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('การเดินทาง'), findsOneWidget);
+        expect(find.text('อาหาร'), findsNothing);
+        await tester.scrollUntilVisible(
+          librarySearch,
+          -180,
+          scrollable: find.byType(Scrollable).hitTestable().last,
+        );
+        expect(find.text('เดินทาง'), findsOneWidget);
+        expect(await tester.runAsync(() => _localRecords(database)), before);
+        expect(voice.requests, isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await disposeLibrary(tester);
+      }
+    },
+  );
+
+  testWidgets('same word reader hides old sense content after a meaning edit', (
+    tester,
+  ) async {
+    try {
+      await pumpLibrary(tester);
+      final original = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.spelling.equals('station'))).getSingle(),
+      ))!;
+      await _tapLabel(tester, 'การเดินทาง');
+      await _tapLabel(tester, 'station');
+      await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง');
+      await _pumpUntil(tester, find.text('ยังไม่ระบุระดับ CEFR'));
+      expect(find.text('stop · จุดจอด'), findsOneWidget);
+      await _tapLabel(tester, 'กลับไปที่บัตรคำ');
+      await _tapLabel(tester, 'แก้ไขคำ');
+      await tester.enterText(
+        find.byKey(const ValueKey('meaning-field')),
+        'สถานีวิทยุ',
+      );
+      final save = find.byKey(const ValueKey('save-word'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await _pumpUntil(tester, find.text('สถานีวิทยุ'));
+      await _tapLabel(tester, 'ดูระดับคำและคำใกล้เคียง');
+      await _pumpUntil(tester, find.text('ยังไม่ระบุระดับ CEFR'));
+      expect(find.text('สถานีวิทยุ'), findsOneWidget);
+      expect(find.text('ยังไม่มีคำใกล้เคียงสำหรับความหมายนี้'), findsOneWidget);
+      expect(find.text('stop · จุดจอด'), findsNothing);
+      expect(find.text('railway station · สถานีรถไฟ'), findsNothing);
+      await _tapLabel(tester, 'กลับไปที่บัตรคำ');
+      expect(find.text('Meet me at the station.'), findsNothing);
+
+      final revised = (await tester.runAsync(
+        () => (database.select(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(original.id))).getSingle(),
+      ))!;
+      expect(revised.ownerId, original.ownerId);
+      expect(revised.categoryId, original.categoryId);
+      expect(revised.localRevision, original.localRevision + 1);
+      expect(revised.spelling, original.spelling);
+      expect(revised.meaning, 'สถานีวิทยุ');
+      expect(revised.cefrLevel, isNull);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await disposeLibrary(tester);
+    }
+  });
+
   testWidgets('listening hub opens IPA and a saved dictation word', (
     tester,
   ) async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../ai/ai_models.dart' show CefrLevel;
 import '../config/m3_theme.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
@@ -71,8 +72,7 @@ class VocabularyWordDetailScreen extends StatelessWidget {
     bookmarkedOnly: bookmarkedOnly,
     builder: (context, current) {
       final theme = Theme.of(context);
-      final station =
-          current.normalizedSpelling == 'station' && current.meaning == 'สถานี';
+      final station = _isStationTransportSense(current);
       return Scaffold(
         appBar: AppBar(
           toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -143,6 +143,18 @@ class VocabularyWordDetailScreen extends StatelessWidget {
                   ),
                   child: const Text('แก้ไขคำ'),
                 ),
+                FilledButton.tonal(
+                  onPressed: () => _open(
+                    context,
+                    'lexical-details',
+                    (item) => _LexicalDetails(word: item),
+                    speech: false,
+                  ),
+                  child: const Text(
+                    'ดูระดับคำและคำใกล้เคียง',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
                 TextButton(
                   onPressed: () => Navigator.maybePop(context),
                   child: Text(returnLabel),
@@ -154,6 +166,78 @@ class VocabularyWordDetailScreen extends StatelessWidget {
       );
     },
   );
+}
+
+bool _isStationTransportSense(VocabularyWord word) =>
+    word.normalizedSpelling == 'station' &&
+    word.meaning == 'สถานี' &&
+    word.partOfSpeech.trim().toLowerCase() == 'noun';
+
+class _LexicalDetails extends StatelessWidget {
+  const _LexicalDetails({required this.word});
+
+  final VocabularyWord word;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final level = CefrLevel.fromWire(word.cefrLevel);
+    final station = _isStationTransportSense(word);
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'รายละเอียดคำ'),
+      ),
+      body: AdaptiveContentPane(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  'รู้จักคำว่า ${word.spelling}',
+                  style: text.headlineSmall,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                level == CefrLevel.unknown
+                    ? 'ยังไม่ระบุระดับ CEFR'
+                    : 'ระดับคำ CEFR · ${level.wire.toUpperCase()}',
+              ),
+              const SizedBox(height: 16),
+              Text(station ? 'คำนาม · /ˈsteɪʃən/' : word.partOfSpeech),
+              Text(word.meaning, style: text.titleLarge),
+              const SizedBox(height: 20),
+              // shortcut: offline phrases cover the authored station sense until reviewed entries are available for other words.
+              if (station) ...[
+                Semantics(
+                  header: true,
+                  child: Text('คำที่ใช้ร่วมกัน', style: text.titleMedium),
+                ),
+                const Text('railway station · สถานีรถไฟ'),
+                const Text('bus station · สถานีขนส่ง'),
+                const SizedBox(height: 16),
+                Semantics(
+                  header: true,
+                  child: Text('คำใกล้เคียงตามบริบท', style: text.titleMedium),
+                ),
+                const Text('stop · จุดจอด'),
+                const Text('station ไม่มีคำตรงข้ามที่ใช้ทั่วไป'),
+              ] else
+                const Text('ยังไม่มีคำใกล้เคียงสำหรับความหมายนี้'),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.maybePop(context),
+                child: const Text('กลับไปที่บัตรคำ'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class OwnedVocabularyWordRoute extends StatefulWidget {
