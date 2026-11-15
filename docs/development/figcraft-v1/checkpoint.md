@@ -1,5 +1,27 @@
 # Continuous execution checkpoint
 
+## S3 Review Desk with local reports and saved words
+
+- Worktree `figcraft-flutter-v1/LexiQuest` and branch
+  `codex/figcraft-flutter-prototype`. Application `85d49781` passed 298
+  Windows Flutter tests and analysis of seven changed Dart files.
+  Review accepted the report, bookmark, and word-detail owner guards.
+- The x64 debug APK SHA-256 starts with `ca6a0233` and matches the
+  installed package. Android API 35 offline at font 2.0 opened the
+  saved station and its report, returned to the original Library query,
+  and reopened the report after a cold start. Three passive database
+  snapshots match. The first pass needed an app restart after an
+  input-dispatch timeout.
+- The due queue completed compass at 100% and returned empty. The
+  Weakness Clinic opened a five-word round with station from actual
+  prior mistakes and returned to the same desk. [Evidence](evidence/s3-f22-review-desk.txt).
+- The prototype has verified 13 of 44 features and 11 of 64 work
+  packages. All 48 screens need delivery checks.
+  [Application CI](https://github.com/Phoomxo/LexiQuest/actions/runs/43668604036).
+- Next test P3.4 from a normal completed round. Open the original Score
+  through Progress history, enter the desk from that Score, and
+  practice that round's missed words while retaining the original result.
+
 ## S3 Review from a completed flashcard answer
 
 - Worktree `figcraft-flutter-v1/LexiQuest` and branch
