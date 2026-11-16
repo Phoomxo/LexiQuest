@@ -21,6 +21,12 @@ final class AccountUseCases {
   final Future<void> Function()? onOwnerTransitionCommitted;
 
   AccountSession? get currentSession => gateway.currentSession;
+  Stream<AccountSession?> get sessionChanges {
+    final source = gateway;
+    return source is AccountSessionObserver
+        ? (source as AccountSessionObserver).sessionChanges
+        : const Stream<AccountSession?>.empty();
+  }
 
   Future<void> reconcileLocalOwner() async {
     final session = gateway.currentSession;
@@ -89,10 +95,17 @@ final class AccountUseCases {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) => gateway.changePassword(
-    currentPassword: _password(currentPassword),
-    newPassword: _password(newPassword),
-  );
+    bool Function()? isCurrent,
+  }) {
+    if (isCurrent != null && !isCurrent()) {
+      throw const AccountException(AccountFailureCode.cancelled);
+    }
+    return gateway.changePassword(
+      currentPassword: _password(currentPassword),
+      newPassword: _password(newPassword),
+      isCurrent: isCurrent,
+    );
+  }
 
   Future<OwnerUpgradeResult> signOutToLocalGuest() async {
     final previousEntry = await entryState.read();

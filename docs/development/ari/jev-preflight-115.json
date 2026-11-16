@@ -1,0 +1,15 @@
+{
+  "observed_at": 1790173743.1416469,
+  "expires": 1790294400.0,
+  "free_usd": "5",
+  "paid_usd": "0",
+  "auto_reload": false,
+  "shared_pending_usd": "1",
+  "model": "typesafe-ai/jev",
+  "input_per_million": "1",
+  "output_per_million": "1",
+  "surcharge_max_usd": "0.01",
+  "max_input_tokens": 32768,
+  "max_output_tokens": 32768,
+  "source": "Fresh Vercel dashboard:5.00 Free Credit, auto-reload disabled; credits API balance5 total_used0; official Jev page Free with32K context until September25. Rates1/1 and shared-pending1 are conservative reservation cushions, not reported charges or known pending requests."
+}

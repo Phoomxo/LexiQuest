@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -19,6 +20,57 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final operation in ['create', 'update', 'cancel']) {
+    test(
+      'AL retired $operation rolls desired state and outbox back together',
+      () async {
+        final original = _reminder(ownerId: 'local:owner-a');
+        if (operation != 'create') await repository.save(original);
+        final before = await repository.list(includeDeleted: true);
+        final intents = await database.select(database.outboxOperations).get();
+        var allowed = true;
+        bool guard() {
+          if (allowed) scheduleMicrotask(() => allowed = false);
+          return allowed;
+        }
+
+        final write = operation == 'cancel'
+            ? repository.cancel(
+                original.id,
+                updatedAtUtc: original.updatedAtUtc.add(
+                  const Duration(seconds: 1),
+                ),
+                mutationAllowed: guard,
+              )
+            : repository.save(
+                operation == 'create'
+                    ? original
+                    : original.copyWith(
+                        scheduledAtUtc: original.scheduledAtUtc.add(
+                          const Duration(hours: 1),
+                        ),
+                        updatedAtUtc: original.updatedAtUtc.add(
+                          const Duration(seconds: 1),
+                        ),
+                      ),
+                mutationAllowed: guard,
+              );
+        await expectLater(
+          write,
+          throwsA(isA<StudyReminderMutationUnavailable>()),
+        );
+        final after = await repository.list(includeDeleted: true);
+        expect(after.length, before.length);
+        if (before.isNotEmpty) {
+          expect(after.single.scheduledAtUtc, before.single.scheduledAtUtc);
+          expect(after.single.isEnabled, before.single.isEnabled);
+          expect(after.single.updatedAtUtc, before.single.updatedAtUtc);
+        }
+        expect(await database.select(database.outboxOperations).get(), intents);
+      },
+    );
+  }
 
   test(
     'reminder token proof requires the exact unexpired canonical lease',

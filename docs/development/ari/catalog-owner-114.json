@@ -1,0 +1,25 @@
+{
+  "checkpoint": 114,
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "tests": 23,
+  "rootCause": "Catalog contexts registered without canonical data owner while AI owner absent.",
+  "fix": "Bind summary and pack tiles to catalog.progress.ownerId; suppress readValue for missing provenance.",
+  "verificationReceipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-449d944986b224a0aa339a2721f22b8a5803a65160f0e0f929a85a4b1b91eb79.json",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "cbb9659520036109d6f716803218eec2b440eefcb01b175676ddf2b7d1d4db69",
+      "fingerprint": "454046e6e98a69d30ceb833cd183f7ce1a6c209d31781724c9a4fad8ca117727",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T21:16:24.5861786+07:00",
+      "FinishedAt": "2026-09-23T21:16:36.3898542+07:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\cbb965952003-454046e6e98a-6cdd280f\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\cbb965952003-454046e6e98a-6cdd280f\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "454046e6e98a69d30ceb833cd183f7ce1a6c209d31781724c9a4fad8ca117727",
+      "StdoutHash": "393F9C9BFB129DB8930E0D854E693995C6C1C1EB76913841815CCC61761B4987",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "open": "Pack detail provenance, native acceptance, full14workflow14mode acceptance, Jev guard and real review."
+}

@@ -1,4 +1,6 @@
 import 'package:drift/native.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -18,6 +20,71 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'AC settings menu opens retryable catalog and revocation fences stale retry',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
+      final manager = _SettingsManager()..failCatalog = true;
+      final registry = MenuActionRegistry(currentOwner: () => 'test');
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: _dependencies(database, features, manager),
+            child: MaterialApp(
+              navigatorKey: navigator,
+              home: const SettingScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final snapshot = registry.snapshot();
+      expect(
+        (snapshot['actions'] as List).where(
+          (a) => a['id'] == 'settings/offline-content',
+        ),
+        hasLength(1),
+      );
+      final result = await registry.execute(
+        id: 'settings/offline-content',
+        owner: 'test',
+        revision: snapshot['revision'] as int,
+        requestId: 'ac-catalog',
+      );
+      expect(result['status'], 'invoked');
+      await tester.pumpAndSettle();
+      final retry = find.byKey(const ValueKey('offline-content/retry'));
+      expect(retry, findsOneWidget);
+      manager.failCatalog = false;
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('ยังไม่มีแพ็กเนื้อหาที่รองรับการใช้งานออฟไลน์'),
+        findsOneWidget,
+      );
+      expect(manager.catalogCalls, 2);
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      manager.failCatalog = true;
+      await tester.tap(find.byKey(const ValueKey('settings/offline-content')));
+      await tester.pumpAndSettle();
+      final stale = tester.widget<FilledButton>(retry).onPressed!;
+      features.emergencyOff(Feature.offlineContent);
+      stale();
+      await tester.pumpAndSettle();
+      expect(manager.catalogCalls, 3);
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('f44 settings entry is dependency and runtime gated', (
     tester,
   ) async {
@@ -106,11 +173,17 @@ final class _GuestSession implements GuestSessionService {
 }
 
 final class _SettingsManager implements OfflineContentManager {
+  bool failCatalog = false;
+  int catalogCalls = 0;
   @override
   Future<bool> canRemove(ContentIdentity identity) async => false;
 
   @override
-  Future<List<OfflineContentState>> catalog() async => const [];
+  Future<List<OfflineContentState>> catalog() async {
+    catalogCalls++;
+    if (failCatalog) throw StateError('private catalog failure');
+    return const [];
+  }
 
   @override
   Future<int> cleanupForDiskPressure({required int bytesToFree}) async => 0;

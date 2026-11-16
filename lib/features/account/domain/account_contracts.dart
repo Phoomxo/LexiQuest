@@ -27,8 +27,11 @@ final class AccountSession {
     required this.isAnonymous,
     required this.emailVerified,
     this.verificationEmailPending = false,
+    this.sessionIdentity,
   });
 
+  /// In-memory provider session identity; never serialized or a credential.
+  final Object? sessionIdentity;
   final String uid;
   final String? email;
   final bool isAnonymous;
@@ -88,7 +91,13 @@ abstract interface class AccountGateway {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
+    bool Function()? isCurrent,
   });
 
   Future<void> signOut();
+}
+
+/// Optional provider observation; events retire in-memory password controls.
+abstract interface class AccountSessionObserver {
+  Stream<AccountSession?> get sessionChanges;
 }

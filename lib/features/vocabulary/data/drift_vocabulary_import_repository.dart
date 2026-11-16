@@ -20,6 +20,31 @@ final class DriftVocabularyImportRepository
     required bool Function() isCancelled,
   }) {
     return database.transaction(() async {
+      Future<void> requireCurrent() async {
+        if (import.requireActiveOwner) {
+          final active = await (database.select(
+            database.localOwners,
+          )..where((r) => r.isActive.equals(true))).get();
+          final category =
+              await (database.select(database.vocabularyCategories)..where(
+                    (r) =>
+                        r.id.equals(import.categoryId) &
+                        r.ownerId.equals(import.ownerId) &
+                        r.isDeleted.equals(false),
+                  ))
+                  .getSingleOrNull();
+          if (active.length != 1 ||
+              active.single.id != import.ownerId ||
+              category == null ||
+              (import.expectedCategoryRevision != null &&
+                  category.localRevision != import.expectedCategoryRevision)) {
+            throw const VocabularyImportCancelled();
+          }
+        }
+        if (isCancelled()) throw const VocabularyImportCancelled();
+      }
+
+      await requireCurrent();
       PackagedStarterAccess.requireMutable(
         import.ownerId,
         categoryId: import.categoryId,
@@ -46,7 +71,9 @@ final class DriftVocabularyImportRepository
               ))
               .getSingleOrNull();
       if (replay != null) {
-        return _restoreResult(replay);
+        final result = await _restoreResult(replay);
+        await requireCurrent();
+        return result;
       }
       final category =
           await (database.select(database.vocabularyCategories)..where(
@@ -150,6 +177,7 @@ final class DriftVocabularyImportRepository
             );
       }
 
+      await requireCurrent();
       return VocabularyImportResult(
         importId: import.importId,
         accepted: accepted,

@@ -15,6 +15,7 @@ final class LocalStudyDateTimeField extends StatefulWidget {
     this.initialUtc,
     this.initialTimezoneId = 'Asia/Bangkok',
     this.enabled = true,
+    this.onPickerRoute,
   });
 
   final String fieldKey;
@@ -23,6 +24,7 @@ final class LocalStudyDateTimeField extends StatefulWidget {
   final DateTime? initialUtc;
   final String initialTimezoneId;
   final bool enabled;
+  final ValueChanged<Route<dynamic>>? onPickerRoute;
 
   @override
   State<LocalStudyDateTimeField> createState() =>
@@ -89,6 +91,11 @@ final class _LocalStudyDateTimeFieldState
       fieldLabelText: 'วันที่ (ปี ค.ศ.)',
       cancelText: 'ยกเลิก',
       confirmText: 'ตกลง',
+      builder: (context, child) {
+        final route = ModalRoute.of(context);
+        if (route != null) widget.onPickerRoute?.call(route);
+        return child!;
+      },
     );
     if (!mounted || picked == null || !widget.enabled) return;
     setState(() {
@@ -103,6 +110,7 @@ final class _LocalStudyDateTimeFieldState
       context: context,
       initialTime: _time ?? TimeOfDay(hour: local.hour, minute: local.minute),
       helpText: 'เลือกเวลา',
+      onPickerRoute: widget.onPickerRoute,
     );
     if (!mounted || picked == null || !widget.enabled) return;
     setState(() {
@@ -116,50 +124,54 @@ final class _LocalStudyDateTimeFieldState
     final zones = tz.timeZoneDatabase.locations.keys.toList()..sort();
     final picked = await showDialog<String>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, update) {
-          final filtered = zones
-              .where(
-                (zone) => '${studyTimezoneLabel(zone)} $zone'
-                    .toLowerCase()
-                    .contains(query.toLowerCase()),
-              )
-              .toList();
-          return AlertDialog(
-            title: const Text('เขตเวลาเรียน'),
-            content: SizedBox(
-              width: 360,
-              height: 360,
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'ค้นหาประเทศหรือเมือง',
+      builder: (context) {
+        final route = ModalRoute.of(context);
+        if (route != null) widget.onPickerRoute?.call(route);
+        return StatefulBuilder(
+          builder: (context, update) {
+            final filtered = zones
+                .where(
+                  (zone) => '${studyTimezoneLabel(zone)} $zone'
+                      .toLowerCase()
+                      .contains(query.toLowerCase()),
+                )
+                .toList();
+            return AlertDialog(
+              title: const Text('เขตเวลาเรียน'),
+              content: SizedBox(
+                width: 360,
+                height: 360,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'ค้นหาประเทศหรือเมือง',
+                      ),
+                      onChanged: (value) => update(() => query = value),
                     ),
-                    onChanged: (value) => update(() => query = value),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) => ListTile(
-                        title: Text(studyTimezoneLabel(filtered[index])),
-                        subtitle: Text(filtered[index]),
-                        onTap: () => Navigator.pop(context, filtered[index]),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) => ListTile(
+                          title: Text(studyTimezoneLabel(filtered[index])),
+                          subtitle: Text(filtered[index]),
+                          onTap: () => Navigator.pop(context, filtered[index]),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('ยกเลิก'),
-              ),
-            ],
-          );
-        },
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('ยกเลิก'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
     if (!mounted || picked == null || !widget.enabled) return;
     setState(() {
