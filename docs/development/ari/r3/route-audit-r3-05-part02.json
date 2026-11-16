@@ -1,0 +1,152 @@
+{
+  "taskId": "01a0cf69-4e93-75e1-9976-e3bbb24718ae",
+  "atUtc": "2026-09-23T18:13:18.471891+00:00",
+  "sourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "wholeScopeComplete": false,
+  "scope": "W01-W04 route assertion audit; precise bounded assertions only",
+  "closureAudit": "closure-audit-r3-05-part02.json",
+  "priorClosureAudit": "closure-audit-r3-05.json",
+  "hostRun": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-b4a421c58c67d3ea32919e9da2e8aa7d288eded9bd4e4ca108ab569cf61d21ef.json",
+    "passed": 62,
+    "distinctFiles": 8,
+    "countsAreNotAdditiveCoverage": true
+  },
+  "reusedPanel": {
+    "tests": 6,
+    "receipt": "build/verification/22682143b4e21336692c1d2e63419961e7f4fad4/targeted-ai-83318c61efd74e663d28a740c840e89c7d14b92f7820f45c53698dc5587830ce.json",
+    "closurePins": 47,
+    "rerun": false
+  },
+  "recovery": {
+    "issue": "Generated closure audit selected the first targets assignment inside receipt discovery instead of the top-level target list; initial false no-candidate output was invalid.",
+    "correction": "Use newline-anchored top-level replacement; recovered receipts and validated all9 closures.",
+    "impact": "Eight-target gate ran before detection. Do not claim all reruns were required or count them as new coverage. No product source or acceptance weakened; no repeat of passed gates."
+  },
+  "assertions": [
+    {
+      "id": "A01",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/managed_tutor_runtime_test.dart",
+        "test/features/ai_tutor/managed/managed_tutor_host_test.dart",
+        "test/features/ai_tutor/managed/managed_tutor_controller_test.dart"
+      ],
+      "proven": "Canonical DB owner/account and generation invalidate session; absent/multiple owner fails closed in runtime source; owner/account/lease changes fence late replies; disposed host ignores callbacks.",
+      "limits": "Runtime uses in-memory Drift and transport fixtures; no native owner switch/provider certification."
+    },
+    {
+      "id": "A02",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/managed_tutor_test_screen_test.dart",
+        "test/features/ai_tutor/managed/managed_tutor_panel_test.dart"
+      ],
+      "proven": "Private login requires explicit return check, delayed login tombstoned on navigation, background cancels connect without autoreconnect; panel preserves offline unsent draft, clears on owner replacement, safe quota messaging, send/disconnect do not restore underlying field focus.",
+      "limits": "Provider acknowledgements and replies mocked; background test title mentions cover but body specifically proves paused/resumed path, not every route-cover sequence."
+    },
+    {
+      "id": "A03",
+      "groups": [
+        "W01"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/optional_ai_app_test.dart"
+      ],
+      "proven": "Absent/failure/pending/available/recreated optional bridge leaves baseline route intact; explicit fresh authentication/owner-generation fences; no answer-attempt change.",
+      "limits": "Baseline route and answer table only, not every screen or durable restart for all tables."
+    },
+    {
+      "id": "A04",
+      "groups": [
+        "W02"
+      ],
+      "tests": [
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "proven": "Questionnaire separates draft/lastConfirmed; manual save survives disconnect; foreign owner context suppressed; invalid/failed save never confirms draft; pending reads/saves fenced after dependency replacement/disposal.",
+      "limits": "Preference subset; full navigation, settings controls and native current-source preferences still require audit. Do not close W02 from questionnaire alone."
+    },
+    {
+      "id": "A05",
+      "groups": [
+        "W03"
+      ],
+      "tests": [
+        "test/screens/vocab_list_screen_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/screens/vocabulary_route_withdrawal_test.dart"
+      ],
+      "proven": "Canonical category/word owner hides stale labels/actions; replaced category revisions rejected; create/edit/import/delete use real domain paths and readback; category/word replay creates one row; repeated import retains one import; preview produces no rows; manual draft survives no owner session; withdrawal rejects pending writes.",
+      "limits": "No native foreign-owner/context/protocol result; complete DB write-failure/retry and late attachment to deletion dialog still open."
+    },
+    {
+      "id": "A06",
+      "groups": [
+        "W03"
+      ],
+      "tests": [
+        "test/scenarios/production_vocabulary_restart_test.dart"
+      ],
+      "proven": "File-backed production bootstrap reopens exact active-owner category/word; foreign owner excluded.",
+      "limits": "Restart fixture does not exercise every import failure or deletion lifecycle."
+    },
+    {
+      "id": "A07",
+      "groups": [
+        "W03"
+      ],
+      "evidence": [
+        "native-vocabulary-r3-05-part02.json"
+      ],
+      "proven": "Current installed APK manual category/create/edit/import/cancel/delete and process restart work while unpaired; preserved draft; 58 tables reconciled and fresh snapshot byte-exact restored.",
+      "limits": "Unpaired baseline is not connected-to-disconnected provider testing."
+    },
+    {
+      "id": "A08",
+      "groups": [
+        "W02"
+      ],
+      "tests": [
+        "test/screens/setting_screen_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/screens/main_navigation_screen_test.dart",
+        "test/features/ai_tutor/managed/full_menu_navigation_test.dart"
+      ],
+      "proven": "Composed app invokes current main/drawer/secondary/learning entry callbacks; settings theme/motion persist; wrong-owner display context/actions suppressed; password/consent/erase actions only open dialogs, covered actions unavailable, no eraser invocation after cancel; manual field-safe shell navigation works under cloud outage.",
+      "limits": "Learning-route entry is not lesson acceptance. Current-native every settings control and all connection-state combinations remain unproven. Tests use inert research fixtures; no research activated."
+    },
+    {
+      "id": "A09",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/local_login_bridge_test.dart"
+      ],
+      "proven": "Reused unchanged44-pin closure: pairing rotation uses fresh capability; absent capability blocks HTTP login; foreign login URL/malformed status rejected; authenticated-but-inference-disabled cannot connect/reply; dispose prevents requests.",
+      "limits": "Fake HTTP protocol, not current physical provider readiness."
+    }
+  ],
+  "nextByGroup": {
+    "W01": "Current native owner/error and real-provider reauth context audit; durable lease/restart effects remain bounded.",
+    "W02": "Host navigation/settings and questionnaire assertions audited; close exact host combinations only after missing connection/lifecycle combinations review; native settings still actionable.",
+    "W03": "Close only never_connected; audit failure/readback and deletion-dialog late attach/reconnect; retain provider/owner native pending.",
+    "W04": "Dart login protocol reused; Python chat_bridge/menu_channel/tutor_mcp tests inspected but current dependency/receipt applicability not yet finalized; actual provider remains unpaired."
+  },
+  "additionalHostRun": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-de9481afeb3c6efed2c33878a72ca43f3df270d141cb1223a3ca42c885220e7b.json",
+    "passed": 70,
+    "distinctFiles": 4,
+    "why": "Four targets have actual changed transitive dependency pins vs recorded passed receipts; targeted rerun justified."
+  }
+}

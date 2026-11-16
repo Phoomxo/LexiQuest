@@ -1,0 +1,89 @@
+{
+  "taskId": "01a0d01e-4d22-7f61-9f4d-403ae77b8450",
+  "sourceFingerprint": "15780712872b6c73d5f68b35bec9af8605c2ce3c40ca097b2d1f5f59d29af00a",
+  "assertions": [
+    {
+      "id": "A37",
+      "groups": [
+        "W05",
+        "meaning-quiz"
+      ],
+      "proven": [
+        "3standalone actualQuizScreen cases:absent/connected/disconnected;choice en-th then th-en,no typedinput;wrongowner context hidden;detach before secondmanualselection preserves screen and enabled choice;2recognitionattempts correct/wrong exactowner;noSRS."
+      ],
+      "tests": [
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "limits": [
+        "Meaning quiz:actual standalone QuizScreen/MeaningQuizModeAdapter with real in-memory SQLite,2choice directions en/th then th/en,correct then wrong recognition,exact owner and no SRS. AI states are registry simulations, not provider authentication. No file reopen or route reentry claim."
+      ]
+    },
+    {
+      "id": "A38",
+      "groups": [
+        "W05",
+        "W07",
+        "flashcard"
+      ],
+      "proven": [
+        "2file-backed remembered/notremembered cases:SQL ABORT preinsert leaves onlyseed;retry afterAIdetach preserves screen and oneacceptedmanualrecall;completedreview;SRS repetitions/lapses exact;everyfixturetable unchanged onreopen."
+      ],
+      "tests": [
+        "test/screens/srs_flashcards_screen_test.dart"
+      ],
+      "limits": [
+        "Flashcard:actual screen/shell/controller/LearningUseCases/DriftRepository and file-backedSQLite. Existing seed recall creates SRS;SQL ABORT trigger prevents first answer insertion. Detached-AI manual retry writes one accepted independent recall, closes actual review session;remembered repetitions2/lapses0 or notremembered repetitions0/lapses1. All fixture tables equal after reopen. No exact command replay assertion, abrupt process death, full learner-data matrix or native audio claim."
+      ]
+    },
+    {
+      "id": "A39",
+      "groups": [
+        "W05",
+        "W11",
+        "speaking"
+      ],
+      "proven": [
+        "4optional-speaking host cases revalidated:pendingack/detach/retry/onewrite/latefinal/owner/privacy/savedreceipt and boundedpersonaltext."
+      ],
+      "tests": [
+        "test/screens/speak_to_text_screen_voice_test.dart"
+      ],
+      "limits": [
+        "Speaking4:repository and speech gateway doubles; pending saved=false,disconnect,one successful record/retry,late duplicate ignored,owner hidden,raw speech clear preserves receipt;bounded text. Not physical speech recognition or durable DB acceptance."
+      ]
+    },
+    {
+      "id": "A40",
+      "groups": [
+        "W05",
+        "W11",
+        "shadowing"
+      ],
+      "proven": [
+        "28existing shadowing host cases revalidated;canonicalowner/context,saveack/dedup,emptyfinal/retry,lifecycle/manualstop/provenance/accessibility."
+      ],
+      "tests": [
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "limits": [
+        "Shadowing28:existing full screen suite including owner provenance/reconnect,delayed ack,empty final,privacy,lifecycle and retry. Repository/recognizer doubles; no physical positive recognition,acoustic pronunciation,provider or durable DB certification."
+      ]
+    }
+  ],
+  "historicalAudit": "historical-audit-r3-05-part12.json",
+  "limits": [
+    "5new cases plus32 revalidated cases=37 unique PASS. Two test files changed; no product defect/RED/fix. No part11 passed selections rerun.",
+    "Meaning quiz:actual standalone QuizScreen/MeaningQuizModeAdapter with real in-memory SQLite,2choice directions en/th then th/en,correct then wrong recognition,exact owner and no SRS. AI states are registry simulations, not provider authentication. No file reopen or route reentry claim.",
+    "Flashcard:actual screen/shell/controller/LearningUseCases/DriftRepository and file-backedSQLite. Existing seed recall creates SRS;SQL ABORT trigger prevents first answer insertion. Detached-AI manual retry writes one accepted independent recall, closes actual review session;remembered repetitions2/lapses0 or notremembered repetitions0/lapses1. All fixture tables equal after reopen. No exact command replay assertion, abrupt process death, full learner-data matrix or native audio claim.",
+    "Speaking4:repository and speech gateway doubles; pending saved=false,disconnect,one successful record/retry,late duplicate ignored,owner hidden,raw speech clear preserves receipt;bounded text. Not physical speech recognition or durable DB acceptance.",
+    "Shadowing28:existing full screen suite including owner provenance/reconnect,delayed ack,empty final,privacy,lifecycle and retry. Repository/recognizer doubles; no physical positive recognition,acoustic pronunciation,provider or durable DB certification.",
+    "No native action/build thispart;part09 APK/original byte-exact backup retained. Fresh transport and fresh backup required before every next native cycle. No liveJev/provider/cost/research."
+  ],
+  "next": [
+    "Continue W07-W14 bounded host applicability/revalidation and realmissingassertions using workflow-audit-r3-05-part12.json and14historical originals. Before rerun compare latest receipts (including parts01-03/10-12) and source dependencies; do not blanket rerun unchanged passes. Start W07 review-center actual UI submission vs existing controller-direct fixture;W08 goals/planning;W09 history/progress;W10 rewards;W12 camera;W13 export;W14 offline/sync.",
+    "Pair native wrong-answer/repair/support and active-board remains gap:historical049 only4/4baseline/connectedresult/disconnectedreplay,labelnotDBreconciliation. Part11actualhost10 preserved. Refresh Vivo9582188822004C6 and freshbackupBEFOREevery nativecycle;preservealloriginals/APKs. ProviderlastUNPAIRED;independent manual native can run when ready.",
+    "Do not rerun part12 37 or part11 58 unchanged selections. Quiz part12 gate broadclosure differs only subsequentlychangedunimportedflashcardtest;selectedquiz/allproduct unchanged;see explicit reuseaudit. Speech physicalpositive recognition/acousticquality/hostfilebackeddurability remain open. W06configuredeligibility/seededdatamatrix separate fromCEFR A29.",
+    "Keep215rows4passed211remaining exactIDs;W01/W02native/provider/account/processdeath and W03delayedpreadmission stillopen. NoR3-06 until realR3-05exit. NoJevcalls/cost/research;fallback unchanged."
+  ],
+  "wholeScopeComplete": false
+}

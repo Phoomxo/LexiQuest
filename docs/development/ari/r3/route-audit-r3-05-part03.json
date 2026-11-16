@@ -1,0 +1,54 @@
+{
+  "taskId": "01a0cf7f-be37-7c31-a1b9-294858718135",
+  "atUtc": "2026-09-23T18:33:43.873339+00:00",
+  "sourceFingerprint": "7083053a2feb7904a146d896c83a025e0de4191fbe1797e5f92a9c342bd5c764",
+  "sourceManifest": "source-manifest-r3-05-part03.json",
+  "productSourceChanged": false,
+  "wholeScopeComplete": false,
+  "assertions": [
+    {
+      "id": "A10",
+      "groups": [
+        "W03"
+      ],
+      "proven": "Manual-open deletion dialog supports late same-owner attachment, disconnect/reconnect, foreign-owner suppression, wrong-target rejection and cancel without deletion.",
+      "evidence": "verification-r3-05-part03.json",
+      "limits": "Host registry owner/session injection; no actual provider or native foreign-owner dialog."
+    },
+    {
+      "id": "A11",
+      "groups": [
+        "W03"
+      ],
+      "proven": "SQLite trigger ABORT injection returns failed; word/outbox rows byte-value equal before/after; dialog stays usable; explicit retry after fault removal produces exact tombstone.",
+      "evidence": "verification-r3-05-part03.json",
+      "limits": "In-memory SQLite; post-commit readback failure and process death/outcome-unknown recovery still actionable. Existing successful readback is not all failure coverage."
+    },
+    {
+      "id": "A12",
+      "groups": [
+        "W02"
+      ],
+      "proven": "Native light/dark theme, reduced motion, unpaired AI expand/collapse, force-stop restart persistence, erasure cancel and offline-content navigation;58 tables compared;fresh backup restored byte-exact.",
+      "evidence": "native-settings-r3-05-part03.json",
+      "limits": "Account controls absent in current native session; no account/consent mutation, research activation, full questionnaire/navigation state grid or actual provider lifecycle certification."
+    },
+    {
+      "id": "A13",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "proven": "Python transitive source/protocol applicability reconciled:26 historical chat/menu/login reused from083;4 standalone tutor MCP cases fresh PASS; real stdio application receipts preserved.",
+      "evidence": "python-protocol-audit-r3-05-part03.json",
+      "limits": "Historical runtime not fully pinned; fake provider protocol, no native or live provider semantics."
+    }
+  ],
+  "nextByGroup": {
+    "W01": "Current native connection/reauth/lifecycle and durable lease/restart combinations remain; unpaired state alone not full acceptance.",
+    "W02": "Finish questionnaire/main/drawer and native connection/lifecycle combinations; current native account controls absent need explicit applicable fixture/scope. Reuse settings source/host receipts where unchanged.",
+    "W03": "Post-commit readback failure/outcome-unknown handling and restart durability remain; late-attachment and precommit SQLite failure/retry now proven host.",
+    "W04": "Python source/receipt audit complete bounded; actual provider/native lifecycle remains unpaired. Do not rerun unchanged26 or fresh4."
+  },
+  "remainingScope": "All211 exact remaining IDs retained; next W05-W14 and14 nested modes after actionable W01-W04 gaps."
+}

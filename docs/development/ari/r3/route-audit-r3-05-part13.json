@@ -1,0 +1,76 @@
+{
+  "taskId": "01a0d02e-195c-7aa2-917c-be297feef7c9",
+  "sourceFingerprint": "36b6433309cf16ca6962751cf89ecf7d7f9c7a0154eba86d3d53eb40826ced65",
+  "assertions": [
+    {
+      "id": "A41",
+      "groups": [
+        "W07",
+        "meaning-quiz"
+      ],
+      "proven": [
+        "6 actual review answer UI cases withfile-backedSQLite,reopenandcanonicalowner/session/recognition/srschecks;connectedfeedbackverifiedanddisconnectkeepsscreen."
+      ],
+      "tests": [
+        "test/screens/review_center_screen_test.dart"
+      ],
+      "limits": [
+        "6 new W07 actual ReviewCenterScreen -> real QuizScreen/MeaningQuizModeAdapter/shell/controller/LearningUseCases/DriftLearningRepository cases;correct/wrong x absent/connected/disconnected. Review queue reader is _Reader fixture and lesson builder composed in test to match production pattern;not actual MainNavigation route or full canonical queue reader.",
+        "Actual visible buttons tapped;exact one recognition attempt matches owner and attached review session, noSRS,actualsessioncompleted;all non-sqlite_internal fixture tables identical after close/reopen. Not abruptprocessdeath/exactcommandreplay/fulllearnerdata/native review-center.",
+        "Connected feedback context verified after answer BEFORE foreign-owner check;disconnected context hidden,screen state unchanged. Registry simulated AI identity,not real provider auth."
+      ]
+    },
+    {
+      "id": "A42",
+      "groups": [
+        "W07",
+        "W08"
+      ],
+      "proven": [
+        "53 existing tests revalidated after latest-receipt/recursiveDartdependency audit showed changedreachableinputs. Weaknesszero-sample/notmastery/due distinctions;goalsdraft/confirmed/unknown/owner;studyplanproposal/acceptance/conflict/lease;personalsetdraft/preview/readback/retry/owner."
+      ],
+      "tests": [
+        "test/screens/personal_sets_screen_test.dart",
+        "test/screens/weakness_clinic_screen_test.dart",
+        "test/screens/learning_goals_assistance_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_plan_screen_test.dart"
+      ],
+      "limits": [
+        "53 existing W07-W08 cases revalidated across weakness,goals assistance+screen,studyplan,personalsets. Goal assistance uses repository doubles;some goal owner tests realSQLite;studyplan/personalset real in-memorySQLite. No broad file-reopen claim for53."
+      ]
+    },
+    {
+      "id": "A43",
+      "groups": [
+        "W05",
+        "W09",
+        "meaning-quiz"
+      ],
+      "proven": [
+        "Native manualwronganswer result0/1,exact1recognition+1completedquiz;58tablescompared,protectedowner/vocabulary/SRS/points/rewards/AIusageunchanged;freshbackuprestoredBYTEEXACT,force-stoppedpidofabsent."
+      ],
+      "tests": [],
+      "limits": [
+        "Native one standalone meaning-quiz wronganswer with part09APK,forward direction,itemCount1,timed600s,UNPAIRED. Result0correct/1wrong,exact one recognitionattempt and completed quizsession;10 protectedtable families unchanged;58tablescompared. Not native review-center or Pairrepair/replay;no native source build."
+      ]
+    }
+  ],
+  "reuseAudit": "reuse-audit-r3-05-part13.json",
+  "native": "native-meaningquiz-r3-05-part13.json",
+  "limits": [
+    "6 new W07 actual ReviewCenterScreen -> real QuizScreen/MeaningQuizModeAdapter/shell/controller/LearningUseCases/DriftLearningRepository cases;correct/wrong x absent/connected/disconnected. Review queue reader is _Reader fixture and lesson builder composed in test to match production pattern;not actual MainNavigation route or full canonical queue reader.",
+    "Actual visible buttons tapped;exact one recognition attempt matches owner and attached review session, noSRS,actualsessioncompleted;all non-sqlite_internal fixture tables identical after close/reopen. Not abruptprocessdeath/exactcommandreplay/fulllearnerdata/native review-center.",
+    "Connected feedback context verified after answer BEFORE foreign-owner check;disconnected context hidden,screen state unchanged. Registry simulated AI identity,not real provider auth.",
+    "53 existing W07-W08 cases revalidated across weakness,goals assistance+screen,studyplan,personalsets. Goal assistance uses repository doubles;some goal owner tests realSQLite;studyplan/personalset real in-memorySQLite. No broad file-reopen claim for53.",
+    "Native one standalone meaning-quiz wronganswer with part09APK,forward direction,itemCount1,timed600s,UNPAIRED. Result0correct/1wrong,exact one recognitionattempt and completed quizsession;10 protectedtable families unchanged;58tablescompared. Not native review-center or Pairrepair/replay;no native source build.",
+    "All14workflows/modes remainOPEN;215rows4passed211remaining unchanged. NoJev/provider/livecost/research/subagent."
+  ],
+  "next": [
+    "Start W09 history/progress thenW10quests/rewards,W12camera,W13export,W14offline/sync. workflow-audit-r3-05-part12.json is initial map only. Audit latest original receipts across build/verification allHEADs (parts01-03/10-13 included),recursiveDartdependencies/config/runtime before rerun;do not blanket rerun unchanged59/37/58.",
+    "W07 new6 cover composed realanswerUI but queueReader fixture,not MainNavigation native route/canonicalreader fullmatrix. W08 newcurrent53 still no fullfiledurability/learnerdata. Nativepart13manualquiz boundedwrong1;Pairwrongrepair/support/activeboard/replayDBreconciliation remains. Native Learn UI thiscycle did not show directPair entry acrossscrolleditems;inspect actual route/feature/config before navigation,no unsupported absent-feature claim.",
+    "Refresh Vivo9582188822004C6 beforeaction andfresh isolatedbackup BEFORE EVERYcycle. Part13 originalmain/WAL/SHMrestoredBYTEEXACT,pidofabsent atverification;preserveall originalbackups andpart09APK. InstalledAPKhash54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5. ProviderpanelUNPAIRED;manualnative independentwork allowed.",
+    "Keep215rows4passed211remaining exactIDs. W01/W02native/provider/account/processdeath;W03delayedpreadmission;W06configuredeligibility;physicalpositive speech/acousticquality/camera groundtruth;hostedsync and180minendurance remain. NoR3-06 until realR3-05exit. Jevledger/cost0/fallback policy unchanged;no livecalls/research."
+  ],
+  "wholeScopeComplete": false
+}

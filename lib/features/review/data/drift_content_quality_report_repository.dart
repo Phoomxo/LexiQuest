@@ -6,6 +6,7 @@ import '../../identity/domain/local_owner_repository.dart';
 import '../../sync/domain/sync_entity.dart';
 import '../domain/content_quality_report.dart';
 import '../domain/content_quality_report_repository.dart';
+import '../domain/review_mutation_context.dart';
 
 typedef ContentReportMutationNotifier = Future<void> Function();
 
@@ -49,10 +50,15 @@ final class DriftContentQualityReportRepository
   @override
   Future<void> submit(ContentQualityReport report) async {
     _revalidate(report);
-    await owners.getOrCreateActiveOwner();
+    final admission = ReviewMutationContext.current;
+    admission?.requireCurrent();
+    final owner = await owners.getOrCreateActiveOwner();
+    admission?.requireCurrent(owner.id);
 
     final queued = await database.transaction(() async {
       final ownerId = await _requireSingleActiveOwnerId();
+      if (ownerId != owner.id) throw StateError('Content report owner changed');
+      admission?.requireCurrent(ownerId);
       final existingById = await (database.select(
         database.contentQualityReports,
       )..where((row) => row.id.equals(report.id))).getSingleOrNull();
@@ -64,6 +70,7 @@ final class DriftContentQualityReportRepository
       final existing = existingById ?? semanticReplay;
 
       final uploadAllowed = await _uploadAllowed(ownerId);
+      admission?.requireCurrent(ownerId);
       if (existing == null) {
         await database
             .into(database.contentQualityReports)
@@ -81,14 +88,22 @@ final class DriftContentQualityReportRepository
             );
       }
 
-      if (!uploadAllowed) return false;
-      return _ensureOutbox(
-        ownerId: ownerId,
-        reportId: existing?.id ?? report.id,
-        submittedAtUtcMs:
-            existing?.submittedAtUtcMs ??
-            report.submittedAtUtc.millisecondsSinceEpoch,
-      );
+      final queued =
+          uploadAllowed &&
+          await _ensureOutbox(
+            ownerId: ownerId,
+            reportId: existing?.id ?? report.id,
+            submittedAtUtcMs:
+                existing?.submittedAtUtcMs ??
+                report.submittedAtUtc.millisecondsSinceEpoch,
+          );
+      if (await _requireSingleActiveOwnerId() != ownerId) {
+        throw StateError('Content report owner changed');
+      }
+      // Includes local-only reports and replay, after every awaited write.
+      // Failure rolls back both the local report and any queued operation.
+      admission?.requireCurrent(ownerId);
+      return queued;
     });
     if (queued) await onLocalMutation?.call();
   }

@@ -49,9 +49,16 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     if (_usesAndroidDocumentPicker) {
       return _saveOnAndroid(artifact, cancellation);
     }
-    final location = await (desktopLocation ?? _chooseDesktopLocation)(
-      artifact,
-    );
+    final String? location;
+    try {
+      location = await (desktopLocation ?? _chooseDesktopLocation)(artifact);
+    } on ExportException {
+      rethrow;
+    } catch (_) {
+      // Choosing a destination has not touched any user file or staging bytes.
+      cancellation.throwIfCancelled();
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
     if (location == null) {
       throw const ExportException(ExportFailureCode.cancelled);
     }
