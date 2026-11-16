@@ -21,7 +21,9 @@ val releaseSigningReady = keystoreProperties["storeFile"] != null &&
 android {
     namespace = "com.lexiquest.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pinned because the APK integrity gate verifies locally compiled LiteRT
+    // custom-op binaries byte-for-byte.
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,7 +32,11 @@ android {
 
     defaultConfig {
         applicationId = "com.lexiquest.app"
-        minSdk = flutter.minSdkVersion
+        // Android 8.0 (API 26): Android 7 (API 24/25) reached security-patch
+        // EOL in 2019. Raising the floor to 26 drops legacy crypto surface and
+        // matches every plugin floor (highest is flutter_tts at 24) and every
+        // procured trial device (vivo V2041 = API 33, HONOR DNP-NX9 = API 36).
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -50,6 +56,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

@@ -1,10 +1,4 @@
 class ContextualStory {
-  final String targetWord;
-  final String cefrLevel;
-  final String storyTitle;
-  final String storyText;
-  final String thaiTranslation;
-
   const ContextualStory({
     required this.targetWord,
     required this.cefrLevel,
@@ -12,10 +6,14 @@ class ContextualStory {
     required this.storyText,
     required this.thaiTranslation,
   });
+
+  final String targetWord;
+  final String cefrLevel;
+  final String storyTitle;
+  final String storyText;
+  final String thaiTranslation;
 }
 
-/// Dynamic CEFR Micro-Story Contextualizer Engine
-/// (IEEE Transactions on Learning Technologies 2024 & ACL 2023 Standard).
 class DynamicStoryContextualizerService {
   const DynamicStoryContextualizerService();
 
@@ -38,7 +36,6 @@ class DynamicStoryContextualizerService {
     },
   };
 
-  /// Generates a contextual micro-story embedded with the target word
   static ContextualStory generateStory(String targetWord) {
     final cleanWord = targetWord.trim().toLowerCase();
     final data =

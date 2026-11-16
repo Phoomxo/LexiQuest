@@ -1,0 +1,77 @@
+S4 pronunciation and dictation from a saved word
+
+Source 1ced5df447cf21314078679fbe96cd733d36bc26.
+FigCraft 21b34eaa, library_frames.py:20–25, finish_routes_b.py:101–136,
+and finish_routes_a.py:225–269. The Library opens a read-only owned
+word with real spelling, meaning and part of speech. Edit is explicit
+and retains the existing form authority. Both audio exercises open
+from the same word and return to it. The authored station context
+includes /ˈsteɪʃən/ and the matching example.
+
+The IPA screen offers all six authored sounds with meaning and mouth
+cue. Station starts at she so /ʃ/ can be compared after /eɪ/. The
+screen requests on-device playback only after the user taps.
+Dictation requests 1.0 and 0.75 speed for the saved spelling, offers
+the meaning when audio is unavailable, and keeps errors and retries
+in the current round. For station, staton identifies a missing i.
+The corrected submission shows the stored meaning and example.
+General words use their own spelling and meaning.
+
+Windows verification
+Initial RED build/s4-word-detail-red.txt SHA-256
+f7661972c9cd53629a6bd5b98d470df9e67e0ada1cf2b2420fde888bff7dc102.
+56 focused Flutter cases passed, including the normal Library path
+at 390×844 and 200% text, explicit editing/Back, audio requests,
+unavailable audio, held playback during owner change, and the same
+Library search. The synthetic SQLite snapshots agree across 13 tables.
+Independent source review checked owner/word pinning, native TTS
+selection and Edit disposal. The final Edit route shares the owner
+fence, preserving its form until the word or authority is gone.
+build/s4-word-detail-focused.txt SHA-256
+0ae3476f313c59c400102e4fbbbb800e461d31962393cd73f96649b26bca3dbb.
+Flutter analyze found no issues. Log SHA-256
+782f64c078632c2b932a5b6c45d673053e6297626b450093acbe3d59c13cae0d.
+Dart format 7 files and git diff --check passed.
+
+Android verification
+Installed the offline debug x86_64 build on isolated API 35 emulator-5592,
+1080×1920, font scale 1. Wi-Fi and data were off, airplane mode on,
+and the guest declined enrollment. The host and installed base APK
+SHA-256 matched at
+9aa12b72d9cd415c30e2b23bcc4966daabf873ca56c970ebba83079e80d24a8e.
+Build log SHA-256
+5d0e10a907e5ea6d7a28a8c01f316880b3b92701f0bb50c4a3cfb97ab4bc7400.
+
+Imported synthetic station through the selected-set file picker and
+read its real spelling, meaning and part of speech. Tapped she playback
+and saw the mouth cue and station position. Dictation accepted normal
+and slow requests and displayed 0.75. Opened the text hint, typed
+staton, saw the missing i and retained draft, corrected it and got
+the success result. Both routes returned to the byte-identical word
+detail. The explicit Edit form showed the original saved values.
+Back returned to the same set, with no saved learning result.
+
+Raw Android UI hierarchy hashes from build/s4-android-evidence/:
+  station-detail.txt / after-ipa.txt / after-dictation.txt
+    2ae31f962e90bb07f8fd5a480cd93b0edbc811fd474719d8efa50923b11fc079
+  ipa-request.txt
+    17173bf188f076607284cb32024f6dac8c5c662230086d9ea8525efe851e904f
+  dictation-request.txt
+    4f5c27b747c7c0ad658ed4245f9b3f0b579df5171cc6e4aae77903d69e05df65
+  dictation-hint.txt
+    25a2ad486c57828c2fe07e0e306e1c9b4452943ea417abf23bf0d61141a3cbcc
+  dictation-missing-i.txt
+    01a3eb9aa35093f42b401360532be7262d806edbec6e925f69ddf7189fb89ae2
+  retained-draft.txt
+    eb3b9be433530d4bfdfb46c5c9815bd3f3b8575a3f13e4c4a4eba92641e9980d
+  dictation-correct.txt
+    a5c5263794e9fa5b2c94961fe8039e12e6b227462a26dd2787069c29fe57cae5
+
+This covers the saved-word origin. Listening hub, source and mic-denial
+origins remain pending. Audible TTS, TalkBack, native text at 200% and
+signed-device acceptance remain unverified.
+
+Exact PR head 4baf9db4cd38c2657d3087d1e41e6a396c915b91, CI 43632727258,
+passed Flutter 2,351, CPU backend 267, both policies, analysis and
+Android debug APK. Raw log SHA-256
+6ac91db7dec5f7d84de27a8136e03380a130f507283306b262fa4aa3e8427518.

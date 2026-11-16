@@ -3,11 +3,6 @@
 *.log
 *.pyc
 *.swp
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
 .DS_Store
 .atom/
 .buildlog/
@@ -16,6 +11,7 @@
 migrate_working_dir/
 .worktrees/
 .firecrawl/
+.firebase/
 .glm-prompts/
 .zcode/
 supabase/.branches/
@@ -23,8 +19,8 @@ supabase/.temp/
 firestore-debug.log
 tool/cli/.runtime/
 tool/cli/logs/
+field/evidence/
 node_modules/
-functions/lib/
 android/build/
 .idea/
 

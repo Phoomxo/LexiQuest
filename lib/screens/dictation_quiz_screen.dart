@@ -1,190 +1,331 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../config/m3_theme.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
+import '../widgets/adaptive_content_pane.dart';
+
+enum _Step { listen, hint, write, miss, correct }
 
 class DictationQuizScreen extends StatefulWidget {
-  final String targetWord;
-  final VoiceProvider? voiceProvider;
-
   const DictationQuizScreen({
     super.key,
     required this.targetWord,
-    this.voiceProvider,
-  });
+    this.meaning,
+    this.partOfSpeech,
+    this.categoryName,
+    this.returnLabel = 'กลับไปดูคำเดิม',
+    this.onReturn,
+    this.autoPlay = true,
+    this.voice,
+  }) : _startWithHint = false;
+
+  const DictationQuizScreen.withHint({
+    super.key,
+    required this.targetWord,
+    required this.meaning,
+    this.partOfSpeech,
+    this.returnLabel = 'กลับไปดูคำเดิม',
+  }) : categoryName = null,
+       onReturn = null,
+       autoPlay = false,
+       voice = null,
+       _startWithHint = true;
+
+  final String targetWord;
+  final String? meaning;
+  final String? partOfSpeech;
+  final String? categoryName;
+  final String returnLabel;
+  final VoidCallback? onReturn;
+  final bool autoPlay;
+  final VoiceUseCases? voice;
+  final bool _startWithHint;
 
   @override
   State<DictationQuizScreen> createState() => _DictationQuizScreenState();
 }
 
 class _DictationQuizScreenState extends State<DictationQuizScreen> {
-  late final VoiceProvider _voiceProvider;
-  bool _ownsVoiceProvider = false;
-  final TextEditingController _textController = TextEditingController();
-  bool? _isCorrect;
+  final _answer = TextEditingController();
+  VoiceUseCases? _localVoice;
+  _Step _step = _Step.listen;
+  double? _speed;
+  double? _requestedSpeed;
+  int _playGeneration = 0;
+  bool _mayBePlaying = false;
+  bool _audioUnavailable = false;
+  bool _useHint = false;
+  bool _emptyAnswer = false;
+  String _submitted = '';
+
+  String get _target => widget.targetWord.trim();
+  bool get _station =>
+      _target.toLowerCase() == 'station' && widget.meaning?.trim() == 'สถานี';
+  bool get _missingStationI =>
+      _target.toLowerCase() == 'station' &&
+      _submitted.toLowerCase() == 'staton';
+  VoiceUseCases? get _activeVoice => widget.voice ?? _localVoice;
 
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
+    if (widget._startWithHint) {
+      _useHint = true;
+      _step = _Step.hint;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudio(speed: 1.0);
-    });
+    if (widget.autoPlay) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_play(1));
+      });
+    }
   }
 
-  Future<void> _playAudio({required double speed}) async {
+  Future<void> _play(double speed) async {
+    if (_speed != null || ModalRoute.isCurrentOf(context) != true) return;
+    final generation = ++_playGeneration;
+    setState(() {
+      _speed = speed;
+      _requestedSpeed = speed;
+      _audioUnavailable = false;
+      _mayBePlaying = true;
+    });
+    var failed = false;
     try {
-      await _voiceProvider.speak(
+      final voice =
+          widget.voice ?? (_localVoice ??= VoiceUseCases.createOnDevice());
+      await voice.speak(
         VoiceRequest.create(
-          text: widget.targetWord,
+          text: _target,
           language: 'en',
-          voiceId: 'teacher_female',
+          voiceId: 'native-default',
           speed: speed,
           mode: VoiceMode.practice,
-          contentId: widget.targetWord,
+          contentId: _target,
           contentType: 'dictation_quiz',
         ),
       );
-    } catch (e) {
-      debugPrint('Error playing dictation audio: $e');
+    } catch (_) {
+      failed = true;
     }
+    if (!mounted || generation != _playGeneration) return;
+    setState(() {
+      _speed = null;
+      _audioUnavailable = failed;
+    });
   }
 
-  void _checkAnswer() {
-    final userInput = _textController.text.trim().toLowerCase();
-    final expected = widget.targetWord.trim().toLowerCase();
+  void _stopAudio() {
+    _playGeneration++;
+    _speed = null;
+    if (!_mayBePlaying) return;
+    _mayBePlaying = false;
+    unawaited(_activeVoice?.stop().catchError((Object _) {}));
+  }
+
+  void _openHint() {
+    _stopAudio();
     setState(() {
-      _isCorrect = userInput == expected;
+      _useHint = true;
+      _step = _Step.hint;
+    });
+  }
+
+  void _write() => setState(() => _step = _Step.write);
+
+  void _submit() {
+    if (_step != _Step.write || ModalRoute.isCurrentOf(context) != true) return;
+    final answer = _answer.text.trim();
+    if (answer.isEmpty) {
+      setState(() => _emptyAnswer = true);
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    _stopAudio();
+    setState(() {
+      _submitted = answer;
+      _step = answer.toLowerCase() == _target.toLowerCase()
+          ? _Step.correct
+          : _Step.miss;
+    });
+  }
+
+  void _restart() {
+    _answer.clear();
+    setState(() {
+      _audioUnavailable = false;
+      _requestedSpeed = null;
+      _useHint = widget._startWithHint;
+      _emptyAnswer = false;
+      _submitted = '';
+      _step = _useHint ? _Step.hint : _Step.listen;
     });
   }
 
   @override
   void dispose() {
-    _textController.dispose();
-    _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _stopAudio();
+    _localVoice?.disposeIfOwned(true);
+    _answer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = switch (_step) {
+      _Step.listen => 'ฟังแล้วเขียน',
+      _Step.hint => 'เขียนจากคำใบ้',
+      _Step.write => 'เขียนคำตอบ',
+      _Step.miss when _missingStationI => 'ยังขาดตัว i',
+      _Step.miss => 'ลองตรวจตัวสะกดอีกครั้ง',
+      _Step.correct => 'สะกดถูกแล้ว',
+    };
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'แบบฝึกฟังคำศัพท์ (Dictation Quiz)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.indigo,
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, title),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'ฟังเสียงแล้วพิมพ์คำศัพท์ให้ถูกต้อง:',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _playAudio(speed: 1.0),
-                  icon: const Icon(Icons.volume_up),
-                  label: const Text('ความเร็วปกติ (1.0x)'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                OutlinedButton.icon(
-                  onPressed: () => _playAudio(speed: 0.75),
-                  icon: const Icon(Icons.slow_motion_video),
-                  label: const Text('ฟังแบบช้า (0.75x)'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
+      body: AdaptiveContentPane(
+        maxWidth: AdaptiveContentPane.formMaxWidth,
+        child: SafeArea(
+          child: ListView(
+            key: ValueKey(_step),
+            padding: const EdgeInsets.all(20),
+            children: [
+              if (widget.categoryName case final name?) ...[
+                Text('$name · 1 คำ'),
+                const SizedBox(height: 12),
               ],
-            ),
-            const SizedBox(height: 40),
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'พิมพ์คำศัพท์ที่คุณได้ยิน...',
-                prefixIcon: Icon(Icons.edit),
+              ..._stepContent(context),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: widget.onReturn ?? () => Navigator.maybePop(context),
+                child: Text(widget.returnLabel),
               ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _checkAnswer(),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _checkAnswer,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text(
-                'ตรวจคำตอบ',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (_isCorrect != null)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _isCorrect!
-                      ? Colors.green.shade100
-                      : Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _isCorrect! ? Icons.check_circle : Icons.cancel,
-                      color: _isCorrect!
-                          ? Colors.green.shade800
-                          : Colors.red.shade800,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isCorrect!
-                          ? 'ถูกต้อง! ($widget.targetWord)'
-                          : 'ลองใหม่อีกครั้ง!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _isCorrect!
-                            ? Colors.green.shade900
-                            : Colors.red.shade900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  List<Widget> _stepContent(BuildContext context) {
+    final heading = Theme.of(context).textTheme.headlineSmall;
+    switch (_step) {
+      case _Step.listen:
+        return [
+          const Text('ลองฟัง แล้วพิมพ์คำที่ได้ยิน'),
+          const SizedBox(height: 12),
+          ..._audioButtons(),
+          FilledButton(
+            onPressed: _write,
+            child: const Text('ลองเขียนคำที่ได้ยิน'),
+          ),
+          TextButton(onPressed: _openHint, child: const Text('เปิดคำใบ้แทน')),
+          if (widget.autoPlay) ..._answerForm(),
+        ];
+      case _Step.hint:
+        return [
+          const Text('ฝึกต่อโดยไม่เปิดเสียง'),
+          const SizedBox(height: 12),
+          if (widget.meaning case final meaning?) Text(meaning, style: heading),
+          if (widget.partOfSpeech case final part?) Text(part),
+          if (_target.characters.length > 1)
+            Text('ขึ้นต้นด้วย ${_target.characters.take(_station ? 2 : 1)}'),
+          if (_station) ...[
+            const SizedBox(height: 12),
+            const Text('Meet me at the ____.'),
+          ],
+          const SizedBox(height: 12),
+          FilledButton(onPressed: _write, child: const Text('ลองเขียนคำ')),
+        ];
+      case _Step.write:
+        return [
+          if (!_useHint) ..._audioButtons(),
+          ..._answerForm(),
+          if (!_useHint)
+            TextButton(onPressed: _openHint, child: const Text('เปิดคำใบ้แทน')),
+        ];
+      case _Step.miss:
+        return [
+          Text(_submitted, style: heading),
+          Text(
+            'เทียบกับ $_target${widget.meaning == null ? '' : ' · ${widget.meaning}'}',
+          ),
+          if (_missingStationI) const Text('คำว่า station ลงท้ายด้วย -tion'),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: _write, child: const Text('แก้คำตอบ')),
+        ];
+      case _Step.correct:
+        return [
+          Text(_target, style: heading),
+          if (widget.meaning case final meaning?) Text(meaning),
+          if (_station) ...[
+            const SizedBox(height: 12),
+            const Text('Meet me at the station.'),
+            const Text('มาเจอกันที่สถานีนะ'),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: _restart,
+            child: Text(
+              widget._startWithHint
+                  ? 'ลองเขียนอีกครั้ง'
+                  : 'ลองฟังคำนี้อีกครั้ง',
+            ),
+          ),
+        ];
+    }
+  }
+
+  List<Widget> _audioButtons() => [
+    OutlinedButton.icon(
+      onPressed: _speed == null ? () => _play(1) : null,
+      icon: const Icon(Icons.volume_up_outlined),
+      label: const Text('ฟังด้วยความเร็วปกติ'),
+    ),
+    OutlinedButton.icon(
+      onPressed: _speed == null ? () => _play(.75) : null,
+      icon: const Icon(Icons.slow_motion_video),
+      label: const Text('ฟังช้าลง'),
+    ),
+    if (_speed case final speed?)
+      Semantics(
+        liveRegion: true,
+        child: Text(
+          speed == .75 ? 'กำลังเปิดเสียง 0.75 เท่า' : 'กำลังเปิดเสียง',
+        ),
+      ),
+    if (_audioUnavailable)
+      Semantics(liveRegion: true, child: const Text('ตอนนี้ฟังเสียงไม่ได้'))
+    else if (_speed == null && _requestedSpeed != null)
+      Text(_requestedSpeed == .75 ? 'ความเร็ว 0.75 เท่า' : 'ความเร็วปกติ'),
+  ];
+
+  List<Widget> _answerForm() => [
+    TextField(
+      controller: _answer,
+      maxLength: maxSpellingLength,
+      autocorrect: false,
+      enableSuggestions: false,
+      textInputAction: TextInputAction.done,
+      decoration: InputDecoration(
+        labelText: 'คำตอบ',
+        errorText: _emptyAnswer ? 'พิมพ์คำตอบก่อนตรวจ' : null,
+      ),
+      onChanged: (_) {
+        if (_emptyAnswer) setState(() => _emptyAnswer = false);
+      },
+      onSubmitted: (_) => _checkFromForm(),
+    ),
+    FilledButton(onPressed: _checkFromForm, child: const Text('ตรวจคำตอบ')),
+  ];
+
+  void _checkFromForm() {
+    if (_step == _Step.listen && widget.autoPlay) _write();
+    _submit();
   }
 }

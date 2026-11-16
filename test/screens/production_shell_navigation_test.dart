@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -16,7 +15,7 @@ class _FakeGuestSessionService implements GuestSessionService {
   }
 }
 
-const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+const _drawerButtonKey = ValueKey<String>('shell-drawer-button');
 
 AppDependencies _dependencies({bool ready = true}) {
   final availability = ready
@@ -24,6 +23,7 @@ AppDependencies _dependencies({bool ready = true}) {
       : RuntimeAvailability.unavailable;
   return AppDependencies(
     runtimeStatus: AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
       firebase: availability,
       supabase: availability,
       backends: availability,
@@ -34,6 +34,10 @@ AppDependencies _dependencies({bool ready = true}) {
 }
 
 Future<void> _pumpHome(WidgetTester tester, {bool ready = true}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(393, 876);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(MyApp(dependencies: _dependencies(ready: ready)));
   await tester.pump();
   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
@@ -50,18 +54,16 @@ Future<void> _openDrawer(WidgetTester tester) async {
 }
 
 void main() {
-  setUp(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
-  testWidgets('/home resolves to the canonical learning shell', (tester) async {
+  testWidgets('/home resolves to the field-safe shell', (tester) async {
     await _pumpHome(tester);
 
     expect(find.byType(MainNavigationScreen), findsOneWidget);
     expect(find.byKey(_drawerButtonKey), findsOneWidget);
   });
 
-  testWidgets('shell has exactly five ordered destinations', (tester) async {
+  testWidgets('field shell exposes all completed primary workspaces', (
+    tester,
+  ) async {
     await _pumpHome(tester);
 
     final destinations = tester
@@ -73,17 +75,15 @@ void main() {
         )
         .toList();
 
-    expect(destinations, hasLength(5));
     expect(destinations.map((destination) => destination.label), <String>[
-      'เรียนรู้',
-      'สถิติ',
-      'จุดอ่อน',
-      'รางวัล',
-      'โปรไฟล์',
+      'ฝึกภาษา',
+      'คลังคำศัพท์',
+      'ความก้าวหน้า',
+      'บัญชี',
     ]);
   });
 
-  testWidgets('all destinations switch the persistent IndexedStack', (
+  testWidgets('field destinations switch the persistent IndexedStack', (
     tester,
   ) async {
     await _pumpHome(tester);
@@ -97,36 +97,44 @@ void main() {
       matching: find.byType(NavigationDestination),
     );
 
-    for (var index = 0; index < 5; index++) {
+    for (var index = 0; index < 4; index++) {
       await tester.tap(destinations.at(index));
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.widget<IndexedStack>(stackFinder).index, index);
     }
   });
 
-  testWidgets('drawer lists legacy destinations and safe runtime status', (
+  testWidgets('drawer keeps completed local features during cloud outage', (
     tester,
   ) async {
     await _pumpHome(tester, ready: false);
     await _openDrawer(tester);
 
-    expect(find.text('คลังหมวดหมู่'), findsOneWidget);
-    expect(find.text('ร้านค้า'), findsNothing);
-    expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+    expect(find.text('คลังคำศัพท์'), findsWidgets);
+    expect(find.text('ร้านค้ารางวัล'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('runtime-status-summary')),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
     final status = tester.widget<Text>(
       find.byKey(const ValueKey<String>('runtime-status-summary')),
     );
-    expect(status.data, contains('ไม่พร้อม'));
+    expect(status.data, contains('การเรียนในเครื่องยังใช้ได้'));
   });
 
-  testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+  testWidgets('drawer vocabulary item keeps the category workspace selected', (
+    tester,
+  ) async {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('คลังหมวดหมู่'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('คลังคำศัพท์').last);
+    await tester.pumpAndSettle();
 
     expect(find.byType(CategoriesPage), findsOneWidget);
   });
@@ -135,7 +143,15 @@ void main() {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('ตั้งค่าเดิม'));
+    await tester.scrollUntilVisible(
+      find.text('ตั้งค่า'),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(find.text('ตั้งค่า'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 

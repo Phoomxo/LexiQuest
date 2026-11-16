@@ -1,0 +1,2496 @@
+﻿ชนิดหลักฐาน,ต้นทาง,ปลายทาง,การกระทำ,ที่มา
+Flutter,main,login_screen,named route,lib/main.dart:143
+Flutter,main,main_navigation_screen,named route,lib/main.dart:165
+Flutter,main,otp_screen,named route,lib/main.dart:168
+Flutter,main,login_screen,named route,lib/main.dart:176
+Flutter,app_route_factory,email_action_screen,route factory,lib/navigation/app_route_factory.dart:18
+Flutter,app_route_factory,login_screen,route factory,lib/navigation/app_route_factory.dart:22
+Flutter,app_route_factory,register_screen,route factory,lib/navigation/app_route_factory.dart:23
+Flutter,app_route_factory,main_navigation_screen,route factory,lib/navigation/app_route_factory.dart:24
+Flutter,app_route_factory,login_screen,route factory,lib/navigation/app_route_factory.dart:26
+Flutter,app_route_factory,login_screen,route factory,lib/navigation/app_route_factory.dart:33
+Flutter,app_route_factory,otp_screen,route factory,lib/navigation/app_route_factory.dart:35
+Flutter,ai_tutor_screen,gemini_settings_screen,จุดเรียก constructor,lib/screens/ai_tutor_screen.dart:494
+Flutter,ai_tutor_screen,choose_mode_screen,จุดเรียก constructor,lib/screens/ai_tutor_screen.dart:524
+Flutter,ai_tutor_screen,quiz_screen,จุดเรียก constructor,lib/screens/ai_tutor_screen.dart:592
+Flutter,ai_tutor_screen,device_permission_center_screen,จุดเรียก constructor,lib/screens/ai_tutor_screen.dart:877
+Flutter,avatar_equipment_screen,shop_page,จุดเรียก constructor,lib/screens/avatar_equipment_screen.dart:13
+Flutter,categories_page,vocab_list_screen,จุดเรียก constructor,lib/screens/categories_page.dart:96
+Flutter,cefr_selection_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/cefr_selection_screen.dart:205
+Flutter,choose_mode_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:158
+Flutter,choose_mode_screen,weakness_clinic_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:160
+Flutter,choose_mode_screen,quiz_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:165
+Flutter,choose_mode_screen,quiz_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:198
+Flutter,choose_mode_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:213
+Flutter,choose_mode_screen,mastery_dashboard_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:229
+Flutter,choose_mode_screen,weakness_clinic_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:242
+Flutter,choose_mode_screen,select_category_for_quiz,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:259
+Flutter,choose_mode_screen,quiz_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:265
+Flutter,choose_mode_screen,associative_reading_session_screen,จุดเรียก constructor,lib/screens/choose_mode_screen.dart:302
+Flutter,email_action_screen,login_screen,named route,lib/screens/email_action_screen.dart:227
+Flutter,ghost_shadow_duel_screen,weakness_clinic_screen,จุดเรียก constructor,lib/screens/ghost_shadow_duel_screen.dart:281
+Flutter,learning_world_map_screen,cefr_selection_screen,จุดเรียก constructor,lib/screens/learning_world_map_screen.dart:96
+Flutter,login_screen,main_navigation_screen,named route,lib/screens/login_screen.dart:109
+Flutter,login_screen,otp_screen,named route,lib/screens/login_screen.dart:113
+Flutter,login_screen,main_navigation_screen,named route,lib/screens/login_screen.dart:129
+Flutter,login_screen,register_screen,named route,lib/screens/login_screen.dart:352
+Flutter,main_navigation_screen,choose_mode_screen,แท็บใน shell,lib/screens/main_navigation_screen.dart:65
+Flutter,main_navigation_screen,categories_page,แท็บใน shell,lib/screens/main_navigation_screen.dart:75
+Flutter,main_navigation_screen,mastery_dashboard_screen,แท็บใน shell,lib/screens/main_navigation_screen.dart:82
+Flutter,main_navigation_screen,profile_settings_screen,แท็บใน shell,lib/screens/main_navigation_screen.dart:91
+Flutter,main_navigation_screen,shop_page,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:226
+Flutter,main_navigation_screen,object_scanner_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:238
+Flutter,main_navigation_screen,object_scanner_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:242
+Flutter,main_navigation_screen,shadowing_challenge_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:255
+Flutter,main_navigation_screen,shadowing_challenge_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:259
+Flutter,main_navigation_screen,ghost_shadow_duel_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:268
+Flutter,main_navigation_screen,ai_tutor_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:281
+Flutter,main_navigation_screen,gemini_settings_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:285
+Flutter,main_navigation_screen,export_center_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:296
+Flutter,main_navigation_screen,setting_screen,จุดเรียก constructor,lib/screens/main_navigation_screen.dart:303
+Flutter,mastery_dashboard_screen,weakness_clinic_screen,จุดเรียก constructor,lib/screens/mastery_dashboard_screen.dart:170
+Flutter,mastery_dashboard_screen,achievements_screen,จุดเรียก constructor,lib/screens/mastery_dashboard_screen.dart:185
+Flutter,mastery_dashboard_screen,shop_page,จุดเรียก constructor,lib/screens/mastery_dashboard_screen.dart:193
+Flutter,object_scanner_screen,device_permission_center_screen,จุดเรียก constructor,lib/screens/object_scanner_screen.dart:393
+Flutter,otp_screen,main_navigation_screen,named route,lib/screens/otp_screen.dart:44
+Flutter,quiz_screen,score_screen,จุดเรียก constructor,lib/screens/quiz_screen.dart:358
+Flutter,register_screen,otp_screen,named route,lib/screens/register_screen.dart:109
+Flutter,result_screen,main_navigation_screen,named route,lib/screens/result_screen.dart:35
+Flutter,select_wallpaper_screen,shop_page,จุดเรียก constructor,lib/screens/select_wallpaper_screen.dart:13
+Flutter,setting_screen,login_screen,named route,lib/screens/setting_screen.dart:344
+Flutter,setting_screen,appearance_settings_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:691
+Flutter,setting_screen,account_deletion_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:867
+Flutter,setting_screen,export_center_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:885
+Flutter,setting_screen,gemini_settings_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:898
+Flutter,setting_screen,device_permission_center_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:919
+Flutter,setting_screen,shadowing_challenge_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:933
+Flutter,setting_screen,object_scanner_screen,จุดเรียก constructor,lib/screens/setting_screen.dart:947
+Flutter,shadowing_challenge_screen,device_permission_center_screen,จุดเรียก constructor,lib/screens/shadowing_challenge_screen.dart:354
+Flutter,source_practice_screen,associative_reading_session_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:369
+Flutter,source_practice_screen,quiz_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:403
+Flutter,source_practice_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:431
+Flutter,source_practice_screen,score_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:610
+Flutter,source_practice_screen,quiz_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:645
+Flutter,source_practice_screen,speak_to_text_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:757
+Flutter,source_practice_screen,score_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:823
+Flutter,source_practice_screen,quiz_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:862
+Flutter,source_practice_screen,ai_tutor_screen,จุดเรียก constructor,lib/screens/source_practice_screen.dart:966
+Flutter,speak_to_text_screen,device_permission_center_screen,จุดเรียก constructor,lib/screens/speak_to_text_screen.dart:591
+Flutter,speak_to_text_screen,word_scramble_screen,จุดเรียก constructor,lib/screens/speak_to_text_screen.dart:659
+Flutter,vocab_list_screen,source_practice_screen,จุดเรียก constructor,lib/screens/vocab_list_screen.dart:89
+Flutter,vocab_list_screen,add_multiple_words_screen,จุดเรียก constructor,lib/screens/vocab_list_screen.dart:112
+Flutter,vocab_list_screen,add_vocab_screen,จุดเรียก constructor,lib/screens/vocab_list_screen.dart:225
+Flutter,weakness_clinic_screen,quiz_screen,จุดเรียก constructor,lib/screens/weakness_clinic_screen.dart:178
+Flutter,weakness_clinic_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/weakness_clinic_screen.dart:201
+Flutter,word_scramble_screen,fill_in_the_blanks_screen,จุดเรียก constructor,lib/screens/word_scramble_screen.dart:61
+Flutter,wordbook_import_screen,srs_flashcards_screen,จุดเรียก constructor,lib/screens/wordbook_import_screen.dart:173
+FigCraft,choose_mode_screen,_today_jobs_done,งานที่ได้รับ,ทำงานที่ได้รับแล้ว
+FigCraft,choose_mode_screen,_today_jobs,งานที่ได้รับ,ยังไม่ได้ทำงานที่ได้รับ
+FigCraft,choose_mode_screen,srs_flashcards_screen,ทบทวนคำนี้,onClick → navigate
+FigCraft,choose_mode_screen,select_category_for_quiz,ฝึกจากชุดคำ,onClick → navigate
+FigCraft,choose_mode_screen,cefr_article_reader_screen,อ่านเรื่องนัดกันที่สถานี,onClick → navigate
+FigCraft,choose_mode_screen,main_navigation_screen,ดูแบบฝึกทั้งหมด,onClick → navigate
+FigCraft,choose_mode_screen,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,choose_mode_screen,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,choose_mode_screen,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,choose_mode_screen,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,choose_mode_screen,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,choose_mode_screen,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,choose_mode_screen,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,main_navigation_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,main_navigation_screen,select_category_for_quiz,คำและความหมาย,onClick → navigate
+FigCraft,main_navigation_screen,cefr_selection_screen,อ่านและแต่งประโยค,onClick → navigate
+FigCraft,main_navigation_screen,_listening,ฟังและพูด,onClick → navigate
+FigCraft,main_navigation_screen,_word_games,เกมฝึกคำ,onClick → navigate
+FigCraft,main_navigation_screen,source_practice_screen,ฝึกจากข้อความของฉัน,onClick → navigate
+FigCraft,select_category_for_quiz,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,select_category_for_quiz,quiz_screen,การเดินทาง,onClick → navigate
+FigCraft,select_category_for_quiz,_travel_q1,ลองฝึกทั้งชุด,onClick → navigate
+FigCraft,select_category_for_quiz,weakness_clinic_screen,คำที่ยังสับสน,onClick → navigate
+FigCraft,select_category_for_quiz,categories_page,จัดชุดคำของฉัน,onClick → navigate
+FigCraft,select_category_for_quiz,_setup_round,ตั้งค่าก่อนฝึก,onClick → navigate
+FigCraft,select_category_for_quiz,_exam_planned,เลือกรูปแบบโจทย์,onClick → navigate
+FigCraft,quiz_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,quiz_screen,_quiz_station,สถานี,onClick → navigate
+FigCraft,quiz_screen,_quiz_right,ชานชาลา,onClick → navigate
+FigCraft,quiz_screen,_quiz_ticket,ตั๋ว,onClick → navigate
+FigCraft,_quiz_right,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quiz_right,_score_right,ดูผลการฝึก,onClick → navigate
+FigCraft,score_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,score_screen,weakness_clinic_screen,ดูคำที่ยังสับสน,onClick → navigate
+FigCraft,score_screen,fill_in_the_blanks_screen,ฝึกคำนี้อีกครั้ง,onClick → navigate
+FigCraft,score_screen,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,score_screen,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,score_screen,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,score_screen,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_score_right,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_score_right,fill_in_the_blanks_screen,ลองเติมคำในประโยค,onClick → navigate
+FigCraft,_score_right,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_score_right,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_score_right,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_score_right,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,srs_flashcards_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,srs_flashcards_screen,_card_reveal,ดูคำแปล,onClick → navigate
+FigCraft,_card_reveal,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_card_reveal,_card_remembered,จำได้แล้ว,onClick → navigate
+FigCraft,_card_reveal,_card_again,ยังจำไม่ได้,onClick → navigate
+FigCraft,_card_remembered,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_card_remembered,fill_in_the_blanks_screen,ลองใช้ในประโยค,onClick → navigate
+FigCraft,_card_remembered,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_card_remembered,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_card_remembered,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_card_remembered,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_card_again,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_card_again,fill_in_the_blanks_screen,ลองเติมคำนี้ในประโยค,onClick → navigate
+FigCraft,_card_again,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_card_again,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_card_again,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_card_again,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_card_again,_friend_recall,ดูคำใบ้จากเพื่อนฝึก,onClick → navigate
+FigCraft,weakness_clinic_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,weakness_clinic_screen,fill_in_the_blanks_screen,ลองเติมคำนี้ในประโยค,onClick → navigate
+FigCraft,weakness_clinic_screen,ai_tutor_screen,ถามผู้ช่วยเรื่องคำนี้,onClick → navigate
+FigCraft,mastery_dashboard_screen,weakness_clinic_screen,คำที่ยังสับสน,onClick → navigate
+FigCraft,mastery_dashboard_screen,_history,ประวัติการฝึก,onClick → navigate
+FigCraft,mastery_dashboard_screen,achievements_screen,ของสะสม,onClick → navigate
+FigCraft,mastery_dashboard_screen,_plan_studio,วางแผนการฝึก,onClick → navigate
+FigCraft,mastery_dashboard_screen,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,mastery_dashboard_screen,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,mastery_dashboard_screen,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,mastery_dashboard_screen,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,mastery_dashboard_screen,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,mastery_dashboard_screen,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,mastery_dashboard_screen,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,_history,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history,_history_today,วันนี้ · เลือกความหมาย,onClick → navigate
+FigCraft,_history,_history_yesterday,เมื่อวาน · เลือกความหมาย,onClick → navigate
+FigCraft,_history,_history_prior,3 วันก่อน · เลือกความหมาย,onClick → navigate
+FigCraft,_history,_chart_history,ดูตัวอย่างกราฟ,onClick → navigate
+FigCraft,_history,mastery_dashboard_screen,กลับไปดูความก้าวหน้า,onClick → navigate
+FigCraft,cefr_selection_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,cefr_selection_screen,learning_world_map_screen,เลือกคำตามระดับ,onClick → navigate
+FigCraft,cefr_selection_screen,cefr_diagnostic_test_screen,ลองตอบก่อนเลือกระดับ,onClick → navigate
+FigCraft,cefr_selection_screen,_easy_reading,ซื้อตั๋วรถไฟ,onClick → navigate
+FigCraft,cefr_selection_screen,_article_from_lesson,นัดกันที่สถานี,onClick → navigate
+FigCraft,cefr_selection_screen,main_navigation_screen,กลับไปเลือกวิธีฝึก,onClick → navigate
+FigCraft,_easy_reading,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_easy_reading,_article_from_easy,ลองอ่านอีกเรื่อง,onClick → navigate
+FigCraft,_easy_reading,cefr_selection_screen,เลือกบทอ่านอื่น,onClick → navigate
+FigCraft,cefr_article_reader_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,cefr_article_reader_screen,_article_term,ดูความหมายของ platform,onClick → navigate
+FigCraft,cefr_article_reader_screen,associative_reading_session_screen,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,associative_reading_session_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,associative_reading_session_screen,_reading_write,platform,onClick → navigate
+FigCraft,associative_reading_session_screen,_reading_hint,ticket,onClick → navigate
+FigCraft,_reading_hint,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint,associative_reading_session_screen,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write,_reading_done,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done,cefr_selection_screen,อ่านเรื่องอื่น,onClick → navigate
+FigCraft,_reading_done,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,cefr_diagnostic_test_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,cefr_diagnostic_test_screen,_diag_q2_0,กล้วย,onClick → navigate
+FigCraft,cefr_diagnostic_test_screen,_diag_q2_1,แอปเปิล,onClick → navigate
+FigCraft,cefr_diagnostic_test_screen,_diag_q2_0,ส้ม,onClick → navigate
+FigCraft,cefr_diagnostic_test_screen,_diag_q2_0,มะม่วง,onClick → navigate
+FigCraft,cefr_diagnostic_test_screen,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_suggest_a2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_suggest_a2,_article_from_suggest,เริ่มอ่านเรื่องนี้,onClick → navigate
+FigCraft,_suggest_a2,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_suggest_a1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_suggest_a1,_easy_reading,เริ่มอ่านเรื่องนี้,onClick → navigate
+FigCraft,_suggest_a1,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,learning_world_map_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,learning_world_map_screen,_cefr_a1,A1 · คำในชีวิตประจำวัน,onClick → navigate
+FigCraft,learning_world_map_screen,_cefr_a2,A2 · การเดินทาง,onClick → navigate
+FigCraft,learning_world_map_screen,_cefr_b1,B1 · การทำงาน,onClick → navigate
+FigCraft,learning_world_map_screen,_cefr_b2,B2 · วิทยาศาสตร์,onClick → navigate
+FigCraft,learning_world_map_screen,_cefr_c1,C1 · การทำงาน,onClick → navigate
+FigCraft,learning_world_map_screen,_cefr_c2,C2 · ปรัชญา,onClick → navigate
+FigCraft,learning_world_map_screen,cefr_selection_screen,กลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,fill_in_the_blanks_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,fill_in_the_blanks_screen,_fill_right,platform,onClick → navigate
+FigCraft,fill_in_the_blanks_screen,_fill_wrong,ticket,onClick → navigate
+FigCraft,_fill_right,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_fill_right,_sentence_start_fill,เรียงประโยคด้วยตัวเอง,onClick → navigate
+FigCraft,_fill_right,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_fill_right,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_fill_right,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_fill_right,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_fill_wrong,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_fill_wrong,fill_in_the_blanks_screen,ลองตอบอีกครั้ง,onClick → navigate
+FigCraft,_listening,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_listening,_listen_choose_set,ฟังชุดคำ,onClick → navigate
+FigCraft,_listening,_dict_start_listen,เขียนตามเสียง,onClick → navigate
+FigCraft,_listening,shadowing_challenge_screen,พูดตามประโยค,onClick → navigate
+FigCraft,_listening,_ipa_hub,ฝึกเสียงทีละคำ,onClick → navigate
+FigCraft,_word_games,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_word_games,word_scramble_screen,เรียงตัวอักษร,onClick → navigate
+FigCraft,_word_games,sentence_scramble_screen,เรียงประโยค,onClick → navigate
+FigCraft,_word_games,ghost_shadow_duel_screen,ท้าสถิติของฉัน,onClick → navigate
+FigCraft,_word_games,boss_battle_screen,ด่านสะกดคำ,onClick → navigate
+FigCraft,_word_games,main_navigation_screen,กลับไปเลือกวิธีฝึก,onClick → navigate
+FigCraft,word_scramble_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,word_scramble_screen,_spell_done,t,onClick → navigate
+FigCraft,word_scramble_screen,_spell_retry,s,onClick → navigate
+FigCraft,_spell_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_spell_done,_sentence_start_spell,ลองเรียงประโยค,onClick → navigate
+FigCraft,_spell_done,_word_games,เลือกเกมอื่น,onClick → navigate
+FigCraft,_spell_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_spell_retry,word_scramble_screen,กลับไปเติมตัวอักษร,onClick → navigate
+FigCraft,sentence_scramble_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,sentence_scramble_screen,_arrange_ticket,ticket,onClick → navigate
+FigCraft,sentence_scramble_screen,_arrange_a,a,onClick → navigate
+FigCraft,sentence_scramble_screen,_word_games,ออกจากแบบฝึก,onClick → navigate
+FigCraft,_sentence_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_done,_word_games,เลือกเกมอื่น,onClick → navigate
+FigCraft,_sentence_done,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_sentence_done,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_sentence_done,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_sentence_done,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_sentence_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_retry,sentence_scramble_screen,กลับไปเรียงใหม่,onClick → navigate
+FigCraft,_sentence_retry,_word_games,กลับไปที่เกมฝึกคำ,onClick → navigate
+FigCraft,ghost_shadow_duel_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,ghost_shadow_duel_screen,_duel_win,ตรวจคำสะกด,onClick → navigate
+FigCraft,ghost_shadow_duel_screen,_duel_spelling_typo,สลับคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_duel_win,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_duel_win,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_duel_win,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_duel_win,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_duel_win,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_duel_win,_word_games,กลับไปเลือกเกม,onClick → navigate
+FigCraft,_duel_same,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_duel_same,ghost_shadow_duel_screen,ลองสะกดอีกครั้ง,onClick → navigate
+FigCraft,boss_battle_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,boss_battle_screen,_boss_first_typo,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,boss_battle_screen,_boss_second,ส่งคำตอบ,onClick → navigate
+FigCraft,boss_battle_screen,_boss_leave_1,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_retry,_boss_final,แก้คำตอบ,onClick → navigate
+FigCraft,_boss_retry,_boss_leave_3,ออกจากด่าน,onClick → navigate
+FigCraft,result_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,result_screen,_boss_word_review,ทวนคำสุดท้าย,onClick → navigate
+FigCraft,result_screen,_word_games,เลือกเกมอื่น,onClick → navigate
+FigCraft,result_screen,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,result_screen,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,result_screen,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,result_screen,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_quiz_station,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quiz_station,score_screen,ดูผลการฝึก,onClick → navigate
+FigCraft,_quiz_ticket,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quiz_ticket,score_screen,ดูผลการฝึก,onClick → navigate
+FigCraft,categories_page,_add_to_library,เพิ่มคำ,onClick → navigate
+FigCraft,categories_page,_search_library,ค้นหาคำในคลัง,onClick → navigate
+FigCraft,categories_page,vocab_list_screen,เปิดชุดการเดินทาง,onClick → navigate
+FigCraft,categories_page,_scan_collection,เปิดชุดของใช้ในครัว,เก็บคำว่า cup แล้ว
+FigCraft,categories_page,_kitchen_empty,เปิดชุดของใช้ในครัว,ยังไม่ได้เก็บ cup
+FigCraft,categories_page,_packs,เลือกชุดคำศัพท์,onClick → navigate
+FigCraft,categories_page,_review_desk,ทบทวนคำศัพท์,onClick → navigate
+FigCraft,categories_page,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,categories_page,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,categories_page,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,categories_page,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,categories_page,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,categories_page,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,categories_page,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,vocab_list_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,vocab_list_screen,_word_search,ค้นหาในชุดนี้,onClick → navigate
+FigCraft,vocab_list_screen,_word,station,onClick → navigate
+FigCraft,vocab_list_screen,_platform,platform,onClick → navigate
+FigCraft,vocab_list_screen,_ticket,ticket,onClick → navigate
+FigCraft,vocab_list_screen,smart_audio_playlist_screen,ฟังคำในชุดนี้,onClick → navigate
+FigCraft,vocab_list_screen,add_vocab_screen,เพิ่มคำในชุด,onClick → navigate
+FigCraft,vocab_list_screen,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_word_search,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_word_search,_word,station,onClick → navigate
+FigCraft,_word_search,vocab_list_screen,แสดงทั้งชุด,onClick → navigate
+FigCraft,_word,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_word,_word_tools,จัดการคำนี้,onClick → navigate
+FigCraft,_word,phonetic_explorer_screen,ฟังและฝึกพูด,onClick → navigate
+FigCraft,_word,ai_tutor_screen,ถามผู้ช่วยเรื่องคำนี้,onClick → navigate
+FigCraft,_word,_station_details,ดูระดับคำและคำใกล้เคียง,onClick → navigate
+FigCraft,_word,dictation_quiz_screen,ฝึกฟังแล้วเขียน,onClick → navigate
+FigCraft,_platform,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_platform,_word,ดูคำที่มักสับสน,onClick → navigate
+FigCraft,_platform,vocab_list_screen,กลับไปดูชุดคำ,onClick → navigate
+FigCraft,_ticket,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ticket,vocab_list_screen,กลับไปดูชุดคำ,onClick → navigate
+FigCraft,add_vocab_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,add_vocab_screen,add_multiple_words_screen,มีหลายคำอยู่ในไฟล์เดียว,onClick → navigate
+FigCraft,add_vocab_screen,_suitcase,เก็บคำนี้,onClick → navigate
+FigCraft,_suitcase,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_suitcase,_library_added,ดูชุดคำที่อัปเดต,onClick → navigate
+FigCraft,_library_added,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_library_added,_suitcase,suitcase,onClick → navigate
+FigCraft,_library_added,_word,station,onClick → navigate
+FigCraft,_library_added,_platform,platform,onClick → navigate
+FigCraft,_library_added,_ticket,ticket,onClick → navigate
+FigCraft,_library_added,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,wordbook_import_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,wordbook_import_screen,add_multiple_words_screen,เพิ่มคำจากตารางเข้าคลัง,onClick → navigate
+FigCraft,wordbook_import_screen,_paste_words,วางคำจากตาราง,onClick → navigate
+FigCraft,wordbook_import_screen,_import_json,ฝึกจากรายการ JSON,onClick → navigate
+FigCraft,wordbook_import_screen,_import_json_bad,ลองไฟล์ที่รูปแบบผิด,onClick → navigate
+FigCraft,wordbook_import_screen,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_paste_words,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_paste_words,_import_ready,ตรวจ 2 รายการ,onClick → navigate
+FigCraft,add_multiple_words_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,add_multiple_words_screen,_import_edit,aisle,onClick → navigate
+FigCraft,add_multiple_words_screen,_import_edit,เติมคำแปลที่ขาด,onClick → navigate
+FigCraft,_import_edit,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_edit,_import_ready,ใช้คำแปลนี้,onClick → navigate
+FigCraft,_import_ready,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_ready,_import_edit,aisle,onClick → navigate
+FigCraft,_import_ready,_import_done,เพิ่ม 2 คำเข้าคลัง,onClick → navigate
+FigCraft,_import_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_done,_library_imported,ดูคำทั้ง 5 คำ,onClick → navigate
+FigCraft,_library_imported,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_library_imported,_word,station,onClick → navigate
+FigCraft,_library_imported,_platform,platform,onClick → navigate
+FigCraft,_library_imported,_ticket,ticket,onClick → navigate
+FigCraft,_library_imported,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,source_practice_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,source_practice_screen,_word,station,onClick → navigate
+FigCraft,source_practice_screen,_ticket,ticket,onClick → navigate
+FigCraft,source_practice_screen,_source_choices,ใช้ข้อความนี้ฝึก,onClick → navigate
+FigCraft,_source_choices,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_choices,_source_q1,เลือกความหมาย,onClick → navigate
+FigCraft,_source_choices,_source_read,อ่านแล้วลองนึกคำ,onClick → navigate
+FigCraft,_source_choices,_dict_start_source,ฟังแล้วเขียน,onClick → navigate
+FigCraft,_source_choices,speak_to_text_screen,พูดคำศัพท์,onClick → navigate
+FigCraft,_source_choices,ai_tutor_screen,ถามเรื่องการใช้คำ,onClick → navigate
+FigCraft,object_scanner_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,object_scanner_screen,_scan_permission,ลองสแกนถ้วย,onClick → navigate
+FigCraft,object_scanner_screen,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,object_scanner_screen,_scan_examples,ลองสถานการณ์อื่น,onClick → navigate
+FigCraft,_scan_result,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_result,_scan_audio,ฟังการออกเสียง,onClick → navigate
+FigCraft,_scan_result,_scan_saved,เก็บคำว่า cup,onClick → navigate
+FigCraft,_scan_result,_scan_ready,ถ่ายใหม่,onClick → navigate
+FigCraft,ai_tutor_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,ai_tutor_screen,_word,ดูคำว่า station,onClick → navigate
+FigCraft,ai_tutor_screen,_tutor_reply,ส่งคำถามตัวอย่าง,onClick → navigate
+FigCraft,_tutor_reply,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_tutor_reply,_word,ดูคำว่า station,onClick → navigate
+FigCraft,_tutor_reply,_platform,เปิดคำว่า platform,onClick → navigate
+FigCraft,dictation_quiz_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,dictation_quiz_screen,_dict_hint,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,dictation_quiz_screen,_dict_play,ดูตัวอย่างการฟัง,onClick → navigate
+FigCraft,dictation_quiz_screen,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_play,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_play,_dict_slow,ฟังช้าลง,onClick → navigate
+FigCraft,_dict_play,_dict_hint,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_play,_dict_write,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_play,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_hint,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_hint,_dict_write,ลองเขียนคำ,onClick → navigate
+FigCraft,_dict_hint,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_feedback,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_feedback,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_feedback,dictation_quiz_screen,ลองฟังคำนี้อีกครั้ง,onClick → navigate
+FigCraft,phonetic_explorer_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,phonetic_explorer_screen,speak_to_text_screen,ฝึกพูดเฉพาะคำ,onClick → navigate
+FigCraft,phonetic_explorer_screen,shadowing_challenge_screen,ฝึกพูดทั้งประโยค,onClick → navigate
+FigCraft,phonetic_explorer_screen,_phonetic_play,ลองเสียง /ʃ/ ในคำว่า she,onClick → navigate
+FigCraft,phonetic_explorer_screen,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_phonetic_play,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_phonetic_play,_ipa_read,เมื่อเปิดเสียงไม่ได้,onClick → navigate
+FigCraft,_phonetic_play,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_phonetic_play,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,smart_audio_playlist_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,smart_audio_playlist_screen,_playlist_play,เริ่มฟังชุดคำ,onClick → navigate
+FigCraft,smart_audio_playlist_screen,_word,เปิดคำแรก,onClick → navigate
+FigCraft,_playlist_play,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_play,_playlist_next,platform,onClick → navigate
+FigCraft,_playlist_play,_playlist_next,ฟังคำถัดไป,onClick → navigate
+FigCraft,_playlist_play,_playlist_stopped_1,หยุดฟัง,onClick → navigate
+FigCraft,_playlist_next,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_next,_playlist_last,ticket,onClick → navigate
+FigCraft,_playlist_next,_playlist_last,ฟังคำถัดไป,onClick → navigate
+FigCraft,_playlist_next,_playlist_stopped_2,หยุดฟัง,onClick → navigate
+FigCraft,_playlist_last,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_last,_playlist_finished,จบการฟังชุดนี้,onClick → navigate
+FigCraft,_playlist_last,_playlist_play,ฟังตั้งแต่คำแรก,onClick → navigate
+FigCraft,shadowing_challenge_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,shadowing_challenge_screen,_shadow_live,ลองพูดตาม,onClick → navigate
+FigCraft,shadowing_challenge_screen,_word,ฝึกอ่านในใจ,onClick → navigate
+FigCraft,_shadow_live,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_shadow_live,_shadow_done,หยุดและดูข้อความ,onClick → navigate
+FigCraft,_shadow_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_shadow_done,_shadow_live,ลองอีกครั้ง,onClick → navigate
+FigCraft,_shadow_done,_word,กลับไปดูคำศัพท์,onClick → navigate
+FigCraft,_shadow_done,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,speak_to_text_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,speak_to_text_screen,_speech_live,เริ่มพูด,onClick → navigate
+FigCraft,speak_to_text_screen,_ipa_no_mic,ฝึกโดยไม่ใช้ไมค์,onClick → navigate
+FigCraft,_speech_live,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_speech_live,_speech_review,หยุดและดูข้อความ,onClick → navigate
+FigCraft,_speech_review,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_speech_review,_word,ตรงแล้ว กลับไปดูคำ,onClick → navigate
+FigCraft,_speech_review,_speech_live,ลองพูดอีกครั้ง,onClick → navigate
+FigCraft,profile_settings_screen,login_screen,เข้าสู่ระบบหรือสร้างบัญชี,onClick → navigate
+FigCraft,profile_settings_screen,_account_data,ข้อมูลของฉัน,onClick → navigate
+FigCraft,profile_settings_screen,setting_screen,ตั้งค่า,onClick → navigate
+FigCraft,profile_settings_screen,achievements_screen,ของสะสม,onClick → navigate
+FigCraft,profile_settings_screen,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,profile_settings_screen,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,profile_settings_screen,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,profile_settings_screen,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,profile_settings_screen,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,profile_settings_screen,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,profile_settings_screen,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,login_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,login_screen,_password_link,ลืมรหัสผ่าน,onClick → navigate
+FigCraft,login_screen,register_screen,ยังไม่มีบัญชี,onClick → navigate
+FigCraft,login_screen,_account_signed_in,เข้าสู่ระบบด้วยบัญชีตัวอย่าง,onClick → navigate
+FigCraft,login_screen,_home_after_both,เรียนต่อโดยไม่ใช้บัญชี,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,login_screen,_today_after_assignment,เรียนต่อโดยไม่ใช้บัญชี,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,login_screen,_home_after_review,เรียนต่อโดยไม่ใช้บัญชี,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,login_screen,choose_mode_screen,เรียนต่อโดยไม่ใช้บัญชี,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_account_signed_in,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_account_signed_in,_account_data,ข้อมูลของฉัน,onClick → navigate
+FigCraft,_account_signed_in,achievements_screen,ของสะสม,onClick → navigate
+FigCraft,_account_signed_in,_plan_preferences,ตั้งวิธีเรียนครั้งแรก,onClick → navigate
+FigCraft,_account_signed_in,_home_after_both,ไปหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_account_signed_in,_today_after_assignment,ไปหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_account_signed_in,_home_after_review,ไปหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_account_signed_in,choose_mode_screen,ไปหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_password_link,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_password_link,_mail_reset_sent,ขอลิงก์ใหม่ในตัวอย่าง,onClick → navigate
+FigCraft,_password_link,login_screen,กลับไปเข้าสู่ระบบ,onClick → navigate
+FigCraft,register_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,register_screen,_register_terms,ความเป็นส่วนตัวและเงื่อนไข,onClick → navigate
+FigCraft,register_screen,_register_terms,อ่านเงื่อนไขก่อนสมัคร,onClick → navigate
+FigCraft,_register_terms,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_register_terms,otp_screen,ดูขั้นตอนยืนยันอีเมล,onClick → navigate
+FigCraft,_register_terms,register_screen,แก้ไขข้อมูลสมัคร,onClick → navigate
+FigCraft,otp_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,otp_screen,email_action_screen,ลิงก์ใช้ไม่ได้,onClick → navigate
+FigCraft,otp_screen,login_screen,กลับไปเข้าสู่ระบบ,onClick → navigate
+FigCraft,otp_screen,register_screen,ตรวจที่อยู่อีเมล,onClick → navigate
+FigCraft,otp_screen,_mail_verified,ลองเปิดลิงก์ยืนยัน,onClick → navigate
+FigCraft,email_action_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,email_action_screen,otp_screen,ยืนยันอีเมล,onClick → navigate
+FigCraft,email_action_screen,_password_link,ตั้งรหัสผ่านใหม่,onClick → navigate
+FigCraft,email_action_screen,login_screen,กลับไปเข้าสู่ระบบ,onClick → navigate
+FigCraft,setting_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,setting_screen,appearance_settings_screen,การแสดงผล,onClick → navigate
+FigCraft,setting_screen,device_permission_center_screen,กล้องและไมโครโฟน,onClick → navigate
+FigCraft,setting_screen,gemini_settings_screen,ผู้ช่วยฝึกภาษา,onClick → navigate
+FigCraft,setting_screen,_account_data,ข้อมูลและความเป็นส่วนตัว,onClick → navigate
+FigCraft,setting_screen,_local_status,ข้อมูลในเครื่อง,onClick → navigate
+FigCraft,setting_screen,_research_choice,การเข้าร่วมวิจัย,onClick → navigate
+FigCraft,device_permission_center_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,device_permission_center_screen,_camera_permission,กล้อง,onClick → navigate
+FigCraft,device_permission_center_screen,_mic_permission,ไมโครโฟน,onClick → navigate
+FigCraft,device_permission_center_screen,_home_after_both,กลับไปฝึกคำ,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,device_permission_center_screen,_today_after_assignment,กลับไปฝึกคำ,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,device_permission_center_screen,_home_after_review,กลับไปฝึกคำ,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,device_permission_center_screen,choose_mode_screen,กลับไปฝึกคำ,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_camera_permission,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_camera_permission,object_scanner_screen,ดูขั้นตอนสแกน,onClick → navigate
+FigCraft,_camera_permission,add_vocab_screen,พิมพ์คำเอง,onClick → navigate
+FigCraft,_mic_permission,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_mic_permission,speak_to_text_screen,ดูขั้นตอนฝึกพูด,onClick → navigate
+FigCraft,_mic_permission,_dict_start_mic,ฝึกฟังแทน,onClick → navigate
+FigCraft,gemini_settings_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,gemini_settings_screen,_assistant_data,ข้อความที่ส่งให้ผู้ช่วย,onClick → navigate
+FigCraft,gemini_settings_screen,_assistant_summary,สรุปผลการฝึก,onClick → navigate
+FigCraft,gemini_settings_screen,_home_after_both,ฝึกคำโดยไม่ใช้ผู้ช่วย,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,gemini_settings_screen,_today_after_assignment,ฝึกคำโดยไม่ใช้ผู้ช่วย,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,gemini_settings_screen,_home_after_review,ฝึกคำโดยไม่ใช้ผู้ช่วย,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,gemini_settings_screen,choose_mode_screen,ฝึกคำโดยไม่ใช้ผู้ช่วย,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_assistant_data,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_assistant_data,ai_tutor_screen,ดูหน้าสนทนาตัวอย่าง,onClick → navigate
+FigCraft,_assistant_data,gemini_settings_screen,กลับไปตั้งค่า,onClick → navigate
+FigCraft,_assistant_summary,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_assistant_summary,gemini_settings_screen,กลับไปตั้งค่าผู้ช่วย,onClick → navigate
+FigCraft,_account_data,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_account_data,export_center_screen,บันทึกสำเนาข้อมูล,onClick → navigate
+FigCraft,_account_data,thesis_chart_screen,ข้อมูลสำหรับงานวิจัย,onClick → navigate
+FigCraft,_account_data,account_deletion_screen,ลบบัญชีและข้อมูล,onClick → navigate
+FigCraft,export_center_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,export_center_screen,_export_words,เฉพาะคลังคำ,onClick → navigate
+FigCraft,export_center_screen,_export_history,คลังคำพร้อมประวัติการฝึก,onClick → navigate
+FigCraft,_export_words,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_export_words,_export_words_ready,ดูตัวอย่างสำเนา,onClick → navigate
+FigCraft,_export_words,export_center_screen,เปลี่ยนรายการ,onClick → navigate
+FigCraft,_export_words,_account_data,กลับไปข้อมูลของฉัน,onClick → navigate
+FigCraft,_export_history,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_export_history,_export_history_ready,ดูตัวอย่างสำเนา,onClick → navigate
+FigCraft,_export_history,export_center_screen,เปลี่ยนรายการ,onClick → navigate
+FigCraft,_export_history,_account_data,กลับไปข้อมูลของฉัน,onClick → navigate
+FigCraft,account_deletion_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,account_deletion_screen,_delete_review,ขั้นตอนถัดไป,onClick → navigate
+FigCraft,account_deletion_screen,export_center_screen,บันทึกสำเนาข้อมูลก่อน,onClick → navigate
+FigCraft,account_deletion_screen,_account_data,เก็บบัญชีไว้,onClick → navigate
+FigCraft,_delete_review,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_delete_review,_account_data,เก็บบัญชีไว้,onClick → navigate
+FigCraft,_delete_review,account_deletion_screen,กลับไปอ่านผลกระทบ,onClick → navigate
+FigCraft,thesis_chart_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,thesis_chart_screen,_chart_account_read,เวลาในการตอบ,onClick → navigate
+FigCraft,thesis_chart_screen,_chart_account_scope,ข้อมูลนี้มาจากไหน,onClick → navigate
+FigCraft,thesis_chart_screen,_account_data,กลับไปที่ข้อมูลของฉัน,onClick → navigate
+FigCraft,appearance_settings_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,appearance_settings_screen,_appearance_dark,ลองโหมดมืด,onClick → navigate
+FigCraft,appearance_settings_screen,select_wallpaper_screen,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,appearance_settings_screen,_display_system,สีตามอุปกรณ์และภาพเคลื่อนไหว,onClick → navigate
+FigCraft,appearance_settings_screen,_plan_access,ข้อความและวิธีตอบ,onClick → navigate
+FigCraft,appearance_settings_screen,setting_screen,กลับไปตั้งค่า,onClick → navigate
+FigCraft,_appearance_dark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_appearance_dark,appearance_settings_screen,ดูโหมดสว่าง,onClick → navigate
+FigCraft,select_wallpaper_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,select_wallpaper_screen,_wall_focus_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,select_wallpaper_screen,shop_page,ร้านของตกแต่ง,onClick → navigate
+FigCraft,select_wallpaper_screen,appearance_settings_screen,กลับไปที่การแสดงผล,onClick → navigate
+FigCraft,_wallpaper_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wallpaper_preview,_wall_shop_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wallpaper_preview,shop_page,กลับไปที่ร้าน,onClick → navigate
+FigCraft,achievements_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,achievements_screen,avatar_equipment_screen,ของตกแต่งของฉัน,onClick → navigate
+FigCraft,achievements_screen,shop_page,ไปที่ร้านของตกแต่ง,onClick → navigate
+FigCraft,achievements_screen,_badge_detail,ดูวันที่ได้รับและเงื่อนไข,onClick → navigate
+FigCraft,avatar_equipment_screen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,avatar_equipment_screen,_hat_preview,หมวกนักออกเสียง,onClick → navigate
+FigCraft,avatar_equipment_screen,_wall_avatar,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,avatar_equipment_screen,achievements_screen,กลับไปดูของสะสม,onClick → navigate
+FigCraft,shop_page,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,shop_page,_wallpaper_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,shop_page,_equipment_from_shop,หมวกนักออกเสียง,onClick → navigate
+FigCraft,shop_page,_home_after_both,กลับไปฝึกคำ,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,shop_page,_today_after_assignment,กลับไปฝึกคำ,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,shop_page,_home_after_review,กลับไปฝึกคำ,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,shop_page,choose_mode_screen,กลับไปฝึกคำ,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,shop_page,_ocean_try,ลองธีมมหาสมุทร · 80 เหรียญ,onClick → navigate
+FigCraft,_travel_f10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f10,_travel_q20,ไปข้อถัดไป,onClick → navigate
+FigCraft,_travel_f11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f11,_travel_q21,ไปข้อถัดไป,onClick → navigate
+FigCraft,_travel_q1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q1,_travel_f10,ชานชาลา,onClick → navigate
+FigCraft,_travel_q1,_travel_f11,สถานี,onClick → navigate
+FigCraft,_travel_f200,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f200,_travel_done00,ดูผลการฝึก,onClick → navigate
+FigCraft,_travel_f201,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f201,_travel_done01,ดูผลการฝึก,onClick → navigate
+FigCraft,_travel_q20,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q20,_travel_f200,สถานี,onClick → navigate
+FigCraft,_travel_q20,_travel_f201,ชานชาลา,onClick → navigate
+FigCraft,_travel_q20,_travel_q20_pause,พักรอบนี้,onClick → navigate
+FigCraft,_travel_f210,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f210,_travel_done10,ดูผลการฝึก,onClick → navigate
+FigCraft,_travel_f211,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_f211,_travel_done11,ดูผลการฝึก,onClick → navigate
+FigCraft,_travel_q21,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q21,_travel_f210,สถานี,onClick → navigate
+FigCraft,_travel_q21,_travel_f211,ชานชาลา,onClick → navigate
+FigCraft,_travel_q21,_travel_q21_pause,พักรอบนี้,onClick → navigate
+FigCraft,_travel_done00,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_done00,_travel_retry0,station,onClick → navigate
+FigCraft,_travel_done00,_travel_retry1,platform,onClick → navigate
+FigCraft,_travel_done00,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_travel_done01,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_done01,_travel_retry0,station,onClick → navigate
+FigCraft,_travel_done01,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_travel_done10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_done10,_travel_retry1,platform,onClick → navigate
+FigCraft,_travel_done10,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_travel_done11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_done11,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_travel_retry0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_retry0,_travel_reveal0,ดูคำแปล,onClick → navigate
+FigCraft,_travel_reveal0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_reveal0,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_travel_retry1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_retry1,_travel_reveal1,ดูคำแปล,onClick → navigate
+FigCraft,_travel_reveal1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_reveal1,select_category_for_quiz,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_f10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f10,_source_q20,ไปข้อถัดไป,onClick → navigate
+FigCraft,_source_f11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f11,_source_q21,ไปข้อถัดไป,onClick → navigate
+FigCraft,_source_q1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_q1,_source_f10,ตั๋ว,onClick → navigate
+FigCraft,_source_q1,_source_f11,สถานี,onClick → navigate
+FigCraft,_source_f200,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f200,_source_done00,ดูผลการฝึก,onClick → navigate
+FigCraft,_source_f201,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f201,_source_done01,ดูผลการฝึก,onClick → navigate
+FigCraft,_source_q20,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_q20,_source_f200,สถานี,onClick → navigate
+FigCraft,_source_q20,_source_f201,ตั๋ว,onClick → navigate
+FigCraft,_source_f210,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f210,_source_done10,ดูผลการฝึก,onClick → navigate
+FigCraft,_source_f211,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_f211,_source_done11,ดูผลการฝึก,onClick → navigate
+FigCraft,_source_q21,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_q21,_source_f210,สถานี,onClick → navigate
+FigCraft,_source_q21,_source_f211,ตั๋ว,onClick → navigate
+FigCraft,_source_done00,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_done00,_source_retry0,station,onClick → navigate
+FigCraft,_source_done00,_source_retry1,ticket,onClick → navigate
+FigCraft,_source_done00,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_done01,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_done01,_source_retry0,station,onClick → navigate
+FigCraft,_source_done01,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_done10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_done10,_source_retry1,ticket,onClick → navigate
+FigCraft,_source_done10,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_done11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_done11,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_retry0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_retry0,_source_reveal0,ดูคำแปล,onClick → navigate
+FigCraft,_source_reveal0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_reveal0,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_retry1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_retry1,_source_reveal1,ดูคำแปล,onClick → navigate
+FigCraft,_source_reveal1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_reveal1,_source_choices,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_source_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_read,_source_fade,ลองอ่านโดยไม่ดูคำแปล,onClick → navigate
+FigCraft,_source_fade,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_fade,_source_recall,ปิดบทอ่านแล้วลองนึกคำ,onClick → navigate
+FigCraft,_source_recall,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_recall,_type_s,เติมตัว s,onClick → navigate
+FigCraft,_source_recall,_type_c,เติมตัว c,onClick → navigate
+FigCraft,_source_recall,_type_leave_empty,พักการฝึก,onClick → navigate
+FigCraft,_source_cue,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_cue,_source_write,ลองใช้ในประโยค,onClick → navigate
+FigCraft,_source_write,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_write,_source_read_result,ดูผลการฝึก,onClick → navigate
+FigCraft,_source_read_result,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_source_read_result,_source_choices,ฝึกคำจากข้อความต่อ,onClick → navigate
+FigCraft,_duel_spelling_typo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_duel_spelling_typo,_duel_same,ตรวจคำสะกด,onClick → navigate
+FigCraft,_duel_spelling_typo,ghost_shadow_duel_screen,สลับคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_arrange_a,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_a,_sentence_check_ok,ticket,onClick → navigate
+FigCraft,_arrange_a,sentence_scramble_screen,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_arrange_ticket,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_ticket,_sentence_check_swap,a,onClick → navigate
+FigCraft,_arrange_ticket,sentence_scramble_screen,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_boss_typo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_typo,_boss_final,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_boss_typo,_boss_retry,ส่งคำตอบ,onClick → navigate
+FigCraft,_boss_typo,_boss_leave_3,ออกจากด่าน,onClick → navigate
+FigCraft,_exam_planned,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_exam_planned,_definition_quiz,อ่านนิยามแล้วหาคำ,onClick → navigate
+FigCraft,_exam_planned,_matching,จับคู่คำกับความหมาย,onClick → navigate
+FigCraft,_exam_planned,_scratchpad,กระดานฝึกเขียน,onClick → navigate
+FigCraft,_exam_planned,_reverse_word,เลือกคำอังกฤษจากความหมายไทย,onClick → navigate
+FigCraft,_exam_planned,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_definition_quiz,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_definition_quiz,_definition_yes,platform,onClick → navigate
+FigCraft,_definition_quiz,_definition_no,ticket,onClick → navigate
+FigCraft,_definition_yes,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_definition_yes,_exam_planned,เลือกแบบฝึกอื่น,onClick → navigate
+FigCraft,_definition_yes,_definition_quiz,ลองข้อเดิม,onClick → navigate
+FigCraft,_definition_no,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_definition_no,_exam_planned,เลือกแบบฝึกอื่น,onClick → navigate
+FigCraft,_definition_no,_definition_quiz,ลองข้อเดิม,onClick → navigate
+FigCraft,_matching,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching,_matching_pick0,station,onClick → navigate
+FigCraft,_matching,_matching_pick1,ticket,onClick → navigate
+FigCraft,_matching_pick0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_pick0,_matching_error0,ตั๋ว,onClick → navigate
+FigCraft,_matching_pick0,_matching_left1,สถานี,onClick → navigate
+FigCraft,_matching_pick0,_matching,เลือกคำอังกฤษใหม่,onClick → navigate
+FigCraft,_matching_error0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_error0,_matching_pick0,ลองเลือกคำแปลอีกครั้ง,onClick → navigate
+FigCraft,_matching_left1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_left1,_matching_done,ตั๋ว,onClick → navigate
+FigCraft,_matching_pick1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_pick1,_matching_error1,สถานี,onClick → navigate
+FigCraft,_matching_pick1,_matching_left0,ตั๋ว,onClick → navigate
+FigCraft,_matching_pick1,_matching,เลือกคำอังกฤษใหม่,onClick → navigate
+FigCraft,_matching_error1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_error1,_matching_pick1,ลองเลือกคำแปลอีกครั้ง,onClick → navigate
+FigCraft,_matching_left0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_left0,_matching_done,สถานี,onClick → navigate
+FigCraft,_matching_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_matching_done,_exam_planned,เลือกแบบฝึกอื่น,onClick → navigate
+FigCraft,_scratchpad,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratchpad,_scratch_stroke,ดูตัวอย่างการเขียน,onClick → navigate
+FigCraft,_scratchpad,_scratch_type,ใช้ข้อความแทน,onClick → navigate
+FigCraft,_scratch_stroke,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratch_stroke,_scratch_word,เขียนต่อให้จบคำ,onClick → navigate
+FigCraft,_scratch_stroke,_scratchpad,ย้อนรอยเขียนล่าสุด,onClick → navigate
+FigCraft,_scratch_stroke,_scratchpad,ล้างกระดาน,onClick → navigate
+FigCraft,_scratch_word,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratch_word,_scratch_confirm,เทียบกับคำเฉลย,onClick → navigate
+FigCraft,_scratch_word,_scratch_stroke,ย้อนรอยเขียนล่าสุด,onClick → navigate
+FigCraft,_scratch_word,_scratchpad,ล้างกระดาน,onClick → navigate
+FigCraft,_scratch_type,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratch_type,_scratch_confirm,ตรวจคำก่อนส่ง,onClick → navigate
+FigCraft,_scratch_confirm,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratch_confirm,_scratch_done,ฉันสะกดตรงกับเฉลย,onClick → navigate
+FigCraft,_scratch_confirm,_scratchpad,ลองเขียนอีกครั้ง,onClick → navigate
+FigCraft,_scratch_confirm,_scratch_type,แก้ด้วยการพิมพ์,onClick → navigate
+FigCraft,_scratch_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scratch_done,_exam_planned,เลือกรูปแบบโจทย์อื่น,onClick → navigate
+FigCraft,_kitchen_empty,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_empty,object_scanner_screen,ถ่ายภาพเก็บคำศัพท์,onClick → navigate
+FigCraft,_kitchen_empty,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_search_library,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_search_library,_scan_cup_detail,ค้นว่า cup,เก็บคำว่า cup แล้ว
+FigCraft,_search_library,_cup_not_found,ค้นว่า cup,ยังไม่ได้เก็บ cup
+FigCraft,_search_library,_station_in_library,ค้นว่า station,onClick → navigate
+FigCraft,_search_library,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_station_in_library,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_station_in_library,_word,station,onClick → navigate
+FigCraft,_station_in_library,_search_library,ค้นคำอื่น,onClick → navigate
+FigCraft,_station_in_library,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_cup_not_found,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cup_not_found,_search_library,ค้นคำอื่น,onClick → navigate
+FigCraft,_cup_not_found,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_scan_cup_detail,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_cup_detail,_scan_collection,เปิดชุดของใช้ในครัว,onClick → navigate
+FigCraft,_scan_cup_detail,_search_library,กลับไปค้นหา,onClick → navigate
+FigCraft,_scan_cup_detail,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_scan_permission,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_permission,_scan_ready,อนุญาตในตัวอย่างนี้,onClick → navigate
+FigCraft,_scan_permission,_scan_denied,ยังไม่อนุญาต,onClick → navigate
+FigCraft,_scan_denied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_denied,_scan_locked,เครื่องไม่ขึ้นคำขอสิทธิ์,onClick → navigate
+FigCraft,_scan_denied,_scan_permission,ขอสิทธิ์อีกครั้ง,onClick → navigate
+FigCraft,_scan_denied,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_locked,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_locked,device_permission_center_screen,ดูสิทธิ์กล้องและไมโครโฟน,onClick → navigate
+FigCraft,_scan_locked,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_ready,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_ready,_scan_result,ถ่ายภาพตัวอย่าง,onClick → navigate
+FigCraft,_scan_ready,_scan_photos,ลองภาพอื่น,onClick → navigate
+FigCraft,_scan_photos,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_photos,_scan_result,ถ้วย,onClick → navigate
+FigCraft,_scan_photos,_scan_unmapped,กระเป๋าเดินทาง,onClick → navigate
+FigCraft,_scan_photos,_scan_blurred,ภาพสั่น,onClick → navigate
+FigCraft,_scan_photos,_scan_ready,กลับช่องถ่ายภาพ,onClick → navigate
+FigCraft,_scan_blurred,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_blurred,_scan_ready,ถ่ายใหม่,onClick → navigate
+FigCraft,_scan_blurred,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_unmapped,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_unmapped,_scan_ready,ถ่ายสิ่งของชิ้นอื่น,onClick → navigate
+FigCraft,_scan_unmapped,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_audio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_audio,_scan_result,กลับไปดูคำ,onClick → navigate
+FigCraft,_scan_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_saved,_scan_collection,เปิดชุดของใช้ในครัว,onClick → navigate
+FigCraft,_scan_saved,_scan_ready,ถ่ายสิ่งของชิ้นต่อไป,onClick → navigate
+FigCraft,_scan_collection,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_collection,_scan_cup_detail,cup,onClick → navigate
+FigCraft,_scan_collection,_scan_recall,ลองนึกความหมาย,onClick → navigate
+FigCraft,_scan_collection,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_scan_collection,_scan_ready,เก็บคำจากภาพอีกครั้ง,onClick → navigate
+FigCraft,_scan_recall,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_recall,_scan_revealed,เปิดคำแปล,onClick → navigate
+FigCraft,_scan_revealed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_revealed,_scan_collection,จำได้แล้ว,onClick → navigate
+FigCraft,_scan_revealed,_scan_recall,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_scan_save_failed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_save_failed,_scan_saved,ลองเก็บคำอีกครั้ง,onClick → navigate
+FigCraft,_scan_save_failed,_scan_result,กลับไปตรวจคำ,onClick → navigate
+FigCraft,_scan_model,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_model,_scan_downloading,ลองดาวน์โหลดในตัวอย่าง,onClick → navigate
+FigCraft,_scan_model,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_downloading,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_downloading,_scan_model_failed,ดูกรณีไฟล์เสียหาย,onClick → navigate
+FigCraft,_scan_downloading,_scan_ready,ดูเมื่อดาวน์โหลดสำเร็จ,onClick → navigate
+FigCraft,_scan_downloading,_scan_model,ยกเลิกดาวน์โหลด,onClick → navigate
+FigCraft,_scan_model_failed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_model_failed,_scan_downloading,ดาวน์โหลดใหม่,onClick → navigate
+FigCraft,_scan_model_failed,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_scan_examples,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_examples,_scan_denied,ไม่ได้ให้สิทธิ์กล้อง,onClick → navigate
+FigCraft,_scan_examples,_scan_model,ต้องเตรียมกล้องครั้งแรก,onClick → navigate
+FigCraft,_scan_examples,_scan_unavailable,เครื่องเปิดกล้องไม่ได้,onClick → navigate
+FigCraft,_scan_examples,_scan_blurred,รูปที่อ่านไม่ออก,onClick → navigate
+FigCraft,_scan_examples,_scan_save_failed,บันทึกคำไม่สำเร็จ,onClick → navigate
+FigCraft,_scan_examples,_scan_ready,ลองถ่ายภาพ,onClick → navigate
+FigCraft,_scan_unavailable,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_scan_unavailable,_scan_permission,ลองเปิดกล้องอีกครั้ง,onClick → navigate
+FigCraft,_scan_unavailable,add_vocab_screen,พิมพ์คำศัพท์เอง,onClick → navigate
+FigCraft,_packs,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_packs,_pack_filter,เลือกตามระดับหรือสิ่งที่อยากฝึก,onClick → navigate
+FigCraft,_packs,_pack,การเดินทาง,onClick → navigate
+FigCraft,_packs,_kitchen_pack,ของใช้ในครัว,onClick → navigate
+FigCraft,_packs,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_pack,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack,_pack_words,คำศัพท์ในชุด,onClick → navigate
+FigCraft,_pack,_provenance,ที่มาของชุดเรียน,onClick → navigate
+FigCraft,_pack,_pack_practice,เลือกวิธีฝึก,onClick → navigate
+FigCraft,_pack,@back,กลับไปยังรายการก่อนหน้า,ย้อนกลับตามประวัติ
+FigCraft,_pack,_packs,ดูชุดเรียนทั้งหมด,onClick → navigate
+FigCraft,_kitchen_pack,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack,_kitchen_pack_words,คำศัพท์ในชุด,onClick → navigate
+FigCraft,_kitchen_pack,_pack_kitchen_proof,ที่มาของชุดเรียน,onClick → navigate
+FigCraft,_kitchen_pack,_kitchen_pack_practice,เลือกวิธีฝึก,onClick → navigate
+FigCraft,_kitchen_pack,@back,กลับไปยังรายการก่อนหน้า,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack,_packs,ดูชุดเรียนทั้งหมด,onClick → navigate
+FigCraft,_word_tools,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_word_tools,_bookmarked,เก็บไว้อ่านอีกครั้ง,onClick → navigate
+FigCraft,_word_tools,_provenance,ที่มาของคำ,onClick → navigate
+FigCraft,_word_tools,_edit_station,แก้ไขคำในคลัง,onClick → navigate
+FigCraft,_edit_station,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_edit_station,_word,ใช้คำแปลนี้,onClick → navigate
+FigCraft,_edit_station,_word,ยกเลิก,onClick → navigate
+FigCraft,_bookmarked,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_bookmarked,_word,station,onClick → navigate
+FigCraft,_bookmarked,_unbookmarked,นำ station ออกจากรายการ,onClick → navigate
+FigCraft,_bookmarked,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_unbookmarked,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_unbookmarked,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_unbookmarked,_review_desk,กลับศูนย์ทบทวน,onClick → navigate
+FigCraft,_provenance,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_provenance,_report,แจ้งคำแปลไม่ตรง,onClick → navigate
+FigCraft,_provenance,_pack_train_proof,ตรวจรุ่นของชุดการเดินทาง,onClick → navigate
+FigCraft,_report,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_report,_report_kind,คำแปลไม่ตรงกับประโยค,onClick → navigate
+FigCraft,_report,_report_queue,เก็บรายงานไว้ส่งเมื่อออนไลน์,onClick → navigate
+FigCraft,_report,_provenance,ยกเลิก,onClick → navigate
+FigCraft,_report_queue,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_report_queue,categories_page,กลับไปที่คลังคำ,onClick → navigate
+FigCraft,_report_queue,_review_desk,กลับศูนย์ทบทวน,onClick → navigate
+FigCraft,_local_status,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_local_status,_local_guest,เมื่อยังไม่เชื่อมบัญชี,onClick → navigate
+FigCraft,_local_status,_offline_manager,จัดการเนื้อหาออฟไลน์,onClick → navigate
+FigCraft,_local_status,_queue_offline,ตรวจคิวที่รอส่ง,onClick → navigate
+FigCraft,_local_status,_home_after_both,กลับไปเรียน,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_local_status,_today_after_assignment,กลับไปเรียน,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_local_status,_home_after_review,กลับไปเรียน,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_local_status,choose_mode_screen,กลับไปเรียน,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_local_guest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_local_guest,categories_page,เปิดคลังคำ,onClick → navigate
+FigCraft,_local_guest,profile_settings_screen,ไปที่บัญชี,onClick → navigate
+FigCraft,_offline_manager,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_offline_manager,_scan_examples,ข้อมูลสำหรับกล้อง,onClick → navigate
+FigCraft,_offline_manager,_availability,สถานะการเชื่อมต่อ,onClick → navigate
+FigCraft,_offline_manager,_file_status,ชุดจำแนกภาพบนเครื่อง,onClick → navigate
+FigCraft,_availability,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_availability,object_scanner_screen,กล้องเก็บคำ,onClick → navigate
+FigCraft,_availability,shadowing_challenge_screen,ฝึกพูด,onClick → navigate
+FigCraft,_availability,gemini_settings_screen,ผู้ช่วยภาษาอังกฤษ,onClick → navigate
+FigCraft,_availability,_limited_voice,ฝึกเมื่อใช้ไมค์ไม่ได้,onClick → navigate
+FigCraft,_availability,_offline_manager,กลับไปดูเนื้อหาในเครื่อง,onClick → navigate
+FigCraft,_research_choice,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_research_choice,_chart_research,ดูกราฟตัวอย่าง,onClick → navigate
+FigCraft,_research_choice,_paired_sample,เปรียบเทียบสองรอบ,onClick → navigate
+FigCraft,_research_choice,_home_after_both,เรียนต่อ,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_research_choice,_today_after_assignment,เรียนต่อ,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_research_choice,_home_after_review,เรียนต่อ,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_research_choice,choose_mode_screen,เรียนต่อ,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_paired_sample,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_paired_sample,_paired_words,ดูคำตอบที่ใช้เปรียบเทียบ,onClick → navigate
+FigCraft,_paired_sample,mastery_dashboard_screen,กลับไปดูความก้าวหน้า,onClick → navigate
+FigCraft,_paired_sample,_research_choice,กลับไปดูตัวเลือกงานวิจัย,onClick → navigate
+FigCraft,_review_desk,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_review_desk,srs_flashcards_screen,ฝึกด้วยบัตรคำ,onClick → navigate
+FigCraft,_review_desk,weakness_clinic_screen,คำที่ยังสับสน,onClick → navigate
+FigCraft,_review_desk,_bookmarked,เก็บไว้อ่านอีกครั้ง,onClick → navigate
+FigCraft,_review_desk,_recall_ladder,ฝึกให้จำได้ด้วยตัวเอง,onClick → navigate
+FigCraft,_review_desk,_report_queue,รายงานที่รอส่ง,onClick → navigate
+FigCraft,_review_desk,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_recall_ladder,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_ladder,_ladder_card,ดูบัตรคำก่อน,onClick → navigate
+FigCraft,_recall_ladder,_ladder_choose,ลองเลือกความหมาย,onClick → navigate
+FigCraft,_recall_ladder,_review_desk,กลับไปเลือกสิ่งที่จะทบทวน,onClick → navigate
+FigCraft,_setup_round,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_setup_round,quiz_screen,เลือกคำแปล 1 คำ,onClick → navigate
+FigCraft,_setup_round,_travel_q1,เลือกคำแปล 2 คำ,onClick → navigate
+FigCraft,_setup_round,_round_preferences,ฝึกแบบอ่านเอง,onClick → navigate
+FigCraft,_setup_round,_exam_planned,เปลี่ยนวิธีตอบ,onClick → navigate
+FigCraft,_setup_round,_round_sync_demo,ฝึกต่อเมื่อบันทึกไม่ได้,onClick → navigate
+FigCraft,_setup_round,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_plan_studio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_studio,_plan_week,สัปดาห์นี้ฝึกเมื่อไรบ้าง,onClick → navigate
+FigCraft,_plan_studio,_plan_goal,ตั้งวันเป้าหมาย,onClick → navigate
+FigCraft,_plan_studio,_plan_timer,จับเวลาฝึก,onClick → navigate
+FigCraft,_plan_studio,_plan_reminder,เตือนให้กลับมาฝึก,onClick → navigate
+FigCraft,_plan_studio,_motivation_studio,ภารกิจและเพื่อนฝึก,onClick → navigate
+FigCraft,_plan_studio,_plan_pref,ปรับวิธีเรียน,onClick → navigate
+FigCraft,_plan_studio,select_category_for_quiz,ฝึกโดยไม่ตั้งแผน,onClick → navigate
+FigCraft,_plan_week,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_week,_calendar_tue,อังคาร 10 พ.ย.,onClick → navigate
+FigCraft,_plan_week,_calendar_thu,พฤหัสบดี 12 พ.ย.,onClick → navigate
+FigCraft,_plan_week,_calendar_fri,ศุกร์ 13 พ.ย.,onClick → navigate
+FigCraft,_plan_week,mastery_dashboard_screen,กลับไปดูความก้าวหน้า,onClick → navigate
+FigCraft,_plan_week,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_plan_goal,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_goal,_plan_goal_7,20 พฤศจิกายน · อีก 7 วัน,onClick → navigate
+FigCraft,_plan_goal,_plan_goal_14,27 พฤศจิกายน · อีก 14 วัน,onClick → navigate
+FigCraft,_plan_goal,select_category_for_quiz,เรียนต่อโดยไม่ตั้งเป้าหมาย,onClick → navigate
+FigCraft,_plan_reminder,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_reminder,_perm_am,เสาร์และอาทิตย์ เวลา 09:00 น.,onClick → navigate
+FigCraft,_plan_reminder,_perm_pm,จันทร์ถึงศุกร์ เวลา 19:00 น.,onClick → navigate
+FigCraft,_plan_reminder,_plan_studio,ปิดต่อไป,onClick → navigate
+FigCraft,_plan_timer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_timer,_plan_timer_5,ฝึก 5 นาที,onClick → navigate
+FigCraft,_plan_timer,_plan_timer_10,ฝึก 10 นาที,onClick → navigate
+FigCraft,_plan_timer,select_category_for_quiz,ฝึกโดยไม่จับเวลา,onClick → navigate
+FigCraft,_plan_timer,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_plan_time_log,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_time_log,_plan_week,ดูสัปดาห์ของฉัน,onClick → navigate
+FigCraft,_plan_time_log,_plan_timer,เริ่มรอบใหม่,onClick → navigate
+FigCraft,_motivation_studio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_motivation_studio,_plan_quest,ภารกิจประจำวัน,onClick → navigate
+FigCraft,_motivation_studio,_plan_streak,วันที่ได้กลับมาฝึก,onClick → navigate
+FigCraft,_motivation_studio,_plan_friend,เพื่อนฝึกของฉัน,onClick → navigate
+FigCraft,_motivation_studio,_plan_share,การ์ดสิ่งที่ทำสำเร็จ,onClick → navigate
+FigCraft,_plan_quest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_quest,_quest_last,ฝึกข้อที่เหลือ,onClick → navigate
+FigCraft,_plan_quest,_motivation_studio,กลับไปดูภารกิจและเพื่อนฝึก,onClick → navigate
+FigCraft,_plan_streak,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_streak,_plan_week,ดูสัปดาห์นี้,onClick → navigate
+FigCraft,_plan_streak,srs_flashcards_screen,ลองฝึกคำเดียว,onClick → navigate
+FigCraft,_plan_friend,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_friend,fill_in_the_blanks_screen,เติมคำในประโยค,onClick → navigate
+FigCraft,_plan_friend,_plan_access,ปรับการแสดงผล,onClick → navigate
+FigCraft,_plan_share,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_share,_plan_share_with_date,แสดงวันที่ฝึก,onClick → navigate
+FigCraft,_plan_share,_plan_share_without_date,ซ่อนวันที่ฝึก,onClick → navigate
+FigCraft,_plan_share,_motivation_studio,ยกเลิก,onClick → navigate
+FigCraft,_plan_share_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_share_preview,_plan_share_without_date,กลับไปแก้การ์ด,onClick → navigate
+FigCraft,_plan_share_preview,_motivation_studio,จบการดูตัวอย่าง,onClick → navigate
+FigCraft,_plan_card_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_card_saved,achievements_screen,กลับไปดูของสะสม,onClick → navigate
+FigCraft,_plan_pref,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_pref,_plan_profile,โปรไฟล์การเรียน,onClick → navigate
+FigCraft,_plan_pref,_plan_preferences,เลือกสิ่งที่อยากฝึก,onClick → navigate
+FigCraft,_plan_pref,_plan_access,การอ่านและการเคลื่อนไหว,onClick → navigate
+FigCraft,_plan_pref,select_category_for_quiz,ข้ามและเลือกชุดคำ,onClick → navigate
+FigCraft,_plan_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_profile,_plan_preferences,เป้าหมายและความสนใจ,onClick → navigate
+FigCraft,_plan_profile,_plan_pref_time,เวลาที่สะดวก,onClick → navigate
+FigCraft,_plan_profile,_plan_pref_method,วิธีที่อยากฝึก,onClick → navigate
+FigCraft,_plan_profile,_article_from_profile,ลองอ่านเรื่องที่สถานี,onClick → navigate
+FigCraft,_plan_preferences,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_preferences,_plan_pref_time,เวลาเดินทาง · ฟังประกาศและอ่านป้าย,onClick → navigate
+FigCraft,_plan_preferences,_plan_undecided,ยังไม่มีเป้าหมาย,onClick → navigate
+FigCraft,_plan_preferences,select_category_for_quiz,ข้ามคำถาม,onClick → navigate
+FigCraft,_plan_undecided,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_undecided,categories_page,เปิดคลังคำ,onClick → navigate
+FigCraft,_plan_undecided,_plan_preferences,กลับไปเลือกเป้าหมาย,onClick → navigate
+FigCraft,_plan_pref_time,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_pref_time,_plan_pref_method,ประมาณ 5 นาทีต่อครั้ง,onClick → navigate
+FigCraft,_plan_pref_time,_plan_timer,เลือกเวลาทุกครั้งที่ฝึก,onClick → navigate
+FigCraft,_plan_pref_time,_plan_pref_method,ข้ามเรื่องเวลา,onClick → navigate
+FigCraft,_plan_pref_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_pref_method,_plan_pref_read,อ่านเรื่องสั้นจากชีวิตประจำวัน,onClick → navigate
+FigCraft,_plan_pref_method,_plan_pref_speak,ฟังเสียงแล้วลองพูดตาม,onClick → navigate
+FigCraft,_plan_pref_method,categories_page,ข้ามและดูคลังคำ,onClick → navigate
+FigCraft,_plan_access,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_access,_plan_large,ข้อความขนาดใหญ่,onClick → navigate
+FigCraft,_plan_access,_plan_still,ลดการเคลื่อนไหว,onClick → navigate
+FigCraft,_plan_access,appearance_settings_screen,สีของหน้าจอ,onClick → navigate
+FigCraft,_plan_access,select_category_for_quiz,ฝึกโดยไม่จับเวลา,onClick → navigate
+FigCraft,_plan_access,add_vocab_screen,พิมพ์แทนการพูด,onClick → navigate
+FigCraft,_plan_access,appearance_settings_screen,กลับไปที่การแสดงผล,onClick → navigate
+FigCraft,_plan_still,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_still,fill_in_the_blanks_screen,เติมคำในประโยค,onClick → navigate
+FigCraft,_plan_still,_plan_access,กลับไปปรับการอ่าน,onClick → navigate
+FigCraft,_plan_large,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_large,_large_revealed,เปิดความหมาย,onClick → navigate
+FigCraft,_plan_large,_plan_access,กลับไปปรับการอ่าน,onClick → navigate
+FigCraft,_plan_goal_7,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_goal_7,_plan_goal,แก้วันเป้าหมาย,onClick → navigate
+FigCraft,_plan_goal_7,_plan_goal_off,ปิดเป้าหมายนี้,onClick → navigate
+FigCraft,_plan_goal_14,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_goal_14,_plan_goal,แก้วันเป้าหมาย,onClick → navigate
+FigCraft,_plan_goal_14,_plan_goal_off,ปิดเป้าหมายนี้,onClick → navigate
+FigCraft,_plan_goal_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_goal_off,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_plan_remind_am,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_remind_am,_plan_reminder,แก้วันและเวลา,onClick → navigate
+FigCraft,_plan_remind_am,_remind_off,ปิดการเตือน,onClick → navigate
+FigCraft,_plan_remind_pm,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_remind_pm,_plan_reminder,แก้วันและเวลา,onClick → navigate
+FigCraft,_plan_remind_pm,_remind_off,ปิดการเตือน,onClick → navigate
+FigCraft,_plan_timer_5,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_timer_5,_plan_paused_5,พักการจับเวลา,onClick → navigate
+FigCraft,_plan_timer_5,_plan_time_first,จบรอบนี้,onClick → navigate
+FigCraft,_plan_paused_5,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_paused_5,_plan_resume_5,ฝึกต่ออีกหนึ่งนาที,onClick → navigate
+FigCraft,_plan_paused_5,_plan_time_first,จบรอบนี้,onClick → navigate
+FigCraft,_plan_resume_5,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_resume_5,_plan_time_log,จบรอบและดูเวลา,onClick → navigate
+FigCraft,_plan_timer_10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_timer_10,_plan_paused_10,พักการจับเวลา,onClick → navigate
+FigCraft,_plan_timer_10,_plan_time_first,จบรอบนี้,onClick → navigate
+FigCraft,_plan_paused_10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_paused_10,_plan_resume_10,ฝึกต่ออีกหนึ่งนาที,onClick → navigate
+FigCraft,_plan_paused_10,_plan_time_first,จบรอบนี้,onClick → navigate
+FigCraft,_plan_resume_10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_resume_10,_plan_time_log,จบรอบและดูเวลา,onClick → navigate
+FigCraft,_plan_time_first,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_time_first,_plan_week,ดูสัปดาห์ของฉัน,onClick → navigate
+FigCraft,_plan_time_first,_plan_timer,เริ่มรอบใหม่,onClick → navigate
+FigCraft,_plan_share_with_date,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_share_with_date,_share_with_date,ดูตัวอย่างการแชร์,onClick → navigate
+FigCraft,_plan_share_with_date,_plan_card_saved,ตัวอย่างการเก็บรูปการ์ด,onClick → navigate
+FigCraft,_plan_share_with_date,_motivation_studio,ยกเลิก,onClick → navigate
+FigCraft,_plan_share_without_date,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_share_without_date,_plan_share_preview,ดูตัวอย่างการแชร์,onClick → navigate
+FigCraft,_plan_share_without_date,_plan_card_saved,ตัวอย่างการเก็บรูปการ์ด,onClick → navigate
+FigCraft,_plan_share_without_date,_motivation_studio,ยกเลิก,onClick → navigate
+FigCraft,_plan_pref_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_pref_read,_article_from_method,ลองฝึกแบบนี้,onClick → navigate
+FigCraft,_plan_pref_read,_plan_pref_method,เปลี่ยนวิธีฝึก,onClick → navigate
+FigCraft,_plan_pref_speak,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_plan_pref_speak,shadowing_challenge_screen,ลองฝึกแบบนี้,onClick → navigate
+FigCraft,_plan_pref_speak,_plan_pref_method,เปลี่ยนวิธีฝึก,onClick → navigate
+FigCraft,_plan_pref_speak,_profile_speaking,ใช้วิธีนี้กับโปรไฟล์,onClick → navigate
+FigCraft,_hat_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_hat_preview,_hat_equipped,ใช้หมวกใบนี้,onClick → navigate
+FigCraft,_hat_preview,avatar_equipment_screen,ยกเลิก,onClick → navigate
+FigCraft,_hat_equipped,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_hat_equipped,_wall_hat,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,_hat_equipped,achievements_screen,กลับไปดูของสะสม,onClick → navigate
+FigCraft,_equipment_from_shop,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_equipment_from_shop,_hat_preview_shop,หมวกนักออกเสียง,onClick → navigate
+FigCraft,_equipment_from_shop,_wall_outfit,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,_equipment_from_shop,shop_page,กลับไปที่ร้าน,onClick → navigate
+FigCraft,_hat_preview_shop,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_hat_preview_shop,_hat_equipped_shop,ใช้หมวกใบนี้,onClick → navigate
+FigCraft,_hat_preview_shop,_equipment_from_shop,ยกเลิก,onClick → navigate
+FigCraft,_hat_equipped_shop,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_hat_equipped_shop,_wall_shop_hat,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,_hat_equipped_shop,shop_page,กลับไปที่ร้าน,onClick → navigate
+FigCraft,_boss_first_typo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_first_typo,boss_battle_screen,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_boss_first_typo,_boss_first_retry,ส่งคำตอบ,onClick → navigate
+FigCraft,_boss_first_typo,_boss_leave_1,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_first_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_first_retry,boss_battle_screen,แก้คำตอบ,onClick → navigate
+FigCraft,_boss_first_retry,_boss_leave_1,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_leave_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_leave_1,boss_battle_screen,เล่นคำเดิมต่อ,onClick → navigate
+FigCraft,_boss_leave_1,_word_games,ออกไปเลือกเกม,onClick → navigate
+FigCraft,_boss_second,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_second,_boss_second_typo,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_boss_second,_boss_final,ส่งคำตอบ,onClick → navigate
+FigCraft,_boss_second,_boss_leave_2,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_second_typo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_second_typo,_boss_second,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_boss_second_typo,_boss_second_retry,ส่งคำตอบ,onClick → navigate
+FigCraft,_boss_second_typo,_boss_leave_2,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_second_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_second_retry,_boss_second,แก้คำตอบ,onClick → navigate
+FigCraft,_boss_second_retry,_boss_leave_2,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_leave_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_leave_2,_boss_second,เล่นคำเดิมต่อ,onClick → navigate
+FigCraft,_boss_leave_2,_word_games,ออกไปเลือกเกม,onClick → navigate
+FigCraft,_boss_final,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_final,_boss_typo,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_boss_final,result_screen,ส่งคำตอบ,onClick → navigate
+FigCraft,_boss_final,_boss_leave_3,ออกจากด่าน,onClick → navigate
+FigCraft,_boss_leave_3,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_leave_3,_boss_final,เล่นคำเดิมต่อ,onClick → navigate
+FigCraft,_boss_leave_3,_word_games,ออกไปเลือกเกม,onClick → navigate
+FigCraft,_cefr_a1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a1,_cefr_a1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_a1,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_a1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a1_card,_cefr_a1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_a1_card,_cefr_a1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_a1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a1_answer,_cefr_a1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_a1_answer,_cefr_a1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_a1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a1_done,_cefr_a1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_a1_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_a2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a2,_cefr_empty,ค้นคำในชุดนี้,onClick → navigate
+FigCraft,_cefr_a2,_cefr_a2_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_a2,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_a2_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a2_card,_cefr_a2_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_a2_card,_cefr_a2,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_a2_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a2_answer,_cefr_a2_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_a2_answer,_cefr_a2_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_a2_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_a2_done,_cefr_a2,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_a2_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_b1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b1,_cefr_b1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_b1,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_b1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b1_card,_cefr_b1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_b1_card,_cefr_b1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_b1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b1_answer,_cefr_b1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_b1_answer,_cefr_b1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_b1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b1_done,_cefr_b1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_b1_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_b2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b2,_cefr_b2_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_b2,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_b2_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b2_card,_cefr_b2_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_b2_card,_cefr_b2,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_b2_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b2_answer,_cefr_b2_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_b2_answer,_cefr_b2_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_b2_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_b2_done,_cefr_b2,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_b2_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_c1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c1,_cefr_c1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_c1,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_c1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c1_card,_cefr_c1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_c1_card,_cefr_c1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_c1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c1_answer,_cefr_c1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_c1_answer,_cefr_c1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_c1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c1_done,_cefr_c1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_c1_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_c2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c2,_cefr_c2_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_cefr_c2,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_c2_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c2_card,_cefr_c2_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_cefr_c2_card,_cefr_c2,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_cefr_c2_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c2_answer,_cefr_c2_done,จำได้แล้ว,onClick → navigate
+FigCraft,_cefr_c2_answer,_cefr_c2_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_cefr_c2_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_c2_done,_cefr_c2,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_cefr_c2_done,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_cefr_empty,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_cefr_empty,_cefr_a2,ล้างคำค้น,onClick → navigate
+FigCraft,_cefr_empty,learning_world_map_screen,เลือกระดับอื่น,onClick → navigate
+FigCraft,_diag_q2_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q2_0,_diag_q3_0,Food,onClick → navigate
+FigCraft,_diag_q2_0,_diag_q3_0,House,onClick → navigate
+FigCraft,_diag_q2_0,_diag_q3_1,Trip,onClick → navigate
+FigCraft,_diag_q2_0,_diag_q3_0,Book,onClick → navigate
+FigCraft,_diag_q2_0,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q2_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q2_1,_diag_q3_1,Food,onClick → navigate
+FigCraft,_diag_q2_1,_diag_q3_1,House,onClick → navigate
+FigCraft,_diag_q2_1,_diag_q3_2,Trip,onClick → navigate
+FigCraft,_diag_q2_1,_diag_q3_1,Book,onClick → navigate
+FigCraft,_diag_q2_1,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q3_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q3_0,_diag_q4_1,บรรลุเป้าหมาย,onClick → navigate
+FigCraft,_diag_q3_0,_diag_q4_0,ล้มเหลว,onClick → navigate
+FigCraft,_diag_q3_0,_diag_q4_0,ปฏิเสธ,onClick → navigate
+FigCraft,_diag_q3_0,_diag_q4_0,ละทิ้ง,onClick → navigate
+FigCraft,_diag_q3_0,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q3_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q3_1,_diag_q4_2,บรรลุเป้าหมาย,onClick → navigate
+FigCraft,_diag_q3_1,_diag_q4_1,ล้มเหลว,onClick → navigate
+FigCraft,_diag_q3_1,_diag_q4_1,ปฏิเสธ,onClick → navigate
+FigCraft,_diag_q3_1,_diag_q4_1,ละทิ้ง,onClick → navigate
+FigCraft,_diag_q3_1,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q3_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q3_2,_diag_q4_3,บรรลุเป้าหมาย,onClick → navigate
+FigCraft,_diag_q3_2,_diag_q4_2,ล้มเหลว,onClick → navigate
+FigCraft,_diag_q3_2,_diag_q4_2,ปฏิเสธ,onClick → navigate
+FigCraft,_diag_q3_2,_diag_q4_2,ละทิ้ง,onClick → navigate
+FigCraft,_diag_q3_2,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q4_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q4_0,_diag_q5_0,โบราณ,onClick → navigate
+FigCraft,_diag_q4_0,_diag_q5_0,ธรรมดา,onClick → navigate
+FigCraft,_diag_q4_0,_diag_q5_0,น่าเบื่อ,onClick → navigate
+FigCraft,_diag_q4_0,_diag_q5_1,ที่นำเสนอสิ่งใหม่,onClick → navigate
+FigCraft,_diag_q4_0,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q4_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q4_1,_diag_q5_1,โบราณ,onClick → navigate
+FigCraft,_diag_q4_1,_diag_q5_1,ธรรมดา,onClick → navigate
+FigCraft,_diag_q4_1,_diag_q5_1,น่าเบื่อ,onClick → navigate
+FigCraft,_diag_q4_1,_diag_q5_2,ที่นำเสนอสิ่งใหม่,onClick → navigate
+FigCraft,_diag_q4_1,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q4_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q4_2,_diag_q5_2,โบราณ,onClick → navigate
+FigCraft,_diag_q4_2,_diag_q5_2,ธรรมดา,onClick → navigate
+FigCraft,_diag_q4_2,_diag_q5_2,น่าเบื่อ,onClick → navigate
+FigCraft,_diag_q4_2,_diag_q5_3,ที่นำเสนอสิ่งใหม่,onClick → navigate
+FigCraft,_diag_q4_2,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q4_3,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q4_3,_diag_q5_3,โบราณ,onClick → navigate
+FigCraft,_diag_q4_3,_diag_q5_3,ธรรมดา,onClick → navigate
+FigCraft,_diag_q4_3,_diag_q5_3,น่าเบื่อ,onClick → navigate
+FigCraft,_diag_q4_3,_diag_q5_4,ที่นำเสนอสิ่งใหม่,onClick → navigate
+FigCraft,_diag_q4_3,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q5_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q5_0,_diag_score_0,Rare,onClick → navigate
+FigCraft,_diag_q5_0,_diag_score_1,Present everywhere,onClick → navigate
+FigCraft,_diag_q5_0,_diag_score_0,Hidden,onClick → navigate
+FigCraft,_diag_q5_0,_diag_score_0,Ancient,onClick → navigate
+FigCraft,_diag_q5_0,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q5_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q5_1,_diag_score_1,Rare,onClick → navigate
+FigCraft,_diag_q5_1,_diag_score_2,Present everywhere,onClick → navigate
+FigCraft,_diag_q5_1,_diag_score_1,Hidden,onClick → navigate
+FigCraft,_diag_q5_1,_diag_score_1,Ancient,onClick → navigate
+FigCraft,_diag_q5_1,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q5_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q5_2,_diag_score_2,Rare,onClick → navigate
+FigCraft,_diag_q5_2,_diag_score_3,Present everywhere,onClick → navigate
+FigCraft,_diag_q5_2,_diag_score_2,Hidden,onClick → navigate
+FigCraft,_diag_q5_2,_diag_score_2,Ancient,onClick → navigate
+FigCraft,_diag_q5_2,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q5_3,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q5_3,_diag_score_3,Rare,onClick → navigate
+FigCraft,_diag_q5_3,_diag_score_4,Present everywhere,onClick → navigate
+FigCraft,_diag_q5_3,_diag_score_3,Hidden,onClick → navigate
+FigCraft,_diag_q5_3,_diag_score_3,Ancient,onClick → navigate
+FigCraft,_diag_q5_3,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag_q5_4,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_q5_4,_diag_score_4,Rare,onClick → navigate
+FigCraft,_diag_q5_4,_diag_score_5,Present everywhere,onClick → navigate
+FigCraft,_diag_q5_4,_diag_score_4,Hidden,onClick → navigate
+FigCraft,_diag_q5_4,_diag_score_4,Ancient,onClick → navigate
+FigCraft,_diag_q5_4,cefr_selection_screen,พักแล้วกลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_diag0_a1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag0_a1,_diag0_a1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag0_a1,_diag_score_0,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag0_a1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag0_a1_card,_diag0_a1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag0_a1_card,_diag0_a1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag0_a1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag0_a1_answer,_diag0_a1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag0_a1_answer,_diag0_a1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag0_a1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag0_a1_done,_diag0_a1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag0_a1_done,_diag_score_0,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_0,_diag0_a1,ระดับคำที่แนะนำ · A1,onClick → navigate
+FigCraft,_diag_score_0,_suggest_a1,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_0,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_diag1_a1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag1_a1,_diag1_a1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag1_a1,_diag_score_1,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag1_a1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag1_a1_card,_diag1_a1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag1_a1_card,_diag1_a1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag1_a1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag1_a1_answer,_diag1_a1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag1_a1_answer,_diag1_a1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag1_a1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag1_a1_done,_diag1_a1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag1_a1_done,_diag_score_1,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_1,_diag1_a1,ระดับคำที่แนะนำ · A1,onClick → navigate
+FigCraft,_diag_score_1,_suggest_a1,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_1,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_diag2_a2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag2_a2,_diag2_a2_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag2_a2,_diag_score_2,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag2_a2_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag2_a2_card,_diag2_a2_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag2_a2_card,_diag2_a2,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag2_a2_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag2_a2_answer,_diag2_a2_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag2_a2_answer,_diag2_a2_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag2_a2_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag2_a2_done,_diag2_a2,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag2_a2_done,_diag_score_2,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_2,_diag2_a2,ระดับคำที่แนะนำ · A2,onClick → navigate
+FigCraft,_diag_score_2,_suggest_a2,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_2,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_diag3_b1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag3_b1,_diag3_b1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag3_b1,_diag_score_3,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag3_b1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag3_b1_card,_diag3_b1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag3_b1_card,_diag3_b1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag3_b1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag3_b1_answer,_diag3_b1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag3_b1_answer,_diag3_b1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag3_b1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag3_b1_done,_diag3_b1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag3_b1_done,_diag_score_3,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_3,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_3,_diag3_b1,ระดับคำที่แนะนำ · B1,onClick → navigate
+FigCraft,_diag_score_3,_suggest_a2,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_3,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_diag4_b2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag4_b2,_diag4_b2_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag4_b2,_diag_score_4,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag4_b2_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag4_b2_card,_diag4_b2_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag4_b2_card,_diag4_b2,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag4_b2_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag4_b2_answer,_diag4_b2_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag4_b2_answer,_diag4_b2_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag4_b2_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag4_b2_done,_diag4_b2,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag4_b2_done,_diag_score_4,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_4,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_4,_diag4_b2,ระดับคำที่แนะนำ · B2,onClick → navigate
+FigCraft,_diag_score_4,_suggest_a2,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_4,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_diag5_c1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag5_c1,_diag5_c1_card,เริ่มทบทวนคำนี้,onClick → navigate
+FigCraft,_diag5_c1,_diag_score_5,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag5_c1_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag5_c1_card,_diag5_c1_answer,พลิกดูความหมาย,onClick → navigate
+FigCraft,_diag5_c1_card,_diag5_c1,พักแล้วกลับชุดคำ,onClick → navigate
+FigCraft,_diag5_c1_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag5_c1_answer,_diag5_c1_done,จำได้แล้ว,onClick → navigate
+FigCraft,_diag5_c1_answer,_diag5_c1_card,ยังนึกไม่ออก · ลองอีกครั้ง,onClick → navigate
+FigCraft,_diag5_c1_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag5_c1_done,_diag5_c1,กลับไปดูชุดเดิม,onClick → navigate
+FigCraft,_diag5_c1_done,_diag_score_5,กลับไปดูผลเดิม,onClick → navigate
+FigCraft,_diag_score_5,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_diag_score_5,_diag5_c1,ระดับคำที่แนะนำ · C1 หรือ C2,onClick → navigate
+FigCraft,_diag_score_5,_suggest_a2,ดูบทอ่านที่แนะนำ,onClick → navigate
+FigCraft,_diag_score_5,cefr_selection_screen,เลือกบทเรียนเอง,onClick → navigate
+FigCraft,_article_term,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term,_article_sound,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term,cefr_article_reader_screen,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term,_article_term_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound,_article_quiet,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound,cefr_article_reader_screen,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet,cefr_article_reader_screen,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_from_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_from_lesson,_article_term_lesson,ดูความหมายของ platform,onClick → navigate
+FigCraft,_article_from_lesson,_recall_from_lesson,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,_recall_from_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_from_lesson,_reading_write_lesson,platform,onClick → navigate
+FigCraft,_recall_from_lesson,_reading_hint_lesson,ticket,onClick → navigate
+FigCraft,_reading_hint_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint_lesson,_recall_from_lesson,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write_lesson,_reading_done_lesson,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done_lesson,cefr_selection_screen,กลับไปเลือกบทเรียน,onClick → navigate
+FigCraft,_reading_done_lesson,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done_lesson,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done_lesson,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done_lesson,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_article_term_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_lesson,_article_sound_lesson,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term_lesson,_article_from_lesson,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_lesson,_article_term_lesson_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound_lesson,_article_quiet_lesson,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound_lesson,_article_from_lesson,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet_lesson,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet_lesson,_article_from_lesson,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_from_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_from_easy,_article_term_easy,ดูความหมายของ platform,onClick → navigate
+FigCraft,_article_from_easy,_recall_from_easy,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,_recall_from_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_from_easy,_reading_write_easy,platform,onClick → navigate
+FigCraft,_recall_from_easy,_reading_hint_easy,ticket,onClick → navigate
+FigCraft,_reading_hint_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint_easy,_recall_from_easy,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write_easy,_reading_done_easy,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done_easy,_easy_reading,กลับไปเรื่องซื้อตั๋วรถไฟ,onClick → navigate
+FigCraft,_reading_done_easy,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done_easy,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done_easy,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done_easy,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_article_term_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_easy,_article_sound_easy,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term_easy,_article_from_easy,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_easy,_article_term_easy_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound_easy,_article_quiet_easy,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound_easy,_article_from_easy,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet_easy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet_easy,_article_from_easy,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_from_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_from_suggest,_article_term_suggest,ดูความหมายของ platform,onClick → navigate
+FigCraft,_article_from_suggest,_recall_from_suggest,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,_recall_from_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_from_suggest,_reading_write_suggest,platform,onClick → navigate
+FigCraft,_recall_from_suggest,_reading_hint_suggest,ticket,onClick → navigate
+FigCraft,_reading_hint_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint_suggest,_recall_from_suggest,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write_suggest,_reading_done_suggest,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done_suggest,_suggest_a2,กลับไปที่บทอ่านแนะนำ,onClick → navigate
+FigCraft,_reading_done_suggest,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done_suggest,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done_suggest,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done_suggest,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_article_term_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_suggest,_article_sound_suggest,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term_suggest,_article_from_suggest,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_suggest,_article_term_suggest_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound_suggest,_article_quiet_suggest,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound_suggest,_article_from_suggest,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet_suggest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet_suggest,_article_from_suggest,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_from_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_from_profile,_article_term_profile,ดูความหมายของ platform,onClick → navigate
+FigCraft,_article_from_profile,_recall_from_profile,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,_recall_from_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_from_profile,_reading_write_profile,platform,onClick → navigate
+FigCraft,_recall_from_profile,_reading_hint_profile,ticket,onClick → navigate
+FigCraft,_reading_hint_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint_profile,_recall_from_profile,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write_profile,_reading_done_profile,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done_profile,_plan_profile,กลับโปรไฟล์การเรียน,onClick → navigate
+FigCraft,_reading_done_profile,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done_profile,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done_profile,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done_profile,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_article_term_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_profile,_article_sound_profile,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term_profile,_article_from_profile,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_profile,_article_term_profile_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound_profile,_article_quiet_profile,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound_profile,_article_from_profile,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet_profile,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet_profile,_article_from_profile,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_from_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_from_method,_article_term_method,ดูความหมายของ platform,onClick → navigate
+FigCraft,_article_from_method,_recall_from_method,ฝึกคำจากเรื่องนี้,onClick → navigate
+FigCraft,_recall_from_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_recall_from_method,_reading_write_method,platform,onClick → navigate
+FigCraft,_recall_from_method,_reading_hint_method,ticket,onClick → navigate
+FigCraft,_reading_hint_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_hint_method,_recall_from_method,กลับไปตอบ,onClick → navigate
+FigCraft,_reading_write_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_write_method,_reading_done_method,ดูสรุปการอ่าน,onClick → navigate
+FigCraft,_reading_done_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reading_done_method,_plan_pref_read,กลับไปดูวิธีเรียนที่เลือก,onClick → navigate
+FigCraft,_reading_done_method,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_reading_done_method,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_reading_done_method,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_reading_done_method,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_article_term_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_method,_article_sound_method,ดูตัวอย่างการฟังเสียง,onClick → navigate
+FigCraft,_article_term_method,_article_from_method,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_method,_article_term_method_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_article_sound_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_sound_method,_article_quiet_method,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_article_sound_method,_article_from_method,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_article_quiet_method,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_quiet_method,_article_from_method,กลับไปอ่านต่อ,onClick → navigate
+FigCraft,_dict_slow,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_slow,_dict_play,ฟังด้วยความเร็วปกติ,onClick → navigate
+FigCraft,_dict_slow,_dict_hint,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_slow,_dict_write,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_slow,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_write,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_write,_dict_typo,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_write,_dict_play,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_write,_dict_feedback,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_write,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_typo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_typo,_dict_write,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_typo,_dict_play,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_typo,_dict_miss,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_typo,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_miss,_dict_write,แก้คำตอบ,onClick → navigate
+FigCraft,_dict_miss,_word,กลับไปดูคำเดิม,onClick → navigate
+FigCraft,_dict_start_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_start_listen,_dict_hint_listen,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_dict_start_listen,_dict_play_listen,ดูตัวอย่างการฟัง,onClick → navigate
+FigCraft,_dict_start_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_play_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_play_listen,_dict_slow_listen,ฟังช้าลง,onClick → navigate
+FigCraft,_dict_play_listen,_dict_hint_listen,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_play_listen,_dict_write_listen,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_play_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_slow_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_slow_listen,_dict_play_listen,ฟังด้วยความเร็วปกติ,onClick → navigate
+FigCraft,_dict_slow_listen,_dict_hint_listen,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_slow_listen,_dict_write_listen,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_slow_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_hint_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_hint_listen,_dict_write_listen,ลองเขียนคำ,onClick → navigate
+FigCraft,_dict_hint_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_write_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_write_listen,_dict_typo_listen,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_write_listen,_dict_play_listen,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_write_listen,_dict_feedback_listen,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_write_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_typo_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_typo_listen,_dict_write_listen,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_typo_listen,_dict_play_listen,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_typo_listen,_dict_miss_listen,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_typo_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_miss_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_miss_listen,_dict_write_listen,แก้คำตอบ,onClick → navigate
+FigCraft,_dict_miss_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_feedback_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_feedback_listen,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_dict_feedback_listen,_dict_start_listen,ลองฟังคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_dict_start_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_start_source,_dict_hint_source,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_dict_start_source,_dict_play_source,ดูตัวอย่างการฟัง,onClick → navigate
+FigCraft,_dict_start_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_play_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_play_source,_dict_slow_source,ฟังช้าลง,onClick → navigate
+FigCraft,_dict_play_source,_dict_hint_source,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_play_source,_dict_write_source,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_play_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_slow_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_slow_source,_dict_play_source,ฟังด้วยความเร็วปกติ,onClick → navigate
+FigCraft,_dict_slow_source,_dict_hint_source,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_slow_source,_dict_write_source,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_slow_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_hint_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_hint_source,_dict_write_source,ลองเขียนคำ,onClick → navigate
+FigCraft,_dict_hint_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_write_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_write_source,_dict_typo_source,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_write_source,_dict_play_source,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_write_source,_dict_feedback_source,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_write_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_typo_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_typo_source,_dict_write_source,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_typo_source,_dict_play_source,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_typo_source,_dict_miss_source,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_typo_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_miss_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_miss_source,_dict_write_source,แก้คำตอบ,onClick → navigate
+FigCraft,_dict_miss_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_feedback_source,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_feedback_source,_source_choices,กลับไปฝึกคำจากข้อความ,onClick → navigate
+FigCraft,_dict_feedback_source,_dict_start_source,ลองฟังคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_dict_start_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_start_mic,_dict_hint_mic,ตอนนี้ฟังเสียงไม่ได้,onClick → navigate
+FigCraft,_dict_start_mic,_dict_play_mic,ดูตัวอย่างการฟัง,onClick → navigate
+FigCraft,_dict_start_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_play_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_play_mic,_dict_slow_mic,ฟังช้าลง,onClick → navigate
+FigCraft,_dict_play_mic,_dict_hint_mic,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_play_mic,_dict_write_mic,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_play_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_slow_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_slow_mic,_dict_play_mic,ฟังด้วยความเร็วปกติ,onClick → navigate
+FigCraft,_dict_slow_mic,_dict_hint_mic,เปิดคำใบ้แทน,onClick → navigate
+FigCraft,_dict_slow_mic,_dict_write_mic,ลองเขียนคำที่ได้ยิน,onClick → navigate
+FigCraft,_dict_slow_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_hint_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_hint_mic,_dict_write_mic,ลองเขียนคำ,onClick → navigate
+FigCraft,_dict_hint_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_write_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_write_mic,_dict_typo_mic,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_write_mic,_dict_play_mic,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_write_mic,_dict_feedback_mic,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_write_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_typo_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_typo_mic,_dict_write_mic,เปลี่ยนคำตอบตัวอย่าง,onClick → navigate
+FigCraft,_dict_typo_mic,_dict_play_mic,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_dict_typo_mic,_dict_miss_mic,ตรวจคำตอบ,onClick → navigate
+FigCraft,_dict_typo_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_miss_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_miss_mic,_dict_write_mic,แก้คำตอบ,onClick → navigate
+FigCraft,_dict_miss_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_feedback_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_dict_feedback_mic,_mic_permission,กลับไปดูสิทธิ์ไมค์,onClick → navigate
+FigCraft,_dict_feedback_mic,_dict_start_mic,ลองฟังคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_ipa_index,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_index,_ipa_cat,/æ/    cat,onClick → navigate
+FigCraft,_ipa_index,_ipa_think,/θ/    think,onClick → navigate
+FigCraft,_ipa_index,_phonetic_play,/ʃ/    she,onClick → navigate
+FigCraft,_ipa_index,_ipa_vision,/ʒ/    vision,onClick → navigate
+FigCraft,_ipa_index,_ipa_sing,/ŋ/    sing,onClick → navigate
+FigCraft,_ipa_index,_ipa_see,/iː/    see,onClick → navigate
+FigCraft,_ipa_cat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_cat,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_cat,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_ipa_think,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_think,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_think,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_ipa_vision,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_vision,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_vision,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_ipa_sing,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_sing,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_sing,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_ipa_see,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_see,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_see,_word,กลับไปดูคำว่า station,onClick → navigate
+FigCraft,_ipa_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_read,_word,กลับไปอ่านคำว่า station,onClick → navigate
+FigCraft,_ipa_read,_ipa_index,เลือกเสียงอื่น,onClick → navigate
+FigCraft,_ipa_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_hub,_ipa_cat_hub,/æ/    cat,onClick → navigate
+FigCraft,_ipa_hub,_ipa_think_hub,/θ/    think,onClick → navigate
+FigCraft,_ipa_hub,_phonetic_play_hub,/ʃ/    she,onClick → navigate
+FigCraft,_ipa_hub,_ipa_vision_hub,/ʒ/    vision,onClick → navigate
+FigCraft,_ipa_hub,_ipa_sing_hub,/ŋ/    sing,onClick → navigate
+FigCraft,_ipa_hub,_ipa_see_hub,/iː/    see,onClick → navigate
+FigCraft,_ipa_hub,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_ipa_cat_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_cat_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_ipa_think_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_think_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_phonetic_play_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_phonetic_play_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_ipa_vision_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_vision_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_ipa_sing_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_sing_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_ipa_see_hub,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_see_hub,_ipa_hub,กลับไปเลือกเสียง,onClick → navigate
+FigCraft,_ipa_no_mic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ipa_no_mic,speak_to_text_screen,กลับไปฝึกพูด,onClick → navigate
+FigCraft,_ipa_no_mic,_word,อ่านคำศัพท์เดิม,onClick → navigate
+FigCraft,_boss_word_review,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_boss_word_review,_word_games,เลือกเกมอื่น,onClick → navigate
+FigCraft,_boss_word_review,result_screen,กลับไปดูผล,onClick → navigate
+FigCraft,_wall_focus_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_focus_preview,_wall_focus_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wall_focus_preview,select_wallpaper_screen,เก็บพื้นหลังเดิม,onClick → navigate
+FigCraft,_wall_focus_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_focus_applied,_appearance_focus,กลับไปที่การแสดงผล,onClick → navigate
+FigCraft,_wall_focus_applied,appearance_settings_screen,ใช้พื้นหลังมาตรฐาน,onClick → navigate
+FigCraft,_appearance_focus,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_appearance_focus,_wall_focus_applied,พื้นหลังหน้าฝึก,onClick → navigate
+FigCraft,_appearance_focus,setting_screen,กลับไปที่ตั้งค่า,onClick → navigate
+FigCraft,_wall_shop_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_shop_applied,shop_page,กลับไปที่ร้าน,onClick → navigate
+FigCraft,_wall_avatar,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_avatar,_wall_avatar_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,_wall_avatar,avatar_equipment_screen,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_avatar_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_avatar_preview,_wall_avatar_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wall_avatar_preview,_wall_avatar,เก็บพื้นหลังเดิม,onClick → navigate
+FigCraft,_wall_avatar_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_avatar_applied,avatar_equipment_screen,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_avatar_applied,_wall_avatar,ใช้พื้นหลังมาตรฐาน,onClick → navigate
+FigCraft,_wall_hat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_hat,_wall_hat_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,_wall_hat,_hat_equipped,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_hat_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_hat_preview,_wall_hat_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wall_hat_preview,_wall_hat,เก็บพื้นหลังเดิม,onClick → navigate
+FigCraft,_wall_hat_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_hat_applied,_hat_equipped,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_hat_applied,_wall_hat,ใช้พื้นหลังมาตรฐาน,onClick → navigate
+FigCraft,_wall_outfit,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_outfit,_wall_outfit_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,_wall_outfit,_equipment_from_shop,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_outfit_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_outfit_preview,_wall_outfit_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wall_outfit_preview,_wall_outfit,เก็บพื้นหลังเดิม,onClick → navigate
+FigCraft,_wall_outfit_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_outfit_applied,_equipment_from_shop,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_outfit_applied,_wall_outfit,ใช้พื้นหลังมาตรฐาน,onClick → navigate
+FigCraft,_wall_shop_hat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_shop_hat,_wall_shop_hat_preview,พื้นหลังสมาธิ,onClick → navigate
+FigCraft,_wall_shop_hat,_hat_equipped_shop,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_shop_hat_preview,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_shop_hat_preview,_wall_shop_hat_applied,ใช้พื้นหลังนี้,onClick → navigate
+FigCraft,_wall_shop_hat_preview,_wall_shop_hat,เก็บพื้นหลังเดิม,onClick → navigate
+FigCraft,_wall_shop_hat_applied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_wall_shop_hat_applied,_hat_equipped_shop,กลับไปแต่งตัวละคร,onClick → navigate
+FigCraft,_wall_shop_hat_applied,_wall_shop_hat,ใช้พื้นหลังมาตรฐาน,onClick → navigate
+FigCraft,_sentence_check_ok,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_ok,_sentence_done,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_ok,_arrange_a,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_check_swap,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_swap,_sentence_retry,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_swap,_arrange_ticket,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_start_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_start_spell,_arrange_ticket_spell,ticket,onClick → navigate
+FigCraft,_sentence_start_spell,_arrange_a_spell,a,onClick → navigate
+FigCraft,_sentence_start_spell,_spell_done,กลับไปดูผลสะกดคำ,onClick → navigate
+FigCraft,_arrange_a_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_a_spell,_sentence_check_ok_spell,ticket,onClick → navigate
+FigCraft,_arrange_a_spell,_sentence_start_spell,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_arrange_ticket_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_ticket_spell,_sentence_check_swap_spell,a,onClick → navigate
+FigCraft,_arrange_ticket_spell,_sentence_start_spell,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_check_ok_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_ok_spell,_sentence_done_spell,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_ok_spell,_arrange_a_spell,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_check_swap_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_swap_spell,_sentence_retry_spell,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_swap_spell,_arrange_ticket_spell,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_retry_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_retry_spell,_sentence_start_spell,กลับไปเรียงใหม่,onClick → navigate
+FigCraft,_sentence_retry_spell,_spell_done,กลับไปดูผลสะกดคำ,onClick → navigate
+FigCraft,_sentence_done_spell,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_done_spell,_spell_done,กลับไปดูผลสะกดคำ,onClick → navigate
+FigCraft,_sentence_done_spell,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_sentence_done_spell,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_sentence_done_spell,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_sentence_done_spell,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_sentence_start_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_start_fill,_arrange_ticket_fill,ticket,onClick → navigate
+FigCraft,_sentence_start_fill,_arrange_a_fill,a,onClick → navigate
+FigCraft,_sentence_start_fill,_fill_right,กลับไปดูผลเติมคำ,onClick → navigate
+FigCraft,_arrange_a_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_a_fill,_sentence_check_ok_fill,ticket,onClick → navigate
+FigCraft,_arrange_a_fill,_sentence_start_fill,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_arrange_ticket_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_arrange_ticket_fill,_sentence_check_swap_fill,a,onClick → navigate
+FigCraft,_arrange_ticket_fill,_sentence_start_fill,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_check_ok_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_ok_fill,_sentence_done_fill,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_ok_fill,_arrange_a_fill,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_check_swap_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_check_swap_fill,_sentence_retry_fill,ตรวจคำตอบ,onClick → navigate
+FigCraft,_sentence_check_swap_fill,_arrange_ticket_fill,เอาคำล่าสุดออก,onClick → navigate
+FigCraft,_sentence_retry_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_retry_fill,_sentence_start_fill,กลับไปเรียงใหม่,onClick → navigate
+FigCraft,_sentence_retry_fill,_fill_right,กลับไปดูผลเติมคำ,onClick → navigate
+FigCraft,_sentence_done_fill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_sentence_done_fill,_fill_right,กลับไปดูผลเติมคำ,onClick → navigate
+FigCraft,_sentence_done_fill,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_sentence_done_fill,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_sentence_done_fill,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_sentence_done_fill,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_listen_choose_set,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_listen_choose_set,vocab_list_screen,การเดินทาง,onClick → navigate
+FigCraft,_listen_choose_set,_listening,กลับไปเลือกแบบฝึกฟัง,onClick → navigate
+FigCraft,_playlist_stopped_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_stopped_1,vocab_list_screen,กลับไปดูชุดการเดินทาง,onClick → navigate
+FigCraft,_playlist_stopped_1,_playlist_play,ฟังตั้งแต่คำแรก,onClick → navigate
+FigCraft,_playlist_stopped_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_stopped_2,vocab_list_screen,กลับไปดูชุดการเดินทาง,onClick → navigate
+FigCraft,_playlist_stopped_2,_playlist_play,ฟังตั้งแต่คำแรก,onClick → navigate
+FigCraft,_playlist_finished,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_playlist_finished,vocab_list_screen,กลับไปดูชุดการเดินทาง,onClick → navigate
+FigCraft,_playlist_finished,_playlist_play,ฟังอีกครั้ง,onClick → navigate
+FigCraft,_chart_account_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_account_read,_account_data,กลับไปที่ข้อมูลของฉัน,onClick → navigate
+FigCraft,_chart_account_read,thesis_chart_screen,ดูกราฟอีกครั้ง,onClick → navigate
+FigCraft,_chart_account_scope,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_account_scope,_account_data,กลับไปที่ข้อมูลของฉัน,onClick → navigate
+FigCraft,_chart_account_scope,thesis_chart_screen,กลับไปดูกราฟ,onClick → navigate
+FigCraft,_chart_history,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_history,_chart_history_read,เวลาในการตอบ,onClick → navigate
+FigCraft,_chart_history,_chart_history_scope,ข้อมูลนี้มาจากไหน,onClick → navigate
+FigCraft,_chart_history,_history,กลับไปที่ประวัติการฝึก,onClick → navigate
+FigCraft,_chart_history_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_history_read,_history,กลับไปที่ประวัติการฝึก,onClick → navigate
+FigCraft,_chart_history_read,_chart_history,ดูกราฟอีกครั้ง,onClick → navigate
+FigCraft,_chart_history_scope,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_history_scope,_history,กลับไปที่ประวัติการฝึก,onClick → navigate
+FigCraft,_chart_history_scope,_chart_history,กลับไปดูกราฟ,onClick → navigate
+FigCraft,_chart_research,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_research,_chart_research_read,เวลาในการตอบ,onClick → navigate
+FigCraft,_chart_research,_chart_research_scope,ข้อมูลนี้มาจากไหน,onClick → navigate
+FigCraft,_chart_research,_research_choice,กลับไปที่งานวิจัยและการเรียน,onClick → navigate
+FigCraft,_chart_research_read,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_research_read,_research_choice,กลับไปที่งานวิจัยและการเรียน,onClick → navigate
+FigCraft,_chart_research_read,_chart_research,ดูกราฟอีกครั้ง,onClick → navigate
+FigCraft,_chart_research_scope,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_chart_research_scope,_research_choice,กลับไปที่งานวิจัยและการเรียน,onClick → navigate
+FigCraft,_chart_research_scope,_chart_research,กลับไปดูกราฟ,onClick → navigate
+FigCraft,_import_json,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_json,_import_deck,อ่านรายการคำ,onClick → navigate
+FigCraft,_import_json,wordbook_import_screen,ยกเลิก,onClick → navigate
+FigCraft,_import_json_bad,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_json_bad,_import_json_error,อ่านรายการคำ,onClick → navigate
+FigCraft,_import_json_bad,wordbook_import_screen,ยกเลิก,onClick → navigate
+FigCraft,_import_json_error,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_json_error,_import_json,เติม ] ในร่าง,onClick → navigate
+FigCraft,_import_json_error,wordbook_import_screen,ยกเลิกการนำเข้า,onClick → navigate
+FigCraft,_import_deck,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_deck,_import_card_1,ฝึกสองคำนี้,onClick → navigate
+FigCraft,_import_deck,wordbook_import_screen,กลับไปเลือกไฟล์,onClick → navigate
+FigCraft,_import_card_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_card_1,_import_reveal_1,เปิดคำแปล,onClick → navigate
+FigCraft,_import_card_1,_import_deck,เลิกฝึกรอบนี้,onClick → navigate
+FigCraft,_import_reveal_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_reveal_1,_import_card_2,จำได้แล้ว,onClick → navigate
+FigCraft,_import_reveal_1,_import_card_1,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_import_card_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_card_2,_import_reveal_2,เปิดคำแปล,onClick → navigate
+FigCraft,_import_card_2,_import_deck,เลิกฝึกรอบนี้,onClick → navigate
+FigCraft,_import_reveal_2,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_reveal_2,_import_deck_done,จำได้แล้ว,onClick → navigate
+FigCraft,_import_reveal_2,_import_card_2,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_import_deck_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_import_deck_done,categories_page,กลับคลังคำ,onClick → navigate
+FigCraft,_import_deck_done,_import_deck,ทบทวนอีกครั้ง,onClick → navigate
+FigCraft,_mail_reset_sent,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_mail_reset_sent,email_action_screen,ลิงก์หมดอายุ,onClick → navigate
+FigCraft,_mail_reset_sent,login_screen,กลับไปเข้าสู่ระบบ,onClick → navigate
+FigCraft,_mail_verified,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_mail_verified,login_screen,กลับไปเข้าสู่ระบบ,onClick → navigate
+FigCraft,_export_words_ready,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_export_words_ready,_account_data,กลับไปข้อมูลของฉัน,onClick → navigate
+FigCraft,_export_words_ready,export_center_screen,เลือกข้อมูลใหม่,onClick → navigate
+FigCraft,_export_history_ready,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_export_history_ready,_account_data,กลับไปข้อมูลของฉัน,onClick → navigate
+FigCraft,_export_history_ready,export_center_screen,เลือกข้อมูลใหม่,onClick → navigate
+FigCraft,_pack_filter,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_filter,_filter_level,ระดับภาษา,onClick → navigate
+FigCraft,_pack_filter,_filter_topic,หัวข้อ,onClick → navigate
+FigCraft,_pack_filter,_filter_skill,ทักษะ,onClick → navigate
+FigCraft,_pack_filter,_filter_goal,เป้าหมาย,onClick → navigate
+FigCraft,_pack_filter,_packs,ดูทุกชุด,onClick → navigate
+FigCraft,_pack_match_level_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_level_0,_pack,การเดินทาง,onClick → navigate
+FigCraft,_pack_match_level_0,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_level_0,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_pack_match_level_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_level_1,_kitchen_pack,ของใช้ในครัว,onClick → navigate
+FigCraft,_pack_match_level_1,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_level_1,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_filter_level,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_filter_level,_pack_match_level_0,A2,onClick → navigate
+FigCraft,_filter_level,_pack_match_level_1,A1,onClick → navigate
+FigCraft,_pack_match_topic_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_topic_0,_pack,การเดินทาง,onClick → navigate
+FigCraft,_pack_match_topic_0,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_topic_0,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_pack_match_topic_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_topic_1,_kitchen_pack,ของใช้ในครัว,onClick → navigate
+FigCraft,_pack_match_topic_1,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_topic_1,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_filter_topic,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_filter_topic,_pack_match_topic_0,การเดินทาง,onClick → navigate
+FigCraft,_filter_topic,_pack_match_topic_1,ของใช้ในครัว,onClick → navigate
+FigCraft,_pack_match_skill_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_skill_0,_pack,การเดินทาง,onClick → navigate
+FigCraft,_pack_match_skill_0,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_skill_0,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_pack_match_skill_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_skill_1,_kitchen_pack,ของใช้ในครัว,onClick → navigate
+FigCraft,_pack_match_skill_1,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_skill_1,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_filter_skill,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_filter_skill,_pack_match_skill_0,อ่าน,onClick → navigate
+FigCraft,_filter_skill,_pack_match_skill_1,นึกความหมาย,onClick → navigate
+FigCraft,_pack_match_goal_0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_goal_0,_pack,การเดินทาง,onClick → navigate
+FigCraft,_pack_match_goal_0,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_goal_0,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_pack_match_goal_1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_match_goal_1,_kitchen_pack,ของใช้ในครัว,onClick → navigate
+FigCraft,_pack_match_goal_1,_pack_filter,เลือกตัวกรองใหม่,onClick → navigate
+FigCraft,_pack_match_goal_1,_packs,ล้างตัวกรอง,onClick → navigate
+FigCraft,_filter_goal,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_filter_goal,_pack_match_goal_0,เดินทางเอง,onClick → navigate
+FigCraft,_filter_goal,_pack_match_goal_1,ใช้คำในบ้าน,onClick → navigate
+FigCraft,_pack_words,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_words,_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_pack_practice,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_practice,_pack_card0,ทบทวนด้วยบัตรคำ,onClick → navigate
+FigCraft,_pack_practice,_pack_q1,เลือกความหมาย,onClick → navigate
+FigCraft,_pack_practice,_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_pack_f10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f10,_pack_q20,ไปข้อถัดไป,onClick → navigate
+FigCraft,_pack_f11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f11,_pack_q21,ไปข้อถัดไป,onClick → navigate
+FigCraft,_pack_q1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_q1,_pack_f10,ชานชาลา,onClick → navigate
+FigCraft,_pack_q1,_pack_f11,สถานี,onClick → navigate
+FigCraft,_pack_f200,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f200,_pack_done00,ดูผลการฝึก,onClick → navigate
+FigCraft,_pack_f201,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f201,_pack_done01,ดูผลการฝึก,onClick → navigate
+FigCraft,_pack_q20,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_q20,_pack_f200,สถานี,onClick → navigate
+FigCraft,_pack_q20,_pack_f201,ชานชาลา,onClick → navigate
+FigCraft,_pack_f210,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f210,_pack_done10,ดูผลการฝึก,onClick → navigate
+FigCraft,_pack_f211,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_f211,_pack_done11,ดูผลการฝึก,onClick → navigate
+FigCraft,_pack_q21,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_q21,_pack_f210,สถานี,onClick → navigate
+FigCraft,_pack_q21,_pack_f211,ชานชาลา,onClick → navigate
+FigCraft,_pack_done00,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_done00,_pack_retry0,station,onClick → navigate
+FigCraft,_pack_done00,_pack_retry1,platform,onClick → navigate
+FigCraft,_pack_done00,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_done01,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_done01,_pack_retry0,station,onClick → navigate
+FigCraft,_pack_done01,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_done10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_done10,_pack_retry1,platform,onClick → navigate
+FigCraft,_pack_done10,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_done11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_done11,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_retry0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_retry0,_pack_reveal0,ดูคำแปล,onClick → navigate
+FigCraft,_pack_reveal0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_reveal0,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_retry1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_retry1,_pack_reveal1,ดูคำแปล,onClick → navigate
+FigCraft,_pack_reveal1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_reveal1,_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_pack_card0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_card0,_pack_answer0,เปิดคำแปล,onClick → navigate
+FigCraft,_pack_answer0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_answer0,_pack_card1,ทบทวนคำถัดไป,onClick → navigate
+FigCraft,_pack_answer0,_pack_card0,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_pack_card1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_card1,_pack_answer1,เปิดคำแปล,onClick → navigate
+FigCraft,_pack_answer1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_answer1,_pack_card_done,จบการทบทวน,onClick → navigate
+FigCraft,_pack_answer1,_pack_card1,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_pack_card_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_card_done,_pack_reviewed,กลับไปดูชุดที่เพิ่งฝึก,onClick → navigate
+FigCraft,_pack_reviewed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_reviewed,_pack_words_reviewed,ดูคำที่เพิ่งทบทวน,onClick → navigate
+FigCraft,_pack_reviewed,_packs,เลือกชุดอื่น,onClick → navigate
+FigCraft,_pack_words_reviewed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_words_reviewed,_pack_reviewed,กลับไปดูผลการทบทวน,onClick → navigate
+FigCraft,_pack_train_proof,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_train_proof,_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_kitchen_pack_words,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_words,_kitchen_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_kitchen_pack_practice,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_practice,_kitchen_pack_card0,ทบทวนด้วยบัตรคำ,onClick → navigate
+FigCraft,_kitchen_pack_practice,_kitchen_pack_q1,เลือกความหมาย,onClick → navigate
+FigCraft,_kitchen_pack_practice,_kitchen_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_kitchen_pack_f10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f10,_kitchen_pack_q20,ไปข้อถัดไป,onClick → navigate
+FigCraft,_kitchen_pack_f11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f11,_kitchen_pack_q21,ไปข้อถัดไป,onClick → navigate
+FigCraft,_kitchen_pack_q1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_q1,_kitchen_pack_f10,ช้อน,onClick → navigate
+FigCraft,_kitchen_pack_q1,_kitchen_pack_f11,ถ้วย,onClick → navigate
+FigCraft,_kitchen_pack_f200,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f200,_kitchen_pack_done00,ดูผลการฝึก,onClick → navigate
+FigCraft,_kitchen_pack_f201,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f201,_kitchen_pack_done01,ดูผลการฝึก,onClick → navigate
+FigCraft,_kitchen_pack_q20,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_q20,_kitchen_pack_f200,ถ้วย,onClick → navigate
+FigCraft,_kitchen_pack_q20,_kitchen_pack_f201,ช้อน,onClick → navigate
+FigCraft,_kitchen_pack_f210,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f210,_kitchen_pack_done10,ดูผลการฝึก,onClick → navigate
+FigCraft,_kitchen_pack_f211,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_f211,_kitchen_pack_done11,ดูผลการฝึก,onClick → navigate
+FigCraft,_kitchen_pack_q21,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_q21,_kitchen_pack_f210,ถ้วย,onClick → navigate
+FigCraft,_kitchen_pack_q21,_kitchen_pack_f211,ช้อน,onClick → navigate
+FigCraft,_kitchen_pack_done00,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_done00,_kitchen_pack_retry0,cup,onClick → navigate
+FigCraft,_kitchen_pack_done00,_kitchen_pack_retry1,spoon,onClick → navigate
+FigCraft,_kitchen_pack_done00,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_done01,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_done01,_kitchen_pack_retry0,cup,onClick → navigate
+FigCraft,_kitchen_pack_done01,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_done10,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_done10,_kitchen_pack_retry1,spoon,onClick → navigate
+FigCraft,_kitchen_pack_done10,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_done11,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_done11,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_retry0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_retry0,_kitchen_pack_reveal0,ดูคำแปล,onClick → navigate
+FigCraft,_kitchen_pack_reveal0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_reveal0,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_retry1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_retry1,_kitchen_pack_reveal1,ดูคำแปล,onClick → navigate
+FigCraft,_kitchen_pack_reveal1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_reveal1,_kitchen_pack,กลับไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_kitchen_pack_card0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_card0,_kitchen_pack_answer0,เปิดคำแปล,onClick → navigate
+FigCraft,_kitchen_pack_answer0,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_answer0,_kitchen_pack_card1,ทบทวนคำถัดไป,onClick → navigate
+FigCraft,_kitchen_pack_answer0,_kitchen_pack_card0,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_kitchen_pack_card1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_card1,_kitchen_pack_answer1,เปิดคำแปล,onClick → navigate
+FigCraft,_kitchen_pack_answer1,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_answer1,_kitchen_pack_card_done,จบการทบทวน,onClick → navigate
+FigCraft,_kitchen_pack_answer1,_kitchen_pack_card1,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_kitchen_pack_card_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_card_done,_kitchen_pack_reviewed,กลับไปดูชุดที่เพิ่งฝึก,onClick → navigate
+FigCraft,_kitchen_pack_reviewed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_reviewed,_kitchen_pack_words_reviewed,ดูคำที่เพิ่งทบทวน,onClick → navigate
+FigCraft,_kitchen_pack_reviewed,_packs,เลือกชุดอื่น,onClick → navigate
+FigCraft,_kitchen_pack_words_reviewed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_kitchen_pack_words_reviewed,_kitchen_pack_reviewed,กลับไปดูผลการทบทวน,onClick → navigate
+FigCraft,_pack_kitchen_proof,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_pack_kitchen_proof,_kitchen_pack,กลับไปดูชุดเรียน,onClick → navigate
+FigCraft,_station_details,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_station_details,@back,กลับไปที่บัตรคำ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q20_pause,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q20_pause,_travel_q20,ทำข้อที่สองต่อ,onClick → navigate
+FigCraft,_travel_q21_pause,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_travel_q21_pause,_travel_q21,ทำข้อที่สองต่อ,onClick → navigate
+FigCraft,_reverse_word,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reverse_word,_reverse_try,station,onClick → navigate
+FigCraft,_reverse_word,_reverse_win,platform,onClick → navigate
+FigCraft,_reverse_try,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reverse_try,_reverse_word,กลับไปเลือกคำตอบ,onClick → navigate
+FigCraft,_reverse_try,_exam_planned,เลือกรูปแบบโจทย์อื่น,onClick → navigate
+FigCraft,_reverse_win,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_reverse_win,_exam_planned,เลือกรูปแบบโจทย์อื่น,onClick → navigate
+FigCraft,_type_leave_empty,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leave_empty,_source_recall,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leave_empty,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_s,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_s,_type_st,เติมตัว t,onClick → navigate
+FigCraft,_type_s,_source_recall,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_s,_type_leaves,พักการฝึก,onClick → navigate
+FigCraft,_type_leaves,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leaves,_type_s,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leaves,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_st,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_st,_type_sta,เติมตัว a,onClick → navigate
+FigCraft,_type_st,_type_s,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_st,_type_leavest,พักการฝึก,onClick → navigate
+FigCraft,_type_leavest,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavest,_type_st,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavest,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_sta,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_sta,_type_stat,เติมตัว t,onClick → navigate
+FigCraft,_type_sta,_type_st,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_sta,_type_leavesta,พักการฝึก,onClick → navigate
+FigCraft,_type_leavesta,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavesta,_type_sta,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavesta,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_stat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_stat,_type_stati,เติมตัว i,onClick → navigate
+FigCraft,_type_stat,_type_sta,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_stat,_type_leavestat,พักการฝึก,onClick → navigate
+FigCraft,_type_leavestat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavestat,_type_stat,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavestat,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_stati,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_stati,_type_statio,เติมตัว o,onClick → navigate
+FigCraft,_type_stati,_type_stat,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_stati,_type_leavestati,พักการฝึก,onClick → navigate
+FigCraft,_type_leavestati,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavestati,_type_stati,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavestati,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_statio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_statio,_type_station,เติมตัว n,onClick → navigate
+FigCraft,_type_statio,_type_stati,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_statio,_type_leavestatio,พักการฝึก,onClick → navigate
+FigCraft,_type_leavestatio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavestatio,_type_statio,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavestatio,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_station,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_station,_source_cue,ตรวจคำตอบ,onClick → navigate
+FigCraft,_type_station,_type_statio,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_station,_type_leavestation,พักการฝึก,onClick → navigate
+FigCraft,_type_leavestation,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavestation,_type_station,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavestation,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_c,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_c,_type_ct,เติมตัว t,onClick → navigate
+FigCraft,_type_c,_source_recall,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_c,_type_leavec,พักการฝึก,onClick → navigate
+FigCraft,_type_leavec,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavec,_type_c,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavec,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_ct,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_ct,_type_cta,เติมตัว a,onClick → navigate
+FigCraft,_type_ct,_type_c,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_ct,_type_leavect,พักการฝึก,onClick → navigate
+FigCraft,_type_leavect,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavect,_type_ct,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavect,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_cta,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_cta,_type_ctat,เติมตัว t,onClick → navigate
+FigCraft,_type_cta,_type_ct,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_cta,_type_leavecta,พักการฝึก,onClick → navigate
+FigCraft,_type_leavecta,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavecta,_type_cta,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavecta,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_ctat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_ctat,_type_ctati,เติมตัว i,onClick → navigate
+FigCraft,_type_ctat,_type_cta,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_ctat,_type_leavectat,พักการฝึก,onClick → navigate
+FigCraft,_type_leavectat,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavectat,_type_ctat,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavectat,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_ctati,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_ctati,_type_ctatio,เติมตัว o,onClick → navigate
+FigCraft,_type_ctati,_type_ctat,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_ctati,_type_leavectati,พักการฝึก,onClick → navigate
+FigCraft,_type_leavectati,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavectati,_type_ctati,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavectati,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_ctatio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_ctatio,_type_ctation,เติมตัว n,onClick → navigate
+FigCraft,_type_ctatio,_type_ctati,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_ctatio,_type_leavectatio,พักการฝึก,onClick → navigate
+FigCraft,_type_leavectatio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavectatio,_type_ctatio,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavectatio,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_ctation,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_ctation,_type_compare,ตรวจคำตอบ,onClick → navigate
+FigCraft,_type_ctation,_type_ctatio,ลบตัวล่าสุด,onClick → navigate
+FigCraft,_type_ctation,_type_leavectation,พักการฝึก,onClick → navigate
+FigCraft,_type_leavectation,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_leavectation,_type_ctation,กลับมาเขียนต่อ,onClick → navigate
+FigCraft,_type_leavectation,_source_choices,ออกไปเลือกแบบฝึก,onClick → navigate
+FigCraft,_type_compare,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_compare,_type_tation,แก้ตัวแรก,onClick → navigate
+FigCraft,_type_compare,_type_ctation,กลับไปดูคำที่ส่ง,onClick → navigate
+FigCraft,_type_tation,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_tation,_type_station,เติม s หน้าคำ,onClick → navigate
+FigCraft,_type_tation,_type_ctation,กลับไปดูคำที่ส่ง,onClick → navigate
+FigCraft,_ladder_card,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_card,_ladder_choose,ลองเลือกความหมาย,onClick → navigate
+FigCraft,_ladder_card,_recall_ladder,พักก่อน,onClick → navigate
+FigCraft,_ladder_choose,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_choose,_ladder_hint,ชานชาลา,onClick → navigate
+FigCraft,_ladder_choose,_ladder_advance,สถานี,onClick → navigate
+FigCraft,_ladder_hint,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_hint,_ladder_choose,ลองเลือกความหมายอีกครั้ง,onClick → navigate
+FigCraft,_ladder_hint,_ladder_card,ดูบัตรคำก่อน,onClick → navigate
+FigCraft,_ladder_advance,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_advance,_ladder_write,ลองนึกคำโดยไม่มีตัวเลือก,onClick → navigate
+FigCraft,_ladder_advance,_ladder_choose,ทบทวนขั้นเดิม,onClick → navigate
+FigCraft,_ladder_write,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_write,_ladder_done,ตรวจคำตอบ,onClick → navigate
+FigCraft,_ladder_write,_ladder_card,ขอคำใบ้,onClick → navigate
+FigCraft,_ladder_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ladder_done,_review_desk,กลับไปเลือกสิ่งที่จะทบทวน,onClick → navigate
+FigCraft,_round_preferences,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_preferences,_round_prefs_listen,เปลี่ยนเป็นฟังและอ่าน,onClick → navigate
+FigCraft,_round_preferences,_round_quiet,ฝึกตามจังหวะของฉัน,onClick → navigate
+FigCraft,_round_preferences,_round_quiet_clock,ใช้เวลาเป็นแนวทาง,onClick → navigate
+FigCraft,_round_preferences,_setup_round,กลับไปเลือกจำนวนคำ,onClick → navigate
+FigCraft,_round_quiet,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet,_round_quiet_saved,ชานชาลา,onClick → navigate
+FigCraft,_round_quiet,_round_quiet_miss,ตั๋ว,onClick → navigate
+FigCraft,_round_quiet,_round_quiet_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_round_quiet,_round_preferences,กลับไปตั้งค่ารอบ,onClick → navigate
+FigCraft,_round_quiet_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_bookmark,_round_quiet,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_quiet_bookmark,_round_quiet_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_round_quiet_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_bookmark_off,_round_quiet,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_quiet_bookmark_off,_round_quiet_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_quiet_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_saved,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_quiet_saved,_round_quiet,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_quiet_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_miss,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_quiet_miss,_round_quiet,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_quiet_clock,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_clock,_round_quiet_clock_saved,ชานชาลา,onClick → navigate
+FigCraft,_round_quiet_clock,_round_quiet_clock_miss,ตั๋ว,onClick → navigate
+FigCraft,_round_quiet_clock,_round_quiet_clock_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_round_quiet_clock,_round_preferences,กลับไปตั้งค่ารอบ,onClick → navigate
+FigCraft,_round_quiet_clock_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_clock_bookmark,_round_quiet_clock,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_quiet_clock_bookmark,_round_quiet_clock_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_round_quiet_clock_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_clock_bookmark_off,_round_quiet_clock,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_quiet_clock_bookmark_off,_round_quiet_clock_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_quiet_clock_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_clock_saved,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_quiet_clock_saved,_round_quiet_clock,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_quiet_clock_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_quiet_clock_miss,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_quiet_clock_miss,_round_quiet_clock,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_prefs_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_prefs_listen,_round_preferences,เปลี่ยนเป็นอ่านเอง,onClick → navigate
+FigCraft,_round_prefs_listen,_round_listen,ฝึกตามจังหวะของฉัน,onClick → navigate
+FigCraft,_round_prefs_listen,_round_listen_clock,ใช้เวลาเป็นแนวทาง,onClick → navigate
+FigCraft,_round_prefs_listen,_setup_round,กลับไปเลือกจำนวนคำ,onClick → navigate
+FigCraft,_round_listen_audio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_audio,_round_listen,กลับไปตอบ,onClick → navigate
+FigCraft,_round_listen,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen,_round_listen_saved,ชานชาลา,onClick → navigate
+FigCraft,_round_listen,_round_listen_miss,ตั๋ว,onClick → navigate
+FigCraft,_round_listen,_round_listen_audio,ฟังคำนี้,onClick → navigate
+FigCraft,_round_listen,_round_listen_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_round_listen,_round_prefs_listen,กลับไปตั้งค่ารอบ,onClick → navigate
+FigCraft,_round_listen_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_bookmark,_round_listen,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_listen_bookmark,_round_listen_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_round_listen_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_bookmark_off,_round_listen,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_listen_bookmark_off,_round_listen_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_listen_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_saved,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_listen_saved,_round_listen,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_listen_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_miss,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_listen_miss,_round_listen,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_listen_clock_audio,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock_audio,_round_listen_clock,กลับไปตอบ,onClick → navigate
+FigCraft,_round_listen_clock,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock,_round_listen_clock_saved,ชานชาลา,onClick → navigate
+FigCraft,_round_listen_clock,_round_listen_clock_miss,ตั๋ว,onClick → navigate
+FigCraft,_round_listen_clock,_round_listen_clock_audio,ฟังคำนี้,onClick → navigate
+FigCraft,_round_listen_clock,_round_listen_clock_bookmark,เก็บคำนี้ไว้อ่าน,onClick → navigate
+FigCraft,_round_listen_clock,_round_prefs_listen,กลับไปตั้งค่ารอบ,onClick → navigate
+FigCraft,_round_listen_clock_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock_bookmark,_round_listen_clock,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_listen_clock_bookmark,_round_listen_clock_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_round_listen_clock_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock_bookmark_off,_round_listen_clock,กลับไปตอบคำเดิม,onClick → navigate
+FigCraft,_round_listen_clock_bookmark_off,_round_listen_clock_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_listen_clock_saved,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock_saved,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_listen_clock_saved,_round_listen_clock,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_listen_clock_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_listen_clock_miss,select_category_for_quiz,กลับไปเลือกชุดคำ,onClick → navigate
+FigCraft,_round_listen_clock_miss,_round_listen_clock,ลองคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_round_sync_demo,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_sync_demo,_round_write_error,ชานชาลา,onClick → navigate
+FigCraft,_round_sync_demo,_round_wrong_error,ตั๋ว,onClick → navigate
+FigCraft,_round_write_error,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_write_error,_round_quiet_saved,บันทึกคำตอบเดิมอีกครั้ง,onClick → navigate
+FigCraft,_round_write_error,_round_sync_demo,กลับไปดูโจทย์,onClick → navigate
+FigCraft,_round_wrong_error,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_round_wrong_error,_round_quiet_miss,บันทึกคำตอบเดิมอีกครั้ง,onClick → navigate
+FigCraft,_round_wrong_error,_round_sync_demo,กลับไปดูโจทย์,onClick → navigate
+FigCraft,_article_term_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_bookmark,cefr_article_reader_screen,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_bookmark,_article_term_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_bookmark_off,cefr_article_reader_screen,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_bookmark_off,_article_term_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_article_term_lesson_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_lesson_bookmark,_article_from_lesson,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_lesson_bookmark,_article_term_lesson_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_lesson_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_lesson_bookmark_off,_article_from_lesson,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_lesson_bookmark_off,_article_term_lesson_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_article_term_easy_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_easy_bookmark,_article_from_easy,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_easy_bookmark,_article_term_easy_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_easy_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_easy_bookmark_off,_article_from_easy,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_easy_bookmark_off,_article_term_easy_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_article_term_suggest_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_suggest_bookmark,_article_from_suggest,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_suggest_bookmark,_article_term_suggest_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_suggest_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_suggest_bookmark_off,_article_from_suggest,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_suggest_bookmark_off,_article_term_suggest_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_article_term_profile_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_profile_bookmark,_article_from_profile,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_profile_bookmark,_article_term_profile_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_profile_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_profile_bookmark_off,_article_from_profile,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_profile_bookmark_off,_article_term_profile_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_article_term_method_bookmark,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_method_bookmark,_article_from_method,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_method_bookmark,_article_term_method_bookmark_off,นำคำนี้ออกจากรายการ,onClick → navigate
+FigCraft,_article_term_method_bookmark_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_article_term_method_bookmark_off,_article_from_method,อ่านต่อที่เดิม,onClick → navigate
+FigCraft,_article_term_method_bookmark_off,_article_term_method_bookmark,เก็บคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_report_kind,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_report_kind,_report,คำแปลไม่ตรงกับประโยค,onClick → navigate
+FigCraft,_report_kind,_report_sentence,ประโยคตัวอย่างสะกดผิด,onClick → navigate
+FigCraft,_report_sentence,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_report_sentence,_report_kind,ประโยคตัวอย่างสะกดผิด,onClick → navigate
+FigCraft,_report_sentence,_report_queue_sentence,เก็บรายงานไว้ส่งเมื่อออนไลน์,onClick → navigate
+FigCraft,_report_sentence,_provenance,ยกเลิก,onClick → navigate
+FigCraft,_report_queue_sentence,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_report_queue_sentence,categories_page,กลับไปที่คลังคำ,onClick → navigate
+FigCraft,_report_queue_sentence,_review_desk,กลับศูนย์ทบทวน,onClick → navigate
+FigCraft,_paired_words,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_paired_words,_paired_sample,กลับไปดูผลเปรียบเทียบ,onClick → navigate
+FigCraft,_calendar_tue,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_calendar_tue,_plan_week,กลับไปดูทั้งสัปดาห์,onClick → navigate
+FigCraft,_calendar_thu,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_calendar_thu,_plan_week,กลับไปดูทั้งสัปดาห์,onClick → navigate
+FigCraft,_calendar_fri,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_calendar_fri,_plan_week,กลับไปดูทั้งสัปดาห์,onClick → navigate
+FigCraft,_perm_am,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_perm_am,_plan_remind_am,อนุญาตให้เตือน,onClick → navigate
+FigCraft,_perm_am,_remind_denied,ยังไม่อนุญาต,onClick → navigate
+FigCraft,_perm_pm,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_perm_pm,_plan_remind_pm,อนุญาตให้เตือน,onClick → navigate
+FigCraft,_perm_pm,_remind_denied,ยังไม่อนุญาต,onClick → navigate
+FigCraft,_remind_denied,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_remind_denied,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_remind_denied,_plan_reminder,เลือกเวลาใหม่,onClick → navigate
+FigCraft,_remind_off,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_remind_off,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_remind_off,_plan_reminder,เลือกเวลาใหม่,onClick → navigate
+FigCraft,_quest_last,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quest_last,_quest_retry,สถานี,onClick → navigate
+FigCraft,_quest_last,_quest_award,ชานชาลา,onClick → navigate
+FigCraft,_quest_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quest_retry,_quest_last,ลองตอบอีกครั้ง,onClick → navigate
+FigCraft,_quest_retry,_plan_quest,พักก่อน,onClick → navigate
+FigCraft,_quest_award,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quest_award,_quest_claimed,รับแต้มภารกิจ,onClick → navigate
+FigCraft,_quest_claimed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_quest_claimed,_motive_claimed,กลับไปดูภารกิจ,onClick → navigate
+FigCraft,_motive_claimed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_motive_claimed,_quest_claimed,ภารกิจประจำวัน,onClick → navigate
+FigCraft,_motive_claimed,_plan_streak,วันที่ได้กลับมาฝึก,onClick → navigate
+FigCraft,_motive_claimed,_plan_friend,เพื่อนฝึกของฉัน,onClick → navigate
+FigCraft,_motive_claimed,_plan_share,การ์ดสิ่งที่ทำสำเร็จ,onClick → navigate
+FigCraft,_motive_claimed,_plan_studio,กลับไปแผนฝึก,onClick → navigate
+FigCraft,_badge_detail,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_badge_detail,@back,กลับไปดูของสะสม,ย้อนกลับตามประวัติ
+FigCraft,_ocean_try,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ocean_try,_ocean_buy,ดูยอดก่อนแลก,onClick → navigate
+FigCraft,_ocean_try,shop_page,เก็บธีมเดิม,onClick → navigate
+FigCraft,_ocean_buy,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ocean_buy,_ocean_owned,ยืนยันแลก 80 เหรียญ,onClick → navigate
+FigCraft,_ocean_buy,shop_page,ยกเลิก,onClick → navigate
+FigCraft,_ocean_owned,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ocean_owned,_ocean_used,ใช้ธีมนี้,onClick → navigate
+FigCraft,_ocean_owned,_shop_owned,เก็บไว้ก่อน,onClick → navigate
+FigCraft,_shop_owned,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_shop_owned,_ocean_used,ธีมมหาสมุทร · มีแล้ว,onClick → navigate
+FigCraft,_shop_owned,_shop_short,ดาบนักไต่ระดับ,onClick → navigate
+FigCraft,_shop_owned,achievements_screen,กลับไปดูของสะสม,onClick → navigate
+FigCraft,_shop_after,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_shop_after,_ocean_used,ธีมมหาสมุทร · กำลังใช้,onClick → navigate
+FigCraft,_shop_after,_shop_short,ดาบนักไต่ระดับ,onClick → navigate
+FigCraft,_shop_after,achievements_screen,กลับไปดูของสะสม,onClick → navigate
+FigCraft,_shop_short,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_shop_short,@back,กลับไปที่ร้าน,ย้อนกลับตามประวัติ
+FigCraft,_ocean_used,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_ocean_used,_shop_after,กลับไปที่ร้าน,onClick → navigate
+FigCraft,_friend_recall,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_friend_recall,srs_flashcards_screen,ลองทบทวนคำนี้อีกครั้ง,onClick → navigate
+FigCraft,_friend_recall,_card_again,กลับไปดูผล,onClick → navigate
+FigCraft,_share_with_date,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_share_with_date,_plan_share_with_date,กลับไปแก้การ์ด,onClick → navigate
+FigCraft,_share_with_date,_motivation_studio,จบการดูตัวอย่าง,onClick → navigate
+FigCraft,_profile_speaking,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_profile_speaking,_preferences_speaking,กลับไปปรับวิธีเรียน,onClick → navigate
+FigCraft,_profile_speaking,_plan_pref_method,เปลี่ยนวิธีฝึก,onClick → navigate
+FigCraft,_preferences_speaking,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_preferences_speaking,_profile_speaking,โปรไฟล์การเรียน,onClick → navigate
+FigCraft,_preferences_speaking,_plan_access,การอ่านและการเคลื่อนไหว,onClick → navigate
+FigCraft,_preferences_speaking,_plan_studio,กลับไปดูแผนฝึก,onClick → navigate
+FigCraft,_large_revealed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_large_revealed,_plan_access,กลับไปปรับการอ่าน,onClick → navigate
+FigCraft,_display_system,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_display_system,_display_quiet,ลดการเคลื่อนไหว,onClick → navigate
+FigCraft,_display_system,_appearance_dark,ดูโหมดมืด,onClick → navigate
+FigCraft,_display_system,appearance_settings_screen,กลับไปเลือกสี,onClick → navigate
+FigCraft,_display_quiet,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_display_quiet,_display_kept,ใช้การตั้งค่านี้,onClick → navigate
+FigCraft,_display_quiet,_display_system,เปลี่ยนสีของหน้าจอ,onClick → navigate
+FigCraft,_display_kept,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_display_kept,_display_system,ปรับสีหรือการเคลื่อนไหว,onClick → navigate
+FigCraft,_display_kept,setting_screen,กลับไปที่ตั้งค่า,onClick → navigate
+FigCraft,_queue_offline,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_queue_offline,_history_offline,เปิดประวัติบนเครื่อง,onClick → navigate
+FigCraft,_queue_offline,_queue_retry,ลองเชื่อมต่ออีกครั้ง,onClick → navigate
+FigCraft,_queue_offline,_local_status,กลับไปดูข้อมูลในเครื่อง,onClick → navigate
+FigCraft,_history_offline,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_offline,_queue_offline,กลับไปดูคิว,onClick → navigate
+FigCraft,_queue_retry,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_queue_retry,_queue_synced,ดูผลการซิงก์,onClick → navigate
+FigCraft,_queue_synced,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_queue_synced,setting_screen,กลับไปที่ตั้งค่า,onClick → navigate
+FigCraft,_limited_voice,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_limited_voice,_type_instead,ลองตอบโดยไม่ใช้เสียง,onClick → navigate
+FigCraft,_limited_voice,_availability,กลับไปดูเครื่องมือ,onClick → navigate
+FigCraft,_type_instead,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_type_instead,_typed_answer,station,onClick → navigate
+FigCraft,_type_instead,_silent_wrong,platform,onClick → navigate
+FigCraft,_silent_wrong,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_silent_wrong,_type_instead,กลับไปเลือกคำ,onClick → navigate
+FigCraft,_typed_answer,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_typed_answer,_availability,กลับไปดูเครื่องมือ,onClick → navigate
+FigCraft,_today_jobs,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_today_jobs,_assigned_word,ทบทวนคำว่า ticket,onClick → navigate
+FigCraft,_today_jobs,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_today_jobs,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_today_jobs,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_today_jobs,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_assigned_word,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_assigned_word,_assigned_reveal,เปิดความหมาย,onClick → navigate
+FigCraft,_assigned_word,_today_jobs_done,พักแล้วกลับไปดูงาน,ทำงานที่ได้รับแล้ว
+FigCraft,_assigned_word,_today_jobs,พักแล้วกลับไปดูงาน,ยังไม่ได้ทำงานที่ได้รับ
+FigCraft,_assigned_reveal,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_assigned_reveal,_today_jobs_done,จบงานนี้,onClick → navigate
+FigCraft,_assigned_reveal,_assigned_word,ลองนึกอีกครั้ง,onClick → navigate
+FigCraft,_today_jobs_done,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_today_jobs_done,_home_after_both,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_today_jobs_done,_today_after_assignment,กลับหน้าฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_today_jobs_done,_home_after_review,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_today_jobs_done,choose_mode_screen,กลับหน้าฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_today_after_assignment,_today_jobs_done,งานที่ทำเสร็จ,onClick → navigate
+FigCraft,_today_after_assignment,srs_flashcards_screen,ทบทวนคำนี้,onClick → navigate
+FigCraft,_today_after_assignment,select_category_for_quiz,ฝึกจากชุดคำ,onClick → navigate
+FigCraft,_today_after_assignment,cefr_article_reader_screen,อ่านเรื่องนัดกันที่สถานี,onClick → navigate
+FigCraft,_today_after_assignment,main_navigation_screen,ดูแบบฝึกทั้งหมด,onClick → navigate
+FigCraft,_today_after_assignment,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_today_after_assignment,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_today_after_assignment,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_today_after_assignment,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_today_after_assignment,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,_today_after_assignment,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,_today_after_assignment,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,_home_after_review,_today_jobs_done,งานที่ได้รับ,ทำงานที่ได้รับแล้ว
+FigCraft,_home_after_review,_today_jobs,งานที่ได้รับ,ยังไม่ได้ทำงานที่ได้รับ
+FigCraft,_home_after_review,fill_in_the_blanks_screen,ใช้คำในประโยค,onClick → navigate
+FigCraft,_home_after_review,select_category_for_quiz,ฝึกจากชุดคำ,onClick → navigate
+FigCraft,_home_after_review,cefr_article_reader_screen,อ่านเรื่องนัดกันที่สถานี,onClick → navigate
+FigCraft,_home_after_review,main_navigation_screen,ดูแบบฝึกทั้งหมด,onClick → navigate
+FigCraft,_home_after_review,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_home_after_review,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_home_after_review,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_home_after_review,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_home_after_review,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,_home_after_review,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,_home_after_review,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,_home_after_both,_today_jobs_done,งานที่ทำเสร็จ,onClick → navigate
+FigCraft,_home_after_both,fill_in_the_blanks_screen,ใช้คำในประโยค,onClick → navigate
+FigCraft,_home_after_both,select_category_for_quiz,ฝึกจากชุดคำ,onClick → navigate
+FigCraft,_home_after_both,cefr_article_reader_screen,อ่านเรื่องนัดกันที่สถานี,onClick → navigate
+FigCraft,_home_after_both,main_navigation_screen,ดูแบบฝึกทั้งหมด,onClick → navigate
+FigCraft,_home_after_both,_home_after_both,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ทบทวน platform แล้ว
+FigCraft,_home_after_both,_today_after_assignment,ฝึกภาษา,ทำงานที่ได้รับแล้ว · ยังต้องทบทวน platform
+FigCraft,_home_after_both,_home_after_review,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ทบทวน platform แล้ว
+FigCraft,_home_after_both,choose_mode_screen,ฝึกภาษา,ยังไม่ได้ทำงานที่ได้รับ · ยังต้องทบทวน platform
+FigCraft,_home_after_both,categories_page,คลังคำศัพท์,onClick → navigate
+FigCraft,_home_after_both,mastery_dashboard_screen,ความก้าวหน้า,onClick → navigate
+FigCraft,_home_after_both,profile_settings_screen,บัญชี,onClick → navigate
+FigCraft,_history_today,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_today,_replay_word,ฝึกคำที่พลาดเป็นรอบใหม่,onClick → navigate
+FigCraft,_history_today,_history,กลับไปดูประวัติ,onClick → navigate
+FigCraft,_history_yesterday,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_yesterday,_history,กลับไปดูประวัติ,onClick → navigate
+FigCraft,_history_prior,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_prior,_history,กลับไปดูประวัติ,onClick → navigate
+FigCraft,_replay_word,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_replay_word,_replay_result,ชานชาลา,onClick → navigate
+FigCraft,_replay_word,_replay_wrong,สถานี,onClick → navigate
+FigCraft,_replay_result,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_replay_result,_history_replayed,กลับไปดูทั้งสองรอบ,onClick → navigate
+FigCraft,_history_replayed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_replayed,_replay_result,รอบที่ลองใหม่ · 1 จาก 1 ข้อ,onClick → navigate
+FigCraft,_history_replayed,_history_prior_attempt,รอบเดิม · 0 จาก 1 ข้อ,onClick → navigate
+FigCraft,_history_replayed,mastery_dashboard_screen,กลับไปดูความก้าวหน้า,onClick → navigate
+FigCraft,_history_prior_attempt,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_prior_attempt,_history_replayed,กลับไปดูทั้งสองรอบ,onClick → navigate
+FigCraft,_replay_wrong,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_replay_wrong,_history_missed,กลับไปดูทั้งสองรอบ,onClick → navigate
+FigCraft,_history_missed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_missed,_replay_wrong,รอบที่ลองใหม่ · 0 จาก 1 ข้อ,onClick → navigate
+FigCraft,_history_missed,_history_prior_miss,รอบเดิม · 0 จาก 1 ข้อ,onClick → navigate
+FigCraft,_history_missed,mastery_dashboard_screen,กลับไปดูความก้าวหน้า,onClick → navigate
+FigCraft,_history_prior_miss,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_history_prior_miss,_history_missed,กลับไปดูทั้งสองรอบ,onClick → navigate
+FigCraft,_file_status,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_status,_file_issue,ตรวจไฟล์ในเครื่อง,onClick → navigate
+FigCraft,_file_status,_offline_manager,กลับไปดูเนื้อหาออฟไลน์,onClick → navigate
+FigCraft,_file_issue,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_issue,_file_ready,ดาวน์โหลดรุ่นเดิมมาซ่อม,onClick → navigate
+FigCraft,_file_issue,_file_status,กลับไปดูชุดข้อมูล,onClick → navigate
+FigCraft,_file_ready,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_ready,_file_remove,เอาไฟล์ออกจากเครื่อง,onClick → navigate
+FigCraft,_file_ready,_offline_manager,กลับไปดูเนื้อหาออฟไลน์,onClick → navigate
+FigCraft,_file_remove,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_remove,_file_removed,เอาเฉพาะชุดกล้องออก,onClick → navigate
+FigCraft,_file_remove,_file_ready,เก็บไว้บนเครื่อง,onClick → navigate
+FigCraft,_file_removed,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_removed,_file_history,เปิดประวัติการฝึก,onClick → navigate
+FigCraft,_file_removed,_file_ready,ดาวน์โหลดชุดกล้องอีกครั้ง,onClick → navigate
+FigCraft,_file_removed,_offline_manager,กลับไปดูเนื้อหาออฟไลน์,onClick → navigate
+FigCraft,_file_history,@back,ย้อนกลับ,ย้อนกลับตามประวัติ
+FigCraft,_file_history,_file_removed,กลับไปดูชุดกล้อง,onClick → navigate
+FigCraft,_add_to_library,categories_page,ยกเลิก,onClick → navigate
+FigCraft,_add_to_library,add_vocab_screen,พิมพ์คำศัพท์,onClick → navigate
+FigCraft,_add_to_library,object_scanner_screen,ถ่ายภาพสิ่งของ,onClick → navigate
+FigCraft,_add_to_library,wordbook_import_screen,นำเข้าจากไฟล์,onClick → navigate

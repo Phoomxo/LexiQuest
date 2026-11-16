@@ -1,0 +1,115 @@
+F09 authored contextual cloze and large-text return
+
+Android follow-up at 77f38d27b7d4f0a127ec449f7449f01630deef00.
+Offline emulator-5592, API 35 x86_64, 1080×1920, Android font scale 2.0.
+Host/installed APK SHA-256 matches the integrated offline candidate:
+5f5d61bae342b2ac7ef7f21968e38a8cfd0a164e6bad76ca0fe6e062dbacd1ba
+A dedicated synthetic guest set seeded exactly two noun records, platform
+and ticket. Both practice modes open through the real activity menu and
+select the same set. Wrong ticket shows a hint, then both modes accepted
+their correct answers. Android Back hid the keyboard without loss of
+the typed ticket draft. Home paused the round and the explicit Resume
+restored the same draft. Correct typed alias: platform number.
+
+The complete typed and choice sentences returned to Practice. History
+showed two distinct 50% results. The typed result exposed ticket and
+platform number with wrong/correct labels and returned to History. SQLite
+showed two completed sessions, each with one wrong and one correct attempt
+in order. Research consents and event envelopes stayed empty.
+
+SHA-256 for raw evidence under build/boss-android-evidence/:
+cloze-typed-after-ime.txt 08c3254d6f239243b4ef3caab0f04432a5f128dfbf1c787839f8df0ba82a0c67
+cloze-typed-resumed.txt 595ce4126acc4a99cb1a749e5f3fc76703c019261765f4abbe55ade507dd842b
+cloze-typed-draft.txt 2202c8d73185c71e51766e14b98e4ce613c596dd774fa885cd9c472a76f40b82
+cloze-typed-complete.txt d802e6eb17202b3e06b57d9bd74f53a62da385ae61b366fdde34bd49a0001751
+cloze-choice-hint.txt dfd977902a4a33aec06cd76ac2f64d14fc0484f648c6db5b47f734ae16a51a63
+cloze-choice-complete.txt f7a93a350bda2a5fe109115816bca8ad312919b9990fb0c4e3d59d41c893846b
+cloze-history-typed.txt 0b4de486b259c2f1fdd4f79625783aacc9c501650fee5989d7f934dfcf2a5373
+cloze-history-return.txt c345b4fa79e484d432db92dc5262a8922496f91da19e62008588ecfa04a96c7d
+cloze-readback.txt 23ab27b776be7c7a23d2f97facfc571c3d7ffdd387b6e5a7df728c317f7fe22b
+Windows current focused 37 passed. build/s3-f09-current-focused.txt SHA-256:
+3c5805e20ebeda41afc3dbe21561349542fa4ebb6c91ace5b958e11974cce6e5
+
+The Android journey above starts from the normal Practice entry. Score
+repair is verified in the Windows focused tests. Signed delivery and
+audible TalkBack remain open.
+
+Android history exposed a narration mismatch for typed input. The follow-up
+changes the history label from selected to typed for clozeTyped only. It
+leaves recorded answers and scores untouched. Current Score/Quiz Flutter
+41 passed, including the accessibility label for typed historical answers.
+Static analysis passed. Build logs SHA-256:
+9a10be47f7e960dc0e3d38c15a3ea63ea368bbd9a95594a35ed62d5beae94649
+6a7de1a8fb35c97b482e73831209fe582fa0fec0ba23d2902f103d43ae1588b6
+
+Score repair was then opened through a real parent Quiz on Android.
+Android Back returned to the byte-identical original 50% result. Reopen
+restored the finished answer and explicit Practice committed the child
+with two attempts, then the old parent Quiz popped the new /home route.
+The debug screenshot showed Navigator `_history.isNotEmpty`. The fix
+only lets Quiz pop its own current route after the Score future returns.
+The integration fixture now drives Library → Quiz → Score → repair.
+It reproduced the same assertion before the fix and passed after it.
+Source 6be1671f763d8af2cad6f73f74b4b2290aeaca67, focused Flutter 50,
+and static analysis clean. Raw SHA-256:
+Android failure screenshot 27acc1262de7929196a363ae9df1cad0673fe8960e73925afede6048719e5b3b
+Android original Score and Back 99e06ce3115e8cc4c445259a8e116afc52ae148dc39c1714fa28c2f6eecb8471
+Android child and parent SQLite cfb9beb6bf14e48122125f02779fd6957d10290703b0185fa368d68a939666df
+Flutter RED 3543387042d4f151a7e4c020dd78c430a3773eb83434c378a5836a307f591a92
+Flutter final 53d804d98b9b8dee2aa3cdad2683b9d833cc48d087c45bfc45e4ca85febfbf0b
+Analysis 4d984467870a3944bebc1533f5ce1f33493b729e862b9eb2fbefaa444c0309b5
+
+Corrected APK c439d1ec890a73c0758ceb095f8a5936a15d859844147b00e3aa9ba2317f3767
+matched the installed offline API 35 base. The native Library Quiz result
+remained 50%. Its repair accepted ticket as wrong and platform as correct,
+then returned to the mounted Practice screen. SQLite readback showed both
+separate 50% results and no research consent or event envelopes.
+Typed history now says `ครั้งก่อนพิมพ์` for both saved inputs.
+Build log SHA-256 f59add8083399d19eccfa2450018cc355eb15a210315f41be37ba69c894fec2d
+Native return SHA-256 bcd92a41459e137a4399d2ab1d1316bf69af9ba3b625f675f16e62a88a34a71e
+Native typed history SHA-256 817f318e08c2145fa8f0ad937d7c0fefbb5296eaa69302b4cfbc872c6af1172e
+SQLite aggregate readback SHA-256 a4b6d69999446cec84e676e41e617e71ddf35808998a9e559b08115a4507dbc0
+
+Original implementation evidence follows.
+
+Source f0574ce914509d9229c0a2ccc7636783e84eed53. Design source
+21b34eaa:docs/design/2026-11-13-design-reset/learn_frames.py:157-171.
+Synthetic Windows Flutter at 390x844, 200% text and in-memory SQLite.
+
+From Score with a stored wrong platform answer, select the sentence repair,
+choose ticket, read the hint and try again. Choose platform and see the
+completed sentence, then return to the real /home practice tab. The original
+score still has one wrong answer and 0%; the new round keeps both attempts.
+From the normal activities list choose typed cloze and the Travel set. Enter
+ticket, dismiss the keyboard, pause via lifecycle and resume. The draft
+survives in that mounted route. Submit, retry with platform number and finish.
+The history reader resolves both incorrect and correct typed answers.
+
+The authored platform sense requires a matching same-set ticket. Choice and
+typed preserve an immutable authored snapshot in the existing quiz storage.
+Choice responses retain their v1 bytes and typed uses explicit v2 text.
+Schema stays at v26. XP/SRS still use the admitted practice answer.
+Typed text stays in local answer evidence and is absent from sync payload
+and event adaptation. Existing round lookup precedes catalog resolution,
+concurrent starts return one session, and foreign or stale owners cannot use
+the parent. Independent source review accepted the scoped changes.
+
+RED SHA-256 (codec, authored policy, repair authority, shell rendering):
+8af6290db46b4f87afc24110b865e0b876db9f31c90fc6d6fe1ab641a60a1ae8
+97ac6ec4658590183a8ef15bf54757797f2f792f48d2a7db80238adf1ed5e2ed
+588ae9d86247307839539f60ce6554d43fca09f3ff8b7488f05f98597c20157a
+10cd7619bfa06f4f4c37806c2e5dcc6a153da28013fc11a8278c8ebf03a1eedc
+
+161 focused cases passed in build/s3-f09-focused.txt, covering quiz/codec,
+learning repository and progress, sync, profile, camera and shell.
+SHA-256 0a5a51ba5239ec64429874fccd272e843b7e86f63a408886020de8a6a1fe153d.
+After the final mounted guard and legacy title correction, four targeted
+200%/owner/cloze cases passed on this source. build/s3-f09-narrow-200pct-final.txt
+SHA-256 fc792c87584f36eda2f20c462c0f9e49deb09e855b1e8ca28c53af90da005d19.
+Analysis exit 0, no issues. All 22 changed Dart files formatted.
+build/s3-f09-analyze.txt SHA-256
+0df12914122e74d086d93c38371834fdb4f41baae2472224404311dad63662ec.
+
+Word Scramble's existing full-sentence ordering uses a distinct title.
+Native keyboard, TalkBack, physical-device large text, and unsubmitted
+draft survival across process death remain unverified.

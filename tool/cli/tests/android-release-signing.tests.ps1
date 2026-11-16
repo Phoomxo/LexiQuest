@@ -36,6 +36,16 @@ $repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -
 $gradlePath = Join-Path $repoRoot 'android\app\build.gradle.kts'
 $examplePath = Join-Path $repoRoot 'android\key.properties.example'
 $androidGitignorePath = Join-Path $repoRoot 'android\.gitignore'
+$proguardPath = Join-Path $repoRoot 'android\app\proguard-rules.pro'
+$initializerPath = Join-Path $repoRoot `
+    'tool\cli\initialize-release-signing.ps1'
+$firebaseShaPath = Join-Path $repoRoot `
+    'tool\cli\configure-firebase-release-sha.cjs'
+$appCheckPath = Join-Path $repoRoot `
+    'tool\cli\configure-firebase-app-check.cjs'
+$appCheckEnforcementPath = Join-Path $repoRoot `
+    'tool\cli\set-firebase-app-check-enforcement.cjs'
+$googleServicesPath = Join-Path $repoRoot 'android\app\google-services.json'
 
 if (-not (Test-Path -LiteralPath $gradlePath)) {
     Write-Host ("FAIL: missing {0}" -f $gradlePath) -ForegroundColor Red
@@ -74,6 +84,127 @@ if (Test-Path -LiteralPath $androidGitignorePath) {
     Assert-Match $gitignore '(?m)^key\.properties\s*$' 'key.properties is gitignored'
     Assert-Match $gitignore '\*+/\*\.keystore|\*\.keystore' 'keystore files are gitignored'
     Assert-Match $gitignore '\*+/\*\.jks|\*\.jks' 'jks files are gitignored'
+    Assert-Match $gitignore '\*+/\*\.p12|\*\.p12' `
+        'PKCS12 release keys are gitignored'
+}
+
+Assert-True (Test-Path -LiteralPath $proguardPath) `
+    'release ProGuard rules exist'
+if (Test-Path -LiteralPath $proguardPath) {
+    $proguard = [System.IO.File]::ReadAllText($proguardPath)
+    Assert-Match $gradle 'proguardFiles' `
+        'release build applies project ProGuard rules'
+    Assert-Match $proguard `
+        'androidx\.work\.impl\.WorkDatabase_Impl[\s\S]*<init>\(\)' `
+        'R8 retains the WorkManager Room constructor used by reflection'
+}
+
+Assert-True (Test-Path -LiteralPath $initializerPath) `
+    'release signing initializer exists'
+if (Test-Path -LiteralPath $initializerPath) {
+    $initializer = [System.IO.File]::ReadAllText($initializerPath)
+    Assert-Match $initializer 'RandomNumberGenerator' `
+        'initializer uses a cryptographic password generator'
+    Assert-Match $initializer 'PKCS12' `
+        'initializer creates a standard release keystore'
+    Assert-Match $initializer '4096' `
+        'initializer creates a 4096-bit RSA key'
+    Assert-Match $initializer 'ConvertFrom-SecureString' `
+        'initializer creates a current-user protected recovery secret'
+    Assert-Match $initializer 'icacls' `
+        'initializer restricts local signing material ACLs'
+    Assert-Match $initializer 'Get-ChildItem -LiteralPath \$signingDirectory' `
+        'initializer enumerates every signing child artifact'
+    Assert-Match $initializer '\$artifact\.FullName[\s\S]*\(F\)' `
+        'initializer preserves owner access to every signing child artifact'
+    Assert-Match $initializer 'Refusing to overwrite' `
+        'initializer never overwrites a permanent release key'
+    Assert-NoMatch $initializer '(?i)storePassword\s*=\s*["'']?[A-Za-z0-9]{8,}' `
+        'initializer contains no hard-coded release password'
+}
+
+Assert-True (Test-Path -LiteralPath $firebaseShaPath) `
+    'Firebase release SHA configurator exists'
+if (Test-Path -LiteralPath $firebaseShaPath) {
+    $firebaseSha = [System.IO.File]::ReadAllText($firebaseShaPath)
+    Assert-Match $firebaseSha 'listAppAndroidSha' `
+        'Firebase SHA registration checks existing state first'
+    Assert-Match $firebaseSha 'createAppAndroidSha' `
+        'Firebase SHA registration uses the authenticated management API'
+    Assert-Match $firebaseSha 'signingCertificateSha256' `
+        'Firebase SHA registration reads the packaged certificate'
+    Assert-NoMatch $firebaseSha '(?i)(access_token|refresh_token|authorization)' `
+        'Firebase SHA evidence never handles or writes authentication tokens'
+}
+
+Assert-True (Test-Path -LiteralPath $appCheckPath) `
+    'Firebase App Check configurator exists'
+if (Test-Path -LiteralPath $appCheckPath) {
+    $appCheck = [System.IO.File]::ReadAllText($appCheckPath)
+    Assert-Match $appCheck 'allowUnrecognizedVersion:\s*true' `
+        'direct APK distribution permits off-Play recognition state'
+    Assert-Match $appCheck 'MEETS_DEVICE_INTEGRITY' `
+        'App Check requires standard device integrity'
+    Assert-Match $appCheck 'requireLicensed:\s*false' `
+        'direct APK distribution does not require Play licensing'
+    Assert-Match $appCheck 'NOT_ENABLED_UNTIL_PHYSICAL_DEVICE_ACCEPTANCE' `
+        'App Check enforcement remains gated on physical acceptance'
+    Assert-NoMatch $appCheck 'enforcement:\s*["'']ENFORCED' `
+        'automation cannot prematurely claim App Check enforcement'
+}
+
+Assert-True (Test-Path -LiteralPath $googleServicesPath) `
+    'Android Firebase client configuration exists'
+Assert-True (Test-Path -LiteralPath $appCheckEnforcementPath) `
+    'Firebase App Check enforcement controller exists'
+if (Test-Path -LiteralPath $appCheckEnforcementPath) {
+    $appCheckEnforcement =
+        [System.IO.File]::ReadAllText($appCheckEnforcementPath)
+    Assert-Match $appCheckEnforcement 'firestore\.googleapis\.com' `
+        'App Check enforcement controller targets Firestore'
+    Assert-Match $appCheckEnforcement `
+        '\["enable", "disable", "status"\]' `
+        'App Check enforcement controller supports safe status and rollback'
+    Assert-Match $appCheckEnforcement 'updateMask:\s*"enforcementMode"' `
+        'App Check enforcement controller mutates only enforcementMode'
+    Assert-NoMatch $appCheckEnforcement `
+        '(?i)(access_token|refresh_token|authorization)' `
+        'App Check enforcement evidence never handles authentication tokens'
+}
+if (
+    (Test-Path -LiteralPath $googleServicesPath) -and
+    (Test-Path -LiteralPath $firebaseShaPath) -and
+    (Test-Path -LiteralPath $appCheckPath)
+) {
+    $googleServices =
+        Get-Content -LiteralPath $googleServicesPath -Raw -Encoding utf8 |
+            ConvertFrom-Json
+    $androidClient = @(
+        $googleServices.client |
+            Where-Object {
+                $_.client_info.android_client_info.package_name -eq
+                    'com.lexiquest.app'
+            }
+    )
+    Assert-True ($androidClient.Count -eq 1) `
+        'google-services contains exactly one LexiQuest Android client'
+    if ($androidClient.Count -eq 1) {
+        $oauthClientTypes = @(
+            $androidClient[0].oauth_client |
+                ForEach-Object { [int]$_.client_type }
+        )
+        Assert-True ($oauthClientTypes -contains 1) `
+            'LexiQuest Android OAuth client is present'
+        Assert-True ($oauthClientTypes -contains 3) `
+            'LexiQuest Web OAuth client is present for Google Sign-In'
+        $configuredAppId = [string]$androidClient[0].client_info.mobilesdk_app_id
+        $firebaseSha = [System.IO.File]::ReadAllText($firebaseShaPath)
+        $appCheck = [System.IO.File]::ReadAllText($appCheckPath)
+        Assert-Match $firebaseSha ([regex]::Escape($configuredAppId)) `
+            'release SHA registration targets the packaged Firebase app id'
+        Assert-Match $appCheck ([regex]::Escape($configuredAppId)) `
+            'App Check configuration targets the packaged Firebase app id'
+    }
 }
 
 Write-Host ("Android release signing tests: {0} passed, {1} failed" -f $script:Passed, $script:Failed)

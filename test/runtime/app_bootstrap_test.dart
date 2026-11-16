@@ -1,12 +1,31 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:drift/native.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
-import 'package:vocab_learning_app/progress/progress_remote_writer.dart';
-import 'package:vocab_learning_app/progress/progress_repository.dart';
-import 'package:vocab_learning_app/progress/purchase_remote_writer.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
+import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
+import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
+import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_motivation_evidence.dart';
+import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_progress_models.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
   @override
@@ -15,42 +34,10 @@ class _StubGuestSessionService implements GuestSessionService {
   }
 }
 
-class _StubProgressRepository implements ProgressRepository {
+final class _SuccessfulGuestSessionService implements GuestSessionService {
   @override
-  Future<void> acknowledgeSession(String sessionId) async {}
-
-  @override
-  Future<List<ProgressSession>> pendingSessions() async => const [];
-
-  @override
-  Future<ProgressSnapshot> readSnapshot() async => const ProgressSnapshot(
-    totalPoints: 0,
-    totalCorrectAnswers: 0,
-    totalWrongAnswers: 0,
-    gamesPlayed: 0,
-  );
-
-  @override
-  Future<void> recordSession(ProgressSession session) async {}
-}
-
-class _StubProgressRemoteWriter implements ProgressRemoteWriter {
-  @override
-  Future<ProgressRemoteResult> recordProgressSession(
-    ProgressSession session,
-  ) async {
-    return const ProgressRemoteAccepted(duplicate: false);
-  }
-}
-
-class _StubPurchaseRemoteWriter implements PurchaseRemoteWriter {
-  @override
-  Future<PurchaseRemoteResult> purchaseItem(String productId) async {
-    return const PurchaseRemoteAccepted(
-      alreadyOwned: false,
-      remainingPoints: 0,
-    );
-  }
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'anonymous-bootstrap-user');
 }
 
 AppConfig _validConfig() => AppConfig.fromValues(
@@ -59,117 +46,798 @@ AppConfig _validConfig() => AppConfig.fromValues(
   isDebug: false,
 );
 
+AppDatabase _testDatabase() {
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  return database;
+}
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
-  group('AppBootstrap.initialize', () {
+  for (final hidden in ['quest', 'mastery', 'host']) {
     test(
-      'production composition does not access Firebase before initialization',
-      () {
-        expect(AppBootstrap.production, returnsNormally);
+      'original-answer bootstrap hidden $hidden has no Quest pipeline',
+      () async {
+        final features = BuildFeatureRegistry({
+          Feature.questV2: hidden == 'quest'
+              ? FeatureState.hidden
+              : FeatureState.limited,
+          Feature.mastery: hidden == 'mastery'
+              ? FeatureState.hidden
+              : FeatureState.enabled,
+        });
+        final fieldFeatures = hidden == 'host'
+            ? const BuildFieldFeatureRegistry({
+                FieldFeature.mastery: FieldFeatureState.hidden,
+              })
+            : const BuildFieldFeatureRegistry.fieldDefaults();
+        var factories = 0;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          cloudSyncEnabled: false,
+          features: features,
+          fieldFeatures: fieldFeatures,
+          questCatalogFactory: (_) async {
+            factories++;
+            throw StateError('hidden catalog must not be constructed');
+          },
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        expect(identical(dependencies.features, features), isTrue);
+        expect(identical(dependencies.fieldFeatures, fieldFeatures), isTrue);
+        await _recordOriginalBootstrapAnswer(dependencies);
+        expect(factories, 0);
+        expect((await dependencies.progress!.load()).quests, isNull);
+        final database = dependencies.database!;
+        final snapshot = await dependencies.progress!.load();
+        expect(snapshot.learningDays?.status, StreakFoldStatus.ready);
+        expect(snapshot.learningDays?.currentStreakDays, 1);
+        expect(
+          await database.select(database.learningDayLog).get(),
+          hasLength(1),
+        );
+        final updates = dependencies.progressUpdates!;
+        final beforeRead = updates.value;
+        expect(beforeRead, greaterThan(0));
+        await dependencies.progress!.load();
+        expect(updates.value, beforeRead);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        await dependencies.streak!.settle(expectedOwnerId: owner.id);
+        expect(updates.value, greaterThan(beforeRead));
+        final select = dependencies.streak!.selectHomeTimezone;
+        if (hidden == 'quest') {
+          expect(
+            (await select(
+              expectedOwnerId: owner.id,
+              ianaId: 'Asia/Bangkok',
+            )).ianaId,
+            'Asia/Bangkok',
+          );
+        } else {
+          await expectLater(
+            select(expectedOwnerId: owner.id, ianaId: 'Asia/Bangkok'),
+            throwsStateError,
+          );
+        }
+        final answer = await database
+            .select(database.answerAttempts)
+            .getSingle();
+        expect(answer.questIntent, isNull);
+        for (final table in [
+          'quest_definition_revisions',
+          'quest_instances',
+          'quest_objective_progress',
+          'quest_claim_receipts',
+          'events_v2',
+          'research_consents',
+        ]) {
+          expect(
+            (await database
+                    .customSelect('SELECT COUNT(*) AS n FROM $table')
+                    .getSingle())
+                .read<int>('n'),
+            0,
+            reason: table,
+          );
+        }
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          hasLength(1),
+        );
+        final awards = await database.select(database.achievementUnlocks).get();
+        expect(
+          awards.map(
+            (row) => (
+              row.ownerId,
+              row.achievementId,
+              row.definitionVersion,
+              row.sourceEventId,
+            ),
+          ),
+          unorderedEquals([
+            (owner.id, 'first_answer', 1, answer.id),
+            (owner.id, 'first_correct', 1, answer.id),
+          ]),
+        );
+        final outbox = await database.select(database.outboxOperations).get();
+        expect(
+          outbox.map(
+            (row) =>
+                (row.ownerId, row.entityType, row.entityId, row.operationKind),
+          ),
+          unorderedEquals([
+            (owner.id, 'attempt', answer.id, 'upsert'),
+            (owner.id, 'srsState', answer.wordId, 'upsert'),
+            for (final award in awards)
+              (owner.id, 'achievementUnlock', award.id, 'upsert'),
+          ]),
+        );
+        final lateMutation = dependencies.learning!.onLocalMutation!;
+        final lastRevision = updates.value;
+        await dependencies.dispose();
+        lateMutation();
+        expect(updates.value, lastRevision);
       },
     );
+  }
 
-    test('retains the repository returned by the injected loader', () async {
-      final expectedRepository = _StubProgressRepository();
-      final bootstrap = AppBootstrap(
+  test(
+    'original-answer bootstrap limited Quest installs once and captures through learning',
+    () async {
+      const features = BuildFeatureRegistry.fieldDefaults();
+      var factories = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
-        loadProgressRepository: () async => expectedRepository,
+        cloudSyncEnabled: false,
+        features: features,
+        questCatalogFactory: (database) {
+          factories++;
+          return DriftQuestRepository(database).installAnswerCatalog();
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(
+        dependencies.features.stateOf(Feature.questV2),
+        FeatureState.limited,
       );
+      expect(factories, 1);
+      final database = dependencies.database!;
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        hasLength(2),
+      );
+      await _recordOriginalBootstrapAnswer(dependencies);
+      final answer =
+          (await database.select(database.answerAttempts).get()).single;
+      final metadata = OriginalAnswerMetadata(
+        calendar: decodeCalendarEvidence(answer.calendarEvidence!),
+        quest: decodeQuestIntent(answer.questIntent!),
+      );
+      expect(metadata.calendar, isA<CapturedCalendarEvidence>());
+      expect(metadata.quest, isA<CapturedQuestIntent>());
+      expect(metadata.calendar.originOwnerId, answer.ownerId);
+      expect(metadata.calendar.occurredAtUtcMs, answer.occurredAtUtcMs);
+      expect(factories, 1);
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      expect(await database.select(database.questClaimReceipts).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
 
-      final dependencies = await bootstrap.initialize();
+      for (var number = 2; number <= 5; number++) {
+        await dependencies.learning!.recordAnswer(
+          sessionId: answer.sessionId,
+          wordId: answer.wordId,
+          promptMode: answer.promptMode,
+          isCorrect: true,
+          responseTimeMs: 100,
+          attemptNumber: number,
+        );
+      }
+      final beforeClaim = await dependencies.progress!.load();
+      final daily = beforeClaim.quests!.current.singleWhere(
+        (card) => card.cadence == QuestType.daily,
+      );
+      expect(beforeClaim.ownerId, answer.ownerId);
+      expect(beforeClaim.totalXp, 5);
+      expect(daily.state, QuestProgressState.completedUnclaimed);
+      final receipt = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: beforeClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((receipt.xpAmount, receipt.replayed), (50, false));
+      final afterClaim = await dependencies.progress!.load();
+      expect(afterClaim.totalXp, 55);
+      expect(
+        afterClaim.quests!.current
+            .singleWhere((card) => card.cadence == QuestType.daily)
+            .state,
+        QuestProgressState.claimed,
+      );
+      expect((await dependencies.rewards!.load()).balance, 5);
+      final replay = await dependencies.rewards!.claimQuest(
+        expectedOwnerId: afterClaim.ownerId!,
+        instanceId: daily.instanceId,
+      );
+      expect((replay.receiptId, replay.replayed), (receipt.receiptId, true));
+      expect((await dependencies.progress!.load()).totalXp, 55);
+      expect(factories, 1);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.researchConsents).get(), isEmpty);
+    },
+  );
+
+  test(
+    'original-answer bootstrap catalog failure leaves ordinary learning available',
+    () async {
+      var factories = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+        questCatalogFactory: (_) async {
+          factories++;
+          throw StateError('synthetic optional catalog failure');
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      await _recordOriginalBootstrapAnswer(dependencies);
+      expect(factories, 1);
+      final database = dependencies.database!;
+      final answer =
+          (await database.select(database.answerAttempts).get()).single;
+      expect(
+        decodeQuestIntent(answer.questIntent!),
+        isA<UnavailableQuestIntent>(),
+      );
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(1),
+      );
+      expect(await database.select(database.srsStates).get(), hasLength(1));
+      expect(
+        await database.select(database.questDefinitionRevisions).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.questInstances).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      final progress = await dependencies.progress!.load();
+      expect(progress.totalXp, 1);
+      expect(
+        progress.quests!.issues,
+        contains(QuestProgressIssue.unavailableCatalog),
+      );
+    },
+  );
+
+  test(
+    'two committed Drift owner transitions A B A cancel delayed validation without reactivating A',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final gateway = _GeminiGateway();
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        geminiSettingsStoreFactory: _ScopedGeminiStore.new,
+        geminiGatewayFactory: () => gateway,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final tutor = dependencies.geminiTutor!;
+      final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      final inserted = tutor.invalidations.first;
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'synthetic-B',
+              createdAtUtcMs: 1,
+              isActive: const Value(false),
+            ),
+          );
+      await inserted;
+      await tutor.configure(
+        key: 'synthetic-A',
+        providerConsent: true,
+        shareLearningSummary: true,
+      );
+      gateway.validationGate = Completer<void>();
+      gateway.validationStarted = Completer<void>();
+      final pending = expectLater(
+        tutor.configure(
+          key: 'synthetic-pending-A',
+          providerConsent: true,
+          shareLearningSummary: true,
+        ),
+        throwsA(isA<GeminiException>()),
+      );
+      await gateway.validationStarted!.future;
+      final before = tutor.epoch;
+      await database.transaction(() async {
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(owner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals('synthetic-B')))
+            .write(const LocalOwnersCompanion(isActive: Value(true)));
+      });
+      await database.transaction(() async {
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals('synthetic-B')))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(owner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(true)));
+      });
+      final finalOwner = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).getSingle();
+      expect(finalOwner.id, owner.id);
+      expect(tutor.epoch, greaterThan(before));
+      expect(gateway.validationCancellation!.isCancelled, isTrue);
+      gateway.validationGate!.complete();
+      await pending;
+      expect((await tutor.loadSettings()).hasKey, isTrue);
+      expect((await tutor.loadSettings()).providerConsent, isFalse);
+      expect((await tutor.loadSettings()).shareLearningSummary, isFalse);
+      expect(gateway.generated, 0);
+    },
+  );
+  test(
+    'real Drift owner ABA updates invalidate pending Gemini work even at the same final snapshot',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final gateway = _GeminiGateway()..gate = Completer<String>();
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        geminiSettingsStoreFactory: _ScopedGeminiStore.new,
+        geminiGatewayFactory: () => gateway,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final tutor = dependencies.geminiTutor!;
+      final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      await tutor.configure(
+        key: 'synthetic-ABA-key',
+        providerConsent: true,
+        shareLearningSummary: true,
+      );
+      final pending = expectLater(
+        tutor.reply(scenario: 'Cafe Ordering', learnerMessage: 'Synthetic ABA'),
+        throwsA(isA<GeminiException>()),
+      );
+      await gateway.started.future;
+      final before = tutor.epoch;
+      // One commit has an unchanged final row, while the owner table was touched.
+      await database.transaction(() async {
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(owner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(owner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(true)));
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      gateway.gate!.complete('Late synthetic ABA reply');
+      await pending;
+      expect(tutor.epoch, greaterThan(before));
+      expect((await tutor.loadSettings()).hasKey, isTrue);
+      expect((await tutor.loadSettings()).providerConsent, isFalse);
+      expect((await tutor.loadSettings()).shareLearningSummary, isFalse);
+    },
+  );
+  test(
+    'optional Gemini auth watcher construction failure does not break local learning',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        readGeminiSession: () => null,
+        watchGeminiSessions: () =>
+            throw StateError('synthetic-watch-unavailable'),
+        geminiSettingsStoreFactory: _ScopedGeminiStore.new,
+        geminiGatewayFactory: _GeminiGateway.new,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(
+        (await dependencies.learning!.startQuiz(limit: 1)).isEmpty,
+        isTrue,
+      );
+      await expectLater(
+        dependencies.geminiTutor!.loadSettings(),
+        throwsA(isA<GeminiException>()),
+      );
+    },
+  );
+  test(
+    'Gemini composition observes owner/auth/anonymous transitions and disposes watches',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final authEvents = StreamController<AccountSession?>.broadcast(
+        sync: true,
+      );
+      AccountSession? session;
+      final store = _ScopedGeminiStore();
+      final gateway = _GeminiGateway();
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        readGeminiSession: () => session,
+        watchGeminiSessions: () => authEvents.stream,
+        geminiSettingsStoreFactory: () => store,
+        geminiGatewayFactory: () => gateway,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      addTearDown(authEvents.close);
+      final tutor = dependencies.geminiTutor!;
+      final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      await tutor.configure(
+        key: 'synthetic-local-guest-key',
+        providerConsent: true,
+        shareLearningSummary: true,
+      );
+      expect((await tutor.loadSettings()).hasKey, isTrue);
+      final epochs = <int>[];
+      final subscription = tutor.invalidations.listen(epochs.add);
+      session = const AccountSession(
+        uid: 'synthetic-uid',
+        email: null,
+        isAnonymous: true,
+        emailVerified: false,
+      );
+      authEvents.add(session);
+      await expectLater(tutor.loadSettings(), throwsA(isA<GeminiException>()));
+      final ownerBound = tutor.invalidations.firstWhere(
+        (_) => tutor.scope?.firebaseUid == 'synthetic-uid',
+      );
+      await dependencies.localOwners!.bindFirebaseUid(
+        owner.id,
+        'synthetic-uid',
+      );
+      await ownerBound;
+      expect((await tutor.loadSettings()).hasKey, isFalse);
+      await tutor.configure(
+        key: 'synthetic-anon-key',
+        providerConsent: true,
+        shareLearningSummary: true,
+      );
+      final beforeUpgrade = tutor.epoch;
+      session = const AccountSession(
+        uid: 'synthetic-uid',
+        email: null,
+        isAnonymous: false,
+        emailVerified: false,
+      );
+      authEvents.add(session);
+      expect(tutor.epoch, greaterThan(beforeUpgrade));
+      expect((await tutor.loadSettings()).hasKey, isFalse);
+      await tutor.configure(
+        key: 'synthetic-registered-key',
+        providerConsent: true,
+        shareLearningSummary: false,
+      );
+      final beforeABA = tutor.epoch;
+      session = null;
+      authEvents.add(session);
+      session = const AccountSession(
+        uid: 'synthetic-uid',
+        email: null,
+        isAnonymous: false,
+        emailVerified: false,
+      );
+      authEvents.add(session);
+      expect(tutor.epoch, greaterThanOrEqualTo(beforeABA + 2));
+      expect((await tutor.loadSettings()).providerConsent, isFalse);
+      await tutor.updateConsents(
+        providerConsent: true,
+        shareLearningSummary: false,
+      );
+      gateway.gate = Completer<String>();
+      final pending = expectLater(
+        tutor.reply(
+          scenario: 'Cafe Ordering',
+          learnerMessage: 'Synthetic pending',
+        ),
+        throwsA(isA<GeminiException>()),
+      );
+      await gateway.started.future;
+      authEvents.addError(StateError('synthetic-auth-unavailable'));
+      expect(gateway.cancellation!.isCancelled, isTrue);
+      gateway.gate!.complete('Late synthetic reply');
+      await pending;
+      await expectLater(tutor.loadSettings(), throwsA(isA<GeminiException>()));
+      expect(
+        (await dependencies.learning!.startQuiz(limit: 1)).isEmpty,
+        isTrue,
+      );
+      authEvents.add(session);
+      expect((await tutor.loadSettings()).providerConsent, isFalse);
+      final beforeOwner = tutor.epoch;
+      await (database.update(database.localOwners)
+            ..where((row) => row.id.equals(owner.id)))
+          .write(const LocalOwnersCompanion(isActive: Value(false)));
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'synthetic-new-owner',
+              createdAtUtcMs: 1,
+            ),
+          );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(tutor.epoch, greaterThan(beforeOwner));
+      await expectLater(tutor.loadSettings(), throwsA(isA<GeminiException>()));
+      expect(dependencies.learning, isNotNull);
+      expect(dependencies.vocabularyImportFilePicker, isNotNull);
+      expect(dependencies.sourcePracticeFilePicker, isNotNull);
+      expect(gateway.generated, 1);
+      expect(epochs, isNotEmpty);
+      await subscription.cancel();
+      await dependencies.dispose();
+      expect(authEvents.hasListener, isFalse);
+      await authEvents.close();
+    },
+  );
+  group('AppBootstrap.initialize', () {
+    test('production defaults research authority to deny-all', () {
+      expect(
+        AppBootstrap.production().researchAuthorizer,
+        isA<DenyAllResearchOperationAuthorizer>(),
+      );
+    });
+
+    test('production accepts an explicitly configured research authority', () {
+      const authorizer = _AllowResearchOperationAuthorizer();
 
       expect(
-        identical(dependencies.progressRepository, expectedRepository),
+        identical(
+          AppBootstrap.production(
+            researchAuthorizer: authorizer,
+          ).researchAuthorizer,
+          authorizer,
+        ),
         isTrue,
       );
     });
 
     test(
-      'composes one-shot progress synchronization when both ports exist',
+      'production composition keeps research export fail closed after consent',
       () async {
-        final repository = _StubProgressRepository();
-        final remoteWriter = _StubProgressRemoteWriter();
-        final bootstrap = AppBootstrap(
+        final database = _testDatabase();
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
           initializeFirebase: () async {},
           initializeSupabase: () async {},
           loadConfig: _validConfig,
           guestSessionService: _StubGuestSessionService(),
-          loadProgressRepository: () async => repository,
-          progressRemoteWriter: remoteWriter,
-        );
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        await dependencies.researchConsent!.accept();
 
-        final dependencies = await bootstrap.initialize();
+        Object? failure;
+        try {
+          await dependencies.exports!.prepare(
+            format: ExportFormat.researchJson,
+            selection: const ExportSelection(
+              includeVocabulary: true,
+              includeAttempts: false,
+              includeReading: false,
+            ),
+            cancellation: ExportCancellation(),
+          );
+        } catch (error) {
+          failure = error;
+        }
 
-        expect(dependencies.progressSyncService, isNotNull);
         expect(
-          identical(dependencies.progressSyncService!.repository, repository),
-          isTrue,
-        );
-        expect(
-          identical(
-            dependencies.progressSyncService!.remoteWriter,
-            remoteWriter,
+          failure,
+          isA<ExportException>().having(
+            (error) => error.code,
+            'code',
+            ExportFailureCode.unavailable,
           ),
-          isTrue,
         );
+        expect(failure.toString(), isNot(contains(owner.id)));
+        expect(await database.select(database.eventsV2).get(), isEmpty);
+        expect(await database.select(database.outboxOperations).get(), isEmpty);
       },
     );
 
     test(
-      'retains the trusted purchase writer without enabling the shop',
+      'account factory failure still exposes local learning and Guest',
       () async {
-        final purchaseWriter = _StubPurchaseRemoteWriter();
-        final bootstrap = AppBootstrap(
-          initializeFirebase: () async {},
-          initializeSupabase: () async {},
-          loadConfig: _validConfig,
-          guestSessionService: _StubGuestSessionService(),
-          purchaseRemoteWriter: purchaseWriter,
-        );
-
-        final dependencies = await bootstrap.initialize();
+        final database = _testDatabase();
+        final dependencies = await _accountBootstrap(
+          database,
+          () => throw StateError('synthetic factory failure'),
+        ).initialize();
+        addTearDown(dependencies.dispose);
 
         expect(
-          identical(dependencies.purchaseRemoteWriter, purchaseWriter),
-          isTrue,
+          dependencies.runtimeStatus.firebase,
+          RuntimeAvailability.unavailable,
         );
+        expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
+        expect(dependencies.account, isNull);
+        expect(dependencies.syncEngine, isNull);
         expect(
-          dependencies.remoteEconomyPolicy.shopAndPurchasesEnabled,
-          isFalse,
+          await dependencies.guestSessionService.start(),
+          isA<GuestSessionStarted>(),
         );
+        final category = await dependencies.vocabulary!.createCategory(
+          'Offline',
+        );
+        expect(category.name, 'Offline');
       },
     );
 
-    test(
-      'repository loader failure returns null without leaking details',
-      () async {
-        const sentinel = 'LOCAL-STORAGE-CREDENTIAL-7c9f3a';
-        final bootstrap = AppBootstrap(
-          initializeFirebase: () async {},
-          initializeSupabase: () async {},
-          loadConfig: _validConfig,
-          guestSessionService: _StubGuestSessionService(),
-          loadProgressRepository: () async => throw StateError(sentinel),
-        );
+    test('unavailable Firebase never creates the account gateway', () async {
+      var factoryCalls = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async =>
+            throw StateError('synthetic offline Firebase'),
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _OfflineGuest(),
+        bindGuestOwnership: true,
+        accountGatewayFactory: () {
+          factoryCalls++;
+          return _StartupGateway(null);
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
 
-        final dependencies = await bootstrap.initialize();
+      expect(factoryCalls, 0);
+      expect(dependencies.account, isNull);
+      expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
+      expect(
+        await dependencies.guestSessionService.start(),
+        isA<GuestSessionStarted>(),
+      );
+    });
 
-        expect(dependencies.progressRepository, isNull);
-        expect(dependencies.toString(), isNot(contains(sentinel)));
-      },
-    );
+    test('failed restored-session read falls back to local learning', () async {
+      final gateway = _StartupGateway(null)
+        ..readFailure = StateError('synthetic session failure');
+      final dependencies = await _accountBootstrap(
+        _testDatabase(),
+        () => gateway,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(
+        dependencies.runtimeStatus.firebase,
+        RuntimeAvailability.unavailable,
+      );
+      expect(dependencies.account, isNull);
+      expect(dependencies.syncEngine, isNull);
+      expect(
+        (await dependencies.vocabulary!.createCategory('Offline')).name,
+        'Offline',
+      );
+    });
+
+    for (final anonymous in [false, true]) {
+      test(
+        'bootstrap reconciles restored ${anonymous ? 'anonymous' : 'registered'} session once',
+        () async {
+          final database = _testDatabase();
+          final gateway = _StartupGateway(
+            AccountSession(
+              uid: 'synthetic-restored',
+              email: anonymous ? null : 'learner@example.test',
+              isAnonymous: anonymous,
+              emailVerified: !anonymous,
+            ),
+          );
+          final dependencies = await _accountBootstrap(
+            database,
+            () => gateway,
+          ).initialize();
+          addTearDown(dependencies.dispose);
+          final owner = await dependencies.localOwners!
+              .getOrCreateActiveOwner();
+
+          expect(dependencies.account, isNotNull);
+          expect(dependencies.account!.googleSignInAvailable, isFalse);
+          expect(owner.firebaseUid, 'synthetic-restored');
+          await dependencies.account!.reconcileLocalOwner();
+          expect(
+            await database.select(database.localOwners).get(),
+            hasLength(1),
+          );
+          expect(gateway.signOutCalls, 0);
+        },
+      );
+    }
+
+    for (final existingB in [false, true]) {
+      test(
+        'bootstrap preserves A when restoring ${existingB ? 'existing' : 'new'} B',
+        () async {
+          final database = _testDatabase();
+          await database.customStatement(
+            "INSERT INTO local_owners (id, firebase_uid, created_at_utc_ms, is_active) VALUES ('owner-a', 'uid-a', 1, 1)",
+          );
+          await database.customStatement(
+            "INSERT INTO vocabulary_categories (id, owner_id, name, normalized_name, created_at_utc_ms, updated_at_utc_ms, cloud_revision) VALUES ('category-a', 'owner-a', 'Travel', 'travel', 1, 1, 4)",
+          );
+          if (existingB) {
+            await database.customStatement(
+              "INSERT INTO local_owners (id, firebase_uid, created_at_utc_ms, is_active) VALUES ('owner-b', 'uid-b', 2, 0)",
+            );
+          }
+          final gateway = _StartupGateway(
+            const AccountSession(
+              uid: 'uid-b',
+              email: 'b@example.test',
+              isAnonymous: false,
+              emailVerified: true,
+            ),
+          );
+          final dependencies = await _accountBootstrap(
+            database,
+            () => gateway,
+          ).initialize();
+          addTearDown(dependencies.dispose);
+
+          expect(
+            dependencies.runtimeStatus.firebase,
+            RuntimeAvailability.ready,
+          );
+          final active = await dependencies.localOwners!
+              .getOrCreateActiveOwner();
+          expect(active.firebaseUid, 'uid-b');
+          if (existingB) expect(active.id, 'owner-b');
+          final category = await database
+              .select(database.vocabularyCategories)
+              .getSingle();
+          expect(category.ownerId, 'owner-a');
+          expect(category.cloudRevision, 4);
+          final ownerCount =
+              (await database.select(database.localOwners).get()).length;
+          await dependencies.account!.reconcileLocalOwner();
+          expect(
+            (await database.select(database.localOwners).get()).length,
+            ownerCount,
+          );
+          expect(
+            await (database.select(
+              database.localOwners,
+            )..where((row) => row.isActive.equals(true))).get(),
+            hasLength(1),
+          );
+        },
+      );
+    }
 
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: () => expectedConfig,
@@ -182,10 +850,41 @@ void main() {
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
       expect(identical(dependencies.config, expectedConfig), isTrue);
+      expect(dependencies.deviceModels, isNotNull);
+      expect(dependencies.objectScanner, isNotNull);
+      expect(dependencies.devicePermissions, isNotNull);
+      expect(dependencies.speechPractice, isNotNull);
+      expect(dependencies.geminiTutor, isNotNull);
+      expect(dependencies.associativeLearning, isNotNull);
+      expect(dependencies.vocabularyImportFilePicker, isNotNull);
+      expect(dependencies.sourcePracticeFilePicker, isNotNull);
     });
 
+    test(
+      'creates the active local owner before exposing dependencies',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final owners = await database.select(database.localOwners).get();
+
+        expect(dependencies.localOwners, isNotNull);
+        expect(owners, hasLength(1));
+        expect(owners.single.isActive, isTrue);
+      },
+    );
+
     test('records Firebase failure and still returns', () async {
+      final database = _testDatabase();
       final bootstrap = AppBootstrap(
+        createDatabase: () => database,
         initializeFirebase: () async => throw StateError('firebase-down'),
         initializeSupabase: () async {},
         loadConfig: _validConfig,
@@ -198,13 +897,37 @@ void main() {
         dependencies.runtimeStatus.firebase,
         RuntimeAvailability.unavailable,
       );
+      expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
+      expect(identical(dependencies.database, database), isTrue);
+      expect(dependencies.vocabulary, isNotNull);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
       expect(dependencies.config, isNotNull);
     });
 
+    test('wires local sync status without a Cloud gateway', () async {
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async =>
+            throw StateError('synthetic offline Firebase'),
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+      ).initialize();
+
+      final status = await dependencies.syncStatus!
+          .watchCurrentOwnerSyncStatus()
+          .firstWhere((snapshot) => snapshot != null);
+
+      expect(dependencies.syncEngine, isNull);
+      expect(status?.ownerId, isNotEmpty);
+      expect(status?.pending, 0);
+      expect(status?.handledConflicts, 0);
+    });
+
     test('records Supabase failure and still returns', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: _validConfig,
@@ -223,6 +946,7 @@ void main() {
 
     test('records config failure with null config', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: () => throw const AppConfigException('invalid config'),
@@ -242,6 +966,7 @@ void main() {
 
     test('represents multiple failures independently', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async => throw StateError('firebase-down'),
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: () => throw const AppConfigException('invalid config'),
@@ -270,6 +995,7 @@ void main() {
       const supabaseSentinel = 'SUPABASE-SECRET-7c9f3a';
       const configSentinel = 'CONFIG-SECRET-7c9f3a';
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async => throw StateError(firebaseSentinel),
         initializeSupabase: () async => throw StateError(supabaseSentinel),
         loadConfig: () => throw const AppConfigException(configSentinel),
@@ -301,6 +1027,7 @@ void main() {
     test('retains exact injected GuestSessionService identity', () async {
       final guestSessionService = _StubGuestSessionService();
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: _validConfig,
@@ -314,5 +1041,250 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'production composition binds anonymous auth to local ownership',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _SuccessfulGuestSessionService(),
+          bindGuestOwnership: true,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final result = await dependencies.guestSessionService.start();
+        LocalOwner? owner;
+        for (var attempt = 0; attempt < 20; attempt++) {
+          owner = await (database.select(
+            database.localOwners,
+          )..where((row) => row.isActive.equals(true))).getSingle();
+          if (owner.firebaseUid == 'anonymous-bootstrap-user') {
+            break;
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+
+        expect(result, isA<GuestSessionStarted>());
+        expect(owner?.firebaseUid, 'anonymous-bootstrap-user');
+        expect(owner?.accountState, 'firebaseBound');
+      },
+    );
+
+    test('composes local mutations into the shared sync trigger', () async {
+      final gateway = _BootstrapSyncGateway();
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        syncGatewayFactory: () => gateway,
+      );
+
+      final dependencies = await bootstrap.initialize();
+      await dependencies.vocabulary!.createCategory('Travel');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(dependencies.syncTrigger, isNotNull);
+      expect(gateway.policyFetches, 1);
+    });
   });
+
+  group('resolveAndroidAppCheckProvider', () {
+    test('returns the debug provider when debugMode is true', () {
+      final provider = resolveAndroidAppCheckProvider(debugMode: true);
+      expect(provider, isA<AndroidDebugProvider>());
+      expect(provider.type, 'debug');
+    });
+
+    test('returns the Play Integrity provider when debugMode is false', () {
+      final provider = resolveAndroidAppCheckProvider(debugMode: false);
+      expect(provider, isA<AndroidPlayIntegrityProvider>());
+      expect(provider.type, 'playIntegrity');
+    });
+
+    test(
+      'selects debug only for the exact debug flag, not a truthy default',
+      () {
+        // Regression guard: the production default is `!kReleaseMode`, so a
+        // release build (kReleaseMode == true) must resolve to Play Integrity
+        // and never fall back to the debug provider.
+        expect(
+          resolveAndroidAppCheckProvider(debugMode: false).runtimeType,
+          AndroidPlayIntegrityProvider,
+        );
+      },
+    );
+  });
+}
+
+AppBootstrap _accountBootstrap(
+  AppDatabase database,
+  AccountGatewayFactory factory,
+) => AppBootstrap(
+  createDatabase: () => database,
+  initializeFirebase: () async {},
+  initializeSupabase: () async {},
+  loadConfig: _validConfig,
+  guestSessionService: _OfflineGuest(),
+  bindGuestOwnership: true,
+  accountGatewayFactory: factory,
+);
+
+final class _OfflineGuest implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionFailed(GuestSessionFailure.firebaseUnavailable);
+}
+
+final class _AllowResearchOperationAuthorizer
+    implements ResearchOperationAuthorizer {
+  const _AllowResearchOperationAuthorizer();
+
+  @override
+  Future<bool> authorize({
+    required String ownerId,
+    required ResearchOperation operation,
+  }) async => true;
+}
+
+final class _StartupGateway implements AccountGateway {
+  _StartupGateway(this.session);
+  AccountSession? session;
+  Object? readFailure;
+  int signOutCalls = 0;
+  @override
+  AccountSession? get currentSession {
+    if (readFailure case final error?) throw error;
+    return session;
+  }
+
+  @override
+  Future<void> signOut() async {
+    signOutCalls++;
+    session = null;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+final class _ScopedGeminiStore implements GeminiSettingsStore {
+  final values = <GeminiScope, GeminiConfiguration>{};
+  @override
+  Future<GeminiConfiguration> read(GeminiScope scope) async =>
+      values[scope] ?? const GeminiConfiguration();
+  @override
+  Future<void> write(
+    GeminiScope scope,
+    GeminiConfiguration configuration,
+  ) async {
+    values[scope] = configuration;
+  }
+}
+
+final class _GeminiGateway implements GeminiGateway {
+  int generated = 0;
+  Completer<String>? gate;
+  final started = Completer<void>();
+  GeminiCancellation? cancellation;
+  Completer<void>? validationGate;
+  Completer<void>? validationStarted;
+  GeminiCancellation? validationCancellation;
+  @override
+  String get model => 'synthetic';
+  @override
+  Future<void> validateKey(
+    String key, {
+    GeminiCancellation? cancellation,
+  }) async {
+    validationCancellation = cancellation;
+    validationStarted?.complete();
+    await validationGate?.future;
+  }
+
+  @override
+  Future<String> generateTutorReply({
+    required String key,
+    required String scenario,
+    required String learnerMessage,
+    GeminiTutorMode mode = GeminiTutorMode.guided,
+    String? learningSummary,
+    GeminiCancellation? cancellation,
+  }) async {
+    generated += 1;
+    this.cancellation = cancellation;
+    if (!started.isCompleted) started.complete();
+    return gate?.future ?? 'synthetic';
+  }
+}
+
+Future<void> _recordOriginalBootstrapAnswer(
+  AppDependencies dependencies,
+) async {
+  final database = dependencies.database!;
+  final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+  await database.customStatement(
+    'INSERT INTO vocabulary_categories '
+    '(id,owner_id,name,normalized_name,created_at_utc_ms,updated_at_utc_ms) '
+    "VALUES ('original-category',?,'Synthetic','synthetic',1,1)",
+    [owner.id],
+  );
+  for (final word in [
+    ('original-word-one', 'station', 'สถานี'),
+    ('original-word-two', 'ticket', 'ตั๋ว'),
+  ]) {
+    await database.customStatement(
+      'INSERT INTO vocabulary_words '
+      '(id,owner_id,category_id,spelling,normalized_spelling,meaning,normalized_meaning,'
+      'part_of_speech,source,created_at_utc_ms,updated_at_utc_ms) '
+      "VALUES (?,?,'original-category',?,?,?,?, 'noun','manual',1,1)",
+      [word.$1, owner.id, word.$2, word.$2, word.$3, word.$3],
+    );
+  }
+  final session = await dependencies.learning!.startQuiz(
+    categoryId: 'original-category',
+  );
+  expect(session.questions, hasLength(2));
+  await dependencies.learning!.recordAnswer(
+    sessionId: session.id,
+    wordId: 'original-word-one',
+    promptMode: 'meaning',
+    isCorrect: true,
+    responseTimeMs: 100,
+    attemptNumber: 1,
+  );
+}
+
+final class _BootstrapSyncGateway implements SyncGateway {
+  int policyFetches = 0;
+
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() async {
+    policyFetches += 1;
+    final now = DateTime.now().toUtc();
+    return CloudSyncPolicy(
+      enabled: true,
+      source: CloudSyncPolicySource.remote,
+      fetchedAtUtc: now,
+      expiresAtUtc: now.add(const Duration(minutes: 15)),
+    );
+  }
+
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) async => PullPage(changes: const [], nextCursor: after, hasMore: false);
+
+  @override
+  Future<PushResult> push(PushMutation mutation) {
+    throw UnimplementedError();
+  }
 }

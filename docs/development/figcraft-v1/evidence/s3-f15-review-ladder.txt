@@ -1,0 +1,74 @@
+F15 vocabulary review through meaning, comparison and typed recall
+
+Application 9120384f1b8b590addc095faf44f0e92f1b5cdd0 on the FigCraft
+prototype branch. The authored station / platform journey requires a
+completed flashcard answer for station and both current words in the
+same owner's set. The saved flashcard answer pins the reviewed word
+snapshot. An optional card and the comparison mark subsequent meaning
+checks as assisted. The typed step keeps the sentence and its Thai
+translation visible and discloses any additional hint separately.
+
+The first unaided meaning check is the sole canonical attempt and uses
+the timestamp saved at that check. If the learner first opens the card,
+the completed round has a null score. The assisted retry and typed
+result stay in the owner-scoped local session continuation. Finalization
+and exact replay preserve one original attempt. The typed field is
+saved on check. Unsubmitted keystrokes stay in memory. The existing
+session storage and wire contracts are unchanged.
+
+Flutter 307 passed on Windows, including the Library entry at 200%,
+exact retry, same-revision word edits, owner and feature scope, due
+review result ownership, progress projections and learning sync. Static
+analysis passed on all 15 changed Dart files. Review found and verified
+corrections for the child route retaining the previous owner's data and
+the V2 quiz visibility bypass.
+
+Windows records under build/, SHA-256
+s3-f15-verify.txt 285b97da358cba02bd4276b4b3ad2c11e7ceaf59704f9a59a93e7e0c3a72f2b7
+s3-f15-analysis.txt f54b419fa50535059a3aeb9f192e6925ca4924bf0810c67cfa670979431a6835
+s3-f15-review-fixes-red.txt 3be2b051d8bc08393b3fe5852d3920d09646854b49b7a2069c12e9333e2446cb
+s3-f15-android-build.txt b675fa881d4201a4ce11b1d33c7e82ca901f4264f35d0880da536d6e74d813bc
+
+The local and installed x64 debug APK from 9120384f match at SHA-256
+6a2dee192eba767392589049cf6412baa0835e8b741addc06f784ed8ba3615bb.
+The isolated Android API 35 emulator used airplane mode, Wi-Fi off,
+system font 2.0 and a local guest who declined research.
+
+Before installing the new APK, use the previous app to complete a real
+due flashcard round for synthetic station / สถานี. The fixture seeds
+the two words and due date. The app records the flashcard attempt and
+its snapshot. Open Library → ทบทวนคำศัพท์ → ฝึกให้จำได้ด้วยตัวเอง.
+Choose ชานชาลา for station and compare the two words. At comparison,
+SQLite has the first wrong check, zero new attempts and unchanged SRS.
+Choose สถานี on the assisted retry, then enter station via the Android
+text field in Meet me at the ____ tomorrow.
+
+The result displays 0/1 for the independent choice, a correct assisted
+choice, and correct contextual typing. The SQLite session contains the
+original check, assisted retry and typed response. Exactly one new
+wrong meaningChoice attempt uses the first check timestamp. The
+original srsRecall attempt is unchanged and the station lapse count
+increases by one. Reward and research tables remain unchanged. The
+return button opens the same Review Desk.
+
+ดูผลรอบล่าสุด opens the same result before and after a cold restart.
+The restart replaced process 11718 with process 12833. Read-only
+SQLite snapshots of the completed round and reopened round are
+byte-for-byte identical.
+
+Android records under build/boss-android-evidence, SHA-256
+f15-installed-sha256.txt ef90dda371f9b3b99da9b0934f7041eaf9199fe06d4232bcfb213d9141a3fadd
+f15-native-prior-review-score.txt 62f5705473a99f3fa1568fd3c4abeb21c9666d9dae6283ee6ad541a5081d1869
+f15-native-db-baseline.json fe417d7f7ffcc4d6f2970bc54781f0694387261e4b1e508124f193d213aabb12
+f15-native-comparison.png 39f49072cac57c9a1e21eec67dd94e953d63dbd522222da8231749e0b326cccd
+f15-native-db-comparison.json d085e80007447707f57b37b6e20d43fba5c632754b229aa08c659c8c976d6abb
+f15-native-typed-blank.png efa6a49e57eba053a99ee0603d2c845a5797e94db7e12d4d86a4d1b14e0c3687
+f15-native-result.png 10cbfa80789ed4bd9c83f283e105e6751f4bac6bfb7452f178e55fa85587c6e4
+f15-native-return.txt 0b4d54a693d95c99330468a13dda02c581ca28d1faf9b86e943360df461c1164
+f15-native-db-completed.json and f15-native-db-reopened.json
+3f3403509080a86e06e0a7d99bc27594928edee440ae87c26843b76c2c766de8
+f15-native-restart-pid.txt 95cc86ed190c641f832a71d605de433adecf97644592a3e8ea623f2fcec4dfdb
+f15-native-reopened.txt 800e8299a36b7c5009b670d1ee58b07caca350ca79185fc4e4117c5b19ff9420
+
+Delivery APK and spoken TalkBack remain unverified. The Android check
+covers the authored word pair and the comparison-assisted retry.

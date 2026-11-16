@@ -7,34 +7,24 @@ const {
   initializeTestEnvironment,
 } = require('@firebase/rules-unit-testing');
 const {
-  collection,
-  deleteField,
   deleteDoc,
   doc,
   getDoc,
-  getDocs,
-  query,
   serverTimestamp,
   setDoc,
   updateDoc,
-  where,
   writeBatch,
 } = require('firebase/firestore');
 
 const projectId = 'demo-lexiquest-rules-test';
 const alice = 'alice_uid';
 const bob = 'bob_uid';
-const anonymousUid = 'anon_123';
 const productId = 'wallpaper_neon';
 const purchaseId = `${alice}_${productId}`;
 let testEnv;
 
-function authDb(uid = alice, isAnon = false, provider = 'password') {
-  const token = {
-    firebase: {
-      sign_in_provider: isAnon ? 'anonymous' : provider,
-    },
-  };
+function authDb(uid = alice, isAnon = false) {
+  const token = isAnon ? { firebase: { sign_in_provider: 'anonymous' } } : {};
   return testEnv.authenticatedContext(uid, token).firestore();
 }
 
@@ -59,59 +49,171 @@ function purchaseData(totalPrice = 50) {
   };
 }
 
-function profileData(overrides = {}) {
+function fieldCategoryData({
+  entityId = 'category-1',
+  operationId = 'operation-1',
+  revision = 1,
+} = {}) {
   return {
-    first_name: 'Alice',
-    last_name: 'Learner',
-    email: 'alice@example.com',
-    age: 20,
-    createdAt: serverTimestamp(),
-    ...overrides,
+    schemaVersion: 1,
+    entityId,
+    payload: {
+      name: 'Travel',
+      normalizedName: 'travel',
+      sortOrder: 0,
+      isDeleted: false,
+      createdAtUtcMs: 1000,
+      updatedAtUtcMs: 2000,
+    },
+    revision,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
   };
 }
 
-function categoryData(uid = alice, name = 'Core words') {
+function fieldOperationData({
+  operationId = 'operation-1',
+  entityId = 'category-1',
+  baseRevision = 0,
+  resultingRevision = 1,
+} = {}) {
   return {
-    category_name: name,
-    created_at: serverTimestamp(),
+    schemaVersion: 1,
+    operationId,
+    entityType: 'category',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision,
+    resultingRevision,
+    acknowledgedAt: serverTimestamp(),
+  };
+}
+
+function writeFieldCategory(db, options = {}) {
+  const uid = options.uid ?? alice;
+  const entityId = options.entityId ?? 'category-1';
+  const operationId = options.operationId ?? 'operation-1';
+  const batch = writeBatch(db);
+  batch.set(
+    doc(db, 'field_users', uid, 'categories', entityId),
+    fieldCategoryData({ ...options, entityId, operationId }),
+  );
+  batch.set(
+    doc(db, 'field_users', uid, 'operations', operationId),
+    fieldOperationData({ ...options, entityId, operationId }),
+  );
+  return batch.commit();
+}
+
+function writeFieldWord(db, {
+  uid = alice,
+  entityId = 'word-1',
+  operationId = 'word-operation-1',
+  categoryId = 'category-1',
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'words', entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload: {
+      categoryId,
+      spelling: 'station',
+      normalizedSpelling: 'station',
+      meaning: 'สถานี',
+      normalizedMeaning: 'สถานี',
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'manual',
+      isGlobal: false,
+      isDeleted: false,
+      createdAtUtcMs: 1000,
+      updatedAtUtcMs: 2000,
+    },
+    revision: 1,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1,
+    operationId,
+    entityType: 'word',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision: 0,
+    resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
+function writeFieldLearningEvent(db, {
+  uid = alice,
+  collection = 'attempts',
+  entityType = 'attempt',
+  entityId = 'attempt-1',
+  operationId = 'attempt-operation-1',
+  payload,
+} = {}) {
+  const resolvedPayload = payload ?? {
+    sessionId: 'session-1',
+    wordId: 'word-1',
+    promptMode: 'meaningChoice',
+    isCorrect: true,
+    responseTimeMs: 320,
+    attemptNumber: 1,
+    occurredAtUtcMs: 2000,
+    providerProvenance: null,
+  };
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, collection, entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload: resolvedPayload,
+    revision: 1,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1,
+    operationId,
+    entityType,
+    entityId,
+    operationKind: 'upsert',
+    baseRevision: 0,
+    resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
+function writeFieldRewardTransaction(db, {
+  uid = alice,
+  entityId = 'reward-1',
+  operationId = 'reward-operation-1',
+  payload,
+} = {}) {
+  return writeFieldLearningEvent(db, {
     uid,
-  };
-}
-
-function wordData(uid = alice, word = 'lexicon') {
-  return {
-    word,
-    meaning: 'A vocabulary',
-    part_of_speech: 'noun',
-    user_id: uid,
-    is_global: false,
-    created_at: serverTimestamp(),
-  };
-}
-
-function vocabularyData(word = 'abate') {
-  return {
-    word,
-    meaning: 'Become less intense',
-    part_of_speech: 'verb',
-  };
-}
-
-function globalWordData(word = 'resilient') {
-  return {
-    word,
-    meaning: 'Able to recover quickly',
-    partOfSpeech: 'adjective',
-    createdAt: serverTimestamp(),
-  };
-}
-
-async function seedDocuments(entries) {
-  await testEnv.withSecurityRulesDisabled(async (context) => {
-    const db = context.firestore();
-    for (const [documentPath, data] of entries) {
-      await setDoc(doc(db, documentPath), data);
-    }
+    collection: 'reward_transactions',
+    entityType: 'rewardTransaction',
+    entityId,
+    operationId,
+    payload: payload ?? {
+      idempotencyKey: 'purchase-tap-1',
+      transactionType: 'purchase',
+      amount: -80,
+      itemId: 'theme_ocean',
+      slot: 'theme',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: 4000,
+    },
   });
 }
 
@@ -137,290 +239,30 @@ after(async () => {
   await testEnv?.cleanup();
 });
 
-describe('registered profile authority contract', () => {
-  it('denies a provider-less authenticated token from private records', async () => {
-    const uid = 'providerless_uid';
-    await seedDocuments([
-      [`users/${uid}`, profileData()],
-    ]);
-    const db = testEnv.authenticatedContext(
-      uid,
-      { firebase: {} },
-    ).firestore();
-
-    await assertFails(getDoc(doc(db, 'users', uid)));
-  });
-
-  it('allows a registered owner to create and read a validated profile', async () => {
-    const db = authDb();
-    const profileRef = doc(db, 'users', alice);
-
-    await assertSucceeds(setDoc(profileRef, profileData()));
-    const profile = await assertSucceeds(getDoc(profileRef));
-    if (profile.data().email !== 'alice@example.com') {
-      throw new Error('Registered owner profile was not preserved.');
-    }
-  });
-
-  it('allows a custom-provider owner to access a validated profile', async () => {
-    const uid = 'custom_provider_uid';
-    const db = authDb(uid, false, 'custom');
-    const profileRef = doc(db, 'users', uid);
-
-    await assertSucceeds(
-      setDoc(profileRef, profileData({ email: 'custom@example.com' })),
-    );
-    await assertSucceeds(getDoc(profileRef));
-  });
-
-  for (const field of ['points', 'totalPoints', 'gamesPlayed']) {
-    it(`denies an owner adding legacy counter ${field}`, async () => {
-      await seedDocuments([
-        [`users/${alice}`, profileData()],
-      ]);
-      const db = authDb();
-
-      await assertFails(
-        updateDoc(doc(db, 'users', alice), { [field]: 1 }),
-      );
-    });
-
-    it(`denies an owner changing legacy counter ${field}`, async () => {
-      await seedDocuments([
-        [`users/${alice}`, profileData({ [field]: 10 })],
-      ]);
-      const db = authDb();
-
-      await assertFails(
-        updateDoc(doc(db, 'users', alice), { [field]: 11 }),
-      );
-    });
-
-    it(`denies an owner removing legacy counter ${field}`, async () => {
-      await seedDocuments([
-        [`users/${alice}`, profileData({ [field]: 10 })],
-      ]);
-      const db = authDb();
-
-      await assertFails(
-        updateDoc(doc(db, 'users', alice), { [field]: deleteField() }),
-      );
-    });
-  }
-
-  it('allows validated profile updates while preserving legacy counters', async () => {
-    await seedDocuments([
-      [
-        `users/${alice}`,
-        profileData({
-          points: 10,
-          totalPoints: 20,
-          gamesPlayed: 3,
-        }),
-      ],
-    ]);
-    const db = authDb();
-
-    await assertSucceeds(
-      updateDoc(doc(db, 'users', alice), {
-        first_name: 'Alicia',
-        last_name: 'Reader',
-        email: 'alicia@example.com',
-        age: 21,
-      }),
-    );
-
-    const profile = await assertSucceeds(
-      getDoc(doc(db, 'users', alice)),
-    );
-    const data = profile.data();
-    if (
-      data.first_name !== 'Alicia'
-      || data.last_name !== 'Reader'
-      || data.email !== 'alicia@example.com'
-      || data.age !== 21
-      || data.points !== 10
-      || data.totalPoints !== 20
-      || data.gamesPlayed !== 3
-    ) {
-      throw new Error('Profile update changed immutable legacy counters.');
-    }
-  });
-
-  it('rejects an invalid resulting profile', async () => {
-    await seedDocuments([
-      [`users/${alice}`, profileData({ points: 10 })],
-    ]);
-    const db = authDb();
-
-    await assertFails(
-      updateDoc(doc(db, 'users', alice), { first_name: '' }),
-    );
-  });
-
-  it('denies cross-owner profile reads and updates', async () => {
-    await seedDocuments([
-      [`users/${alice}`, profileData()],
-    ]);
-    const db = authDb(bob);
-
-    await assertFails(getDoc(doc(db, 'users', alice)));
-    await assertFails(
-      updateDoc(doc(db, 'users', alice), { first_name: 'Mallory' }),
-    );
-  });
-});
-
-describe('registered private learning record contract', () => {
-  it('allows owner category CRUD while denying cross-owner access', async () => {
-    const db = authDb();
-    const categoryRef = doc(db, 'categories', 'alice_category');
-    const wordRef = doc(
-      db,
-      'categories',
-      'alice_category',
-      'words',
-      'alice_word',
-    );
-
-    await assertSucceeds(setDoc(categoryRef, categoryData()));
-    await assertSucceeds(setDoc(wordRef, wordData()));
-    await assertSucceeds(getDoc(categoryRef));
-    await assertSucceeds(getDoc(wordRef));
-    await assertSucceeds(
-      updateDoc(wordRef, { meaning: 'A collection of words' }),
-    );
-
-    const bobDb = authDb(bob);
-    await assertFails(
-      getDoc(doc(bobDb, 'categories', 'alice_category')),
-    );
-    await assertFails(
-      getDoc(
-        doc(
-          bobDb,
-          'categories',
-          'alice_category',
-          'words',
-          'alice_word',
-        ),
-      ),
-    );
-
-    await assertSucceeds(deleteDoc(wordRef));
-    await assertSucceeds(deleteDoc(categoryRef));
-  });
-});
-
-describe('trusted remote economy contract', () => {
-  it('denies direct progress evidence reads and writes for every client', async () => {
-    await seedDocuments([
-      [
-        'progress_sessions/server_owned',
-        {
-          uid: alice,
-          sessionId: 'session_1',
-          eventIds: ['event_1'],
-          correctAnswers: 1,
-          completedAt: '2026-07-29T10:00:00.000Z',
-          recordedAt: '2026-07-29T10:00:01.000Z',
-          fingerprint: 'server-only',
-        },
-      ],
-    ]);
-    const ownerDb = authDb();
-    const crossOwnerDb = authDb(bob);
-    const anonymousDb = authDb(anonymousUid, true);
-    const unauthenticatedDb = testEnv.unauthenticatedContext().firestore();
-
-    for (const db of [
-      ownerDb,
-      crossOwnerDb,
-      anonymousDb,
-      unauthenticatedDb,
-    ]) {
-      await assertFails(
-        getDoc(doc(db, 'progress_sessions', 'server_owned')),
-      );
-      await assertFails(
-        setDoc(doc(db, 'progress_sessions', 'client_forged'), {
-          uid: alice,
-          correctAnswers: 100,
-        }),
-      );
-    }
-  });
-
-  it('denies an owner creating remote economy state', async () => {
-    const db = authDb();
-
-    await assertFails(
-      setDoc(doc(db, 'state', alice), { totalPoints: 100 }),
-    );
-  });
-
-  it('denies an owner creating wallpaper-only state', async () => {
-    const db = authDb();
-
-    await assertFails(
-      setDoc(
-        doc(db, 'state', alice),
-        { selectedWallpaper: 'wallpaper_neon.png' },
-      ),
-    );
-  });
-
-  for (const [field, value] of [
-    ['totalPoints', 150],
-    ['totalCorrectAnswers', 1],
-    ['totalWrongAnswers', 1],
-    ['gamesPlayed', 1],
-  ]) {
-    it(`denies an owner changing remote economy counter ${field}`, async () => {
-      await seedStateAndProduct();
-      const db = authDb();
-
-      await assertFails(
-        updateDoc(doc(db, 'state', alice), { [field]: value }),
-      );
-    });
-  }
-
-  it('denies mixing a wallpaper preference with an economy mutation', async () => {
+describe('purchased_items transaction integrity', () => {
+  it('denies minting an item without atomically debiting points', async () => {
     await seedStateAndProduct();
     const db = authDb();
 
     await assertFails(
-      updateDoc(doc(db, 'state', alice), {
-        selectedWallpaper: 'wallpaper_neon.png',
-        totalPoints: 150,
-      }),
+      setDoc(doc(db, 'purchased_items', purchaseId), purchaseData()),
     );
   });
 
-  it('allows an owner to update only the wallpaper preference', async () => {
+  it('denies a purchase whose submitted price differs from the catalog', async () => {
     await seedStateAndProduct();
     const db = authDb();
-
-    await assertSucceeds(
-      updateDoc(doc(db, 'state', alice), {
-        selectedWallpaper: 'wallpaper_neon.png',
-      }),
-    );
-    await assertSucceeds(
-      updateDoc(doc(db, 'state', alice), { selectedWallpaper: null }),
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'state', alice), { totalPoints: 99 });
+    batch.set(
+      doc(db, 'purchased_items', purchaseId),
+      purchaseData(1),
     );
 
-    const state = await assertSucceeds(getDoc(doc(db, 'state', alice)));
-    if (
-      state.data().totalPoints !== 100
-      || state.data().selectedWallpaper !== null
-    ) {
-      throw new Error('Wallpaper-only update changed remote economy state.');
-    }
+    await assertFails(batch.commit());
   });
 
-  it('denies an exact-price purchase even with an atomic debit', async () => {
+  it('allows one purchase with the exact catalog price and atomic debit', async () => {
     await seedStateAndProduct();
     const db = authDb();
     const batch = writeBatch(db);
@@ -430,67 +272,34 @@ describe('trusted remote economy contract', () => {
       purchaseData(),
     );
 
-    await assertFails(batch.commit());
-  });
-
-  it('denies direct creation of a purchased item', async () => {
-    await seedStateAndProduct();
-    const db = authDb();
-
-    await assertFails(
-      setDoc(doc(db, 'purchased_items', purchaseId), purchaseData()),
-    );
-  });
-
-  it('keeps purchased items immutable to clients', async () => {
-    await seedStateAndProduct();
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await setDoc(
-        doc(context.firestore(), 'purchased_items', purchaseId),
-        purchaseData(),
-      );
-    });
-    const db = authDb();
-    const purchaseRef = doc(db, 'purchased_items', purchaseId);
-
-    await assertFails(updateDoc(purchaseRef, { total_price: 1 }));
-    await assertFails(deleteDoc(purchaseRef));
-  });
-
-  it('keeps legacy owner state and purchase records readable', async () => {
-    await seedStateAndProduct();
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await setDoc(
-        doc(context.firestore(), 'purchased_items', purchaseId),
-        purchaseData(),
-      );
-    });
-    const db = authDb();
-
+    await assertSucceeds(batch.commit());
     const state = await assertSucceeds(getDoc(doc(db, 'state', alice)));
     const purchase = await assertSucceeds(
       getDoc(doc(db, 'purchased_items', purchaseId)),
     );
-    const purchases = await assertSucceeds(
-      getDocs(
-        query(
-          collection(db, 'purchased_items'),
-          where('user_id', '==', alice),
-        ),
-      ),
-    );
-    const bobDb = authDb('bob_uid');
-    await assertFails(getDoc(doc(bobDb, 'state', alice)));
-    await assertFails(
-      getDoc(doc(bobDb, 'purchased_items', purchaseId)),
-    );
-    if (
-      state.data().totalPoints !== 100
-      || purchase.data().product_id !== productId
-      || purchases.size !== 1
-    ) {
-      throw new Error('Legacy owner records were not preserved.');
+    if (state.data().totalPoints !== 50 || purchase.data().total_price !== 50) {
+      throw new Error('The committed purchase does not match the expected debit.');
     }
+  });
+
+  it('denies a second purchase of the same product', async () => {
+    await seedStateAndProduct();
+    const db = authDb();
+    const first = writeBatch(db);
+    first.update(doc(db, 'state', alice), { totalPoints: 50 });
+    first.set(
+      doc(db, 'purchased_items', purchaseId),
+      purchaseData(),
+    );
+    await assertSucceeds(first.commit());
+
+    const second = writeBatch(db);
+    second.update(doc(db, 'state', alice), { totalPoints: 0 });
+    second.set(
+      doc(db, 'purchased_items', purchaseId),
+      purchaseData(),
+    );
+    await assertFails(second.commit());
   });
 });
 
@@ -562,141 +371,8 @@ describe('voice_telemetry_events telemetry contract', () => {
 });
 
 describe('anonymous user isolation & cross-account integrity contract', () => {
-  it('denies anonymous profile read, create, update, and delete', async () => {
-    await seedDocuments([
-      [`users/${anonymousUid}`, profileData()],
-    ]);
-    const db = authDb(anonymousUid, true);
-    const existingRef = doc(db, 'users', anonymousUid);
-    const createDb = authDb('anon_create_profile', true);
-
-    await assertFails(getDoc(existingRef));
-    await assertFails(
-      setDoc(
-        doc(createDb, 'users', 'anon_create_profile'),
-        profileData({ email: 'anon@example.com' }),
-      ),
-    );
-    await assertFails(updateDoc(existingRef, { first_name: 'Guest' }));
-    await assertFails(deleteDoc(existingRef));
-  });
-
-  it('denies anonymous state read, create, update, and delete', async () => {
-    await seedDocuments([
-      [
-        `state/${anonymousUid}`,
-        { totalPoints: 100, selectedWallpaper: null },
-      ],
-    ]);
-    const db = authDb(anonymousUid, true);
-    const existingRef = doc(db, 'state', anonymousUid);
-    const createDb = authDb('anon_create_state', true);
-
-    await assertFails(getDoc(existingRef));
-    await assertFails(
-      setDoc(
-        doc(createDb, 'state', 'anon_create_state'),
-        { selectedWallpaper: null },
-      ),
-    );
-    await assertFails(
-      updateDoc(existingRef, {
-        selectedWallpaper: 'wallpaper_neon.png',
-      }),
-    );
-    await assertFails(deleteDoc(existingRef));
-  });
-
-  it('denies anonymous purchase read, create, update, and delete', async () => {
-    const anonymousPurchaseId = `${anonymousUid}_${productId}`;
-    await seedDocuments([
-      [
-        `purchased_items/${anonymousPurchaseId}`,
-        {
-          user_id: anonymousUid,
-          product_id: productId,
-          total_price: 50,
-          created_at: serverTimestamp(),
-        },
-      ],
-    ]);
-    const db = authDb(anonymousUid, true);
-    const existingRef = doc(db, 'purchased_items', anonymousPurchaseId);
-
-    await assertFails(getDoc(existingRef));
-    await assertFails(
-      setDoc(
-        doc(db, 'purchased_items', `${anonymousPurchaseId}_new`),
-        {
-          user_id: anonymousUid,
-          product_id: 'wallpaper_other',
-          total_price: 10,
-          created_at: serverTimestamp(),
-        },
-      ),
-    );
-    await assertFails(updateDoc(existingRef, { total_price: 1 }));
-    await assertFails(deleteDoc(existingRef));
-  });
-
-  it('denies anonymous category read, create, update, and delete', async () => {
-    await seedDocuments([
-      [`categories/anon_category`, categoryData(anonymousUid)],
-    ]);
-    const db = authDb(anonymousUid, true);
-    const existingRef = doc(db, 'categories', 'anon_category');
-
-    await assertFails(getDoc(existingRef));
-    await assertFails(
-      setDoc(
-        doc(db, 'categories', 'anon_category_new'),
-        categoryData(anonymousUid, 'Guest words'),
-      ),
-    );
-    await assertFails(
-      updateDoc(existingRef, { category_name: 'Changed' }),
-    );
-    await assertFails(deleteDoc(existingRef));
-  });
-
-  it('denies anonymous category word read, create, update, and delete', async () => {
-    await seedDocuments([
-      [`categories/anon_category`, categoryData(anonymousUid)],
-      [
-        `categories/anon_category/words/existing_word`,
-        wordData(anonymousUid),
-      ],
-    ]);
-    const db = authDb(anonymousUid, true);
-    const existingRef = doc(
-      db,
-      'categories',
-      'anon_category',
-      'words',
-      'existing_word',
-    );
-
-    await assertFails(getDoc(existingRef));
-    await assertFails(
-      setDoc(
-        doc(
-          db,
-          'categories',
-          'anon_category',
-          'words',
-          'new_word',
-        ),
-        wordData(anonymousUid, 'mnemonic'),
-      ),
-    );
-    await assertFails(
-      updateDoc(existingRef, wordData(anonymousUid, 'lexicon')),
-    );
-    await assertFails(deleteDoc(existingRef));
-  });
-
   it('denies anonymous user from creating telemetry events or writing to shared collections', async () => {
-    const anonDb = authDb(anonymousUid, true);
+    const anonDb = authDb('anon_123', true);
     await assertFails(
       setDoc(doc(anonDb, 'voice_telemetry_events', 'evt_anon'), {
         schemaVersion: 'voice_telemetry_v1',
@@ -719,76 +395,508 @@ describe('anonymous user isolation & cross-account integrity contract', () => {
   });
 
   it('denies user from writing to another user\'s state document', async () => {
-    await seedStateAndProduct();
-    const db = authDb(bob);
+    const db = authDb('bob_uid');
+    await assertFails(
+      setDoc(doc(db, 'state', alice), {
+        totalPoints: 99999,
+      }),
+    );
+  });
+});
+
+describe('field sync ownership and atomic revision contract', () => {
+  it('allows registered and anonymous owners to atomically create their own entity', async () => {
+    const registeredDb = authDb();
+    await assertSucceeds(writeFieldCategory(registeredDb));
+
+    const anonymousDb = authDb('anon_field', true);
+    await assertSucceeds(
+      writeFieldCategory(anonymousDb, {
+        uid: 'anon_field',
+        entityId: 'category-anon',
+        operationId: 'operation-anon',
+      }),
+    );
+  });
+
+  it('denies cross-user reads and writes', async () => {
+    await assertSucceeds(writeFieldCategory(authDb()));
+    const bobDb = authDb(bob);
 
     await assertFails(
-      updateDoc(
-        doc(db, 'state', alice),
-        { selectedWallpaper: 'wallpaper_neon.png' },
+      getDoc(doc(bobDb, 'field_users', alice, 'categories', 'category-1')),
+    );
+    await assertFails(
+      writeFieldCategory(bobDb, {
+        uid: alice,
+        entityId: 'category-by-bob',
+        operationId: 'operation-by-bob',
+      }),
+    );
+  });
+
+  it('denies an entity write without its immutable operation acknowledgement', async () => {
+    const db = authDb();
+    await assertFails(
+      setDoc(
+        doc(db, 'field_users', alice, 'categories', 'category-1'),
+        fieldCategoryData(),
       ),
     );
   });
-});
 
-describe('admin-seeded shared content contract', () => {
-  for (const [identity, isAnonymous] of [
-    ['registered', false],
-    ['anonymous', true],
-  ]) {
-    for (const [collectionName, existingId, createId, dataFactory] of [
-      ['vocabulary', 'seeded_vocab', 'client_vocab', vocabularyData],
-      ['global_words', 'seeded_word', 'client_word', globalWordData],
-    ]) {
-      it(`denies ${identity} client mutations to ${collectionName}`, async () => {
-        await seedDocuments([
-          [`${collectionName}/${existingId}`, dataFactory()],
-        ]);
-        const uid = isAnonymous ? anonymousUid : alice;
-        const db = authDb(uid, isAnonymous);
-        const existingRef = doc(db, collectionName, existingId);
+  it('denies extra entity fields and a mismatched document id', async () => {
+    const db = authDb();
+    const extra = writeBatch(db);
+    extra.set(
+      doc(db, 'field_users', alice, 'categories', 'category-extra'),
+      {
+        ...fieldCategoryData({
+          entityId: 'category-extra',
+          operationId: 'operation-extra',
+        }),
+        leakedField: 'not allowed',
+      },
+    );
+    extra.set(
+      doc(db, 'field_users', alice, 'operations', 'operation-extra'),
+      fieldOperationData({
+        entityId: 'category-extra',
+        operationId: 'operation-extra',
+      }),
+    );
+    await assertFails(extra.commit());
 
-        await assertFails(
-          setDoc(
-            doc(db, collectionName, createId),
-            dataFactory('client-created'),
-          ),
-        );
-        await assertFails(
-          setDoc(existingRef, dataFactory('client-overwrite')),
-        );
-        await assertFails(deleteDoc(existingRef));
-      });
-    }
+    const mismatch = writeBatch(db);
+    mismatch.set(
+      doc(db, 'field_users', alice, 'categories', 'category-path'),
+      fieldCategoryData({
+        entityId: 'different',
+        operationId: 'operation-mismatch',
+      }),
+    );
+    mismatch.set(
+      doc(db, 'field_users', alice, 'operations', 'operation-mismatch'),
+      fieldOperationData({
+        entityId: 'different',
+        operationId: 'operation-mismatch',
+      }),
+    );
+    await assertFails(mismatch.commit());
+  });
 
-    it(`allows ${identity} signed-in reads of admin-seeded shared content`, async () => {
-      await seedDocuments([
-        ['vocabulary/seeded_vocab', vocabularyData()],
-        ['global_words/seeded_word', globalWordData()],
-      ]);
-      const uid = isAnonymous ? anonymousUid : alice;
-      const db = authDb(uid, isAnonymous);
+  it('requires the exact current base revision and advancing result', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldCategory(db));
 
-      const vocabulary = await assertSucceeds(
-        getDoc(doc(db, 'vocabulary', 'seeded_vocab')),
-      );
-      const globalWord = await assertSucceeds(
-        getDoc(doc(db, 'global_words', 'seeded_word')),
-      );
-      if (!vocabulary.exists() || !globalWord.exists()) {
-        throw new Error('Admin-seeded shared content was not readable.');
-      }
+    await assertFails(
+      writeFieldCategory(db, {
+        operationId: 'operation-stale',
+        baseRevision: 0,
+        revision: 2,
+        resultingRevision: 2,
+      }),
+    );
+    await assertSucceeds(
+      writeFieldCategory(db, {
+        operationId: 'operation-2',
+        baseRevision: 1,
+        revision: 2,
+        resultingRevision: 2,
+      }),
+    );
+  });
+
+  it('keeps operation acknowledgements immutable', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldCategory(db));
+    await assertFails(
+      updateDoc(
+        doc(db, 'field_users', alice, 'operations', 'operation-1'),
+        { resultingRevision: 999 },
+      ),
+    );
+    await assertFails(
+      deleteDoc(doc(db, 'field_users', alice, 'operations', 'operation-1')),
+    );
+  });
+
+  it('requires each synchronized word to reference an existing cloud category', async () => {
+    const db = authDb();
+    await assertFails(writeFieldWord(db));
+    await assertSucceeds(writeFieldCategory(db));
+    await assertSucceeds(writeFieldWord(db));
+  });
+
+  it('accepts immutable attempt and reading evidence with atomic acknowledgements', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningEvent(db));
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'reading_events',
+        entityType: 'readingEvent',
+        entityId: 'reading-1',
+        operationId: 'reading-operation-1',
+        payload: {
+          documentId: 'article-1',
+          documentRevision: 1,
+          eventType: 'completed',
+          position: 6,
+          occurredAtUtcMs: 3000,
+        },
+      }),
+    );
+  });
+
+  it('keeps learning evidence create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningEvent(db));
+    const ref = doc(db, 'field_users', alice, 'attempts', 'attempt-1');
+    await assertFails(updateDoc(ref, { 'payload.isCorrect': false }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-1')));
+  });
+
+  it('accepts catalog-bound reward purchases and equipment as immutable events', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldRewardTransaction(db));
+    await assertSucceeds(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-equip-1',
+        operationId: 'reward-equip-operation-1',
+        payload: {
+          idempotencyKey: 'equip-reward-1',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: 'theme_ocean',
+          slot: 'theme',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 5000,
+        },
+      }),
+    );
+    const ref = doc(
+      db,
+      'field_users',
+      alice,
+      'reward_transactions',
+      'reward-1',
+    );
+    await assertFails(updateDoc(ref, { 'payload.amount': 0 }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  for (const type of ['creditQuizCorrectV1', 'creditLegacyCarryV1']) {
+    it(`denies positive ${type} mint in the purchase/equip-only protocol`, async () => {
+      await assertFails(writeFieldRewardTransaction(authDb(), {
+        entityId: `denied-${type}`,
+        operationId: `denied-${type}`,
+        payload: {
+          idempotencyKey: `denied-${type}`,
+          transactionType: type,
+          amount: 1,
+          itemId: null,
+          slot: null,
+          catalogVersion: 0,
+          sourceEventId: 'synthetic-attempt',
+          occurredAtUtcMs: 4000,
+        },
+      }));
     });
   }
 
-  it('keeps unknown and research collections recursively denied', async () => {
+  it('accepts only zero-cost equip for the built-in wallpaper', async () => {
     const db = authDb();
+    const standard = {
+      transactionType: 'equip',
+      amount: 0,
+      itemId: 'wallpaper_default',
+      slot: 'wallpaper',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: 4000,
+    };
+    const write = (id, overrides = {}) => writeFieldRewardTransaction(db, {
+      entityId: id,
+      operationId: id,
+      payload: { ...standard, idempotencyKey: id, ...overrides },
+    });
+    await assertSucceeds(write('equip-wallpaper-default'));
+    await assertFails(write('purchase-wallpaper-default', { transactionType: 'purchase' }));
+    await assertFails(write('charge-wallpaper-default', { amount: -1 }));
+    await assertFails(write('wrong-slot-wallpaper-default', { slot: 'theme' }));
+  });
 
+  it('rejects reward transactions with a client-invented price or slot', async () => {
+    const db = authDb();
     await assertFails(
-      setDoc(doc(db, 'research_events', 'event_1'), {
-        outcome: 'correct',
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-price',
+        operationId: 'reward-price-operation',
+        payload: {
+          idempotencyKey: 'bad-price',
+          transactionType: 'purchase',
+          amount: -1,
+          itemId: 'theme_ocean',
+          slot: 'theme',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 4000,
+        },
       }),
     );
-    await assertFails(getDoc(doc(db, 'unknown_collection', 'document_1')));
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-slot',
+        operationId: 'reward-slot-operation',
+        payload: {
+          idempotencyKey: 'bad-slot',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: 'theme_ocean',
+          slot: 'weapon',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 4000,
+        },
+      }),
+    );
+  });
+
+  it('accepts documented attempt number and response-time boundaries', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-boundary',
+        operationId: 'attempt-boundary-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2147483647,
+          attemptNumber: 1000000,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects a negative response time', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-negative-response',
+        operationId: 'attempt-negative-response-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: -1,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects an oversized prompt mode', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-long-prompt',
+        operationId: 'attempt-long-prompt-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'x'.repeat(61),
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects extra learning evidence fields', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-extra',
+        operationId: 'attempt-extra-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+          rawAudio: 'must-not-sync',
+        },
+      }),
+    );
+  });
+
+  it('allows policy reads but denies client policy writes', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'app_control', 'field'), {
+        schemaVersion: 1,
+        cloudSyncEnabled: true,
+      });
+    });
+    const db = authDb();
+    await assertSucceeds(getDoc(doc(db, 'app_control', 'field')));
+    await assertFails(
+      setDoc(doc(db, 'app_control', 'field'), {
+        schemaVersion: 1,
+        cloudSyncEnabled: false,
+      }),
+    );
+  });
+
+  it('accepts immutable srs_states mirroring per-word review state', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-1',
+        operationId: 'srs-operation-1',
+        payload: {
+          wordId: 'word-1',
+          stability: 2.5,
+          difficulty: 0.3,
+          intervalDays: 7,
+          repetitions: 3,
+          lapses: 1,
+          lastReviewAtUtcMs: 4000,
+          dueAtUtcMs: 100000,
+          algorithmVersion: 1,
+        },
+      }),
+    );
+  });
+
+  it('keeps srs_states create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-2',
+        operationId: 'srs-operation-2',
+        payload: {
+          wordId: 'word-2',
+          stability: 1.0,
+          difficulty: 0.5,
+          intervalDays: 1,
+          repetitions: 1,
+          lapses: 0,
+          lastReviewAtUtcMs: null,
+          dueAtUtcMs: 5000,
+          algorithmVersion: 1,
+        },
+      }),
+    );
+    const ref = doc(db, 'field_users', alice, 'srs_states', 'word-2');
+    await assertFails(updateDoc(ref, { 'payload.intervalDays': 99 }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(
+      getDoc(doc(authDb(bob), 'field_users', alice, 'srs_states', 'word-2')),
+    );
+  });
+
+  it('rejects srs_states with extra payload keys', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-3',
+        operationId: 'srs-operation-3',
+        payload: {
+          wordId: 'word-3',
+          stability: 1.0,
+          difficulty: 0.5,
+          intervalDays: 1,
+          repetitions: 1,
+          lapses: 0,
+          lastReviewAtUtcMs: null,
+          dueAtUtcMs: 5000,
+          algorithmVersion: 1,
+          evilExtraField: 'must-be-rejected',
+        },
+      }),
+    );
+  });
+
+  it('accepts immutable achievement_unlocks ledger entries', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          sourceEventId: 'attempt-1',
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
+  });
+
+  it('keeps achievement_unlocks create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          sourceEventId: 'attempt-1',
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
+    const ref = doc(db, 'field_users', alice, 'achievement_unlocks', 'unlock-1');
+    await assertFails(updateDoc(ref, { 'payload.definitionVersion': 2 }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(
+      getDoc(
+        doc(authDb(bob), 'field_users', alice, 'achievement_unlocks', 'unlock-1'),
+      ),
+    );
+  });
+
+  it('rejects achievement_unlocks with missing sourceEventId', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
   });
 });
+

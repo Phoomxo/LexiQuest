@@ -1,6 +1,7 @@
 # Firestore Client Access Inventory
 
-Updated: 2026-07-28
+Date: 2026-07-26
+Branch: `feature/production-vertical-slices`
 
 ## Scope summary
 
@@ -19,46 +20,38 @@ Updated: 2026-07-28
 ## Identity model
 
 All Firestore access follows a Firebase Auth sign-in (`FirebaseAuth.instance`).
-Firebase anonymous authentication is used to enter the product shell and may
-read shared, admin-seeded content. An anonymous Firebase identity is a guest,
-not a registered owner: it cannot read or persist remote profile, state,
-purchase, category, category-word, or telemetry records. Guest learning data
-must remain local. Ownership is expressed inconsistently across collections,
-which is the dominant compatibility risk for any ownership rule.
+There is no anonymous-data path. Ownership is expressed inconsistently across
+collections, which is the dominant compatibility risk for any ownership rule.
 
 ## Per-collection access
 
 ### `users/{uid}` — owned by document id
 - Write `set` (AuthService.registerUser): `first_name`, `last_name`,
   `email`, `age`, `createdAt` (server timestamp).
-- Unused legacy helper `UserService.saveUserData` attempts `first_name`,
-  `last_name`, `email`, and `points`; it omits required `age` and `createdAt`,
-  so current create rules reject the payload.
-- No active quiz path writes `points`, `totalPoints`, or `gamesPlayed`.
-  Existing legacy counter fields remain readable for compatibility but cannot
-  be added, changed, or removed by a client. They remain non-authoritative
-  until the trusted-writer migration reconciles them.
+- Write `set` (UserService.saveUserData): `first_name`, `last_name`,
+  `email`, `points`. Omits `age` and `createdAt`.
+- Write `update` (UserService.updateUserPoints, QuizService.savePointsToFirestore):
+  `points` (increment / literal).
+- Write `set merge` (quiz_screen._savePointsToFirestore): `totalPoints`,
+  `gamesPlayed` (increment). Note field-name divergence from `points`.
 - Read (UserService.getUserData, SettingScreen): `first_name`, `last_name`,
   `email`, `age`, `points`.
 - **Rule note:** no owner field is stored. A rule must key on the path
   wildcard `match /users/{userId}` with `userId == request.auth.uid`.
 
 ### `state/{uid}` — owned by document id; NO stored owner field
-- ScoreScreen no longer writes this collection; completed-session progress is
-  stored locally through `ProgressRepository`.
+- Write `set merge` (ScoreScreen._updateUserStats): `totalPoints`,
+  `totalCorrectAnswers`, `totalWrongAnswers`, `gamesPlayed` (all increment).
 - Write `update` (SelectWallpaperScreen._setWallpaper): `selectedWallpaper`
   (nullable; may be written as null).
-- Dormant legacy write: ShopPage._buyProduct attempts a negative
-  `totalPoints` increment. `RemoteEconomyPolicy` closes the screen and
-  Firestore rules deny the write.
-- Read (dormant ShopPage, UserService.getTotalPointsFromState,
+- Write `update` in transaction (ShopPage._buyProduct): `totalPoints`
+  (negative increment).
+- Read (ScoreScreen, ShopPage, UserService.getTotalPointsFromState,
   quiz_screen._loadBackground): `totalPoints`, `selectedWallpaper`.
 - **Rule note:** the document carries no `uid`/`user_id`. A rule anchored on
-  a stored owner field rejects every access. The repository rule keys owner
-  reads on `state/{userId}`, denies client create/delete and counter changes,
-  and permits only a `selectedWallpaper`-only update. The wallpaper write uses
-  `.update()` and therefore requires a pre-existing legacy or trusted-writer
-  document.
+  a stored owner field rejects every access. Must be `state/{userId}` with
+  `userId == request.auth.uid`. The `selectedWallpaper` write uses `.update()`
+  and assumes the document already exists (created lazily by ScoreScreen).
 
 ### `categories/{categoryId}` — owned by stored `uid`
 - Write `set` (CategoryService.addCategory / addCategoryForUser /
@@ -86,55 +79,50 @@ which is the dominant compatibility risk for any ownership rule.
   parent category's `uid` via `get(/databases/(db)/documents/categories/$(categoryId))`,
   which is a per-query constant and therefore satisfiable for list queries.
 
-### `vocabulary/{vocabId}` — shared, admin-seeded read-only content
-- Legacy client write attempt `add` (main_vocabulary): `word`, `meaning`,
-  `part_of_speech`. **No `uid` field.** Repository rules intentionally deny
-  this path; only a controlled Firebase Admin import may seed the collection.
+### `vocabulary/{vocabId}` — inconsistent ownership
+- Write `add` (main_vocabulary): `word`, `meaning`, `part_of_speech`.
+  **No `uid` field.**
 - Read (VocabService.getRandomVocab): `.where('uid', isEqualTo: user.uid)`.
 - Read (QuizService.generateQuizQuestions, choose_mode_screen):
   `.get()` with **no** filter.
-- **Rule note:** signed-in registered and anonymous identities may read the
-  shared pool. Client create, update, and delete are denied. The inconsistent
-  filtered reader remains a client/data-model defect; do not resolve it by
-  granting a client write path.
+- **Rule note:** no single ownership rule satisfies all three paths.
+  Keying on `uid` blocks both the unfiltered reads and the writes. This is a
+  data-model defect; do not resolve it by widening public access.
 
-### `quiz/{quizId}` — denied legacy global append
-- Legacy write attempt `add` (QuizService.saveQuestionToFirestore): `word`,
-  `options` (array), `correctAnswer`, `createdAt` (server timestamp). No `uid`.
+### `quiz/{quizId}` — global append, no ownership
+- Write `add` (QuizService.saveQuestionToFirestore): `word`, `options`
+  (array), `correctAnswer`, `createdAt` (server timestamp). No `uid`.
 - No client reads.
-- **Rule note:** all client access remains denied because the writer is dead
-  code and has no owner scope. A future quiz bank must use a controlled import.
+- **Rule note:** must allow authenticated create with no ownership, or quiz
+  generation silently drops (failure is caught and swallowed).
 
-### `global_words/{word}` — shared, admin-seeded read-only dictionary
+### `global_words/{word}` — global read/write cache, no ownership
 - Read (GlobalWordService.findWordInDatabase): get by doc id (= word).
-- Legacy client write attempt `set` (GlobalWordService.addWordToDatabase):
-  `word`, `meaning`,
+- Write `set` (GlobalWordService.addWordToDatabase): `word`, `meaning`,
   `partOfSpeech` (camelCase), `createdAt` (server timestamp). No `uid`;
-  repository rules intentionally deny this cache-miss path.
-- **Rule note:** signed-in registered and anonymous identities may read.
-  Client create, update, and delete are denied; controlled Admin import is the
-  only seeding path.
+  any user may overwrite any word.
+- **Rule note:** must allow authenticated read and create/update, or the
+  dictionary-cache path errors.
 
-### `products/{productId}` — signed-in read-only catalog
+### `products/{productId}` — public read, client-initiated seed
 - Read (ShopPage._fetchProducts): unfiltered `.get()`; `name`, `price`,
   `image_name`, `image_url`.
 - Read (SelectWallpaperScreen): get by id; `image_url`, `image_name`.
-- Legacy write attempt `set merge` (ShopPage._seedDefaultProducts, triggered
-  on empty products and via the restore button): `name`, `image_name`,
-  `image_url`, `price`, `createdAt` (server timestamp). No ownership.
-- **Rule note:** signed-in reads are allowed and all client writes are denied.
-  Product seeding is an Admin operation; dormant client seeding falls back to
-  in-app defaults.
+- Write `set merge` (ShopPage._seedDefaultProducts, triggered on empty
+  products and via the restore button): `name`, `image_name`, `image_url`,
+  `price`, `createdAt` (server timestamp). No ownership.
+- **Rule note:** must allow authenticated read and merge-write, or shop
+  seeding silently fails (falls back to in-app defaults) and shop/wallpaper
+  reads degrade to defaults.
 
 ### `purchased_items/{purchaseId}` — owned by stored `user_id`
-- Dormant legacy write: ShopPage._buyProduct attempts a transactional `set`
-  with `user_id`, `product_id`, `total_price`, and `created_at`; repository
-  rules deny every client write.
+- Write `set` in transaction (ShopPage._buyProduct): `user_id`, `product_id`,
+  `total_price`, `created_at` (client timestamp).
 - Read (ShopPage._buyProduct): `.where('user_id', isEqualTo: uid).where(
   'product_id', isEqualTo: productId)`.
 - Read (SelectWallpaperScreen): `.where('user_id', isEqualTo: uid)`; `product_id`.
-- **Rule note:** owner reads remain satisfiable for these filtered queries;
-  create, update, and delete are denied until a trusted server writer exists.
+- **Rule note:** an ownership rule on `user_id` is satisfiable for these
+  filtered reads.
 
 ### `voice_telemetry_events/{eventId}` — global append, no owner in payload
 - Write `add` (FirestoreVoiceTelemetrySink): the VoiceTelemetryEvent.toMap
@@ -143,8 +131,8 @@ which is the dominant compatibility risk for any ownership rule.
   `cacheHit`, `latencyMs`, `contentId`, `contentType`, `requestId`,
   `modelVersion`, `occurredAtUtc` ISO-8601 UTC). No `uid`/`user_id`.
 - No reads. Write failures are swallowed by design.
-- **Rule note:** registered-user create is allowed with no payload ownership
-  field. Anonymous creates and every client read/update/delete are denied.
+- **Rule note:** must allow authenticated create with no ownership
+  requirement, or telemetry is silently dropped.
 
 ## Required production verification
 
@@ -153,21 +141,13 @@ against this inventory. Confirm that:
 
 - `users`, `state`, and `products` reads are keyed on document id (path
   wildcard), not a stored owner field;
-- anonymous guests retain shared `vocabulary`, `global_words`, and `products`
-  reads but cannot access or persist remote private learning records;
-- legacy `users` counters are preserved unchanged during validated profile
-  updates and cannot be added, changed, or removed by clients;
-- `state` denies client creation and counter mutation while preserving only
-  owner reads and `selectedWallpaper`-only updates;
-- `purchased_items` preserves owner-filtered legacy reads and denies every
-  client write;
+- `state` is not gated on any field that is never written;
 - `categories/words` list rules are satisfiable for the unfiltered client
   reads (parent-category lookup) without leaking cross-user words;
-- `vocabulary` and `global_words` remain client-read-only and are populated
-  only by an inventoried, controlled Admin SDK import;
-- `quiz` remains denied, `products` remains client-read-only, and
-  `voice_telemetry_events` remains registered-user create-only;
+- `quiz`, `global_words`, `products` (seed), and `voice_telemetry_events`
+  retain authenticated no-ownership access, or accept the corresponding
+  client-path regressions explicitly;
+- the `vocabulary` ownership contradiction is resolved in the data model
+  before any ownership rule is applied to it;
 - client-time `created_at` writes are not rejected by a server-timestamp
-  assertion;
-- every deployed Firebase Admin SDK or other privileged writer that bypasses
-  client rules is inventoried and reconciled with this policy.
+  assertion.

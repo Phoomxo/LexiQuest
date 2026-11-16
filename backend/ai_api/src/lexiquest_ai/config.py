@@ -107,6 +107,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     max_text_length: int = Field(default=500, ge=1, le=MAX_TEXT_LENGTH_CEILING)
     request_timeout_seconds: int = Field(default=20, ge=1, le=120)
+    account_deletion_enabled: bool = False
 
     # --- Response cache (primary cost control) ---
     cache_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=1, le=365 * 24 * 3600)

@@ -1,279 +1,1229 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+
+import '../config/m3_theme.dart';
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/progress/application/progress_use_cases.dart';
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/field_feature_registry.dart';
+import '../runtime/registries/feature_registry.dart';
+import '../widgets/adaptive_content_pane.dart';
 import 'add_multiple_words_screen.dart';
-import '../models/word_model.dart';
-import '../services/word_service.dart';
 import 'add_vocab_screen.dart';
+import 'dictation_quiz_screen.dart';
+import '../navigation/app_routes.dart';
+import 'object_scanner_screen.dart';
+import 'quiz_screen.dart';
+import 'score_screen.dart';
+import 'smart_audio_playlist_screen.dart';
+import 'source_practice_screen.dart';
+import 'vocabulary_word_detail_screen.dart';
+import 'wordbook_import_screen.dart';
+
+enum _AddWordMethod { manual, camera, file }
+
+typedef _CategoryContext = ({
+  AppDependencies? dependencies,
+  VocabularyUseCases vocabulary,
+  String id,
+  String name,
+});
+
+class _OwnedPlaylistRoute extends StatefulWidget {
+  const _OwnedPlaylistRoute({required this.category, required this.ownerId});
+
+  final _CategoryContext category;
+  final String ownerId;
+
+  @override
+  State<_OwnedPlaylistRoute> createState() => _OwnedPlaylistRouteState();
+}
+
+class _OwnedPlaylistRouteState extends State<_OwnedPlaylistRoute> {
+  StreamSubscription<void>? _ownerWrites;
+  late final Future<List<VocabularyWord>> _words;
+  bool _invalidated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final scope = widget.category.dependencies;
+    _ownerWrites = scope?.watchLocalOwnerWrites()?.listen(
+      (_) => _invalidate(),
+      onError: (Object _) => _invalidate(),
+    );
+    _words = _loadWords();
+  }
+
+  Future<List<VocabularyWord>> _loadWords() async {
+    final category = widget.category;
+    if (_ownerWrites != null &&
+        await category.dependencies?.readActiveOwnerId() != widget.ownerId) {
+      _invalidate();
+      return const [];
+    }
+    if (!mounted || _invalidated) return const [];
+    return category.vocabulary
+        .watchWords(category.id, expectedOwnerId: widget.ownerId)
+        .first;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!identical(
+      widget.category.dependencies,
+      AppDependenciesScope.maybeOf(context),
+    )) {
+      _invalidate();
+    }
+  }
+
+  void _invalidate() {
+    if (mounted && !_invalidated) setState(() => _invalidated = true);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_ownerWrites?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<VocabularyWord>>(
+    future: _words,
+    builder: (context, snapshot) {
+      if (!_invalidated && snapshot.hasData) {
+        return SmartAudioPlaylistScreen(
+          wordList: [
+            for (final word in snapshot.data!)
+              {'word': word.spelling, 'translation': word.meaning},
+          ],
+          categoryName: widget.category.name,
+          returnLabel: 'กลับไปดูชุด${widget.category.name}',
+          voice: widget.category.dependencies?.voice,
+        );
+      }
+      return Scaffold(
+        appBar: AppBar(title: const Text('ฟังคำในชุด')),
+        body: Center(
+          child: _invalidated || snapshot.hasError
+              ? const Text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่')
+              : const CircularProgressIndicator(),
+        ),
+      );
+    },
+  );
+}
 
 class VocabListScreen extends StatefulWidget {
-  final String categoryId;
-  final String categoryName;
-
   const VocabListScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
+    this.expectedOwnerId,
+    this.vocabulary,
+    this.importer,
+    this.startAdding = false,
+    this.initialQuery = '',
+    this.selectForDictation = false,
+    this.onReturnFromDictation,
   });
+
+  final String categoryId;
+  final String categoryName;
+  final String? expectedOwnerId;
+  final VocabularyUseCases? vocabulary;
+  final ImportVocabulary? importer;
+  final bool startAdding;
+  final String initialQuery;
+  final bool selectForDictation;
+  final VoidCallback? onReturnFromDictation;
 
   @override
   State<VocabListScreen> createState() => _VocabListScreenState();
 }
 
 class _VocabListScreenState extends State<VocabListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  late WordService wordService;
-  String searchQuery = "";
+  late final TextEditingController _searchController;
+  late String _query;
+  VocabularyUseCases? _vocabulary;
+  String? _categoryId;
+  Stream<List<VocabularyWord>>? _words;
+  ProgressUseCases? _progress;
+  Future<SessionHistoryEntry?>? _latest;
+  bool _addStarted = false;
+  bool _openingLatest = false;
+  bool _savedOnly = false;
+  bool _managingBookmark = false;
+  AppDependencies? _dependencies;
+  bool _dependenciesCaptured = false;
+  bool _invalidated = false;
+  String? _routeOwnerId;
+  StreamSubscription<String?>? _ownerSubscription;
 
   @override
   void initState() {
     super.initState();
-    wordService = WordService(categoryId: widget.categoryId);
+    _searchController = TextEditingController(text: widget.initialQuery);
+    _query = normalizeVocabularyText(widget.initialQuery);
   }
 
-  /// 🔥 ฟังก์ชันแสดง Dialog ยืนยันการลบคำศัพท์
-  void showDeleteConfirmationDialog(BuildContext context, Word word) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'ลบคำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'คุณต้องการลบ "${word.word}" ใช่หรือไม่?',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!_dependenciesCaptured) {
+      _dependencies = dependencies;
+      _dependenciesCaptured = true;
+      _watchRouteOwner(dependencies);
+    } else if (!identical(_dependencies, dependencies)) {
+      _invalidated = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant VocabListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.categoryId != widget.categoryId ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+      _dependencies = AppDependenciesScope.maybeOf(context);
+      _dependenciesCaptured = true;
+      _invalidated = false;
+      _watchRouteOwner(_dependencies);
+      _addStarted = false;
+      _savedOnly = false;
+      _searchController.text = widget.initialQuery;
+      _query = normalizeVocabularyText(widget.initialQuery);
+    } else if (!identical(oldWidget.vocabulary, widget.vocabulary)) {
+      _invalidated = true;
+    }
+  }
+
+  void _watchRouteOwner(AppDependencies? dependencies) {
+    unawaited(_ownerSubscription?.cancel());
+    _routeOwnerId = null;
+    _ownerSubscription = dependencies?.watchActiveOwnerId()?.listen(
+      (active) {
+        if (!mounted || !identical(dependencies, _dependencies)) return;
+        final expected = _routeOwnerId ?? widget.expectedOwnerId;
+        if (expected != null && expected != active) {
+          setState(() => _invalidated = true);
+        } else if (_routeOwnerId == null && active != null) {
+          setState(() => _routeOwnerId = active);
+        }
+      },
+      onError: (Object _) {
+        if (mounted && identical(dependencies, _dependencies)) {
+          setState(() => _invalidated = true);
+        }
+      },
+    );
+  }
+
+  _CategoryContext? get _currentCategory {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = dependencies == null
+        ? widget.vocabulary
+        : dependencies.vocabulary;
+    if (_invalidated ||
+        !_dependenciesCaptured ||
+        (_ownerSubscription != null &&
+            widget.expectedOwnerId != null &&
+            _routeOwnerId == null) ||
+        !identical(_dependencies, dependencies) ||
+        vocabulary == null ||
+        (dependencies != null &&
+            widget.vocabulary != null &&
+            !identical(widget.vocabulary, vocabulary))) {
+      return null;
+    }
+    return (
+      dependencies: dependencies,
+      vocabulary: vocabulary,
+      id: widget.categoryId,
+      name: widget.categoryName,
+    );
+  }
+
+  bool _isCurrent(_CategoryContext category) {
+    if (!mounted) return false;
+    final current = _currentCategory;
+    return current != null &&
+        identical(current.dependencies, category.dependencies) &&
+        identical(current.vocabulary, category.vocabulary) &&
+        current.id == category.id &&
+        current.name == category.name;
+  }
+
+  Future<String?> _currentOwner(
+    _CategoryContext category, {
+    String? expectedOwnerId,
+  }) async {
+    if (!_isCurrent(category)) return null;
+    try {
+      final owner = await category.vocabulary.owners.getOrCreateActiveOwner();
+      if (!_isCurrent(category)) return null;
+      if (expectedOwnerId == null || owner.id == expectedOwnerId) {
+        return owner.id;
+      }
+    } catch (_) {
+      if (!_isCurrent(category)) return null;
+    }
+    if (mounted) setState(() => _invalidated = true);
+    return null;
+  }
+
+  Widget _unavailableCategory(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('ชุดคำนี้ไม่พร้อมใช้งาน กรุณากลับไปเลือกชุดใหม่'),
+          const SizedBox(height: 16),
           TextButton(
-            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text(
-              'ลบ',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              await wordService.deleteWord(word.id!);
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-              setState(() {});
-            },
+            onPressed: () => Navigator.maybePop(context),
+            child: const Text('กลับไปเลือกชุดคำ'),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
 
-  void showDeleteAllWordsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'ลบคำศัพท์ทั้งหมด',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'คุณต้องการลบคำศัพท์ทั้งหมดในหมวดหมู่นี้ใช่หรือไม่?',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          TextButton(
-            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text(
-              'ลบทั้งหมด',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              await wordService.deleteAllWords();
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              if (!mounted) return;
-              setState(() {});
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return SpeedDial(
-      animatedIcon: AnimatedIcons.menu_close,
-      backgroundColor: Colors.deepPurple,
-      foregroundColor: Colors.white,
-      overlayColor: Colors.black,
-      overlayOpacity: 0.3,
-      spacing: 12,
-      spaceBetweenChildren: 10,
-      children: [
-        SpeedDialChild(
-          child: const Icon(Icons.add, color: Colors.white),
-          backgroundColor: Colors.blue,
-          label: 'เพิ่มคำศัพท์',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    AddWordScreen(categoryId: widget.categoryId),
-              ),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.playlist_add, color: Colors.white),
-          backgroundColor: Colors.green,
-          label: 'เพิ่มหลายคำ (Datamuse)',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AddMultipleWordsScreen(
-                  categoryId: widget.categoryId,
-                  categoryName: widget.categoryName,
-                ),
-              ),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.delete_forever, color: Colors.white),
-          backgroundColor: Colors.red,
-          label: 'ลบคำศัพท์ทั้งหมด',
-          onTap: () {
-            showDeleteAllWordsDialog(context);
-          },
-        ),
-      ],
-    );
+  @override
+  void dispose() {
+    unawaited(_ownerSubscription?.cancel());
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final category = _currentCategory;
+    final useCases = category?.vocabulary;
+    final importer = dependencies == null
+        ? widget.importer
+        : dependencies.vocabularyImporter;
+    final progress = category == null ? null : dependencies?.progress;
+    final learning = dependencies?.learning;
+    final sourcePicker = dependencies?.sourcePracticeFilePicker;
+    final features =
+        dependencies?.fieldFeatures ??
+        const BuildFieldFeatureRegistry.allEnabled();
+    if (!identical(useCases, _vocabulary) ||
+        _categoryId != category?.id ||
+        !identical(_progress, progress)) {
+      _vocabulary = useCases;
+      _categoryId = category?.id;
+      _words = useCases?.watchWords(
+        category!.id,
+        expectedOwnerId: widget.expectedOwnerId,
+      );
+      _progress = progress;
+      _latest = category == null
+          ? null
+          : _progress?.loadLatestSessionForCategory(category.id);
+      _latest?.ignore();
+    }
+    if (widget.startAdding && !_addStarted && category != null) {
+      _addStarted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isCurrent(category)) {
+          _showAddWordOptions(context, category, importer, features);
+        }
+      });
+    }
+    final canListen =
+        features.isVisible(FieldFeature.speechPractice) &&
+        features.isVisible(FieldFeature.vocabulary) &&
+        (dependencies?.features.isVisible(Feature.speechPractice) ?? true) &&
+        (dependencies?.features.isVisible(Feature.vocabulary) ?? true);
+    final canPracticeSource =
+        !widget.selectForDictation &&
+        useCases != null &&
+        learning != null &&
+        sourcePicker != null &&
+        features.isVisible(FieldFeature.reading);
+    final canPractice =
+        !widget.selectForDictation &&
+        learning != null &&
+        features.isVisible(FieldFeature.quiz);
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.categoryName,
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(
+          context,
+          widget.selectForDictation
+              ? 'เลือกคำที่จะเขียนตามเสียง'
+              : category?.name ?? 'ชุดคำศัพท์',
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: "ค้นหาคำศัพท์...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              onChanged: (query) {
-                setState(() {
-                  searchQuery = query.toLowerCase();
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<Word>>(
-              stream: wordService.getWordsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text('เกิดข้อผิดพลาดในการโหลดคำศัพท์'),
-                  );
-                }
-
-                final words = snapshot.data ?? [];
-                final filteredWords = words
-                    .where(
-                      (word) => word.word.toLowerCase().contains(searchQuery),
-                    )
-                    .toList();
-
-                if (filteredWords.isEmpty) {
-                  return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
-                }
-
-                return ListView.builder(
-                  itemCount: filteredWords.length,
-                  itemBuilder: (context, index) {
-                    final word = filteredWords[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        title: Text(
-                          word.word,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${word.meaning} (${word.partOfSpeech})'),
-                            if (word.userId == '')
-                              const Text(
-                                '🔗 คำศัพท์นี้ถูกเพิ่มจาก Datamuse API',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
+      body: AdaptiveContentPane(
+        child: category == null || useCases == null
+            ? _unavailableCategory(context)
+            : StreamBuilder<List<VocabularyWord>>(
+                key: ValueKey((useCases, widget.categoryId)),
+                stream: _words,
+                builder: (context, snapshot) {
+                  final allWords = snapshot.data ?? const <VocabularyWord>[];
+                  final words = allWords
+                      .where(
+                        (word) =>
+                            (!_savedOnly || word.isBookmarked) &&
+                            (word.normalizedSpelling.contains(_query) ||
+                                word.normalizedMeaning.contains(_query)),
+                      )
+                      .toList(growable: false);
+                  return CustomScrollView(
+                    key: PageStorageKey(
+                      'vocabulary-words:${widget.categoryId}',
+                    ),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                        sliver: SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SearchBar(
+                                controller: _searchController,
+                                hintText: 'ค้นหาคำศัพท์',
+                                elevation: const WidgetStatePropertyAll(0),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                    ),
+                                  ),
+                                ),
+                                leading: const Icon(Icons.search),
+                                onChanged: (value) => setState(
+                                  () => _query = normalizeVocabularyText(value),
                                 ),
                               ),
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () =>
-                              showDeleteConfirmationDialog(context, word),
+                              const SizedBox(height: 16),
+                              if (!widget.selectForDictation &&
+                                  snapshot.hasData &&
+                                  (_savedOnly || allWords.isNotEmpty)) ...[
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    ChoiceChip(
+                                      label: const Text('คำทั้งหมด'),
+                                      selected: !_savedOnly,
+                                      onSelected: (_) =>
+                                          setState(() => _savedOnly = false),
+                                    ),
+                                    ChoiceChip(
+                                      label: const Text('คำที่เก็บไว้'),
+                                      selected: _savedOnly,
+                                      onSelected: (_) =>
+                                          setState(() => _savedOnly = true),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              if (canPractice) ...[
+                                FilledButton.icon(
+                                  onPressed:
+                                      snapshot.hasError || allWords.isEmpty
+                                      ? null
+                                      : () async {
+                                          final ownerId = await _currentOwner(
+                                            category,
+                                            expectedOwnerId:
+                                                allWords.first.ownerId,
+                                          );
+                                          if (ownerId == null ||
+                                              !context.mounted ||
+                                              ModalRoute.of(
+                                                    context,
+                                                  )?.isCurrent !=
+                                                  true) {
+                                            return;
+                                          }
+                                          await AppNavigator.pushPage<void>(
+                                            context,
+                                            AppPage<void>(
+                                              name: 'learning/category-quiz',
+                                              builder: (_) => QuizScreen(
+                                                categoryId: category.id,
+                                                categoryName: category.name,
+                                                learning: learning,
+                                                expectedOwnerId: ownerId,
+                                                configureRound: true,
+                                              ),
+                                            ),
+                                          );
+                                          _refreshLatest();
+                                        },
+                                  icon: const Icon(Icons.play_arrow),
+                                  label: const Text('ฝึกจากชุดนี้'),
+                                ),
+                                if (!snapshot.hasError &&
+                                    snapshot.hasData &&
+                                    allWords.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      'เพิ่มคำอย่างน้อย 1 คำก่อนเริ่มฝึก',
+                                    ),
+                                  ),
+                                const SizedBox(height: 8),
+                              ],
+                              if (!widget.selectForDictation)
+                                OutlinedButton.icon(
+                                  key: const ValueKey('add-word'),
+                                  onPressed: () => _showAddWordOptions(
+                                    context,
+                                    category,
+                                    importer,
+                                    features,
+                                  ),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('เพิ่มคำ'),
+                                ),
+                              if (!widget.selectForDictation && canListen)
+                                OutlinedButton.icon(
+                                  onPressed:
+                                      allWords.isEmpty || snapshot.hasError
+                                      ? null
+                                      : () => _openPlaylist(
+                                          context,
+                                          category,
+                                          allWords.first.ownerId,
+                                        ),
+                                  icon: const Icon(Icons.headphones_outlined),
+                                  label: const Text('ฟังคำในชุดนี้'),
+                                ),
+                              if (!widget.selectForDictation &&
+                                  _latest != null &&
+                                  features.isVisible(FieldFeature.mastery))
+                                FutureBuilder<SessionHistoryEntry?>(
+                                  key: ValueKey((_progress, widget.categoryId)),
+                                  future: _latest,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState !=
+                                        ConnectionState.done) {
+                                      return const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: LinearProgressIndicator(
+                                          semanticsLabel:
+                                              'กำลังอ่านผลล่าสุดของชุดนี้',
+                                        ),
+                                      );
+                                    }
+                                    if (snapshot.hasError) {
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Semantics(
+                                            liveRegion: true,
+                                            child: const Text(
+                                              'อ่านผลล่าสุดไม่สำเร็จ',
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: _refreshLatest,
+                                            child: const Text(
+                                              'ลองอ่านผลอีกครั้ง',
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    final entry = snapshot.data;
+                                    if (entry == null) {
+                                      return const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          'ยังไม่มีผลการฝึกที่บันทึกสำหรับชุดนี้',
+                                        ),
+                                      );
+                                    }
+                                    final summary = entry.summary;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          Text(
+                                            'ผลล่าสุด · ${summary.score}% · ตอบถูก ${summary.correctCount} จาก ${summary.correctCount + summary.wrongCount}',
+                                          ),
+                                          TextButton.icon(
+                                            onPressed: _openingLatest
+                                                ? null
+                                                : _openLatestResult,
+                                            icon: const Icon(Icons.history),
+                                            label: const Text('ดูผลล่าสุด'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              if (canPracticeSource) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  children: [
+                                    TextButton.icon(
+                                      key: const ValueKey('source-practice'),
+                                      onPressed: () async {
+                                        if (await _currentOwner(
+                                              category,
+                                              expectedOwnerId: allWords.isEmpty
+                                                  ? null
+                                                  : allWords.first.ownerId,
+                                            ) ==
+                                            null) {
+                                          return;
+                                        }
+                                        if (!context.mounted) return;
+                                        await AppNavigator.pushPage<void>(
+                                          context,
+                                          AppPage<void>(
+                                            name: 'vocabulary/source-practice',
+                                            builder: (_) =>
+                                                SourcePracticeScreen(
+                                                  categoryId: category.id,
+                                                  categoryName: category.name,
+                                                  vocabulary: useCases,
+                                                  learning: learning,
+                                                  filePicker: sourcePicker,
+                                                  associativeLearning:
+                                                      dependencies
+                                                          ?.associativeLearning,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.menu_book_outlined,
+                                      ),
+                                      label: const Text('ฝึกจากไฟล์'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
-                    );
-                  },
-                );
-              },
+                      if (snapshot.hasError)
+                        SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              Semantics(
+                                liveRegion: true,
+                                child: const Text('อ่านคำศัพท์ไม่สำเร็จ'),
+                              ),
+                              TextButton(
+                                onPressed: () => setState(
+                                  () => _words = useCases.watchWords(
+                                    widget.categoryId,
+                                    expectedOwnerId: widget.expectedOwnerId,
+                                  ),
+                                ),
+                                child: const Text('ลองใหม่'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (!snapshot.hasData)
+                        const SliverToBoxAdapter(
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              semanticsLabel: 'กำลังโหลดคำศัพท์',
+                            ),
+                          ),
+                        )
+                      else if (words.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              _savedOnly &&
+                                      !allWords.any((word) => word.isBookmarked)
+                                  ? 'ยังไม่มีคำที่เก็บไว้'
+                                  : allWords.isEmpty
+                                  ? 'ยังไม่มีคำศัพท์ในหมวดนี้'
+                                  : 'ไม่พบคำศัพท์ที่ค้นหา',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                          sliver: SliverList.builder(
+                            itemCount: words.length,
+                            itemBuilder: (context, index) {
+                              final word = words[index];
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                title: Text(word.spelling),
+                                subtitle: Text(
+                                  '${word.meaning} · ${word.partOfSpeech}',
+                                ),
+                                onTap: widget.selectForDictation
+                                    ? canListen
+                                          ? () => _chooseDictationWord(
+                                              context,
+                                              category,
+                                              word,
+                                            )
+                                          : null
+                                    : () => _openWordDetail(
+                                        context,
+                                        category,
+                                        word,
+                                      ),
+                                trailing: widget.selectForDictation
+                                    ? const Icon(Icons.chevron_right)
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            tooltip:
+                                                'จัดการคำนี้ ${word.spelling}',
+                                            icon: Icon(
+                                              word.isBookmarked
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border,
+                                            ),
+                                            onPressed: _managingBookmark
+                                                ? null
+                                                : () => _manageBookmark(
+                                                    category,
+                                                    word,
+                                                  ),
+                                          ),
+                                          IconButton(
+                                            tooltip:
+                                                'ลบคำศัพท์ ${word.spelling}',
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                            ),
+                                            onPressed: () => _deleteWord(
+                                              context,
+                                              category,
+                                              word,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  void _refreshLatest() {
+    if (mounted && _currentCategory != null) {
+      setState(() {
+        _latest = _progress?.loadLatestSessionForCategory(widget.categoryId);
+        _latest?.ignore();
+      });
+    }
+  }
+
+  Future<void> _openLatestResult() async {
+    final progress = _progress;
+    final category = _currentCategory;
+    if (progress == null || category == null || _openingLatest) return;
+    final categoryId = category.id;
+    setState(() => _openingLatest = true);
+    try {
+      final entry = await progress.loadLatestSessionForCategory(categoryId);
+      if (!mounted) return;
+      if (!_isCurrent(category) ||
+          !identical(
+            progress,
+            AppDependenciesScope.maybeOf(context)?.progress,
+          ) ||
+          widget.categoryId != categoryId ||
+          (entry != null && entry.categoryId != categoryId)) {
+        throw StateError('latest result context changed');
+      }
+      if (entry == null) {
+        _refreshLatest();
+        return;
+      }
+      final summary = entry.summary;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/category-latest-score',
+          builder: (_) => ScoreScreen(
+            correctAnswers: summary.correctCount,
+            wrongAnswers: summary.wrongCount,
+            score: summary.score,
+            sessionId: summary.id,
+            expectedOwnerId: entry.ownerId,
+            categoryName: entry.categoryName ?? category.name,
+            mistakes: entry.mistakes,
+            returnLabel: 'กลับไปที่ชุดคำ',
+            showOriginalHistory: true,
+            originalAnswers: entry.originalAnswers,
+            originalRecallAnswers: entry.originalRecallAnswers,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('อ่านผลล่าสุดไม่สำเร็จ กรุณาลองใหม่')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingLatest = false);
+    }
+  }
+
+  Future<void> _showAddWordOptions(
+    BuildContext context,
+    _CategoryContext category,
+    ImportVocabulary? importer,
+    FieldFeatureRegistry features,
+  ) async {
+    final ownerId = await _currentOwner(category);
+    if (ownerId == null || !context.mounted) return;
+    var chosen = false;
+    final method = await showModalBottomSheet<_AddWordMethod>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        AppDependenciesScope.maybeOf(sheetContext);
+        void choose(_AddWordMethod method) {
+          if (!sheetContext.mounted || chosen) return;
+          chosen = true;
+          Navigator.pop(sheetContext, _isCurrent(category) ? method : null);
+        }
+
+        if (!_isCurrent(category)) {
+          return SafeArea(child: _unavailableCategory(sheetContext));
+        }
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'เพิ่มคำใน ${category.name}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('พิมพ์คำศัพท์'),
+                  onTap: () => choose(_AddWordMethod.manual),
+                ),
+                if (features.isVisible(FieldFeature.objectScanner))
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_outlined),
+                    title: const Text('ถ่ายภาพ'),
+                    subtitle:
+                        features.stateOf(FieldFeature.objectScanner) ==
+                            FieldFeatureState.limited
+                        ? const Text('อนุญาตกล้องและเตรียมโมเดลก่อนถ่าย')
+                        : null,
+                    onTap: () => choose(_AddWordMethod.camera),
+                  ),
+                ListTile(
+                  key: const ValueKey('import-words'),
+                  leading: const Icon(Icons.file_upload_outlined),
+                  title: const Text('นำเข้าจากไฟล์'),
+                  subtitle: Text(
+                    importer == null
+                        ? 'ยังไม่พร้อมนำเข้าในขณะนี้'
+                        : 'เลือกไฟล์ CSV หรือ JSON แล้วตรวจรายการ',
+                  ),
+                  enabled: importer != null,
+                  onTap: importer == null
+                      ? null
+                      : () => choose(_AddWordMethod.file),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-      floatingActionButton: _buildFloatingActionButton(),
+        );
+      },
     );
+    if (!context.mounted || method == null) return;
+    if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+        !context.mounted) {
+      return;
+    }
+    final currentImporter = category.dependencies == null
+        ? widget.importer
+        : category.dependencies?.vocabularyImporter;
+    if (!identical(importer, currentImporter)) return;
+    switch (method) {
+      case _AddWordMethod.manual:
+        await _openAddWord(context, category, expectedOwnerId: ownerId);
+        return;
+      case _AddWordMethod.camera:
+        await AppNavigator.pushPage<VocabularyWord>(
+          context,
+          AppPage<VocabularyWord>(
+            name: 'vocabulary/camera',
+            builder: (_) => ObjectScannerScreen(
+              targetCategoryId: category.id,
+              targetCategoryName: category.name,
+            ),
+          ),
+        );
+        return;
+      case _AddWordMethod.file:
+        Future<void> saveToSet(
+          BuildContext importContext, {
+          bool pasteTable = false,
+        }) async {
+          if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+              !importContext.mounted ||
+              ModalRoute.isCurrentOf(importContext) != true) {
+            return;
+          }
+          await AppNavigator.pushPage<void>(
+            importContext,
+            AppPage<void>(
+              name: 'vocabulary/import/save',
+              builder: (_) => AddMultipleWordsScreen(
+                categoryId: category.id,
+                categoryName: category.name,
+                importer: importer,
+                vocabulary: category.vocabulary,
+                pasteTable: pasteTable,
+                expectedOwnerId: ownerId,
+              ),
+            ),
+          );
+        }
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'vocabulary/import',
+            builder: (importContext) => WordbookImportScreen(
+              expectedOwnerId: ownerId,
+              onSaveToLibrary: () => saveToSet(importContext),
+              onPasteToLibrary: () =>
+                  saveToSet(importContext, pasteTable: true),
+            ),
+          ),
+        );
+        return;
+    }
+  }
+
+  Future<void> _chooseDictationWord(
+    BuildContext context,
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (word.categoryId != category.id) return;
+    final owner = await _currentOwner(category, expectedOwnerId: word.ownerId);
+    if (owner == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/word/dictation',
+        builder: (_) => OwnedVocabularyWordRoute(
+          word: word,
+          vocabulary: category.vocabulary,
+          scope: category.dependencies,
+          builder: (_, current) => DictationQuizScreen(
+            key: ValueKey(current.localRevision),
+            targetWord: current.spelling,
+            meaning: current.meaning,
+            partOfSpeech: current.partOfSpeech,
+            categoryName: category.name,
+            voice: category.dependencies?.voice,
+            autoPlay: false,
+            returnLabel: 'กลับไปเลือกแบบฝึกฟัง',
+            onReturn: widget.onReturnFromDictation,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPlaylist(
+    BuildContext context,
+    _CategoryContext category,
+    String ownerId,
+  ) async {
+    if (await _currentOwner(category, expectedOwnerId: ownerId) == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/playlist',
+        builder: (_) =>
+            _OwnedPlaylistRoute(category: category, ownerId: ownerId),
+      ),
+    );
+  }
+
+  Future<void> _openWordDetail(
+    BuildContext context,
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (word.categoryId != category.id) return;
+    final owner = await _currentOwner(category, expectedOwnerId: word.ownerId);
+    if (owner == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/word',
+        builder: (_) => VocabularyWordDetailScreen(
+          word: word,
+          categoryName: category.name,
+          vocabulary: category.vocabulary,
+          scope: category.dependencies,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openAddWord(
+    BuildContext context,
+    _CategoryContext category, {
+    required String expectedOwnerId,
+  }) async {
+    final ownerId = await _currentOwner(
+      category,
+      expectedOwnerId: expectedOwnerId,
+    );
+    if (ownerId == null ||
+        !context.mounted ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/add',
+        builder: (_) => AddWordScreen(
+          categoryId: category.id,
+          categoryName: category.name,
+          vocabulary: category.vocabulary,
+          expectedOwnerId: ownerId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _manageBookmark(
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (_managingBookmark ||
+        !_isCurrent(category) ||
+        word.categoryId != category.id) {
+      return;
+    }
+    setState(() => _managingBookmark = true);
+    final save = !word.isBookmarked;
+    try {
+      final owner = await _currentOwner(
+        category,
+        expectedOwnerId: word.ownerId,
+      );
+      if (owner == null || !mounted || !_isCurrent(category)) return;
+      final activeOwners = category.dependencies?.watchActiveOwnerId()?.map(
+        (id) => id == owner,
+      );
+      final confirmed = await showModalBottomSheet<bool>(
+        context: context,
+        useSafeArea: true,
+        builder: (sheetContext) => StreamBuilder<bool>(
+          stream: activeOwners,
+          initialData: activeOwners == null,
+          builder: (sheetContext, snapshot) {
+            final sameScope = identical(
+              AppDependenciesScope.maybeOf(sheetContext),
+              category.dependencies,
+            );
+            if (!sameScope || !_isCurrent(category) || snapshot.data != true) {
+              return const SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('รายการเก็บคำยังไม่พร้อมใช้งาน'),
+                ),
+              );
+            }
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      word.spelling,
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    Text(word.meaning),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () async {
+                        if (!sheetContext.mounted ||
+                            await _currentOwner(
+                                  category,
+                                  expectedOwnerId: owner,
+                                ) ==
+                                null ||
+                            !sheetContext.mounted ||
+                            ModalRoute.of(sheetContext)?.isCurrent != true) {
+                          return;
+                        }
+                        Navigator.pop(sheetContext, true);
+                      },
+                      child: Text(
+                        save
+                            ? 'เก็บไว้อ่านอีกครั้ง'
+                            : 'นำออกจากรายการคำที่เก็บไว้',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      if (confirmed != true ||
+          await _currentOwner(category, expectedOwnerId: owner) == null) {
+        return;
+      }
+      await category.vocabulary.setBookmarked(
+        expectedOwnerId: owner,
+        wordId: word.id,
+        bookmarked: save,
+      );
+      if (save && _isCurrent(category)) {
+        setState(() {
+          _searchController.clear();
+          _query = '';
+          _savedOnly = true;
+        });
+      }
+    } catch (_) {
+      if (await _currentOwner(category, expectedOwnerId: word.ownerId) !=
+              null &&
+          mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เปลี่ยนรายการคำที่เก็บไว้ไม่สำเร็จ')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _managingBookmark = false);
+    }
+  }
+
+  Future<void> _deleteWord(
+    BuildContext context,
+    _CategoryContext category,
+    VocabularyWord word,
+  ) async {
+    if (word.categoryId != category.id ||
+        await _currentOwner(category, expectedOwnerId: word.ownerId) == null ||
+        !context.mounted) {
+      return;
+    }
+    var chosen = false;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        AppDependenciesScope.maybeOf(dialogContext);
+        void choose(bool accepted) {
+          if (!dialogContext.mounted || chosen) return;
+          chosen = true;
+          Navigator.pop(dialogContext, accepted && _isCurrent(category));
+        }
+
+        if (!_isCurrent(category)) {
+          return AlertDialog(
+            title: const Text('ชุดคำนี้ไม่พร้อมใช้งาน'),
+            actions: [
+              TextButton(
+                onPressed: () => choose(false),
+                child: const Text('กลับ'),
+              ),
+            ],
+          );
+        }
+        return AlertDialog(
+          title: const Text('ลบคำศัพท์'),
+          content: Text('ลบ “${word.spelling}” หรือไม่'),
+          actions: [
+            TextButton(
+              onPressed: () => choose(false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => choose(true),
+              child: const Text('ลบ'),
+            ),
+          ],
+        );
+      },
+    );
+    if (accepted != true) return;
+    try {
+      if (await _currentOwner(category, expectedOwnerId: word.ownerId) ==
+          null) {
+        return;
+      }
+      await category.vocabulary.deleteWord(word.id);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ลบคำศัพท์ไม่สำเร็จ')));
+      }
+    }
   }
 }

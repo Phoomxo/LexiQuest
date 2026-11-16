@@ -1,0 +1,82 @@
+F34 achievement card preview, save, and Android Sharesheet
+
+Source 09aa32169827df43d8d8b28a3962c7aea03975d8. Approved FigCraft design
+21b34eaa:docs/design/2026-11-13-design-reset/feature_tasks_c.py (case 34) and
+proposed_planner.py (MOTIVE/SHARE/preview).
+Android API 35 Google APIs x86_64, task-owned emulator-5592, 1080×2280,
+isolated offline local guest, no research consent. On a fresh Android user,
+two normal two-answer rounds on Nov 14 and Nov 15 produced real local
+attendance. The emulator clock was set before creating the guest and was
+advanced between rounds. Daily Quest showed 2/5 and weekly Quest 4/20.
+An earlier attempt moved the clock before a pre-existing guest's creation
+and showed unavailable streak authority. The fresh guest gave valid history.
+
+Debug build: flutter build apk --debug --no-pub --target-platform android-x64
+--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=false.
+Candidate and installed base.apk SHA-256:
+66de19672a1340aaa9e92b0e2bb131965c8c27eb275681fea96eee6f4d93a503
+
+1. Entered ความก้าวหน้า > วางแผนการฝึก > ภารกิจและเพื่อนฝึก >
+   การ์ดสิ่งที่ทำสำเร็จ. Card showed ฝึกต่อเนื่อง 2 วัน. Date started
+   hidden, switch displayed the latest actual practice date, and hiding it
+   again restored the brand line. The preview said ซ่อนวันที่ฝึกแล้ว.
+   End Preview returned to the same daily Quest 2/5. Before/after UI text
+   is byte-identical. No receiver receipt existed before choosing a target.
+2. Tapped แชร์ภาพ, saw Android's image thumbnail, and pressed system Back.
+   The preview was still open and the receiver still had no receipt.
+   Reopened Sharesheet and explicitly chose only LexiQuest PNG test,
+   a local fixture APK with no network permission. It decoded one PNG
+   from a matching content:// stream with a read grant and no write grant.
+   It observed no text/title payload. Received 960×513, 21,802 bytes.
+3. Tapped บันทึกรูปการ์ด. System picker opened Downloads with the PNG name.
+   System Back kept the preview open, without saved status. Retried and
+   pressed SAVE. The app reported saved; MediaStore listed one local PNG.
+   Read the exact synthetic file via the isolated userdebug emulator and
+   confirmed its SHA-256 equaled the received PNG byte-for-byte:
+   a49d46c28709d8ef41e4f65f3798b614e7b0d1eae175a68fd32fdaf852b75bd9
+   Visually inspected the received image. It contained trophy, Thai
+   streak headline and LexiQuest. No date, user, account or answer appeared.
+4. Ended the preview, restarted the Android app and entered the same offline
+   guest. The card still showed the saved two-day streak and hid the date.
+
+Windows Flutter focused 82 passed (including five new real SQLite widget
+journeys at 390×844 and 200%). Tests cover Quest return, hidden date and
+explicit date choice, duplicate share suppression, failure/retry, same PNG
+bytes for share/save, owner switch in preview, and discard/no-write if owner
+changes while Android chooses a destination. Independent source review
+accepted the revised dismissal and Quest context. Analysis and formatting
+passed. No schema/reward authority or generated files changed in the commit.
+
+Local raw logs and screenshots under build/. SHA-256:
+  s6-f34-red.txt                           3efea4d0b3c372042a8f8c259e1b7d09de8b9018cc0910a552e559c2a1db3876
+  s6-f34-regression-final.txt              4d4be8040f94a4d5cbe4182f44f454ece5bea69c3a308bd6e0283a63939a7caa
+  s6-f34-analyze-final.txt                 112e3743281242a7d881524f0f77d7bbd58735e67b5e628260539b8534986d3d
+  s6-f34-android.txt                       89e4ecbdd2856d16ed30c1c054e12d89f226f0ba20027e8904517878abc0f01d
+  f34-share-sink/f34-share-sink.apk        071ea6cc84e26e1819028f28ebf0bc81d1df060fd89a38415651da947b3ba558
+  f34-android-evidence/preview-hidden.png  76e0080c148704cc584ac11b60f13bb1b53dc007f2915d94d16c31f0a7f74c9d
+  f34-android-evidence/chooser-expanded.png 6ebc9aa57eb3e53469500a5f38037123f809999da66e724b49c31a18f7036720
+  f34-android-evidence/receiver.txt        54d279d82566cbf0e5f8dc5739b1b7f20453cb8823e4f935a2ec00395e236c52
+  f34-android-evidence/quest-before.txt    021ec08bf237a795cb120c4c6ac06fd9027647beafdc5e2614eb4cf8262a64fa
+  f34-android-evidence/quest-after.txt     021ec08bf237a795cb120c4c6ac06fd9027647beafdc5e2614eb4cf8262a64fa
+  f34-android-evidence/saved-png-sha.txt   5514e469e1d40b4d05578ffa21269e263b43c96a3098dd2093591c5bd3d1556c
+  f34-android-evidence/reopened.txt       8fbc09b5725dec80685482b000fea372f5d1b665f100d3fdea0629e875c74979
+
+Signed delivery APK/vivo, TalkBack audio, native platform variants and an
+external app/recipient were not exercised. Card previews are available in
+Flutter; share and save actions are Android. Android handoff uses a
+bounded private cache with opportunistic pruning on later shares.
+
+CI follow-up: run 43623076800 on ff94c706 failed the two existing participant
+screen architecture checks at a direct Drift import. The five f34 journey
+tests passed in that run. Failed-step log SHA-256
+3b7ec49b287a6cc9deb00c62ec883053488826fdc5f3ceca5ccbb08c39bd8d18.
+Source 24830588170f99962cb97e87ca0cf985f298a590 composes the active-owner
+reads/writes and the same Android export destination contract at runtime.
+The architecture, card, planner and file picker suites passed 36 locally.
+build/s6-f34-boundary-recovery.txt SHA-256
+e592325ed4e7af20039218543291388dafc8d4247c8366b79f797918a5102349.
+Exact CI 43624564637 passed on 24830588 with Flutter 2,312, CPU backend
+267, analysis, Firestore, Supabase and Android debug APK build.
+build/s6-f34-repair-ci.txt SHA-256
+555f4e0eab3fb73a1c346153df844ee8da0cd08d51c1a2acffe206cdb47b4efe.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43624564637

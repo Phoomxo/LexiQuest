@@ -1,13 +1,22 @@
-import 'learning_record_validation.dart';
-
 enum RecallMode { unaided, cued, cloze, multipleChoice, transfer }
 
-enum RecallCueLevel { none, highlight, associationHint, fullDefinition }
+enum CueLevel { none, highlight, associationHint, fullDefinition }
 
-final class RecallAttempt {
+class RecallAttempt {
+  final String attemptId;
+  final String sessionId;
+  final String wordKey;
+  final RecallMode recallMode;
+  final CueLevel cueLevel;
+  final bool correctness;
+  final int responseTimeMs;
+  final int confidence; // 1 to 5
+  final String? contextId;
+  final String algorithmVersion;
+  final DateTime occurredAt;
+
   RecallAttempt({
     required this.attemptId,
-    required this.ownerId,
     required this.sessionId,
     required this.wordKey,
     required this.recallMode,
@@ -16,42 +25,46 @@ final class RecallAttempt {
     required this.responseTimeMs,
     required this.confidence,
     this.contextId,
-    required this.algorithmVersion,
-    required DateTime occurredAtUtc,
-    this.schemaVersion = 1,
-  }) : occurredAtUtc = LearningRecordValidation.utc(occurredAtUtc) {
-    LearningRecordValidation.identifier(attemptId, 'attemptId');
-    LearningRecordValidation.identifier(ownerId, 'ownerId');
-    LearningRecordValidation.identifier(sessionId, 'sessionId');
-    LearningRecordValidation.identifier(wordKey, 'wordKey');
-    LearningRecordValidation.identifier(algorithmVersion, 'algorithmVersion');
-    LearningRecordValidation.schemaVersion(schemaVersion);
-    if (contextId != null) {
-      LearningRecordValidation.identifier(contextId!, 'contextId');
+    this.algorithmVersion = 'v1.0.0',
+    required this.occurredAt,
+  }) {
+    if (confidence < 1 || confidence > 5) {
+      throw ArgumentError('confidence must be between 1 and 5');
     }
     if (responseTimeMs < 0) {
-      throw ArgumentError.value(
-        responseTimeMs,
-        'responseTimeMs',
-        'must be non-negative',
-      );
-    }
-    if (confidence < 1 || confidence > 5) {
-      throw ArgumentError.value(confidence, 'confidence', 'must be 1 to 5');
+      throw ArgumentError('responseTimeMs must be non-negative');
     }
   }
 
-  final String attemptId;
-  final String ownerId;
-  final String sessionId;
-  final String wordKey;
-  final RecallMode recallMode;
-  final RecallCueLevel cueLevel;
-  final bool correctness;
-  final int responseTimeMs;
-  final int confidence;
-  final String? contextId;
-  final String algorithmVersion;
-  final DateTime occurredAtUtc;
-  final int schemaVersion;
+  Map<String, dynamic> toJson() {
+    return {
+      'attemptId': attemptId,
+      'sessionId': sessionId,
+      'wordKey': wordKey,
+      'recallMode': recallMode.name,
+      'cueLevel': cueLevel.name,
+      'correctness': correctness,
+      'responseTimeMs': responseTimeMs,
+      'confidence': confidence,
+      'contextId': contextId,
+      'algorithmVersion': algorithmVersion,
+      'occurredAt': occurredAt.toUtc().toIso8601String(),
+    };
+  }
+
+  factory RecallAttempt.fromJson(Map<String, dynamic> json) {
+    return RecallAttempt(
+      attemptId: json['attemptId'] as String,
+      sessionId: json['sessionId'] as String,
+      wordKey: json['wordKey'] as String,
+      recallMode: RecallMode.values.byName(json['recallMode'] as String),
+      cueLevel: CueLevel.values.byName(json['cueLevel'] as String),
+      correctness: json['correctness'] as bool,
+      responseTimeMs: json['responseTimeMs'] as int,
+      confidence: json['confidence'] as int,
+      contextId: json['contextId'] as String?,
+      algorithmVersion: json['algorithmVersion'] as String? ?? 'v1.0.0',
+      occurredAt: DateTime.parse(json['occurredAt'] as String),
+    );
+  }
 }

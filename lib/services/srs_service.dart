@@ -3,6 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/srs_item.dart';
 
 /// Single-user Spaced Repetition Service backed by SharedPreferences.
+///
+/// @deprecated Use [LearningUseCases.startDueReview] backed by Drift.
+/// SharedPreferences storage is superseded by the `srs_states` Drift table.
+/// Removal target: Phase 1.
+@Deprecated(
+  'Use LearningUseCases.startDueReview() '
+  '(lib/features/learning/application/learning_use_cases.dart). '
+  'Removal target: Phase 1.',
+)
 class SrsService {
   static const String _kSrsStorageKey = 'lexiquest_srs_items_v1';
   final SharedPreferences? prefs;

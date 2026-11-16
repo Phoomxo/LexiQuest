@@ -22,6 +22,13 @@ class DailyQuest {
   bool get isCompleted => currentProgress >= targetCount;
 }
 
+/// @deprecated Use DriftQuestProgressReader and RewardUseCases.claimQuest.
+/// Quarantined: in-memory state resets on restart, incompatible [DailyQuest]
+/// model.  Removal target: Phase 0 gate (Week 16).
+@Deprecated(
+  'Use DriftQuestProgressReader and RewardUseCases.claimQuest. '
+  'Removal target: Phase 0 gate.',
+)
 class StreakAndDailyQuestService {
   int _currentStreakDays = 1;
   int _streakFreezeCount = 1;

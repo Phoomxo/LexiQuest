@@ -1,0 +1,189 @@
+enum RewardItemKind { theme, wallpaper, headgear, weapon, armor, relic }
+
+final class RewardCatalogItem {
+  const RewardCatalogItem({
+    required this.id,
+    required this.catalogVersion,
+    required this.kind,
+    required this.name,
+    required this.description,
+    required this.price,
+    this.purchasable = true,
+  });
+
+  final String id;
+  final int catalogVersion;
+  final RewardItemKind kind;
+  final String name;
+  final String description;
+  final int price;
+  final bool purchasable;
+
+  String get slot => switch (kind) {
+    RewardItemKind.theme => 'theme',
+    RewardItemKind.wallpaper => 'wallpaper',
+    RewardItemKind.headgear => 'headgear',
+    RewardItemKind.weapon => 'weapon',
+    RewardItemKind.armor => 'armor',
+    RewardItemKind.relic => 'relic',
+  };
+}
+
+abstract final class RewardCatalog {
+  static const version = 1;
+
+  static const defaultWallpaper = RewardCatalogItem(
+    id: 'wallpaper_default',
+    catalogVersion: version,
+    kind: RewardItemKind.wallpaper,
+    name: 'พื้นหลังมาตรฐาน',
+    description: 'พื้นหลังเริ่มต้นของหน้าฝึก',
+    price: 0,
+    purchasable: false,
+  );
+
+  static const items = <RewardCatalogItem>[
+    RewardCatalogItem(
+      id: 'theme_default',
+      catalogVersion: version,
+      kind: RewardItemKind.theme,
+      name: 'ธีมมาตรฐาน',
+      description: 'ธีม Material 3 มาตรฐานของ LexiQuest',
+      price: 0,
+    ),
+    RewardCatalogItem(
+      id: 'theme_ocean',
+      catalogVersion: version,
+      kind: RewardItemKind.theme,
+      name: 'ธีมมหาสมุทร',
+      description: 'ชุดสีฟ้าเข้มที่อ่านง่ายทั้งโหมดสว่างและมืด',
+      price: 80,
+    ),
+    RewardCatalogItem(
+      id: 'wallpaper_focus',
+      catalogVersion: version,
+      kind: RewardItemKind.wallpaper,
+      name: 'พื้นหลังสมาธิ',
+      description: 'พื้นหลังเรียบ ลดสิ่งรบกวนระหว่างเรียน',
+      price: 60,
+    ),
+    RewardCatalogItem(
+      id: 'headgear_ipa',
+      catalogVersion: version,
+      kind: RewardItemKind.headgear,
+      name: 'หมวกนักออกเสียง',
+      description: 'อุปกรณ์ตกแต่งที่ได้รับจากคะแนนการเรียนจริง',
+      price: 100,
+    ),
+    RewardCatalogItem(
+      id: 'weapon_cefr',
+      catalogVersion: version,
+      kind: RewardItemKind.weapon,
+      name: 'ดาบนักไต่ระดับ',
+      description: 'อุปกรณ์ตกแต่งสำหรับโปรไฟล์ผู้เรียน',
+      price: 120,
+    ),
+    RewardCatalogItem(
+      id: 'armor_srs',
+      catalogVersion: version,
+      kind: RewardItemKind.armor,
+      name: 'เกราะช่วยทบทวน',
+      description: 'อุปกรณ์ตกแต่งสำหรับโปรไฟล์ผู้เรียน',
+      price: 120,
+    ),
+  ];
+
+  static RewardCatalogItem? byId(String id) {
+    if (id == defaultWallpaper.id) return defaultWallpaper;
+    for (final item in items) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+}
+
+final class RewardAccount {
+  const RewardAccount({
+    required this.balance,
+    required this.catalogVersion,
+    required this.ownedItemIds,
+    required this.equippedBySlot,
+    required this.transactionCount,
+  });
+
+  final int balance;
+  final int catalogVersion;
+  final Set<String> ownedItemIds;
+  final Map<String, String> equippedBySlot;
+  final int transactionCount;
+}
+
+final class RewardSession {
+  const RewardSession({required this.ownerId, required this.account});
+
+  final String ownerId;
+  final RewardAccount account;
+}
+
+enum PurchaseStatus { purchased, alreadyOwned, replayed }
+
+final class PurchaseResult {
+  const PurchaseResult({required this.status, required this.account});
+
+  final PurchaseStatus status;
+  final RewardAccount account;
+}
+
+enum EquipStatus { equipped, alreadyEquipped, replayed }
+
+final class QuestClaimResult {
+  const QuestClaimResult({
+    required this.ownerId,
+    required this.receiptId,
+    required this.canonicalInstanceId,
+    required this.xpAmount,
+    required this.issuedAtUtc,
+    required this.replayed,
+  });
+
+  final String ownerId;
+  final String receiptId;
+  final String canonicalInstanceId;
+  final int xpAmount;
+  final DateTime issuedAtUtc;
+  final bool replayed;
+}
+
+final class EquipResult {
+  const EquipResult({required this.status, required this.account});
+
+  final EquipStatus status;
+  final RewardAccount account;
+}
+
+final class RewardAppearance {
+  const RewardAppearance({required this.ownerId, required this.equippedBySlot});
+
+  const RewardAppearance.empty() : ownerId = null, equippedBySlot = const {};
+
+  final String? ownerId;
+  final Map<String, String> equippedBySlot;
+}
+
+enum RewardFailureCode {
+  unknownItem,
+  staleCatalog,
+  insufficientBalance,
+  invalidIdempotencyKey,
+  ownerChanged,
+  notOwned,
+  slotMismatch,
+  questUnavailable,
+  questNotClaimable,
+}
+
+final class RewardException implements Exception {
+  const RewardException(this.code);
+
+  final RewardFailureCode code;
+}

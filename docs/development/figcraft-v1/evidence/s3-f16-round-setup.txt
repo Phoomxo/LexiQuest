@@ -1,0 +1,96 @@
+F16 category quiz round setup
+
+Source a30abdbc63e5c44f89339b971445b288fe674ec6. Win Flutter with synthetic
+A/B and in-memory SQLite. Library > selected set > Quiz and ChooseMode >
+all practice > category selector > Quiz are the production paths.
+
+Library: cancel before starting returns to the same set. Session and answer
+tables stay empty and the existing vocabulary outbox is unchanged. Choose
+two questions, answer question one, pause, remount, and open B independently.
+Reopen A, resume the same session on question two with the same choices, finish
+100%, return to A, and verify the stored result and settings.
+
+ChooseMode: with only two usable words, selecting three disables Start and
+creates no session. Select one question, Listen and read, and the five-minute
+guide. The second word in A supplies a distractor and neither word from B
+appears. Native channel fixture rejects playback; the failure message leaves
+the question answerable. Advance five minutes; no answer has been recorded.
+Answer, finish 100%, return to the real category selector, and read the stored
+one-question, listening, five-minute settings.
+
+Owner change while Start is held returns Back without creating a session or
+answer when the stale request resolves. Application test removes words after
+preview and confirms a shortage before writing. QuizPlan v2 stores settings
+in the existing plan JSON; null settings use the exact v1 shape. Cursor and
+response codecs remain v1. No schema migration applies.
+
+RED logs SHA-256 (codec v2, missing setup route, native cancellation/rejection)
+750eeced1d02cbf0a0f770b64bd72e99e186d9f1eee7a9b34ead7aa25e55864b
+76fa9f693137833f870405867541da9b8a1becd9b2d7e92b7f7e49627bbf6719
+840f42f1ab025cd4675de62c50d13be3d9ca41f944b19712cf8659ad44b4d464
+
+GREEN build/s3-f16-focused-final.txt, 176 focused Flutter cases, exit 0.
+e8558c73fd27113f1f90a584d331ac1790ca3caa65abb13c20114fce67e5c908
+After the analyzer-requested braces, build/s3-f16-final-route-regression.txt
+passed 18 on this source. b939e0f75d20ab0ca895f758e0ad8b35f67edc63883c980ba2d77c610f6284ca
+build/s3-f16-analyze.txt, no issues, exit 0, SHA-256
+b6b2495d87daece9b093f389930f9c97516f38efc4ad6410b0a419b6d0b2ae25
+15 changed Dart files passed format. Independent source review accepted f16.
+
+Five minutes are advisory wall time from the saved start, including pauses.
+Quiz uses system speech only on explicit request, through the native provider
+with no app remote fallback. The OS can pick a voice that depends on network.
+No physical playback, offline voice availability, or spoken TalkBack result
+is asserted by the mocked channel or the Windows tests.
+
+Android API 35 offline rerun on d5df28500346e3a16def896c27618fce2d452442
+
+The guest declined research. Airplane mode was on, Wi-Fi was off and text
+scale was 2.0. The host and installed x64 debug APK shared SHA-256
+7342f3a9500f22f3219b901a8b866bf6d2821446eb45d716c39dcf1f9ec32c70.
+
+Library > ชุดทดลองทบทวน F06 > ฝึกจากชุดนี้. Choosing five questions with
+only three usable words displays the shortage and disables Start in the
+Android accessibility tree. Cancel returns to the same set. The read-only
+SQLite baselines match with 13 sessions, 22 attempts, 44 outbox operations
+and zero research events or consents.
+
+Choose two questions, Listen and read, and the five-minute guide. Tap
+ฟังคำนี้, then answer harbor and pause on ferryvessel. SQLite shows one
+attempt and cursor slot 1 awaitingAnswer on session
+session:d543b203-7af5-4b42-9512-32ba7049a060. Reopen from the same set.
+The same second prompt and choices remain. At five minutes of actual wall
+time, ครบ 5 นาทีแล้ว · ยังตอบต่อได้ appears while the saved attempt
+count stays at one. Answer and finish 100% after 326 seconds. Return to
+the original set and reopen its latest result after stopping and restarting
+the app. Both earlier selections are visible. The reopened SQLite snapshot
+matches the finished snapshot byte-for-byte with the same session, exactly
+two correct answers, version 2 settings, and zero research rows.
+
+The emulator ran without audio. Audible system speech and TalkBack on a
+signed delivery build remain unverified.
+
+Native records under build/boss-android-evidence, SHA-256
+f16-native-baseline.json and f16-native-cancelled.json
+b6684a636fa2449075147a7d121dd0bcb77565b19c9ee4cbd798d98b546e8c25
+f16-native-overcount-disabled.txt 092defe7c1f39c6e8e9c07f5a09f9995956159f4cf12c07c48c7cddf7c3f6c2b
+f16-native-paused.json 68263f96cbb3ef90911bbd9367932a3f1374df3e172ee24cb74c2c4c311bcc49
+f16-native-expired.png a5642a6fc8bf220daa51ecffdf2e2f80479ea49112ba2f0d4a596cecc3a9c87f
+f16-native-expired-db.txt 75a9a2dabb66f53156365e33e32da0cde9630a0405dd21307e090a127f4cc98f
+f16-native-finished.json and f16-native-reopened.json
+388a202d52de2c9221e1bcae5fde7db3a6a3d13312bb36b2865b38f25540fcd1
+f16-native-reopened-score.txt 06da5e79c2e935d3b94799994afa7c5cc424ac7f60d3567d616a7ff3e9db305f
+
+Practice > ดูแบบฝึกทั้งหมด > ฝึกตามหมวดหมู่ > ชุดทดลองทบทวน F06.
+Choose one question, independent reading, and self-paced practice. The quiz displays
+คำถาม 1 จาก 1 and ไม่จับเวลา. Answer harbor, finish 100%, and use
+กลับไปเลือกชุดคำ to return to the original category chooser. SQLite
+stores version 2 with questionCount 1, listenAndRead false and
+fiveMinuteGuide false for session:de7675e8-2d12-44a1-bd28-af93f4ec79f8.
+The one new correct attempt is in F06, the completed two-word round
+and earlier attempts remain identical, and the research counts stay zero.
+
+f16-native-quiet-q1.txt 2de5743f653183e265a9c8212656c05220190cfc60e4843e099a3523719c4cc7
+f16-native-quiet-score.txt 4c4b4aba6e074bad0dc2c3d7337f351bc04513cd00ce61e7979087607f0958c4
+f16-native-quiet-return.txt 83c565fa2be7b5ee9e96109707106a0ead0cbfa6ca36a54aa77b6db00aae71d6
+f16-native-quiet.json df01cb7a35a20715f59c1e9c682adabee38f59cdacd027de55a02778d9907d4e

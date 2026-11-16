@@ -1,0 +1,12 @@
+Completed GitHub Actions for the S7 practice-mode unit.
+Commit 9371b4342316fb49acc89705383f2ed8f7a9e4e6
+Run https://github.com/Phoomxo/LexiQuest/actions/runs/43571302282
+Conclusion SUCCESS, exact commit read back from API and full raw log.
+
+Flutter2150 passed; full analysis/format/CLI/Firestore/Supabase passed.
+Voice55, AI107 and LexiQuest-LM75 CPU tests passed; Android debug build passed.
+Raw log build/ci-9371b434-success.txt
+SHA256 ca4d0061bad85b3d736106a76e13ec134284dc0a2d0a2775474f4b1bd0d75fab
+
+This verifies committed practice work, not subsequent dirty achievement work.
+Native v29 remains earlier-source evidence. No current-source install claimed.

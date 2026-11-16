@@ -1,0 +1,77 @@
+S3 f06 and f14 offline due review, rating and reopen
+
+Application source 1edcabbf332f71765584791b0a6f0fca4ef38571.
+Android API 35 x86_64, isolated local guest, airplane mode, font scale 2.0.
+Host and installed debug APK SHA-256:
+46c8a80801c4873162c11b2c9a4e76f9424285a6f69d71c2366670d62d0a0c67
+
+The isolated database was v26 and had an empty active owner due queue.
+An atomic fixture transaction created one category, the word harbor with
+meaning ท่าเรือ and one due SRS row for the active synthetic guest. The
+fixture followed the existing SRS widget seed and never changed the
+device clock. The app started with one due word in its normal Today card.
+Fixture and Android seed-read SHA-256 under build/boss-android-evidence:
+f06-seed.sql bdf80284cfe8421679824160c348bf22955dddc260f7a792c3a6976d8fcc5f75
+f06-seeded-due.txt f2a73be7214693290730896bde43b9752d3959be20707f518339e35b21aa1eea
+
+Practice home → ทบทวนคำนี้ opened harbor. ดูคำแปล revealed ท่าเรือ.
+The selected word had zero attempts after reveal. Pressing จำได้แล้ว
+gave บันทึกแล้ว and the selected rating. จบการทบทวน showed 100% with one
+self-rated answer, and the result returned to the original Practice tab.
+The sole owner/session/word row had prompt mode srsRecall and score 100.
+The schedule moved from interval 0 to 1 with due time 86,400,000 ms after
+the recorded answer. The old app process was force-stopped and a cold
+launch reached the guest. Today stayed empty and its existing action
+opened the Library. Progress → ประวัติการฝึก → ทบทวนด้วยบัตรคำ opened
+the same 100%, one-answer result. The session read matched byte for byte
+after reopening. The history result reports an unavailable original
+prompt-text snapshot for this recall; the score and category persist.
+กลับไปดูประวัติ returned to Progress. The full fixture had 9 sessions,
+19 answers, 37 outbox operations, 0 events_v2 and 0 research consents.
+
+Raw Android logs under build/boss-android-evidence, SHA-256:
+f06-today-due.txt 5977e4041ae504486e0f4762f57e6944193925c4c2c810262e75a737c82d98af
+f06-before-reveal.txt 0bd8090d74227e12ce2f2fbc733f3dc443cc9c73d86dc6945d144968f88f9914
+f06-after-reveal.txt 7164fd1756ca42e818d2679cebea5a1a8289606dc3966c4556408fa77db9ac7c
+f06-after-reveal-db.txt 13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354
+f06-rated.txt b7719f89ade1f92ea4f4b8c480b50f7d014c4a45c1214aa538f46c27257ad393
+f06-score.txt 9b224d708ef831289ed1436e7c4c6636b925c2ffdb78d643d56a6126bb04b60f
+f06-completed-db.txt and f06-reopened-db.txt:
+87bdb8b7f3a08e2a3b6597e7c34968c4aaed9eb9989675edf7fd4a4c20ab426e
+f06-reopened-today.txt bcd92a41459e137a4399d2ab1d1316bf69af9ba3b625f675f16e62a88a34a71e
+f06-empty-library.txt f78c1feea6a591f37d00c68006318d04bb39c7a8992fb15eb7e841895b7fcf01
+f06-reopened-score.txt 72952b5c5d8203d68561d27dd6cd80ed43ca1b1b3384c74a9e3e81087e425c09
+f06-after-reopen-counts.txt 9fcd1e36c9377b564020425956266184244a0a9d53cbfe6c18e97e328b0df662
+
+Windows Flutter 87 passed across mode picker, flashcards, SRS policy and
+learning use cases, including incorrect rating and local retry behavior.
+build/s3-f06-f14-recheck.txt SHA-256:
+52d051921e869a1f667f4241a2130fb638eed155b6f829716d4f15602b33f3c2
+
+f06 and f14 pass in this offline prototype scope. Signed accessibility
+and live sync remain open.
+
+P1.5 due-date branches on the same APK and fixture owner
+
+The second fixture added bridge with an overdue 7-day interval, three
+repetitions and zero lapses. Before reveal and after revealing and
+returning to Today without a rating, the complete five-field SRS state
+and zero-attempt count matched. The word remained due. On entering again,
+เลือก ยังจำไม่ได้ stored one srsRecall attempt and a completed 0% result.
+The interval reset to one day, repetitions to zero and lapses to one.
+The next due time was 86,400,000 ms from the timestamp of that answer.
+The earlier remember case used the same relative offset from its
+recorded answer; the policy tests compare both results at one fixed
+UTC reference time. The Today queue became empty after the rating.
+That assertion passed in the subsequent 177-test regression run.
+s3-f43-srs-original-card.txt records its Windows log hash.
+
+Raw Android logs under build/boss-android-evidence, SHA-256:
+p15-forget-fixture.sql 3e1007bb6e9aa250906d9f715b09a327b4f12075442bcb76131c4878f9acaa4a
+p15-forget-before.txt and p15-after-unanswered.txt
+910d019020ee4f0ef6975145c9ae7baa0a530a8998f428095160261281abdc15
+p15-forget-reveal.txt 211eff2b590343162ce9dc8871386e9fe90d8f3061c88d158e3d59bb0bc2a4b9
+p15-forget-rated.txt 70fe2534deb9dafba3a1358b605a1d5938f8687e53f9be7ac283da81aea9f9dd
+p15-forget-score.txt 62f5705473a99f3fa1568fd3c4abeb21c9666d9dae6283ee6ad541a5081d1869
+p15-forget-completed.txt e431968ad4c0a7e3e3f032fcd3d2ee65eeec1e0f0f07020e486f4cdb0d0cc392
+p15-forget-back-today.txt bcd92a41459e137a4399d2ab1d1316bf69af9ba3b625f675f16e62a88a34a71e

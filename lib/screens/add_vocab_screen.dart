@@ -1,252 +1,387 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../models/word_model.dart';
-import '../services/word_service.dart';
-import '../services/global_word_service.dart';
+
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../runtime/app_dependencies.dart';
 
 class AddWordScreen extends StatefulWidget {
-  final String categoryId;
-  final Word? word;
+  const AddWordScreen({
+    super.key,
+    required this.categoryId,
+    this.vocabulary,
+    this.word,
+    this.initialDraft,
+    this.expectedOwnerId,
+    this.categoryName,
+    this.onCreated,
+  }) : assert(word == null || initialDraft == null);
 
-  const AddWordScreen({super.key, required this.categoryId, this.word});
+  final String categoryId;
+  final VocabularyUseCases? vocabulary;
+  final VocabularyWord? word;
+  final CreateWordCommand? initialDraft;
+  final String? expectedOwnerId;
+  final String? categoryName;
+  final ValueChanged<VocabularyWord>? onCreated;
 
   @override
   State<AddWordScreen> createState() => _AddWordScreenState();
 }
 
 class _AddWordScreenState extends State<AddWordScreen> {
-  late TextEditingController _wordController;
-  late TextEditingController _meaningController;
-  late TextEditingController _partOfSpeechController;
-  late WordService wordService;
-  late GlobalWordService globalWordService;
-
-  List<String> _suggestedWords = [];
+  late final TextEditingController _wordController;
+  late final TextEditingController _meaningController;
+  late final TextEditingController _partOfSpeechController;
+  AppDependencies? _writeDependencies;
+  bool _writeContextCaptured = false;
+  String? _writeOwnerId;
+  String? _writeCategoryId;
+  CreateWordCommand? _writeDraft;
+  VocabularyWord? _writeWord;
+  bool _saving = false;
+  String? _wordError;
+  String? _meaningError;
+  String? _partOfSpeechError;
+  String? _formError;
 
   @override
   void initState() {
     super.initState();
-    wordService = WordService(categoryId: widget.categoryId);
-    globalWordService = GlobalWordService();
-
-    _wordController = TextEditingController(text: widget.word?.word ?? '');
+    _wordController = TextEditingController(
+      text: widget.word?.spelling ?? widget.initialDraft?.spelling,
+    );
     _meaningController = TextEditingController(
-      text: widget.word?.meaning ?? '',
+      text: widget.word?.meaning ?? widget.initialDraft?.meaning,
     );
     _partOfSpeechController = TextEditingController(
-      text: widget.word?.partOfSpeech ?? '',
+      text: widget.word?.partOfSpeech ?? widget.initialDraft?.partOfSpeech,
     );
   }
 
-  /// 🔎 **ดึงคำศัพท์จาก GlobalWords หรือ API**
-  Future<void> _searchWord(String query) async {
-    if (query.isEmpty) return;
-
-    try {
-      final wordData = await globalWordService.addWordToDatabase(query);
-
-      if (!mounted) return;
-      setState(() {
-        _wordController.text = wordData['word'];
-        _meaningController.text = wordData['meaning'];
-        _partOfSpeechController.text = wordData['partOfSpeech'];
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
-    }
-  }
-
-  /// 🔎 **แปลคำศัพท์เป็นภาษาไทยโดยใช้ Google Translate**
-  Future<void> _translateToThai(String word) async {
-    final url = Uri.parse(
-      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=$word',
-    );
-
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      setState(() {
-        _meaningController.text =
-            data[0][0][0]; // ใส่ค่าที่แปลลงในช่อง "ความหมาย"
-      });
-    }
-  }
-
-  /// 🔥 **ดึงข้อมูล "ประเภทของคำ" อัตโนมัติจาก Dictionary API**
-  Future<void> _fetchWordDetails(String word) async {
-    final url = Uri.parse(
-      'https://api.dictionaryapi.dev/api/v2/entries/en/$word',
-    );
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      if (data.isNotEmpty) {
-        setState(() {
-          _partOfSpeechController.text =
-              data[0]['meanings'][0]['partOfSpeech'] ?? '';
-        });
-      }
-    }
-  }
-
-  /// 🔎 **ดึงคำแนะนำจาก Datamuse API**
-  Future<void> _fetchSuggestions(String query) async {
-    if (query.isEmpty) {
-      setState(() => _suggestedWords = []);
-      return;
-    }
-
-    final url = Uri.parse('https://api.datamuse.com/words?sp=$query*');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      setState(() {
-        _suggestedWords = data.map<String>((word) => word['word']).toList();
-      });
-    }
-  }
-
-  /// 🔥 **Autocomplete สำหรับเลือกคำศัพท์**
-  Widget _buildWordAutocomplete() {
-    return Autocomplete<String>(
-      optionsBuilder: (TextEditingValue textEditingValue) async {
-        await _fetchSuggestions(textEditingValue.text);
-        return _suggestedWords;
-      },
-      onSelected: (String selection) async {
-        setState(() {
-          _wordController.text = selection;
-        });
-
-        // ✅ ค้นหาใน Firestore หรือ API
-        await _searchWord(selection);
-
-        // ✅ **แปลเป็นภาษาไทย**
-        await _translateToThai(selection);
-
-        // ✅ **ดึงข้อมูลประเภทของคำ**
-        await _fetchWordDetails(selection);
-      },
-      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          onEditingComplete: onEditingComplete,
-          decoration: InputDecoration(
-            labelText: 'คำศัพท์',
-            prefixIcon: const Icon(Icons.translate),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      },
-    );
-  }
-
-  /// ➕ **เพิ่มคำศัพท์**
-  void _addOrUpdateWord() async {
-    final wordText = _wordController.text.trim();
-    final meaning = _meaningController.text.trim();
-    final partOfSpeech = _partOfSpeechController.text.trim();
-
-    if (wordText.isEmpty || meaning.isEmpty || partOfSpeech.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบทุกช่อง')),
-      );
-      return;
-    }
-
-    try {
-      if (widget.word == null) {
-        await wordService.addWord(
-          Word(
-            word: wordText,
-            meaning: meaning,
-            partOfSpeech: partOfSpeech,
-            userId: '',
-            isGlobal: false,
-            createdAt: DateTime.now(),
-          ),
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('เพิ่มคำศัพท์สำเร็จ')));
-      } else {
-        await wordService.updateWord(
-          widget.word!.id!,
-          Word(
-            word: wordText,
-            meaning: meaning,
-            partOfSpeech: partOfSpeech,
-            userId: widget.word!.userId,
-            isGlobal: widget.word!.isGlobal,
-            createdAt: widget.word!.createdAt,
-          ),
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('อัปเดตคำศัพท์สำเร็จ')));
-      }
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if ((widget.initialDraft != null ||
+            widget.expectedOwnerId != null ||
+            widget.word != null) &&
+        !_writeContextCaptured) {
+      _writeDependencies = AppDependenciesScope.maybeOf(context);
+      _writeContextCaptured = true;
+      _writeOwnerId = widget.word?.ownerId ?? widget.expectedOwnerId;
+      _writeCategoryId = widget.categoryId;
+      _writeDraft = widget.initialDraft;
+      _writeWord = widget.word;
     }
   }
 
   @override
+  void dispose() {
+    _wordController.dispose();
+    _meaningController.dispose();
+    _partOfSpeechController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.word == null ? 'เพิ่มคำศัพท์' : 'แก้ไขคำศัพท์'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    final useCases =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.initialDraft != null
+                ? 'ตรวจคำจากภาพ'
+                : widget.word == null
+                ? 'เพิ่มคำศัพท์'
+                : 'แก้ไขคำศัพท์',
+          ),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            _buildWordAutocomplete(),
-            const SizedBox(height: 15),
+            if (widget.categoryName != null) ...[
+              Text('เก็บในชุด ${widget.categoryName}'),
+              const SizedBox(height: 8),
+            ],
+            if (widget.initialDraft != null) ...[
+              const Text('ผลสแกนยังไม่ยืนยัน ตรวจชื่อและกรอกคำแปลเอง'),
+              const SizedBox(height: 16),
+            ],
             TextField(
-              controller: _meaningController,
+              key: const ValueKey('word-field'),
+              controller: _wordController,
+              enabled: !_saving,
+              textInputAction: TextInputAction.next,
+              maxLength: maxSpellingLength,
               decoration: InputDecoration(
-                labelText: 'ความหมาย (ภาษาไทย)',
-                prefixIcon: const Icon(Icons.text_snippet),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                labelText: 'คำศัพท์',
+                border: const OutlineInputBorder(),
+                errorText: _wordError,
               ),
+              onChanged: (_) {
+                if (_wordError != null || _formError != null) {
+                  setState(() {
+                    _wordError = null;
+                    _formError = null;
+                  });
+                }
+              },
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             TextField(
-              controller: _partOfSpeechController,
+              key: const ValueKey('meaning-field'),
+              controller: _meaningController,
+              enabled: !_saving,
+              textInputAction: TextInputAction.next,
+              maxLength: maxMeaningLength,
               decoration: InputDecoration(
-                labelText: 'ประเภทของคำ',
-                prefixIcon: const Icon(Icons.category),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                labelText: 'ความหมาย',
+                border: const OutlineInputBorder(),
+                errorText: _meaningError,
+              ),
+              onChanged: (_) {
+                if (_meaningError != null || _formError != null) {
+                  setState(() {
+                    _meaningError = null;
+                    _formError = null;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const ValueKey('part-of-speech-field'),
+              controller: _partOfSpeechController,
+              enabled: !_saving,
+              textInputAction: TextInputAction.done,
+              maxLength: maxPartOfSpeechLength,
+              decoration: InputDecoration(
+                labelText: 'ชนิดของคำ',
+                border: const OutlineInputBorder(),
+                errorText: _partOfSpeechError,
+              ),
+              onChanged: (_) {
+                if (_partOfSpeechError != null || _formError != null) {
+                  setState(() {
+                    _partOfSpeechError = null;
+                    _formError = null;
+                  });
+                }
+              },
+              onSubmitted: (_) {
+                if (!_saving && useCases != null) _save(useCases);
+              },
+            ),
+            if (_formError case final error?) ...[
+              const SizedBox(height: 4),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  error,
+                  key: const ValueKey('word-form-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
+            ],
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              key: const ValueKey('save-word'),
+              onPressed: _saving || useCases == null
+                  ? null
+                  : () => _save(useCases),
+              icon: _saving
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        semanticsLabel: 'กำลังบันทึกคำศัพท์',
+                      ),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_saving ? 'กำลังบันทึก…' : 'บันทึก'),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addOrUpdateWord,
-        icon: const Icon(Icons.check, color: Colors.white),
-        label: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
-      ),
     );
+  }
+
+  Future<void> _save(VocabularyUseCases useCases) async {
+    if (_saving) return;
+    final wordError = _requiredError(_wordController.text, 'กรอกคำศัพท์');
+    final meaningError = _requiredError(
+      _meaningController.text,
+      'กรอกความหมาย',
+    );
+    final partOfSpeechError = _requiredError(
+      _partOfSpeechController.text,
+      'กรอกชนิดของคำ',
+    );
+    setState(() {
+      _wordError = wordError;
+      _meaningError = meaningError;
+      _partOfSpeechError = partOfSpeechError;
+      _formError = null;
+    });
+    if (wordError != null ||
+        meaningError != null ||
+        partOfSpeechError != null) {
+      return;
+    }
+    setState(() => _saving = true);
+    final draft = widget.initialDraft;
+    final word = _writeWord;
+    final expectedOwnerId = word?.ownerId ?? widget.expectedOwnerId;
+    final bound =
+        _writeContextCaptured ||
+        draft != null ||
+        widget.word != null ||
+        expectedOwnerId != null;
+    try {
+      if (bound) await _requireWriteContext(useCases, expectedOwnerId);
+      if (word != null) {
+        await useCases.updateWord(
+          UpdateWordCommand(
+            id: word.id,
+            categoryId: widget.categoryId,
+            spelling: _wordController.text,
+            meaning: _meaningController.text,
+            partOfSpeech: _partOfSpeechController.text,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
+          ),
+          expectedWord: word,
+        );
+        // The guarded detail route already observes the committed revision.
+        if (mounted && ModalRoute.isCurrentOf(context) == true) {
+          Navigator.pop(context);
+        }
+        return;
+      }
+      final created = await useCases.createWord(
+        CreateWordCommand(
+          categoryId: widget.categoryId,
+          spelling: _wordController.text,
+          meaning: _meaningController.text,
+          partOfSpeech: _partOfSpeechController.text,
+          cefrLevel: draft?.cefrLevel,
+          source: draft?.source ?? 'manual',
+        ),
+        expectedOwnerId: expectedOwnerId,
+      );
+      if (bound) {
+        await _requireWriteContext(useCases, expectedOwnerId);
+        if (created.ownerId != expectedOwnerId ||
+            created.categoryId != _writeCategoryId) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (draft != null) {
+        if (mounted) Navigator.pop<VocabularyWord>(context, created);
+      } else if (mounted) {
+        widget.onCreated?.call(created);
+        Navigator.pop(context);
+      }
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () =>
+              _formError = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
+    } on StaleVocabularyWordFailure {
+      if (mounted) {
+        setState(
+          () => _formError = 'คำนี้ถูกแก้ไขแล้ว กรุณาเปิดรายละเอียดคำใหม่',
+        );
+      }
+    } on InvalidVocabularyFailure catch (error) {
+      if (mounted) _showInvalidField(error.field);
+    } on DuplicateVocabularyFailure {
+      if (mounted) setState(() => _formError = 'มีคำศัพท์และความหมายนี้แล้ว');
+    } on CategoryWordLimitFailure {
+      if (mounted) {
+        setState(() => _formError = 'หมวดหมู่นี้มีคำศัพท์ครบ 50 คำแล้ว');
+      }
+    } catch (_) {
+      if (mounted) setState(() => _formError = 'บันทึกคำศัพท์ไม่สำเร็จ');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _requireOriginalWord() {
+    final original = _writeWord;
+    final current = widget.word;
+    if (original == null && current == null) return;
+    if (original == null ||
+        current == null ||
+        current.id != original.id ||
+        current.ownerId != original.ownerId ||
+        current.categoryId != original.categoryId ||
+        current.isDeleted) {
+      throw const VocabularyNotFoundFailure();
+    }
+    if (current.localRevision != original.localRevision) {
+      throw const StaleVocabularyWordFailure();
+    }
+  }
+
+  Future<void> _requireWriteContext(
+    VocabularyUseCases useCases,
+    String? expectedOwnerId,
+  ) async {
+    if (!mounted ||
+        !_writeContextCaptured ||
+        expectedOwnerId == null ||
+        !identical(AppDependenciesScope.maybeOf(context), _writeDependencies) ||
+        _writeOwnerId != expectedOwnerId ||
+        !identical(widget.initialDraft, _writeDraft) ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId) ||
+        widget.categoryId != _writeCategoryId ||
+        (_writeDraft != null && _writeDraft!.categoryId != widget.categoryId)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    _requireOriginalWord();
+    final dependencies = _writeDependencies;
+    final currentVocabulary = dependencies?.vocabulary;
+    if (currentVocabulary != null && !identical(currentVocabulary, useCases)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final owner = await (dependencies?.localOwners ?? useCases.owners)
+        .getOrCreateActiveOwner();
+    if (!mounted ||
+        owner.id != expectedOwnerId ||
+        !identical(AppDependenciesScope.maybeOf(context), dependencies) ||
+        !identical(widget.initialDraft, _writeDraft) ||
+        widget.categoryId != _writeCategoryId ||
+        (widget.expectedOwnerId != null &&
+            widget.expectedOwnerId != expectedOwnerId)) {
+      throw const VocabularyNotFoundFailure();
+    }
+    _requireOriginalWord();
+  }
+
+  String? _requiredError(String value, String message) =>
+      value.trim().isEmpty ? message : null;
+
+  void _showInvalidField(String field) {
+    setState(() {
+      switch (field) {
+        case 'spelling':
+          _wordError = 'กรอกคำศัพท์ไม่เกิน $maxSpellingLength ตัวอักษร';
+        case 'meaning':
+          _meaningError = 'กรอกความหมายไม่เกิน $maxMeaningLength ตัวอักษร';
+        case 'partOfSpeech':
+          _partOfSpeechError =
+              'กรอกชนิดของคำไม่เกิน $maxPartOfSpeechLength ตัวอักษร';
+        default:
+          _formError = 'ตรวจสอบข้อมูลคำศัพท์แล้วลองใหม่';
+      }
+    });
   }
 }

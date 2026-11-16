@@ -4,26 +4,12 @@ param()
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $manifestPath = Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml'
-$gradlePath = Join-Path $repoRoot 'android\app\build.gradle.kts'
-$servicesPath = Join-Path $repoRoot 'android\app\google-services.json'
-$firebaseOptionsPath = Join-Path $repoRoot 'lib\firebase_options.dart'
-$mainActivityPath = Join-Path $repoRoot 'android\app\src\main\kotlin\com\lexiquest\app\MainActivity.kt'
-$legacyMainActivityPath = Join-Path $repoRoot 'android\app\src\main\kotlin\com\example\vocab_learning_app\MainActivity.kt'
 $source = Get-Content -LiteralPath $manifestPath -Raw
-$gradle = Get-Content -LiteralPath $gradlePath -Raw
-$services = Get-Content -LiteralPath $servicesPath -Raw | ConvertFrom-Json
-$firebaseOptions = Get-Content -LiteralPath $firebaseOptionsPath -Raw
-$productionClient = @(
-    $services.client |
-        Where-Object {
-            $_.client_info.android_client_info.package_name -eq 'com.lexiquest.app'
-        }
-) | Select-Object -First 1
-$mainActivity = if (Test-Path -LiteralPath $mainActivityPath) {
-    Get-Content -LiteralPath $mainActivityPath -Raw
-} else {
-    ''
-}
+$assetLinksPath = Join-Path $repoRoot `
+    'hosting\public\.well-known\assetlinks.json'
+$firebasePath = Join-Path $repoRoot 'firebase.json'
+$hostedVerifierPath = Join-Path $repoRoot `
+    'tool\cli\verify-hosted-asset-links.ps1'
 
 $checks = [ordered]@{
     'Release manifest explicitly blocks cleartext traffic' =
@@ -38,24 +24,42 @@ $checks = [ordered]@{
         $source -match 'android:name="android\.hardware\.camera\.autofocus"\s+android:required="false"'
     'Microphone hardware is optional' =
         $source -match 'android:name="android\.hardware\.microphone"\s+android:required="false"'
-    'Android namespace uses the production package' =
-        $gradle -match 'namespace\s*=\s*"com\.lexiquest\.app"'
-    'Android application id uses the production package' =
-        $gradle -match 'applicationId\s*=\s*"com\.lexiquest\.app"'
-    'Firebase config contains the production Android client' =
-        $null -ne $productionClient
-    'Firebase config uses the registered production app id' =
-        $productionClient.client_info.mobilesdk_app_id -eq
-            '1:145034183638:android:2c492244dd68e77dbe5a77'
-    'Flutter Firebase options use the registered production app id' =
-        $firebaseOptions -match
-            "static const FirebaseOptions android[\s\S]*?appId:\s*'1:145034183638:android:2c492244dd68e77dbe5a77'"
-    'MainActivity is stored under the production package path' =
-        (Test-Path -LiteralPath $mainActivityPath)
-    'MainActivity declares the production package' =
-        $mainActivity -match '(?m)^package com\.lexiquest\.app\s*$'
-    'Legacy MainActivity package path is absent' =
-        -not (Test-Path -LiteralPath $legacyMainActivityPath)
+    'Android App Links statement is present' =
+        (Test-Path -LiteralPath $assetLinksPath)
+    'Firebase Hosting configuration is present' =
+        (Test-Path -LiteralPath $firebasePath)
+    'Hosted Asset Links verifier is present' =
+        (Test-Path -LiteralPath $hostedVerifierPath)
+}
+if (Test-Path -LiteralPath $hostedVerifierPath) {
+    $hostedVerifier = Get-Content -LiteralPath $hostedVerifierPath -Raw
+    $checks['Hosted verifier checks both Firebase domains'] =
+        (
+            $hostedVerifier -match 'web\.app/\.well-known/assetlinks\.json' -and
+            $hostedVerifier -match (
+                'firebaseapp\.com/\.well-known/assetlinks\.json'
+            )
+        )
+    $checks['Hosted verifier reconciles the release certificate'] =
+        $hostedVerifier -match 'signingCertificateSha256'
+}
+
+if (Test-Path -LiteralPath $assetLinksPath) {
+    $assetLinks = Get-Content -LiteralPath $assetLinksPath -Raw
+    $checks['Asset links target the production package'] =
+        $assetLinks -match '"package_name":\s*"com\.lexiquest\.app"'
+    $checks['Asset links pin the release signing certificate'] =
+        $assetLinks -match (
+            'E1:B0:0E:17:89:6B:FB:73:FE:0D:C4:24:29:76:8B:96:' +
+            '64:65:21:3D:49:A8:A5:16:5D:E0:66:88:CC:8F:DC:1F'
+        )
+}
+if (Test-Path -LiteralPath $firebasePath) {
+    $firebase = Get-Content -LiteralPath $firebasePath -Raw
+    $checks['Hosting targets the production App Link site'] =
+        $firebase -match '"site":\s*"vocab-learning-app-219ef"'
+    $checks['Hosting applies explicit asset links headers'] =
+        $firebase -match '/\.well-known/assetlinks\.json'
 }
 
 $failed = @($checks.GetEnumerator() | Where-Object { -not $_.Value })

@@ -1,310 +1,395 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
-import '../services/auth_service.dart';
+
+import '../features/account/application/account_use_cases.dart';
+import '../features/account/domain/account_contracts.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
+import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
 import '../services/guest_session_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'otp_screen.dart'; // เพิ่มไฟล์ OTP Screen
+import '../widgets/research_consent_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.guestSessionService});
+  const LoginScreen({
+    super.key,
+    this.guestSessionService,
+    this.account,
+    this.researchConsent,
+  });
 
   final GuestSessionService? guestSessionService;
+  final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  AuthService? _authServiceInstance;
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  GuestSessionService? _guest;
+  AccountUseCases? _account;
+  ResearchConsentUseCases? _researchConsent;
+  bool _busy = false;
+  bool _obscure = true;
+  String? _emailError;
+  String? _passwordError;
 
-  AuthService get _authService {
-    _authServiceInstance ??= AuthService();
-    return _authServiceInstance!;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _guest ??= widget.guestSessionService ?? dependencies?.guestSessionService;
+    _account ??= widget.account ?? dependencies?.account;
+    _researchConsent ??=
+        widget.researchConsent ?? dependencies?.researchConsent;
   }
 
-  GuestSessionService? _guestSessionServiceInstance;
-
-  GuestSessionService get _guestSessionService {
-    final injected = widget.guestSessionService;
-    if (injected != null) return injected;
-    _guestSessionServiceInstance ??= FirebaseGuestSessionService.production();
-    return _guestSessionServiceInstance!;
-  }
-
-  bool _isLoading = false;
-  bool _isGuestLoading = false;
-
-  bool _isValidEmail(String email) {
-    final RegExp regex = RegExp(
-      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-    );
-    return regex.hasMatch(email);
-  }
-
-  Future<void> _login() async {
-    setState(() => _isLoading = true);
-
-    try {
-      String email = _emailController.text.trim();
-      String password = _passwordController.text.trim();
-
-      if (!_isValidEmail(email)) {
-        throw FirebaseAuthException(
-          code: 'invalid-email',
-          message: 'รูปแบบอีเมลไม่ถูกต้อง',
-        );
-      }
-      if (password.isEmpty) {
-        throw FirebaseAuthException(
-          code: 'empty-password',
-          message: 'กรุณากรอกรหัสผ่าน',
-        );
-      }
-
-      // เข้าสู่ระบบ
-      UserCredential? userCredential = await _authService.signIn(
-        email: email,
-        password: password,
-      );
-
-      User? user = userCredential?.user;
-      if (user != null && !user.emailVerified) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
-        );
-        return;
-      }
-
-      // อนุญาตให้เข้าสู่ระบบ
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(child: Text(AuthService.getErrorMessage(e))),
-            ],
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(child: Text(AuthService.getErrorMessage(e))),
-            ],
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _startGuestSession() async {
-    if (_isGuestLoading) return;
-    setState(() => _isGuestLoading = true);
-
-    final GuestSessionResult result;
-    try {
-      result = await _guestSessionService.start();
-    } catch (_) {
-      if (!mounted) return;
-      _showGuestFailureSnackBar(GuestSessionFailure.unknown);
-      setState(() => _isGuestLoading = false);
+  Future<void> _signIn() async {
+    final account = _account;
+    if (_busy) return;
+    if (account == null) {
+      _show('ระบบบัญชีออนไลน์ไม่พร้อม คุณยังเรียนโดยไม่ใช้บัญชีได้');
       return;
     }
-
-    if (!mounted) return;
-    switch (result) {
-      case GuestSessionStarted():
-        Navigator.pushReplacementNamed(context, '/home');
-      case GuestSessionFailed(:final reason):
-        _showGuestFailureSnackBar(reason);
-        setState(() => _isGuestLoading = false);
+    final email = _email.text.trim();
+    final emailError = _emailErrorText(email);
+    final passwordError = _password.text.isEmpty ? 'กรอกรหัสผ่าน' : null;
+    if (emailError != null || passwordError != null) {
+      setState(() {
+        _emailError = emailError;
+        _passwordError = passwordError;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _emailError = null;
+      _passwordError = null;
+    });
+    try {
+      final session = await account.signIn(
+        email: email,
+        password: _password.text,
+      );
+      await _completeSignIn(session, fallbackEmail: email);
+    } on AccountException catch (error) {
+      if (mounted) _show(_accountFailure(error.code));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  void _showGuestFailureSnackBar(GuestSessionFailure reason) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_guestFailureMessage(reason)),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _signInWithGoogle() async {
+    final account = _account;
+    if (_busy) return;
+    if (account == null || !account.googleSignInAvailable) {
+      _show('ผู้ให้บริการบัญชีไม่พร้อมใช้งาน');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final session = await account.signInWithGoogle();
+      await _completeSignIn(session);
+    } on AccountException catch (error) {
+      if (mounted) _show(_accountFailure(error.code));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
-  String _guestFailureMessage(GuestSessionFailure reason) {
-    return switch (reason) {
-      GuestSessionFailure.firebaseUnavailable =>
-        'ระบบยืนยันตัวตนยังไม่พร้อม กรุณาลองใหม่ภายหลัง',
-      GuestSessionFailure.providerDisabled =>
-        'โหมดผู้เยี่ยมชมยังไม่เปิดใช้งาน กรุณาเข้าสู่ระบบด้วยอีเมล',
-      GuestSessionFailure.network =>
-        'เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
-      GuestSessionFailure.unknown =>
-        'เริ่มโหมดผู้เยี่ยมชมไม่ได้ กรุณาลองใหม่หรือเข้าสู่ระบบด้วยอีเมล',
-    };
+  Future<void> _completeSignIn(
+    AccountSession session, {
+    String fallbackEmail = '',
+  }) async {
+    if (!mounted) return;
+    await _ensureResearchConsentDecision();
+    if (!mounted) return;
+    if (session.emailVerified) {
+      await AppNavigator.resetTo<void>(context, AppRoute.home);
+    } else {
+      await AppNavigator.push<void>(
+        context,
+        AppRoute.emailVerification,
+        arguments: EmailVerificationArgs(session.email ?? fallbackEmail),
+      );
+    }
+  }
+
+  Future<void> _startGuest() async {
+    final guest = _guest;
+    if (guest == null || _busy) return;
+    await _ensureResearchConsentDecision();
+    if (!mounted) return;
+    setState(() => _busy = true);
+    final result = await guest.start();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (result is GuestSessionStarted) {
+      await AppNavigator.resetTo<void>(context, AppRoute.home);
+    } else {
+      _show('เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+    }
+  }
+
+  Future<void> _ensureResearchConsentDecision() async {
+    final consent = _researchConsent;
+    if (consent == null) return;
+    try {
+      final current = await consent.load();
+      if (current.accepted || current.withdrawnAtUtc != null || !mounted) {
+        return;
+      }
+      final accepted = await showResearchConsentDialog(context);
+      if (accepted != true) return;
+      final recorded = await consent.accept(expectedOwnerId: current.ownerId);
+      if (!recorded && mounted) {
+        _show('สถานะผู้ใช้เปลี่ยน จึงไม่ได้บันทึกความยินยอมการวิจัย');
+      }
+    } catch (_) {
+      if (mounted) {
+        _show(
+          'ตรวจสอบสถานะการวิจัยไม่ได้ '
+          'จึงไม่ได้บันทึกความยินยอมการวิจัย',
+        );
+      }
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    var resetEmail = _email.text;
+    String? resetError;
+    final email = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          void submit() {
+            final value = resetEmail.trim();
+            final error = _emailErrorText(value);
+            if (error != null) {
+              setDialogState(() => resetError = error);
+              return;
+            }
+            Navigator.pop(dialogContext, value);
+          }
+
+          return AlertDialog(
+            title: const Text('รีเซ็ตรหัสผ่าน'),
+            content: TextFormField(
+              initialValue: resetEmail,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: InputDecoration(
+                labelText: 'อีเมล',
+                errorText: resetError,
+              ),
+              onChanged: (value) {
+                resetEmail = value;
+                if (resetError != null) {
+                  setDialogState(() => resetError = null);
+                }
+              },
+              onFieldSubmitted: (_) => submit(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('ยกเลิก'),
+              ),
+              FilledButton(onPressed: submit, child: const Text('ส่งลิงก์')),
+            ],
+          );
+        },
+      ),
+    );
+    if (email == null || !mounted) return;
+    final account = _account;
+    if (account == null) {
+      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
+      return;
+    }
+    try {
+      await account.sendPasswordReset(email);
+      if (mounted) {
+        _show('ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว หากมีบัญชีนี้อยู่ในระบบ');
+      }
+    } on AccountException catch (error) {
+      if (mounted) _show(_accountFailure(error.code));
+    }
+  }
+
+  void _show(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = ((width - 560) / 2)
+        .clamp(24.0, double.infinity)
+        .toDouble();
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigo],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(25.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '🔑 เข้าสู่ระบบ (Login)',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
+      appBar: AppBar(title: const Text('เข้าสู่ระบบ LexiQuest')),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            AutofillGroup(
+              child: ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 24,
+                ),
+                children: [
+                  const SizedBox(height: 32),
+                  Icon(
+                    Icons.menu_book_outlined,
+                    size: 72,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'สร้างคลังคำของคุณ ฝึกทบทวน '
+                    'และติดตามความก้าวหน้าภาษาอังกฤษ',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'LexiQuest: แอปพลิเคชันเรียนรู้คำศัพท์ภาษาอังกฤษ',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'อีเมล (Email)',
-                        hintText: 'กรอกอีเมลของคุณ',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'รหัสผ่าน (Password)',
-                        hintText: 'กรอกรหัสผ่าน',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 20),
-                    _isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _login,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 50,
-                              ),
-                              backgroundColor: Colors.deepPurple,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'เข้าสู่ระบบ (Login)',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      key: const ValueKey<String>('guest-mode-button'),
-                      onPressed: _isGuestLoading ? null : _startGuestSession,
-                      icon: _isGuestLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.play_arrow, color: Colors.green),
-                      label: const Text(
-                        '🚀 ทดลองใช้งานทันที (Guest Mode)',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _email,
+                    enabled: !_busy,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [
+                      AutofillHints.username,
+                      AutofillHints.email,
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'อีเมล',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ).copyWith(errorText: _emailError),
+                    onChanged: (_) {
+                      if (_emailError != null) {
+                        setState(() => _emailError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _password,
+                    enabled: !_busy,
+                    obscureText: _obscure,
+                    autofillHints: const [AutofillHints.password],
+                    onSubmitted: (_) => _signIn(),
+                    decoration: InputDecoration(
+                      labelText: 'รหัสผ่าน',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      errorText: _passwordError,
+                      suffixIcon: IconButton(
+                        tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure ? Icons.visibility : Icons.visibility_off,
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่ (Register)",
+                    onChanged: (_) {
+                      if (_passwordError != null) {
+                        setState(() => _passwordError = null);
+                      }
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _busy ? null : _forgotPassword,
+                      child: const Text('ลืมรหัสผ่าน'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _signIn,
+                      child: const Text('เข้าสู่ระบบ'),
+                    ),
+                  ),
+                  if (_account?.googleSignInAvailable == true) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        key: const ValueKey<String>('google-sign-in-button'),
+                        onPressed: _busy ? null : _signInWithGoogle,
+                        icon: const Icon(Icons.account_circle_outlined),
+                        label: const Text('ใช้บัญชี Google'),
                       ),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      key: const ValueKey<String>('guest-mode-button'),
+                      onPressed: _busy ? null : _startGuest,
+                      child: const Text('เรียนต่อโดยไม่ใช้บัญชี'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => AppNavigator.push<void>(
+                            context,
+                            AppRoute.register,
+                          ),
+                    child: const Text('สร้างบัญชีใหม่'),
+                  ),
+                ],
               ),
             ),
-          ),
+            if (_busy)
+              const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังเข้าสู่ระบบ',
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 }
+
+String? _emailErrorText(String value) {
+  final email = value.trim();
+  if (email.isEmpty) return 'กรอกอีเมล';
+  return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)
+      ? null
+      : 'ตรวจสอบรูปแบบอีเมล';
+}
+
+String _accountFailure(AccountFailureCode code) => switch (code) {
+  AccountFailureCode.invalidEmail => 'รูปแบบอีเมลไม่ถูกต้อง',
+  AccountFailureCode.invalidDisplayName => 'ชื่อที่แสดงไม่ถูกต้อง',
+  AccountFailureCode.weakPassword => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+  AccountFailureCode.emailInUse => 'อีเมลนี้ถูกใช้แล้ว',
+  AccountFailureCode.invalidCredential => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+  AccountFailureCode.userDisabled => 'บัญชีนี้ถูกระงับ',
+  AccountFailureCode.tooManyRequests => 'มีคำขอมากเกินไป กรุณาลองภายหลัง',
+  AccountFailureCode.requiresRecentLogin => 'กรุณาเข้าสู่ระบบใหม่ก่อนทำรายการ',
+  AccountFailureCode.invalidActionCode => 'ลิงก์ยืนยันไม่ถูกต้อง',
+  AccountFailureCode.expiredActionCode => 'ลิงก์ยืนยันหมดอายุแล้ว',
+  AccountFailureCode.network => 'ไม่สามารถเชื่อมต่อเครือข่ายได้',
+  AccountFailureCode.unavailable => 'ผู้ให้บริการบัญชีไม่พร้อมใช้งาน',
+  AccountFailureCode.cancelled => 'ยกเลิกรายการแล้ว',
+  AccountFailureCode.unknown => 'ทำรายการบัญชีไม่สำเร็จ',
+};

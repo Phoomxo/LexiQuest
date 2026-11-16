@@ -147,6 +147,41 @@ void main() {
     expect(sink.events.single.fallbackReason, VoiceFailureCategory.network);
   });
 
+  test(
+    'factory without a remote endpoint keeps practice available on native TTS',
+    () async {
+      final client = _RecordingHttpClient((_) async => _wavResponse());
+      final native = _RecordingNativeTtsAdapter();
+      final player = _RecordingAudioPlayerAdapter();
+      final sink = _RecordingTelemetrySink();
+
+      final service = VoiceServiceFactory.create(
+        client: client,
+        nativeTtsAdapter: native,
+        audioPlayerAdapter: player,
+        telemetrySink: sink,
+      );
+
+      final result = await service.speak(_request());
+
+      expect(client.sendCount, 0);
+      expect(player.playBytesCalls, isEmpty);
+      expect(native.speakCalls, <String>['Hello world.']);
+      expect(result.requestedEngine, VoiceEngine.omniVoice);
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(result.usedFallback, isTrue);
+      expect(sink.events, hasLength(1));
+      expect(
+        sink.events.single.fallbackReason,
+        VoiceFailureCategory.configuration,
+      );
+
+      await service.dispose();
+      expect(client.closeCount, 1);
+      expect(player.disposeCount, 1);
+    },
+  );
+
   test('dispose owns every resource exactly once and is idempotent', () async {
     final client = _RecordingHttpClient((_) async => _wavResponse());
     final native = _RecordingNativeTtsAdapter();

@@ -1,0 +1,144 @@
+{
+  "figcraft_sha256": "b0920d7043a1981447a16a14a39939dcb96f63215817ba657f0bb87fb2f6f245",
+  "presenter": "FigCraft desktop 0.18.1",
+  "cases": [
+    {
+      "task": "ยกเลิกเพิ่มคำแล้วกลับไปฝึกภาษา",
+      "start": "choose_mode_screen",
+      "buttons": [
+        "คลังคำศัพท์",
+        "เพิ่มคำ",
+        "ยกเลิก",
+        "ฝึกภาษา"
+      ],
+      "clicks": 4,
+      "witness": "_add_to_library",
+      "text": "เพิ่มคำศัพท์",
+      "landing": "choose_mode_screen"
+    },
+    {
+      "task": "เปิดการพิมพ์คำแล้วกลับคลัง",
+      "start": "categories_page",
+      "buttons": [
+        "เพิ่มคำ",
+        "พิมพ์คำศัพท์",
+        "ย้อนกลับ",
+        "ยกเลิก"
+      ],
+      "clicks": 4,
+      "witness": "add_vocab_screen",
+      "text": "suitcase",
+      "landing": "categories_page"
+    },
+    {
+      "task": "เปิดกล้องแล้วกลับคลัง",
+      "start": "categories_page",
+      "buttons": [
+        "เพิ่มคำ",
+        "ถ่ายภาพสิ่งของ",
+        "ย้อนกลับ",
+        "ยกเลิก"
+      ],
+      "clicks": 4,
+      "witness": "object_scanner_screen",
+      "text": "ถ้วย",
+      "landing": "categories_page"
+    },
+    {
+      "task": "เลือกนำเข้าไฟล์แล้วกลับคลัง",
+      "start": "categories_page",
+      "buttons": [
+        "เพิ่มคำ",
+        "นำเข้าจากไฟล์",
+        "กลับคลังคำ"
+      ],
+      "clicks": 3,
+      "witness": "wordbook_import_screen",
+      "text": "คำบนรถไฟ.csv",
+      "landing": "categories_page"
+    },
+    {
+      "task": "ค้น station จากทุกชุด อ่านคำแล้วกลับเข้าชุดเดิม",
+      "start": "categories_page",
+      "buttons": [
+        "ค้นหาคำในคลัง",
+        "ค้นว่า station",
+        "station",
+        "ย้อนกลับ",
+        "กลับคลังคำ",
+        "เปิดชุดการเดินทาง",
+        "กลับคลังคำ"
+      ],
+      "clicks": 7,
+      "witness": "_station_in_library",
+      "text": "การเดินทาง",
+      "landing": "categories_page"
+    },
+    {
+      "task": "เปิดข้อความจากเมนูฝึก อ่านคำแล้วกลับมาหน้าฝึก",
+      "start": "choose_mode_screen",
+      "buttons": [
+        "ดูแบบฝึกทั้งหมด",
+        "ฝึกจากข้อความของฉัน",
+        "ticket",
+        "ย้อนกลับ",
+        "ย้อนกลับ",
+        "ย้อนกลับ"
+      ],
+      "clicks": 6,
+      "witness": "_ticket",
+      "text": "Here is my ticket.",
+      "landing": "choose_mode_screen"
+    },
+    {
+      "task": "ทำงานที่ได้รับก่อน ทบทวนคำ แล้วกลับจากคลัง",
+      "start": "choose_mode_screen",
+      "buttons": [
+        "งานที่ได้รับ",
+        "ทบทวนคำว่า ticket",
+        "เปิดความหมาย",
+        "จบงานนี้",
+        "กลับหน้าฝึกภาษา",
+        "คลังคำศัพท์",
+        "ฝึกภาษา",
+        "ทบทวนคำนี้",
+        "ดูคำแปล",
+        "จำได้แล้ว",
+        "กลับหน้าฝึกภาษา",
+        "คลังคำศัพท์",
+        "ฝึกภาษา",
+        "งานที่ทำเสร็จ",
+        "กลับหน้าฝึกภาษา"
+      ],
+      "clicks": 15,
+      "witness": "_home_after_both",
+      "text": "ใช้คำในประโยค",
+      "landing": "_home_after_both"
+    },
+    {
+      "task": "ทบทวนคำก่อน ทำงานที่ได้รับ แล้วกลับมาใช้คำในประโยค",
+      "start": "choose_mode_screen",
+      "buttons": [
+        "ทบทวนคำนี้",
+        "ดูคำแปล",
+        "จำได้แล้ว",
+        "กลับหน้าฝึกภาษา",
+        "คลังคำศัพท์",
+        "ฝึกภาษา",
+        "งานที่ได้รับ",
+        "ทบทวนคำว่า ticket",
+        "เปิดความหมาย",
+        "จบงานนี้",
+        "กลับหน้าฝึกภาษา",
+        "ใช้คำในประโยค",
+        "platform",
+        "กลับหน้าฝึกภาษา"
+      ],
+      "clicks": 14,
+      "witness": "_home_after_both",
+      "text": "งานที่ทำเสร็จ",
+      "landing": "_home_after_both"
+    }
+  ],
+  "clicks": 57
+}

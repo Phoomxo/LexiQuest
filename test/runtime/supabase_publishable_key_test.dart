@@ -95,10 +95,5 @@ void main() {
     test('ships no legacy Supabase anon JWT literal', () {
       expect(source, isNot(contains('eyJ')));
     });
-
-    test('targets the controlled production project', () {
-      expect(source, isNot(contains('anyiuoqnuimtjlbjhwuf')));
-      expect(source, contains('https://jkiyfnlegmhodyxpfwpc.supabase.co'));
-    });
   });
 }

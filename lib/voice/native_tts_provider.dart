@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'voice_models.dart';
@@ -20,41 +22,73 @@ abstract interface class NativeTtsAdapter {
 
 /// Production [NativeTtsAdapter] backed by an injected-or-default [FlutterTts].
 final class FlutterTtsAdapter implements NativeTtsAdapter {
-  FlutterTtsAdapter({FlutterTts? flutterTts})
+  FlutterTtsAdapter({FlutterTts? flutterTts, this.awaitCompletion = false})
     : _flutterTts = flutterTts ?? FlutterTts();
 
   final FlutterTts _flutterTts;
+  final bool awaitCompletion;
+  Future<void>? _pendingStop;
 
   @override
   Future<void> setLanguage(String language) async {
-    await _flutterTts.setLanguage(language);
+    if (_pendingStop case final pending?) {
+      await pending.timeout(const Duration(seconds: 5));
+    }
+    // Set the plugin's shared mode before the provider checks cancellation.
+    await _flutterTts.awaitSpeakCompletion(awaitCompletion);
+    _requireAccepted(await _flutterTts.setLanguage(language));
   }
 
   @override
   Future<void> setSpeechRate(double rate) async {
-    await _flutterTts.setSpeechRate(rate);
+    _requireAccepted(await _flutterTts.setSpeechRate(rate));
   }
 
   @override
   Future<void> setVolume(double volume) async {
-    await _flutterTts.setVolume(volume);
+    _requireAccepted(await _flutterTts.setVolume(volume));
   }
 
   @override
   Future<void> setPitch(double pitch) async {
-    await _flutterTts.setPitch(pitch);
+    _requireAccepted(await _flutterTts.setPitch(pitch));
   }
 
   @override
   Future<void> speak(String text) async {
-    await _flutterTts.speak(text);
+    final speaking = _flutterTts.speak(text);
+    if (!awaitCompletion) {
+      _requireAccepted(await speaking);
+      return;
+    }
+    try {
+      _requireAccepted(await speaking.timeout(const Duration(seconds: 25)));
+    } on TimeoutException {
+      await stop().timeout(const Duration(seconds: 5));
+      rethrow;
+    }
   }
 
   @override
-  Future<void> stop() async {
-    await _flutterTts.stop();
+  Future<void> stop() {
+    return _pendingStop ??= _stop().whenComplete(() => _pendingStop = null);
+  }
+
+  Future<void> _stop() async {
+    _requireAccepted(await _flutterTts.stop());
+  }
+
+  void _requireAccepted(Object? result) {
+    if (result == 0) {
+      throw StateError('Native speech request was rejected');
+    }
   }
 }
+
+const _nativeCancelled = VoiceFailure(
+  category: VoiceFailureCategory.cancelled,
+  message: 'On-device speech request was cancelled.',
+);
 
 const _nativeSynthesisFailure = VoiceFailure(
   category: VoiceFailureCategory.synthesis,
@@ -73,15 +107,22 @@ final class NativeTtsProvider implements VoiceProvider {
   NativeTtsProvider(this._adapter);
 
   final NativeTtsAdapter _adapter;
+  int _stopGeneration = 0;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    final generation = _stopGeneration;
     try {
       await _adapter.setLanguage(_languageTagFor(request.language));
+      _requireCurrent(generation);
       await _adapter.setSpeechRate(request.speed / 2);
+      _requireCurrent(generation);
       await _adapter.setVolume(1.0);
+      _requireCurrent(generation);
       await _adapter.setPitch(1.0);
+      _requireCurrent(generation);
       await _adapter.speak(request.text);
+      _requireCurrent(generation);
       return VoicePlaybackResult(
         requestedEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
         actualEngine: VoiceEngine.nativeTts,
@@ -89,12 +130,22 @@ final class NativeTtsProvider implements VoiceProvider {
         cacheHit: false,
       );
     } on Object {
+      if (generation != _stopGeneration) {
+        throw _nativeCancelled;
+      }
       throw _nativeSynthesisFailure;
+    }
+  }
+
+  void _requireCurrent(int generation) {
+    if (generation != _stopGeneration) {
+      throw _nativeCancelled;
     }
   }
 
   @override
   Future<void> stop() async {
+    _stopGeneration++;
     try {
       await _adapter.stop();
     } on Object {

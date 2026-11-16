@@ -1,72 +1,4 @@
-import 'learning_record_validation.dart';
-
-enum ReadingSessionStage {
-  supportedReading,
-  cueFading,
-  recall,
-  association,
-  transfer,
-  scheduling,
-  completed,
-  abandoned,
-}
-
-final class ReadingSession {
-  ReadingSession({
-    required this.sessionId,
-    required this.ownerId,
-    required this.cefrLevel,
-    required List<String> targetWordKeys,
-    required this.mixPolicyVersion,
-    required this.contentId,
-    required this.contentVersion,
-    required this.currentStage,
-    required DateTime startedAtUtc,
-    required DateTime updatedAtUtc,
-    DateTime? completedAtUtc,
-    DateTime? abandonedAtUtc,
-    this.schemaVersion = 1,
-  }) : targetWordKeys = List<String>.unmodifiable(targetWordKeys),
-       startedAtUtc = LearningRecordValidation.utc(startedAtUtc),
-       updatedAtUtc = LearningRecordValidation.utc(updatedAtUtc),
-       completedAtUtc = completedAtUtc == null
-           ? null
-           : LearningRecordValidation.utc(completedAtUtc),
-       abandonedAtUtc = abandonedAtUtc == null
-           ? null
-           : LearningRecordValidation.utc(abandonedAtUtc) {
-    LearningRecordValidation.identifier(sessionId, 'sessionId');
-    LearningRecordValidation.identifier(ownerId, 'ownerId');
-    LearningRecordValidation.identifier(mixPolicyVersion, 'mixPolicyVersion');
-    LearningRecordValidation.identifier(contentId, 'contentId');
-    LearningRecordValidation.identifier(contentVersion, 'contentVersion');
-    LearningRecordValidation.schemaVersion(schemaVersion);
-    if (!RegExp(r'^[ABC][12]$').hasMatch(cefrLevel)) {
-      throw ArgumentError.value(
-        cefrLevel,
-        'cefrLevel',
-        'must be A1 through C2',
-      );
-    }
-    if (this.targetWordKeys.isEmpty || this.targetWordKeys.length > 8) {
-      throw ArgumentError.value(
-        targetWordKeys,
-        'targetWordKeys',
-        'must contain between 1 and 8 words',
-      );
-    }
-    for (final wordKey in this.targetWordKeys) {
-      LearningRecordValidation.identifier(wordKey, 'targetWordKeys');
-    }
-    if (this.targetWordKeys.toSet().length != this.targetWordKeys.length) {
-      throw ArgumentError('targetWordKeys must not contain duplicates');
-    }
-    if (this.updatedAtUtc.isBefore(this.startedAtUtc)) {
-      throw ArgumentError('updatedAtUtc must not precede startedAtUtc');
-    }
-    _validateTerminalState();
-  }
-
+class ReadingSession {
   final String sessionId;
   final String ownerId;
   final String cefrLevel;
@@ -74,29 +6,56 @@ final class ReadingSession {
   final String mixPolicyVersion;
   final String contentId;
   final String contentVersion;
-  final ReadingSessionStage currentStage;
-  final DateTime startedAtUtc;
-  final DateTime updatedAtUtc;
-  final DateTime? completedAtUtc;
-  final DateTime? abandonedAtUtc;
+  final List<int> completedStages;
+  final DateTime startedAt;
+  final DateTime? completedAt;
   final int schemaVersion;
 
-  void _validateTerminalState() {
-    switch (currentStage) {
-      case ReadingSessionStage.completed:
-        if (completedAtUtc == null || abandonedAtUtc != null) {
-          throw ArgumentError('completed sessions require only completedAtUtc');
-        }
-      case ReadingSessionStage.abandoned:
-        if (abandonedAtUtc == null || completedAtUtc != null) {
-          throw ArgumentError('abandoned sessions require only abandonedAtUtc');
-        }
-      default:
-        if (completedAtUtc != null || abandonedAtUtc != null) {
-          throw ArgumentError(
-            'non-terminal sessions cannot have terminal timestamps',
-          );
-        }
-    }
+  ReadingSession({
+    required this.sessionId,
+    required this.ownerId,
+    required this.cefrLevel,
+    required this.targetWordKeys,
+    this.mixPolicyVersion = 'v1.0.0',
+    required this.contentId,
+    this.contentVersion = 'v1.0.0',
+    this.completedStages = const [],
+    required this.startedAt,
+    this.completedAt,
+    this.schemaVersion = 1,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'sessionId': sessionId,
+      'ownerId': ownerId,
+      'cefrLevel': cefrLevel,
+      'targetWordKeys': targetWordKeys,
+      'mixPolicyVersion': mixPolicyVersion,
+      'contentId': contentId,
+      'contentVersion': contentVersion,
+      'completedStages': completedStages,
+      'startedAt': startedAt.toUtc().toIso8601String(),
+      'completedAt': completedAt?.toUtc().toIso8601String(),
+      'schemaVersion': schemaVersion,
+    };
+  }
+
+  factory ReadingSession.fromJson(Map<String, dynamic> json) {
+    return ReadingSession(
+      sessionId: json['sessionId'] as String,
+      ownerId: json['ownerId'] as String,
+      cefrLevel: json['cefrLevel'] as String,
+      targetWordKeys: List<String>.from(json['targetWordKeys'] as List),
+      mixPolicyVersion: json['mixPolicyVersion'] as String? ?? 'v1.0.0',
+      contentId: json['contentId'] as String,
+      contentVersion: json['contentVersion'] as String? ?? 'v1.0.0',
+      completedStages: List<int>.from(json['completedStages'] as List? ?? []),
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
+      schemaVersion: json['schemaVersion'] as int? ?? 1,
+    );
   }
 }

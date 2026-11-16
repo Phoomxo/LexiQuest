@@ -1,0 +1,62 @@
+f18 English-to-Thai feedback from saved vocabulary
+
+Application 2261454fe3487d3a835d9e920db336cd7202ef0b on the FigCraft
+prototype branch. The pinned 21b34eaa design lists the station
+comparison in feature_tasks_b.py task 18.
+
+On the previous Android APK a learner who chose ชานชาลา for station
+saw the chosen meaning and station — สถานี. The saved 50% round had
+optionWords set to null. The feedback already reads optionWords when a
+question supplies it. The policy now pins actual owned pairs against
+the displayed Thai option. The durable round preserves the mapping
+alongside the original answer index. It still reads earlier null
+snapshots. A shared translation stays an available choice with no
+single-word comparison when it maps to multiple word IDs.
+
+Three regression checks first reproduced the missing comparison in
+the UI and persisted plan. The scoped Windows suite passed 233 tests
+after checking both answer positions, shared translations, detached
+owner repair actions, original history, and the reverse-choice path.
+The owner-scope widget cases scroll to the next action before tapping.
+Static analysis passed for all six changed Dart files.
+
+Linux CI 43682172257 on the exact application source passed 2,452
+Flutter tests, 267 backend CPU tests, Firestore and Supabase checks,
+analysis and the Android debug build. The raw
+build/s3-f18-source-ci-43682172257.txt log has SHA-256
+44c9f1a11d49ab2819b9b2ed64dbb7ec7dc5c3337f70ef694c3c34228258d3fb.
+
+The isolated Android API 35 x86_64 debug APK used font 2.0, airplane
+mode, Wi-Fi off and an unbound local guest. Host and installed APK
+SHA-256 both equal
+43c0e4a433289fc3dfd2ae278599eecd35785c93b70f0afa1d6c69e72f30fa5f.
+
+From the Library set F18-Contrast-Synthetic choose ฝึกจากชุดนี้ and
+start the two-question round. The first question asks for station.
+Choosing ชานชาลา shows station — สถานี and platform — ชานชาลา.
+The second question asks for platform. Choosing สถานี shows both
+pairs with their roles reversed. Scrolling reaches Next and Score.
+The 0% result has two wrong answers and returns to the same set.
+Back to Library and its ฝึกภาษา tab returned to the learning home.
+
+SQLite confirmed the correct choices at indexes 1 and 0 and the
+selected choices at indexes 0 and 1. Both saved word pairs reference
+the owned words at revision 1. The two attempts are distinct and
+owned by the current guest. Research events, consents and research
+outbox operations are all zero.
+
+Android reported a cold launch from process 1211 to 2824. Progress
+history reopened the current 0% result with both original choices and
+the previous application's 50% result, including its original answers.
+The completed and reopened snapshots of the new round match at
+SHA-256 2fd9ddb243cebcfec2b0d397695fd2119b2ddb65f75c2fafb4c70efb3ac6ed65.
+The before and after legacy snapshots match at
+SHA-256 8e8697f1e505405e5f0c57bddf4eca465fea316f4b02612c89631f472a4cf671.
+
+The raw hierarchies and SQLite snapshots are in
+build/boss-android-evidence/f18-native-*.txt and f18-native-db-*.json.
+The reopened and legacy Score PNGs have SHA-256
+3534da43126e555cefc879640d2a8710211908e672a5c348b9e4346f980f8b3b
+and d8d5223878b68158bc963b9b67d1fb93d466655437cff019f8d9b72567aa1a0a.
+
+Delivery APK and spoken TalkBack checks are pending.

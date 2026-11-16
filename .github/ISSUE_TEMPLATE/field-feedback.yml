@@ -1,0 +1,64 @@
+name: LexiQuest field feedback
+description: Report a non-sensitive field-test problem or usability issue.
+title: "[Field feedback] "
+labels:
+  - field-feedback
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is public. Do not include your name, email, password,
+        API key, authentication token, vocabulary database, raw voice,
+        camera image, or any other personal information.
+  - type: input
+    id: participant_code
+    attributes:
+      label: Pseudonymous participant code
+      description: Use only the study code supplied by the coordinator.
+      placeholder: LQ-000
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Version and Build ID
+      placeholder: 1.0.0+1 / abc123
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device model and Android version
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network state
+      options:
+        - Offline
+        - Wi-Fi
+        - Cellular
+        - Offline then online
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Describe what you did without attaching private data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I removed secrets and personal information from this report.
+          required: true

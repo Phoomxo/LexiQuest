@@ -1,0 +1,14 @@
+Exact revision CI after the Linux expected-image correction
+
+Source 4d8fbca664bafc420e28a8e303085f30d53a4e07
+Run 43599142859, completed SUCCESS.
+https://github.com/Phoomxo/LexiQuest/actions/runs/43599142859
+
+2,241 Flutter tests, Dart format 541 unchanged, static analysis clean,
+CLI contract tests, Firestore emulator and Supabase local policy checks.
+Voice 55, AI 117 and LexiQuest LM 75 passed. Android debug APK built.
+Raw log build/s7-v12-linux-ci-success.txt SHA256
+efd0627d4e37801c2ee2ad2171dc706b3944f8a1ba63f8a379e04be4800517b8.
+
+Production source matches a194d01a. Vivo v30 failed its installed lineage
+migration and v31 recovered the old source. See s7-v12-native-migration.txt.

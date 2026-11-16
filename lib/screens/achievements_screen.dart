@@ -1,191 +1,289 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
-import '../models/achievement_badge.dart';
-import '../config/remote_economy_policy.dart';
+
+import '../config/m3_theme.dart';
+import '../features/progress/domain/progress_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/registries/feature_registry.dart';
+import '../widgets/adaptive_content_pane.dart';
+import 'avatar_equipment_screen.dart';
+import 'shop_page.dart';
 
-class AchievementsScreen extends StatelessWidget {
-  final List<AchievementBadge>? badges;
-  final int? coins;
+typedef AchievementProgressLoader = Future<ProgressSnapshot> Function();
 
+class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({
     super.key,
-    this.badges,
-    this.coins,
-    this.remoteEconomyPolicy,
+    this.loader,
+    this.showCollection = false,
   });
 
-  final RemoteEconomyPolicy? remoteEconomyPolicy;
+  final AchievementProgressLoader? loader;
+  final bool showCollection;
+
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  Future<ProgressSnapshot>? _load;
+  AchievementProgressLoader? _loader;
+  AppDependencies? _dependencies;
+  ValueListenable<int>? _progressUpdates;
+  int _generation = 0;
+
+  AchievementProgressLoader? get _currentLoader =>
+      widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+
+  Future<ProgressSnapshot> _loadProgress() {
+    final loader = _loader = _currentLoader;
+    final dependencies = _dependencies;
+    final generation = ++_generation;
+    bool current() =>
+        mounted &&
+        generation == _generation &&
+        identical(dependencies, _dependencies);
+    final next = Future<ProgressSnapshot>.sync(() async {
+      if (loader == null) {
+        throw StateError('progress dependency unavailable');
+      }
+      final progress = await loader();
+      if (!current()) throw StateError('achievement context changed');
+      final owners =
+          dependencies?.localOwners ?? dependencies?.progress?.owners;
+      if (owners != null && progress.ownerId != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (!current() || owner.id != progress.ownerId) {
+          throw StateError('achievement owner changed');
+        }
+      }
+      return progress;
+    });
+    next.ignore();
+    return next;
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    final next = _loadProgress();
+    setState(() {
+      _load = next;
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final updates = dependencies?.progressUpdates;
+    final scopeChanged = !identical(dependencies, _dependencies);
+    final updatesChanged = !identical(updates, _progressUpdates);
+    if (updatesChanged) {
+      _progressUpdates?.removeListener(_refresh);
+      _progressUpdates = updates;
+      updates?.addListener(_refresh);
+    }
+    _dependencies = dependencies;
+    if (_load == null ||
+        scopeChanged ||
+        updatesChanged ||
+        _currentLoader != _loader) {
+      _load = _loadProgress();
+    }
+  }
+
+  @override
+  void didUpdateWidget(AchievementsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.loader != oldWidget.loader) {
+      _load = _loadProgress();
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _progressUpdates?.removeListener(_refresh);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final remoteEconomyEnabled =
-        remoteEconomyPolicy ??
-        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
-        const RemoteEconomyPolicy();
-    final displayBadges = badges ?? const <AchievementBadge>[];
-
+    final scope = AppDependenciesScope.maybeOf(context);
+    final canOpenDecorations =
+        widget.showCollection &&
+        scope?.rewards != null &&
+        (scope?.fieldFeatures.isVisible(FieldFeature.shop) ?? false) &&
+        (scope?.features.isVisible(Feature.shop) ?? false);
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          remoteEconomyEnabled.shopAndPurchasesEnabled
-              ? 'ตราความสำเร็จ & รางวัล (Achievements)'
-              : 'ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(
+          context,
+          widget.showCollection ? 'ของสะสม' : 'ความสำเร็จ',
         ),
-        backgroundColor: Colors.amber.shade800,
-        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            if (!remoteEconomyEnabled.shopAndPurchasesEnabled)
-              Card(
-                elevation: 2,
-                color: Colors.blueGrey.shade50,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      body: AdaptiveContentPane(
+        child: FutureBuilder<ProgressSnapshot>(
+          key: ValueKey(_generation),
+          future: _load,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังอ่านประวัติความสำเร็จ',
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'ความคืบหน้าการฝึกเฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              );
+            }
+            if (snapshot.hasError) {
+              return ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Semantics(
+                    liveRegion: true,
+                    child: const Text(
+                      'ไม่สามารถอ่านประวัติความสำเร็จในเครื่องได้',
+                    ),
                   ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: _refresh,
+                    child: const Text('ลองใหม่'),
+                  ),
+                ],
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังอ่านประวัติความสำเร็จ',
                 ),
-              )
-            else if (coins != null)
-              Card(
-                elevation: 4,
-                color: Colors.amber.shade100,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monetization_on,
-                            color: Colors.amber.shade900,
-                            size: 36,
+              );
+            }
+            final progress = snapshot.data!;
+            final unlocked = {
+              for (final achievement in progress.achievements)
+                if (achievement.definitionVersion == 1) achievement.id,
+            };
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (canOpenDecorations)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.checkroom_outlined),
+                      title: const Text('ของตกแต่งของฉัน'),
+                      subtitle: const Text('ดูของที่มีและที่กำลังใช้'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'rewards/equipment',
+                          builder: (_) => AvatarEquipmentScreen(
+                            expectedOwnerId: progress.ownerId,
+                            onOpenShop: (equipmentContext) async {
+                              await AppNavigator.pushPage<void>(
+                                equipmentContext,
+                                const AppPage<void>(
+                                  name: 'rewards/shop',
+                                  builder: _buildShop,
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$coins เหรียญสะสม',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade900,
-                            ),
-                          ),
-                        ],
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.shopping_bag),
-                        label: const Text('ร้านค้า'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade900,
-                          foregroundColor: Colors.white,
                         ),
                       ),
-                    ],
+                    ),
+                  ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.toll_outlined),
+                    title: const Text('คะแนนประสบการณ์'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${progress.totalXp}',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const Text('รวม XP จากคำตอบและภารกิจที่บันทึกไว้'),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: displayBadges.isEmpty
-                  ? const Center(
+                const SizedBox(height: 8),
+                if (progress.achievements.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 48),
+                    child: Center(
                       child: Text(
-                        'ยังไม่มีความสำเร็จที่ยืนยันจากข้อมูลการฝึก',
+                        progress.sampleSize == 0
+                            ? 'ยังไม่มีความสำเร็จที่ปลดล็อก\nยังไม่มีคำตอบที่บันทึกไว้'
+                            : 'ยังไม่มีความสำเร็จที่ปลดล็อก',
                         textAlign: TextAlign.center,
                       ),
-                    )
-                  : GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.9,
-                          ),
-                      itemCount: displayBadges.length,
-                      itemBuilder: (context, index) {
-                        final badge = displayBadges[index];
-                        return Card(
-                          elevation: badge.isUnlocked ? 4 : 1,
-                          color: badge.isUnlocked
-                              ? Colors.amber.shade50
-                              : Colors.grey.shade200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: badge.isUnlocked
-                                  ? Colors.amber
-                                  : Colors.grey.shade400,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  badge.isUnlocked ? Icons.stars : Icons.lock,
-                                  size: 44,
-                                  color: badge.isUnlocked
-                                      ? Colors.amber.shade800
-                                      : Colors.grey,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  badge.title,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: badge.isUnlocked
-                                        ? Colors.black87
-                                        : Colors.grey.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  badge.description,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
-            ),
+                  ),
+                for (final achievement in progress.achievements)
+                  _earned(achievement),
+                if (achievementV1Metadata.keys.any(
+                  (key) => !unlocked.contains(key),
+                )) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'เงื่อนไขที่ยังไม่ปลดล็อก',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final entry in achievementV1Metadata.entries)
+                    if (!unlocked.contains(entry.key))
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.lock_outline),
+                          title: Text(entry.value.title),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('ยังไม่ปลดล็อก'),
+                              Text(entry.value.condition),
+                            ],
+                          ),
+                        ),
+                      ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _earned(AchievementEvidence achievement) {
+    final metadata = achievement.definitionVersion == 1
+        ? achievementV1Metadata[achievement.id]
+        : null;
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.workspace_premium_outlined),
+        title: Text(metadata?.title ?? 'ความสำเร็จจากการเรียน'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (metadata != null) const Text('เงื่อนไขปัจจุบัน'),
+            if (metadata != null) Text(metadata.condition),
+            const Text('ปลดล็อกเมื่อ'),
+            Text(_date(achievement.unlockedAtUtc.toUtc())),
           ],
         ),
       ),
     );
   }
+
+  String _date(DateTime value) =>
+      '${value.day.toString().padLeft(2, '0')}/'
+      '${value.month.toString().padLeft(2, '0')}/${value.year}';
 }
+
+Widget _buildShop(BuildContext _) => const ShopPage();

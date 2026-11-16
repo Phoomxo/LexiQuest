@@ -1,197 +1,233 @@
 import 'package:flutter/material.dart';
-import '../services/rank_service.dart';
+
+import '../config/m3_theme.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../navigation/app_routes.dart';
+import '../widgets/adaptive_content_pane.dart';
+import 'result_screen.dart';
+
+const _stageWords = <BossSpellingWord>[
+  (
+    word: 'ephemeral',
+    meaning: 'ชั่วคราว',
+    typo: 'ephemral',
+    hint: 'หลังตัว m ยังมีตัว e',
+    partOfSpeech: null,
+    example: null,
+    exampleMeaning: null,
+  ),
+  (
+    word: 'meticulous',
+    meaning: 'พิถีพิถัน',
+    typo: 'meticulus',
+    hint: 'ช่วงท้ายสะกดว่า -lous',
+    partOfSpeech: null,
+    example: null,
+    exampleMeaning: null,
+  ),
+  (
+    word: 'sustainable',
+    meaning: 'ยั่งยืน',
+    typo: 'sustainble',
+    hint: 'สะกดส่วนท้ายว่า -able',
+    partOfSpeech: 'คำคุณศัพท์',
+    example: 'We need sustainable energy.',
+    exampleMeaning: 'เราต้องการพลังงานที่ยั่งยืน',
+  ),
+];
 
 class BossBattleScreen extends StatefulWidget {
-  final String bossName;
-  final int initialBossHp;
-  final List<Map<String, String>> questions;
-  final RankService? rankService;
-
   const BossBattleScreen({
     super.key,
-    this.bossName = 'บอสคำศัพท์ C1 (Vocab Titan)',
-    this.initialBossHp = 100,
-    this.questions = const [
-      {'word': 'ephemeral', 'translation': 'ชั่วคราว'},
-      {'word': 'meticulous', 'translation': 'พิถีพิถัน'},
-      {'word': 'sustainable', 'translation': 'ยั่งยืน'},
-    ],
-    this.rankService,
+    required this.onChooseGame,
+    this.onReturnPractice,
   });
+
+  final VoidCallback onChooseGame;
+  final VoidCallback? onReturnPractice;
 
   @override
   State<BossBattleScreen> createState() => _BossBattleScreenState();
 }
 
 class _BossBattleScreenState extends State<BossBattleScreen> {
-  late final RankService _rankService;
-  late int _bossHp;
-  int _currentIndex = 0;
-  int _earnedXp = 0;
-  int _earnedCoins = 0;
-  bool _isVictory = false;
-  final TextEditingController _inputController = TextEditingController();
+  final _answer = TextEditingController();
+  final _passedWords = <BossSpellingWord>[];
+  String? _submitted;
+  bool _needsAnswer = false;
+  bool _confirmingExit = false;
+  bool _finished = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _rankService = widget.rankService ?? const RankService();
-    _bossHp = widget.initialBossHp;
+  void _submit() {
+    if (_finished ||
+        _submitted != null ||
+        _confirmingExit ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
+    }
+    final answer = _answer.text.trim();
+    if (answer.isEmpty) {
+      setState(() => _needsAnswer = true);
+      return;
+    }
+    final prompt = _stageWords[_passedWords.length];
+    FocusScope.of(context).unfocus();
+    if (answer.toLowerCase() != prompt.word) {
+      setState(() => _submitted = answer);
+      return;
+    }
+    setState(() {
+      _passedWords.add(prompt);
+      _answer.clear();
+      _needsAnswer = false;
+      _finished = _passedWords.length == _stageWords.length;
+    });
+    if (!_finished) return;
+    final passedWords = List<BossSpellingWord>.unmodifiable(_passedWords);
+    final onChooseGame = widget.onChooseGame;
+    final onReturnPractice = widget.onReturnPractice;
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'learning/spelling-result',
+        builder: (_) => ResultScreen(
+          passedWords: passedWords,
+          onChooseGame: onChooseGame,
+          onReturnPractice: onReturnPractice,
+        ),
+      ),
+      replace: true,
+    );
   }
 
-  void _attackBoss() {
-    if (_currentIndex >= widget.questions.length || _bossHp <= 0) return;
-
-    final currentQuestion = widget.questions[_currentIndex];
-    final targetWord = currentQuestion['word']!.toLowerCase().trim();
-    final userInput = _inputController.text.toLowerCase().trim();
-
-    if (userInput == targetWord) {
-      final damage = 35;
-      setState(() {
-        _bossHp = (_bossHp - damage).clamp(0, widget.initialBossHp);
-        final xpGain = _rankService.calculateXpGain(
-          isCorrect: true,
-          latencyMs: 1000,
-          isBossBattle: true,
-        );
-        _earnedXp += xpGain;
-        _earnedCoins += 30;
-        _inputController.clear();
-
-        if (_bossHp <= 0) {
-          _isVictory = true;
-        } else if (_currentIndex < widget.questions.length - 1) {
-          _currentIndex++;
-        }
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('สะกดคำไม่ถูกต้อง! บอสป้องกันไว้ได้')),
-      );
+  Future<void> _requestExit() async {
+    if (_confirmingExit ||
+        _finished ||
+        ModalRoute.isCurrentOf(context) != true) {
+      return;
     }
+    setState(() => _confirmingExit = true);
+    FocusScope.of(context).unfocus();
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('จะออกจากด่านไหม'),
+        content: const Text('รอบนี้ยังเล่นไม่จบ ครั้งหน้าจะเริ่มที่คำแรก'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('เล่นคำเดิมต่อ'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ออกไปเลือกเกม'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _confirmingExit = false);
+    if (exit == true) widget.onChooseGame();
   }
 
   @override
   void dispose() {
-    _inputController.dispose();
+    _answer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = _currentIndex < widget.questions.length
-        ? widget.questions[_currentIndex]
-        : {'word': '', 'translation': ''};
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          '⚔️ ต่อสู้บอสคำศัพท์ประจำวัน',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+    final count = _passedWords.length;
+    final total = _stageWords.length;
+    final question = _stageWords[count.clamp(0, total - 1)];
+    final submitted = _submitted;
+    final theme = Theme.of(context);
+    return PopScope<void>(
+      canPop: _finished,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestExit();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: M3Theme.appBarToolbarHeight(context),
+          title: M3Theme.appBarTitle(
+            context,
+            submitted == null ? 'ด่านสะกดคำ' : 'ลองตรวจตัวสะกด',
+          ),
         ),
-        backgroundColor: Colors.red.shade900,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // Boss Status Card
-            Card(
-              elevation: 6,
-              color: Colors.red.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.bossName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        Text(
-                          'HP: $_bossHp / ${widget.initialBossHp}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+        body: AdaptiveContentPane(
+          maxWidth: AdaptiveContentPane.formMaxWidth,
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Semantics(
+                  liveRegion: true,
+                  child: Text('ผ่านแล้ว $count จาก $total คำ'),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: count / total,
+                  semanticsLabel: 'ความคืบหน้าด่าน',
+                ),
+                const SizedBox(height: 12),
+                Text('พลังคู่ต่อสู้ ${(100 - count * 35).clamp(0, 100)}'),
+                if (!_finished) ...[
+                  const SizedBox(height: 16),
+                  Text('คำที่ ${count + 1} จาก $total'),
+                  const SizedBox(height: 12),
+                  if (submitted == null) ...[
+                    const Text('เขียนเป็นภาษาอังกฤษ'),
+                    Text(
+                      question.meaning,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _answer,
+                      maxLength: maxSpellingLength,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submit(),
+                      onChanged: (_) {
+                        if (_needsAnswer) setState(() => _needsAnswer = false);
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'คำตอบ',
+                        errorText: _needsAnswer ? 'พิมพ์คำตอบก่อนส่ง' : null,
+                      ),
+                    ),
+                    FilledButton(
+                      onPressed: _submit,
+                      child: const Text('ส่งคำตอบ'),
+                    ),
+                  ] else ...[
+                    const Text('คำที่ส่ง'),
+                    Text(submitted, style: theme.textTheme.headlineSmall),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        submitted.toLowerCase() == question.typo
+                            ? question.hint
+                            : 'ตรวจตัวสะกด เทียบกับ ${question.word}',
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    LinearProgressIndicator(
-                      value: _bossHp / widget.initialBossHp,
-                      color: Colors.red,
-                      backgroundColor: Colors.grey.shade300,
-                      minHeight: 12,
+                    FilledButton(
+                      onPressed: () => setState(() => _submitted = null),
+                      child: const Text('แก้คำตอบ'),
                     ),
                   ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            if (_isVictory) ...[
-              const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
-              const SizedBox(height: 12),
-              const Text(
-                '🎉 ชัยชนะ! คุณปราบบอสสำเร็จ',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'ได้รับ +$_earnedXp XP และ +$_earnedCoins เหรียญ!',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange,
-                ),
-              ),
-            ] else ...[
-              Text(
-                'คำแปล: "${currentQuestion['translation']}"',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.indigo,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _inputController,
-                decoration: InputDecoration(
-                  labelText: 'พิมพ์สะกดคำศัพท์เพื่อโจมตีบอส',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  TextButton(
+                    onPressed: _requestExit,
+                    child: const Text('ออกจากด่าน'),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _attackBoss,
-                icon: const Icon(Icons.flash_on),
-                label: const Text('โจมตีบอส!'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade800,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-              ),
-            ],
-          ],
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

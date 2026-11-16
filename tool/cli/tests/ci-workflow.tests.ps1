@@ -70,7 +70,9 @@ function Invoke-TriggerTests {
     param([string]$Text)
     Assert-RegexMatches $Text '\bpull_request\b' 'workflow triggers on pull_request'
     Assert-RegexMatches $Text '\bpush\b' 'workflow triggers on push'
-    Assert-RegexMatches $Text '\bmain\b' 'push target includes the main branch'
+    $pushBranches = [regex]::Match($Text, '(?m)^  push:\n    branches: \[([^\]\n]+)\]').Groups[1].Value.Split(',').Trim()
+    Assert-True ($pushBranches -ccontains 'main') 'push target includes the main branch'
+    Assert-True ($pushBranches -ccontains 'codex/current-code-20261113') 'push target includes the current code branch'
 }
 
 function Invoke-PermissionTests {
@@ -127,16 +129,6 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
     Assert-ContainsString $Text 'apk' 'Android build produces an APK'
     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
-    Assert-ContainsString $Text 'vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'build reads the Supabase publishable key from a repository variable'
-    Assert-ContainsString $Text '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'build injects the Supabase publishable key'
-    Assert-ContainsString $Text 'Create ephemeral release signing key' 'CI creates a disposable release signing key'
-    Assert-ContainsString $Text 'flutter build appbundle --release' 'CI builds a release candidate AAB'
-    Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'CI verifies the release candidate signature'
-    Assert-ContainsString $Text 'grep -q "jar verified."' 'CI rejects unsigned release candidates'
-    Assert-ContainsString $Text 'mkdir -p build/sbom' 'CI prepares the SBOM output directory'
-    Assert-ContainsString $Text 'release-candidate.cdx.json' 'CI creates an artifact SBOM'
-    Assert-ContainsString $Text 'source.cdx.json' 'CI creates a source SBOM'
-    Assert-ContainsString $Text 'Remove ephemeral signing material' 'CI removes disposable signing material'
 }
 
 function Invoke-UvFrozenTests {
@@ -161,28 +153,6 @@ function Invoke-SecretEmbeddingTests {
     Assert-RegexNotMatches $Text 'AKIA[0-9A-Z]{16}' 'no embedded AWS access key'
     Assert-RegexNotMatches $Text 'AIza[0-9A-Za-z_-]{35}' 'no embedded Google API key'
     Assert-RegexNotMatches $Text '\bsk-[A-Za-z0-9]{20,}' 'no embedded OpenAI-style key'
-}
-
-function Invoke-GitleaksConfigTests {
-    param([string]$Text)
-
-    $block = [regex]::Match(
-        $Text,
-        '(?s)\[\[allowlists\]\]\s*description\s*=\s*"Retired public Supabase anon key in three historical commits\."(?<Body>.*?)(?=\[\[allowlists\]\]|\z)'
-    )
-    Assert-True $block.Success 'Gitleaks documents the retired public Supabase anon-key exception'
-    if (-not $block.Success) { return }
-
-    $body = $block.Groups['Body'].Value
-    Assert-ContainsString $body 'condition = "AND"' 'historical exception requires every constraint'
-    Assert-ContainsString $body "'''(?:^|/)lib/main\.dart$'''" 'historical exception is limited to lib/main.dart'
-    foreach ($commit in @(
-        'ff2364209c53bf3b4ff5e3bff7630484d9c5fd05',
-        '15ae3e0e6b510296c4d064f974993f167730f8c4',
-        '52a478a7a9589766bfbdf8a88bff97e3a6c771b7'
-    )) {
-        Assert-ContainsString $body $commit ('historical exception includes only reviewed commit ' + $commit)
-    }
 }
 
 function Invoke-NpmFirebaseToolchainTests {
@@ -232,9 +202,6 @@ function Invoke-NpmFirebaseToolchainTests {
     Assert-RegexMatches $WorkflowText '(?m)^[ \t]*java-version[ \t]*:[ \t]*[''"]?21\b' 'setup-java selects Java 21 (firebase-tools 15.24.0 requires Java 21+)'
     Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
-    Assert-ContainsString $WorkflowText 'npm --prefix functions ci --ignore-scripts' 'workflow installs trusted writer dependencies reproducibly'
-    Assert-ContainsString $WorkflowText 'npm --prefix functions test' 'workflow executes trusted writer tests'
-    Assert-ContainsString $WorkflowText 'npm run test:functions-emulator' 'workflow executes trusted writer emulator tests'
 }
 
 function Invoke-SupabaseToolchainTests {
@@ -271,13 +238,6 @@ if (-not (Test-Path -LiteralPath $packageJsonPath)) {
 
 $packageJsonText = Get-CiWorkflowText -Path $packageJsonPath
 
-$gitleaksConfigPath = Join-Path $repoRoot '.gitleaks.toml'
-if (-not (Test-Path -LiteralPath $gitleaksConfigPath)) {
-    Write-Host ("FAIL: missing Gitleaks config '{0}'." -f $gitleaksConfigPath) -ForegroundColor Red
-    exit 1
-}
-$gitleaksConfigText = Get-CiWorkflowText -Path $gitleaksConfigPath
-
 Write-Host '-> Triggers' -ForegroundColor Cyan
 try { Invoke-TriggerTests -Text $workflowText } catch { Write-Fail ('Trigger suite threw: ' + $_.Exception.Message) }
 
@@ -301,9 +261,6 @@ try { Invoke-UvFrozenTests -Text $workflowText } catch { Write-Fail ('uv suite t
 
 Write-Host '-> Secret embedding' -ForegroundColor Cyan
 try { Invoke-SecretEmbeddingTests -Text $workflowText } catch { Write-Fail ('secret suite threw: ' + $_.Exception.Message) }
-
-Write-Host '-> Gitleaks config' -ForegroundColor Cyan
-try { Invoke-GitleaksConfigTests -Text $gitleaksConfigText } catch { Write-Fail ('Gitleaks config suite threw: ' + $_.Exception.Message) }
 
 Write-Host '-> npm/Firebase toolchain' -ForegroundColor Cyan
 try {

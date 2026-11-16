@@ -1,0 +1,65 @@
+{
+  "cloudDeletion": [
+    "research_consents", "vocabulary_categories", "vocabulary_words",
+    "vocabulary_imports", "vocabulary_import_rows", "learning_sessions",
+    "answer_attempts", "srs_states", "reading_progress_entries",
+    "reading_events", "points_ledger_entries", "achievement_unlocks",
+    "reward_transactions", "owned_reward_items", "equipped_reward_items",
+    "outbox_operations", "sync_checkpoints", "sync_conflicts", "events_v2",
+    "quest_instances", "quest_objective_progress", "streak_states",
+    "learning_day_log", "association_records", "associative_memory_states",
+    "local_owners"
+  ],
+  "exportV10": [
+    "research_consents", "vocabulary_categories", "vocabulary_words",
+    "vocabulary_imports", "vocabulary_import_rows", "learning_sessions",
+    "answer_attempts", "srs_states", "reading_progress_entries",
+    "reading_events", "points_ledger_entries", "achievement_unlocks",
+    "reward_transactions", "owned_reward_items", "equipped_reward_items",
+    "outbox_operations", "sync_checkpoints", "sync_conflicts", "events_v2",
+    "quest_instances", "quest_objective_progress", "streak_states",
+    "learning_day_log", "association_records", "associative_memory_states",
+    "local_owners"
+  ],
+  "exportV11": [
+    "research_consents", "vocabulary_categories", "vocabulary_words",
+    "vocabulary_imports", "vocabulary_import_rows", "learning_sessions",
+    "answer_attempts", "srs_states", "reading_progress_entries",
+    "reading_events", "points_ledger_entries", "achievement_unlocks",
+    "reward_transactions", "owned_reward_items", "equipped_reward_items",
+    "outbox_operations", "sync_checkpoints", "sync_conflicts", "events_v2",
+    "quest_instances", "quest_objective_progress", "streak_states",
+    "learning_day_log", "association_records", "associative_memory_states",
+    "local_owners", "owner_calendar_epochs", "quest_claim_receipts",
+    "streak_baselines", "streak_token_adjustments", "quest_definitions",
+    "quest_definition_revisions"
+  ],
+  "exportV12": [
+    "research_consents", "vocabulary_categories", "vocabulary_words",
+    "vocabulary_imports", "vocabulary_import_rows", "learning_sessions",
+    "answer_attempts", "srs_states", "reading_progress_entries",
+    "reading_events", "points_ledger_entries", "achievement_unlocks",
+    "reward_transactions", "owned_reward_items", "equipped_reward_items",
+    "outbox_operations", "sync_checkpoints", "sync_conflicts", "events_v2",
+    "quest_instances", "quest_objective_progress", "streak_states",
+    "learning_day_log", "association_records", "associative_memory_states",
+    "local_owners", "owner_calendar_epochs", "quest_claim_receipts",
+    "streak_baselines", "streak_token_adjustments", "quest_definitions",
+    "quest_definition_revisions", "local_content_reports", "focus_sessions",
+    "learning_preferences"
+  ],
+  "exportV26": [
+    "research_consents", "vocabulary_categories", "vocabulary_words",
+    "vocabulary_imports", "vocabulary_import_rows", "learning_sessions",
+    "answer_attempts", "srs_states", "reading_progress_entries",
+    "reading_events", "points_ledger_entries", "achievement_unlocks",
+    "reward_transactions", "owned_reward_items", "equipped_reward_items",
+    "outbox_operations", "sync_checkpoints", "sync_conflicts", "events_v2",
+    "quest_instances", "quest_objective_progress", "streak_states",
+    "learning_day_log", "association_records", "associative_memory_states",
+    "local_owners", "owner_calendar_epochs", "quest_claim_receipts",
+    "streak_baselines", "streak_token_adjustments", "quest_definitions",
+    "quest_definition_revisions", "local_content_reports", "focus_sessions",
+    "learning_preferences", "archived_v25_records"
+  ]
+}

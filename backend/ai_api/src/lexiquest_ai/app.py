@@ -13,9 +13,17 @@ import logging
 from uuid import uuid4
 
 from fastapi import FastAPI, Header
+from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 
 from lexiquest_ai.auth import TokenVerifier, extract_bearer_token
+from lexiquest_ai.account_deletion import (
+    AccountDeletionConflict,
+    AccountDeletionRequest,
+    AccountDeletionResponse,
+    AccountDeletionService,
+    RecentAuthenticationRequired,
+)
 from lexiquest_ai.config import Settings
 from lexiquest_ai.errors import (
     content_generation_failed,
@@ -41,6 +49,7 @@ def create_app(
     content_service: ContentGenerator,
     token_verifier: TokenVerifier,
     settings: Settings,
+    account_deletion_service: AccountDeletionService | None = None,
 ) -> FastAPI:
     """Create the HTTP API without loading production dependencies."""
 
@@ -143,5 +152,67 @@ def create_app(
             model_version=result.model_version,
             cached=result.cached,
         )
+
+    @app.post("/v1/account-deletions")
+    def delete_account(
+        request: AccountDeletionRequest,
+        authorization: str | None = Header(default=None),
+    ) -> AccountDeletionResponse:
+        token = extract_bearer_token(authorization)
+        user = token_verifier.verify(token)
+        if not settings.account_deletion_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_DISABLED",
+                    "message": "Account deletion is not enabled.",
+                },
+            )
+        if account_deletion_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_UNAVAILABLE",
+                    "message": "Account deletion is unavailable.",
+                },
+                headers={"Retry-After": "5"},
+            )
+        try:
+            receipt = account_deletion_service.delete(request, user)
+        except RecentAuthenticationRequired:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "RECENT_AUTHENTICATION_REQUIRED",
+                    "message": "Sign in again before deleting your account.",
+                },
+            ) from None
+        except AccountDeletionConflict:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "ACCOUNT_DELETION_CONFLICT",
+                    "message": "A different deletion request already exists.",
+                },
+            ) from None
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "code": "INVALID_ACCOUNT_DELETION_REQUEST",
+                    "message": "The account deletion request is invalid.",
+                },
+            ) from None
+        except Exception as error:
+            logger.error("Account deletion failed: %s", type(error).__name__)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_FAILED",
+                    "message": "Account deletion could not be completed.",
+                },
+                headers={"Retry-After": "5"},
+            ) from None
+        return receipt.response()
 
     return app

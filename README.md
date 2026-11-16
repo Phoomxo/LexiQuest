@@ -1,5 +1,8 @@
 # LexiQuest
 
+The current audit remediation source is on `codex/cycle12-release`. See the [source and artifact index](C:/Users/Phet/.codex/worktrees/cycle12-release/LexiQuest/docs/development/current-source.md).
+This checkout retains work in progress on `feature/associative-reading-loop`. Earlier UX work in `lexiquest-current` is also retained separately.
+
 An AI-enhanced gamified vocabulary learning application built with Flutter, Firebase, and an authenticated OmniVoice text-to-speech engine.
 
 ## Overview
@@ -15,9 +18,16 @@ LexiQuest combines gamified vocabulary learning (quizzes, word scrambles, catego
 
 ## Development & Testing
 
+Development work follows the [LexiQuest Agentic Development Life Cycle](docs/development/agentic-development-life-cycle.md): Intent, Ground, Plan, Execute, Review, Attest, Integrate, and Learn. The process keeps implementation moving while requiring source-grounded context, focused checks, review disposition, and durable evidence for each completed task.
+
 ### Running Flutter Tests
 
+The LiteRT tests run inference on a real MobileNet model. Run the preparation
+script from the project root on a fresh checkout or after `flutter clean`.
+It verifies the model's size and SHA-256 and reuses a verified local copy.
+
 ```powershell
+./tool/cli/prepare-field-model.ps1
 flutter test
 ```
 

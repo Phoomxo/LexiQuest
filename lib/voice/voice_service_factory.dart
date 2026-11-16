@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:vocab_learning_app/config/app_config.dart';
 
@@ -34,23 +36,28 @@ final class VoiceServiceFactory {
     int cacheMaxBytes = 16 * 1024 * 1024,
     String omniVoiceModelVersion = 'unresolved',
   }) {
-    final resolvedConfig = config ?? AppConfig.fromEnvironment();
-    final resolvedClient = client ?? http.Client();
-    final authTokenProvider = FirebaseVoiceAuthTokenProvider(
-      firebaseTokenReader ?? FirebaseAuthTokenReader(),
-    );
     final nativeProvider = NativeTtsProvider(
       nativeTtsAdapter ?? FlutterTtsAdapter(),
     );
-    final omniVoiceProvider = OmniVoiceProvider(
-      client: resolvedClient,
-      authTokenProvider: authTokenProvider,
-      baseUri: resolvedConfig.voiceApiBaseUri,
-      timeout: timeout,
-    );
-    final audioPlayer = PluginVoiceAudioPlayer(
-      audioPlayerAdapter ?? AudioplayersAdapter(),
-    );
+    final resolvedConfig = config ?? _environmentConfigOrNull();
+    final resolvedClient = resolvedConfig == null
+        ? client
+        : client ?? http.Client();
+    final audioPlayer = audioPlayerAdapter == null
+        ? resolvedConfig == null
+              ? const _NoopVoiceAudioPlayer()
+              : PluginVoiceAudioPlayer(AudioplayersAdapter())
+        : PluginVoiceAudioPlayer(audioPlayerAdapter);
+    final omniVoiceProvider = resolvedConfig == null
+        ? const _UnavailableOmniVoiceSynthesizer()
+        : OmniVoiceProvider(
+            client: resolvedClient!,
+            authTokenProvider: FirebaseVoiceAuthTokenProvider(
+              firebaseTokenReader ?? FirebaseAuthTokenReader(),
+            ),
+            baseUri: resolvedConfig.voiceApiBaseUri,
+            timeout: timeout,
+          );
     final hybrid = HybridVoiceService(
       nativeProvider: nativeProvider,
       omniVoiceProvider: omniVoiceProvider,
@@ -80,8 +87,8 @@ final class ManagedVoiceService implements VoiceProvider {
   });
 
   final HybridVoiceService _hybrid;
-  final PluginVoiceAudioPlayer _audioPlayer;
-  final http.Client _client;
+  final VoiceAudioPlayer _audioPlayer;
+  final http.Client? _client;
   bool _disposed = false;
 
   @override
@@ -125,7 +132,7 @@ final class ManagedVoiceService implements VoiceProvider {
     }
 
     try {
-      _client.close();
+      _client?.close();
     } on Object catch (error, stackTrace) {
       firstError ??= error;
       firstStackTrace ??= stackTrace;
@@ -136,4 +143,39 @@ final class ManagedVoiceService implements VoiceProvider {
       Error.throwWithStackTrace(error, firstStackTrace!);
     }
   }
+}
+
+AppConfig? _environmentConfigOrNull() {
+  try {
+    return AppConfig.fromEnvironment();
+  } on AppConfigException {
+    return null;
+  }
+}
+
+const _remoteVoiceUnavailable = VoiceFailure(
+  category: VoiceFailureCategory.configuration,
+  message: 'Remote voice synthesis is not configured.',
+);
+
+final class _UnavailableOmniVoiceSynthesizer implements OmniVoiceSynthesizer {
+  const _UnavailableOmniVoiceSynthesizer();
+
+  @override
+  Future<OmniVoiceAudio> synthesize(VoiceRequest request) async {
+    throw _remoteVoiceUnavailable;
+  }
+}
+
+final class _NoopVoiceAudioPlayer implements VoiceAudioPlayer {
+  const _NoopVoiceAudioPlayer();
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  Future<void> play(Uint8List bytes) async {}
+
+  @override
+  Future<void> stop() async {}
 }

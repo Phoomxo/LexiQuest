@@ -1,0 +1,60 @@
+Historical Android SQLite reconciliation, 2026-11-14
+
+Base 4d8fbca664bafc420e28a8e303085f30d53a4e07, FigCraft draft PR16.
+Prior native failure and same-signer recovery are recorded in
+s7-v12-native-migration.txt. This receipt uses synthetic rows and no native DB.
+
+Pinned SQL snapshots contain DDL only. Temporary capture worktrees used the
+actual v12, v23, v25 and v29 code. The v23→v25 upgrade and actual v29 reopen
+of v25 were executed before capturing their SQLite catalogs. The three
+historical catalogs share fingerprint
+fd28bd89a5d272e0557ee3b35b9960554f910b61a7c16fc4e8da01017e0368bf.
+The v12 DDL SHA256 is
+fc1cacfd4e8958f0c7b40aee33dadc41b5669c06576a72250dd8f2fcd3d7ed5f.
+Fixture methods and individual values are under test/fixtures/database.
+
+Observed behavior in focused tests:
+
+- Actual v11 and v12 fixture data preserves the plan, cursor, answer,
+  bookmark, report, Focus, study preferences and existing XP through reopen.
+  Current SQLite has 38 application tables. Upgraded FigCraft schemas
+  match the columns, foreign keys and index contract of fresh v26.
+- All three historical fixture paths preserve vocabulary, original score,
+  owner isolation, protected research provenance, original Quest data and
+  pinned learning-pack BLOB bytes. Full local export covers 36 scopes.
+  The existing cloud deletion contract has 26 scopes.
+- A forced failure after archival but before committing user_version rolls
+  back data and DDL. Retrying then succeeds. Unknown historical shape and
+  cross-owner links with otherwise valid SQLite foreign keys are rejected.
+- An assessment_runs link overrides a historical ordinary activity label.
+  Its responses never become SRS, Streak or delivery evidence. Raw original
+  fields remain in the owner's export and deletion scope. The old ledger is
+  retained, while ineligible XP or coins are excluded from projected totals.
+- New ordinary practice can issue only its own reward. A historical v2 ACK
+  stays immutable. Other unsupported operations are suspended. Replay and
+  owner binding/merge do not reactivate old delivery or materialize an
+  unissued historical award. New sync and local study preserve wire shape.
+
+Root verified recent focused logs:
+build/s7-v26-reward-fence.txt: 117 tests, SHA256
+a21f7b301827eca665d6b42fd9b22f15deefc468248c349b5043aa1562a7dea9.
+build/s7-v26-final-lineage.txt: 13 tests, SHA256
+cf239f5896c77b25521047411f5e02e68a167498e837eba5542429d8d0c7d960.
+The independent delta review compared the v25 activity and reward policy
+to the new owner, linkage, migration and replay checks.
+
+Frozen Windows regression, Flutter 3.44.7:
+flutter test --no-pub -r expanded
+2,268 passed in 9:39 with terminal exit 0.
+build/s7-v26-full-flutter.txt SHA256
+8e6165ada812b3a0c2c4b0726d5145231a2ff22d303d8855d5472b79058a6e68.
+tool/figcraft/fingerprint_inputs.py read the same 597 test inputs before and
+after, including all three v25 fixtures and the v12 fixture. Both manifests:
+172cf0897341ad6db7247a5c1e61ca24722cd466fbcf4983af6717f62f7ed598.
+Dart format verified 546 staged/committed Dart files with zero changes.
+flutter analyze --no-pub completed with no issues (21.2s). Raw log SHA256
+e54646e6e43d3cc5dc69ed8fc512c9d01b14d61d18f02157a0e1753924611245.
+
+Backend CPU suites: 137 AI, 55 Voice and 75 LM. Local synthetic project
+Firestore rules 33 and Auth 3 pass. Supabase local Docker was unavailable.
+No signing secrets, production create/delete, real enrollment or uploads.

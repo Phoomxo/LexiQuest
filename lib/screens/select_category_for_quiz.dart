@@ -1,125 +1,188 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_category.dart';
+import '../runtime/app_dependencies.dart';
 
 class SelectCategoryForQuiz extends StatefulWidget {
-  const SelectCategoryForQuiz({super.key});
+  const SelectCategoryForQuiz({
+    super.key,
+    this.vocabulary,
+    this.onSelect,
+    this.expectedOwnerId,
+  });
+
+  final VocabularyUseCases? vocabulary;
+  final Future<void> Function(BuildContext, VocabularyCategory)? onSelect;
+  final String? expectedOwnerId;
 
   @override
   State<SelectCategoryForQuiz> createState() => _SelectCategoryForQuizState();
 }
 
 class _SelectCategoryForQuizState extends State<SelectCategoryForQuiz> {
-  List<Map<String, dynamic>> availableCategories = [];
-  bool isLoading = true;
+  var _retryEpoch = 0;
+  bool _opening = false;
+  Stream<String?>? _ownerChanges;
+  AppDependencies? _dependencies;
 
   @override
-  void initState() {
-    super.initState();
-    _fetchAvailableCategories();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!identical(dependencies, _dependencies)) {
+      _dependencies = dependencies;
+      _ownerChanges = dependencies?.watchActiveOwnerId();
+    }
   }
 
-  Future<void> _fetchAvailableCategories() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      setState(() {
-        isLoading = false;
-      });
+  Future<void> _select(VocabularyCategory category) async {
+    final onSelect = widget.onSelect;
+    if (onSelect == null) {
+      Navigator.pop(context, category.id);
       return;
     }
-
-    final categoriesSnapshot = await FirebaseFirestore.instance
-        .collection('categories')
-        .where('uid', isEqualTo: user.uid)
-        .get();
-
-    List<Map<String, dynamic>> filteredCategories = [];
-
-    for (var categoryDoc in categoriesSnapshot.docs) {
-      final wordsCountSnapshot = await categoryDoc.reference
-          .collection('words')
-          .count()
-          .get();
-
-      if ((wordsCountSnapshot.count ?? 0) >= 5) {
-        filteredCategories.add({
-          'id': categoryDoc.id,
-          'name': categoryDoc['category_name'],
-        });
-      }
+    if (_opening) return;
+    _opening = true;
+    try {
+      await onSelect(context, category);
+    } finally {
+      _opening = false;
     }
-
-    setState(() {
-      availableCategories = filteredCategories;
-      isLoading = false;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final vocabulary =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('เลือกหมวดหมู่สำหรับฝึก'),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF7B1FA2), Color(0xFF2196F3)], // ม่วง -> ฟ้า
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : availableCategories.isEmpty
-          ? const Center(
-              child: Text(
-                'ไม่มีหมวดหมู่ที่มีคำศัพท์มากกว่า 5 คำ',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ListView.builder(
-                itemCount: availableCategories.length,
-                itemBuilder: (context, index) {
-                  final category = availableCategories[index];
-                  return Card(
-                    color: const Color(0xFFB39DDB), // ม่วงอ่อน
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 6,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF673AB7), // ม่วงเข้ม
-                        child: const Icon(Icons.category, color: Colors.white),
-                      ),
-                      title: Text(
-                        category['name'],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                      onTap: () {
-                        Navigator.pop(context, category['id']);
-                      },
+      appBar: AppBar(title: const Text('เลือกหมวดหมู่')),
+      body: _ownerChanges != null && widget.expectedOwnerId != null
+          ? StreamBuilder<String?>(
+              key: ObjectKey(_ownerChanges),
+              stream: _ownerChanges,
+              builder: (context, owner) {
+                if (owner.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'กำลังตรวจบัญชีผู้เรียน',
                     ),
                   );
-                },
+                }
+                if (owner.data != widget.expectedOwnerId) {
+                  return const _CategoryMessage('เปลี่ยนผู้ใช้แล้ว');
+                }
+                return _categories(vocabulary);
+              },
+            )
+          : _categories(vocabulary),
+    );
+  }
+
+  Widget _categories(VocabularyUseCases? vocabulary) => vocabulary == null
+      ? const _CategoryMessage('ไม่สามารถเปิดคลังคำศัพท์ในเครื่องได้')
+      : StreamBuilder<List<VocabularyCategory>>(
+          key: ValueKey<int>(_retryEpoch),
+          stream: vocabulary.watchCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return _CategoryFailure(
+                onRetry: () => setState(() => _retryEpoch++),
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังโหลดหมวดหมู่',
+                ),
+              );
+            }
+            final categories = snapshot.data!
+                .where(
+                  (category) =>
+                      widget.expectedOwnerId == null ||
+                      category.ownerId == widget.expectedOwnerId,
+                )
+                .toList(growable: false);
+            if (categories.isEmpty) {
+              return _CategoryMessage(
+                'ยังไม่มีหมวดหมู่ เพิ่มคำศัพท์จากแท็บคำศัพท์ก่อนเริ่มแบบทดสอบ',
+                actionLabel: 'กลับไปหน้าเรียน',
+                onAction: () => Navigator.maybePop(context),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: categories.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.folder_outlined),
+                    title: Text(category.name),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _select(category),
+                  ),
+                );
+              },
+            );
+          },
+        );
+}
+
+class _CategoryFailure extends StatelessWidget {
+  const _CategoryFailure({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                'อ่านหมวดหมู่ไม่สำเร็จ กรุณาลองใหม่',
+                textAlign: TextAlign.center,
               ),
             ),
-      backgroundColor: const Color(0xFFEDE7F6), // สีม่วงอ่อนเป็นพื้นหลัง
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryMessage extends StatelessWidget {
+  const _CategoryMessage(this.message, {this.actionLabel, this.onAction});
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

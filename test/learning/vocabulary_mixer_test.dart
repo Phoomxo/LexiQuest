@@ -2,41 +2,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/learning/vocabulary_mixer.dart';
 
 void main() {
-  const mixer = VersionedVocabularyMixer();
+  group('B3 Vocabulary Mixer Tests', () {
+    test('VocabularyMixer respects targets, maxNew, and seed determinism', () {
+      final mixer = VocabularyMixer();
 
-  test('mixes due, weak, and at most two new words deterministically', () {
-    const request = VocabularyMixRequest(
-      dueWords: ['due-a', 'due-b', 'shared'],
-      weakWords: ['weak-a', 'weak-b', 'shared'],
-      newWords: ['new-a', 'new-b', 'new-c'],
-      targetCount: 6,
-      seed: 42,
-    );
+      final due = ['due1', 'due2', 'due3', 'due4', 'due5'];
+      final weak = ['weak1', 'weak2', 'weak3'];
+      final newWords = ['new1', 'new2', 'new3', 'new4'];
 
-    final first = mixer.mix(request);
-    final replay = mixer.mix(request);
-
-    expect(first.algorithmVersion, 'mixer-v1');
-    expect(first.words, replay.words);
-    expect(first.words.toSet(), hasLength(first.words.length));
-    expect(first.words, hasLength(6));
-    expect(
-      first.words.where(request.newWords.contains).length,
-      lessThanOrEqualTo(2),
-    );
-  });
-
-  test('returns all available unique words when the pool is undersized', () {
-    final result = mixer.mix(
-      const VocabularyMixRequest(
-        dueWords: ['one'],
-        weakWords: ['one', 'two'],
-        newWords: [],
+      final selection1 = mixer.selectTargetWords(
+        dueWords: due,
+        weakWords: weak,
+        newWords: newWords,
         targetCount: 6,
-        seed: 1,
-      ),
-    );
+        maxNew: 2,
+        seed: 42,
+      );
 
-    expect(result.words.toSet(), {'one', 'two'});
+      final selection2 = mixer.selectTargetWords(
+        dueWords: due,
+        weakWords: weak,
+        newWords: newWords,
+        targetCount: 6,
+        maxNew: 2,
+        seed: 42,
+      );
+
+      expect(selection1.length, 6);
+      expect(selection1, equals(selection2));
+
+      final newCount = selection1.where((w) => newWords.contains(w)).length;
+      expect(newCount, lessThanOrEqualTo(2));
+    });
   });
 }

@@ -1,128 +1,180 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../config/m3_theme.dart';
+import '../navigation/app_routes.dart';
+import '../widgets/adaptive_content_pane.dart';
+
+const _sample = (
+  questionCount: 5,
+  before: (correct: 2, meanResponseMs: 2400),
+  after: (correct: 3, meanResponseMs: 1600),
+);
+
+String _percent(int correct) =>
+    '${(correct * 100 / _sample.questionCount).round()}%';
+
+String _seconds(int milliseconds) =>
+    '${(milliseconds / 1000).toStringAsFixed(1)} วินาที';
+
+enum _ChartDetail {
+  comparison('compare', 'เปรียบเทียบสองรอบ', 'ดูกราฟอีกครั้ง'),
+  provenance('source', 'ที่มาของตัวเลข', 'กลับไปดูกราฟ');
+
+  const _ChartDetail(this.routeName, this.title, this.chartLabel);
+
+  final String routeName;
+  final String title;
+  final String chartLabel;
+}
+
 class ThesisChartScreen extends StatelessWidget {
-  final double preTestScore;
-  final double postTestScore;
-  final List<double> latencyTrend;
+  const ThesisChartScreen({super.key, required this.returnLabel});
 
-  const ThesisChartScreen({
-    super.key,
-    required this.preTestScore,
-    required this.postTestScore,
-    required this.latencyTrend,
-  });
+  final String returnLabel;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.indigo.shade900,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  void _openDetail(BuildContext context, _ChartDetail detail) {
+    final chart = ModalRoute.of(context);
+    if (chart?.isCurrent != true) return;
+    final navigator = Navigator.of(context);
+    AppNavigator.pushPage<bool>(
+      context,
+      AppPage<bool>(
+        name: 'learning/sample-chart/${detail.routeName}',
+        builder: (context) => _SampleScaffold(
+          title: detail.title,
           children: [
-            const Text(
-              '1. กราฟเปรียบเทียบคะแนน Pre-Test vs Post-Test',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.indigo,
+            if (detail == _ChartDetail.comparison) ...[
+              Text('ข้อมูลสมมติ · คำชุดเดิม ${_sample.questionCount} ข้อ'),
+              const SizedBox(height: 20),
+              Text(
+                'ตอบถูกเพิ่มขึ้น ${_sample.after.correct - _sample.before.correct} ข้อ',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
+              Text(
+                '${_sample.before.correct} จาก ${_sample.questionCount}  →  '
+                '${_sample.after.correct} จาก ${_sample.questionCount}',
+              ),
+              Text(
+                'ข้อที่ตอบถูกคิดเป็น ${_percent(_sample.before.correct)} '
+                'และ ${_percent(_sample.after.correct)}',
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'เวลาตอบเฉลี่ยต่อข้อ',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Text(
+                '${_seconds(_sample.before.meanResponseMs)}  →  '
+                '${_seconds(_sample.after.meanResponseMs)}',
+              ),
+              const Text('ตัวอย่างนี้บอกเฉพาะสิ่งที่เกิดในสองรอบ'),
+            ] else ...[
+              const Text('ตัวอย่างสำหรับฝึกอ่านกราฟ'),
+              const SizedBox(height: 20),
+              Text(
+                'ตัวเลขทั้งหมดเป็นข้อมูลสมมติ',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Text('ตัวอย่างนี้ไม่ลงทะเบียนหรือส่งข้อมูลวิจัย'),
+            ],
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(returnLabel, textAlign: TextAlign.center),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 220,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: 100,
-                  barGroups: [
-                    BarChartGroupData(
-                      x: 0,
-                      barRods: [
-                        BarChartRodData(
-                          toY: preTestScore,
-                          color: Colors.orange,
-                          width: 28,
-                        ),
-                      ],
-                    ),
-                    BarChartGroupData(
-                      x: 1,
-                      barRods: [
-                        BarChartRodData(
-                          toY: postTestScore,
-                          color: Colors.green,
-                          width: 28,
-                        ),
-                      ],
-                    ),
-                  ],
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (val, meta) {
-                          if (val == 0) {
-                            return Text(
-                              'Pre-Test (${preTestScore.toStringAsFixed(1)}%)',
-                            );
-                          }
-                          if (val == 1) {
-                            return Text(
-                              'Post-Test (${postTestScore.toStringAsFixed(1)}%)',
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const Divider(height: 40),
-            const Text(
-              '2. กราฟแนวโน้มความเร็วการตอบสะสม (Latency Trend ms)',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.indigo,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 220,
-              child: LineChart(
-                LineChartData(
-                  minY: 500,
-                  maxY: 3000,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: List.generate(
-                        latencyTrend.length,
-                        (index) =>
-                            FlSpot(index.toDouble(), latencyTrend[index]),
-                      ),
-                      isCurved: true,
-                      color: Colors.blueAccent,
-                      barWidth: 4,
-                    ),
-                  ],
-                ),
-              ),
+            OutlinedButton(
+              onPressed: () => Navigator.maybePop(context),
+              child: Text(detail.chartLabel, textAlign: TextAlign.center),
             ),
           ],
         ),
       ),
+    ).then((goToOrigin) {
+      if (goToOrigin == true && navigator.mounted && chart?.isCurrent == true) {
+        navigator.pop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => _SampleScaffold(
+    title: 'อ่านกราฟตัวอย่าง',
+    children: [
+      const Text('ผู้เรียนสมมติหนึ่งคน · ชุดคำเดียวกัน'),
+      const SizedBox(height: 20),
+      _ScoreBar(label: 'ก่อนฝึก', correct: _sample.before.correct),
+      const SizedBox(height: 12),
+      _ScoreBar(label: 'หลังฝึก', correct: _sample.after.correct),
+      const SizedBox(height: 20),
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('เวลาในการตอบ'),
+        subtitle: const Text('ดูผลรอบแรกและรอบหลัง'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _openDetail(context, _ChartDetail.comparison),
+      ),
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('ข้อมูลนี้มาจากไหน'),
+        subtitle: const Text('ดูขอบเขตของตัวอย่าง'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _openDetail(context, _ChartDetail.provenance),
+      ),
+      const SizedBox(height: 12),
+      OutlinedButton(
+        onPressed: () => Navigator.maybePop(context),
+        child: Text(returnLabel, textAlign: TextAlign.center),
+      ),
+    ],
+  );
+}
+
+class _ScoreBar extends StatelessWidget {
+  const _ScoreBar({required this.label, required this.correct});
+
+  final String label;
+  final int correct;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = '$label $correct จาก ${_sample.questionCount} ข้อ';
+    return Semantics(
+      label: description,
+      value: _percent(correct),
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(description, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: correct / _sample.questionCount,
+            minHeight: 8,
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _SampleScaffold extends StatelessWidget {
+  const _SampleScaffold({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      toolbarHeight: M3Theme.appBarToolbarHeight(context),
+      title: M3Theme.appBarTitle(context, title),
+    ),
+    body: AdaptiveContentPane(
+      maxWidth: AdaptiveContentPane.formMaxWidth,
+      child: SafeArea(
+        child: ListView(padding: const EdgeInsets.all(24), children: children),
+      ),
+    ),
+  );
 }

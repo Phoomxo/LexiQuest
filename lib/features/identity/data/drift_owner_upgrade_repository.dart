@@ -1,0 +1,1164 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart' as db;
+
+import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../domain/owner_upgrade.dart';
+
+typedef OwnerUpgradeUtcNow = DateTime Function();
+typedef OwnerUpgradeIdGenerator = String Function();
+
+final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+  DriftOwnerUpgradeRepository(
+    this._database, {
+    required this.nowUtc,
+    required this.generateConflictId,
+    required this.generateOwnerId,
+  });
+
+  final db.AppDatabase _database;
+  final OwnerUpgradeUtcNow nowUtc;
+  final OwnerUpgradeIdGenerator generateConflictId;
+  final OwnerUpgradeIdGenerator generateOwnerId;
+  Future<void> _writeGate = Future<void>.value();
+
+  @override
+  Future<OwnerUpgradeResult> upgrade({
+    required String activeOwnerId,
+    required String firebaseUid,
+  }) {
+    final sourceId = _requiredId(activeOwnerId, 'activeOwnerId');
+    final uid = _requiredId(firebaseUid, 'firebaseUid');
+    return _serialized(
+      () => _database.transaction(() async {
+        final source = await _ownerById(sourceId);
+        if (source == null || !source.isActive) {
+          throw StateError('active local owner was not found');
+        }
+        if (source.firebaseUid == uid) {
+          return OwnerUpgradeResult(
+            targetOwnerId: source.id,
+            mode: OwnerUpgradeMode.alreadyBound,
+            conflictCount: 0,
+          );
+        }
+
+        final target = await _ownerByFirebaseUid(uid);
+        final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+        if (target == null) {
+          await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+          await (_database.update(
+            _database.localOwners,
+          )..where((row) => row.id.equals(source.id))).write(
+            db.LocalOwnersCompanion(
+              firebaseUid: Value(uid),
+              accountState: const Value('firebaseBound'),
+              upgradedAtUtcMs: Value(upgradedAt),
+            ),
+          );
+          return OwnerUpgradeResult(
+            targetOwnerId: source.id,
+            mode: OwnerUpgradeMode.anonymousBound,
+            conflictCount: 0,
+          );
+        }
+
+        // Two physical XP rows cannot represent the same immutable Quest grant.
+        final xpCollision = await _database
+            .customSelect(
+              'SELECT 1 FROM points_ledger_entries g JOIN points_ledger_entries t '
+              'ON t.idempotency_key=g.idempotency_key WHERE g.owner_id=? AND t.owner_id=? '
+              "AND (g.entry_type='questClaimXpV1' OR t.entry_type='questClaimXpV1') LIMIT 1",
+              variables: [Variable(source.id), Variable(target.id)],
+            )
+            .getSingleOrNull();
+        if (xpCollision != null) {
+          throw StateError('Conflicting Quest XP provenance');
+        }
+
+        await _requireTransferableHistoricalOwner(source.id);
+        var conflicts = await _mergeQuestHistory(source.id, target.id);
+        conflicts += await _mergeStreakHistory(
+          source.id,
+          target.id,
+          upgradedAt,
+        );
+        conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
+        conflicts += await _mergeWords(source.id, target.id, upgradedAt);
+        await _makeImportKeysUnique(source.id, target.id);
+        conflicts += await _makeRewardKeysUnique(
+          source.id,
+          target.id,
+          upgradedAt,
+        );
+        conflicts += await _discardNaturalKeyDuplicates(
+          source.id,
+          target.id,
+          upgradedAt,
+        );
+        await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+        await _mergeStudyRecords(source.id, target.id);
+        await _moveOwnerRows(source.id, target.id);
+        await _rebuildLearningProjections(target.id);
+        await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
+
+        await _database.customUpdate(
+          'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+        );
+        await _database.customUpdate(
+          'UPDATE local_owners '
+          'SET is_active = 1, account_state = ?, upgraded_at_utc_ms = ? '
+          'WHERE id = ?',
+          variables: [
+            const Variable<String>('firebaseBound'),
+            Variable<int>(upgradedAt),
+            Variable<String>(target.id),
+          ],
+          updates: {_database.localOwners},
+        );
+        await _database.customUpdate(
+          'UPDATE local_owners '
+          'SET account_state = ?, upgraded_at_utc_ms = ? WHERE id = ?',
+          variables: [
+            Variable<String>('mergedInto:${target.id}'),
+            Variable<int>(upgradedAt),
+            Variable<String>(source.id),
+          ],
+          updates: {_database.localOwners},
+        );
+        return OwnerUpgradeResult(
+          targetOwnerId: target.id,
+          mode: OwnerUpgradeMode.mergedExisting,
+          conflictCount: conflicts,
+        );
+      }),
+    );
+  }
+
+  @override
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+    return _serialized(
+      () => _database.transaction(() async {
+        final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
+        final createdAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+        await _database.customUpdate(
+          'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+          updates: {_database.localOwners},
+        );
+        await _database
+            .into(_database.localOwners)
+            .insert(
+              db.LocalOwnersCompanion.insert(
+                id: ownerId,
+                createdAtUtcMs: createdAt,
+              ),
+            );
+        return OwnerUpgradeResult(
+          targetOwnerId: ownerId,
+          mode: OwnerUpgradeMode.localGuestCreated,
+          conflictCount: 0,
+        );
+      }),
+    );
+  }
+
+  @override
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) {
+    final previous = _requiredId(previousOwnerId, 'previousOwnerId');
+    final guest = _requiredId(guestOwnerId, 'guestOwnerId');
+    return _serialized(
+      () => _database.transaction(() async {
+        final guestRow = await _ownerById(guest);
+        final previousRow = await _ownerById(previous);
+        if (guestRow == null ||
+            previousRow == null ||
+            !guestRow.isActive ||
+            guestRow.firebaseUid != null) {
+          throw StateError('logout rollback state is no longer safe');
+        }
+        await (_database.delete(
+          _database.localOwners,
+        )..where((row) => row.id.equals(guest))).go();
+        await (_database.update(_database.localOwners)
+              ..where((row) => row.id.equals(previous)))
+            .write(const db.LocalOwnersCompanion(isActive: Value(true)));
+      }),
+    );
+  }
+
+  Future<int> _mergeCategories(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id, target.id AS target_id,
+             guest.name AS guest_name, target.name AS target_name
+      FROM vocabulary_categories guest
+      JOIN vocabulary_categories target
+        ON target.owner_id = ?
+       AND target.normalized_name = guest.normalized_name
+      WHERE guest.owner_id = ?
+      ORDER BY guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+        )
+        .get();
+    for (final collision in collisions) {
+      final guestId = collision.read<String>('guest_id');
+      final targetCategoryId = collision.read<String>('target_id');
+      await _database.customUpdate(
+        'UPDATE vocabulary_words SET category_id = ? WHERE category_id = ?',
+        variables: [
+          Variable<String>(targetCategoryId),
+          Variable<String>(guestId),
+        ],
+        updates: {_database.vocabularyWords},
+      );
+      await _database.customUpdate(
+        'UPDATE vocabulary_imports SET category_id = ? WHERE category_id = ?',
+        variables: [
+          Variable<String>(targetCategoryId),
+          Variable<String>(guestId),
+        ],
+        updates: {_database.vocabularyImports},
+      );
+      await _retireDuplicateOutbox(sourceId, 'category', guestId);
+      await _remapEntityReferences('category', guestId, targetCategoryId);
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'category',
+        entityId: targetCategoryId,
+        localSnapshot: <String, Object?>{
+          'id': guestId,
+          'name': collision.read<String>('guest_name'),
+        },
+        targetSnapshot: <String, Object?>{
+          'id': targetCategoryId,
+          'name': collision.read<String>('target_name'),
+        },
+        resolvedAt: resolvedAt,
+      );
+      await _database.customUpdate(
+        'DELETE FROM vocabulary_categories WHERE id = ?',
+        variables: [Variable<String>(guestId)],
+        updates: {_database.vocabularyCategories},
+      );
+    }
+    return collisions.length;
+  }
+
+  Future<int> _mergeWords(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id, target.id AS target_id,
+             guest.spelling AS guest_spelling,
+             target.spelling AS target_spelling,
+             guest.is_bookmarked AS guest_bookmarked
+      FROM vocabulary_words guest
+      JOIN vocabulary_words target
+        ON target.owner_id = ?
+       AND target.category_id = guest.category_id
+       AND target.normalized_spelling = guest.normalized_spelling
+       AND target.normalized_meaning = guest.normalized_meaning
+      WHERE guest.owner_id = ?
+      ORDER BY guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+        )
+        .get();
+    for (final collision in collisions) {
+      final guestId = collision.read<String>('guest_id');
+      final targetWordId = collision.read<String>('target_id');
+      if (collision.read<int>('guest_bookmarked') == 1) {
+        await (_database.update(
+          _database.vocabularyWords,
+        )..where((row) => row.id.equals(targetWordId))).write(
+          const db.VocabularyWordsCompanion(isBookmarked: Value(true)),
+        );
+      }
+      await _database.customUpdate(
+        'UPDATE answer_attempts SET word_id = ? WHERE word_id = ?',
+        variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
+        updates: {_database.answerAttempts},
+      );
+      await _database.customUpdate(
+        'UPDATE vocabulary_import_rows SET word_id = ? WHERE word_id = ?',
+        variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
+        updates: {_database.vocabularyImportRows},
+      );
+      await _database.customUpdate(
+        'UPDATE srs_states SET word_id = ? WHERE word_id = ?',
+        variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
+        updates: {_database.srsStates},
+      );
+      await _retireDuplicateOutbox(sourceId, 'word', guestId);
+      await _remapEntityReferences('word', guestId, targetWordId);
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'word',
+        entityId: targetWordId,
+        localSnapshot: <String, Object?>{
+          'id': guestId,
+          'spelling': collision.read<String>('guest_spelling'),
+        },
+        targetSnapshot: <String, Object?>{
+          'id': targetWordId,
+          'spelling': collision.read<String>('target_spelling'),
+        },
+        resolvedAt: resolvedAt,
+      );
+      await _database.customUpdate(
+        'DELETE FROM vocabulary_words WHERE id = ?',
+        variables: [Variable<String>(guestId)],
+        updates: {_database.vocabularyWords},
+      );
+    }
+    return collisions.length;
+  }
+
+  Future<int> _mergeStreakHistory(String source, String target, int at) async {
+    // The target's existing calendar (including implicit UTC) governs future answers.
+    await (_database.update(_database.ownerCalendarEpochs)
+          ..where((r) => r.ownerId.equals(source) & r.isSelected))
+        .write(const db.OwnerCalendarEpochsCompanion(isSelected: Value(false)));
+    await (_database.update(
+      _database.streakBaselines,
+    )..where((r) => r.ownerId.equals(source) & r.controlsContinuity)).write(
+      const db.StreakBaselinesCompanion(controlsContinuity: Value(false)),
+    );
+
+    // A missing target state represents zero continuity, even when the guest has a streak.
+    await _database.customInsert(
+      'INSERT INTO streak_states (owner_id, updated_at_utc_ms) '
+      'SELECT ?, ? WHERE EXISTS (SELECT 1 FROM streak_states WHERE owner_id=?) '
+      'AND NOT EXISTS (SELECT 1 FROM streak_states WHERE owner_id=?)',
+      variables: [
+        Variable(target),
+        Variable(at),
+        Variable(source),
+        Variable(target),
+      ],
+      updates: {_database.streakStates},
+    );
+
+    var conflicts = 0;
+    for (final table in ['streak_states', 'learning_day_log']) {
+      final day = table == 'learning_day_log';
+      final rows = await _database
+          .customSelect(
+            'SELECT g.* FROM $table g JOIN $table t ON t.owner_id=? '
+            '${day ? 'AND t.learning_day=g.learning_day' : ''} '
+            'WHERE g.owner_id=? ORDER BY g.rowid',
+            variables: [Variable(target), Variable(source)],
+          )
+          .get();
+      for (final guest in rows) {
+        final key = day ? guest.read<String>('learning_day') : null;
+        final predicate = day ? 'owner_id=? AND learning_day=?' : 'owner_id=?';
+        List<Variable<String>> forOwner(String owner) => [
+          Variable(owner),
+          if (key != null) Variable(key),
+        ];
+        final kept = await _database
+            .customSelect(
+              'SELECT * FROM $table WHERE $predicate',
+              variables: forOwner(target),
+            )
+            .getSingle();
+        await _recordMergeConflict(
+          ownerId: target,
+          entityType: day ? 'learningDay' : 'streakState',
+          entityId: day ? kept.read<String>('id') : target,
+          localSnapshot: guest.data,
+          targetSnapshot: kept.data,
+          resolvedAt: at,
+        );
+        if (day) {
+          await _database.customUpdate(
+            'UPDATE learning_day_log SET first_session_at_utc_ms=MIN(first_session_at_utc_ms,?) '
+            'WHERE $predicate',
+            variables: [
+              Variable(guest.read<int>('first_session_at_utc_ms')),
+              ...forOwner(target),
+            ],
+            updates: {_database.learningDayLog},
+          );
+        } else {
+          await _database.customUpdate(
+            'UPDATE streak_states SET longest_streak_days=MAX(longest_streak_days,?) WHERE owner_id=?',
+            variables: [
+              Variable(guest.read<int>('longest_streak_days')),
+              Variable(target),
+            ],
+            updates: {_database.streakStates},
+          );
+        }
+        await _database.customUpdate(
+          'DELETE FROM $table WHERE $predicate',
+          variables: forOwner(source),
+          updates: {_database.learningDayLog, _database.streakStates},
+        );
+        conflicts++;
+      }
+    }
+    return conflicts;
+  }
+
+  Future<int> _mergeQuestHistory(String source, String target) async {
+    final owners = [source, target];
+    final instances =
+        await (_database.select(_database.questInstances)..where(
+              (r) =>
+                  r.ownerId.isIn(owners) & r.recordKind.equals('legacy').not(),
+            ))
+            .get();
+    final byId = {for (final row in instances) row.instanceId: row};
+    final rules = {
+      for (final rule in await (_database.select(
+        _database.ownerCalendarEpochs,
+      )..where((r) => r.ownerId.isIn(owners))).get())
+        rule.ruleId: rule,
+    };
+    final segments = {
+      for (final row in instances)
+        row.instanceId: _periodSegments(row.segmentsJson!),
+    };
+    bool ruleCovers(
+      db.QuestInstance row,
+      db.OwnerCalendarEpoch rule,
+      List<(int, int)> parts,
+    ) {
+      return rule.ownerId == row.ownerId &&
+          rule.originOwnerId == row.originOwnerId &&
+          parts.first.$1 >= rule.effectiveUtcUs &&
+          (rule.expiresUtcUs == null || parts.last.$2 <= rule.expiresUtcUs!);
+    }
+
+    bool samePinnedPeriod(db.QuestInstance a, db.QuestInstance b) {
+      final left = segments[a.instanceId], right = segments[b.instanceId];
+      final ar = rules[a.calendarRuleId], br = rules[b.calendarRuleId];
+      return a.questId == b.questId &&
+          a.civilLabel == b.civilLabel &&
+          a.catalogVersion == b.catalogVersion &&
+          a.definitionDigest == b.definitionDigest &&
+          left != null &&
+          right != null &&
+          left.length == right.length &&
+          left.indexed.every((entry) => entry.$2 == right[entry.$1]) &&
+          ar != null &&
+          br != null &&
+          ruleCovers(a, ar, left) &&
+          ruleCovers(b, br, right) &&
+          ar.ianaId == br.ianaId &&
+          ar.tzdbRevision == br.tzdbRevision;
+    }
+
+    for (final row in instances.where((r) => r.recordKind == 'alias')) {
+      final canonical = byId[row.canonicalInstanceId];
+      if (canonical == null ||
+          canonical.ownerId != row.ownerId ||
+          canonical.recordKind != 'canonical' ||
+          !samePinnedPeriod(row, canonical)) {
+        throw StateError('Invalid Quest alias owner, target or period pins');
+      }
+    }
+    final paid = <String>{};
+    final scopedIds = _database.selectOnly(_database.questInstances)
+      ..addColumns([_database.questInstances.instanceId])
+      ..where(_database.questInstances.ownerId.isIn(owners));
+    for (final receipt
+        in await (_database.select(_database.questClaimReceipts)..where(
+              (r) => r.ownerId.isIn(owners) | r.instanceId.isInQuery(scopedIds),
+            ))
+            .get()) {
+      final row = byId[receipt.instanceId];
+      if (row == null ||
+          row.ownerId != receipt.ownerId ||
+          row.originOwnerId != receipt.originOwnerId) {
+        throw StateError('Quest receipt belongs to a different occurrence');
+      }
+      paid.add(row.canonicalInstanceId ?? row.instanceId);
+    }
+    final alienAlias =
+        await (_database.select(_database.questInstances)
+              ..where(
+                (r) =>
+                    r.ownerId.isIn(owners).not() &
+                    r.canonicalInstanceId.isInQuery(scopedIds),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (alienAlias != null) {
+      throw StateError('Quest alias belongs to another owner');
+    }
+    // Compare original periods directly. Transitive overlap does not prove equivalence.
+    final periods = instances.where((r) => r.recordKind != 'alias').toList();
+    final conflicts = <String>{};
+    final partners = <String, Set<String>>{};
+    for (final g in periods.where((r) => r.ownerId == source)) {
+      for (final t in periods.where(
+        (r) =>
+            r.ownerId == target &&
+            (r.questId == g.questId || r.periodKey == g.periodKey),
+      )) {
+        final gs = segments[g.instanceId], ts = segments[t.instanceId];
+        if (g.periodKey != t.periodKey &&
+            g.civilLabel != t.civilLabel &&
+            gs != null &&
+            ts != null &&
+            !_overlap(gs, ts)) {
+          continue;
+        }
+        final compatible =
+            g.recordKind == 'canonical' &&
+            t.recordKind == 'canonical' &&
+            samePinnedPeriod(g, t);
+        if (!compatible) {
+          conflicts.addAll([g.instanceId, t.instanceId]);
+          continue;
+        }
+        (partners[g.instanceId] ??= {}).add(t.instanceId);
+        (partners[t.instanceId] ??= {}).add(g.instanceId);
+      }
+    }
+    // One-to-many candidates and an exact match touching a contested record stay unclaimable.
+    for (final entry in partners.entries) {
+      if (entry.value.length != 1 || conflicts.contains(entry.key)) {
+        conflicts.add(entry.key);
+        conflicts.addAll(entry.value);
+      }
+    }
+    final aliases = <String, String>{};
+    for (final g in periods.where((r) => r.ownerId == source)) {
+      final candidates = partners[g.instanceId];
+      if (candidates == null || candidates.length != 1) continue;
+      final t = candidates.single;
+      if (conflicts.contains(g.instanceId) || conflicts.contains(t)) {
+        conflicts.addAll([g.instanceId, t]);
+      } else if (paid.contains(g.instanceId) && !paid.contains(t)) {
+        aliases[t] = g.instanceId;
+      } else {
+        aliases[g.instanceId] = t;
+      }
+    }
+    for (final row in instances) {
+      final oldRoot = row.canonicalInstanceId ?? row.instanceId;
+      final conflict = conflicts.contains(oldRoot);
+      final canonical = aliases[oldRoot];
+      if (!conflict && canonical == null) continue;
+      await (_database.update(
+        _database.questInstances,
+      )..where((r) => r.instanceId.equals(row.instanceId))).write(
+        db.QuestInstancesCompanion(
+          recordKind: Value(conflict ? 'conflict' : 'alias'),
+          canonicalInstanceId: Value(conflict ? null : canonical),
+        ),
+      );
+    }
+    return conflicts.length;
+  }
+
+  Future<void> _makeImportKeysUnique(String sourceId, String targetId) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id, guest.source_hash AS source_hash
+      FROM vocabulary_imports guest
+      JOIN vocabulary_imports target
+        ON target.owner_id = ?
+       AND target.category_id = guest.category_id
+       AND target.source_hash = guest.source_hash
+      WHERE guest.owner_id = ?
+      ORDER BY guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+        )
+        .get();
+    for (final collision in collisions) {
+      final id = collision.read<String>('guest_id');
+      final hash = collision.read<String>('source_hash');
+      await _database.customUpdate(
+        'UPDATE vocabulary_imports SET source_hash = ? WHERE id = ?',
+        variables: [Variable<String>('$hash:merged:$id'), Variable<String>(id)],
+        updates: {_database.vocabularyImports},
+      );
+    }
+  }
+
+  Future<int> _makeRewardKeysUnique(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id, target.id AS target_id,
+             guest.idempotency_key AS idempotency_key
+      FROM reward_transactions guest
+      JOIN reward_transactions target
+        ON target.owner_id = ?
+       AND target.idempotency_key = guest.idempotency_key
+      WHERE guest.owner_id = ?
+      ORDER BY guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+        )
+        .get();
+    for (final collision in collisions) {
+      final guestId = collision.read<String>('guest_id');
+      final targetTransactionId = collision.read<String>('target_id');
+      final key = collision.read<String>('idempotency_key');
+      final suffix = guestId.length > 220
+          ? guestId.substring(guestId.length - 220)
+          : guestId;
+      await (_database.update(
+        _database.rewardTransactions,
+      )..where((row) => row.id.equals(guestId))).write(
+        db.RewardTransactionsCompanion(idempotencyKey: Value('merged:$suffix')),
+      );
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'rewardTransaction',
+        entityId: targetTransactionId,
+        localSnapshot: <String, Object?>{'id': guestId, 'idempotencyKey': key},
+        targetSnapshot: <String, Object?>{
+          'id': targetTransactionId,
+          'idempotencyKey': key,
+        },
+        resolvedAt: resolvedAt,
+      );
+    }
+    return collisions.length;
+  }
+
+  Future<int> _discardNaturalKeyDuplicates(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    var conflicts = 0;
+    for (final specification in const <_DuplicateSpecification>[
+      _DuplicateSpecification(
+        table: 'research_consents',
+        entityType: 'researchConsent',
+        join: 'target.consent_version = guest.consent_version',
+      ),
+      _DuplicateSpecification(
+        table: 'srs_states',
+        entityType: 'srsState',
+        join: 'target.word_id = guest.word_id',
+      ),
+      _DuplicateSpecification(
+        table: 'reading_progress_entries',
+        entityType: 'readingProgress',
+        join:
+            'target.document_id = guest.document_id AND '
+            'target.document_revision = guest.document_revision',
+      ),
+      _DuplicateSpecification(
+        table: 'association_records',
+        entityType: 'association',
+        join: 'target.word_key = guest.word_key AND target.type = guest.type',
+      ),
+      _DuplicateSpecification(
+        table: 'points_ledger_entries',
+        entityType: 'pointsLedger',
+        join: 'target.idempotency_key = guest.idempotency_key',
+      ),
+      _DuplicateSpecification(
+        table: 'achievement_unlocks',
+        entityType: 'achievement',
+        join:
+            'target.achievement_id = guest.achievement_id AND '
+            'target.definition_version = guest.definition_version',
+      ),
+      _DuplicateSpecification(
+        table: 'equipped_reward_items',
+        entityType: 'equippedReward',
+        join: 'target.slot = guest.slot',
+      ),
+      _DuplicateSpecification(
+        table: 'owned_reward_items',
+        entityType: 'ownedReward',
+        join: 'target.item_id = guest.item_id',
+      ),
+      _DuplicateSpecification(
+        table: 'sync_checkpoints',
+        entityType: 'syncCheckpoint',
+        join: 'target.collection_name = guest.collection_name',
+      ),
+    ]) {
+      final duplicates = await _database
+          .customSelect(
+            '''
+        SELECT guest.id AS guest_id, target.id AS target_id
+        FROM ${specification.table} guest
+        JOIN ${specification.table} target
+          ON target.owner_id = ? AND ${specification.join}
+        WHERE guest.owner_id = ?
+        ORDER BY guest.id
+        ''',
+            variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+          )
+          .get();
+      for (final duplicate in duplicates) {
+        final guestId = duplicate.read<String>('guest_id');
+        final targetEntityId = duplicate.read<String>('target_id');
+        await _recordMergeConflict(
+          ownerId: targetId,
+          entityType: specification.entityType,
+          entityId: targetEntityId,
+          localSnapshot: <String, Object?>{'id': guestId},
+          targetSnapshot: <String, Object?>{'id': targetEntityId},
+          resolvedAt: resolvedAt,
+        );
+        if (specification.table == 'achievement_unlocks') {
+          await _retireDuplicateOutbox(sourceId, 'achievementUnlock', guestId);
+        }
+        await _database.customUpdate(
+          'DELETE FROM ${specification.table} WHERE id = ?',
+          variables: [Variable<String>(guestId)],
+        );
+        conflicts += 1;
+      }
+    }
+    return conflicts;
+  }
+
+  Future<void> _mergeStudyRecords(String sourceId, String targetId) async {
+    await _database.customUpdate(
+      "UPDATE focus_sessions SET state = 'interrupted', revision = revision + 1 "
+      "WHERE owner_id = ? AND (state = 'running' OR "
+      "(state = 'paused' AND EXISTS (SELECT 1 FROM focus_sessions "
+      "WHERE owner_id = ? AND state IN ('running','paused'))))",
+      variables: [Variable(sourceId), Variable(targetId)],
+      updates: {_database.focusSessions},
+    );
+    final preferences = await (_database.select(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.isIn([sourceId, targetId]))).get();
+    if (preferences.length != 2) return;
+    final source = preferences.singleWhere((row) => row.ownerId == sourceId);
+    final target = preferences.singleWhere((row) => row.ownerId == targetId);
+    final takeSourceGoal = target.goalState == 'unset';
+    await (_database.update(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.equals(targetId))).write(
+      db.LearningPreferencesCompanion(
+        onboardingState: Value(
+          target.onboardingState == 'unset'
+              ? source.onboardingState
+              : target.onboardingState,
+        ),
+        purpose: Value(target.purpose ?? source.purpose),
+        plannedMinutes: Value(target.plannedMinutes ?? source.plannedMinutes),
+        learningMethod: Value(target.learningMethod ?? source.learningMethod),
+        goalState: Value(takeSourceGoal ? source.goalState : target.goalState),
+        goalCivilDate: Value(
+          takeSourceGoal ? source.goalCivilDate : target.goalCivilDate,
+        ),
+        updatedAtUtcMs: Value(
+          source.updatedAtUtcMs > target.updatedAtUtcMs
+              ? source.updatedAtUtcMs
+              : target.updatedAtUtcMs,
+        ),
+      ),
+    );
+    await (_database.delete(
+      _database.learningPreferences,
+    )..where((row) => row.ownerId.equals(sourceId))).go();
+  }
+
+  Future<void> _moveOwnerRows(String sourceId, String targetId) async {
+    for (final table in ownerUpgradeInventory) {
+      await _updateOwner(table, sourceId, targetId);
+    }
+    await _database.customUpdate(
+      "UPDATE outbox_operations "
+      "SET state = 'pending', lease_token = NULL, lease_expires_at_utc_ms = NULL "
+      "WHERE owner_id = ? AND state = 'blockedAuth'",
+      variables: [Variable<String>(targetId)],
+      updates: {_database.outboxOperations},
+    );
+  }
+
+  Future<void> _requireTransferableHistoricalOwner(String ownerId) async {
+    final row = await _database
+        .customSelect(
+          'SELECT 1 FROM archived_v25_records WHERE owner_id = ? AND source_table IN ('
+          "'research_participation_permits','motivation_measurement_runs','motivation_responses',"
+          "'measurement_opportunities','assessment_runs') "
+          'UNION ALL SELECT 1 FROM events_v2 WHERE owner_id = ? AND event_type IN ('
+          "'TodayExperiencePresented','TodayExperiencePresentationChanged',"
+          "'TodayExperienceMissionStarted','TodayExperienceMissionCompleted') LIMIT 1",
+          variables: [Variable<String>(ownerId), Variable<String>(ownerId)],
+        )
+        .getSingleOrNull();
+    if (row != null) {
+      throw StateError(
+        'Changing a signed research owner requires re-enrollment',
+      );
+    }
+  }
+
+  Future<void> _requeueOwnerForNewCloudNamespace(
+    String ownerId,
+    int rehomedAtUtcMs,
+  ) async {
+    await (_database.update(
+      _database.vocabularyCategories,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.VocabularyCategoriesCompanion(
+        cloudRevision: Value(0),
+        lastAcknowledgedAtUtcMs: Value(null),
+        serverUpdatedAtUtcMs: Value(null),
+      ),
+    );
+    await (_database.update(
+      _database.vocabularyWords,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.VocabularyWordsCompanion(
+        cloudRevision: Value(0),
+        lastAcknowledgedAtUtcMs: Value(null),
+        serverUpdatedAtUtcMs: Value(null),
+      ),
+    );
+    await (_database.update(
+      _database.syncCheckpoints,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.SyncCheckpointsCompanion(
+        serverCursor: Value(null),
+        lastSuccessAtUtcMs: Value(null),
+      ),
+    );
+
+    for (final specification in const <_RehomeSpecification>[
+      _RehomeSpecification(
+        table: 'vocabulary_categories',
+        entityType: 'category',
+        hasSoftDelete: true,
+      ),
+      _RehomeSpecification(
+        table: 'vocabulary_words',
+        entityType: 'word',
+        hasSoftDelete: true,
+      ),
+      _RehomeSpecification(table: 'answer_attempts', entityType: 'attempt'),
+      _RehomeSpecification(table: 'reading_events', entityType: 'readingEvent'),
+      _RehomeSpecification(
+        table: 'reward_transactions',
+        entityType: 'rewardTransaction',
+      ),
+    ]) {
+      final rows = await _database
+          .customSelect(
+            'SELECT id${specification.hasSoftDelete ? ', is_deleted' : ''} '
+            'FROM ${specification.table} WHERE owner_id = ? '
+            '${specification.entityType == 'rewardTransaction' ? "AND transaction_type IN ('purchase', 'equip') " : ''}'
+            '${specification.entityType == 'attempt' ? "AND (legacy_evidence_disposition IS NULL OR legacy_evidence_disposition = 'base-v25') " : ''}'
+            'AND NOT EXISTS (SELECT 1 FROM outbox_operations archived '
+            'WHERE archived.owner_id = ${specification.table}.owner_id '
+            'AND archived.entity_type = ? AND archived.entity_id = ${specification.table}.id '
+            "AND (archived.payload_version <> 1 OR archived.state = 'historicalV25')) "
+            'ORDER BY id',
+            variables: [
+              Variable<String>(ownerId),
+              Variable<String>(specification.entityType),
+            ],
+          )
+          .get();
+      for (final row in rows) {
+        final entityId = row.read<String>('id');
+        final changed = await _database.customUpdate(
+          "UPDATE outbox_operations SET base_revision = 0, state = 'pending', "
+          'attempt_count = 0, next_attempt_at_utc_ms = NULL, '
+          'lease_token = NULL, lease_expires_at_utc_ms = NULL, '
+          'last_attempt_at_utc_ms = NULL, acknowledged_at_utc_ms = NULL, '
+          'failure_code = NULL '
+          'WHERE owner_id = ? AND entity_type = ? AND entity_id = ? '
+          "AND payload_version = 1 AND state <> 'historicalV25'",
+          variables: [
+            Variable<String>(ownerId),
+            Variable<String>(specification.entityType),
+            Variable<String>(entityId),
+          ],
+          updates: {_database.outboxOperations},
+        );
+        if (changed > 0) continue;
+        final generated = _requiredId(generateConflictId(), 'operationId');
+        await _database
+            .into(_database.outboxOperations)
+            .insert(
+              db.OutboxOperationsCompanion.insert(
+                operationId: _requiredId('rehome:$generated', 'operationId'),
+                ownerId: ownerId,
+                entityType: specification.entityType,
+                entityId: entityId,
+                operationKind:
+                    specification.hasSoftDelete &&
+                        row.read<int>('is_deleted') != 0
+                    ? 'delete'
+                    : 'upsert',
+                createdAtUtcMs: rehomedAtUtcMs,
+              ),
+            );
+      }
+    }
+  }
+
+  Future<void> _rebuildLearningProjections(String ownerId) async {
+    final rebuilder = DriftLearningProjectionRebuilder(_database);
+    final wordRows = await _database
+        .customSelect(
+          'SELECT DISTINCT word_id FROM answer_attempts '
+          'WHERE owner_id = ? AND (legacy_evidence_disposition IS NULL '
+          "OR legacy_evidence_disposition = 'base-v25') ORDER BY word_id",
+          variables: [Variable<String>(ownerId)],
+        )
+        .get();
+    for (final row in wordRows) {
+      await rebuilder.rebuildWord(
+        ownerId: ownerId,
+        wordId: row.read<String>('word_id'),
+      );
+    }
+
+    final sessionRows = await _database
+        .customSelect(
+          'SELECT DISTINCT session_id FROM answer_attempts '
+          'WHERE owner_id = ? AND legacy_evidence_disposition IS NULL ORDER BY session_id',
+          variables: [Variable<String>(ownerId)],
+        )
+        .get();
+    for (final row in sessionRows) {
+      await rebuilder.rebuildSession(
+        ownerId: ownerId,
+        sessionId: row.read<String>('session_id'),
+      );
+    }
+    await rebuilder.rebuildAchievements(ownerId);
+
+    final readingRows = await _database
+        .customSelect(
+          'SELECT DISTINCT document_id, document_revision FROM reading_events '
+          'WHERE owner_id = ? ORDER BY document_id, document_revision',
+          variables: [Variable<String>(ownerId)],
+        )
+        .get();
+    for (final row in readingRows) {
+      await rebuilder.rebuildReading(
+        ownerId: ownerId,
+        documentId: row.read<String>('document_id'),
+        documentRevision: row.read<int>('document_revision'),
+      );
+    }
+  }
+
+  Future<void> _updateOwner(String table, String sourceId, String targetId) {
+    return _database.customUpdate(
+      'UPDATE $table SET owner_id = ? WHERE owner_id = ?',
+      variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+    );
+  }
+
+  Future<void> _remapEntityReferences(
+    String entityType,
+    String sourceEntityId,
+    String targetEntityId,
+  ) async {
+    await _database.customUpdate(
+      'UPDATE outbox_operations SET entity_id = ? '
+      'WHERE entity_type = ? AND entity_id = ?',
+      variables: [
+        Variable<String>(targetEntityId),
+        Variable<String>(entityType),
+        Variable<String>(sourceEntityId),
+      ],
+      updates: {_database.outboxOperations},
+    );
+    await _database.customUpdate(
+      'UPDATE sync_conflicts SET entity_id = ? '
+      'WHERE entity_type = ? AND entity_id = ?',
+      variables: [
+        Variable<String>(targetEntityId),
+        Variable<String>(entityType),
+        Variable<String>(sourceEntityId),
+      ],
+      updates: {_database.syncConflicts},
+    );
+  }
+
+  Future<void> _retireDuplicateOutbox(
+    String ownerId,
+    String entityType,
+    String entityId,
+  ) {
+    return (_database.update(_database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityType.equals(entityType) &
+              row.entityId.equals(entityId) &
+              row.state.isIn(const [
+                'pending',
+                'retryWaiting',
+                'inFlight',
+                'blockedAuth',
+                'permanentFailure',
+              ]),
+        ))
+        .write(
+          const db.OutboxOperationsCompanion(
+            state: Value('superseded'),
+            nextAttemptAtUtcMs: Value(null),
+            leaseToken: Value(null),
+            leaseExpiresAtUtcMs: Value(null),
+            failureCode: Value('guestUpgradeDuplicate'),
+          ),
+        );
+  }
+
+  Future<void> _recordMergeConflict({
+    required String ownerId,
+    required String entityType,
+    required String entityId,
+    required Map<String, Object?> localSnapshot,
+    required Map<String, Object?> targetSnapshot,
+    required int resolvedAt,
+  }) async {
+    final conflictId = _requiredId(generateConflictId(), 'conflictId');
+    await _database.customInsert(
+      '''
+      INSERT INTO sync_conflicts
+        (id, owner_id, entity_type, entity_id, local_revision, cloud_revision,
+         resolution_policy, outcome, local_snapshot_json,
+         cloud_snapshot_json, resolved_at_utc_ms)
+      VALUES (?, ?, ?, ?, 0, 0, 'guestUpgradeTargetWins',
+              'targetRetained', ?, ?, ?)
+      ''',
+      variables: [
+        Variable<String>(conflictId),
+        Variable<String>(ownerId),
+        Variable<String>(entityType),
+        Variable<String>(entityId),
+        Variable<String>(jsonEncode(localSnapshot)),
+        Variable<String>(jsonEncode(targetSnapshot)),
+        Variable<int>(resolvedAt),
+      ],
+      updates: {_database.syncConflicts},
+    );
+  }
+
+  Future<db.LocalOwner?> _ownerById(String id) {
+    return (_database.select(
+      _database.localOwners,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<db.LocalOwner?> _ownerByFirebaseUid(String uid) {
+    return (_database.select(
+      _database.localOwners,
+    )..where((row) => row.firebaseUid.equals(uid))).getSingleOrNull();
+  }
+
+  Future<T> _serialized<T>(Future<T> Function() operation) async {
+    final previous = _writeGate;
+    final completer = Completer<void>();
+    _writeGate = completer.future;
+    try {
+      await previous;
+      return await operation();
+    } finally {
+      completer.complete();
+    }
+  }
+}
+
+final class _DuplicateSpecification {
+  const _DuplicateSpecification({
+    required this.table,
+    required this.entityType,
+    required this.join,
+  });
+
+  final String table;
+  final String entityType;
+  final String join;
+}
+
+final class _RehomeSpecification {
+  const _RehomeSpecification({
+    required this.table,
+    required this.entityType,
+    this.hasSoftDelete = false,
+  });
+
+  final String table;
+  final String entityType;
+  final bool hasSoftDelete;
+}
+
+List<(int, int)>? _periodSegments(String encoded) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(encoded);
+  } on FormatException {
+    return null;
+  }
+  if (decoded is! List || decoded.isEmpty) return null;
+  final segments = <(int, int)>[];
+  for (final part in decoded) {
+    if (part case [final int start, final int end]) {
+      if (start >= end || (segments.isNotEmpty && segments.last.$2 >= start)) {
+        return null;
+      }
+      segments.add((start, end));
+    } else {
+      return null;
+    }
+  }
+  return segments;
+}
+
+bool _overlap(List<(int, int)> a, List<(int, int)> b) {
+  var i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i].$2 <= b[j].$1) {
+      i++;
+    } else if (b[j].$2 <= a[i].$1) {
+      j++;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+String _requiredId(String value, String field) {
+  final canonical = value.trim();
+  if (canonical.isEmpty || canonical.length > 256) {
+    throw ArgumentError.value(value, field, 'must contain 1-256 characters');
+  }
+  return canonical;
+}
+
+DateTime _requireUtc(DateTime value) {
+  if (!value.isUtc) {
+    throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
+  }
+  return value;
+}

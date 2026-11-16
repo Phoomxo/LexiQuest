@@ -1,0 +1,92 @@
+S2 Library file import and temporary JSON practice
+
+Source 6d2c5af694ce0be29b27653b48ea8ac9f6fbb5aa.
+FigCraft design 21b34eaa, library_frames.py:9–16, focused_library.py:83–95,
+finish_routes_b.py:270–301, and detached-b.md:13. Entries available at
+Library → นำเข้าชุดคำ and selected set → เพิ่มคำ → นำเข้าจากไฟล์.
+
+JSON file text can be reviewed and edited before parsing. The bracket
+repair is offered only when appending one bracket validates the entire
+draft. It changes the draft in memory. Practice accepts a word and
+meaning or translation, and uses per-card reveal, retry and completion.
+The authored malformed file is also available from the menu. File imports
+and pasted CSV use the existing owner-scoped review and confirmation.
+They retain the durable parser's row requirements and duplicate handling.
+Private drafts clear on an owner write or dependency-scope change.
+Pending pickers, set choice, row editing and durable confirmation are
+fenced to the originating owner. The schema and export contracts are unchanged.
+
+Windows Flutter
+The 390×844 / 200% journeys cover native picker cancel through the
+picker seam, malformed JSON repair, two recall cards with same-card retry,
+Back to the preview, result, same Library search, and reopening the menu.
+An A-to-B switch before picker completion hides A's private name/text.
+The paste preview and selected-set cancellation return to their origin.
+Before and after snapshots agree across 13 tables for the temporary
+paths, including owner, vocabulary, import, learning, SRS, research,
+reward and outbox records. A stale expected-owner durable import is
+rejected before a vocabulary or import record is written.
+
+Initial RED absent library entry, build/s2-wordbook-red.txt SHA-256
+c672f4b475da32a5071c4f7a6bb77dc3b61f97db271ed9cf726e5032ddf946cd.
+An initial full pass of the scoped tests found a below-fold tap and a
+synthetic owner-switch test waiting in the wrong async zone. The test
+now scrolls to actionable controls and pumps frames through the switch.
+The final scoped run passed 72 including the screen and parser journeys,
+durable import, offline Library, and architecture tests.
+build/s2-wordbook-final.txt SHA-256
+241b13e5f29cd5148edae23e12a481571713637338d86cd68932d774f925155d.
+Analysis found no issues; log SHA-256
+1c0f4a0d42620ec53b21fb21b3d5de9d0527fa1a6f2495697252b740ccf75503.
+Format 10 files and git show --check passed. Independent review checked
+the owner capture, draft disposal, stale route guards, and row dialog
+cleanup. Final title also hides the previous owner's set on invalidation.
+
+Flutter debug x86_64 Android build used --no-pub, android-x64 and
+LEXIQUEST_CLOUD_SYNC_ENABLED=false. Final build log SHA-256
+135aa6cf72cdbf1c1862e5c236d9692138e31c91c87d1eb104386c80299c463d.
+Candidate and installed base APK SHA-256
+96e5b5a26a34a6e1ad3e1f15696275bcb48330173cf8630c3bfc9c9a4672d466.
+
+Native verification on fresh emulator-5592, API 35 x86_64, 1080×1920,
+font scale 1, Wi-Fi and mobile data off, airplane mode on, no default
+network, no research consent. The Android document picker opened
+wordbook-synthetic.json. The malformed draft showed the missing bracket
+and both word/meaning pairs. Repair produced the two-word preview.
+Android Back from card 1 returned to the byte-identical preview.
+Retry on pencil returned to the same hidden card. The app revealed
+wallet, showed both words on the result and returned to the original
+empty Library. After a cold launch and declining research again, the
+Library was byte-identical and Wordbook opened at its menu. The Android
+source file still matched its host fixture SHA-256
+cf7fee63c5c53a07102b63dd05c5f4fa34461f5c6e8c2c0e57bec0a219bf9988.
+
+In a separate, explicit save, created Wordbook-Synthetic through
+the set chooser, pasted carriage,railcar,noun and previewed one ready
+row. After confirmation the set showed exactly one word, with the
+entered meaning and part of speech. The two temporary words did not
+appear in the Library. The native focus and label readback use UI
+hierarchy, with no signed-device or spoken TalkBack observation.
+
+Native evidence files under build/wordbook-android-evidence/:
+  empty-library.txt / library-return.txt / library-reopen.txt
+    6de5a75c637bca897707d407f0bcd699a3a33a17a55b0f2795daf18b4b858e32
+  json-error.txt
+    f77ad1411677716f95aa2c33eab29a4157b205b15fbfbd560be18a3792f81d81
+  json-preview.txt / preview-return.txt
+    9a0bdec84fe76819068ec7f4946e10d7955b66b4f691285b3968acf9fa7549f7
+  wallet-reveal.txt
+    7f3eb10848eb8122a0d2c4ed14d1bed7647a72dbe420e77825733d3a322e8fd1
+  result.txt
+    79c5aa7be09c2550a5c8d4369adab0c689ea5d5046b8b8f20c65d160e21985a1
+  paste-preview.txt
+    7f5e932a23ca33846afa67abbf70759f57f6c989623889341871affdb6a24837
+  saved-set.txt
+    ba07bfab447cca4e446324f490e040aed276282ba8e5a527bf89e46c9cbf0753
+
+Physical TalkBack, native 200% and signed APK acceptance remain open.
+
+Exact PR head 0ab02e3742c45c730e452cfbfb66500939ef42ce, CI 43631245794,
+passed Flutter 2,344, CPU backend 267, Firestore and Supabase policies,
+analysis and Android debug APK. Raw log SHA-256
+c72c495525b8c233378569aca6cfee2310486ac1173c4d14731390961f842531.

@@ -1,6 +1,5 @@
 enum LearningActivity {
-  multipleChoiceQuiz('multiple_choice_quiz'),
-  associativeReading('associative_reading');
+  multipleChoiceQuiz('multiple_choice_quiz');
 
   const LearningActivity(this.wireName);
 
@@ -19,8 +18,7 @@ enum LearningActivity {
 }
 
 enum LearningSkill {
-  meaningRecall('meaning_recall'),
-  contextRecall('context_recall');
+  meaningRecall('meaning_recall');
 
   const LearningSkill(this.wireName);
 

@@ -1,671 +1,805 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../services/object_vocabulary_database.dart';
-import '../services/srs_service.dart';
+
+import '../config/m3_theme.dart';
+import '../features/device_model/application/model_benchmark.dart';
+import '../features/device_model/domain/model_lifecycle.dart';
+import '../features/media_practice/application/object_scanner_use_cases.dart';
+import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../runtime/app_dependencies.dart';
+import '../navigation/app_routes.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
+import '../widgets/adaptive_content_pane.dart';
+import 'device_permission_center_screen.dart';
+import 'add_vocab_screen.dart';
 
-/// Object Scanner experience backed by a built-in vocabulary simulation.
-///
-/// This version does not inspect camera, image, or ML input. It samples the
-/// bundled vocabulary database, plays audio, and keeps a local result history.
 class ObjectScannerScreen extends StatefulWidget {
-  /// Optional voice provider for dependency injection in tests.
-  final VoiceProvider? voiceProvider;
+  const ObjectScannerScreen({
+    super.key,
+    this.scanner,
+    this.voice,
+    this.targetCategoryId,
+    this.targetCategoryName,
+  });
 
-  const ObjectScannerScreen({super.key, this.voiceProvider});
+  final ObjectScannerController? scanner;
+  final VoiceUseCases? voice;
+  final String? targetCategoryId;
+  final String? targetCategoryName;
 
   @override
   State<ObjectScannerScreen> createState() => _ObjectScannerScreenState();
 }
 
-class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
-  late final VoiceProvider _voiceProvider;
-  bool _ownsVoiceProvider = false;
-
-  final ObjectVocabularyDatabase _vocabDb = const ObjectVocabularyDatabase();
-
-  bool _isScanning = false;
-  ScannedVocabulary? _currentResult;
-  double _confidence = 0.0;
-  final List<_ScanHistoryEntry> _scanHistory = [];
-  String _selectedCategory = 'All';
+class _ObjectScannerScreenState extends State<ObjectScannerScreen>
+    with WidgetsBindingObserver {
+  ObjectScannerController? _scanner;
+  late final VoiceUseCases _voice;
+  bool _ownsVoice = false;
+  bool _initializing = true;
+  bool _capturing = false;
+  bool _downloading = false;
+  bool _benchmarking = false;
+  bool _modelUnavailable = false;
+  bool _accepted = false;
+  bool _saving = false;
+  bool _editingManual = false;
+  String? _expectedOwnerId;
+  String? _error;
+  CameraFailureCode? _initializationFailure;
+  CameraFailureCode? _captureFailure;
+  ObjectScanResult? _result;
+  List<ModelBenchmarkResult> _benchmarks = const [];
+  ModelCancellation? _cancellation;
 
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
+    WidgetsBinding.instance.addObserver(this);
+    _voice = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoice = widget.voice == null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_scanner != null) return;
+    _scanner =
+        widget.scanner ?? AppDependenciesScope.maybeOf(context)?.objectScanner;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
+  }
+
+  Future<void> _initialize() async {
+    final scanner = _scanner;
+    if (scanner == null) {
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+          _error = 'ฟีเจอร์กล้องยังไม่พร้อมใช้งานบนอุปกรณ์นี้';
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _initializing = true;
+        _error = null;
+        _initializationFailure = null;
+      });
+    }
+    try {
+      final owners = AppDependenciesScope.maybeOf(context)?.localOwners;
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (_expectedOwnerId != null && owner.id != _expectedOwnerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        _expectedOwnerId = owner.id;
+      }
+      if (!mounted) return;
+      await scanner.initialize();
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+          _error = null;
+          _initializationFailure = null;
+        });
+      }
+    } on CameraPracticeException catch (error) {
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+          _modelUnavailable = error.code == CameraFailureCode.modelUnavailable;
+          _initializationFailure = error.code;
+          _error = _cameraFailureText(error.code);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+          _error = 'อ่านบัญชีในเครื่องไม่สำเร็จ กรุณากลับแล้วลองอีกครั้ง';
+        });
+      }
+    }
+  }
+
+  Future<void> _capture() async {
+    final scanner = _scanner;
+    if (scanner == null || _capturing || _saving || _editingManual) return;
+    final cancellation = ModelCancellation();
+    _cancellation = cancellation;
+    setState(() {
+      _capturing = true;
+      _accepted = false;
+      _error = null;
+      _result = null;
+      _captureFailure = null;
+    });
+    try {
+      final result = await scanner.captureAndClassify(
+        cancellation: cancellation,
+      );
+      if (mounted) setState(() => _result = result);
+    } on CameraPracticeException catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = _cameraFailureText(error.code);
+          _captureFailure = error.code;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+      _cancellation = null;
+    }
+  }
+
+  Future<void> _downloadModel() async {
+    final scanner = _scanner;
+    if (scanner == null || _downloading) return;
+    final cancellation = ModelCancellation();
+    _cancellation = cancellation;
+    setState(() {
+      _downloading = true;
+      _error = null;
+    });
+    try {
+      await scanner.downloadModel(cancellation: cancellation);
+      if (!mounted) return;
+      setState(() {
+        _modelUnavailable = false;
+        _initializing = true;
+      });
+      await _initialize();
+    } on ModelLifecycleException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = switch (error.code) {
+          ModelFailureCode.cancelled => 'ยกเลิกการดาวน์โหลดแล้ว',
+          ModelFailureCode.checksumMismatch || ModelFailureCode.sizeMismatch =>
+            'โมเดลไม่ผ่านการตรวจสอบและจะไม่ถูกเปิดใช้งาน',
+          _ => 'ดาวน์โหลดโมเดลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่',
+        };
+      });
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+      _cancellation = null;
+    }
+  }
+
+  Future<void> _benchmarkModel() async {
+    final scanner = _scanner;
+    if (scanner == null || _benchmarking) return;
+    setState(() {
+      _benchmarking = true;
+      _benchmarks = const [];
+      _error = null;
+    });
+    try {
+      final results = await scanner.benchmarkModel();
+      if (mounted) setState(() => _benchmarks = results);
+    } on ModelLifecycleException {
+      if (mounted) {
+        setState(
+          () => _error = 'ไม่สามารถทดสอบประสิทธิภาพโมเดลบนเครื่องนี้ได้',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ');
+      }
+    } finally {
+      if (mounted) setState(() => _benchmarking = false);
+    }
+  }
+
+  Future<void> _accept() async {
+    final scanner = _scanner;
+    final result = _result;
+    if (scanner == null ||
+        result == null ||
+        result.vocabulary == null ||
+        _saving ||
+        _editingManual ||
+        _accepted) {
+      return;
+    }
+    final owners = AppDependenciesScope.maybeOf(context)?.localOwners;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (owner.id != _expectedOwnerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (!mounted) return;
+      final word = await scanner.accept(
+        result,
+        categoryId: widget.targetCategoryId,
+        expectedOwnerId: _expectedOwnerId,
+      );
+      if (owners != null) {
+        final owner = await owners.getOrCreateActiveOwner();
+        if (owner.id != _expectedOwnerId || word.ownerId != owner.id) {
+          throw const VocabularyNotFoundFailure();
+        }
+      }
+      if (!mounted) return;
+      if (widget.targetCategoryId != null &&
+          word.categoryId != widget.targetCategoryId) {
+        throw const VocabularyNotFoundFailure();
+      }
+      setState(() {
+        _accepted = true;
+        _saving = false;
+      });
+      if (widget.targetCategoryId != null) {
+        Navigator.of(context).pop<VocabularyWord>(word);
+      }
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () => _error = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _correctManually() async {
+    if (_editingManual || _saving || _capturing) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = dependencies?.vocabulary;
+    final scanner = _scanner;
+    final result = _result;
+    final categoryId = widget.targetCategoryId;
+    final ownerId = _expectedOwnerId;
+    if (dependencies == null ||
+        vocabulary == null ||
+        scanner == null ||
+        categoryId == null ||
+        ownerId == null ||
+        (result == null &&
+            _captureFailure != CameraFailureCode.noConfidentMatch)) {
+      return;
+    }
+    setState(() {
+      _editingManual = true;
+      _error = null;
+    });
+    try {
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      await scanner.pause();
+      try {
+        await _voice.stop();
+      } catch (_) {
+        // Audio failure must not prevent a manual word correction.
+      }
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (!mounted) return;
+      final draft = CreateWordCommand(
+        categoryId: categoryId,
+        spelling:
+            result?.vocabulary?.englishWord ?? result?.primary.label ?? '',
+        meaning: '',
+        partOfSpeech: '',
+        source: 'object-scanner:manualCorrection',
+      );
+      final saved = await AppNavigator.pushPage<VocabularyWord>(
+        context,
+        AppPage<VocabularyWord>(
+          name: 'vocabulary/camera-manual-correction',
+          builder: (_) => AddWordScreen(
+            categoryId: categoryId,
+            categoryName: widget.targetCategoryName,
+            vocabulary: vocabulary,
+            expectedOwnerId: ownerId,
+            initialDraft: draft,
+          ),
+        ),
+      );
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (saved != null) {
+        if (saved.categoryId != categoryId || saved.ownerId != ownerId) {
+          throw const VocabularyNotFoundFailure();
+        }
+        if (!mounted) return;
+        setState(() {
+          _accepted = true;
+          _editingManual = false;
+        });
+        Navigator.of(context).pop<VocabularyWord>(saved);
+        return;
+      }
+      await scanner.resume();
+      await _requireManualContext(
+        dependencies,
+        result,
+        categoryId,
+        ownerId,
+        scanner,
+      );
+      if (mounted) setState(() {});
+    } on VocabularyNotFoundFailure {
+      if (mounted) {
+        setState(
+          () => _error = 'บัญชีหรือชุดคำเปลี่ยนแล้ว กรุณากลับไปเลือกชุดใหม่',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'เปิดหน้ากรอกคำหรือกลับไปใช้กล้องไม่สำเร็จ กรุณาลองอีกครั้ง',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _editingManual = false);
+    }
+  }
+
+  Future<void> _requireManualContext(
+    AppDependencies dependencies,
+    ObjectScanResult? result,
+    String categoryId,
+    String ownerId,
+    ObjectScannerController scanner,
+  ) async {
+    bool current() =>
+        mounted &&
+        identical(AppDependenciesScope.maybeOf(context), dependencies) &&
+        identical(_result, result) &&
+        identical(_scanner, scanner) &&
+        widget.targetCategoryId == categoryId &&
+        _expectedOwnerId == ownerId;
+    final owners = dependencies.localOwners;
+    if (!current() || owners == null) throw const VocabularyNotFoundFailure();
+    final owner = await owners.getOrCreateActiveOwner();
+    if (!current() || owner.id != ownerId) {
+      throw const VocabularyNotFoundFailure();
+    }
+  }
+
+  Future<void> _speak(String text) async {
+    try {
+      await _voice.speak(
+        VoiceRequest.create(
+          text: text,
+          language: 'en',
+          voiceId: 'device-default',
+          speed: 0.9,
+          mode: VoiceMode.practice,
+          contentId: 'scanner:$text',
+          contentType: 'object-scanner',
+        ),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _error = 'ระบบอ่านออกเสียงไม่พร้อมใช้งาน');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final scanner = _scanner;
+    if (scanner == null) return;
+    // The OS permission dialog can pause and resume the app during initialization.
+    if (_initializing) return;
+    if (state == AppLifecycleState.resumed) {
+      if (_editingManual || _initializationFailure != null) return;
+      scanner
+          .resume()
+          .then((_) {
+            if (mounted) setState(() => _error = null);
+          })
+          .catchError((_) {
+            if (mounted) setState(() => _error = 'เปิดกล้องอีกครั้งไม่สำเร็จ');
+          });
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      _cancellation?.cancel();
+      scanner.pause();
     }
   }
 
   @override
   void dispose() {
-    _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    WidgetsBinding.instance.removeObserver(this);
+    _cancellation?.cancel();
+    final scanner = _scanner;
+    if (scanner != null) unawaited(scanner.pause());
+    _voice.stop();
+    _voice.disposeIfOwned(_ownsVoice);
+    // Runtime-owned scanners are disposed by AppDependencies. Injected test
+    // scanners are owned by the caller.
     super.dispose();
-  }
-
-  /// Draw a vocabulary sample without camera, image, or ML input.
-  void _scanObject() {
-    setState(() => _isScanning = true);
-
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-
-      // Get entries filtered by category, then pick a random one.
-      List<ScannedVocabulary> pool;
-      if (_selectedCategory == 'All') {
-        pool = _vocabDb.allEntries;
-      } else {
-        pool = _vocabDb.getByCategory(_selectedCategory);
-        if (pool.isEmpty) pool = _vocabDb.allEntries;
-      }
-
-      // Avoid repeating recent scans.
-      final recentLabels = _scanHistory
-          .take(5)
-          .map((e) => e.vocab.mlLabel)
-          .toSet();
-      final filtered = pool
-          .where((v) => !recentLabels.contains(v.mlLabel))
-          .toList();
-      final candidates = filtered.isNotEmpty ? filtered : pool;
-
-      final shuffled = candidates.toList()..shuffle();
-      final picked = shuffled.first;
-      final simulatedConfidence = 0.75 + (0.24 * (shuffled.length % 10) / 10);
-
-      setState(() {
-        _isScanning = false;
-        _currentResult = picked;
-        _confidence = simulatedConfidence;
-        _scanHistory.insert(
-          0,
-          _ScanHistoryEntry(vocab: picked, confidence: simulatedConfidence),
-        );
-      });
-    });
-  }
-
-  Future<void> _speakWord(String text) async {
-    try {
-      await _voiceProvider.speak(
-        VoiceRequest.create(
-          text: text,
-          language: 'en',
-          voiceId: 'teacher_female',
-          speed: 0.85,
-          mode: VoiceMode.practice,
-          contentId: 'object_scan_${text.hashCode}',
-          contentType: 'object_scanner',
-        ),
-      );
-    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = ['All', ..._vocabDb.categories];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'สแกนวัตถุคำศัพท์ (Object Scanner)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+    final scanner = _scanner;
+    final result = _result;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final canCorrectManually =
+        widget.targetCategoryId != null &&
+        _expectedOwnerId != null &&
+        dependencies?.localOwners != null &&
+        dependencies?.vocabulary != null &&
+        (result != null ||
+            _captureFailure == CameraFailureCode.noConfidentMatch);
+    return PopScope(
+      canPop: !_saving && !_editingManual,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: M3Theme.appBarToolbarHeight(context),
+          title: M3Theme.appBarTitle(context, 'สแกนวัตถุ'),
         ),
-        backgroundColor: Colors.blueGrey.shade800,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Category Filter ──
-            SizedBox(
-              height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final cat = categories[index];
-                  final isSelected = _selectedCategory == cat;
-                  return ChoiceChip(
-                    label: Text(
-                      cat,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.blueGrey.shade800,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: Colors.blueGrey.shade800,
-                    backgroundColor: Colors.grey.shade200,
-                    onSelected: (_) => setState(() => _selectedCategory = cat),
-                  );
-                },
+        body: AdaptiveContentPane(
+          child: SafeArea(
+            child: ListView(
+              padding: EdgeInsets.all(
+                MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
               ),
-            ),
-            Text(
-              'โหมดจำลอง — เวอร์ชันนี้ยังไม่ใช้กล้องหรือ ML จริง',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-
-            // ── Simulation preview area ──
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.cyanAccent, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyan.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    spreadRadius: 2,
-                  ),
+              children: [
+                if (widget.targetCategoryName != null) ...[
+                  Text('เก็บในชุด ${widget.targetCategoryName}'),
+                  const SizedBox(height: 12),
                 ],
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: _isScanning
-                        ? const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircularProgressIndicator(
-                                color: Colors.cyanAccent,
-                                strokeWidth: 3,
+                AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: ColoredBox(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      child: _initializing
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                semanticsLabel: 'กำลังเปิดกล้อง',
                               ),
-                              SizedBox(height: 12),
-                              Text(
-                                'กำลังสุ่มตัวอย่างคำศัพท์...',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _currentResult != null
-                                    ? Icons.check_circle
-                                    : Icons.center_focus_weak,
+                            )
+                          : scanner?.isReady ?? false
+                          ? scanner!.buildPreview()
+                          : const Center(
+                              child: Icon(
+                                Icons.no_photography_outlined,
                                 size: 64,
-                                color: _currentResult != null
-                                    ? Colors.greenAccent
-                                    : Colors.cyanAccent,
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _currentResult != null
-                                    ? 'ผลจำลอง: ${_currentResult!.englishWord}'
-                                    : 'กดปุ่มด้านล่างเพื่อสุ่มตัวอย่างคำศัพท์',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                    ),
                   ),
-                  // Scanning corners overlay
-                  ..._buildScanCorners(),
-                  if (_currentResult != null && !_isScanning)
-                    Positioned(
-                      top: 40,
-                      left: 60,
-                      right: 60,
-                      bottom: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.greenAccent,
-                            width: 2.5,
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  key: const ValueKey<String>('object-scanner-capture-button'),
+                  onPressed:
+                      scanner?.isReady == true &&
+                          !_capturing &&
+                          !_saving &&
+                          !_editingManual
+                      ? _capture
+                      : null,
+                  icon: _capturing
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            semanticsLabel: 'กำลังวิเคราะห์ภาพ',
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.greenAccent.withValues(alpha: 0.1),
-                        ),
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                        )
+                      : const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
+                  ),
+                ),
+                if (scanner?.isReady == true) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: const ValueKey<String>(
+                      'object-scanner-benchmark-model',
+                    ),
+                    onPressed:
+                        _benchmarking || _capturing || _saving || _editingManual
+                        ? null
+                        : _benchmarkModel,
+                    icon: _benchmarking
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              semanticsLabel: 'กำลังทดสอบประสิทธิภาพโมเดล',
                             ),
-                            color: Colors.greenAccent,
-                            child: Text(
-                              'ตัวอย่าง: ${_currentResult!.mlLabel}',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ),
+                          )
+                        : const Icon(Icons.speed_outlined),
+                    label: Text(
+                      _benchmarking
+                          ? 'กำลังทดสอบประสิทธิภาพ…'
+                          : 'ทดสอบประสิทธิภาพบนเครื่องนี้',
+                    ),
+                  ),
+                ],
+                if (_benchmarks.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Card(
+                    key: const ValueKey<String>(
+                      'object-scanner-benchmark-result',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
+                          for (final result in _benchmarks)
+                            Text(_benchmarkSummary(result)),
+                        ],
                       ),
                     ),
+                  ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Simulation button ──
-            ElevatedButton.icon(
-              key: const ValueKey<String>('object-scanner-simulate-button'),
-              onPressed: _isScanning ? null : _scanObject,
-              icon: Icon(_isScanning ? Icons.hourglass_top : Icons.shuffle),
-              label: Text(
-                _isScanning ? 'กำลังสุ่ม...' : 'สุ่มตัวอย่างวัตถุ (โหมดจำลอง)',
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey.shade800,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey.shade400,
-                minimumSize: const Size(double.infinity, 52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // ── Stats Bar ──
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '📊 ฐานข้อมูล: ${_vocabDb.totalEntries} คำ | ${_vocabDb.categories.length} หมวด',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                Text(
-                  '🔀 สุ่มแล้ว: ${_scanHistory.length}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-
-            // ── Result Card ──
-            if (_currentResult != null) ...[
-              const SizedBox(height: 16),
-              _buildResultCard(_currentResult!, _confidence),
-            ],
-
-            // ── Scan History ──
-            if (_scanHistory.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              const Text(
-                '📋 ประวัติผลจำลอง',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              ..._scanHistory.take(10).map((entry) => _buildHistoryTile(entry)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard(ScannedVocabulary vocab, double confidence) {
-    final confidencePercent = (confidence * 100).toStringAsFixed(1);
-    final confidenceColor = confidence > 0.9
-        ? Colors.green
-        : confidence > 0.7
-        ? Colors.orange
-        : Colors.red;
-
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Word + CEFR Badge + Confidence
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _cefrColor(vocab.cefrLevel),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    vocab.cefrLevel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                if (_modelUnavailable) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: const ValueKey<String>(
+                      'object-scanner-download-model',
+                    ),
+                    onPressed: _downloading
+                        ? () => _cancellation?.cancel()
+                        : _downloadModel,
+                    icon: Icon(_downloading ? Icons.stop : Icons.download),
+                    label: Text(
+                      _downloading
+                          ? 'ยกเลิกดาวน์โหลด'
+                          : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    vocab.englishWord,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.indigo,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: confidenceColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: confidenceColor),
-                  ),
-                  child: Text(
-                    '$confidencePercent%',
-                    style: TextStyle(
-                      color: confidenceColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Phonetic
-            Text(
-              vocab.phonetic,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 4),
-
-            // Thai Translation
-            Text(
-              'คำแปล: ${vocab.thaiTranslation}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-
-            // Category
-            Text(
-              '📁 หมวด: ${vocab.category}',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-            ),
-            const Divider(height: 20),
-
-            // Example Sentence
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('📖 ', style: TextStyle(fontSize: 16)),
-                  Expanded(
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(
+                    liveRegion: true,
                     child: Text(
-                      '"${vocab.exampleSentence}"',
+                      _error!,
+                      key: const ValueKey<String>('object-scanner-error'),
                       style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.blue.shade900,
-                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                     ),
                   ),
+                  if (scanner != null &&
+                      scanner.isReady != true &&
+                      !_modelUnavailable) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      key: const ValueKey<String>(
+                        'object-scanner-retry-camera',
+                      ),
+                      onPressed:
+                          _initializationFailure ==
+                              CameraFailureCode.permissionPermanentlyDenied
+                          ? () => AppNavigator.pushPage<void>(
+                              context,
+                              AppPage<void>(
+                                name: 'settings/device-permissions',
+                                builder: (_) =>
+                                    const DevicePermissionCenterScreen(),
+                              ),
+                            )
+                          : _initialize,
+                      icon: Icon(
+                        _initializationFailure ==
+                                CameraFailureCode.permissionPermanentlyDenied
+                            ? Icons.settings_outlined
+                            : Icons.refresh,
+                      ),
+                      label: Text(
+                        _initializationFailure ==
+                                CameraFailureCode.permissionPermanentlyDenied
+                            ? 'เปิดศูนย์สิทธิ์อุปกรณ์'
+                            : 'ลองเปิดกล้องอีกครั้ง',
+                      ),
+                    ),
+                  ],
                 ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Confidence Bar
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ค่าความมั่นใจจำลอง: $confidencePercent%',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: confidence,
-                    minHeight: 8,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(confidenceColor),
+                if (result != null) ...[
+                  const SizedBox(height: 16),
+                  _ResultCard(
+                    result: result,
+                    accepted: _accepted,
+                    saving: _saving,
+                    onSpeak: () => _speak(
+                      result.vocabulary?.englishWord ??
+                          (result.matchedClassification ?? result.primary)
+                              .label,
+                    ),
+                    onAccept: result.vocabulary == null ? null : _accept,
                   ),
-                ),
+                ],
+                if (canCorrectManually) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'ผลสแกนยังไม่ยืนยันชื่อวัตถุ คุณกรอกคำและคำแปลเองก่อนบันทึกได้',
+                  ),
+                  OutlinedButton.icon(
+                    key: const ValueKey('object-scanner-manual-correction'),
+                    onPressed: _editingManual || _saving
+                        ? null
+                        : _correctManually,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('กรอกคำเอง'),
+                  ),
+                ],
               ],
-            ),
-            const SizedBox(height: 12),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _speakWord(vocab.englishWord),
-                    icon: const Icon(Icons.volume_up, size: 18),
-                    label: const Text('ฟังเสียง'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.indigo,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _speakWord(vocab.exampleSentence),
-                    icon: const Icon(Icons.record_voice_over, size: 18),
-                    label: const Text('ฟังประโยค'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.teal,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      try {
-                        await SrsService().recordReview(
-                          vocab.englishWord,
-                          true,
-                        );
-                      } catch (_) {}
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '📥 บันทึก "${vocab.englishWord}" เข้าคลัง SRS Flashcards เรียบร้อย!',
-                            ),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.bookmark_add, size: 18),
-                    label: const Text('บันทึก'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryTile(_ScanHistoryEntry entry) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _cefrColor(entry.vocab.cefrLevel),
-          radius: 18,
-          child: Text(
-            entry.vocab.cefrLevel,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        title: Text(
-          entry.vocab.englishWord,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          entry.vocab.thaiTranslation,
-          style: const TextStyle(fontSize: 13),
-        ),
-        trailing: Text(
-          '${(entry.confidence * 100).toStringAsFixed(0)}%',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-        ),
-        dense: true,
-        onTap: () {
-          setState(() {
-            _currentResult = entry.vocab;
-            _confidence = entry.confidence;
-          });
-        },
       ),
     );
   }
 
-  List<Widget> _buildScanCorners() {
-    const cornerSize = 20.0;
-    const cornerStroke = 3.0;
-    const color = Colors.cyanAccent;
+  String _cameraFailureText(CameraFailureCode code) => switch (code) {
+    CameraFailureCode.permissionDenied =>
+      'ไม่ได้รับสิทธิ์ใช้กล้อง จึงยังสแกนวัตถุไม่ได้',
+    CameraFailureCode.permissionPermanentlyDenied =>
+      'สิทธิ์กล้องถูกปิดถาวร กรุณาเปิดจากการตั้งค่าระบบ',
+    CameraFailureCode.modelUnavailable =>
+      'ยังไม่มีโมเดลที่ตรวจสอบแล้ว กรุณาดาวน์โหลดโมเดลเมื่อออนไลน์',
+    CameraFailureCode.cancelled => 'ยกเลิกการสแกนแล้ว',
+    CameraFailureCode.invalidImage => 'รูปภาพนี้ไม่สามารถนำมาวิเคราะห์ได้',
+    CameraFailureCode.noConfidentMatch =>
+      'ยังระบุวัตถุไม่ได้ ลองเพิ่มแสงและถ่ายวัตถุทีละชิ้น',
+    CameraFailureCode.captureFailed => 'ถ่ายภาพหรือวิเคราะห์ไม่สำเร็จ',
+    CameraFailureCode.unavailable ||
+    CameraFailureCode.initializationFailed => 'กล้องไม่พร้อมใช้งานบนอุปกรณ์นี้',
+  };
 
-    return [
-      Positioned(
-        top: 8,
-        left: 8,
-        child: _corner(cornerSize, cornerStroke, color, true, true),
-      ),
-      Positioned(
-        top: 8,
-        right: 8,
-        child: _corner(cornerSize, cornerStroke, color, true, false),
-      ),
-      Positioned(
-        bottom: 8,
-        left: 8,
-        child: _corner(cornerSize, cornerStroke, color, false, true),
-      ),
-      Positioned(
-        bottom: 8,
-        right: 8,
-        child: _corner(cornerSize, cornerStroke, color, false, false),
-      ),
-    ];
+  String _benchmarkSummary(ModelBenchmarkResult result) {
+    final medianMs = (result.medianMicros / 1000).toStringAsFixed(1);
+    final p90Ms = (result.p90Micros / 1000).toStringAsFixed(1);
+    final peakMb = (result.peakWorkingSetBytes / (1024 * 1024)).toStringAsFixed(
+      1,
+    );
+    final mode = result.delegate == ModelDelegate.cpu
+        ? 'โหมดมาตรฐาน'
+        : 'โหมดเร่งความเร็ว';
+    return '$mode · '
+        'ทดสอบ ${result.sampleSize} ครั้ง · '
+        'เวลากลาง $medianMs มิลลิวินาที · '
+        '90% ไม่เกิน $p90Ms มิลลิวินาที · '
+        'หน่วยความจำสูงสุด $peakMb MB';
   }
+}
 
-  Widget _corner(double size, double stroke, Color color, bool top, bool left) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(painter: _CornerPainter(stroke, color, top, left)),
+final class _ResultCard extends StatelessWidget {
+  const _ResultCard({
+    required this.result,
+    required this.accepted,
+    required this.saving,
+    required this.onSpeak,
+    required this.onAccept,
+  });
+
+  final ObjectScanResult result;
+  final bool accepted;
+  final bool saving;
+  final VoidCallback onSpeak;
+  final VoidCallback? onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final vocabulary = result.vocabulary;
+    final displayedClassification =
+        result.matchedClassification ?? result.primary;
+    final confidence = (displayedClassification.confidence * 100)
+        .toStringAsFixed(1);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              vocabulary?.englishWord ?? displayedClassification.label,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            if (vocabulary != null)
+              Text(
+                vocabulary.thaiTranslation,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            const SizedBox(height: 8),
+            Text('ความมั่นใจจากโมเดล: $confidence%'),
+            Text(
+              'ผลจากโมเดลสแกนวัตถุในอุปกรณ์',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (vocabulary == null) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'ยังไม่มีคำแปลที่ตรวจสอบแล้วสำหรับคำนี้ ถ้าชื่อไม่ตรงกับภาพ ลองถ่ายใหม่อีกครั้ง',
+              ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onSpeak,
+                  icon: const Icon(Icons.volume_up_outlined),
+                  label: const Text('ฟังเสียง'),
+                ),
+                if (onAccept != null)
+                  FilledButton.icon(
+                    onPressed: accepted || saving ? null : onAccept,
+                    icon: Icon(accepted ? Icons.check : Icons.add),
+                    label: Text(
+                      accepted
+                          ? 'บันทึกแล้ว'
+                          : saving
+                          ? 'กำลังบันทึก...'
+                          : 'เพิ่มเข้าคลัง',
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
-
-  Color _cefrColor(String level) {
-    switch (level.toUpperCase()) {
-      case 'A1':
-        return Colors.green;
-      case 'A2':
-        return Colors.teal;
-      case 'B1':
-        return Colors.blue;
-      case 'B2':
-        return Colors.indigo;
-      case 'C1':
-        return Colors.purple;
-      case 'C2':
-        return Colors.amber.shade800;
-      default:
-        return Colors.grey;
-    }
-  }
-}
-
-class _ScanHistoryEntry {
-  final ScannedVocabulary vocab;
-  final double confidence;
-
-  const _ScanHistoryEntry({required this.vocab, required this.confidence});
-}
-
-class _CornerPainter extends CustomPainter {
-  final double stroke;
-  final Color color;
-  final bool top;
-  final bool left;
-
-  _CornerPainter(this.stroke, this.color, this.top, this.left);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = stroke
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    if (top && left) {
-      path.moveTo(0, size.height);
-      path.lineTo(0, 0);
-      path.lineTo(size.width, 0);
-    } else if (top && !left) {
-      path.moveTo(0, 0);
-      path.lineTo(size.width, 0);
-      path.lineTo(size.width, size.height);
-    } else if (!top && left) {
-      path.moveTo(0, 0);
-      path.lineTo(0, size.height);
-      path.lineTo(size.width, size.height);
-    } else {
-      path.moveTo(0, size.height);
-      path.lineTo(size.width, size.height);
-      path.lineTo(size.width, 0);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

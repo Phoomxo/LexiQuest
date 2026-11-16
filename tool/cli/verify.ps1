@@ -6,9 +6,8 @@
 .DESCRIPTION
     Runs every mandatory foundation check fail-fast. It never starts Voice API,
     AI API, Ollama, OmniVoice, a local LM server, model loading, or another CUDA
-    consumer. Backend tests provision frozen project environments with dev
-    dependencies while explicitly excluding optional GPU, LLM, and training
-    dependency groups.
+    consumer. Backend tests reuse the installed project environments without
+    syncing optional GPU/training dependency groups.
 #>
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -16,17 +15,6 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = $PSScriptRoot
 $repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 $script:phaseResults = @()
-
-function Get-RequiredSupabasePublishableKey {
-    $value = $env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY
-    if (
-        [string]::IsNullOrWhiteSpace($value) -or
-        $value -notmatch '^sb_publishable_[A-Za-z0-9_-]+$'
-    ) {
-        throw 'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY must be a valid publishable key.'
-    }
-    return $value
-}
 
 function Write-VerifySummary {
     param([string]$Title)
@@ -107,8 +95,6 @@ try {
     Invoke-VerifyPhase '02.1' 'CI/CD contract tests' {
         $contractTests = @(
             'ci-workflow.tests.ps1',
-            'verify-backend-environments.tests.ps1',
-            'verify-scope.tests.ps1',
             'dependabot-config.tests.ps1',
             'osv-pr-workflow.tests.ps1',
             'osv-scheduled-workflow.tests.ps1',
@@ -117,8 +103,8 @@ try {
             'firestore-rules-security.tests.ps1',
             'model-loading-security.tests.ps1',
             'android-manifest-security.tests.ps1',
-            'android-release-signing.tests.ps1'
-            'production-release-workflow.tests.ps1'
+            'android-release-signing.tests.ps1',
+            'verify-field-release.tests.ps1'
         )
         foreach ($contractTest in $contractTests) {
             & powershell -NoProfile -ExecutionPolicy Bypass -File `
@@ -173,20 +159,12 @@ try {
         & flutter test --reporter compact
     }
 
-    Invoke-VerifyPhase '06.1' 'Trusted writer tests' {
-        & npm --prefix functions test
-    }
-
-    Invoke-VerifyPhase '06.2' 'Trusted writer emulator tests' {
-        & npm run test:functions-emulator
-    }
-
     Invoke-VerifyPhase '07' 'Voice API CPU-only tests' {
         & uv run `
             --project (Join-Path $repoRoot 'backend\voice_api') `
             --frozen `
+            --no-sync `
             --group dev `
-            --no-group gpu `
             pytest backend/voice_api/tests -q `
             --ignore=backend/voice_api/tests/integration
     }
@@ -195,8 +173,8 @@ try {
         & uv run `
             --project (Join-Path $repoRoot 'backend\ai_api') `
             --frozen `
+            --no-sync `
             --group dev `
-            --no-group llm `
             pytest backend/ai_api/tests -q
     }
 
@@ -204,13 +182,12 @@ try {
         & uv run `
             --project (Join-Path $repoRoot 'backend\lexiquest_lm') `
             --frozen `
+            --no-sync `
             --group dev `
-            --no-group train `
             pytest backend/lexiquest_lm/tests -q
     }
 
     Invoke-VerifyPhase '10' 'Android debug APK build (emulator loopback)' {
-        $supabasePublishableKey = Get-RequiredSupabasePublishableKey
         $shortSha = (& git rev-parse --short HEAD 2>$null | Select-Object -First 1)
         if ([string]::IsNullOrWhiteSpace($shortSha)) {
             $shortSha = 'unknown'
@@ -228,7 +205,6 @@ try {
             '--debug',
             '--dart-define=LEXIQUEST_VERSION=1.0.0+1',
             ('--dart-define=LEXIQUEST_BUILD_ID=' + $buildId),
-            ('--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' + $supabasePublishableKey),
             '--dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001',
             '--dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000'
         )

@@ -1,0 +1,94 @@
+f02 Sample pack review and P3.1 catalog metadata
+
+Application ca6bbeea5a2f86dcfe732cba3e855102f5602f81 on the FigCraft
+prototype branch. The pinned 21b34eaa design defines the kitchen
+pack, its ordered words, and the sample review journey in
+feature_tasks_a.py task 2. The level-selection journey is task 1.
+
+The same bundled pack provides the catalog metadata, the word list,
+its source digest, and both ordered flashcards. The sample review
+requires revealing the current meaning before advancing. Hiding and
+revealing it again cannot advance the review. The pack records
+completion only after Finish on the last revealed card. Its progress
+is a result of the sample round inside the currently open pack.
+
+The catalog applies one filter at a time to bundled metadata. It
+exposes level, topic, skill, and goal from the pinned sample packs.
+The Android and widget checks for f01 exercise this catalog route.
+The earlier owned Library-level evidence remains in
+s2-f01-level-filter.txt.
+
+The two new widget checks failed first on the absent review method
+and absent catalog filter. The final suite passed 151 cases across
+architecture, vocabulary, Library, app shell, and Review Desk.
+Analysis passed on both changed Dart files.
+
+Linux CI 43678592836 on application ca6bbeea passed 2,448 Flutter
+tests, 267 backend CPU tests, Firestore and Supabase policy checks,
+static analysis, and the Android debug build. The raw CI log
+under build/ is s2-f02-source-ci-43678592836.txt. Its SHA-256 is
+d2991b8003e8ea4b93fd543c0d5447c6bf60f86d5b79c611d967967015ec9a4e.
+
+The installed and host x64 debug APK SHA-256 is
+a98a3fd9c490939f18342b60f83604ca0c9357312409ecd4bdce1095dd6ab204.
+The isolated Android API 35 emulator used airplane mode, Wi-Fi off,
+system font 2.0, and an unbound local guest.
+
+From the Library search A-F03, the catalog's A2 filter shows one
+travel pack. Back from its two-word detail retains A2. C2 shows
+zero results and the empty filter message. Clearing the filter
+restores the travel and kitchen packs.
+
+The kitchen detail shows A1 and two ordered pairs, cup / ถ้วย then
+spoon / ช้อน. Back after revealing cup leaves no completed
+result. Start again, hide and reveal cup again, then advance
+to the still-hidden spoon. Reveal spoon and finish. The result
+and reviewed list display both pairs. The same kitchen detail
+shows เปิดทบทวนแล้ว 2 จาก 2 คำ. The travel detail has its own
+status. Back through the catalog retains the A-F03 Library search.
+
+After a cold launch changed PID 26067 to 28099, open the
+existing A-F03-Empty-Synthetic set. It shows zero words and says
+to add a word before practice. Reopen the kitchen pack. Source
+revision LQ-KT-01 and its SHA-256 match the f04 record. The pack
+starts a fresh sample round at cup with its meaning hidden.
+
+The baseline, completed and reopened SQLite snapshots agree
+byte for byte. They cover the active guest's vocabulary, learning
+sessions, answer attempts, points, reward transactions and outbox.
+Research event, consent and outbox counts are zero.
+
+Windows records under build/, SHA-256
+s2-f02-red.txt 171df533dc0e4e324870d8830e1354ff6f171ef588266a2d96031fe223f74b76
+s2-f02-catalog-red.txt 82a94ebaee9a525a002aa0484219844d20cf1e610fad62de8cfd31b246b63132
+s2-f02-verified.txt be9ebe79ce41901039556b8fe4e4bb5f08a480a0d12837f4225f701306d23d3b
+s2-f02-analysis.txt e93de7e54a96c876dfd8bf083704c93ee39104539f00fb5f1ea18f59713cc30c
+s2-f02-android-build.txt d6084737609c295d09dd9757784dada1e222519547282cddb321c18cc0d30014
+
+Android records under build/boss-android-evidence, SHA-256
+f02-installed-sha256.txt 608bbc38924389234b5731f6787158e907d28a3f66504a213ca01212f02984f9
+f02-native-catalog-a2.txt abb6e65b21e71f651ba0ed2a355c27b357942c71bd6ad5ca5343427425d5f8b9
+f02-native-catalog-a2.png 62c808e73c3d5ec7b12fec8d523b77dcaa69b26c3bf77b9fbf59983d99418a3f
+f02-native-catalog-c2-empty.txt 2ec844e693df3aa33dabfbc9bde0c33e26c480da19619a05428ef52f22a2c080
+f02-native-catalog-cleared.txt 75399db06350171cdc86d890182ae0c7cf5caff5fbd43038227ea2a9db33690b
+f02-native-kitchen-words.txt 2e8649840080ddbd469e6aef3371fef3acba2db58f301b5c00a44aef25c21014
+f02-native-cancelled.txt 25abc09c49aa3ba93b1e8ab5804b2b4dbd6df9306028e9901ac262ac9081abcd
+f02-native-first-hidden.txt a06398d6ba296c3e814c5a8f95e90033af33669a77347be1aef2d3f6a3f2d062
+f02-native-second-revealed.txt 18658749281e894fcead30f897a92230c1cc3e81712b63dec320f367bb9ad86d
+f02-native-second-revealed.png 2977ad32a774130c611773464622b3dc985a38be6029d56c46973346cde0d0ca
+f02-native-completed.txt ccaca32ca3208ca2f10dd3d4b9bf3e316d85c278233a024e877e74ffca9c14e4
+f02-native-completed.png cb9ac35595388c4527969a5912e9f7850be46185c6f81d7bbd4e768902dd296d
+f02-native-returned-pack.txt 3dddf29cb28289bb479a3319f4eb9f2ca410fe65e33e340f896de1de8b654965
+f02-native-returned-pack.png 9f92475ce6c53d30b6bd90a92d3ce0bd187c19d98531ab724769845e7bd686b8
+f02-native-reviewed-words.txt 134cf9d429e67e4bb6a68dd32b8a2a654dde44e46bb55cc2db436f10cd394235
+f02-native-returned-library.txt 50f7c5b7fd1884f7b5886e40c2c3aeed98ed9139fbf3635f67feea3587b50fe3
+f02-native-cold-pids.txt 8c3a9a9f3c9662b67b27598288f4b75972ab607c12f71edea75c1a7c899d310d
+f02-native-empty-owned-set.txt c088a75e7019398e8b5e0a442f13f8a72b897c1ca04678ed3d1807db29dad47b
+f02-native-current-provenance.txt ac105a99ebadd557e4003afb5a9910001cd9dfa81418a530d9ef379332849529
+f02-native-reopened-first.txt a06398d6ba296c3e814c5a8f95e90033af33669a77347be1aef2d3f6a3f2d062
+f02-native-db-baseline.json 60a22457b425bb26506325f7d612139e8c1dc284855b2a59aadfddf061014d6b
+
+f02-native-db-completed.json and f02-native-db-reopened.json
+match f02-native-db-baseline.json.
+
+Delivery APK and spoken TalkBack checks are pending.

@@ -1,0 +1,291 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart
+00:00 +0: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +1: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +2: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +3: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +4: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +5: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +6: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +7: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +8: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:01 +9: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +10: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +11: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +12: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +13: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +13: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: add category validates inside the dialog before persistence
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:vocab_learning_app/data/local/app_database.g.dart:17210:36)
+#4      new AppDatabase (package:vocab_learning_app/data/local/app_database.dart)
+#5      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart:109:16)
+#6      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:439:61)
+#7      Future.forEach.<anonymous closure> (dart:async/future.dart:674:26)
+#8      Future.doWhile.<anonymous closure> (dart:async/future.dart:732:26)
+#9      StackZoneSpecification._registerUnaryCallback.<anonymous closure>.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:36)
+#10     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)
+#11     StackZoneSpecification._registerUnaryCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:24)
+#12     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#13     _CustomZone.runUnary (dart:async/zone.dart:733:19)
+#14     _CustomZone.runUnaryGuarded (dart:async/zone.dart:633:7)
+#15     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:671:26)
+#16     Future.doWhile (dart:async/future.dart:749:18)
+#17     Future.forEach (dart:async/future.dart:672:12)
+#18     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:439:18)
+#19     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:21)
+#20     _rootRun (dart:async/zone_root.dart:35:13)
+#21     _CustomZone.run (dart:async/zone.dart:726:19)
+#22     _runZoned (dart:async/zone_api.dart:166:6)
+#23     runZoned (dart:async/zone_api.dart:92:10)
+#24     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:17)
+#25     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:17)
+#26     _rootRun (dart:async/zone_root.dart:35:13)
+#27     _CustomZone.run (dart:async/zone.dart:726:19)
+#28     _runZoned (dart:async/zone_api.dart:166:6)
+#29     runZoned (dart:async/zone_api.dart:92:10)
+#30     Invoker._waitForOutstandingCallbacks (package:test_api/src/backend/invoker.dart:314:5)
+#31     Invoker._onRun.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/invoker.dart:457:21)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:02 +14: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:02 +15: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:03 +16: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:03 +17: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_library_test.dart: set and word searches keep their context after returning
+00:03 +18: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
+00:03 +18: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: add word validates every field and guards pending navigation
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:vocab_learning_app/data/local/app_database.g.dart:17210:36)
+#4      new AppDatabase (package:vocab_learning_app/data/local/app_database.dart)
+#5      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart:109:16)
+#6      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:439:61)
+#7      Future.forEach.<anonymous closure> (dart:async/future.dart:674:26)
+#8      Future.doWhile.<anonymous closure> (dart:async/future.dart:732:26)
+#9      StackZoneSpecification._registerUnaryCallback.<anonymous closure>.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:36)
+#10     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)
+#11     StackZoneSpecification._registerUnaryCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:24)
+#12     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#13     _CustomZone.runUnary (dart:async/zone.dart:733:19)
+#14     _CustomZone.runUnaryGuarded (dart:async/zone.dart:633:7)
+#15     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:671:26)
+#16     Future.doWhile (dart:async/future.dart:749:18)
+#17     Future.forEach (dart:async/future.dart:672:12)
+#18     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:439:18)
+#19     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:21)
+#20     _rootRun (dart:async/zone_root.dart:35:13)
+#21     _CustomZone.run (dart:async/zone.dart:726:19)
+#22     _runZoned (dart:async/zone_api.dart:166:6)
+#23     runZoned (dart:async/zone_api.dart:92:10)
+#24     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:17)
+#25     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:17)
+#26     _rootRun (dart:async/zone_root.dart:35:13)
+#27     _CustomZone.run (dart:async/zone.dart:726:19)
+#28     _runZoned (dart:async/zone_api.dart:166:6)
+#29     runZoned (dart:async/zone_api.dart:92:10)
+#30     Invoker._waitForOutstandingCallbacks (package:test_api/src/backend/invoker.dart:314:5)
+#31     Invoker._onRun.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/invoker.dart:457:21)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:03 +19: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
+00:03 +19: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: category retry creates one fresh subscription and recovers
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:vocab_learning_app/data/local/app_database.g.dart:17210:36)
+#4      new AppDatabase (package:vocab_learning_app/data/local/app_database.dart)
+#5      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart:109:16)
+#6      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:439:61)
+#7      Future.forEach.<anonymous closure> (dart:async/future.dart:674:26)
+#8      Future.doWhile.<anonymous closure> (dart:async/future.dart:732:26)
+#9      StackZoneSpecification._registerUnaryCallback.<anonymous closure>.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:36)
+#10     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)
+#11     StackZoneSpecification._registerUnaryCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:24)
+#12     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#13     _CustomZone.runUnary (dart:async/zone.dart:733:19)
+#14     _CustomZone.runUnaryGuarded (dart:async/zone.dart:633:7)
+#15     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:671:26)
+#16     Future.doWhile (dart:async/future.dart:749:18)
+#17     Future.forEach (dart:async/future.dart:672:12)
+#18     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:439:18)
+#19     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:21)
+#20     _rootRun (dart:async/zone_root.dart:35:13)
+#21     _CustomZone.run (dart:async/zone.dart:726:19)
+#22     _runZoned (dart:async/zone_api.dart:166:6)
+#23     runZoned (dart:async/zone_api.dart:92:10)
+#24     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:17)
+#25     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:17)
+#26     _rootRun (dart:async/zone_root.dart:35:13)
+#27     _CustomZone.run (dart:async/zone.dart:726:19)
+#28     _runZoned (dart:async/zone_api.dart:166:6)
+#29     runZoned (dart:async/zone_api.dart:92:10)
+#30     Invoker._waitForOutstandingCallbacks (package:test_api/src/backend/invoker.dart:314:5)
+#31     Invoker._onRun.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/invoker.dart:457:21)
+00:04 +20: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
+00:04 +20: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: category retry creates one fresh subscription and recovers
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:04 +21: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: selected set name and return context survive the saved result
+00:04 +21: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart: guest vocabulary survives widget reconstruction without cloud
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:vocab_learning_app/data/local/app_database.g.dart:17210:36)
+#4      new AppDatabase (package:vocab_learning_app/data/local/app_database.dart)
+#5      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/offline_vocabulary_journey_test.dart:109:16)
+#6      Declarer._runSetUps.<anonymous closure> (package:test_api/src/backend/declarer.dart:439:61)
+#7      Future.forEach.<anonymous closure> (dart:async/future.dart:674:26)
+#8      Future.doWhile.<anonymous closure> (dart:async/future.dart:732:26)
+#9      StackZoneSpecification._registerUnaryCallback.<anonymous closure>.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:36)
+#10     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)
+#11     StackZoneSpecification._registerUnaryCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:127:24)
+#12     _rootRunUnary (dart:async/zone_root.dart:48:47)
+#13     _CustomZone.runUnary (dart:async/zone.dart:733:19)
+#14     _CustomZone.runUnaryGuarded (dart:async/zone.dart:633:7)
+#15     _CustomZone.bindUnaryCallbackGuarded.<anonymous closure> (dart:async/zone.dart:671:26)
+#16     Future.doWhile (dart:async/future.dart:749:18)
+#17     Future.forEach (dart:async/future.dart:672:12)
+#18     Declarer._runSetUps (package:test_api/src/backend/declarer.dart:439:18)
+#19     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:252:21)
+#20     _rootRun (dart:async/zone_root.dart:35:13)
+#21     _CustomZone.run (dart:async/zone.dart:726:19)
+#22     _runZoned (dart:async/zone_api.dart:166:6)
+#23     runZoned (dart:async/zone_api.dart:92:10)
+#24     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:17)
+#25     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:17)
+#26     _rootRun (dart:async/zone_root.dart:35:13)
+#27     _CustomZone.run (dart:async/zone.dart:726:19)
+#28     _runZoned (dart:async/zone_api.dart:166:6)
+#29     runZoned (dart:async/zone_api.dart:92:10)
+#30     Invoker._waitForOutstandingCallbacks (package:test_api/src/backend/invoker.dart:314:5)
+#31     Invoker._onRun.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/invoker.dart:457:21)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:04 +22: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:04 +23: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:04 +24: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +25: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +26: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +27: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +28: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +29: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:05 +30: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +31: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +32: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +33: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +34: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +35: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +36: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +37: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: due review shows its persisted score before returning home
+00:06 +38: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:06 +39: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:06 +40: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:06 +41: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:06 +42: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +43: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +44: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +45: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +46: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +47: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +48: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +49: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:07 +50: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +51: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +52: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +53: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +54: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +55: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +56: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +57: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +58: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:08 +59: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +60: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +61: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +62: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +63: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +64: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +65: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/figcraft_shell_test.dart: library shortcut opens the existing tab and retains its place
+00:09 +66: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:09 +67: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:09 +68: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +69: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +70: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +71: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +72: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +73: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +74: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +75: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +76: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: source Flashcards returns one immutable result after finish
+00:10 +77: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +78: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +79: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +80: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +81: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +82: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +83: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +84: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +85: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +86: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +87: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:11 +88: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +89: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +90: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +91: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +92: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +93: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +94: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +95: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +96: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +97: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +98: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +99: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +100: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +101: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +102: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +103: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: /home resolves to the field-safe shell
+00:12 +104: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/main_navigation_screen_test.dart: limited features explain requirements and offer setup actions
+00:12 +105: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +106: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +107: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +108: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +109: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +110: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:13 +111: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:14 +112: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:14 +113: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:14 +114: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/quiz_screen_test.dart: wrong answer is explained then practiced from the score screen
+00:14 +115: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retries false evidence after lost ack
+00:14 +116: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer vocabulary item keeps the category workspace selected
+00:14 +117: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer vocabulary item keeps the category workspace selected
+00:14 +118: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish fails
+00:14 +119: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish fails
+00:15 +120: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish fails
+00:15 +121: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer settings item reaches SettingScreen
+00:15 +122: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/production_shell_navigation_test.dart: drawer settings item reaches SettingScreen
+00:15 +123: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish ack is lost
+00:15 +124: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish ack is lost
+00:15 +125: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish ack is lost
+00:15 +126: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish ack is lost
+00:15 +127: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: SRS retains last attempt when finish ack is lost
+00:15 +128: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: offers verified model download when no active model exists
+00:15 +129: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: offers verified model download when no active model exists
+00:15 +130: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/srs_flashcards_screen_test.dart: Tapping card flips to back side displaying translation and buttons
+00:15 +131: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: runs bounded CPU and XNNPACK benchmarks on demand
+00:15 +132: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: scanner result actions remain reachable at 2x on Size(360.0, 800.0)
+00:15 +133: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: scanner result actions remain reachable at 2x on Size(412.0, 915.0)
+00:15 +134: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: scanner result actions remain reachable at 2x on Size(800.0, 360.0)
+00:15 +135: C:/Users/Phet/.codex/worktrees/figcraft-flutter-v1/LexiQuest/test/screens/object_scanner_screen_test.dart: scanner route title stays readable with Back at 2x
+00:15 +136: All tests passed!
