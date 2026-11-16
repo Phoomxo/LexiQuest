@@ -8,6 +8,7 @@ import '../progress/purchase_remote_writer.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
+import 'field_feature_registry.dart';
 import 'learning_dependencies.dart';
 
 final class AppDependencies {
@@ -21,6 +22,7 @@ final class AppDependencies {
     this.progressSyncService,
     this.purchaseRemoteWriter,
     this.learningDependencies,
+    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
   });
 
   final AppRuntimeStatus runtimeStatus;
@@ -32,6 +34,7 @@ final class AppDependencies {
   final ProgressSyncService? progressSyncService;
   final PurchaseRemoteWriter? purchaseRemoteWriter;
   final LearningDependencies? learningDependencies;
+  final FieldFeatureRegistry fieldFeatures;
 
   @override
   String toString() => 'AppDependencies';

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
@@ -30,6 +31,7 @@ AppDependencies _dependencies({bool ready = true}) {
     ),
     config: null,
     guestSessionService: _FakeGuestSessionService(),
+    fieldFeatures: const BuildFieldFeatureRegistry.allEnabled(),
   );
 }
 
@@ -61,7 +63,7 @@ void main() {
     expect(find.byKey(_drawerButtonKey), findsOneWidget);
   });
 
-  testWidgets('shell has exactly five ordered destinations', (tester) async {
+  testWidgets('shell has exactly six ordered destinations', (tester) async {
     await _pumpHome(tester);
 
     final destinations = tester
@@ -73,7 +75,7 @@ void main() {
         )
         .toList();
 
-    expect(destinations, hasLength(5));
+    expect(destinations, hasLength(6));
     expect(destinations.map((destination) => destination.label), <String>[
       'เรียนรู้',
       'สถิติ',
@@ -97,7 +99,7 @@ void main() {
       matching: find.byType(NavigationDestination),
     );
 
-    for (var index = 0; index < 5; index++) {
+    for (var index = 0; index < 6; index++) {
       await tester.tap(destinations.at(index));
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.widget<IndexedStack>(stackFinder).index, index);
