@@ -172,6 +172,11 @@ final class DriftLearnerPreferencesRepository
               createdAtUtcMs: updatedAtUtcMs,
             ),
           );
+      // Recheck after every awaited write, before transaction commit. Throwing
+      // here rolls back both the preference and superseded/new outbox intents.
+      if (!(mutationAllowed?.call() ?? true)) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
       return true;
     });
     if (changed) await onLocalMutation?.call();

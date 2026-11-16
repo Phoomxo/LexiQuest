@@ -1,0 +1,59 @@
+{
+  "taskId": "01a0cfa2-bb7b-7410-8b01-7f5a3dee5a2d",
+  "atUtc": "2026-09-23T19:13:12.373560+00:00",
+  "sourceFingerprint": "2f3583e87a6e6765f94bbc66ea9e635911e1140f79fa350fd5f9e461d9dbd136",
+  "sourceManifest": "source-manifest-r3-05-part05.json",
+  "gate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-d82150194f9459ab7a5be90f0a9cb12985cbfcfff997826a2973823d19cb8602.json",
+    "sha256": "741dbff4faf8b7dc125353dca9f8366dcd9a88256be4570d3537a4179eb0d016",
+    "status": "Passed",
+    "tests": 50,
+    "distinctFiles": 6,
+    "targets": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/vocabulary_save_reconciliation_test.dart",
+          "test/screens/offline_vocabulary_journey_test.dart",
+          "test/screens/production_shell_navigation_test.dart",
+          "test/screens/vocabulary_route_withdrawal_test.dart",
+          "test/screens/vocab_list_screen_test.dart",
+          "test/screens/vocabulary_delete_reconciliation_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "AI",
+        "commandKey": "8b7216c4b01468e3a0da4e59185de2ec9627c95ddaf51dce54104b7777599251"
+      }
+    ],
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "8b7216c4b01468e3a0da4e59185de2ec9627c95ddaf51dce54104b7777599251",
+        "fingerprint": "b31ab6d981a7345c2489a168740ca6aa178c48b00711bb77b05a6180cfcd465e",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-23T19:05:38.2401308+00:00",
+        "FinishedAt": "2026-09-23T19:05:59.4593389+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\8b7216c4b014-b31ab6d981a7-6304c9e0\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\8b7216c4b014-b31ab6d981a7-6304c9e0\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "b31ab6d981a7345c2489a168740ca6aa178c48b00711bb77b05a6180cfcd465e",
+        "StdoutHash": "257AA2B2A4052FBC8ED240538E40766DBB8F59CC92048721B7338EB6C36B2E2B",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "analysis": {
+    "command": "dart analyze lib/screens/add_vocab_screen.dart test/screens/vocabulary_save_reconciliation_test.dart",
+    "result": "No issues found"
+  },
+  "diffCheck": "Affected source/test CRLF-aware diff check exit0",
+  "initialFocusedGreen": {
+    "tests": 4,
+    "note": "Earlier four-case green before correcting successful-root-route compatibility; not additive"
+  },
+  "reusedUnchanged": "Historical Python26 plus part03 standalone4 unchanged; no rerun. Shared protocol/registry foundations retained. Prior native settings limited by original tested APK; no new native settings claim.",
+  "ownedJobs": []
+}

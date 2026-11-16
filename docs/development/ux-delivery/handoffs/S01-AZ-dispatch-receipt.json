@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-az-20260925-6c39",
+  "atUtc": "2026-09-24T22:27:58.780604+00:00",
+  "status": "CLAIMED",
+  "clientThreadId": "client-new-thread:b91915a8-22bc-4dbc-855a-3c7013ff8dcf",
+  "successorThreadId": "01a0d588-44b1-76a0-8e7a-52c0dab47181",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "sourceThreadId": "01a0d561-33e5-7ff3-ace9-663f145a31c2",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\6c39\\LexiQuest",
+  "stateRevision": 104,
+  "writerReleasedAtUtc": "2026-09-24T22:25:59.205965+00:00",
+  "manifestSha256": "dcded8de33c45dd320d0fe6e4177ddb9a6b7fc3e15486ab8cea68e58fcbb888f",
+  "archiveSha256": "0bcd2caab287dbc37a36acd9a9c43a33da20092ea8ec88939a673e44655fecb1",
+  "receiptRole": "Separate coordination receipt; immutable source snapshot not modified",
+  "recoveryAndCurrentImplementationAuthorizationIncluded": true,
+  "routing": "Astra/medium deterministic fallback, not Jev-selected; Standard/default requested/runtime tier unexposed",
+  "successorWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\ebf7\\LexiQuest",
+  "successorBranch": "feature/ux-s01-az-ebf7",
+  "claimObservedAtUtc": "2026-09-24T22:30:11.666782+00:00",
+  "successorStateRevision": 105
+}
