@@ -14,6 +14,16 @@ final class DisplayPreferencesController extends ChangeNotifier {
   Future<void> _serial = Future<void>.value();
   bool _isInitialized = false;
   bool _disposed = false;
+  int _pendingReads = 0;
+  bool _readRequired = false;
+  bool get isReading => _pendingReads > 0;
+  bool get readRequired => _readRequired;
+  bool get canEdit =>
+      !_disposed &&
+      _isInitialized &&
+      !isReading &&
+      !_readRequired &&
+      _ownerId != null;
   String? _ownerId;
 
   static ThemeMode get fallbackThemeMode => ThemeMode.system;
@@ -30,15 +40,27 @@ final class DisplayPreferencesController extends ChangeNotifier {
   bool get reducedMotionEnabled =>
       _display.motionMode == LearnerMotionPreference.reduced;
 
-  Future<void> initialize() => _enqueue(() async {
-    final saved = await _preferences.read();
-    _replace(saved.display, ownerId: saved.ownerId, initialized: true);
-  });
+  Future<void> initialize() {
+    _pendingReads++;
+    if (!_disposed && _isInitialized) notifyListeners();
+    return _enqueue(() async {
+      try {
+        final saved = await _preferences.readDisplayPreferences();
+        _readRequired = false;
+        _replace(saved.display, ownerId: saved.ownerId, initialized: true);
+      } on Object {
+        _readRequired = true;
+        rethrow;
+      }
+    }).whenComplete(() {
+      _pendingReads--;
+      if (!_disposed) notifyListeners();
+    });
+  }
 
-  Future<void> refreshAfterOwnerTransition() => _enqueue(() async {
+  Future<void> refreshAfterOwnerTransition() async {
     try {
-      final saved = await _preferences.read();
-      _replace(saved.display, ownerId: saved.ownerId, initialized: true);
+      await initialize();
     } on Object {
       _replace(
         LearnerDisplayPreferences.defaults(),
@@ -46,12 +68,17 @@ final class DisplayPreferencesController extends ChangeNotifier {
         initialized: true,
       );
     }
-  });
+  }
 
-  Future<void> selectThemeMode(ThemeMode mode) {
+  Future<void> selectThemeMode(
+    ThemeMode mode, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) {
     final expectedOwnerId = _ownerId;
     return _enqueue(() async {
-      if (expectedOwnerId == null) {
+      if (expectedOwnerId == null ||
+          _readRequired ||
+          !(mutationAllowed?.call() ?? true)) {
         throw const LearnerPreferencesMutationUnavailable();
       }
       final selected = switch (mode) {
@@ -59,40 +86,57 @@ final class DisplayPreferencesController extends ChangeNotifier {
         ThemeMode.light => LearnerThemePreference.light,
         ThemeMode.dark => LearnerThemePreference.dark,
       };
-      if (_isInitialized &&
-          _ownerId == expectedOwnerId &&
-          _display.themeMode == selected) {
+      // A replacement controller may predate an acknowledged durable write.
+      // Use the canonical companion field, and evaluate no-op against that row.
+      final current = await _preferences.readDisplayPreferences(
+        expectedOwnerId: expectedOwnerId,
+      );
+      if (_disposed || !(mutationAllowed?.call() ?? true)) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
+      if (current.display.themeMode == selected) {
+        _replace(current.display, ownerId: current.ownerId, initialized: true);
         return;
       }
       final saved = await _preferences.saveDisplayPreferences(
         expectedOwnerId: expectedOwnerId,
         themeMode: selected,
-        motionMode: _display.motionMode,
-        mutationAllowed: () => !_disposed,
+        motionMode: current.display.motionMode,
+        mutationAllowed: () => !_disposed && (mutationAllowed?.call() ?? true),
       );
       _replace(saved.display, ownerId: saved.ownerId, initialized: true);
     });
   }
 
-  Future<void> setReducedMotion(bool enabled) {
+  Future<void> setReducedMotion(
+    bool enabled, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) {
     final expectedOwnerId = _ownerId;
     return _enqueue(() async {
-      if (expectedOwnerId == null) {
+      if (expectedOwnerId == null ||
+          _readRequired ||
+          !(mutationAllowed?.call() ?? true)) {
         throw const LearnerPreferencesMutationUnavailable();
       }
       final selected = enabled
           ? LearnerMotionPreference.reduced
           : LearnerMotionPreference.system;
-      if (_isInitialized &&
-          _ownerId == expectedOwnerId &&
-          _display.motionMode == selected) {
+      final current = await _preferences.readDisplayPreferences(
+        expectedOwnerId: expectedOwnerId,
+      );
+      if (_disposed || !(mutationAllowed?.call() ?? true)) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
+      if (current.display.motionMode == selected) {
+        _replace(current.display, ownerId: current.ownerId, initialized: true);
         return;
       }
       final saved = await _preferences.saveDisplayPreferences(
         expectedOwnerId: expectedOwnerId,
-        themeMode: _display.themeMode,
+        themeMode: current.display.themeMode,
         motionMode: selected,
-        mutationAllowed: () => !_disposed,
+        mutationAllowed: () => !_disposed && (mutationAllowed?.call() ?? true),
       );
       _replace(saved.display, ownerId: saved.ownerId, initialized: true);
     });
@@ -103,7 +147,15 @@ final class DisplayPreferencesController extends ChangeNotifier {
       return Future<void>.error(StateError('Display preferences disposed.'));
     }
     final result = _serial.then((_) async {
-      if (!_disposed) await operation();
+      if (!_disposed) {
+        try {
+          await operation();
+        } on Object {
+          _readRequired = true;
+          if (!_disposed) notifyListeners();
+          rethrow;
+        }
+      }
     });
     _serial = result.then<void>((_) {}, onError: (_, _) {});
     return result;

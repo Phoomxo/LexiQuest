@@ -834,3 +834,10 @@ Vivo isolated110 actual replies accurately read0 then1 sample,0weak words/0due, 
 ### W08 catalog context — checkpoint113
 
 Coverage audit found catalog/detail descriptive context missing. Added read-only catalog counts, no-match/empty states and bounded mounted pack metadata/revision, explicitly not learner proficiency or completion. Native controls remain unchanged. RED then23 catalog tests PASS;two-file analysis clean. [Evidence](catalog-context-113.json). Detail context,late-attachment/adversarial coverage and native actual-provider verification remain pending;installed110 unchanged.
+
+### Checkpoints114-116 — catalog, Jev review, pack detail
+Catalog canonical-owner regression repaired; added mounted tile owner transition coverage. Pack detail now carries query owner provenance and bounded read-only context. Detail/use-case24 and catalog/progress35 tests PASS;6file analyzer clean. Jev guard/caller18 offline tests PASS and2 live calls (synthetic + sanitized catalog review) returned owner-isolation with high uncertainty,cost0. This guided extra mounted-tile coverage; efficiency/full pilot not proven. Evidence: catalog-owner-114.json, jev-review-115.json, pack-detail-context-116.json. Native and14/14 acceptance remain OPEN.
+
+
+Native116: isolated package identity checked, build/install PASS. Vivo awake; home→planning→empty catalog and unpaired AI expand/collapse PASS. No verified pack exists in current isolated fixture; nonempty/detail/provider native acceptance remains pending and is not claimed from host tests. Device left on catalog; no bridge running. Checkpoint145.
+

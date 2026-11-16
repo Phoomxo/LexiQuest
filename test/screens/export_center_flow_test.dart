@@ -24,8 +24,379 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'AD inherited dependency removal cancels preparation and retry uses restored service',
+    (tester) async {
+      final fixture = (await tester.runAsync(_ExportFixture.create))!;
+      final font = Completer<ByteData>();
+      var preparing = false;
+      final exports = _copyExports(
+        fixture.exports,
+        font: () {
+          preparing = true;
+          return font.future;
+        },
+      );
+      final owners = DriftReviewOwnerIdentityReader(fixture.database);
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:synthetic-ui-export-owner',
+      );
+      Future<void> mount(ExportUseCases? value) async {
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: AppDependenciesScope(
+              dependencies: _dependencies(fixture, value, owners),
+              child: const MaterialApp(home: ExportCenterScreen()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      try {
+        await mount(exports);
+        await _choose(tester, ExportFormat.pdf);
+        await _tap(tester, find.text('ประวัติการอ่าน'));
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => preparing);
+        await mount(null);
+        await _reveal(tester, find.text('สร้างและบันทึกไฟล์'));
+        expect(
+          tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+          isNull,
+        );
+        font.complete(await fixture.exports.loadThaiFont());
+        await tester.pumpAndSettle();
+        expect(fixture.artifacts, isEmpty);
+        await mount(fixture.exports);
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+        expect(fixture.artifacts.single.format, ExportFormat.pdf);
+        expect(_guidance(registry)['selection']['reading'], isFalse);
+      } finally {
+        if (!font.isCompleted) font.completeError(StateError('test cleanup'));
+        await _close(tester, fixture);
+      }
+    },
+  );
+
+  testWidgets(
+    'AD owner reader replacement cancels pending preparation without saving stale data',
+    (tester) async {
+      final fixture = (await tester.runAsync(_ExportFixture.create))!;
+      final font = Completer<ByteData>();
+      var preparing = false;
+      final exports = _copyExports(
+        fixture.exports,
+        font: () {
+          preparing = true;
+          return font.future;
+        },
+      );
+      final owners = DriftReviewOwnerIdentityReader(fixture.database);
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:synthetic-ui-export-owner',
+      );
+      try {
+        await _mount(tester, exports, owners, registry);
+        await _choose(tester, ExportFormat.pdf);
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => preparing);
+        await _mount(tester, exports, _UnavailableOwner(), registry);
+        expect(registry.snapshot()['context'], isEmpty);
+        font.complete(await fixture.exports.loadThaiFont());
+        await tester.pumpAndSettle();
+        expect(fixture.artifacts, isEmpty);
+        expect(_status(tester), isEmpty);
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+        expect(fixture.artifacts, hasLength(1));
+        expect(registry.snapshot()['context'], isEmpty);
+      } finally {
+        if (!font.isCompleted) font.completeError(StateError('test cleanup'));
+        await _close(tester, fixture);
+      }
+    },
+  );
+
+  for (final boundary in ['font', 'desktop-picker']) {
+    testWidgets(
+      'AD $boundary failure is private and explicitly retryable at 360px 200%',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final fixture = (await tester.runAsync(_ExportFixture.create))!;
+        var fail = true;
+        var calls = 0;
+        final exports = _copyExports(
+          fixture.exports,
+          font: boundary == 'font'
+              ? () async {
+                  calls++;
+                  if (fail) throw StateError('private-font-path');
+                  return fixture.exports.loadThaiFont();
+                }
+              : null,
+          store: boundary == 'desktop-picker'
+              ? FileSelectorExportStore(
+                  isAndroid: false,
+                  desktopLocation: (artifact) async {
+                    calls++;
+                    if (fail) throw StateError('private-picker-path');
+                    return File.fromUri(
+                      fixture.directory.uri.resolve(artifact.suggestedFileName),
+                    ).path;
+                  },
+                  temporaryDirectory: () async => fixture.directory,
+                )
+              : null,
+        );
+        final owners = DriftReviewOwnerIdentityReader(fixture.database);
+        final registry = MenuActionRegistry(
+          currentOwner: () => 'local:synthetic-ui-export-owner',
+        );
+        try {
+          await _mount(tester, exports, owners, registry, large: true);
+          await _choose(tester, ExportFormat.pdf);
+          await _tap(tester, find.text('ประวัติคำตอบ'));
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _guidance(registry)['status'] == 'failed');
+          await _reveal(
+            tester,
+            find.byKey(const ValueKey<String>('export-status')),
+          );
+          expect(_status(tester), contains('ลองอีกครั้ง'));
+          expect(_status(tester), isNot(contains('private-')));
+          expect(_guidance(registry).toString(), isNot(contains('private-')));
+          expect(_guidance(registry)['selection']['attempts'], isFalse);
+          expect(registry.snapshot()['actions'], isEmpty);
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            0,
+          );
+          await tester.pump(const Duration(seconds: 1));
+          expect(calls, 1);
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _guidance(registry)['status'] == 'failed');
+          expect(calls, 2);
+          fail = false;
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+          expect(calls, 3);
+          expect(_guidance(registry)['format'], 'pdf');
+          expect(_guidance(registry)['selection']['attempts'], isFalse);
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            1,
+          );
+        } finally {
+          await _close(tester, fixture);
+        }
+      },
+    );
+  }
+
+  for (final late in ['success', 'failure']) {
+    testWidgets(
+      'AD replacement cancels old picker and fences late $late and callbacks',
+      (tester) async {
+        final fixture = (await tester.runAsync(_ExportFixture.create))!;
+        final pending = Completer<String?>();
+        final newPicker = Completer<String?>();
+        var oldPickerCalls = 0;
+        var oldWrites = 0;
+        final oldExports = _copyExports(
+          fixture.exports,
+          store: FileSelectorExportStore(
+            isAndroid: false,
+            desktopLocation: (_) {
+              oldPickerCalls++;
+              return pending.future;
+            },
+            desktopSaver: (_, _) async {
+              oldWrites++;
+            },
+            temporaryDirectory: () async => fixture.directory,
+          ),
+        );
+        final owners = DriftReviewOwnerIdentityReader(fixture.database);
+        final registry = MenuActionRegistry(
+          currentOwner: () => 'local:synthetic-ui-export-owner',
+        );
+        try {
+          await _mount(tester, oldExports, owners, registry);
+          await _choose(tester, ExportFormat.anki);
+          await _reveal(tester, find.text('สร้างและบันทึกไฟล์'));
+          final oldStart = tester
+              .widget<FilledButton>(find.byType(FilledButton))
+              .onPressed!;
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => oldPickerCalls == 1);
+          final oldCancel = tester
+              .widget<OutlinedButton>(find.byType(OutlinedButton))
+              .onPressed!;
+          await _mount(tester, fixture.exports, owners, registry);
+          expect(_guidance(registry)['status'], 'idle');
+          expect(_guidance(registry)['format'], 'anki');
+          oldStart();
+          oldCancel();
+          await tester.pump();
+          expect(_guidance(registry)['status'], 'idle');
+          expect(fixture.artifacts, isEmpty);
+          fixture.saver = (_) => newPicker.future;
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => fixture.artifacts.isNotEmpty);
+          if (late == 'success') {
+            pending.complete(
+              File.fromUri(fixture.directory.uri.resolve('stale.csv')).path,
+            );
+          } else {
+            pending.completeError(StateError('private-stale-picker'));
+          }
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(oldWrites, 0);
+          expect(oldPickerCalls, 1);
+          expect(_guidance(registry)['status'], 'running');
+          oldCancel();
+          await tester.pump();
+          expect(_guidance(registry)['status'], 'running');
+          newPicker.complete(null);
+          await _until(
+            tester,
+            () => _guidance(registry)['failureCode'] == 'cancelled',
+          );
+          fixture.saver = null;
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+          expect(_guidance(registry)['status'], 'saved');
+          expect(fixture.artifacts, hasLength(2));
+        } finally {
+          if (!pending.isCompleted) pending.complete(null);
+          if (!newPicker.isCompleted) newPicker.complete(null);
+          await _close(tester, fixture);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'AD optional owner reader replacement rejects late identity and old status',
+    (tester) async {
+      final fixture = (await tester.runAsync(_ExportFixture.create))!;
+      final pending = Completer<String>();
+      final oldOwners = _DeferredOwner(pending.future);
+      final newOwners = _DeferredOwner(Future.value('new-guidance-owner'));
+      var currentOwner = 'new-guidance-owner';
+      final registry = MenuActionRegistry(currentOwner: () => currentOwner);
+      try {
+        await _mount(tester, fixture.exports, oldOwners, registry);
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+        await _mount(tester, fixture.exports, newOwners, registry);
+        expect(
+          tester
+              .widget<MenuActionBinding>(find.byType(MenuActionBinding))
+              .ownerId,
+          'new-guidance-owner',
+        );
+        expect(_guidance(registry)['status'], 'idle');
+        expect(_status(tester), isEmpty);
+        pending.complete('local:synthetic-ui-export-owner');
+        await tester.pumpAndSettle();
+        expect(_guidance(registry)['status'], 'idle');
+        currentOwner = 'local:synthetic-ui-export-owner';
+        registry.invalidateSession(preserveContext: true);
+        expect(registry.snapshot()['context'], isEmpty);
+        expect(fixture.artifacts, hasLength(1));
+      } finally {
+        if (!pending.isCompleted)
+          pending.complete('local:synthetic-ui-export-owner');
+        await _close(tester, fixture);
+      }
+    },
+  );
+
+  for (final late in ['success', 'failure']) {
+    testWidgets(
+      'AD route pop cancels pending preparation before transition ends ($late)',
+      (tester) async {
+        final fixture = (await tester.runAsync(_ExportFixture.create))!;
+        final font = Completer<ByteData>();
+        var fontCalls = 0;
+        final exports = _copyExports(
+          fixture.exports,
+          font: () {
+            fontCalls++;
+            return font.future;
+          },
+        );
+        final navigator = GlobalKey<NavigatorState>();
+        final owners = DriftReviewOwnerIdentityReader(fixture.database);
+        final registry = MenuActionRegistry(
+          currentOwner: () => 'local:synthetic-ui-export-owner',
+        );
+        try {
+          await tester.pumpWidget(
+            MenuActionScope(
+              registry: registry,
+              child: MaterialApp(
+                navigatorKey: navigator,
+                home: const Scaffold(body: Text('home')),
+              ),
+            ),
+          );
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  ExportCenterScreen(exports: exports, ownerIdentities: owners),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await _choose(tester, ExportFormat.pdf);
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => fontCalls == 1);
+          final staleCancel = tester
+              .widget<OutlinedButton>(find.byType(OutlinedButton))
+              .onPressed!;
+          navigator.currentState!.pop();
+          // The outgoing state is still mounted during the reverse transition.
+          expect(find.byType(ExportCenterScreen), findsOneWidget);
+          if (late == 'success') {
+            font.complete(await fixture.exports.loadThaiFont());
+          } else {
+            font.completeError(StateError('private-late-font'));
+          }
+          await tester.pump();
+          await tester.pumpAndSettle();
+          staleCancel();
+          await tester.pump();
+          expect(tester.takeException(), isNull);
+          expect(fixture.artifacts, isEmpty);
+          expect(registry.snapshot()['context'], isEmpty);
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            0,
+          );
+        } finally {
+          if (!font.isCompleted) font.completeError(StateError('test cleanup'));
+          await _close(tester, fixture);
+        }
+      },
+    );
+  }
+
   for (final format in ExportFormat.values) {
     testWidgets('real export button saves readable ${format.name} bytes', (
       tester,
@@ -306,6 +677,86 @@ void main() {
       await _close(tester, fixture);
     }
   });
+}
+
+ExportUseCases _copyExports(
+  ExportUseCases source, {
+  ExportFontLoader? font,
+  ExportArtifactStore? store,
+}) => ExportUseCases(
+  reader: source.reader,
+  store: store ?? source.store,
+  nowUtc: source.nowUtc,
+  loadThaiFont: font ?? source.loadThaiFont,
+  lifecycleArchive: source.lifecycleArchive,
+);
+
+AppDependencies _dependencies(
+  _ExportFixture fixture,
+  ExportUseCases? exports,
+  ReviewOwnerIdentityReader owners,
+) {
+  final research = InertResearchDependencies(fixture.database);
+  return AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _GuestSession(),
+    quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
+    database: fixture.database,
+    exports: exports,
+    activeOwnerIdentities: owners,
+  );
+}
+
+final class _GuestSession implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'synthetic-export');
+}
+
+Future<void> _mount(
+  WidgetTester tester,
+  ExportUseCases exports,
+  ReviewOwnerIdentityReader owners,
+  MenuActionRegistry registry, {
+  bool large = false,
+}) async {
+  await tester.pumpWidget(
+    MenuActionScope(
+      registry: registry,
+      child: MaterialApp(
+        builder: large
+            ? (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: child!,
+              )
+            : null,
+        home: ExportCenterScreen(exports: exports, ownerIdentities: owners),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await _until(tester, () => true);
+}
+
+final class _DeferredOwner implements ReviewOwnerIdentityReader {
+  _DeferredOwner(this.result);
+  final Future<String> result;
+  @override
+  Future<String> requireSingleActiveOwnerId() => result;
 }
 
 Future<void> _open(

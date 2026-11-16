@@ -10,6 +10,41 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 
 void main() {
+  test(
+    'AJ learning write rechecks lifetime before commit and rolls back outbox',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final cases = _useCases(database);
+      final baseline = await cases.save(
+        goal: LearnerPreferenceGoal.balancedGrowth,
+        availableMinutesPerDay: 20,
+        activityPreference: LearnerActivityPreference.mixedPractice,
+      );
+      final rows = (await database.select(database.outboxOperations).get())
+          .map((r) => r.toJson())
+          .toList();
+      var checks = 0;
+      await expectLater(
+        cases.save(
+          expectedOwnerId: baseline.ownerId,
+          goal: LearnerPreferenceGoal.examPreparation,
+          availableMinutesPerDay: 45,
+          activityPreference: LearnerActivityPreference.quiz,
+          mutationAllowed: () => ++checks == 1,
+        ),
+        throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+      );
+      expect(checks, greaterThanOrEqualTo(2));
+      expect(await cases.read(), baseline);
+      expect(
+        (await database.select(database.outboxOperations).get())
+            .map((r) => r.toJson())
+            .toList(),
+        rows,
+      );
+    },
+  );
   group('f35 learner preference authority', () {
     test(
       'exposes typed editable defaults without a learning-style label',

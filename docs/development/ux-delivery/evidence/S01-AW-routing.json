@@ -1,0 +1,13 @@
+{
+  "atUtc": "2026-09-24T21:02:24.125996+00:00",
+  "model": "gpt-6-astra",
+  "reasoning": "medium",
+  "selection": "deterministic current-model fallback, not Jev-selected",
+  "requestedTier": "Standard/default",
+  "runtimeTier": "unexposed",
+  "liveInference": false,
+  "originalJevTrancheUsd": 5,
+  "ledgerQuotaCacheUnchanged": true,
+  "controllerLoginBlockUnchanged": true,
+  "freshExecutorFreeCreditAutoReloadSharedSpendQuotaAndDurableReservationRequiredBeforeLiveRouting": true
+}

@@ -79,6 +79,22 @@ final class LearnerPreferencesUseCases {
     return repository.read(owner.id);
   }
 
+  /// Display readback must still belong to the canonical active owner after IO.
+  Future<LearnerPreferences> readDisplayPreferences({
+    String? expectedOwnerId,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    final saved = await repository.read(owner.id);
+    final current = await owners.getOrCreateActiveOwner();
+    if (current.id != owner.id || saved.ownerId != owner.id) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    return saved;
+  }
+
   Future<LearnerPreferences> saveDisplayPreferences({
     required String expectedOwnerId,
     required LearnerThemePreference themeMode,
@@ -92,7 +108,7 @@ final class LearnerPreferencesUseCases {
     final current = await repository.read(owner.id);
     if (current.display.themeMode == themeMode &&
         current.display.motionMode == motionMode) {
-      return current;
+      return readDisplayPreferences(expectedOwnerId: expectedOwnerId);
     }
     await repository.saveDisplayPreferences(
       owner.id,
@@ -103,7 +119,7 @@ final class LearnerPreferencesUseCases {
       ),
       mutationAllowed: mutationAllowed,
     );
-    return repository.read(owner.id);
+    return readDisplayPreferences(expectedOwnerId: expectedOwnerId);
   }
 
   Future<EffectiveLearnerPreferences> readEffective({

@@ -40,7 +40,8 @@ class SettingScreen extends StatefulWidget {
   State<SettingScreen> createState() => _SettingScreenState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _SettingScreenState extends State<SettingScreen>
+    with WidgetsBindingObserver {
   AccountUseCases? _account;
   ResearchConsentUseCases? _researchConsent;
   Future<ResearchConsentStatus>? _consentStatus;
@@ -53,11 +54,57 @@ class _SettingScreenState extends State<SettingScreen> {
   Listenable? _featureChanges;
   bool _busy = false;
   bool _displayBusy = false;
+  int _displayGeneration = 0;
+  bool _displayForeground = true;
+  bool _displayVisible = false;
+  bool _displayExited = false;
+  String? _displayOwner;
+  bool _displayReading = false;
+  bool get _displayActive =>
+      mounted &&
+      !_displayExited &&
+      _displayForeground &&
+      TickerMode.valuesOf(context).enabled &&
+      ModalRoute.of(context)?.isCurrent != false;
+  bool _displayCurrent(int generation, DisplayPreferencesController display) =>
+      generation == _displayGeneration &&
+      identical(display, _displayPreferences) &&
+      _displayActive;
+  void _retireDisplay() {
+    _displayGeneration++;
+    _displayBusy = false;
+  }
+
+  void _syncDisplayVisibility() {
+    final visible = _displayActive;
+    if (visible != _displayVisible) _retireDisplay();
+    _displayVisible = visible;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final state = WidgetsBinding.instance.lifecycleState;
+    _displayForeground = state == null || state == AppLifecycleState.resumed;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    setState(() {
+      _displayForeground = state == AppLifecycleState.resumed;
+      _retireDisplay();
+      _syncDisplayVisibility();
+    });
+  }
+
   bool _erasureConfirming = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncDisplayVisibility();
     final dependencies = AppDependenciesScope.maybeOf(context);
     _account ??= widget.account ?? dependencies?.account;
     _researchConsent ??=
@@ -93,12 +140,26 @@ class _SettingScreenState extends State<SettingScreen> {
   void _bindDisplayPreferences(DisplayPreferencesController? controller) {
     if (identical(_displayPreferences, controller)) return;
     _displayPreferences?.removeListener(_onDisplayPreferencesChanged);
+    _retireDisplay();
     _displayPreferences = controller;
+    _displayOwner = controller?.ownerId;
+    _displayReading = controller?.isReading ?? false;
     controller?.addListener(_onDisplayPreferencesChanged);
   }
 
   void _onDisplayPreferencesChanged() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        if ((_displayPreferences?.isReading ?? false) && !_displayReading) {
+          _retireDisplay();
+        }
+        _displayReading = _displayPreferences?.isReading ?? false;
+        if (_displayOwner != _displayPreferences?.ownerId) {
+          _displayOwner = _displayPreferences?.ownerId;
+          _retireDisplay();
+        }
+      });
+    }
   }
 
   void _bindFeatureRegistry(FeatureRegistry? registry) {
@@ -116,6 +177,9 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   void dispose() {
+    _displayExited = true;
+    _retireDisplay();
+    WidgetsBinding.instance.removeObserver(this);
     _displayPreferences?.removeListener(_onDisplayPreferencesChanged);
     _featureChanges?.removeListener(_onFeatureRegistryChanged);
     super.dispose();
@@ -151,29 +215,57 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
-  Future<void> _selectTheme(ThemeMode mode) async {
-    final display = _displayPreferences;
-    if (display == null || _displayBusy) return;
+  Future<void> _changeDisplay(
+    int generation,
+    DisplayPreferencesController display,
+    Future<void> Function(bool Function()) save,
+  ) async {
+    if (!_displayCurrent(generation, display) ||
+        _displayBusy ||
+        !display.canEdit) {
+      return;
+    }
     setState(() => _displayBusy = true);
+    bool allowed() => _displayCurrent(generation, display);
     try {
-      await display.selectThemeMode(mode);
+      await save(allowed);
     } on Object {
-      if (mounted) _show('บันทึกธีมไม่สำเร็จ');
+      if (allowed()) {
+        _show('ยังยืนยันผลบันทึกไม่ได้ โปรดอ่านค่าที่บันทึกก่อนเลือกอีกครั้ง');
+      }
     } finally {
-      if (mounted) setState(() => _displayBusy = false);
+      if (allowed()) {
+        setState(() {
+          _displayBusy = false;
+          _displayGeneration++;
+        });
+      }
     }
   }
 
-  Future<void> _setReducedMotion(bool enabled) async {
-    final display = _displayPreferences;
-    if (display == null || _displayBusy) return;
+  Future<void> _readDisplay(
+    int generation,
+    DisplayPreferencesController display,
+  ) async {
+    if (!_displayCurrent(generation, display) ||
+        _displayBusy ||
+        display.isReading) {
+      return;
+    }
     setState(() => _displayBusy = true);
     try {
-      await display.setReducedMotion(enabled);
+      await display.initialize();
     } on Object {
-      if (mounted) _show('บันทึกการลดการเคลื่อนไหวไม่สำเร็จ');
+      if (_displayCurrent(generation, display)) {
+        _show('อ่านค่าการแสดงผลไม่ได้ ลองอ่านอีกครั้ง');
+      }
     } finally {
-      if (mounted) setState(() => _displayBusy = false);
+      if (_displayCurrent(generation, display)) {
+        setState(() {
+          _displayBusy = false;
+          _displayGeneration++;
+        });
+      }
     }
   }
 
@@ -416,6 +508,11 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final generation = _displayGeneration;
+    final displayReady =
+        !_displayBusy &&
+        _displayActive &&
+        (_displayPreferences?.canEdit ?? false);
     final dependencies = AppDependenciesScope.maybeOf(context);
     final session = _account?.currentSession;
     final cloudReady =
@@ -442,535 +539,651 @@ class _SettingScreenState extends State<SettingScreen> {
     );
     final logoutEntry = NavigationGlossary.require('settings/logout');
     final eraseLocalDataEntry = NavigationGlossary.require('erase-local-data');
-    return Scaffold(
-      appBar: AppBar(title: const Text('ตั้งค่า')),
-      body: ListTileTheme(
-        data: ListTileTheme.of(context).copyWith(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _displayExited = true;
+          _retireDisplay();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ตั้งค่า')),
+        body: ListTileTheme(
+          data: ListTileTheme.of(context).copyWith(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            titleTextStyle: Theme.of(context).textTheme.titleMedium,
+            subtitleTextStyle: Theme.of(context).textTheme.bodySmall,
           ),
-          titleTextStyle: Theme.of(context).textTheme.titleMedium,
-          subtitleTextStyle: Theme.of(context).textTheme.bodySmall,
-        ),
-        child: MenuActionListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (_displayPreferences case final display?)
-              Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      MenuActionBinding(
-                        id: displayEntry.id,
-                        ownerId: display.ownerId,
-                        label: displayEntry.fullThaiLabel,
-                        onInvoke: null,
-                        readValue: display.ownerId == null
-                            ? null
-                            : 'ธีม ${display.themeMode.name} · ลดการเคลื่อนไหว ${display.reducedMotionEnabled}',
-                        child: Tooltip(
-                          message: displayEntry.tooltip,
-                          child: Semantics(
-                            header: true,
-                            label: displayEntry.semanticsLabel,
-                            child: Row(
-                              children: [
-                                Icon(displayEntry.icon),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    displayEntry.fullThaiLabel,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleLarge,
+          child: MenuActionListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (_displayPreferences case final display?)
+                if (!display.canEdit)
+                  ListTile(
+                    title: Text(
+                      display.isReading
+                          ? 'กำลังอ่านค่าการแสดงผล'
+                          : 'อ่านค่าที่บันทึกก่อนเลือกอีกครั้ง',
+                    ),
+                    trailing: TextButton(
+                      key: const ValueKey('display-retry'),
+                      onPressed: display.isReading || _displayBusy
+                          ? null
+                          : () => _readDisplay(generation, display),
+                      child: const Text('อ่านค่าอีกครั้ง'),
+                    ),
+                  ),
+              if (_displayPreferences case final display?)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MenuActionBinding(
+                          id: displayEntry.id,
+                          ownerId: display.ownerId,
+                          label: displayEntry.fullThaiLabel,
+                          onInvoke: null,
+                          readValue: display.ownerId == null
+                              ? null
+                              : 'ธีม ${display.themeMode.name} · ลดการเคลื่อนไหว ${display.reducedMotionEnabled}',
+                          child: Tooltip(
+                            message: displayEntry.tooltip,
+                            child: Semantics(
+                              header: true,
+                              label: displayEntry.semanticsLabel,
+                              child: Row(
+                                children: [
+                                  Icon(displayEntry.icon),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      displayEntry.fullThaiLabel,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        alignment: WrapAlignment.start,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          Tooltip(
-                            message: systemThemeEntry.tooltip,
-                            child: MenuActionBinding(
-                              id: systemThemeEntry.id,
-                              ownerId: display.ownerId,
-                              label: systemThemeEntry.fullThaiLabel,
-                              onInvoke: _displayBusy
-                                  ? null
-                                  : () => _selectTheme(ThemeMode.system),
-                              child: Semantics(
-                                button: true,
-                                enabled: !_displayBusy,
-                                label: systemThemeEntry.semanticsLabel,
-                                selected: display.themeMode == ThemeMode.system,
-                                onTap: _displayBusy
+                        const SizedBox(height: 12),
+                        Wrap(
+                          alignment: WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Tooltip(
+                              message: systemThemeEntry.tooltip,
+                              child: MenuActionBinding(
+                                id: systemThemeEntry.id,
+                                ownerId: display.ownerId,
+                                label: systemThemeEntry.fullThaiLabel,
+                                onInvoke: !displayReady
                                     ? null
-                                    : () => _selectTheme(ThemeMode.system),
-                                excludeSemantics: true,
-                                child: ChoiceChip(
-                                  key: const ValueKey<String>('theme-system'),
+                                    : () => _changeDisplay(
+                                        generation,
+                                        display,
+                                        (allowed) => display.selectThemeMode(
+                                          ThemeMode.system,
+                                          mutationAllowed: allowed,
+                                        ),
+                                      ),
+                                child: Semantics(
+                                  button: true,
+                                  enabled: displayReady,
+                                  label: systemThemeEntry.semanticsLabel,
                                   selected:
                                       display.themeMode == ThemeMode.system,
-                                  onSelected: _displayBusy
+                                  onTap: !displayReady
                                       ? null
-                                      : (_) => _selectTheme(ThemeMode.system),
-                                  label: Text(systemThemeEntry.fullThaiLabel),
-                                  avatar: Icon(systemThemeEntry.icon),
+                                      : () => _changeDisplay(
+                                          generation,
+                                          display,
+                                          (allowed) => display.selectThemeMode(
+                                            ThemeMode.system,
+                                            mutationAllowed: allowed,
+                                          ),
+                                        ),
+                                  excludeSemantics: true,
+                                  child: ChoiceChip(
+                                    key: const ValueKey<String>('theme-system'),
+                                    selected:
+                                        display.themeMode == ThemeMode.system,
+                                    onSelected: !displayReady
+                                        ? null
+                                        : (_) => _changeDisplay(
+                                            generation,
+                                            display,
+                                            (allowed) =>
+                                                display.selectThemeMode(
+                                                  ThemeMode.system,
+                                                  mutationAllowed: allowed,
+                                                ),
+                                          ),
+                                    label: Text(systemThemeEntry.fullThaiLabel),
+                                    avatar: Icon(systemThemeEntry.icon),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Tooltip(
-                            message: lightThemeEntry.tooltip,
-                            child: MenuActionBinding(
-                              id: lightThemeEntry.id,
-                              ownerId: display.ownerId,
-                              label: lightThemeEntry.fullThaiLabel,
-                              onInvoke: _displayBusy
-                                  ? null
-                                  : () => _selectTheme(ThemeMode.light),
-                              child: Semantics(
-                                button: true,
-                                enabled: !_displayBusy,
-                                label: lightThemeEntry.semanticsLabel,
-                                selected: display.themeMode == ThemeMode.light,
-                                onTap: _displayBusy
+                            Tooltip(
+                              message: lightThemeEntry.tooltip,
+                              child: MenuActionBinding(
+                                id: lightThemeEntry.id,
+                                ownerId: display.ownerId,
+                                label: lightThemeEntry.fullThaiLabel,
+                                onInvoke: !displayReady
                                     ? null
-                                    : () => _selectTheme(ThemeMode.light),
-                                excludeSemantics: true,
-                                child: ChoiceChip(
-                                  key: const ValueKey<String>('theme-light'),
+                                    : () => _changeDisplay(
+                                        generation,
+                                        display,
+                                        (allowed) => display.selectThemeMode(
+                                          ThemeMode.light,
+                                          mutationAllowed: allowed,
+                                        ),
+                                      ),
+                                child: Semantics(
+                                  button: true,
+                                  enabled: displayReady,
+                                  label: lightThemeEntry.semanticsLabel,
                                   selected:
                                       display.themeMode == ThemeMode.light,
-                                  onSelected: _displayBusy
+                                  onTap: !displayReady
                                       ? null
-                                      : (_) => _selectTheme(ThemeMode.light),
-                                  label: Text(lightThemeEntry.fullThaiLabel),
-                                  avatar: Icon(lightThemeEntry.icon),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Tooltip(
-                            message: darkThemeEntry.tooltip,
-                            child: MenuActionBinding(
-                              id: darkThemeEntry.id,
-                              ownerId: display.ownerId,
-                              label: darkThemeEntry.fullThaiLabel,
-                              onInvoke: _displayBusy
-                                  ? null
-                                  : () => _selectTheme(ThemeMode.dark),
-                              child: Semantics(
-                                button: true,
-                                enabled: !_displayBusy,
-                                label: darkThemeEntry.semanticsLabel,
-                                selected: display.themeMode == ThemeMode.dark,
-                                onTap: _displayBusy
-                                    ? null
-                                    : () => _selectTheme(ThemeMode.dark),
-                                excludeSemantics: true,
-                                child: ChoiceChip(
-                                  key: const ValueKey<String>('theme-dark'),
-                                  selected: display.themeMode == ThemeMode.dark,
-                                  onSelected: _displayBusy
-                                      ? null
-                                      : (_) => _selectTheme(ThemeMode.dark),
-                                  label: Text(darkThemeEntry.fullThaiLabel),
-                                  avatar: Icon(darkThemeEntry.icon),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Tooltip(
-                        message: reducedMotionEntry.tooltip,
-                        child: MenuActionBinding(
-                          id: reducedMotionEntry.id,
-                          ownerId: display.ownerId,
-                          label: reducedMotionEntry.fullThaiLabel,
-                          onInvoke: _displayBusy
-                              ? null
-                              : () => _setReducedMotion(
-                                  !display.reducedMotionEnabled,
-                                ),
-                          child: Semantics(
-                            enabled: !_displayBusy,
-                            label: reducedMotionEntry.semanticsLabel,
-                            hint:
-                                'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
-                            toggled: display.reducedMotionEnabled,
-                            onTap: _displayBusy
-                                ? null
-                                : () => _setReducedMotion(
-                                    !display.reducedMotionEnabled,
+                                      : () => _changeDisplay(
+                                          generation,
+                                          display,
+                                          (allowed) => display.selectThemeMode(
+                                            ThemeMode.light,
+                                            mutationAllowed: allowed,
+                                          ),
+                                        ),
+                                  excludeSemantics: true,
+                                  child: ChoiceChip(
+                                    key: const ValueKey<String>('theme-light'),
+                                    selected:
+                                        display.themeMode == ThemeMode.light,
+                                    onSelected: !displayReady
+                                        ? null
+                                        : (_) => _changeDisplay(
+                                            generation,
+                                            display,
+                                            (allowed) =>
+                                                display.selectThemeMode(
+                                                  ThemeMode.light,
+                                                  mutationAllowed: allowed,
+                                                ),
+                                          ),
+                                    label: Text(lightThemeEntry.fullThaiLabel),
+                                    avatar: Icon(lightThemeEntry.icon),
                                   ),
-                            excludeSemantics: true,
-                            child: SwitchListTile(
-                              key: const ValueKey<String>(
-                                'reduced-motion-switch',
+                                ),
                               ),
-                              contentPadding: EdgeInsets.zero,
-                              secondary: Icon(reducedMotionEntry.icon),
-                              title: Text(reducedMotionEntry.fullThaiLabel),
-                              subtitle: const Text(
-                                'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                            ),
+                            Tooltip(
+                              message: darkThemeEntry.tooltip,
+                              child: MenuActionBinding(
+                                id: darkThemeEntry.id,
+                                ownerId: display.ownerId,
+                                label: darkThemeEntry.fullThaiLabel,
+                                onInvoke: !displayReady
+                                    ? null
+                                    : () => _changeDisplay(
+                                        generation,
+                                        display,
+                                        (allowed) => display.selectThemeMode(
+                                          ThemeMode.dark,
+                                          mutationAllowed: allowed,
+                                        ),
+                                      ),
+                                child: Semantics(
+                                  button: true,
+                                  enabled: displayReady,
+                                  label: darkThemeEntry.semanticsLabel,
+                                  selected: display.themeMode == ThemeMode.dark,
+                                  onTap: !displayReady
+                                      ? null
+                                      : () => _changeDisplay(
+                                          generation,
+                                          display,
+                                          (allowed) => display.selectThemeMode(
+                                            ThemeMode.dark,
+                                            mutationAllowed: allowed,
+                                          ),
+                                        ),
+                                  excludeSemantics: true,
+                                  child: ChoiceChip(
+                                    key: const ValueKey<String>('theme-dark'),
+                                    selected:
+                                        display.themeMode == ThemeMode.dark,
+                                    onSelected: !displayReady
+                                        ? null
+                                        : (_) => _changeDisplay(
+                                            generation,
+                                            display,
+                                            (allowed) =>
+                                                display.selectThemeMode(
+                                                  ThemeMode.dark,
+                                                  mutationAllowed: allowed,
+                                                ),
+                                          ),
+                                    label: Text(darkThemeEntry.fullThaiLabel),
+                                    avatar: Icon(darkThemeEntry.icon),
+                                  ),
+                                ),
                               ),
-                              value: display.reducedMotionEnabled,
-                              onChanged: _displayBusy
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Tooltip(
+                          message: reducedMotionEntry.tooltip,
+                          child: MenuActionBinding(
+                            id: reducedMotionEntry.id,
+                            ownerId: display.ownerId,
+                            label: reducedMotionEntry.fullThaiLabel,
+                            onInvoke: !displayReady
+                                ? null
+                                : () => _changeDisplay(
+                                    generation,
+                                    display,
+                                    (allowed) => display.setReducedMotion(
+                                      !display.reducedMotionEnabled,
+                                      mutationAllowed: allowed,
+                                    ),
+                                  ),
+                            child: Semantics(
+                              enabled: displayReady,
+                              label: reducedMotionEntry.semanticsLabel,
+                              hint:
+                                  'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                              toggled: display.reducedMotionEnabled,
+                              onTap: !displayReady
                                   ? null
-                                  : _setReducedMotion,
+                                  : () => _changeDisplay(
+                                      generation,
+                                      display,
+                                      (allowed) => display.setReducedMotion(
+                                        !display.reducedMotionEnabled,
+                                        mutationAllowed: allowed,
+                                      ),
+                                    ),
+                              excludeSemantics: true,
+                              child: SwitchListTile(
+                                key: const ValueKey<String>(
+                                  'reduced-motion-switch',
+                                ),
+                                contentPadding: EdgeInsets.zero,
+                                secondary: Icon(reducedMotionEntry.icon),
+                                title: Text(reducedMotionEntry.fullThaiLabel),
+                                subtitle: const Text(
+                                  'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                                ),
+                                value: display.reducedMotionEnabled,
+                                onChanged: !displayReady
+                                    ? null
+                                    : (enabled) => _changeDisplay(
+                                        generation,
+                                        display,
+                                        (allowed) => display.setReducedMotion(
+                                          enabled,
+                                          mutationAllowed: allowed,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            MenuActionBinding(
-              id: accountEntry.id,
-              label: accountEntry.fullThaiLabel,
-              onInvoke: null,
-              readValue: session == null
-                  ? 'ข้อมูลในเครื่อง'
-                  : session.emailVerified
-                  ? 'ยืนยันอีเมลแล้ว'
-                  : 'รอยืนยันอีเมล',
-              child: Tooltip(
-                message: accountEntry.tooltip,
-                child: Semantics(
-                  label: accountEntry.semanticsLabel,
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Icon(
-                        session == null
-                            ? accountEntry.icon
-                            : Icons.verified_user,
-                      ),
-                      title: Text(session?.email ?? 'โหมดใช้งานในเครื่อง'),
-                      subtitle: Text(
-                        session == null
-                            ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
-                            : session.emailVerified
-                            ? 'ยืนยันอีเมลแล้ว'
-                            : 'รอยืนยันอีเมล',
-                      ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            ),
-            if (_offlineContent != null &&
-                _featureRegistry?.isVisible(Feature.offlineContent) == true)
-              Tooltip(
-                message: offlineContentEntry.tooltip,
-                child: MenuActionBinding(
-                  id: offlineContentEntry.id,
-                  label: offlineContentEntry.fullThaiLabel,
-                  onInvoke: _openOfflineContent,
+              MenuActionBinding(
+                id: accountEntry.id,
+                label: accountEntry.fullThaiLabel,
+                onInvoke: null,
+                readValue: session == null
+                    ? 'ข้อมูลในเครื่อง'
+                    : session.emailVerified
+                    ? 'ยืนยันอีเมลแล้ว'
+                    : 'รอยืนยันอีเมล',
+                child: Tooltip(
+                  message: accountEntry.tooltip,
                   child: Semantics(
-                    button: true,
-                    enabled: true,
-                    label: offlineContentEntry.semanticsLabel,
-                    hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
-                    onTap: _openOfflineContent,
-                    excludeSemantics: true,
+                    label: accountEntry.semanticsLabel,
                     child: Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
-                        key: const ValueKey<String>('settings/offline-content'),
-                        minTileHeight: 48,
-                        leading: Icon(offlineContentEntry.icon),
-                        title: Text(offlineContentEntry.fullThaiLabel),
-                        subtitle: const Text(
-                          'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                        leading: Icon(
+                          session == null
+                              ? accountEntry.icon
+                              : Icons.verified_user,
                         ),
-                        onTap: _openOfflineContent,
+                        title: Text(session?.email ?? 'โหมดใช้งานในเครื่อง'),
+                        subtitle: Text(
+                          session == null
+                              ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
+                              : session.emailVerified
+                              ? 'ยืนยันอีเมลแล้ว'
+                              : 'รอยืนยันอีเมล',
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            if (_researchConsent case final consent?)
-              FutureBuilder<ResearchConsentStatus>(
-                future: _consentStatus,
-                builder: (context, snapshot) {
-                  final failed =
-                      snapshot.connectionState == ConnectionState.done &&
-                      snapshot.hasError;
-                  final ready =
-                      snapshot.connectionState == ConnectionState.done &&
-                      snapshot.hasData &&
-                      !snapshot.hasError;
-                  final accepted = ready && snapshot.data!.accepted;
-                  final description = failed
-                      ? 'อ่านสถานะความยินยอมไม่ได้ กรุณาลองใหม่'
-                      : !ready
-                      ? 'กำลังอ่านสถานะความยินยอม'
-                      : accepted
-                      ? 'ยินยอมฉบับ ${snapshot.data!.version} สำหรับส่งออกชุดวิจัย — ถอนความยินยอมได้'
-                      : 'ยังไม่ยินยอมส่งออกชุดวิจัย — เรียนตามปกติได้';
-                  final enabled = ready && !_busy;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Tooltip(
-                      message: researchConsentEntry.tooltip,
-                      child: MenuActionBinding(
-                        id: researchConsentEntry.id,
-                        label: researchConsentEntry.fullThaiLabel,
-                        onInvoke: failed
-                            ? () => _reloadConsent(consent)
-                            : enabled
-                            ? () => _openResearchConsentDetails(accepted)
-                            : null,
-                        child: Semantics(
-                          button: true,
-                          enabled: enabled || failed,
-                          label: researchConsentEntry.semanticsLabel,
-                          value: description,
-                          hint: failed
-                              ? 'ลองอ่านสถานะอีกครั้ง'
-                              : 'อ่านรายละเอียดก่อนตัดสินใจเกี่ยวกับชุดข้อมูลวิจัย',
-                          onTap: failed
+              if (_offlineContent != null &&
+                  _featureRegistry?.isVisible(Feature.offlineContent) == true)
+                Tooltip(
+                  message: offlineContentEntry.tooltip,
+                  child: MenuActionBinding(
+                    id: offlineContentEntry.id,
+                    label: offlineContentEntry.fullThaiLabel,
+                    onInvoke: _openOfflineContent,
+                    child: Semantics(
+                      button: true,
+                      enabled: true,
+                      label: offlineContentEntry.semanticsLabel,
+                      hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                      onTap: _openOfflineContent,
+                      excludeSemantics: true,
+                      child: Card(
+                        child: ListTile(
+                          key: const ValueKey<String>(
+                            'settings/offline-content',
+                          ),
+                          minTileHeight: 48,
+                          leading: Icon(offlineContentEntry.icon),
+                          title: Text(offlineContentEntry.fullThaiLabel),
+                          subtitle: const Text(
+                            'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                          ),
+                          onTap: _openOfflineContent,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_researchConsent case final consent?)
+                FutureBuilder<ResearchConsentStatus>(
+                  future: _consentStatus,
+                  builder: (context, snapshot) {
+                    final failed =
+                        snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasError;
+                    final ready =
+                        snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasData &&
+                        !snapshot.hasError;
+                    final accepted = ready && snapshot.data!.accepted;
+                    final description = failed
+                        ? 'อ่านสถานะความยินยอมไม่ได้ กรุณาลองใหม่'
+                        : !ready
+                        ? 'กำลังอ่านสถานะความยินยอม'
+                        : accepted
+                        ? 'ยินยอมฉบับ ${snapshot.data!.version} สำหรับส่งออกชุดวิจัย — ถอนความยินยอมได้'
+                        : 'ยังไม่ยินยอมส่งออกชุดวิจัย — เรียนตามปกติได้';
+                    final enabled = ready && !_busy;
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Tooltip(
+                        message: researchConsentEntry.tooltip,
+                        child: MenuActionBinding(
+                          id: researchConsentEntry.id,
+                          label: researchConsentEntry.fullThaiLabel,
+                          onInvoke: failed
                               ? () => _reloadConsent(consent)
                               : enabled
                               ? () => _openResearchConsentDetails(accepted)
                               : null,
-                          excludeSemantics: true,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      accepted
-                                          ? researchConsentEntry.icon
-                                          : Icons.assignment_outlined,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
+                          child: Semantics(
+                            button: true,
+                            enabled: enabled || failed,
+                            label: researchConsentEntry.semanticsLabel,
+                            value: description,
+                            hint: failed
+                                ? 'ลองอ่านสถานะอีกครั้ง'
+                                : 'อ่านรายละเอียดก่อนตัดสินใจเกี่ยวกับชุดข้อมูลวิจัย',
+                            onTap: failed
+                                ? () => _reloadConsent(consent)
+                                : enabled
+                                ? () => _openResearchConsentDetails(accepted)
+                                : null,
+                            excludeSemantics: true,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        accepted
+                                            ? researchConsentEntry.icon
+                                            : Icons.assignment_outlined,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          researchConsentEntry.fullThaiLabel,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    description,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Align(
+                                    alignment: AlignmentDirectional.centerEnd,
+                                    child: TextButton(
+                                      key: ValueKey(
+                                        failed
+                                            ? 'research-consent-retry'
+                                            : 'research-consent-details',
+                                      ),
+                                      onPressed: failed
+                                          ? () => _reloadConsent(consent)
+                                          : enabled
+                                          ? () => _openResearchConsentDetails(
+                                              accepted,
+                                            )
+                                          : null,
                                       child: Text(
-                                        researchConsentEntry.fullThaiLabel,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
+                                        failed ? 'ลองใหม่' : 'รายละเอียด',
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  description,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 12),
-                                Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: TextButton(
-                                    key: ValueKey(
-                                      failed
-                                          ? 'research-consent-retry'
-                                          : 'research-consent-details',
-                                    ),
-                                    onPressed: failed
-                                        ? () => _reloadConsent(consent)
-                                        : enabled
-                                        ? () => _openResearchConsentDetails(
-                                            accepted,
-                                          )
-                                        : null,
-                                    child: Text(
-                                      failed ? 'ลองใหม่' : 'รายละเอียด',
-                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            if (AppDependenciesScope.maybeOf(context)?.adventureResearch
-                case final research?)
-              Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  key: const ValueKey('settings/research-participation'),
-                  minTileHeight: 64,
-                  leading: const Icon(Icons.science_outlined),
-                  title: const Text('การเข้าร่วมวิจัยแรงจูงใจ'),
-                  subtitle: const Text(
-                    'นำเข้าสิทธิ์ที่ลงนามแล้ว ตรวจสถานะ หรือถอนการเข้าร่วม',
-                  ),
-                  onTap: () async {
-                    final identities = AppDependenciesScope.maybeOf(
-                      context,
-                    )?.activeOwnerIdentities;
-                    if (identities == null) return;
-                    final ownerId = await identities
-                        .requireSingleActiveOwnerId();
-                    if (!context.mounted) return;
-                    await AppNavigator.pushPage<void>(
-                      context,
-                      AppPage<void>(
-                        name: 'settings/research-participation',
-                        builder: (_) => ResearchParticipationScreen(
-                          runtime: research,
-                          ownerId: ownerId,
                         ),
                       ),
                     );
                   },
                 ),
-              ),
-            MenuActionBinding(
-              id: cloudStatusEntry.id,
-              label: cloudStatusEntry.fullThaiLabel,
-              onInvoke: null,
-              readValue: jsonEncode({
-                'firebaseAvailability':
-                    dependencies?.runtimeStatus.firebase.name ?? 'unknown',
-                'syncEngineConfigured': dependencies?.syncEngine != null,
-                'syncCompletion': 'not-observed',
-                'interpretation':
-                    'service-readiness-is-not-network-connectivity-or-confirmed-sync',
-                'baselineRequiresMcp': false,
-              }),
-              child: Tooltip(
-                message: cloudStatusEntry.tooltip,
-                child: Semantics(
-                  label: cloudStatusEntry.semanticsLabel,
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Icon(
-                        cloudReady
-                            ? cloudStatusEntry.icon
-                            : Icons.cloud_off_outlined,
-                      ),
-                      title: Text(cloudStatusEntry.fullThaiLabel),
-                      subtitle: Text(
-                        cloudReady
-                            ? 'พร้อมใช้งาน'
-                            : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
-                      ),
+              if (AppDependenciesScope.maybeOf(context)?.adventureResearch
+                  case final research?)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    key: const ValueKey('settings/research-participation'),
+                    minTileHeight: 64,
+                    leading: const Icon(Icons.science_outlined),
+                    title: const Text('การเข้าร่วมวิจัยแรงจูงใจ'),
+                    subtitle: const Text(
+                      'นำเข้าสิทธิ์ที่ลงนามแล้ว ตรวจสถานะ หรือถอนการเข้าร่วม',
                     ),
-                  ),
-                ),
-              ),
-            ),
-            if (session != null && !session.isAnonymous) ...[
-              Tooltip(
-                message: changePasswordEntry.tooltip,
-                child: MenuActionBinding(
-                  id: changePasswordEntry.id,
-                  label: changePasswordEntry.fullThaiLabel,
-                  onInvoke: _busy
-                      ? null
-                      : () {
-                          unawaited(_changePassword());
-                        },
-                  child: Semantics(
-                    button: true,
-                    enabled: !_busy,
-                    label: changePasswordEntry.semanticsLabel,
-                    onTap: _busy ? null : _changePassword,
-                    excludeSemantics: true,
-                    child: Card(
-                      child: ListTile(
-                        minTileHeight: 48,
-                        leading: Icon(changePasswordEntry.icon),
-                        title: Text(changePasswordEntry.fullThaiLabel),
-                        onTap: _busy ? null : _changePassword,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Tooltip(
-                message: logoutEntry.tooltip,
-                child: MenuActionBinding(
-                  id: logoutEntry.id,
-                  label: logoutEntry.fullThaiLabel,
-                  onInvoke: null,
-                  child: Semantics(
-                    button: true,
-                    enabled: !_busy,
-                    label: logoutEntry.semanticsLabel,
-                    hint: 'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
-                    onTap: _busy ? null : _logout,
-                    excludeSemantics: true,
-                    child: Card(
-                      child: ListTile(
-                        minTileHeight: 48,
-                        leading: Icon(logoutEntry.icon),
-                        title: Text(logoutEntry.fullThaiLabel),
-                        subtitle: const Text(
-                          'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                    onTap: () async {
+                      final identities = AppDependenciesScope.maybeOf(
+                        context,
+                      )?.activeOwnerIdentities;
+                      if (identities == null) return;
+                      final ownerId = await identities
+                          .requireSingleActiveOwnerId();
+                      if (!context.mounted) return;
+                      await AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'settings/research-participation',
+                          builder: (_) => ResearchParticipationScreen(
+                            runtime: research,
+                            ownerId: ownerId,
+                          ),
                         ),
-                        onTap: _busy ? null : _logout,
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ],
-            if (_localDataEraser != null && _localOwners != null)
-              Tooltip(
-                message: eraseLocalDataEntry.tooltip,
-                child: MenuActionBinding(
-                  id: eraseLocalDataEntry.id,
-                  label: eraseLocalDataEntry.fullThaiLabel,
-                  onInvoke: _busy
-                      ? null
-                      : () {
-                          unawaited(_eraseLocalData());
-                        },
+              MenuActionBinding(
+                id: cloudStatusEntry.id,
+                label: cloudStatusEntry.fullThaiLabel,
+                onInvoke: null,
+                readValue: jsonEncode({
+                  'firebaseAvailability':
+                      dependencies?.runtimeStatus.firebase.name ?? 'unknown',
+                  'syncEngineConfigured': dependencies?.syncEngine != null,
+                  'syncCompletion': 'not-observed',
+                  'interpretation':
+                      'service-readiness-is-not-network-connectivity-or-confirmed-sync',
+                  'baselineRequiresMcp': false,
+                }),
+                child: Tooltip(
+                  message: cloudStatusEntry.tooltip,
                   child: Semantics(
-                    button: true,
-                    enabled: !_busy,
-                    label: eraseLocalDataEntry.semanticsLabel,
-                    hint: eraseLocalDataEntry.tooltip,
-                    onTap: _busy ? null : _eraseLocalData,
-                    excludeSemantics: true,
+                    label: cloudStatusEntry.semanticsLabel,
                     child: Card(
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
-                        key: const ValueKey<String>('erase-local-data'),
-                        minTileHeight: 48,
-                        leading: Icon(eraseLocalDataEntry.icon),
-                        title: Text(eraseLocalDataEntry.fullThaiLabel),
-                        subtitle: Text(eraseLocalDataEntry.tooltip),
-                        onTap: _busy ? null : _eraseLocalData,
+                        leading: Icon(
+                          cloudReady
+                              ? cloudStatusEntry.icon
+                              : Icons.cloud_off_outlined,
+                        ),
+                        title: Text(cloudStatusEntry.fullThaiLabel),
+                        subtitle: Text(
+                          cloudReady
+                              ? 'พร้อมใช้งาน'
+                              : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            if (_busy)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-          ],
+              if (session != null && !session.isAnonymous) ...[
+                Tooltip(
+                  message: changePasswordEntry.tooltip,
+                  child: MenuActionBinding(
+                    id: changePasswordEntry.id,
+                    label: changePasswordEntry.fullThaiLabel,
+                    onInvoke: _busy
+                        ? null
+                        : () {
+                            unawaited(_changePassword());
+                          },
+                    child: Semantics(
+                      button: true,
+                      enabled: !_busy,
+                      label: changePasswordEntry.semanticsLabel,
+                      onTap: _busy ? null : _changePassword,
+                      excludeSemantics: true,
+                      child: Card(
+                        child: ListTile(
+                          minTileHeight: 48,
+                          leading: Icon(changePasswordEntry.icon),
+                          title: Text(changePasswordEntry.fullThaiLabel),
+                          onTap: _busy ? null : _changePassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Tooltip(
+                  message: logoutEntry.tooltip,
+                  child: MenuActionBinding(
+                    id: logoutEntry.id,
+                    label: logoutEntry.fullThaiLabel,
+                    onInvoke: null,
+                    child: Semantics(
+                      button: true,
+                      enabled: !_busy,
+                      label: logoutEntry.semanticsLabel,
+                      hint:
+                          'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                      onTap: _busy ? null : _logout,
+                      excludeSemantics: true,
+                      child: Card(
+                        child: ListTile(
+                          minTileHeight: 48,
+                          leading: Icon(logoutEntry.icon),
+                          title: Text(logoutEntry.fullThaiLabel),
+                          subtitle: const Text(
+                            'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                          ),
+                          onTap: _busy ? null : _logout,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (_localDataEraser != null && _localOwners != null)
+                Tooltip(
+                  message: eraseLocalDataEntry.tooltip,
+                  child: MenuActionBinding(
+                    id: eraseLocalDataEntry.id,
+                    label: eraseLocalDataEntry.fullThaiLabel,
+                    onInvoke: _busy
+                        ? null
+                        : () {
+                            unawaited(_eraseLocalData());
+                          },
+                    child: Semantics(
+                      button: true,
+                      enabled: !_busy,
+                      label: eraseLocalDataEntry.semanticsLabel,
+                      hint: eraseLocalDataEntry.tooltip,
+                      onTap: _busy ? null : _eraseLocalData,
+                      excludeSemantics: true,
+                      child: Card(
+                        child: ListTile(
+                          key: const ValueKey<String>('erase-local-data'),
+                          minTileHeight: 48,
+                          leading: Icon(eraseLocalDataEntry.icon),
+                          title: Text(eraseLocalDataEntry.fullThaiLabel),
+                          subtitle: Text(eraseLocalDataEntry.tooltip),
+                          onTap: _busy ? null : _eraseLocalData,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_busy)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            ],
+          ),
         ),
       ),
     );

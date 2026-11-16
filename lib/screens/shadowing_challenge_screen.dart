@@ -512,7 +512,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       label: 'Shadowing transcript evidence',
       ownerId: _ownerId,
       onInvoke: null,
-      readValue: jsonEncode({
+      // The provider session owner does not establish the prompt's provenance.
+      readValue: _ownerId == null ? null : jsonEncode({
         'interpretation': 'transcript-similarity-not-acoustic-pronunciation',
         'listening': _listening,
         'retryRequired': evidenceRetryRequired || sessionCloseRetryRequired,

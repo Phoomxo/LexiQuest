@@ -172,6 +172,11 @@ final class DriftLearnerPreferencesRepository
               createdAtUtcMs: updatedAtUtcMs,
             ),
           );
+      // Recheck after every awaited write, before transaction commit. Throwing
+      // here rolls back both the preference and superseded/new outbox intents.
+      if (!(mutationAllowed?.call() ?? true)) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
       return true;
     });
     if (changed) await onLocalMutation?.call();
@@ -226,6 +231,7 @@ final class DriftLearnerPreferencesRepository
                 localRevision: const Value(0),
               ),
             );
+        await _checkDisplayCommit(ownerId, mutationAllowed);
         return;
       }
       await (database.update(
@@ -237,7 +243,20 @@ final class DriftLearnerPreferencesRepository
           displayUpdatedAtUtcMs: Value(updatedAtUtcMs),
         ),
       );
+      await _checkDisplayCommit(ownerId, mutationAllowed);
     });
+  }
+
+  Future<void> _checkDisplayCommit(
+    String ownerId,
+    LearnerPreferencesMutationGuard? allowed,
+  ) async {
+    final owner = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals(ownerId))).getSingleOrNull();
+    if (owner == null || !owner.isActive || !(allowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
   }
 
   bool _sameValues(

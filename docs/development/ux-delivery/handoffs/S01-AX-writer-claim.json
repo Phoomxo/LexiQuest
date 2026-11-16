@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-ax-20260925-0610",
+  "taskId": "01a0d53d-71af-7e92-bcf0-332cdafb5dcf",
+  "atUtc": "2026-09-24T21:07:48.730323+00:00",
+  "stateRevision": 99,
+  "writer": {
+    "status": "ACTIVE",
+    "holderThreadId": "01a0d53d-71af-7e92-bcf0-332cdafb5dcf",
+    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\f934\\LexiQuest",
+    "branch": "feature/ux-s01-ax-f934",
+    "claimedAtUtc": "2026-09-24T21:07:48.730323+00:00",
+    "currentItem": "S01-AX-explicit-word-delete-recovery",
+    "dispatchId": "ux-s01-ax-20260925-0610"
+  },
+  "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-AX-source-receipt.json",
+  "routing": "Astra/medium deterministic fallback; Standard/default requested; runtime tier unexposed",
+  "recoveryPolicy": "Stop failed method, diagnose, correct and retest; no abandonment or bypassing acceptance."
+}

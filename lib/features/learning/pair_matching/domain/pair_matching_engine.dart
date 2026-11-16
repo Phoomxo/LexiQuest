@@ -543,6 +543,7 @@ abstract final class PairMatchingEngine {
             shownSupportRevision >= command.expectedRevision ||
             responseTimeMs < 0 ||
             (state.repairFor(wordId) != null &&
+                state.repairFor(wordId)?.status != PairRepairStatus.available &&
                 state.repairFor(wordId)?.status !=
                     PairRepairStatus.guidedRequired)) {
           throw StateError('Invalid Pair guided confirmation');

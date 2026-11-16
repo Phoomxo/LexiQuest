@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-bb-20260925-f7d4",
+  "status": "DISPATCHED",
+  "clientThreadId": "client-new-thread:4aefcb1c-d2d6-49e4-9bf6-b03e128e9f9c",
+  "successorThreadId": "01a0d5c7-b638-77a2-a8ac-b1aec699146d",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "predecessorThreadId": "01a0d5a9-a389-7e42-b745-b72f9352264a",
+  "predecessorReleasedAtUtc": "2026-09-24T23:35:43.495644+00:00",
+  "manifestSha256": "ef00c9045b88dd9f8e1692bac9ce3ba3615ffc359dc09f0737608a339595ca14",
+  "archiveSha256": "a3b45aacc640cba244ee76ac296ef89f39bc934e5204b128dd76dd66184183b8",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "routing": "Deterministic fallback, NOT Jev-selected; Standard/default requested; runtime tier unexposed",
+  "duplicateDispatchAllowed": false,
+  "coordinationOnlyAfterImmutableSnapshot": true,
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/0684/LexiQuest",
+  "resolvedAtUtc": "2026-09-24T23:38:47.159921+00:00",
+  "resolutionEvidence": "Created client receipt matched local session_index ID/title and git worktree feature/ux-s01-bb-0684; wait_threads snapshot queried"
+}
