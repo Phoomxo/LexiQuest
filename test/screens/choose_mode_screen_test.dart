@@ -259,6 +259,264 @@ Future<void> _openConfiguredMode(
 }
 
 void main() {
+  testWidgets(
+    'AS library immediate feature retirement rejects detached article push',
+    (tester) async {
+      final h = await _SrsGateHarness.create();
+      addTearDown(h.close);
+      await h.pump(tester);
+      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+      await tester.tap(find.byKey(const ValueKey('home/learn/reading/cefr')));
+      await tester.pumpAndSettle();
+      final open = tester
+          .widget<ListTile>(
+            find.widgetWithText(ListTile, 'A1 · A book for May'),
+          )
+          .onTap!;
+      final navigator = Navigator.of(
+        tester.element(find.byType(LocalReadingLibraryScreen)),
+      );
+      h.features.emergencyOff(Feature.reading);
+      open();
+      await tester.pumpAndSettle();
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
+      expect(find.byType(ChooseModeScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  for (final retirement in [
+    'tab',
+    'cover',
+    'lifecycle',
+    'dispose',
+    'replacement',
+    'pop',
+  ]) {
+    testWidgets('AS chooser detached reading retires after $retirement', (
+      tester,
+    ) async {
+      final nav = GlobalKey<NavigatorState>();
+      final active = ValueNotifier(true);
+      final version = ValueNotifier(0);
+      addTearDown(active.dispose);
+      addTearDown(version.dispose);
+      Widget chooser() => ValueListenableBuilder<int>(
+        valueListenable: version,
+        builder: (_, v, _) => ValueListenableBuilder<bool>(
+          valueListenable: active,
+          builder: (_, on, _) => TickerMode(
+            enabled: on,
+            child: ChooseModeScreen(
+              featureRegistry: BuildFeatureRegistry.allEnabled(),
+              lessonModes: buildLessonModeRegistry(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: retirement == 'pop'
+              ? const Scaffold(body: Text('root'))
+              : chooser(),
+        ),
+      );
+      if (retirement == 'pop') {
+        nav.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => chooser()),
+        );
+        await tester.pumpAndSettle();
+      }
+      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+      final dynamic entry = tester.widget(
+        find.byKey(const ValueKey('home/learn/reading/cefr')),
+      );
+      final VoidCallback retained = entry.onTap;
+      switch (retirement) {
+        case 'tab':
+          active.value = false;
+          await tester.pump();
+          active.value = true;
+          await tester.pump();
+        case 'cover':
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+          await tester.pumpAndSettle();
+          nav.currentState!.pop();
+          await tester.pumpAndSettle();
+        case 'lifecycle':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await tester.pump();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+        case 'dispose':
+          await tester.pumpWidget(const SizedBox());
+        case 'replacement':
+          version.value++;
+          await tester.pump();
+        case 'pop':
+          nav.currentState!.pop();
+      }
+      retained();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ProductionFeatureGate), findsNothing);
+    });
+  }
+
+  for (final child in ['library', 'article', 'catalog']) {
+    testWidgets('AS $child rebinds replacement live registry', (tester) async {
+      final h = await _SrsGateHarness.create();
+      addTearDown(h.close);
+      final replacement = await _SrsGateHarness.create();
+      addTearDown(replacement.close);
+      final deps = ValueNotifier(h.dependencies);
+      addTearDown(deps.dispose);
+      await tester.pumpWidget(
+        ValueListenableBuilder<AppDependencies>(
+          valueListenable: deps,
+          builder: (_, d, _) => AppDependenciesScope(
+            dependencies: d,
+            child: const MaterialApp(home: ChooseModeScreen()),
+          ),
+        ),
+      );
+      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+      await tester.tap(find.byKey(const ValueKey('home/learn/reading/cefr')));
+      await tester.pumpAndSettle();
+      if (child != 'library') {
+        final target = child == 'article'
+            ? find.text('A1 · A book for May')
+            : find.byKey(const ValueKey('reading-library-vocabulary-catalog'));
+        await tester.scrollUntilVisible(target, 200);
+        await tester.pumpAndSettle();
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+      }
+      deps.value = replacement.dependencies;
+      await tester.pumpAndSettle();
+      h.features.emergencyOff(Feature.reading);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
+      replacement.features.emergencyOff(Feature.reading);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  }
+  testWidgets('AS chooser repeated reading taps admit one library', (
+    tester,
+  ) async {
+    final h = await _SrsGateHarness.create();
+    addTearDown(h.close);
+    await h.pump(tester);
+    await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+    final entry = find.byKey(const ValueKey('home/learn/reading/cefr'));
+    await tester.tap(entry);
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(LocalReadingLibraryScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  });
+
+  testWidgets('AS retained chooser reading action cannot stack libraries', (
+    tester,
+  ) async {
+    final h = await _SrsGateHarness.create();
+    addTearDown(h.close);
+    await h.pump(tester);
+    await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+    final dynamic entry = tester.widget(
+      find.byKey(const ValueKey('home/learn/reading/cefr')),
+    );
+    entry.onTap();
+    entry.onTap();
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(LocalReadingLibraryScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  for (final child in ['article', 'catalog']) {
+    testWidgets('AS reading $child observes live emergency off', (
+      tester,
+    ) async {
+      final h = await _SrsGateHarness.create();
+      addTearDown(h.close);
+      await h.pump(tester);
+      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+      await tester.tap(find.byKey(const ValueKey('home/learn/reading/cefr')));
+      await tester.pumpAndSettle();
+      final target = child == 'article'
+          ? find.text('A1 · A book for May')
+          : find.byKey(const ValueKey('reading-library-vocabulary-catalog'));
+      await tester.scrollUntilVisible(target, 200);
+      await tester.pumpAndSettle();
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      h.features.emergencyOff(Feature.reading);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(CefrArticleReaderScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  }
+
+  testWidgets('AS reading practice remains usable after chooser removal', (
+    tester,
+  ) async {
+    final h = await _SrsGateHarness.create();
+    addTearDown(h.close);
+    final parent = ValueNotifier(true);
+    addTearDown(parent.dispose);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: h.dependencies,
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: parent,
+            builder: (_, show, _) => show
+                ? const ChooseModeScreen()
+                : const Scaffold(body: Text('original parent')),
+          ),
+        ),
+      ),
+    );
+    await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+    await tester.tap(find.byKey(const ValueKey('home/learn/reading/cefr')));
+    await tester.pumpAndSettle();
+    parent.value = false;
+    await tester.pumpAndSettle();
+    final target = find.text('ฝึกจากคำศัพท์ที่มีระดับ');
+    await tester.scrollUntilVisible(target, 200);
+    await tester.pumpAndSettle();
+    await tester.tap(target);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
   for (final connection in ['absent', 'connected', 'disconnected']) {
     testWidgets('scratchpad MCP $connection preserves local-only input', (
       tester,

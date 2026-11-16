@@ -1,0 +1,231 @@
+{
+  "taskId": "01a0cf69-4e93-75e1-9976-e3bbb24718ae",
+  "atUtc": "2026-09-23T18:10:58.310346+00:00",
+  "sourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "installedApkVerifiedSha256": "2bf09c7a94ec9d48e8ef87b7788511020021b7dea9eaae83fc71861da1970386",
+  "provider": "FRESH_NATIVE_UNPAIRED; no provider launched",
+  "backup": "build/ari-r3-05/part02-native/backup.json",
+  "restore": {
+    "atUtc": "2026-09-23T18:09:16.472954+00:00",
+    "byteExact": true,
+    "forceStopped": true,
+    "verified": {
+      "lexiquest.sqlite": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+      "lexiquest.sqlite-wal": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+      "lexiquest.sqlite-shm": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2"
+    }
+  },
+  "storageComparison": {
+    "tablesCompared": 58,
+    "integrity": "ok both disposable clones",
+    "changes": [
+      {
+        "table": "vocabulary_categories",
+        "beforeRows": 8,
+        "afterRows": 9,
+        "pk": [
+          "id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "vocabulary_words",
+        "beforeRows": 19,
+        "afterRows": 21,
+        "pk": [
+          "id"
+        ],
+        "added": 2,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "vocabulary_imports",
+        "beforeRows": 4,
+        "afterRows": 5,
+        "pk": [
+          "id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "vocabulary_import_rows",
+        "beforeRows": 6,
+        "afterRows": 9,
+        "pk": [
+          "id"
+        ],
+        "added": 3,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "content_download_states",
+        "beforeRows": 2,
+        "afterRows": 2,
+        "pk": [
+          "id"
+        ],
+        "added": 0,
+        "removed": 0,
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      {
+        "table": "outbox_operations",
+        "beforeRows": 359,
+        "afterRows": 365,
+        "pk": [
+          "operation_id"
+        ],
+        "added": 6,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "runtime_flags",
+        "beforeRows": 3,
+        "afterRows": 3,
+        "pk": [
+          "key"
+        ],
+        "added": 0,
+        "removed": 0,
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      {
+        "table": "quest_instances",
+        "beforeRows": 3,
+        "afterRows": 4,
+        "pk": [
+          "instance_id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "quest_objective_progress",
+        "beforeRows": 3,
+        "afterRows": 4,
+        "pk": [
+          "id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedColumns": []
+      }
+    ],
+    "assertions": {
+      "oneDeletedFixtureCategory": true,
+      "twoDeletedFixtureWords": true,
+      "editedMeaningRetained": true,
+      "sameCanonicalOwner": true,
+      "exactlySixNewOutboxOperations": true,
+      "operationKinds": {
+        "upsert": 4,
+        "delete": 2
+      },
+      "existingRowsUnchanged": [
+        "vocabulary_categories",
+        "vocabulary_words",
+        "outbox_operations"
+      ],
+      "invariantTables": [
+        "local_owners",
+        "answer_attempts",
+        "learning_sessions",
+        "ai_usage_events"
+      ],
+      "importCounts": {
+        "accepted": 1,
+        "duplicate": 1,
+        "rejected": 1
+      },
+      "importRows": [
+        [
+          1,
+          "duplicate",
+          null
+        ],
+        [
+          2,
+          "accepted",
+          null
+        ],
+        [
+          3,
+          "rejected",
+          "missingMeaning"
+        ]
+      ]
+    }
+  },
+  "observed": [
+    "Created category R305P02 manually",
+    "Created bottle/container/noun; draft preserved across unpaired AI expand/collapse",
+    "Edited meaning to containers; force-stop/relaunch and category reentry preserved edited word",
+    "Imported duplicate bottle, valid pencil, invalid missing-meaning pen: native counts 1/1/1 match durable import rows",
+    "Cancel exact pencil deletion preserves word; confirm deletes only pencil",
+    "Delete exact fixture category removes it from UI; original category rows unchanged",
+    "58-table before/after comparison; unchanged owners, answer attempts, sessions, AI usage; six same-owner outbox operations; original category/word/outbox rows unchanged",
+    "Restored fresh part02 main/WAL/SHM byte-exact and force-stopped isolated app"
+  ],
+  "notProven": [
+    "Real provider context, connection loss or late attachment",
+    "Native different-owner lifecycle",
+    "All W03 durable failure/retry cases",
+    "Thai native text entry; this fixture used ASCII values",
+    "Whole W03 or R3-05 completion"
+  ],
+  "recovery": [
+    "Startup null-root dump diagnosed with foreground activity and screenshot; stable route then fresh compressed dump succeeded",
+    "Input noun initially lost n during keyboard transition; observed draft corrected before save",
+    "PowerShell rejected unquoted comma expression before any command executed; quoted input method confirmed exact three-row draft"
+  ],
+  "evidenceHashes": {
+    "build/ari-r3-05/part02-native/01-home.xml": "764519ccc77fb620fb3a5c8423457f787d15a38ddbf2f2b3191a6e0e90994427",
+    "build/ari-r3-05/part02-native/02-loaded.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part02-native/03-vocabulary.xml": "098f7a269e4b220a65d6fb06bb8fc3128f8f47d19b30cfa629d967ce64e3d19d",
+    "build/ari-r3-05/part02-native/04-category-dialog.xml": "d11fcbe9e13f4960c48194fc80a9d410d1b11a6aa22a2dce776ed826fef28684",
+    "build/ari-r3-05/part02-native/05-category-saved.xml": "ddefd8b7a2285258aa8978cb286add9244cd799b0c0cdd21b07a50e46ab857a8",
+    "build/ari-r3-05/part02-native/06-empty-category.xml": "da14cfbe42b46c6fcd61dbb803f6cb44f40b6fc8edf371b607dfcbae873c62e7",
+    "build/ari-r3-05/part02-native/07-word-form.xml": "189b11e6dffcf85a8594876bc530f58c6fbc19248645a7e85a2a357b71125f5a",
+    "build/ari-r3-05/part02-native/08-word-draft.xml": "5d50206f05b3ba9136927109753e41b4e0a5b1b5a15722315e3f75b05d0fb24f",
+    "build/ari-r3-05/part02-native/09-draft-ai-expanded.xml": "c51fe34ecab91052c3235ac58057e5b3e2803cd70f752c27b880578d0a0b4db9",
+    "build/ari-r3-05/part02-native/10-unpaired-draft.xml": "6ee8eea75b6ea2e9cb7baeb5e29ad56ad5793a13ceac40aeef9a5cc9b36b1893",
+    "build/ari-r3-05/part02-native/11-collapsed-draft.xml": "c51fe34ecab91052c3235ac58057e5b3e2803cd70f752c27b880578d0a0b4db9",
+    "build/ari-r3-05/part02-native/12-word-saved.xml": "147f83865f812a6c5144afce9e8941138b784f5b6120e91587d4529f4e5cee52",
+    "build/ari-r3-05/part02-native/13-word-edit.xml": "c60744545511ba7913698774b6acae1d07a862703441e7ca28ee780d56a026b7",
+    "build/ari-r3-05/part02-native/14-edited-draft.xml": "30b84e12a29f2f8abe182451d5b2965984c09913f628c99d0aca99a499a46cb8",
+    "build/ari-r3-05/part02-native/15-edited-saved.xml": "6d1b40f84f90c62d766d8cd5c4d46cf1c458a537f9ba1831feb339c8478e9592",
+    "build/ari-r3-05/part02-native/16-restart-state.png": "401d41138ee3f229f7eca32ebbf4123354902d2f27661cbbd1233dce3917435a",
+    "build/ari-r3-05/part02-native/17-restarted-category.xml": "036d8042c3384baa6e0a1c2783df1d4e25e06145565862f316a71555454cc926",
+    "build/ari-r3-05/part02-native/18-restarted-word.xml": "a1724ebe71fab81063312c73c0efeee01c51021a674ad5edca76b5241c2403c5",
+    "build/ari-r3-05/part02-native/19-import-form.xml": "0e906e211af2841711907cfd4ee82fb8c16d8729f49bde5eac3e0fb0a47ba4fd",
+    "build/ari-r3-05/part02-native/20-import-draft.xml": "4a78b7151e770aade6b4079dae165ac4c0595e380f052389acf2a617ae50580d",
+    "build/ari-r3-05/part02-native/21-import-result.xml": "4f93bf7976e54dc9a1c64d0d7ed7ac310cd23049cc614a65ac6100c20c48dc34",
+    "build/ari-r3-05/part02-native/22-delete-confirm.xml": "441aa7f167df6f835e27deea8b4773bd2c4f2ea5e788a2fe60b0761adc6dc1ae",
+    "build/ari-r3-05/part02-native/23-delete-cancelled.xml": "174531337646ad753c79f869a353fa7278bcfeb5cda13f1e5d86e97799d0e361",
+    "build/ari-r3-05/part02-native/24-delete-reopened.xml": "441aa7f167df6f835e27deea8b4773bd2c4f2ea5e788a2fe60b0761adc6dc1ae",
+    "build/ari-r3-05/part02-native/25-word-deleted.xml": "6d1b40f84f90c62d766d8cd5c4d46cf1c458a537f9ba1831feb339c8478e9592",
+    "build/ari-r3-05/part02-native/26-category-return.xml": "ddefd8b7a2285258aa8978cb286add9244cd799b0c0cdd21b07a50e46ab857a8",
+    "build/ari-r3-05/part02-native/27-category-delete-confirm.xml": "3d869550d1e9b42665b4374d207f9f1324eaae950e990286581052b22e383c2f",
+    "build/ari-r3-05/part02-native/28-cleaned.xml": "ae35522e4ccf40585f5ab2737b0ee4104ea0ba4a7f53a9ae84820a3616d37347",
+    "build/ari-r3-05/part02-native/after-hashes.json": "cc7639783c60a3ee072710bbdfa5dead746dd54875c1721675f79a4ac8c7e9a1",
+    "build/ari-r3-05/part02-native/backup.json": "ce0b78b23f524a168e56b63c0e87971b2158a5f02dd54b13b7eae607cf8a8170",
+    "build/ari-r3-05/part02-native/oem-warning.log": "b409caeda990ab74b1fd396d7af1f7534d4793352abd0a17385dbd3bc65e5931",
+    "build/ari-r3-05/part02-native/restore.json": "3ea5a7a4e48b4051fafa5494081c82faedd2a8250e736f044fd69267524c3237",
+    "build/ari-r3-05/part02-native/storage-comparison.json": "41ff36cc6be24265da7dce8ccc610ca5f690206e6b6c861f36ad280c2ed51834"
+  }
+}

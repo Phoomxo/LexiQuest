@@ -1,0 +1,49 @@
+{
+  "id": "R3-05-SAVE-READBACK-001",
+  "taskId": "01a0cfa2-bb7b-7410-8b01-7f5a3dee5a2d",
+  "status": "FIXED_HOST_VERIFIED_NATIVE_BASELINE_VERIFIED",
+  "sourceFingerprint": "2f3583e87a6e6765f94bbc66ea9e635911e1140f79fa350fd5f9e461d9dbd136",
+  "rootCause": "Create/edit save catch conflated failed mutation and failed verification after successful return; retry could invoke mutation again.",
+  "red": {
+    "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/5e6cb6a80ef6-1038fe1f1e6c-0cd6f5bf/Explicit-Flutter-tests.stdout.log",
+    "sha256": "5e0a1eaa3c44d7ab686b1ea13501fc3e72765f562982aaa92177361e18da3b58",
+    "tests": 4,
+    "expected": "outcome_unknown",
+    "actual": "failed",
+    "beforeFailureAssertions": "File-backed committed word values/revision and unchanged survivor checked; full outbox captured"
+  },
+  "fix": "Retain returned word while verification unresolved; subsequent save only reconciles exact ID/owner/values/revision; disable draft edits/manual save while unresolved; return outcome_unknown for missing/mismatched/throwing readback. On successful verification clear pending state to preserve normal form behavior.",
+  "verified": [
+    "Four real SQLite cases: create/edit x reconcile before restart/restart while unknown",
+    "Foreign owner and disconnected registry expose no actions/context; same-owner reconnect retries read without mutation",
+    "Each unresolved retry retains mutationCalls1; recovery retains1; all rows/outbox identical after reopen",
+    "Existing duplicate test retained; normal successful root-screen operation semantics preserved",
+    "Native create/edit/restart and AI unpaired draft preservation on new APK"
+  ],
+  "limits": [
+    "Only create/edit post-success verification boundary; exceptions inside mutation or its notifier are not certified.",
+    "No durable request-ID protocol across process death; domain rows/outbox persist on SQLite reopen.",
+    "Category/import still require fault tests; static patterns alone do not constitute a reproduced defect.",
+    "No native injected readback fault, connected provider, foreign-owner native account, or whole W03 certification."
+  ],
+  "recovery": [
+    {
+      "method": "Guessed add_word_screen.dart search",
+      "correction": "Discovered actual add_vocab_screen.dart via rg --files; did not repeat invalid path"
+    },
+    {
+      "method": "Affected regression first run",
+      "result": "45 pass/1 fail: existing duplicate expected after successful root-screen save; initial fix incorrectly retained commit after verified success",
+      "correction": "Clear pending state only on verified success; keep old assertion unchanged; final50 pass"
+    },
+    {
+      "method": "Read UTF16 test log as UTF8",
+      "correction": "Inspect BOM and decode UTF16; ASCII-safe excerpts"
+    },
+    {
+      "method": "First native dump immediately after launch",
+      "result": "null root node, no stale XML consumed",
+      "correction": "Captured screenshot showing loaded home, then fresh dump succeeded; used am start -W for subsequent restart"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 
 import '../domain/vocabulary_category.dart';
@@ -161,7 +163,7 @@ final class VocabularyUseCases {
           word: word,
           mutationAllowed: mutationAllowed,
         );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return result;
   }
 
@@ -194,7 +196,7 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return created;
   }
 
@@ -220,7 +222,7 @@ final class VocabularyUseCases {
       normalizedName: normalizeVocabularyText(canonicalName),
       nowUtc: _currentUtc(),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return renamed;
   }
 
@@ -236,7 +238,7 @@ final class VocabularyUseCases {
       categoryId: canonicalCategoryId,
       nowUtc: _currentUtc(),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
   }
 
   Future<VocabularyWord> createWord(
@@ -264,7 +266,7 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return created;
   }
 
@@ -293,7 +295,7 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return updated;
   }
 
@@ -313,7 +315,7 @@ final class VocabularyUseCases {
       wordId: canonicalWordId,
       nowUtc: _currentUtc(),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
   }
 
   VocabularyWord _wordFromInput({
@@ -403,4 +405,20 @@ String _required(String value, String field, {required int maxLength}) {
     );
   }
   return canonical;
+}
+
+/// The repository has already committed both local data and its sync outbox.
+/// A failed optional sync wake-up must not change the mutation's return value.
+/// Later startup/resume/manual sync triggers can drain the retained outbox.
+void notifyCommittedVocabularyMutation(LocalMutationNotifier? notifier) {
+  try {
+    notifier?.call();
+  } on Object catch (_, stackTrace) {
+    developer.log(
+      'Sync notification failed after vocabulary commit; outbox retained.',
+      name: 'lexiquest.vocabulary',
+      level: 900,
+      stackTrace: stackTrace,
+    );
+  }
 }

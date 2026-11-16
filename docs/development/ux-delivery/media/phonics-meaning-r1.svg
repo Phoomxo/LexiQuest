@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400" role="img" aria-labelledby="title desc">
+  <title id="title">ภาพร่างความหมายหลังสาธิต mat และ sit</title><desc id="desc">ซ้ายเป็นเสื่อ ขวาเป็นคนนั่งเก้าอี้ ใช้หลังสาธิตเท่านั้น ไม่แสดงก่อนตรวจการอ่านคำใหม่</desc>
+  <rect width="800" height="400" rx="24" fill="#f5f1e7"/>
+  <rect x="30" y="30" width="350" height="340" rx="24" fill="#e3eee4"/>
+  <path d="M87 171h235l-30 103H62z" fill="#c99245" stroke="#75502f" stroke-width="6"/>
+  <path d="M91 191h223M84 217h223M77 245h222" stroke="#f2cf8b" stroke-width="12"/>
+  <rect x="420" y="30" width="350" height="340" rx="24" fill="#e3eaf1"/>
+  <path d="M554 197v62h128M566 259v70m105-70v70" fill="none" stroke="#805a3f" stroke-width="17"/>
+  <circle cx="607" cy="109" r="32" fill="#a87559"/>
+  <path d="M605 153v70h75l27 92" fill="none" stroke="#377c88" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M612 167l40 39h25" fill="none" stroke="#a87559" stroke-width="19" stroke-linecap="round"/>
+</svg>

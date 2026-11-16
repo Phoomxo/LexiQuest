@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T15:00:34.297678+00:00",
+  "threadId": "01a0d3ed-1e8f-7e01-ba4a-fecfeb31d8cf",
+  "dispatchId": "ux-s01-ak-20260924-a2b7",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\a2b7\\LexiQuest",
+  "targetRoot": "C:\\Users\\Phet\\.codex\\worktrees\\8d94\\LexiQuest",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "ea355cb0ea8310e547f9c531d1da7e2c6e4fe6033c3fecaa2eea758b7059628c",
+  "archiveSha256": "1dbd35d18765e56df13de39e1181740f55b56f0fc7a4f82117a4d4b1d0ec0403",
+  "canonicalFingerprint": "504e94fb8ef7f32507264a154cce2435110f0ffa706c7ddbd4eadb2ab4bfb485",
+  "verifiedEntries": 1202,
+  "checks": [
+    "raw segments",
+    "containment",
+    "casefold uniqueness",
+    "exact membership",
+    "CRC",
+    "every byte size/hash/deletion",
+    "separate manifest copy"
+  ],
+  "result": "PASS",
+  "predecessorUntouched": true,
+  "routing": "Astra/medium deterministic fallback; Standard/default requested, runtime tier unexposed; no live Jev or ledger change"
+}
