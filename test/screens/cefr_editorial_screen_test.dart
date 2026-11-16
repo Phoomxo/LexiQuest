@@ -100,9 +100,23 @@ void main() {
       }
       expect(find.text('คำที่เลือก'), findsOneWidget);
       await tester.tap(find.text('คำที่เลือก'));
-      await tester.runAsync(
-        () async => Future<void>.delayed(const Duration(milliseconds: 100)),
-      );
+      // Owner revalidation and the popped dialog cross both real SQLite IO and
+      // fake Flutter frames. Wait for the actual acknowledgement, boundedly.
+      for (
+        var attempt = 0;
+        attempt < 30 &&
+            find
+                .text('คำนี้อยู่ในคลังของคุณแล้ว ใช้ฝึกและทบทวนได้')
+                .evaluate()
+                .isEmpty;
+        attempt++
+      ) {
+        await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       await tester.pumpAndSettle();
       final owner = await owners.getOrCreateActiveOwner();
       final rows = await vocabulary.vocabulary.listAllWords(owner.id);

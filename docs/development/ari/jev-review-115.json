@@ -1,0 +1,91 @@
+{
+  "status": "GUARD_OFFLINE_PASS_LIVE_REVIEW_EXECUTED",
+  "offlineTests": 18,
+  "liveRequestsThisTask": 2,
+  "ledger": {
+    "tranche": "authorized-USD5-2026-09-23",
+    "expires": 1790294400.0,
+    "paused": null,
+    "pending": 0,
+    "calls": 2,
+    "spent_usd": "0"
+  },
+  "calls": [
+    {
+      "inputHash": "bdbd8cf4271a3a0145db829e3e0d2689a4056b6cb2fce5b49e11e0b91c307346",
+      "reservationUsd": "0.141072",
+      "state": "settled",
+      "receipt": {
+        "cost_usd": "0",
+        "model": "typesafe-ai/jev",
+        "generation_id": "gen_01M37AQ3FBQ9A6XDJABM0ADRB8",
+        "result": {
+          "category": "owner",
+          "suggested_check_group": "owner-isolation",
+          "uncertain": 0.65
+        },
+        "usage": {
+          "input_tokens": 541,
+          "output_tokens": 154
+        },
+        "paid_usd": "0"
+      }
+    },
+    {
+      "inputHash": "2064dd3e302f1c2e847665750cd6c902d288a338ce118b9f287f56f009972ad0",
+      "reservationUsd": "0.141072",
+      "state": "settled",
+      "receipt": {
+        "cost_usd": "0",
+        "model": "typesafe-ai/jev",
+        "generation_id": "gen_01M37AQFNBE5S05D2JF54VNGEE",
+        "result": {
+          "category": "owner",
+          "suggested_check_group": "owner-isolation",
+          "uncertain": 0.61
+        },
+        "usage": {
+          "input_tokens": 587,
+          "output_tokens": 154
+        },
+        "paid_usd": "0"
+      }
+    }
+  ],
+  "syntheticBaseline": "12 cases labelled before live; one live case exercised,11 not yet evaluated.",
+  "reviewUse": "Both outputs prioritized owner isolation with high uncertainty. Primary review identified missing coverage while a pack tile remains mounted. Added mounted-tile disconnect/reconnect and cross-owner coverage; catalog suite now24 passing.",
+  "limitations": [
+    "No whole-pilot quality or efficiency acceptance; no measured Astra token savings.",
+    "Local reservation is not a provider-side hard cap.",
+    "Live ledger remains outside repo with secrets directory; receipts exported here without credentials.",
+    "No purchases, topup, deployment, or application runtime Jev integration."
+  ],
+  "sources": [
+    "https://docs.typesafe.ai/api",
+    "https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe",
+    "https://vercel.com/docs/ai-gateway/sdks-and-apis/rest-api",
+    "https://vercel.com/ai-gateway/models/jev"
+  ],
+  "offlineVerification": [
+    {
+      "Name": "jev-review.tests.ps1",
+      "commandKey": "c2b2d70ac40f6bc89c03b7cd5320685a1e1dbf8892cbb877cca23085615eed80",
+      "fingerprint": "3f277cc66f47a9f6bf098bd7ad250aacf668997d24b399e9ecd9561f557aa2d0",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T14:28:12.7838675+00:00",
+      "FinishedAt": "2026-09-23T14:28:13.7697086+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\c2b2d70ac40f-3f277cc66f47-a3e81fb2\\jev-review.tests.ps1.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\c2b2d70ac40f-3f277cc66f47-a3e81fb2\\jev-review.tests.ps1.stderr.log",
+      "postFingerprint": "3f277cc66f47a9f6bf098bd7ad250aacf668997d24b399e9ecd9561f557aa2d0",
+      "StdoutHash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "StderrHash": "3498DDC05E3A4BFEC6E410B127DA3F76B80AD928BEBC1CFB003BE45782CFFF6D"
+    }
+  ],
+  "sourcePins": {
+    "tool/experiments/jev_review/guard.py": "840ee544f8d55f5822e31d194c91a5bd2137109b8a4ed34145391bb8720c99f4",
+    "tool/experiments/jev_review/pilot.py": "b1c96eefd2adaf1063574f83a425898f1b6ccdc7cd9c9afc9ac2a76f19dd77fd",
+    "tool/experiments/jev_review/test_guard.py": "848b8992fa61983c90663a3fffe5c4fcceb15a2c138705f239413dac44304cd5",
+    "tool/experiments/jev_review/test_pilot.py": "726f5af06857e2fc7e992955038d9d8e7dcb2de729fc7e660d4c4469d70cd3f4"
+  }
+}

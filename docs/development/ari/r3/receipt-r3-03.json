@@ -1,0 +1,36 @@
+{
+  "taskId": "01a0cf33-006f-7b02-aed1-92ee5c3fe61c",
+  "completedAtUtc": "2026-09-23T17:13:32.456292+00:00",
+  "status": "COMPLETE_WITH_EXPLICIT_DETERMINISTIC_FALLBACK",
+  "doneIds": [
+    "03.1",
+    "03.2",
+    "03.3/fallback_audit"
+  ],
+  "sourceFingerprint": "592b95e31940f33b3a50a9831adf72c908c51379c966fa39f6179b1dc5a0cc13",
+  "sourceManifest": "source-manifest-r3-03.json",
+  "verification": "verification-r3-03.json",
+  "ledgerMigration": "ledger-migration-r3-03.json",
+  "route": "route-r3-03.json",
+  "ownedJobs": [],
+  "liveCalls": 0,
+  "paidSpendUsd": "0",
+  "applicationSourceChanged": false,
+  "review": {
+    "method": "sole-coordinator source review; no subagents per user",
+    "findingsFixed": [
+      "nonfinite billing timestamps",
+      "duplicate generation receipt",
+      "legacy cache preservation",
+      "CLI purpose binding"
+    ],
+    "remainingDefects": []
+  },
+  "remaining": [
+    "Live Jev Choice adapter and fresh billing/eligibility acceptance",
+    "Jev pilot quality/efficiency unmeasured",
+    "R3-02 provider_semantics and owner_and_lifecycle external pending",
+    "R3-04 through R3-08; 14/14 and original Free V2 not accepted"
+  ],
+  "batchPolicy": "fixed synthetic/review/routing each12, one unresolved globally, same original USD5 tranche"
+}

@@ -1,0 +1,20 @@
+{
+  "atUtc": "2026-09-23T20:54:53.256959+00:00",
+  "predecessorTaskId": "01a0cffe-6e5b-7e42-b135-1dad3feabff7",
+  "actualTaskId": "01a0d00c-89c3-72c0-8ba1-b198c5aeaaaa",
+  "clientThreadId": "client-new-thread:9826c1d2-de1e-4776-80c5-9465229c3b42",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "serviceTierRequested": "Standard/default;noFast/priority",
+  "runtimeTierExposed": false,
+  "status": "ACK_VERIFIED_ALL_PREDECESSOR_WRITES_RELEASED",
+  "applicationReleased": true,
+  "coordinationReleased": true,
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "reservationId": "R3-05-part11-from-part10-20260924",
+  "ownedJobs": [],
+  "sourceAckVerified": true,
+  "releasedAtUtc": "2026-09-23T20:56:38.520130+00:00",
+  "recovery": "Task-list100 response was plain text; JSON parse method stopped. Bounded30 safe parse succeeded;actual identity confirmed from successor ACK,not inferred from task list. No duplicate creation."
+}

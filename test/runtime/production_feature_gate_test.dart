@@ -13,6 +13,88 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets('S01-AB live emergency-off recovery returns to parent without enabling', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final registry = RuntimeFeatureRegistry(const BuildFeatureRegistry({Feature.questV2: FeatureState.enabled}));
+    addTearDown(registry.dispose);
+    final navigator = GlobalKey<NavigatorState>();
+    var builds = 0;
+    await tester.pumpWidget(AppDependenciesScope(
+      dependencies: _dependencies(db, registry),
+      child: MaterialApp(navigatorKey: navigator, home: const Scaffold(body: Text('safe parent'))),
+    ));
+    navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => ProductionFeatureGate(
+      feature: Feature.questV2, registry: registry, builder: (_) {
+        builds++;
+        return const Scaffold(body: Text('live quest'));
+      },
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('live quest'), findsOneWidget);
+    final before = builds;
+    registry.emergencyOff(Feature.questV2);
+    await tester.pumpAndSettle();
+    expect(find.text('ยังเปิดหน้านี้ไม่ได้'), findsOneWidget);
+    expect(find.text('live quest'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'กลับหน้าก่อนหน้า'));
+    await tester.pumpAndSettle();
+    expect(find.text('safe parent'), findsOneWidget);
+    expect(registry.stateOf(Feature.questV2), FeatureState.emergencyOff);
+    expect(builds, before);
+    expect(navigator.currentState!.canPop(), isFalse);
+  });
+
+  for (final pushed in [false, true]) {
+    testWidgets('S01-AB Thai unavailable recovery root=$pushed at 360px 200%', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      final navigator = GlobalKey<NavigatorState>();
+      const gate = ProductionFeatureGate(
+        feature: Feature.vocabulary,
+        registry: BuildFeatureRegistry({Feature.vocabulary: FeatureState.disabled}),
+        builder: _unexpectedContent,
+      );
+      await tester.pumpWidget(MaterialApp(
+        navigatorKey: navigator,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: pushed ? const Scaffold(body: Text('parent destination')) : gate,
+      ));
+      if (pushed) {
+        navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => gate));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('ยังเปิดหน้านี้ไม่ได้'), findsOneWidget);
+      expect(find.textContaining('ข้อมูลการเรียนที่บันทึกไว้ยังอยู่'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsNothing);
+      final back = find.widgetWithText(FilledButton, 'กลับหน้าก่อนหน้า');
+      if (pushed) {
+        await tester.ensureVisible(back);
+        await tester.pumpAndSettle();
+        expect(tester.getSemantics(back), matchesSemantics(
+          label: 'กลับหน้าก่อนหน้า', isButton: true, hasEnabledState: true,
+          isEnabled: true, hasTapAction: true, hasFocusAction: true, isFocusable: true,
+        ));
+        expect(tester.getSize(back).height, greaterThanOrEqualTo(48));
+        await tester.tap(back);
+        await tester.pumpAndSettle();
+        expect(find.text('parent destination'), findsOneWidget);
+      } else {
+        expect(back, findsNothing);
+        expect(find.textContaining('เลือกหน้าอื่นจากเมนูที่มีอยู่'), findsOneWidget);
+      }
+      expect(navigator.currentState!.canPop(), isFalse);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+  }
+
   testWidgets('disabled features never construct the lazy enabled subtree', (
     tester,
   ) async {
@@ -183,3 +265,5 @@ final class _GuestSessionService implements GuestSessionService {
   Future<GuestSessionResult> start() async =>
       const GuestSessionStarted(uid: 'production-feature-gate');
 }
+
+Widget _unexpectedContent(BuildContext context) => const Text('must stay unavailable');

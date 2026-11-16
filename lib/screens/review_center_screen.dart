@@ -34,25 +34,83 @@ final class ReviewCenterScreen extends StatefulWidget {
 final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
   late Future<ReviewQueueSnapshot> _load;
   String? _openingIdentity;
+  int _generation = 0;
+  bool _loading = false;
+  bool _routeExited = false;
 
   @override
   void initState() {
     super.initState();
-    _load = widget.useCases.loadSnapshot();
+    _startLoad();
   }
 
-  void _retry() {
-    final next = widget.useCases.loadSnapshot();
-    setState(() {
-      _load = next;
-    });
+  bool _current(int generation) =>
+      mounted && !_routeExited && generation == _generation;
+
+  Future<bool> _canOpen(
+    int generation,
+    ReviewCenterUseCases useCases,
+    String ownerId,
+  ) async {
+    if (!_current(generation) || ModalRoute.of(context)?.isCurrent == false) {
+      return false;
+    }
+    final currentOwner = await useCases.ownerIdentities
+        .requireSingleActiveOwnerId();
+    return _current(generation) &&
+        currentOwner == ownerId &&
+        ModalRoute.of(context)?.isCurrent != false;
+  }
+
+  void _startLoad() {
+    final generation = ++_generation;
+    _loading = true;
+    _load = widget.useCases.loadSnapshot();
+    // Observe both outcomes before FutureBuilder attaches on the next frame.
+    // An obsolete read must not release a newer read's pending guard.
+    _load.then<void>(
+      (_) {
+        if (_current(generation)) _loading = false;
+      },
+      onError: (Object _, StackTrace __) {
+        if (_current(generation)) _loading = false;
+      },
+    );
+  }
+
+  void _retry(int generation) {
+    if (!_current(generation) || _loading || _openingIdentity != null) return;
+    setState(_startLoad);
+  }
+
+  @override
+  void didUpdateWidget(ReviewCenterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.useCases != widget.useCases ||
+        oldWidget.lessonShellBuilder != widget.lessonShellBuilder) {
+      _openingIdentity = null;
+      _startLoad();
+    }
+  }
+
+  void _exit() {
+    _routeExited = true;
+    _generation++;
+  }
+
+  @override
+  void dispose() {
+    _exit();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final generation = _generation;
     final probes = widget.transferProbes;
     final embedded = probes?.isAvailable() == true;
     final queue = FutureBuilder<ReviewQueueSnapshot>(
+      key: ValueKey(generation),
       future: _load,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -60,7 +118,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
             semanticsLabel: 'โหลดรายการทบทวนไม่สำเร็จ',
             message: 'ไม่สามารถโหลดรายการทบทวนได้',
             action: FilledButton.icon(
-              onPressed: _retry,
+              onPressed: () => _retry(generation),
               icon: const Icon(Icons.refresh),
               label: const Text('ลองอีกครั้ง'),
             ),
@@ -134,7 +192,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
                   item: item,
                   opening: _openingIdentity == _identityKey(item),
                   onLaunch: _openingIdentity == null
-                      ? () => _launch(item)
+                      ? () => _launch(item, generation, loaded.ownerId)
                       : null,
                 ),
               );
@@ -143,25 +201,45 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
         );
       },
     );
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          NavigationGlossary.require('home/today/review').fullThaiLabel,
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_routeExited) setState(_exit);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            NavigationGlossary.require('home/today/review').fullThaiLabel,
+          ),
         ),
+        body: _routeExited
+            ? const SizedBox.shrink()
+            : embedded
+            ? ListView(
+                children: [
+                  TransferProbeReviewPanel(
+                    useCases: probes!,
+                    onReturned: () => _retry(generation),
+                  ),
+                  queue,
+                ],
+              )
+            : queue,
       ),
-      body: embedded
-          ? ListView(
-              children: [
-                TransferProbeReviewPanel(useCases: probes!, onReturned: _retry),
-                queue,
-              ],
-            )
-          : queue,
     );
   }
 
-  Future<void> _launch(ReviewQueueItem item) async {
-    if (_openingIdentity != null) return;
+  Future<void> _launch(
+    ReviewQueueItem item,
+    int generation,
+    String ownerId,
+  ) async {
+    if (!_current(generation) ||
+        _loading ||
+        _openingIdentity != null ||
+        ModalRoute.of(context)?.isCurrent == false)
+      return;
+    final useCases = widget.useCases;
+    final lessonShellBuilder = widget.lessonShellBuilder;
     final identity = _identityKey(item);
     setState(() => _openingIdentity = identity);
     UnifiedLessonShellLease? destination;
@@ -169,10 +247,14 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
     var destinationOwnsSession = false;
     var launchFailed = false;
     try {
-      request = await widget.useCases.launch(item);
-      destination = widget.lessonShellBuilder(request);
+      if (!await _canOpen(generation, useCases, ownerId)) return;
+      request = await useCases.launch(item);
+      if (request.ownerId != ownerId ||
+          !await _canOpen(generation, useCases, ownerId))
+        return;
+      destination = lessonShellBuilder(request);
       if (!destination.usesLearningAuthority(
-        widget.useCases.sessionAuthorityIdentity,
+        useCases.sessionAuthorityIdentity,
       )) {
         throw StateError(
           'review destination uses a different learning authority',
@@ -184,7 +266,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
         ownerId: request.ownerId,
         expectedContent: request.items,
       );
-      if (!mounted) return;
+      if (!await _canOpen(generation, useCases, ownerId)) return;
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
@@ -194,32 +276,28 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
       );
     } catch (_) {
       launchFailed = true;
+    } finally {
       if (request != null && !destinationOwnsSession) {
         try {
-          await widget.useCases.abandonLaunch(request);
+          await useCases.abandonLaunch(request);
         } catch (_) {
           launchFailed = true;
         }
       }
-    } finally {
       try {
         await destination?.retire();
       } catch (_) {
         launchFailed = true;
       }
-      if (launchFailed && mounted) {
+      if (launchFailed && _current(generation)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ไม่สามารถเริ่มการทบทวนได้')),
         );
       }
-      if (mounted) {
-        final next = widget.useCases.loadSnapshot();
-        // Observe immediately: an async read can fail before the next frame
-        // attaches FutureBuilder. The same future still renders its error UI.
-        next.ignore();
+      if (_current(generation)) {
         setState(() {
           _openingIdentity = null;
-          _load = next;
+          _startLoad();
         });
       }
     }

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T17:41:36.465982+00:00",
+  "item": "S01-AQ-pack-detail-recovery",
+  "status": "HOST_PASS",
+  "hostTests": 463,
+  "newWidgetRouteOwnerCases": 24,
+  "originalSourceRedResolved": 17,
+  "additionalControlBoundaryRedResolved": 2,
+  "introducedRegressionResolved": 1,
+  "remainingRed": [],
+  "gates": [
+    {
+      "path": "build/ux-delivery/S01-AQ/final-related.json",
+      "sha256": "047c64165319cd782a8069d2ed7fcb8aaae4b74026419806173d40443e669a48",
+      "tests": 179,
+      "status": "Passed",
+      "sourceFingerprint": "09e7c820bfe15ab7b8c7fe1c84f3f0a925b840cecf2e4ed604be90dfc1cd46a7",
+      "streams": [
+        {
+          "path": "build/ux-delivery/S01-AQ/final-related.stdout.log",
+          "sha256": "036d700e0b86bb78e143ea3f5f5c5ad4da2da2ec7fccf93478b8067ab91e4a01"
+        },
+        {
+          "path": "build/ux-delivery/S01-AQ/final-related.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    },
+    {
+      "path": "build/ux-delivery/S01-AQ/final-regression.json",
+      "sha256": "a832e2ae1e7924ad95afd7032efd2c68397dfe535ca5a569f893f13e23448a44",
+      "tests": 284,
+      "status": "Passed",
+      "sourceFingerprint": "cfd1756d401070764295b9131c8992aef064e441dd9e55fe6d7b87a07518688c",
+      "streams": [
+        {
+          "path": "build/ux-delivery/S01-AQ/final-regression.stdout.log",
+          "sha256": "6d29db854150eca4bbf09103017f0f4619dc43174d6c915b61b95f9770a2407f"
+        },
+        {
+          "path": "build/ux-delivery/S01-AQ/final-regression.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    }
+  ],
+  "sourcePins": "build/ux-delivery/S01-AQ/source-pins.json",
+  "sourcePinCount": 1540,
+  "allFinalPinsAgreeAndCurrent": true,
+  "checkpoint": "build/ux-delivery/S01-AQ/host-checkpoint-source.zip",
+  "checkpointSha256": "7564ec20ca96d3ff2e37e224769a9827a34622e27c7f4da799df438c16f46bee",
+  "sourceChanges": [
+    {
+      "path": "lib/screens/learning_pack_detail_screen.dart",
+      "beforeSha256": "c05d561a51ca7f1e0540cfbee13e6c8b56df8bf044b24a8923282130988b022d",
+      "afterSha256": "8bf643622a3b081aa4525b98dc235e2bfff12e9f9ee815f1f1c45d2bf5ba164a"
+    },
+    {
+      "path": "lib/widgets/rich_lexical_card.dart",
+      "beforeSha256": "cfbca26e3c1ddbbfffdd9cc286973314649ec2e66f80a821cb33717cc529da9d",
+      "afterSha256": "f8ac53f7a5e6567d54fe4aa0e59d919d535482b97c8cd08b2d2a64dbc38db267"
+    },
+    {
+      "path": "lib/features/review/presentation/bookmark_learning_item_button.dart",
+      "beforeSha256": "8d006691a9fadd022463291a057bd0050fe9faa03c5e3e1f0c146cebb58386c7",
+      "afterSha256": "27d070dc50d37ee8ebc6073046b62da5e6c3e21490a7832d7c5ad94389438c58"
+    },
+    {
+      "path": "lib/features/review/presentation/content_report_sheet.dart",
+      "beforeSha256": "00284e4ec11536843cf036821f5680848c914d47cabd5d898612f3c38ee89e96",
+      "afterSha256": "bfb744475446d03e14c24445d4a0dc3c2cde2b82d32ae79c9aa1dd2356ca6103"
+    },
+    {
+      "path": "test/screens/learning_pack_detail_screen_test.dart",
+      "beforeSha256": "9fa8d8e8cc254547b357d4ba6a1a0012ae1afc6b189bdd19f008c5b3cc4e206d",
+      "afterSha256": "62f0272cc103964f8f4b6616c20cd04493c79242f7ab0ce2cf3490f8ff13b66e"
+    }
+  ],
+  "prototypeReuse": {
+    "tests": 115,
+    "compatibilityChecks": 3,
+    "pinsVerified": {
+      "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+      "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+      "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+      "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+      "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+      "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+      "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+      "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+    },
+    "rerun": false
+  },
+  "selfReview": "Sole-writer self-review, no subagents/independent reviewer. Selected-reader/vocabulary/action/repository rebinding, canonical owner observation and post-await revalidation, bounded READ-ONLY retry and route/tab/pop/disposal/app lifecycle fence private results. Owned report is usable and single-flight. Submit/close/reason, bookmark/unsave admission and post-await acknowledgement fenced. Exact pinned revision/lexical identities/quality and optional menu context preserved. Thai 360px/200% retry verified. No content/activity/assignment/scoring/scheduling/schema/research/provider change.",
+  "acceptanceLimit": "Screen read/display, control admission and post-await acknowledgement only. Does not prove cancellation/rollback inside already-admitted bookmark/report repository transactions. Existing canonical writers unchanged; AR is the next distinct isolated-Drift test-first owner/transaction investigation.",
+  "diagnostics": [
+    "red-1 missing drift Value import and initial environment InputDrift; fixture corrected, not behavior RED.",
+    "red-2: 12 original-source RED. red-extra: restore original four implementation files from archive, five additional RED and four existing PASS; restore green implementation afterward.",
+    "green-1 fixture expected top-of-list after report; corrected to explicitly scroll back because new UI preserves position; assertions retained.",
+    "red-admission: retained removal targeted old repository; bind repository identity too. New action missed a tap outside viewport; explicit scroll/pump corrected fixture.",
+    "admission-diagnostic confirms introduced removal-of-standalone-useCases regression. Failed string replacement against formatted line followed by unintended continued gate retained in final-related-2. Stopped method, inspected exact line, applied direct patch and verified selected-useCases identity.",
+    "red-sheet-controls confirms detached reason callback setState after dispose; mounted/lifetime guard now covers close/reason.",
+    "Evidence assembly initially looked for unchanged tracked rich_lexical_card in dirty overlay manifest; missing key diagnosed, original bytes/hash read from complete pre-edit ZIP instead. No acceptance skipped.",
+    "Final sequential gates 179+284=463 PASS. All1540 pins identical/current, streams and checkpoint exact ZIP/CRC/hash verified. No source edits during gates. Selection fingerprints differ by targets, not source drift. CR-at-EOL-aware diff check PASS."
+  ],
+  "originalArchives": [
+    "build/ux-delivery/S01-AQ/pre-edit.zip",
+    "build/ux-delivery/S01-AQ/state-pre-edit.zip",
+    "build/ux-delivery/S01-AQ/docs-pre-edit.zip"
+  ],
+  "runEvidenceIndex": "build/ux-delivery/S01-AQ/run-evidence-index.json",
+  "pending": [
+    "native/device",
+    "restart",
+    "real keyboard/screen reader",
+    "permitted visual/user review",
+    "qualified content/media/trials",
+    "release"
+  ],
+  "sprintAccepted": false,
+  "routing": "Astra/medium deterministic fallback, not Jev-selected; Standard/default requested, runtime tier unexposed; original Jev ledger/quota/cache unchanged"
+}

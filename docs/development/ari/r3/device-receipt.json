@@ -1,0 +1,135 @@
+{
+  "taskId": "01a0cf23-34ae-78c2-9116-87746c0cd49c",
+  "phase": "HOST_NATIVE_STORAGE_DONE_PROVIDER_EXTERNAL_PENDING",
+  "observedAtUtc": "2026-09-23T16:55:39.783192+00:00",
+  "sourceFingerprint": "1355fee0971e467335454862f736cea4ae43e4cb2624ba191c752ce0f8631ccb",
+  "backupHashes": {
+    "lexiquest.sqlite": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+    "lexiquest.sqlite-wal": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+    "lexiquest.sqlite-shm": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2"
+  },
+  "fixtureInstalled": false,
+  "restore": "PASS_FINAL_BYTE_EXACT_ALL_THREE",
+  "ownedJobs": [],
+  "fixtureSha256": "9b39270755b8a28c0c775d4dd1f83d508015e041a5201ac6da536d18dff440c4",
+  "incident": {
+    "method": "exec-out stdin transfer",
+    "symptom": "no progress; destination zero bytes; owned adb process waiting",
+    "recovery": "stopped owned adb/python, push temporary file and run-as cp; hash match",
+    "applicationStartedWithIncompleteFile": false
+  },
+  "restoreHashChecks": {
+    "lexiquest.sqlite": true,
+    "lexiquest.sqlite-wal": true,
+    "lexiquest.sqlite-shm": true
+  },
+  "nativeCatalog": "PASS_3_ROWS",
+  "nativeFilter": "PASS_FOOD2_AND_A2_FOOD_EMPTY_CORRECTED_FIXTURE",
+  "nativeDetail": "PASS_REVISION1_ONE_WORD_REVISION2_TWO_WORDS",
+  "provider": "NOT_RUN_UNPAIRED",
+  "nextAction": "R3-03 independent Jev package; retain R3-02 provider/owner lifecycle pending until paired authenticated provider ready",
+  "restoredTableCount": 58,
+  "nativeBaseline": "PASS_UNPAIRED_AI_NOTICE_AND_COLLAPSE",
+  "nativeContext": "PENDING_UNPAIRED_PROVIDER",
+  "nativeOwnerSwitch": "PENDING_HOST_REGRESSION_PASS_ONLY",
+  "postRelaunchTableDifferences": [
+    "content_download_states",
+    "runtime_flags"
+  ],
+  "postRelaunchComparedTables": 58,
+  "nativeSearchClear": "PASS_TRAVEL_ONE_CLEAR_THREE",
+  "finalAppState": "force-stopped after exact restore; previous restored relaunch verified",
+  "restoreAtUtc": "2026-09-23T16:53:05.601463+00:00",
+  "postRelaunchOnlyChangedColumns": {
+    "content_download_states": [
+      "updated_at_utc_ms"
+    ],
+    "runtime_flags": [
+      "expires_at_utc_ms",
+      "updated_at_utc_ms"
+    ]
+  },
+  "sourceManifest": "source-manifest-r3-02.json",
+  "doneIds": [
+    "02.1",
+    "02.2/native_catalog_search_filter_detail_baseline",
+    "02.3"
+  ],
+  "remainingIds": [
+    "02.2/provider_semantics",
+    "02.2/owner_and_lifecycle"
+  ],
+  "hostTests": {
+    "count": 5,
+    "status": "PASS",
+    "receipt": "fixture-verification-r3-02.json",
+    "redLog": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/a3b5cc23f7c4-3ef4b210c040-ab929211/Explicit-Flutter-tests.stdout.log"
+  },
+  "analysis": {
+    "errors": 0,
+    "warnings": 0,
+    "info": 1,
+    "detail": "Existing path import uses transitive package; depend_on_referenced_packages; unchanged import, not claimed clean"
+  },
+  "sourceChangeReview": {
+    "method": "sole-writer review versus adoption ZIP; no subagents per user",
+    "changedFiles": [
+      "test/features/learning_packs/ari_catalog_fixture_test.dart",
+      "test/support/ari_catalog_fixture.dart"
+    ],
+    "productionWrites": 0
+  },
+  "route": {
+    "routeStatus": "DETERMINISTIC_FALLBACK",
+    "selectedModel": "gpt-6-astra",
+    "effort": "medium",
+    "tierPolicy": "Standard/default requested; runtime tier not exposed",
+    "reason": "installed router offline-only; live guard acceptance pending and balance not freshly verified",
+    "jevChoiceCalled": false,
+    "paidSpend": 0,
+    "ledger": "LOCALAPPDATA/LexiQuestDevSecrets/jev-review-ledger.sqlite unchanged"
+  },
+  "wholeScopeComplete": false,
+  "nativeEvidence": [
+    {
+      "path": "native-r3-02/11-catalog-fixed.xml",
+      "sha256": "355e546e3e075f7fb34cfed181f098b39201b7de0c867c4737ea656e8136ce27"
+    },
+    {
+      "path": "native-r3-02/12-detail-r2-fixed.xml",
+      "sha256": "c125e865a418c42de6b845ccfcea738ed8e32951b7ffc09e823d745a298165d5"
+    },
+    {
+      "path": "native-r3-02/13-detail-ai.xml",
+      "sha256": "d20d69c8b64b90740e7a5d66373734f0c873b94efc8922dbd8d5531bdb286dc1"
+    },
+    {
+      "path": "native-r3-02/14-ai-collapsed.xml",
+      "sha256": "c125e865a418c42de6b845ccfcea738ed8e32951b7ffc09e823d745a298165d5"
+    },
+    {
+      "path": "native-r3-02/16-detail-r1.xml",
+      "sha256": "0f626ae0c590490462786550a87b40de4fd444172324074d8ea00489b63cf66a"
+    },
+    {
+      "path": "native-r3-02/18-food-fixed.xml",
+      "sha256": "33ba94970b0a238c27daba3ae57e4b7e42fe9764856c95801281e51c1eccb46e"
+    },
+    {
+      "path": "native-r3-02/19-empty-fixed.xml",
+      "sha256": "bf57d3296e5b36ceb69e82ff199a09dafd4b3304f6c3785f2cbc618d440b7504"
+    },
+    {
+      "path": "native-r3-02/20-restored-home.xml",
+      "sha256": "ba86b084bbb28def55ea8750d9e8aa5b24431f9566d7912277d7c1660aa92bf8"
+    },
+    {
+      "path": "native-r3-02/24-search-travel.xml",
+      "sha256": "19dc6f59c18e1b24b33f333946ec5194f777543598fd5978a7ab046b0bdb33a5"
+    },
+    {
+      "path": "native-r3-02/25-search-cleared.xml",
+      "sha256": "12c6669d231f5c8943c23f11fe739a509f314e734382bde711874bdaba796cb1"
+    }
+  ]
+}

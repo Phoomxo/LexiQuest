@@ -1,3 +1,4 @@
+import 'vocabulary_browse_lifetime.dart';
 import 'package:flutter/material.dart';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
@@ -34,12 +35,102 @@ class VocabListScreen extends StatefulWidget {
   State<VocabListScreen> createState() => _VocabListScreenState();
 }
 
-class _VocabListScreenState extends State<VocabListScreen> {
+class _VocabListScreenState extends State<VocabListScreen>
+    with WidgetsBindingObserver, VocabularyBrowseLifetime<VocabListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
+  VocabularyUseCases? _vocabulary;
+  VocabularyBrowseRead<VocabularyWord>? _words;
+  FeatureRegistry? _boundFeatures;
+  String? _boundCategory;
+  String? _displayOwner;
+
+  void _bind() {
+    final next =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final features = _features;
+    if (!identical(features, _boundFeatures)) browseGeneration++;
+    _boundFeatures = features;
+    bindBrowseFeatures(features);
+    if (identical(next, _vocabulary) && _boundCategory == widget.categoryId)
+      return;
+    browseGeneration++;
+    _words?.dispose();
+    _query = '';
+    _searchController.clear();
+    _displayOwner = null;
+    _boundCategory = widget.categoryId;
+    _vocabulary = next;
+    final category = widget.categoryId;
+    _words = next == null
+        ? null
+        : VocabularyBrowseRead(
+            next,
+            (owner) => next.vocabulary.watchWords(owner, category),
+            categoryId: category,
+          );
+    _words?.addListener(_readChanged);
+  }
+
+  void _readChanged() {
+    final owner = _words?.ownerId;
+    if (owner != null && _displayOwner != null && owner != _displayOwner) {
+      _query = '';
+      _searchController.clear();
+      browseGeneration++;
+    }
+    _displayOwner = owner;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bind();
+  }
+
+  @override
+  void didUpdateWidget(VocabListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.importer, widget.importer)) browseGeneration++;
+    _bind();
+  }
+
+  bool _current(int generation, int revision) =>
+      browseCurrent(generation) &&
+      !browseOpening &&
+      _admitted &&
+      _words?.revision == revision;
+
+  void _retry(int generation, int revision) {
+    if (!_current(generation, revision) || _words!.pending) return;
+    _words!.refresh();
+  }
+
+  Future<void> _openRoute(
+    int generation,
+    int revision,
+    AppPage<void> page,
+  ) async {
+    if (!_current(generation, revision)) return;
+    final read = _words!;
+    browseOpening = true;
+    try {
+      if (!await read.admit() ||
+          !browseCurrent(generation) ||
+          read.revision != revision ||
+          !_admitted)
+        return;
+      await AppNavigator.pushPage<void>(context, page);
+    } finally {
+      browseOpening = false;
+      if (mounted) setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    _words?.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -51,15 +142,26 @@ class _VocabListScreenState extends State<VocabListScreen> {
       mounted && _features?.isEnabled(Feature.vocabulary) == true;
 
   @override
-  Widget build(BuildContext context) => ProductionFeatureGate(
-    feature: Feature.vocabulary,
-    registry: _features,
-    builder: _buildContent,
+  Widget build(BuildContext context) => PopScope<void>(
+    onPopInvokedWithResult: (didPop, _) {
+      if (didPop) browseExit();
+    },
+    child: ProductionFeatureGate(
+      feature: Feature.vocabulary,
+      registry: _features,
+      builder: (context) => _words == null
+          ? _buildContent(context)
+          : ListenableBuilder(
+              listenable: _words!,
+              builder: (context, _) => _buildContent(context),
+            ),
+    ),
   );
 
   Widget _buildContent(BuildContext context) {
-    final useCases =
-        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final useCases = _vocabulary;
+    final generation = browseGeneration;
+    final revision = _words?.revision ?? 0;
     final importer =
         widget.importer ??
         AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
@@ -67,7 +169,11 @@ class _VocabListScreenState extends State<VocabListScreen> {
       widget.categoryId,
     );
     return Scaffold(
-      appBar: AppBar(title: Text(widget.categoryName)),
+      appBar: AppBar(
+        title: Text(
+          _words?.available == false ? 'คลังคำศัพท์' : widget.categoryName,
+        ),
+      ),
       body: useCases == null
           ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
           : Column(
@@ -79,23 +185,41 @@ class _VocabListScreenState extends State<VocabListScreen> {
                     hintText: 'ค้นหาคำศัพท์',
                     leading: const Icon(Icons.search),
                     onChanged: (value) {
+                      if (!_current(generation, revision)) return;
                       setState(() => _query = value.trim().toLowerCase());
                     },
                   ),
                 ),
                 Expanded(
-                  child: StreamBuilder<List<VocabularyWord>>(
-                    stream: useCases.watchWords(widget.categoryId),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Center(
-                          child: Text('อ่านคำศัพท์ไม่สำเร็จ'),
+                  child: Builder(
+                    builder: (context) {
+                      final read = _words!;
+                      if (read.failed) {
+                        return Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('อ่านคำศัพท์ไม่สำเร็จ'),
+                                const SizedBox(height: 8),
+                                OutlinedButton(
+                                  onPressed: () => _retry(generation, revision),
+                                  child: const Text('ลองใหม่'),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       }
-                      if (!snapshot.hasData) {
+                      if (!read.available)
+                        return const Center(
+                          child: Text('หมวดหมู่นี้ไม่พร้อมใช้งาน'),
+                        );
+                      if (read.data == null) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      final words = snapshot.data!
+                      final words = read.data!
                           .where(
                             (word) =>
                                 _query.isEmpty ||
@@ -106,7 +230,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                       if (words.isEmpty) {
                         return Center(
                           child: Text(
-                            snapshot.data!.isEmpty
+                            read.data!.isEmpty
                                 ? 'ยังไม่มีคำศัพท์ในหมวดนี้'
                                 : 'ไม่พบคำศัพท์ที่ตรงกับคำค้น',
                           ),
@@ -133,7 +257,12 @@ class _VocabListScreenState extends State<VocabListScreen> {
                             label: 'แก้ไขคำ ${word.spelling}',
                             onInvoke: isReadOnly
                                 ? null
-                                : () => _openWordEditor(context, word: word),
+                                : () => _openWordEditor(
+                                    context,
+                                    generation,
+                                    revision,
+                                    word: word,
+                                  ),
                             child: ListTile(
                               title: Text(word.spelling),
                               subtitle: Text(
@@ -141,7 +270,12 @@ class _VocabListScreenState extends State<VocabListScreen> {
                               ),
                               onTap: isReadOnly
                                   ? null
-                                  : () => _openWordEditor(context, word: word),
+                                  : () => _openWordEditor(
+                                      context,
+                                      generation,
+                                      revision,
+                                      word: word,
+                                    ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -152,15 +286,23 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                           ? null
                                           : word.ownerId,
                                       label: 'ดูตัวอย่างคำ ${word.spelling}',
-                                      onInvoke: () =>
-                                          _openExamples(context, word),
+                                      onInvoke: () => _openExamples(
+                                        context,
+                                        word,
+                                        generation,
+                                        revision,
+                                      ),
                                       child: IconButton(
                                         tooltip: 'ดูตัวอย่างการใช้',
                                         icon: const Icon(
                                           Icons.menu_book_outlined,
                                         ),
-                                        onPressed: () =>
-                                            _openExamples(context, word),
+                                        onPressed: () => _openExamples(
+                                          context,
+                                          word,
+                                          generation,
+                                          revision,
+                                        ),
                                       ),
                                     ),
                                   if (!isReadOnly)
@@ -192,7 +334,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 ),
               ],
             ),
-      floatingActionButton: useCases == null || isReadOnlyCategory
+      floatingActionButton:
+          useCases == null || isReadOnlyCategory || _words?.available != true
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -202,11 +345,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
                   MenuActionBinding(
                     id: 'vocabulary/import',
                     label: 'นำเข้าคำศัพท์',
-                    onInvoke: () => _openImporter(context),
+                    onInvoke: () =>
+                        _openImporter(context, generation, revision),
                     child: FloatingActionButton.small(
                       heroTag: 'words-import',
                       tooltip: 'นำเข้าคำศัพท์',
-                      onPressed: () => _openImporter(context),
+                      onPressed: () =>
+                          _openImporter(context, generation, revision),
                       child: const Icon(Icons.file_upload_outlined),
                     ),
                   ),
@@ -214,11 +359,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 MenuActionBinding(
                   id: 'vocabulary/add-word',
                   label: 'เพิ่มคำศัพท์',
-                  onInvoke: () => _openWordEditor(context),
+                  onInvoke: () =>
+                      _openWordEditor(context, generation, revision),
                   child: FloatingActionButton.extended(
                     key: const ValueKey('add-word'),
                     heroTag: 'words-add',
-                    onPressed: () => _openWordEditor(context),
+                    onPressed: () =>
+                        _openWordEditor(context, generation, revision),
                     icon: const Icon(Icons.add),
                     label: const Text('เพิ่มคำศัพท์'),
                   ),
@@ -228,51 +375,69 @@ class _VocabListScreenState extends State<VocabListScreen> {
     );
   }
 
-  void _openImporter(BuildContext context) {
-    if (!_admitted) return;
-    final features = _features;
-    AppNavigator.pushPage<void>(
-      context,
+  void _openImporter(BuildContext context, int generation, int revision) {
+    if (!_current(generation, revision)) return;
+    final features = widget.featureRegistry;
+    final categoryId = widget.categoryId;
+    final categoryName = widget.categoryName;
+    final explicitImporter = widget.importer;
+    _openRoute(
+      generation,
+      revision,
       AppPage<void>(
         name: 'vocabulary/import',
         builder: (_) => AddMultipleWordsScreen(
           featureRegistry: features,
-          importer: widget.importer,
-          categoryId: widget.categoryId,
-          categoryName: widget.categoryName,
+          importer: explicitImporter,
+          categoryId: categoryId,
+          categoryName: categoryName,
         ),
       ),
     );
   }
 
-  void _openWordEditor(BuildContext context, {VocabularyWord? word}) {
-    if (!_admitted) return;
-    final features = _features;
-    AppNavigator.pushPage<void>(
-      context,
+  void _openWordEditor(
+    BuildContext context,
+    int generation,
+    int revision, {
+    VocabularyWord? word,
+  }) {
+    if (!_current(generation, revision)) return;
+    final features = widget.featureRegistry;
+    final categoryId = widget.categoryId;
+    final explicitVocabulary = widget.vocabulary;
+    _openRoute(
+      generation,
+      revision,
       AppPage<void>(
         name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
         builder: (_) => AddWordScreen(
-          categoryId: widget.categoryId,
+          categoryId: categoryId,
           word: word,
           featureRegistry: features,
-          vocabulary: widget.vocabulary,
+          vocabulary: explicitVocabulary,
         ),
       ),
     );
   }
 
-  void _openExamples(BuildContext context, VocabularyWord word) {
-    if (!_admitted) return;
-    final features = _features;
-    AppNavigator.pushPage<void>(
-      context,
+  void _openExamples(
+    BuildContext context,
+    VocabularyWord word,
+    int generation,
+    int revision,
+  ) {
+    if (!_current(generation, revision)) return;
+    final features = widget.featureRegistry;
+    _openRoute(
+      generation,
+      revision,
       AppPage<void>(
         name: 'vocabulary/examples',
         builder: (_) => ProductionFeatureGate(
           feature: Feature.vocabulary,
           registry: features,
-          builder: (_) => Scaffold(
+          builder: (childContext) => Scaffold(
             appBar: AppBar(title: const Text('ตัวอย่างการใช้คำ')),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -281,12 +446,12 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 children: [
                   Text(
                     word.spelling,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(childContext).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     word.meaning,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(childContext).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text('${word.partOfSpeech} · ${word.cefrLevel}'),
@@ -314,6 +479,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
   ) async {
     if (!_admitted) return;
     var deleting = false;
+    var deletionCommitted = false;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => MenuActionBinding(
@@ -340,6 +506,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                     dialogContext,
                     useCases,
                     word,
+                    alreadyCommitted: deletionCommitted,
+                    onCommitted: () => deletionCommitted = true,
                   );
                   if (result['status'] == 'deleted' && dialogContext.mounted) {
                     Navigator.pop(dialogContext, false);
@@ -354,21 +522,25 @@ class _VocabListScreenState extends State<VocabListScreen> {
               child: AlertDialog(
                 title: const Text('ลบคำศัพท์'),
                 content: Text(
-                  'ลบ “${word.spelling}” (${word.meaning}) หรือไม่',
+                  deletionCommitted
+                      ? 'ยังยืนยันผลการลบไม่ได้ ปิดหน้าต่างนี้เพื่อตรวจสอบรายการคำศัพท์'
+                      : 'ลบ “${word.spelling}” (${word.meaning}) หรือไม่',
                 ),
                 actions: [
                   MenuActionBinding(
                     id: 'vocabulary/word-delete-cancel',
-                    label: 'ยกเลิกการลบคำศัพท์',
+                    label: deletionCommitted
+                        ? 'ปิดผลการลบคำศัพท์'
+                        : 'ยกเลิกการลบคำศัพท์',
                     ownerId: word.ownerId,
                     onInvoke: cancel,
                     child: TextButton(
                       onPressed: cancel,
-                      child: const Text('ยกเลิก'),
+                      child: Text(deletionCommitted ? 'ปิด' : 'ยกเลิก'),
                     ),
                   ),
                   FilledButton(
-                    onPressed: deleting
+                    onPressed: deleting || deletionCommitted
                         ? null
                         : () => Navigator.pop(dialogContext, true),
                     child: const Text('ลบ'),
@@ -395,8 +567,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Future<Map<String, Object?>> _mcpDeleteWord(
     BuildContext dialogContext,
     VocabularyUseCases useCases,
-    VocabularyWord word,
-  ) async {
+    VocabularyWord word, {
+    required bool alreadyCommitted,
+    required VoidCallback onCommitted,
+  }) async {
     final registry = MenuActionScope.maybeOf(dialogContext);
     final revision = registry?.snapshot()['revision'];
     bool allowed() =>
@@ -406,19 +580,25 @@ class _VocabListScreenState extends State<VocabListScreen> {
         registry?.currentOwner() == word.ownerId &&
         registry?.snapshot()['revision'] == revision;
     if (!allowed()) return {'status': 'stale'};
+    var committed = alreadyCommitted;
     try {
-      await useCases.deleteWord(
-        word.id,
-        expectedOwnerId: word.ownerId,
-        mutationAllowed: allowed,
-      );
+      if (!committed) {
+        await useCases.deleteWord(
+          word.id,
+          expectedOwnerId: word.ownerId,
+          mutationAllowed: allowed,
+        );
+        committed = true;
+        onCommitted();
+      }
       final remaining = await useCases.vocabulary.listAllWords(word.ownerId);
+      if (!allowed()) return {'status': 'stale'};
       if (remaining.any((record) => record.id == word.id)) {
         return {'status': 'verification_failed'};
       }
       return {'status': 'deleted', 'wordId': word.id};
     } catch (_) {
-      return {'status': 'failed'};
+      return {'status': committed ? 'outcome_unknown' : 'failed'};
     }
   }
 }

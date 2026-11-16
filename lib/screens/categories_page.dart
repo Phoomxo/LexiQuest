@@ -1,3 +1,4 @@
+import 'vocabulary_browse_lifetime.dart';
 import 'package:flutter/material.dart';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
@@ -21,16 +22,26 @@ class CategoriesPage extends StatefulWidget {
   State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
+class _CategoriesPageState extends State<CategoriesPage>
+    with WidgetsBindingObserver, VocabularyBrowseLifetime<CategoriesPage> {
   VocabularyUseCases? _vocabulary;
-  Stream<List<VocabularyCategory>>? _categories;
+  VocabularyBrowseRead<VocabularyCategory>? _categories;
+  FeatureRegistry? _boundFeatures;
 
   void _bindVocabulary() {
     final next =
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final features = _features;
+    if (!identical(features, _boundFeatures)) browseGeneration++;
+    _boundFeatures = features;
+    bindBrowseFeatures(features);
     if (identical(next, _vocabulary)) return;
+    browseGeneration++;
+    _categories?.dispose();
     _vocabulary = next;
-    _categories = next?.watchCategories();
+    _categories = next == null
+        ? null
+        : VocabularyBrowseRead(next, next.vocabulary.watchCategories);
   }
 
   @override
@@ -45,13 +56,61 @@ class _CategoriesPageState extends State<CategoriesPage> {
     _bindVocabulary();
   }
 
-  void _retry() {
-    if (!_admitted) return;
-    setState(() {
-      // A new subscription resolves the active owner again, even when the
-      // injected use-case object has not changed.
-      _categories = _vocabulary?.watchCategories();
-    });
+  void _retry(int generation, int revision) {
+    final read = _categories;
+    if (!browseCurrent(generation) ||
+        browseOpening ||
+        !_admitted ||
+        read == null ||
+        revision != read.revision ||
+        read.pending)
+      return;
+    read.refresh();
+  }
+
+  Future<void> _openCategory(
+    VocabularyCategory category,
+    int generation,
+    int revision,
+  ) async {
+    final read = _categories;
+    if (!browseCurrent(generation) ||
+        browseOpening ||
+        !_admitted ||
+        read == null ||
+        read.revision != revision)
+      return;
+    browseOpening = true;
+    try {
+      if (!await read.admit() ||
+          !browseCurrent(generation) ||
+          read.revision != revision ||
+          !_admitted)
+        return;
+      final explicitVocabulary = widget.vocabulary;
+      final explicitFeatures = widget.featureRegistry;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'vocabulary/category',
+          builder: (_) => VocabListScreen(
+            vocabulary: explicitVocabulary,
+            featureRegistry: explicitFeatures,
+            categoryId: category.id,
+            categoryName: category.name,
+          ),
+        ),
+      );
+    } finally {
+      browseOpening = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _categories?.dispose();
+    super.dispose();
   }
 
   FeatureRegistry? get _features =>
@@ -61,10 +120,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
       mounted && _features?.isEnabled(Feature.vocabulary) == true;
 
   @override
-  Widget build(BuildContext context) => ProductionFeatureGate(
-    feature: Feature.vocabulary,
-    registry: _features,
-    builder: _buildContent,
+  Widget build(BuildContext context) => PopScope<void>(
+    onPopInvokedWithResult: (didPop, _) {
+      if (didPop) browseExit();
+    },
+    child: ProductionFeatureGate(
+      feature: Feature.vocabulary,
+      registry: _features,
+      builder: _buildContent,
+    ),
   );
 
   Widget _buildContent(BuildContext context) {
@@ -73,17 +137,21 @@ class _CategoriesPageState extends State<CategoriesPage> {
       appBar: AppBar(title: const Text('คลังคำศัพท์')),
       body: useCases == null
           ? const _LocalDataUnavailable()
-          : StreamBuilder<List<VocabularyCategory>>(
-              key: ObjectKey(_categories),
-              stream: _categories,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return _FailureState(onRetry: _retry);
+          : ListenableBuilder(
+              listenable: _categories!,
+              builder: (context, _) {
+                final read = _categories!;
+                final generation = browseGeneration;
+                final revision = read.revision;
+                if (read.failed) {
+                  return _FailureState(
+                    onRetry: () => _retry(generation, revision),
+                  );
                 }
-                if (!snapshot.hasData) {
+                if (read.data == null) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final categories = snapshot.data!;
+                final categories = read.data!;
                 if (categories.isEmpty) {
                   return const Center(
                     child: Text(
@@ -99,20 +167,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     void openCategory() {
-                      if (!_admitted) return;
-                      final features = _features;
-                      AppNavigator.pushPage<void>(
-                        context,
-                        AppPage<void>(
-                          name: 'vocabulary/category',
-                          builder: (_) => VocabListScreen(
-                            featureRegistry: features,
-                            vocabulary: widget.vocabulary,
-                            categoryId: category.id,
-                            categoryName: category.name,
-                          ),
-                        ),
-                      );
+                      _openCategory(category, generation, revision);
                     }
 
                     return Card(
@@ -229,6 +284,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   final TextEditingController _controller = TextEditingController();
   String? _formOwner;
   bool _saving = false;
+  VocabularyCategory? _committedCategory;
 
   @override
   void initState() {
@@ -259,17 +315,36 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   }
 
   Future<Map<String, Object?>> _save({String? expectedOwnerId}) async {
-    if (!mounted || !widget.admitted() || _saving) return {'status': 'busy'};
+    if (!mounted ||
+        !widget.admitted() ||
+        _saving ||
+        (expectedOwnerId == null && _committedCategory != null)) {
+      return {'status': 'busy'};
+    }
     final registry = MenuActionScope.maybeOf(context);
     final revision = registry?.snapshot()['revision'];
+    final sessionGeneration = registry?.sessionGeneration;
     bool allowed() =>
         mounted &&
         widget.admitted() &&
         (expectedOwnerId == null ||
             registry?.currentOwner() == expectedOwnerId &&
                 registry?.snapshot()['revision'] == revision);
+    // A successful insert refreshes list bindings and advances the registry
+    // revision. Reconciliation checks the session, owner and route admission;
+    // the pre-mutation guard above still requires the original revision.
+    bool verificationAllowed() =>
+        mounted &&
+        widget.admitted() &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        registry?.currentOwner() == expectedOwnerId &&
+        registry?.sessionGeneration == sessionGeneration;
     setState(() => _saving = true);
     try {
+      final pending = _committedCategory;
+      if (pending != null) {
+        return await _verifySaved(pending, verificationAllowed);
+      }
       final saved = await widget.vocabulary.createCategory(
         _controller.text,
         expectedOwnerId: expectedOwnerId,
@@ -283,6 +358,29 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
         }
         return {'status': 'invoked'};
       }
+      _committedCategory = saved;
+      return await _verifySaved(saved, verificationAllowed);
+    } on InvalidVocabularyFailure {
+      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
+      return {'status': 'invalid'};
+    } on DuplicateVocabularyFailure {
+      _message('มีหมวดหมู่นี้แล้ว');
+      return {'status': 'duplicate'};
+    } catch (_) {
+      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
+      return {'status': 'failed'};
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<Map<String, Object?>> _verifySaved(
+    VocabularyCategory saved,
+    bool Function() allowed,
+  ) async {
+    try {
+      final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
+      if (!allowed() || owner.id != saved.ownerId) return {'status': 'stale'};
       final records = await widget.vocabulary.vocabulary
           .watchCategories(saved.ownerId)
           .first;
@@ -297,7 +395,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                 !record.isDeleted,
           )
           .firstOrNull;
-      if (persisted == null) return {'status': 'verification_failed'};
+      if (persisted == null) return {'status': 'outcome_unknown'};
+      if (!allowed()) return {'status': 'stale'};
+      _committedCategory = null;
       if (mounted && ModalRoute.of(context)?.isCurrent == true) {
         Navigator.pop(context);
       }
@@ -309,17 +409,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           'revision': persisted.localRevision,
         },
       };
-    } on InvalidVocabularyFailure {
-      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
-      return {'status': 'invalid'};
-    } on DuplicateVocabularyFailure {
-      _message('มีหมวดหมู่นี้แล้ว');
-      return {'status': 'duplicate'};
     } catch (_) {
-      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
-      return {'status': 'failed'};
-    } finally {
-      if (mounted) setState(() => _saving = false);
+      _message('บันทึกแล้ว แต่ยังตรวจสอบผลไม่ได้ กรุณาปิดแล้วตรวจหมวดหมู่');
+      return {'status': 'outcome_unknown'};
     }
   }
 
@@ -336,7 +428,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
       onForm: _formOwner == null
           ? null
           : (values) {
-              if (_saving || !widget.admitted()) return {'status': 'busy'};
+              if (_saving || _committedCategory != null || !widget.admitted()) {
+                return {'status': 'busy'};
+              }
               setState(() => _controller.text = values['name']!);
               return {'status': 'filled', 'values': values};
             },
@@ -355,6 +449,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           content: TextField(
             key: const ValueKey('category-name-field'),
             controller: _controller,
+            enabled: !_saving && _committedCategory == null,
             autofocus: true,
             maxLength: maxCategoryNameLength,
             decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
@@ -368,7 +463,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
             ),
             FilledButton(
               key: const ValueKey('save-category'),
-              onPressed: _saving ? null : () => _save(),
+              onPressed: _saving || _committedCategory != null
+                  ? null
+                  : () => _save(),
               child: const Text('บันทึก'),
             ),
           ],
@@ -403,13 +500,16 @@ class _FailureState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('อ่านหมวดหมู่ไม่สำเร็จ'),
-          const SizedBox(height: 8),
-          OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
-        ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('อ่านหมวดหมู่ไม่สำเร็จ'),
+            const SizedBox(height: 8),
+            OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T08:54:29.741488+00:00",
+  "baselineManifest": "docs/development/ux-delivery/handoffs/S01-XY-checkpoint-manifest.json",
+  "baselineEntries": 483,
+  "unchangedEntries": 479,
+  "authorizedDocumentationChanges": [
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/S01.md",
+    "docs/development/ux-delivery/ready-backlog.md",
+    "docs/development/ux-delivery/state.json"
+  ],
+  "oldBytesArchive": "build/ux-delivery/S01-Z-checkpoint/predecessor-changed-docs.zip",
+  "oldBytesArchiveSha256": "86b34964f458bda5f10a9c40b7c34c6c0b28c707ed27c5e40b56fa5abc9e651e",
+  "productionAndTestChanges": [],
+  "YInputsUnchanged": true,
+  "sourceDesignInputPinsVerified": 26,
+  "outputPinsVerified": true,
+  "proposedDerivedIdLengthBudgetChecked": true,
+  "predecessorsUnmodified": true
+}
