@@ -524,6 +524,187 @@ void main() {
     await tester.runAsync(database.close);
   });
 
+  for (final failWrite in [false, true]) {
+    testWidgets('R3-05 late delete attachment with write failure $failWrite', (
+      tester,
+    ) async {
+      final vocabulary = dependencies.vocabulary!;
+      final category = await tester.runAsync(
+        () => vocabulary.createCategory('Delete fixture'),
+      );
+      final word = await tester.runAsync(
+        () => vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category!.id,
+            spelling: 'book',
+            meaning: 'หนังสือ',
+            partOfSpeech: 'noun',
+          ),
+        ),
+      );
+      String? owner;
+      final categoryOwner = category!.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: VocabListScreen(
+                categoryId: category.id,
+                categoryName: category.name,
+              ),
+            ),
+          ),
+        ),
+      );
+      await pumpUntilFound(tester, find.widgetWithText(ListTile, 'book'));
+      var request = 0;
+      Future<Map<String, Object?>> invoke(
+        String id, {
+        Map<String, String> values = const {},
+      }) async {
+        Map<String, Object?>? result;
+        registry
+            .execute(
+              id: id,
+              owner: owner!,
+              revision: registry.snapshot()['revision'] as int,
+              requestId: 'delete-${request++}',
+              values: values,
+            )
+            .then((value) => result = value);
+        for (var i = 0; i < 50 && result == null; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        expect(
+          result,
+          isNotNull,
+          reason: 'Delete command must finish within bounded frame/IO pumps',
+        );
+        await tester.pumpAndSettle();
+        return result!;
+      }
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await _settleDeleteRead(tester);
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = categoryOwner;
+      expect(
+        (registry.snapshot()['actions'] as List).map((v) => (v as Map)['id']),
+        containsAll([
+          'vocabulary/word-delete-confirm',
+          'vocabulary/word-delete-cancel',
+        ]),
+      );
+      owner = null;
+      expect(registry.snapshot()['actions'], isEmpty);
+      owner = categoryOwner;
+      expect(find.byType(AlertDialog), findsOneWidget);
+      owner = 'other-owner';
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = category.ownerId;
+
+      expect(
+        (await tester.runAsync(
+          () => database.select(database.vocabularyWords).get(),
+        ))!.single.isDeleted,
+        isFalse,
+      );
+      expect(
+        (await invoke(
+          'vocabulary/word-delete-confirm',
+          values: {'wordId': 'wrong-target'},
+        ))['status'],
+        'invalid',
+      );
+      await invoke('vocabulary/word-delete-cancel');
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        (await tester.runAsync(
+          () => database.select(database.vocabularyWords).get(),
+        ))!.single.isDeleted,
+        isFalse,
+      );
+      await invoke('vocabulary/word/0/delete');
+      if (failWrite) {
+        final beforeWords = await tester.runAsync(
+          () => database
+              .customSelect('SELECT * FROM vocabulary_words ORDER BY id')
+              .get(),
+        );
+        final beforeOutbox = await tester.runAsync(
+          () => database
+              .customSelect(
+                'SELECT * FROM outbox_operations ORDER BY operation_id',
+              )
+              .get(),
+        );
+        await tester.runAsync(
+          () => database.customStatement(
+            "CREATE TRIGGER r305_reject_delete BEFORE UPDATE ON vocabulary_words "
+            "WHEN NEW.is_deleted = 1 BEGIN SELECT RAISE(ABORT, 'r305 injected disk write failure'); END",
+          ),
+        );
+        expect(
+          (await invoke(
+            'vocabulary/word-delete-confirm',
+            values: {'wordId': word!.id},
+          ))['status'],
+          'failed',
+        );
+        expect(find.byType(AlertDialog), findsOneWidget);
+        final afterWords = await tester.runAsync(
+          () => database
+              .customSelect('SELECT * FROM vocabulary_words ORDER BY id')
+              .get(),
+        );
+        final afterOutbox = await tester.runAsync(
+          () => database
+              .customSelect(
+                'SELECT * FROM outbox_operations ORDER BY operation_id',
+              )
+              .get(),
+        );
+        expect(
+          afterWords!.map((r) => r.data).toList(),
+          beforeWords!.map((r) => r.data).toList(),
+        );
+        expect(
+          afterOutbox!.map((r) => r.data).toList(),
+          beforeOutbox!.map((r) => r.data).toList(),
+        );
+        await tester.runAsync(
+          () => database.customStatement('DROP TRIGGER r305_reject_delete'),
+        );
+      }
+      expect(
+        (await invoke(
+          'vocabulary/word-delete-confirm',
+          values: {'wordId': word!.id},
+        ))['status'],
+        'deleted',
+      );
+      final rows = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(rows, hasLength(1));
+      expect(rows!.single.id, word.id);
+      expect(rows.single.isDeleted, isTrue);
+      expect(rows.single.ownerId, owner);
+      expect(find.byType(AlertDialog), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(database.close);
+    });
+  }
+
   testWidgets(
     'MCP import previews without writing and verifies mixed outcomes',
     (tester) async {
@@ -1008,7 +1189,7 @@ void main() {
       );
       expect(delete.hitTestable(), findsOneWidget);
       await tester.tap(delete);
-      await tester.pumpAndSettle();
+      await _settleDeleteRead(tester);
       expect(find.text('ลบ “word19” (คำทดสอบ) หรือไม่'), findsOneWidget);
       await tester.tap(find.text('ยกเลิก'));
       await tester.pumpAndSettle();
@@ -1022,4 +1203,16 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+}
+
+Future<void> _settleDeleteRead(WidgetTester tester) async {
+  for (var i = 0; i < 15; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(find.byType(AlertDialog), findsOneWidget);
+  expect(find.byType(LinearProgressIndicator), findsNothing);
+  await tester.pumpAndSettle();
 }

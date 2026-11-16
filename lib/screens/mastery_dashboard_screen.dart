@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,8 @@ import '../features/progress/domain/progress_models.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../utils/local_study_datetime.dart';
 import '../widgets/learning_summary_card.dart';
 import 'learning_calendar_screen.dart';
@@ -43,6 +46,51 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   Future<PersonalLearningProfile>? _load;
   AppDependencies? _dependencies;
   var _wasActive = false;
+  var _generation = 0;
+  var _loading = false;
+  var _openingCalendar = false;
+  var _routeExited = false;
+  StreamSubscription<({String ownerId, String? firebaseUid})?>?
+  _ownerSubscription;
+  var _ownerEpoch = 0;
+  var _ownerReady = false;
+  String? _ownerId;
+
+  void _observeOwner() {
+    final epoch = ++_ownerEpoch;
+    _ownerSubscription?.cancel().ignore();
+    _ownerSubscription = null;
+    _ownerReady = false;
+    _ownerId = null;
+    _retireRead();
+    final progress = _dependencies?.progress;
+    if (_routeExited ||
+        !TickerMode.valuesOf(context).enabled ||
+        widget.loader != null ||
+        progress == null) {
+      return;
+    }
+    _ownerSubscription = progress.watchProfileOwner().listen(
+      (owner) {
+        if (!mounted || _routeExited || epoch != _ownerEpoch) return;
+        setState(() {
+          _ownerReady = true;
+          _ownerId = owner?.ownerId;
+          _reload();
+        });
+      },
+      onError: (Object error, StackTrace stack) {
+        if (!mounted || _routeExited || epoch != _ownerEpoch) return;
+        setState(() {
+          _retireRead();
+          _ownerReady = false;
+          _ownerId = null;
+          _load = Future<PersonalLearningProfile>.error(error, stack);
+          _load!.ignore();
+        });
+      },
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -51,7 +99,12 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final dependencyChanged = !identical(_dependencies, dependencies);
     _dependencies = dependencies;
-    if (!isActive) {
+    if ((widget.loader == null && dependencyChanged) ||
+        isActive != _wasActive) {
+      _observeOwner();
+    }
+    if (!isActive || _routeExited) {
+      if (_wasActive) _retireRead();
       _wasActive = false;
       return;
     }
@@ -66,58 +119,197 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   @override
   void didUpdateWidget(MasteryDashboardScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.loader, widget.loader) &&
-        TickerMode.valuesOf(context).enabled) {
+    if (!_routeExited && !identical(oldWidget.loader, widget.loader)) {
+      _observeOwner();
+      if (!TickerMode.valuesOf(context).enabled) return;
       _reload();
       // A loader replacement and tab activation can occur in the same frame.
       _wasActive = true;
     }
   }
 
+  bool _current(int generation) =>
+      mounted && !_routeExited && generation == _generation;
+
+  void _retireRead() {
+    _generation++;
+    _load = null;
+    _loading = false;
+  }
+
   void _reload() {
-    final loader =
-        widget.loader ?? _dependencies?.progress?.loadPersonalLearningProfile;
-    _load = loader == null
-        ? Future<PersonalLearningProfile>.error(
-            StateError('personal learning profile dependency unavailable'),
-          )
-        : loader();
+    final progress = _dependencies?.progress;
+    if (widget.loader == null && progress != null && !_ownerReady) return;
+    final generation = ++_generation;
+    final custom = widget.loader;
+    final ownerId = _ownerId;
+    final loader = custom ?? progress?.loadPersonalLearningProfile;
+    _loading = true;
+    _load = Future<PersonalLearningProfile>.sync(() async {
+      if (loader == null) {
+        throw StateError('personal learning profile dependency unavailable');
+      }
+      final profile = await loader();
+      if (custom == null) {
+        final current = await progress!.owners.getOrCreateActiveOwner();
+        if (profile.ownerId != ownerId || current.id != ownerId) {
+          throw StateError('personal learning profile owner changed');
+        }
+      }
+      return profile;
+    });
+    // Observe failure immediately, including retries before the next frame.
+    // An obsolete completion cannot clear the current read's pending guard.
+    _load!.then<void>(
+      (_) {
+        if (_current(generation)) _loading = false;
+      },
+      onError: (Object _, StackTrace __) {
+        if (_current(generation)) _loading = false;
+      },
+    );
+  }
+
+  void _retry(int generation) {
+    if (!_current(generation) ||
+        !_wasActive ||
+        _loading ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      return;
+    }
+    setState(() {
+      if (widget.loader == null &&
+          _dependencies?.progress != null &&
+          !_ownerReady) {
+        _observeOwner();
+      } else {
+        _reload();
+      }
+    });
+  }
+
+  Future<void> _openCalendar(
+    int generation,
+    PersonalLearningProfile profile,
+  ) async {
+    bool admitted() =>
+        _current(generation) &&
+        _wasActive &&
+        TickerMode.valuesOf(context).enabled &&
+        ModalRoute.of(context)?.isCurrent != false;
+    if (!admitted() || _openingCalendar) return;
+    _openingCalendar = true;
+    final custom = widget.loader;
+    final dependencies = _dependencies;
+    try {
+      if (custom == null) {
+        final progress = dependencies?.progress;
+        if (progress == null) return;
+        final owner = await progress.owners.getOrCreateActiveOwner();
+        if (!admitted() ||
+            !identical(dependencies, _dependencies) ||
+            owner.id != profile.ownerId)
+          return;
+        final state = dependencies!.features.stateOf(Feature.mastery);
+        if (state != FeatureState.enabled && state != FeatureState.limited)
+          return;
+      }
+      if (!admitted()) return;
+      final open = widget.openLearningCalendar;
+      if (open != null) {
+        await open(context, profile.calendar);
+      } else {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'progress/learning-calendar',
+            builder: (_) => custom == null
+                ? ProductionFeatureGate(
+                    feature: Feature.mastery,
+                    builder: (_) => const LearningCalendarScreen(),
+                  )
+                : LearningCalendarScreen(
+                    loader: () async {
+                      if (!mounted || _routeExited || widget.loader != custom)
+                        throw StateError('calendar source retired');
+                      final result = await custom();
+                      if (!mounted ||
+                          _routeExited ||
+                          widget.loader != custom ||
+                          result.ownerId != profile.ownerId)
+                        throw StateError('calendar source changed');
+                      return result.calendar;
+                    },
+                  ),
+          ),
+        );
+      }
+    } catch (_) {
+      // Admission is a read. A failed acknowledgement never repeats navigation.
+      if (admitted()) setState(_reload);
+    } finally {
+      _openingCalendar = false;
+    }
+  }
+
+  void _exit() {
+    _routeExited = true;
+    _ownerEpoch++;
+    _ownerSubscription?.cancel().ignore();
+    _ownerSubscription = null;
+    _retireRead();
+  }
+
+  @override
+  void dispose() {
+    _exit();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ภาพรวมการเรียน')),
-      body: FutureBuilder<PersonalLearningProfile>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const _DashboardMessage(
-              'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final profile = snapshot.data!;
-          return MenuActionBinding(
-            id: 'progress/profile-summary',
-            label: 'Learning progress evidence',
-            ownerId: profile.ownerId,
-            onInvoke: null,
-            readValue: _profileAssistance(profile),
-            child: _DashboardBody(
-              profile,
-              onOpenWeakness: widget.onOpenWeakness,
-              onOpenReview: widget.onOpenReview,
-              openLearningCalendar:
-                  widget.openLearningCalendar ?? _openLearningCalendar,
-            ),
-          );
-        },
+    final generation = _generation;
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_routeExited) setState(_exit);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ภาพรวมการเรียน')),
+        body: !_wasActive || _routeExited
+            ? const SizedBox.shrink()
+            : FutureBuilder<PersonalLearningProfile>(
+                key: ValueKey(generation),
+                future: _load,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return _DashboardMessage(
+                      'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
+                      onRetry: () => _retry(generation),
+                    );
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final profile = snapshot.data!;
+                  return MenuActionBinding(
+                    id: 'progress/profile-summary',
+                    label: 'Learning progress evidence',
+                    ownerId: profile.ownerId,
+                    onInvoke: null,
+                    readValue: _profileAssistance(profile),
+                    child: _DashboardBody(
+                      profile,
+                      onOpenWeakness: widget.onOpenWeakness,
+                      onOpenReview: widget.onOpenReview,
+                      openLearningCalendar: (_, __) =>
+                          _openCalendar(generation, profile),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -534,32 +726,34 @@ class _NoEvidence extends StatelessWidget {
 }
 
 class _DashboardMessage extends StatelessWidget {
-  const _DashboardMessage(this.message);
+  const _DashboardMessage(this.message, {required this.onRetry});
 
   final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(message, textAlign: TextAlign.center),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('ลองอีกครั้ง'),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
-
-Future<void> _openLearningCalendar(
-  BuildContext context,
-  LearningCalendarSnapshot calendar,
-) async {
-  await AppNavigator.pushPage<void>(
-    context,
-    AppPage<void>(
-      name: 'progress/learning-calendar',
-      builder: (_) => LearningCalendarScreen(loader: () async => calendar),
-    ),
-  );
 }
 
 String _duration(Duration duration) {

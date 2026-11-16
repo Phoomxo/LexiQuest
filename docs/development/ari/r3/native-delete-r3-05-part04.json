@@ -1,0 +1,138 @@
+{
+  "taskId": "01a0cf8e-bc26-74e1-879e-0f3a6879e3a3",
+  "sourceFingerprint": "e8cf7cecb5386634168d1798f434e5cff05b6e06adae18bbffc0e10713885e12",
+  "sourceManifest": "source-manifest-r3-05-part04.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part04.apk",
+  "apkSha256": "696ebdcc47d3b322fc4fa868a25d6fe119144cb8a3364805444874809c70a1c9",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "log": "build/ari-r3-05/part04-android-build.log",
+    "sha256": "84353608b7c3ec99bc46580ffef26b206b6c304c1a05b37285097293ef096717",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "warning": "Existing plugin Kotlin Gradle migration warning"
+  },
+  "observed": [
+    "Fresh snapshot before isolated APK install; aapt package checked before install",
+    "Create R305Part04 category and r305book/book/noun word",
+    "Exact-target deletion dialog cancel retains word; confirm removes it",
+    "Force-stop/relaunch and reenter category still empty",
+    "AI expand/collapse freshly shows unpaired; manual empty-list route remains",
+    "58tables compared by actual PK; original vocabulary/outbox rows unchanged; owners/answers/sessions/AI usage unchanged",
+    "Fresh main/WAL/SHM restored byte-exact; isolated app force-stopped"
+  ],
+  "notProven": [
+    "Native injected post-commit read failure",
+    "Actual provider semantics, connected lifecycle, foreign-owner native session",
+    "Whole W03 or whole R3-05"
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part04-native/backup.json",
+  "restore": "build/ari-r3-05/part04-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "outbox_operations": {
+        "beforeRows": 359,
+        "afterRows": 362,
+        "added": 3,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "operation_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      "vocabulary_categories": {
+        "beforeRows": 8,
+        "afterRows": 9,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_words": {
+        "beforeRows": 19,
+        "afterRows": 20,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "fixture": {
+      "categoriesAdded": 1,
+      "wordsAdded": 1,
+      "wordTombstones": 1,
+      "outboxRowsAdded": 3,
+      "deleteOutboxRows": 1,
+      "sameOwner": true
+    },
+    "installedApkSha256": "696ebdcc47d3b322fc4fa868a25d6fe119144cb8a3364805444874809c70a1c9",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "oemWarning": "CPU EACCES warning separated; fresh UI dumps succeeded"
+}

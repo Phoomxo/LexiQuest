@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/content_quality_report.dart';
+import '../domain/review_mutation_context.dart';
+import 'review_mutation_state.dart';
 
 typedef ContentReportSheetSubmit =
     Future<void> Function({
@@ -14,20 +16,47 @@ final class ContentReportSheet extends StatefulWidget {
     super.key,
     required this.identity,
     required this.onSubmit,
+    this.canSubmit,
+    this.expectedOwnerId,
   });
 
   final ContentIdentity identity;
   final ContentReportSheetSubmit onSubmit;
+  final bool Function()? canSubmit;
+  final String? expectedOwnerId;
 
   @override
   State<ContentReportSheet> createState() => _ContentReportSheetState();
 }
 
-final class _ContentReportSheetState extends State<ContentReportSheet> {
+final class _ContentReportSheetState
+    extends ReviewMutationState<ContentReportSheet> {
   final TextEditingController _comment = TextEditingController();
   ContentReportReason? _reason;
   bool _submitting = false;
   String? _error;
+
+  bool get _canEdit =>
+      mutationVisible && !_submitting && widget.canSubmit?.call() != false;
+
+  @override
+  void retireMutation() {
+    super.retireMutation();
+    _submitting = false;
+    _error = null;
+  }
+
+  @override
+  void didUpdateWidget(ContentReportSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.identity != widget.identity ||
+        oldWidget.onSubmit != widget.onSubmit ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+      retireMutation();
+      _reason = null;
+      _comment.clear();
+    }
+  }
 
   @override
   void dispose() {
@@ -36,13 +65,22 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
   }
 
   void _close() {
-    if (_submitting) return;
+    if (!_canEdit) return;
     Navigator.of(context).maybePop();
   }
 
   Future<void> _submit() async {
     final reason = _reason;
-    if (reason == null || _submitting) return;
+    if (!mutationVisible ||
+        reason == null ||
+        _submitting ||
+        widget.canSubmit?.call() == false)
+      return;
+    final generation = mutationGeneration;
+    final canSubmit = widget.canSubmit;
+    final action = widget.onSubmit;
+    final expectedOwnerId = widget.expectedOwnerId;
+    bool current() => mutationCurrent(generation) && canSubmit?.call() != false;
     final trimmed = _comment.text.trim();
     final comment = trimmed.isEmpty ? null : trimmed;
     if (comment != null &&
@@ -61,8 +99,12 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
       _error = null;
     });
     try {
-      await widget.onSubmit(reason: reason, comment: comment);
-      if (!mounted) return;
+      await ReviewMutationContext.run(
+        () => action(reason: reason, comment: comment),
+        isCurrent: current,
+        expectedOwnerId: expectedOwnerId,
+      );
+      if (!current()) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -72,10 +114,11 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
       );
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     } catch (_) {
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'ยังยืนยันการส่งรายงานไม่ได้');
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted && generation == mutationGeneration)
+        setState(() => _submitting = false);
     }
   }
 
@@ -120,7 +163,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
             RadioGroup<ContentReportReason>(
               groupValue: _reason,
               onChanged: (value) {
-                if (!_submitting) setState(() => _reason = value);
+                if (_canEdit) setState(() => _reason = value);
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

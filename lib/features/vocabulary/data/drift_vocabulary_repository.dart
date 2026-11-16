@@ -10,7 +10,12 @@ import '../domain/vocabulary_word.dart';
 import 'packaged_starter_access.dart';
 
 final class DriftVocabularyRepository
-    implements VocabularyRepository, AtomicVocabularyCreationRepository {
+    implements
+        VocabularyRepository,
+        AtomicVocabularyCreationRepository,
+        GuardedVocabularyWordCreationRepository,
+        GuardedVocabularyCategoryRepository,
+        GuardedVocabularyWordDeletionRepository {
   DriftVocabularyRepository(this.database, {this.contentManifests});
 
   static const int categoryWordLimit = 50;
@@ -153,6 +158,45 @@ final class DriftVocabularyRepository
     // A stale view or owner rolls back category, word and outbox together.
     await requireCurrent();
     return result;
+  });
+
+  Future<void> _requireCategoryAdmission(
+    String ownerId,
+    bool Function() allowed,
+  ) async {
+    final active = await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).get();
+    if (active.length != 1 || active.single.id != ownerId || !allowed()) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
+  }
+
+  @override
+  Future<VocabularyCategory> createCategoryWithAdmission({
+    required VocabularyCategory category,
+    required bool Function() mutationAllowed,
+  }) => database.transaction(() async {
+    await _requireCategoryAdmission(category.ownerId, mutationAllowed);
+    final result = await createCategory(category);
+    await _requireCategoryAdmission(category.ownerId, mutationAllowed);
+    return result;
+  });
+
+  @override
+  Future<void> deleteCategoryWithAdmission({
+    required String ownerId,
+    required String categoryId,
+    required DateTime nowUtc,
+    required bool Function() mutationAllowed,
+  }) => database.transaction(() async {
+    await _requireCategoryAdmission(ownerId, mutationAllowed);
+    await deleteCategory(
+      ownerId: ownerId,
+      categoryId: categoryId,
+      nowUtc: nowUtc,
+    );
+    await _requireCategoryAdmission(ownerId, mutationAllowed);
   });
 
   @override
@@ -303,6 +347,29 @@ final class DriftVocabularyRepository
       );
     });
   }
+
+  @override
+  Future<VocabularyWord> createWordWithAdmission({
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+  }) => database.transaction(() async {
+    Future<void> requireCurrent() async {
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).get();
+      if (active.length != 1 ||
+          active.single.id != word.ownerId ||
+          !mutationAllowed()) {
+        throw const InvalidVocabularyFailure('owner', 'stale operation');
+      }
+    }
+
+    await requireCurrent();
+    final result = await createWord(word);
+    // The outer transaction owns both the canonical word and its outbox row.
+    await requireCurrent();
+    return result;
+  });
 
   @override
   Future<VocabularyWord> createWord(VocabularyWord word) async {
@@ -459,6 +526,41 @@ final class DriftVocabularyRepository
       );
     });
   }
+
+  @override
+  Future<void> deleteWordWithAdmission({
+    required String ownerId,
+    required String wordId,
+    required DateTime nowUtc,
+    required bool Function() mutationAllowed,
+    VocabularyWord? expectedWord,
+    int? expectedCategoryRevision,
+  }) => database.transaction(() async {
+    await _requireCategoryAdmission(ownerId, mutationAllowed);
+    final word = await _activeWord(ownerId, wordId);
+    if (word == null ||
+        (expectedWord != null &&
+            (expectedWord.id != wordId ||
+                expectedWord.ownerId != ownerId ||
+                expectedWord.categoryId != word.categoryId ||
+                expectedWord.localRevision != word.localRevision))) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
+    Future<void> requireCategory() async {
+      final category = await _activeCategory(ownerId, word.categoryId);
+      if (category == null ||
+          (expectedCategoryRevision != null &&
+              category.localRevision != expectedCategoryRevision)) {
+        throw const InvalidVocabularyFailure('owner', 'stale operation');
+      }
+    }
+
+    await requireCategory();
+    await _requireCategoryAdmission(ownerId, mutationAllowed);
+    await deleteWord(ownerId: ownerId, wordId: wordId, nowUtc: nowUtc);
+    await requireCategory();
+    await _requireCategoryAdmission(ownerId, mutationAllowed);
+  });
 
   Future<void> _appendOutbox({
     required String entityType,

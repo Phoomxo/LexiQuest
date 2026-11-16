@@ -298,7 +298,7 @@ Future<void> _pumpProductionShell(
     AppDependenciesScope(
       dependencies: _dependencies(harness.database, harness.registry),
       child: MaterialApp(
-        home: MainNavigationScreen(featureRegistry: harness.registry),
+        home: MainNavigationScreen(initialIndex: 0, featureRegistry: harness.registry),
       ),
     ),
   );

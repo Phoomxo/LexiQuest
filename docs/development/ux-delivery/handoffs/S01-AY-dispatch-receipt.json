@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-ay-20260925-f934",
+  "status": "CLAIMED",
+  "clientThreadId": "client-new-thread:9194c690-b800-4ddf-9ee1-2b162f9c5590",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "predecessorThreadId": "01a0d53d-71af-7e92-bcf0-332cdafb5dcf",
+  "predecessorWriterReleased": true,
+  "sourceManifest": "docs/development/ux-delivery/handoffs/S01-AY-source-manifest.json",
+  "manifestSha256": "b338406e4030e628ac09f5e18d2d1584038a24fbc8af1fe397e8e62b2507c1a0",
+  "archiveSha256": "3432cccd5f243fad840068223602740070a80b7bddef9b0051bd1e8a8b2f4984",
+  "duplicateDispatch": false,
+  "recoveryAndImplementationAuthorizationIncluded": true,
+  "setupObservation": "Resolved: controller verified running successor, source receipt and LIVE ACTIVE revision102 identifying the sole writer.",
+  "controllerReceiptDelivered": true,
+  "coordinationOnlyAfterImmutableSnapshot": true,
+  "successorThreadId": "01a0d561-33e5-7ff3-ace9-663f145a31c2",
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/6c39/LexiQuest",
+  "successorBranch": "feature/ux-s01-ay-6c39",
+  "successorStateRevision": 102,
+  "resolutionEvidence": {
+    "reportedByThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+    "recordedAtUtc": "2026-09-24T21:49:03.590866+00:00",
+    "verification": "Controller independently verified AX gates535 tests/source1552 pins and2509-entry handoff hashes."
+  }
+}

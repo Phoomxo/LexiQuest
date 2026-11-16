@@ -19,6 +19,7 @@ import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository
 import 'package:vocab_learning_app/screens/avatar_equipment_screen.dart';
 
 void main() {
+  recoveryTests();
   testWidgets('F02 replacement retires old shop command and busy state', (
     tester,
   ) async {
@@ -579,8 +580,10 @@ final class _BlockingOwners implements LocalOwnerRepository {
   final LocalOwnerRepository delegate;
   Future<void>? pending;
   bool failNextRead = false;
+  int reads = 0;
   @override
   Future<LocalOwner> getOrCreateActiveOwner() async {
+    reads++;
     await pending;
     if (failNextRead) {
       failNextRead = false;
@@ -592,4 +595,565 @@ final class _BlockingOwners implements LocalOwnerRepository {
   @override
   Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
       delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
+void recoveryTests() {
+  testWidgets('AI review old cancel cannot cancel a subsequent preview operation', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+    );
+    await tester.pumpAndSettle();
+    final preview = find.byKey(const ValueKey('reward-preview/headgear_ipa'));
+    await _scrollToCenter(tester, preview, delta: 200);
+    await tester.tap(preview);
+    await tester.pumpAndSettle();
+    final cancel = tester
+        .widget<TextButton>(find.widgetWithText(TextButton, 'เลิกลอง'))
+        .onPressed!;
+    cancel();
+    await tester.pumpAndSettle();
+    await _scrollToCenter(tester, preview, delta: 200);
+    await tester.tap(preview);
+    await tester.pumpAndSettle();
+    cancel();
+    await tester.pump();
+    expect(find.text('กำลังลองหมวก IPA'), findsOneWidget);
+  });
+  testWidgets('AI review overlapping item operations cannot leave a retired busy tile', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+    );
+    await tester.pumpAndSettle();
+    final first = find.byKey(const ValueKey('reward-purchase/theme_ocean'));
+    await _scrollToCenter(tester, first, delta: 200);
+    final firstAction = tester.widget<FilledButton>(first).onPressed!;
+    final second = find.byKey(
+      const ValueKey('reward-purchase/wallpaper_focus'),
+    );
+    await _scrollToCenter(tester, second, delta: 200);
+    final secondAction = tester.widget<FilledButton>(second).onPressed!;
+    final wait = Completer<void>();
+    f.owners.pending = wait.future;
+    firstAction();
+    secondAction();
+    await tester.pump();
+    f.owners.pending = null;
+    wait.complete();
+    // Bounded pumps permit inspection of a spinner regression without settle timeout.
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await _scrollToCenter(
+      tester,
+      find.byKey(const ValueKey('reward-item/wallpaper_focus')),
+      delta: 200,
+    );
+    expect(find.text('กำลังบันทึกรายการ…'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'AI retry is bounded and retired callbacks cannot restart reads',
+    (tester) async {
+      final f = await _RecoveryFixture.create();
+      addTearDown(f.database.close);
+      f.owners.failNextRead = true;
+      await tester.pumpWidget(
+        MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+      );
+      await tester.pumpAndSettle();
+      final retry = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'ลองใหม่'))
+          .onPressed!;
+      final wait = Completer<void>();
+      f.owners.pending = wait.future;
+      final before = f.owners.reads;
+      retry();
+      retry();
+      retry();
+      await tester.pump();
+      final started = f.owners.reads - before;
+      f.owners.pending = null;
+      wait.complete();
+      await tester.pumpAndSettle();
+      expect(started, 1);
+      final completed = f.owners.reads;
+      retry();
+      await tester.pumpAndSettle();
+      expect(f.owners.reads, completed);
+    },
+  );
+
+  for (final boundary in [
+    'covered',
+    'pop',
+    'inactive',
+    'replacement',
+    'dispose',
+  ]) {
+    for (final pending in [false, true]) {
+      testWidgets(
+        'AI $boundary retires ${pending ? "pending" : "retained"} explicit purchase',
+        (tester) async {
+          final f = await _RecoveryFixture.create();
+          addTearDown(f.database.close);
+          final nav = GlobalKey<NavigatorState>();
+          var active = true;
+          var rewards = f.rewards;
+          late StateSetter update;
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: nav,
+              home: const Scaffold(body: Text('home')),
+            ),
+          );
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => StatefulBuilder(
+                builder: (context, set) {
+                  update = set;
+                  return TickerMode(
+                    enabled: active,
+                    child: AvatarEquipmentScreen(rewards: rewards),
+                  );
+                },
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final purchase = find.byKey(
+            const ValueKey('reward-purchase/theme_ocean'),
+          );
+          await _scrollToCenter(tester, purchase, delta: 200);
+          final action = tester.widget<FilledButton>(purchase).onPressed!;
+          final before =
+              (await f.database.select(f.database.rewardTransactions).get())
+                  .map((r) => r.toJson())
+                  .toList();
+          final wait = Completer<void>();
+          if (pending) {
+            f.owners.pending = wait.future;
+            action();
+          }
+          if (boundary == 'covered')
+            nav.currentState!.push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: Text('cover')),
+              ),
+            );
+          if (boundary == 'pop') nav.currentState!.pop();
+          if (boundary == 'inactive') {
+            update(() => active = false);
+            await tester.pump();
+          }
+          if (boundary == 'replacement') {
+            update(() => rewards = f.makeRewards());
+            await tester.pump();
+          }
+          if (boundary == 'dispose')
+            await tester.pumpWidget(const SizedBox.shrink());
+          if (!pending) action();
+          f.owners.pending = null;
+          wait.complete();
+          await tester.pumpAndSettle();
+          expect(
+            (await f.database.select(f.database.rewardTransactions).get())
+                .map((r) => r.toJson())
+                .toList(),
+            before,
+          );
+          expect(find.text('ซื้อรายการและบันทึกในเครื่องแล้ว'), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  for (final boundary in [
+    'covered',
+    'pop',
+    'inactive',
+    'replacement',
+    'dispose',
+  ]) {
+    for (final pending in [false, true]) {
+      testWidgets(
+        'AI $boundary retires ${pending ? "pending" : "retained"} explicit equip',
+        (tester) async {
+          final f = await _RecoveryFixture.create();
+          addTearDown(f.database.close);
+          await f.rewards.purchase(
+            itemId: 'theme_ocean',
+            catalogVersion: 2,
+            idempotencyKey: 'fixture-owned',
+          );
+          final nav = GlobalKey<NavigatorState>();
+          var active = true;
+          var rewards = f.rewards;
+          late StateSetter update;
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: nav,
+              home: const Scaffold(body: Text('home')),
+            ),
+          );
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => StatefulBuilder(
+                builder: (context, set) {
+                  update = set;
+                  return TickerMode(
+                    enabled: active,
+                    child: AvatarEquipmentScreen(rewards: rewards),
+                  );
+                },
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final purchase = find.byKey(
+            const ValueKey('reward-equip/theme_ocean'),
+          );
+          await _scrollToCenter(tester, purchase, delta: 200);
+          final action = tester.widget<OutlinedButton>(purchase).onPressed!;
+          final before =
+              (await f.database.select(f.database.rewardTransactions).get())
+                  .map((r) => r.toJson())
+                  .toList();
+          final wait = Completer<void>();
+          if (pending) {
+            f.owners.pending = wait.future;
+            action();
+          }
+          if (boundary == 'covered')
+            nav.currentState!.push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: Text('cover')),
+              ),
+            );
+          if (boundary == 'pop') nav.currentState!.pop();
+          if (boundary == 'inactive') {
+            update(() => active = false);
+            await tester.pump();
+          }
+          if (boundary == 'replacement') {
+            update(() => rewards = f.makeRewards());
+            await tester.pump();
+          }
+          if (boundary == 'dispose')
+            await tester.pumpWidget(const SizedBox.shrink());
+          if (!pending) action();
+          f.owners.pending = null;
+          wait.complete();
+          await tester.pumpAndSettle();
+          expect(
+            (await f.database.select(f.database.rewardTransactions).get())
+                .map((r) => r.toJson())
+                .toList(),
+            before,
+          );
+          expect(find.text('ซื้อรายการและบันทึกในเครื่องแล้ว'), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  for (final pending in [false, true]) {
+    testWidgets('AI displayed owner change retires purchase pending=$pending', (
+      tester,
+    ) async {
+      final f = await _RecoveryFixture.create();
+      addTearDown(f.database.close);
+      await tester.pumpWidget(
+        MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+      );
+      await tester.pumpAndSettle();
+      final purchase = find.byKey(
+        const ValueKey('reward-purchase/theme_ocean'),
+      );
+      await _scrollToCenter(tester, purchase, delta: 200);
+      final action = tester.widget<FilledButton>(purchase).onPressed!;
+      final wait = Completer<void>();
+      if (pending) {
+        f.owners.pending = wait.future;
+        action();
+      }
+      // Real committed owner switch; both synthetic owners have sufficient coins/XP.
+      await f.database.customStatement('UPDATE local_owners SET is_active = 0');
+      await f.database.customStatement(
+        "INSERT INTO local_owners (id, created_at_utc_ms, is_active) VALUES ('local:second', 1, 1)",
+      );
+      await f.database
+          .into(f.database.pointsLedgerEntries)
+          .insert(
+            PointsLedgerEntriesCompanion.insert(
+              id: 'second-xp',
+              ownerId: 'local:second',
+              idempotencyKey: 'second-xp',
+              entryType: 'quizCorrect',
+              amount: 200,
+              occurredAtUtcMs: 1,
+            ),
+          );
+      final direct = f.makeRewards();
+      f.owners.pending = null;
+      await direct.grantCoins(
+        idempotencyKey: 'second-coins',
+        amount: 100,
+        sourceEventId: 'second-grant',
+      );
+      final before =
+          (await f.database.select(f.database.rewardTransactions).get())
+              .map((r) => r.toJson())
+              .toList();
+      if (!pending) action();
+      wait.complete();
+      await tester.pumpAndSettle();
+      expect(
+        (await f.database.select(f.database.rewardTransactions).get())
+            .map((r) => r.toJson())
+            .toList(),
+        before,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'AI committed owner signal retires displayed preview and old cancel',
+    (tester) async {
+      final f = await _RecoveryFixture.create();
+      addTearDown(f.database.close);
+      await tester.pumpWidget(
+        MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+      );
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const ValueKey('reward-preview/headgear_ipa'));
+      await _scrollToCenter(tester, preview, delta: 200);
+      await tester.tap(preview);
+      await tester.pumpAndSettle();
+      final cancel = tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'เลิกลอง'))
+          .onPressed!;
+      await f.database.transaction(() async {
+        await f.database.customUpdate(
+          'UPDATE local_owners SET is_active = 0',
+          updates: {f.database.localOwners},
+        );
+        await f.database.customUpdate(
+          "INSERT INTO local_owners (id, created_at_utc_ms, is_active) VALUES ('local:second', 1, 1)",
+          updates: {f.database.localOwners},
+        );
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('กำลังลองหมวก IPA'), findsNothing);
+      expect(find.text('XP สะสม 0'), findsOneWidget);
+      await _scrollToCenter(tester, preview, delta: 200);
+      await tester.tap(preview);
+      await tester.pumpAndSettle();
+      cancel();
+      await tester.pump();
+      expect(find.text('กำลังลองหมวก IPA'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AI preview scroll scheduled before cover cannot move covered page',
+    (tester) async {
+      final f = await _RecoveryFixture.create();
+      addTearDown(f.database.close);
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: AvatarEquipmentScreen(rewards: f.rewards),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final preview = find.byKey(const ValueKey('reward-preview/headgear_ipa'));
+      await _scrollToCenter(tester, preview, delta: 200);
+      final controller = tester
+          .widget<ListView>(find.byType(ListView))
+          .controller!;
+      final offset = controller.offset;
+      tester.widget<OutlinedButton>(preview).onPressed!();
+      nav.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('cover')),
+        ),
+      );
+      await tester.pump();
+      if (controller.hasClients) expect(controller.offset, offset);
+      await tester.pumpAndSettle();
+      nav.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('กำลังลองหมวก IPA'), findsNothing);
+    },
+  );
+
+  testWidgets('AI retired failed retry after pop or disposal does nothing', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    f.owners.failNextRead = true;
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+    );
+    await tester.pumpAndSettle();
+    final retry = tester
+        .widget<FilledButton>(find.widgetWithText(FilledButton, 'ลองใหม่'))
+        .onPressed!;
+    await tester.pumpWidget(const SizedBox.shrink());
+    final reads = f.owners.reads;
+    retry();
+    await tester.pump();
+    expect(f.owners.reads, reads);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'AI immediate repeated owner read failure stays observed and can recover',
+    (tester) async {
+      final f = await _RecoveryFixture.create();
+      addTearDown(f.database.close);
+      f.owners.failNextRead = true;
+      await tester.pumpWidget(
+        MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+      );
+      await tester.pumpAndSettle();
+      f.owners.failNextRead = true;
+      await tester.tap(find.widgetWithText(FilledButton, 'ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('ไม่สามารถอ่านข้อมูลรางวัลในเครื่องได้'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.widgetWithText(FilledButton, 'ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(find.text('เหรียญคงเหลือ'), findsOneWidget);
+    },
+  );
+  testWidgets('AI inactive initial destination does not read rewards', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    final before = f.owners.reads;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TickerMode(
+          enabled: false,
+          child: AvatarEquipmentScreen(rewards: f.rewards),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(f.owners.reads, before);
+  });
+  testWidgets('AI failure fits Thai narrow screen with large text', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    f.owners.failNextRead = true;
+    tester.view.physicalSize = const Size(360, 220);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (c, child) => MediaQuery(
+          data: MediaQuery.of(
+            c,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: AvatarEquipmentScreen(rewards: f.rewards),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+  });
+  testWidgets('AI old preview callback cannot change replacement display', (
+    tester,
+  ) async {
+    final f = await _RecoveryFixture.create();
+    addTearDown(f.database.close);
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: f.rewards)),
+    );
+    await tester.pumpAndSettle();
+    final preview = find.byKey(const ValueKey('reward-preview/headgear_ipa'));
+    await _scrollToCenter(tester, preview, delta: 200);
+    final action = tester.widget<OutlinedButton>(preview).onPressed!;
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: f.makeRewards())),
+    );
+    await tester.pumpAndSettle();
+    action();
+    await tester.pumpAndSettle();
+    expect(find.text('กำลังลองหมวก IPA'), findsNothing);
+  });
+}
+
+class _RecoveryFixture {
+  _RecoveryFixture(this.database, this.owners);
+  final AppDatabase database;
+  final _BlockingOwners owners;
+  late RewardUseCases rewards;
+  int sequence = 0;
+  RewardUseCases makeRewards() => RewardUseCases(
+    owners: owners,
+    repository: DriftRewardRepository(database),
+    progress: ProgressUseCases(
+      owners: owners,
+      queries: DriftProgressQueries(database),
+      nowUtc: () => DateTime.utc(2026),
+    ),
+    generateId: () => 'recovery-${sequence++}',
+    nowUtc: () => DateTime.utc(2026),
+  );
+  static Future<_RecoveryFixture> create() async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final owners = _BlockingOwners(
+      DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'recovery-owner',
+        nowUtc: () => DateTime.utc(2026),
+      ),
+    );
+    final owner = await owners.getOrCreateActiveOwner();
+    await database
+        .into(database.pointsLedgerEntries)
+        .insert(
+          PointsLedgerEntriesCompanion.insert(
+            id: 'recovery-xp',
+            ownerId: owner.id,
+            idempotencyKey: 'recovery-xp',
+            entryType: 'quizCorrect',
+            amount: 200,
+            occurredAtUtcMs: 1,
+          ),
+        );
+    final f = _RecoveryFixture(database, owners);
+    f.rewards = f.makeRewards();
+    await f.rewards.grantCoins(
+      idempotencyKey: 'recovery-coins',
+      amount: 100,
+      sourceEventId: 'recovery-grant',
+    );
+    return f;
+  }
 }

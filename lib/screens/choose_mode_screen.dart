@@ -50,6 +50,8 @@ class ChooseModeScreen extends StatefulWidget {
     this.sessionConfigurationPolicy = const SessionConfigurationPolicy(),
     this.leadingCards = const <Widget>[],
     this.secondaryCards = const <Widget>[],
+    this.focusHome = false,
+    this.readingLibrary = false,
   });
 
   final FeatureRegistry? featureRegistry;
@@ -57,16 +59,84 @@ class ChooseModeScreen extends StatefulWidget {
   final SessionConfigurationPolicy sessionConfigurationPolicy;
   final List<Widget> leadingCards;
   final List<Widget> secondaryCards;
+  final bool focusHome;
+
+  /// A route-owned entry reuses the canonical vocabulary configuration flow.
+  final bool readingLibrary;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
 }
 
-class _ChooseModeScreenState extends State<ChooseModeScreen> {
+class _ChooseModeScreenState extends State<ChooseModeScreen>
+    with WidgetsBindingObserver {
+  int _readingGeneration = 0;
+  bool _readingExited = false;
+  bool _readingForeground = true;
+  bool _readingActive = false;
+  AppDependencies? _readingDependencies;
+  bool get _readingVisible =>
+      !_readingExited &&
+      _readingForeground &&
+      TickerMode.valuesOf(context).enabled &&
+      ModalRoute.of(context)?.isCurrent != false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final state = WidgetsBinding.instance.lifecycleState;
+    _readingForeground = state == null || state == AppLifecycleState.resumed;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final active = _readingVisible;
+    if (!identical(dependencies, _readingDependencies) ||
+        active != _readingActive)
+      _readingGeneration++;
+    _readingDependencies = dependencies;
+    _readingActive = active;
+  }
+
+  @override
+  void didUpdateWidget(ChooseModeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.featureRegistry, widget.featureRegistry) ||
+        !identical(oldWidget.lessonModes, widget.lessonModes))
+      _readingGeneration++;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted || _readingExited) return;
+    setState(() {
+      _readingForeground = state == AppLifecycleState.resumed;
+      _readingGeneration++;
+      _readingActive = _readingVisible;
+    });
+  }
+
+  @override
+  void dispose() {
+    _readingExited = true;
+    _readingGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   bool _openingMode = false;
+  bool _showAllModes = false;
 
   @override
   Widget build(BuildContext context) {
+    if (widget.readingLibrary) {
+      return LocalReadingLibraryScreen(
+        onVocabularyPractice: () => _openVocabularyReading(context),
+      );
+    }
+    final readingGeneration = _readingGeneration;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final features = widget.featureRegistry ?? dependencies?.features;
     final modes = widget.lessonModes ?? dependencies?.lessonModes;
@@ -188,47 +258,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         _LearningTile(
           key: const ValueKey<String>('home/learn/reading/cefr'),
           glossary: NavigationGlossary.require('home/learn/reading/cefr'),
-          onTap: () => _openReadingLibrary(
-            context,
-            () => _openMode(context, LessonMode.cefrReading, (
-              _,
-              adapter,
-              configuration,
-              _,
-            ) {
-              final cefrAdapter = adapter as CefrReadingModeAdapter;
-              return NativeVocabularyLessonModeLoader(
-                sessionConfiguration: configuration,
-                isQuestionAvailable: (question) {
-                  try {
-                    cefrAdapter.requireCanonicalCefrLevel(
-                      question.word.cefrLevel,
-                    );
-                    return true;
-                  } on StateError {
-                    return false;
-                  }
-                },
-                builder: (_, session, question) => CefrArticleReaderScreen(
-                  title: LocalReadingCatalog.forLevel(
-                    question.word.cefrLevel!,
-                  ).title,
-                  contentNotice: LocalReadingCatalog.notice,
-                  content:
-                      '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).text}\n\n'
-                      '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).reflection}\n\n'
-                      '${question.word.spelling} means ${question.word.meaning}.',
-                  cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
-                    question.word.cefrLevel,
-                  ),
-                  ownerId: session.ownerId,
-                  sessionId: session.id,
-                  wordId: question.word.id,
-                  modeAdapter: cefrAdapter,
-                ),
-              );
-            }),
-          ),
+          onTap: () => _openReadingLibrary(readingGeneration),
         ),
       if (features?.isVisible(Feature.quiz) == true && dictation != null)
         _LearningTile(
@@ -376,102 +406,125 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               tiles.any((tile) => group.value.contains(tile.glossary.id)),
         )
         .toList(growable: false);
-    return Scaffold(
-      appBar: AppBar(title: const Text('เรียน')),
-      body: SafeArea(
-        top: false,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 960),
-            child: SingleChildScrollView(
-              key: const ValueKey('learning-menu-scroll'),
-              padding: EdgeInsets.fromLTRB(
-                MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
-                8,
-                MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
-                32,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final card in widget.leadingCards)
-                    _supplementaryCard(context, card),
-                  if (starter != null) ...[
-                    Card(
-                      margin: EdgeInsets.zero,
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Semantics(
-                              header: true,
-                              child: Text(
-                                'เริ่มฝึกสั้น ๆ',
-                                style: Theme.of(context).textTheme.titleLarge,
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _readingExited = true;
+          _readingGeneration++;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('เรียน')),
+        body: SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: SingleChildScrollView(
+                key: const ValueKey('learning-menu-scroll'),
+                padding: EdgeInsets.fromLTRB(
+                  MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                  8,
+                  MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                  32,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final card in widget.leadingCards)
+                      _supplementaryCard(context, card),
+                    if (starter != null) ...[
+                      Card(
+                        margin: EdgeInsets.zero,
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  'เริ่มฝึกสั้น ๆ',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(_modeDescription(starter.glossary.id)),
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              key: const ValueKey('learn-starter'),
-                              onPressed: _openingMode ? null : starter.onTap,
-                              icon: const Icon(Icons.play_arrow),
-                              label: Text(
-                                'เริ่ม${starter.glossary.shortThaiLabel}',
+                              const SizedBox(height: 8),
+                              Text(_modeDescription(starter.glossary.id)),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                key: const ValueKey('learn-starter'),
+                                onPressed: _openingMode ? null : starter.onTap,
+                                icon: const Icon(Icons.play_arrow),
+                                label: Text(
+                                  'เริ่ม${starter.glossary.shortThaiLabel}',
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (widget.secondaryCards.isNotEmpty) ...[
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'วันนี้และแผนเรียน',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    for (final card in widget.secondaryCards)
-                      _supplementaryCard(context, card),
-                    const SizedBox(height: 12),
-                  ],
-                  for (final group in visibleGroups) ...[
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: group == visibleGroups.first ? 8 : 24,
-                        bottom: 12,
-                      ),
-                      child: Semantics(
+                      const SizedBox(height: 24),
+                    ],
+                    if (widget.secondaryCards.isNotEmpty) ...[
+                      Semantics(
                         header: true,
                         child: Text(
-                          group.key,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          'วันนี้และแผนเรียน',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
-                    ),
-                    _LearningChoiceGrid(
-                      tiles: [
-                        for (final id in group.value)
-                          for (final tile in tiles)
-                            if (tile.glossary.id == id) tile,
+                      const SizedBox(height: 12),
+                      for (final card in widget.secondaryCards)
+                        _supplementaryCard(context, card),
+                      const SizedBox(height: 12),
+                    ],
+                    if (widget.focusHome && visibleGroups.isNotEmpty) ...[
+                      OutlinedButton.icon(
+                        key: const ValueKey('learn-show-all-modes'),
+                        onPressed: () =>
+                            setState(() => _showAllModes = !_showAllModes),
+                        icon: Icon(
+                          _showAllModes ? Icons.expand_less : Icons.grid_view,
+                        ),
+                        label: Text(
+                          _showAllModes ? 'ซ่อนโหมดฝึก' : 'ดูโหมดฝึกทั้งหมด',
+                        ),
+                      ),
+                      if (_showAllModes) const SizedBox(height: 12),
+                    ],
+                    if (!widget.focusHome || _showAllModes)
+                      for (final group in visibleGroups) ...[
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: group == visibleGroups.first ? 8 : 24,
+                            bottom: 12,
+                          ),
+                          child: Semantics(
+                            header: true,
+                            child: Text(
+                              group.key,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                        _LearningChoiceGrid(
+                          tiles: [
+                            for (final id in group.value)
+                              for (final tile in tiles)
+                                if (tile.glossary.id == id) tile,
+                          ],
+                        ),
                       ],
-                    ),
+                    if (tiles.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
+                      ),
                   ],
-                  if (tiles.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
-                    ),
-                ],
+                ),
               ),
             ),
           ),
@@ -525,26 +578,70 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     }
   }
 
-  Future<void> _openReadingLibrary(
+  Future<void> _openVocabularyReading(
     BuildContext context,
-    VoidCallback onVocabularyPractice,
-  ) async {
-    final registry =
-        widget.featureRegistry ??
-        AppDependenciesScope.maybeOf(context)?.features;
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'home/learn/reading/library',
-        builder: (_) => ProductionFeatureGate(
-          feature: Feature.reading,
-          registry: registry,
-          builder: (_) => LocalReadingLibraryScreen(
-            onVocabularyPractice: onVocabularyPractice,
-          ),
+  ) => _openMode(context, LessonMode.cefrReading, (
+    _,
+    adapter,
+    configuration,
+    _,
+  ) {
+    final cefrAdapter = adapter as CefrReadingModeAdapter;
+    return NativeVocabularyLessonModeLoader(
+      sessionConfiguration: configuration,
+      isQuestionAvailable: (question) {
+        try {
+          cefrAdapter.requireCanonicalCefrLevel(question.word.cefrLevel);
+          return true;
+        } on StateError {
+          return false;
+        }
+      },
+      builder: (_, session, question) => CefrArticleReaderScreen(
+        title: LocalReadingCatalog.forLevel(question.word.cefrLevel!).title,
+        contentNotice: LocalReadingCatalog.notice,
+        content:
+            '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).text}\n\n'
+            '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).reflection}\n\n'
+            '${question.word.spelling} means ${question.word.meaning}.',
+        cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
+          question.word.cefrLevel,
         ),
+        ownerId: session.ownerId,
+        sessionId: session.id,
+        wordId: question.word.id,
+        modeAdapter: cefrAdapter,
       ),
     );
+  });
+
+  Future<void> _openReadingLibrary(int generation) async {
+    if (!mounted ||
+        _readingExited ||
+        _openingMode ||
+        generation != _readingGeneration ||
+        !_readingVisible)
+      return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final features = widget.featureRegistry ?? dependencies?.features;
+    if (features?.isEnabled(Feature.reading) != true) return;
+    _openingMode = true;
+    _readingGeneration++;
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'home/learn/reading/library',
+          builder: (_) => ProductionFeatureGate(
+            feature: Feature.reading,
+            builder: (_) => const ChooseModeScreen(readingLibrary: true),
+          ),
+        ),
+      );
+    } finally {
+      _openingMode = false;
+      if (mounted && !_readingExited) setState(() {});
+    }
   }
 
   Future<void> _openMode(
