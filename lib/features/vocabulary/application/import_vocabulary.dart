@@ -108,7 +108,7 @@ final class ImportVocabulary {
       ),
       isCancelled: cancellation,
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return result;
   }
 

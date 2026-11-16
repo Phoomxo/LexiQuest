@@ -29,6 +29,7 @@ class AddMultipleWordsScreen extends StatefulWidget {
 class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   final TextEditingController _rowsController = TextEditingController();
   bool _saving = false;
+  VocabularyImportResult? _committedResult;
   bool _cancelled = false;
   String? _formOwner;
   bool _ownerBindingStarted = false;
@@ -109,6 +110,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
           TextField(
             key: const ValueKey('import-rows-field'),
             controller: _rowsController,
+            enabled: !_saving && _committedResult == null,
             onChanged: (_) => setState(() {}),
             minLines: 8,
             maxLines: 16,
@@ -120,7 +122,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const ValueKey('import-words'),
-            onPressed: _saving || importer == null
+            onPressed: _saving || _committedResult != null || importer == null
                 ? null
                 : () => _import(importer),
             icon: _saving
@@ -143,7 +145,9 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
       onForm: _formOwner == null || importer == null
           ? null
           : (values) {
-              if (!_admitted || _saving) return {'status': 'busy'};
+              if (!_admitted || _saving || _committedResult != null) {
+                return {'status': 'busy'};
+              }
               setState(() => _rowsController.text = values['rows']!);
               return {'status': 'filled', 'totalRows': _rows().length};
             },
@@ -155,7 +159,9 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
         onForm: _formOwner == null || importer == null
             ? null
             : (_) {
-                if (!_admitted || _saving) return {'status': 'busy'};
+                if (!_admitted || _saving || _committedResult != null) {
+                  return {'status': 'busy'};
+                }
                 final rows = _rows();
                 final rejected = importer.previewRows(rows);
                 return {
@@ -187,12 +193,17 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
     ImportVocabulary importer, {
     String? expectedOwnerId,
   }) async {
-    if (!_admitted || _saving) return {'status': 'busy'};
+    if (!_admitted ||
+        _saving ||
+        (expectedOwnerId == null && _committedResult != null)) {
+      return {'status': 'busy'};
+    }
     final registry = MenuActionScope.maybeOf(context);
     final revision = registry?.snapshot()['revision'];
     bool cancelled() =>
         _cancelled ||
         !_admitted ||
+        ModalRoute.of(context)?.isCurrent != true ||
         (expectedOwnerId != null &&
             (registry?.currentOwner() != expectedOwnerId ||
                 registry?.snapshot()['revision'] != revision));
@@ -201,6 +212,15 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
       _cancelled = false;
     });
     try {
+      final pending = _committedResult;
+      if (pending != null) {
+        return await _verifySaved(
+          importer,
+          pending,
+          expectedOwnerId!,
+          cancelled,
+        );
+      }
       final rows = _rows();
       final result = await importer(
         categoryId: widget.categoryId,
@@ -209,35 +229,11 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
         isCancelled: cancelled,
         expectedOwnerId: expectedOwnerId,
       );
-      if (expectedOwnerId != null &&
-          !await importer.verifyResult(
-            result,
-            expectedOwnerId: expectedOwnerId,
-            categoryId: widget.categoryId,
-          )) {
-        return {'status': 'verification_failed'};
+      if (expectedOwnerId != null) {
+        _committedResult = result;
+        return await _verifySaved(importer, result, expectedOwnerId, cancelled);
       }
-      if (!mounted) return {'status': 'cancelled'};
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'เพิ่ม ${result.accepted} · ซ้ำ ${result.duplicates} · '
-            'ไม่ผ่าน ${result.rejected.length}',
-          ),
-        ),
-      );
-      if (Navigator.of(context).canPop()) Navigator.pop(context);
-      return {
-        'status': expectedOwnerId == null ? 'invoked' : 'saved',
-        'record': {
-          'importId': result.importId,
-          'accepted': result.accepted,
-          'duplicates': result.duplicates,
-          'rejected': _failures(result.rejected),
-          'rejectedCount': result.rejected.length,
-          'rejectedTruncated': result.rejected.length > 20,
-        },
-      };
+      return _complete(result, 'invoked');
     } on VocabularyImportCancelled {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -255,5 +251,61 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<Map<String, Object?>> _verifySaved(
+    ImportVocabulary importer,
+    VocabularyImportResult result,
+    String expectedOwnerId,
+    bool Function() cancelled,
+  ) async {
+    try {
+      if (cancelled()) return {'status': 'stale'};
+      if (!await importer.verifyResult(
+        result,
+        expectedOwnerId: expectedOwnerId,
+        categoryId: widget.categoryId,
+      )) {
+        return {'status': 'outcome_unknown'};
+      }
+      if (cancelled()) return {'status': 'stale'};
+      _committedResult = null;
+      return _complete(result, 'saved');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'บันทึกแล้ว แต่ยังตรวจสอบผลไม่ได้ กรุณาปิดแล้วตรวจรายการคำศัพท์',
+            ),
+          ),
+        );
+      }
+      return {'status': 'outcome_unknown'};
+    }
+  }
+
+  Map<String, Object?> _complete(VocabularyImportResult result, String status) {
+    if (!mounted) return {'status': 'cancelled'};
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'เพิ่ม ${result.accepted} · ซ้ำ ${result.duplicates} · '
+          'ไม่ผ่าน ${result.rejected.length}',
+        ),
+      ),
+    );
+    if (Navigator.of(context).canPop()) Navigator.pop(context);
+    return {
+      'status': status,
+      'record': {
+        'importId': result.importId,
+        'accepted': result.accepted,
+        'duplicates': result.duplicates,
+        'rejected': _failures(result.rejected),
+        'rejectedCount': result.rejected.length,
+        'rejectedTruncated': result.rejected.length > 20,
+      },
+    };
   }
 }

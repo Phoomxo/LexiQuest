@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "status": "PREDECESSOR_RELEASED_R3_01_READ_ONLY_ADOPTION",
+  "observedAtUtc": "2026-09-23T16:34:43.454310+00:00",
+  "releasingThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "successorTaskId": "01a0cf1c-f5ca-7f00-9fbc-3708502172ce",
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "branch": "feature/ari-app-device-integration",
+  "head": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "release": {
+    "applicationSourceWriter": true,
+    "coordinationDocumentWriter": true,
+    "ownedSourceJobs": [],
+    "processObservation": "No flutter/dart/gradle/java/agy source-worker process observed; adb daemon and godkiller --mcp remain independent."
+  },
+  "dirtySourceBeforeThisReceipt": [
+    {
+      "path": "docs/development/ari/README.md",
+      "gitStatus": "modified",
+      "sha256": "baeb01c9e7102b4d5af88c0aa1c6328f45be8833736e80ef633029de574b1ec0",
+      "bytes": 10819
+    },
+    {
+      "path": "docs/development/ari/antigravity-routing-discovery.json",
+      "gitStatus": "untracked",
+      "sha256": "d66700d139202f530c5396eaa80a4255a61043a021d6254fa1d43b2cf229a35c",
+      "bytes": 3969
+    },
+    {
+      "path": "docs/development/ari/app-device-integration.md",
+      "gitStatus": "modified",
+      "sha256": "f3af911c5e696d5a602a4e5e78c8db16400b20a37804e446c50b473c6ba591dc",
+      "bytes": 131496
+    },
+    {
+      "path": "docs/development/ari/catalog-owner-114.json",
+      "gitStatus": "untracked",
+      "sha256": "b797c2da46314e3d1557f3fd759a874f6f170cfdfe4897e45f8097f9c99163c8",
+      "bytes": 1694
+    },
+    {
+      "path": "docs/development/ari/continuation-checkpoint.json",
+      "gitStatus": "modified",
+      "sha256": "27520ace64a9e991d40319f220c799924dfe0d6f3bf729752bde42d85400dab3",
+      "bytes": 3517
+    },
+    {
+      "path": "docs/development/ari/device-observations.jsonl",
+      "gitStatus": "modified",
+      "sha256": "764bd1e49fae1f9fa5497b977e8932d68c3072bc4210f31a6e305561fa6ed6bc",
+      "bytes": 7270879
+    },
+    {
+      "path": "docs/development/ari/execution-r3.json",
+      "gitStatus": "untracked",
+      "sha256": "7d4dd23392d6aac7af32bbaa7dd8c36c8bac2bec452f0eaae19eaa689e003c45",
+      "bytes": 2356
+    },
+    {
+      "path": "docs/development/ari/execution-r3.md",
+      "gitStatus": "untracked",
+      "sha256": "5f2b7fbb345b92fa75112bccfa49a89e500af5fbe2869c5d5b82b4b7e44dbf44",
+      "bytes": 21509
+    },
+    {
+      "path": "docs/development/ari/jev-development-plan.json",
+      "gitStatus": "untracked",
+      "sha256": "b836fd84aba7262ccd0afccf4cf6047310e7cee729db993269febd2b017cf18c",
+      "bytes": 10959
+    },
+    {
+      "path": "docs/development/ari/jev-development-plan.md",
+      "gitStatus": "untracked",
+      "sha256": "1d5c44a72c69c578bc081b752313df307a4dfcebed0ae4401bf59ee3cad524c3",
+      "bytes": 55131
+    },
+    {
+      "path": "docs/development/ari/jev-free-probe.json",
+      "gitStatus": "untracked",
+      "sha256": "4100b64f471739b66dc7b34a78640e5cdc49219ed7165202b122b453ca2713f9",
+      "bytes": 1484
+    },
+    {
+      "path": "docs/development/ari/jev-preflight-115.json",
+      "gitStatus": "untracked",
+      "sha256": "332d272433835f9ffacf249a4b33fe8e5d8ec608da6c368623a474fc3d2e97d1",
+      "bytes": 636
+    },
+    {
+      "path": "docs/development/ari/jev-review-115.json",
+      "gitStatus": "untracked",
+      "sha256": "fa3eea10b28a94ba63984ab2e031229db4920988e4585626589e2afa2efbc5aa",
+      "bytes": 4045
+    },
+    {
+      "path": "docs/development/ari/optional-mcp-workflows.json",
+      "gitStatus": "modified",
+      "sha256": "544c5117ab37d2164f63156374fa7eca638439d372394ec7efa8de6a9c6f1623",
+      "bytes": 142743
+    },
+    {
+      "path": "docs/development/ari/pack-detail-context-116.json",
+      "gitStatus": "untracked",
+      "sha256": "25d8afb058cde77e44a73ca17c862826db1acb8aaa383b6d044f06249a483dcb",
+      "bytes": 4971
+    },
+    {
+      "path": "lib/features/progress/data/drift_progress_queries.dart",
+      "gitStatus": "modified",
+      "sha256": "d4ce500977d6b93da383d93546e3d7b148ab1462e5de6e3b3685c2439bc83cc2",
+      "bytes": 23633
+    },
+    {
+      "path": "lib/features/progress/domain/progress_models.dart",
+      "gitStatus": "modified",
+      "sha256": "38865920022ac1d26f2b6a40db170f618215396918dde86a23af579422873cb5",
+      "bytes": 3239
+    },
+    {
+      "path": "lib/screens/learning_pack_catalog_screen.dart",
+      "gitStatus": "modified",
+      "sha256": "49b1ec8dac5823d047dd19c606b4a6ed5d336dcf349aeb6c63cf55b80acefd18",
+      "bytes": 12304
+    },
+    {
+      "path": "lib/screens/learning_pack_detail_screen.dart",
+      "gitStatus": "modified",
+      "sha256": "c05d561a51ca7f1e0540cfbee13e6c8b56df8bf044b24a8923282130988b022d",
+      "bytes": 11356
+    },
+    {
+      "path": "test/features/learning_packs/ari_catalog_fixture_test.dart",
+      "gitStatus": "untracked",
+      "sha256": "4c70e46e51ef394a59fa4bc6f1979f908343449650321b2a5ac498178d88b3eb",
+      "bytes": 4044
+    },
+    {
+      "path": "test/screens/learning_pack_catalog_screen_test.dart",
+      "gitStatus": "modified",
+      "sha256": "2fa4a48a4229fd175ccf3066603e2e9e9987c72f8709301cd814cc8e0752f24d",
+      "bytes": 21818
+    },
+    {
+      "path": "test/screens/learning_pack_detail_screen_test.dart",
+      "gitStatus": "modified",
+      "sha256": "9fa8d8e8cc254547b357d4ba6a1a0012ae1afc6b189bdd19f008c5b3cc4e206d",
+      "bytes": 24964
+    },
+    {
+      "path": "test/support/ari_catalog_fixture.dart",
+      "gitStatus": "untracked",
+      "sha256": "4796e06054712026f55c8e2c9d0b7cb5dd5b80d135f652d28e7d666c9634f14b",
+      "bytes": 7060
+    },
+    {
+      "path": "tool/cli/tests/jev-review.tests.ps1",
+      "gitStatus": "untracked",
+      "sha256": "57fc7bd99aef4e1c99f9f6ad6c038e9913f275e96c26c1aa86d8cfb27acfa5b4",
+      "bytes": 210
+    },
+    {
+      "path": "tool/experiments/jev_review/README.md",
+      "gitStatus": "untracked",
+      "sha256": "2cee0c4d495aaf5601f28666a75b2b65fd31d4a2ab9b240cb38cdd36ed91baa9",
+      "bytes": 2545
+    },
+    {
+      "path": "tool/experiments/jev_review/cases.json",
+      "gitStatus": "untracked",
+      "sha256": "30ac01c6b27c3545fdf66ca0ed3cf8124ea9b47d2bbe218651dc644aa9ae9de2",
+      "bytes": 3449
+    },
+    {
+      "path": "tool/experiments/jev_review/catalog-review.json",
+      "gitStatus": "untracked",
+      "sha256": "5369df52d1071a00d938fe8d71b58bd1fcbf6ae010c3846b97a50ea3db0b903f",
+      "bytes": 530
+    },
+    {
+      "path": "tool/experiments/jev_review/guard.py",
+      "gitStatus": "untracked",
+      "sha256": "840ee544f8d55f5822e31d194c91a5bd2137109b8a4ed34145391bb8720c99f4",
+      "bytes": 8441
+    },
+    {
+      "path": "tool/experiments/jev_review/model_route.py",
+      "gitStatus": "untracked",
+      "sha256": "6d7801393282d636eb10fc75b009f31d3fc9a005c22aac5c10e46f3c10e1461c",
+      "bytes": 6641
+    },
+    {
+      "path": "tool/experiments/jev_review/pilot.py",
+      "gitStatus": "untracked",
+      "sha256": "b1c96eefd2adaf1063574f83a425898f1b6ccdc7cd9c9afc9ac2a76f19dd77fd",
+      "bytes": 6159
+    },
+    {
+      "path": "tool/experiments/jev_review/synthetic-owner.json",
+      "gitStatus": "untracked",
+      "sha256": "1acadd8b560b9a0a5445bff6dd1884b61434730dff5125b346ef57cbd3f00af9",
+      "bytes": 334
+    },
+    {
+      "path": "tool/experiments/jev_review/test_guard.py",
+      "gitStatus": "untracked",
+      "sha256": "848b8992fa61983c90663a3fffe5c4fcceb15a2c138705f239413dac44304cd5",
+      "bytes": 7486
+    },
+    {
+      "path": "tool/experiments/jev_review/test_model_route.py",
+      "gitStatus": "untracked",
+      "sha256": "9b8299c875acf3a5e8d79329675c8e23f006fcfc66b9beb23b3b4b7caab1ca38",
+      "bytes": 4116
+    },
+    {
+      "path": "tool/experiments/jev_review/test_pilot.py",
+      "gitStatus": "untracked",
+      "sha256": "726f5af06857e2fc7e992955038d9d8e7dcb2de729fc7e660d4c4469d70cd3f4",
+      "bytes": 2553
+    }
+  ],
+  "deviceBackup": {
+    "manifest": "build/ari-catalog-fixture/backup-manifest.json",
+    "originalDirectory": "build/ari-catalog-fixture/original",
+    "files": [
+      {
+        "name": "lexiquest.sqlite",
+        "bytes": 3375104,
+        "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+        "matchesManifest": true
+      },
+      {
+        "name": "lexiquest.sqlite-wal",
+        "bytes": 4185952,
+        "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+        "matchesManifest": true
+      },
+      {
+        "name": "lexiquest.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+        "matchesManifest": true
+      }
+    ],
+    "allMatchManifest": true,
+    "deviceFixtureInstalled": false,
+    "deviceDatabaseModifiedByThisTask": false
+  },
+  "jevLedger": {
+    "path": "%LOCALAPPDATA%/LexiQuestDevSecrets/jev-review-ledger.sqlite",
+    "callStates": [
+      {
+        "state": "settled",
+        "count": 2
+      }
+    ],
+    "preserveExistingHistory": true
+  },
+  "latestCheckpoint": "docs/development/ari/continuation-checkpoint.json revision 150",
+  "canonicalAcceptance": "docs/development/ari/optional-mcp-workflows.json",
+  "routingPlan": "docs/development/ari/jev-development-plan.md revision 7",
+  "r3Plan": "docs/development/ari/execution-r3.md",
+  "openWork": [
+    "14 workflow and 14 mode criterion reconciliation",
+    "Native catalog/detail fixture journey and verified DB restoration",
+    "Jev ledger batch migration and live route validation",
+    "Whole-project review and frozen endurance after current acceptance"
+  ],
+  "nextAction": "R3-01 read-only adoption and source/owner reconciliation; acquire sole writer only after verifying this receipt and no other writer."
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T18:19:47.061607+00:00",
+  "dispatchId": "ux-s01-as-20260925-f57c",
+  "status": "CLAIMED",
+  "clientThreadId": "client-new-thread:4c2999ea-da65-4197-8314-633490fc3249",
+  "hostId": "local",
+  "sourceThreadId": "01a0d486-a2b2-74d0-a33e-5030a379fc97",
+  "sourceImmutable": true,
+  "writerReleased": true,
+  "manifestSha256": "f171207b0f73ee43fd3de008183c0bf243b716bc30befe00770e2770c815445e",
+  "archiveSha256": "24963d44817140e925db2d00352871f1efbc225c9317467b9831d7e099570022",
+  "note": "Exactly one successor created; reuse client/task identity, no duplicate dispatch. Coordination receipt written separately after immutable snapshot.",
+  "successorThreadId": "01a0d4a4-fce4-7a23-b49a-939287b44bb6",
+  "successorWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\6898\\LexiQuest",
+  "successorBranch": "feature/ux-s01-as-6898",
+  "successorStateRevision": 84,
+  "claimVerifiedAtUtc": "2026-09-24T18:21:48.781987+00:00",
+  "doNotDispatchAgain": true,
+  "actualIdSource": "Session metadata resolved queued task; wait_threads confirmed active; successor source receipt/writer claim/LIVE state independently read and matched."
+}

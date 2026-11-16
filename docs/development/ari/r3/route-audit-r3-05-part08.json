@@ -1,0 +1,59 @@
+{
+  "taskId": "01a0cfd7-68db-7b63-bde0-f60a6014008a",
+  "atUtc": "2026-09-23T20:18:02.288782+00:00",
+  "sourceFingerprint": "33fcf94b6b902063347e71728f61b602fa02b8dd24822f3db7113ce71b412202",
+  "sourceManifest": "source-manifest-r3-05-part08.json",
+  "wholeScopeComplete": false,
+  "priorAssertionsReviewed": "A01-A21 canonical route-audit-part02..07 read; bounded claims retained, no inherited whole-route certification.",
+  "assertions": [
+    {
+      "id": "A22",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "30file-backed post-commit lifecycle cases:5routes x6transitions;stale response/no record,cover route preserved,pending identity retained,read-only fresh request withmutationCalls1,reopen snapshots exact",
+        "RegistrysessionGeneration unaffected by actionregistration/removal and changes on sessioninvalidation/disconnect/owner;categorylistrefresh does not invalidate own verification",
+        "9productRED across create/edit/category/import/delete;importlease case alreadypassed;final95tests11filesPASS witholdassertionsunchanged"
+      ],
+      "evidence": "late-verification-r3-05-part08.json",
+      "limits": [
+        "Controlled real SQLite read delay on host; no live provider or native injected latency claim.",
+        "The30cases cover post-commit verification for create/edit/category/import/delete across cover, same-owner session invalidation, disconnect, foreign AI owner, disposal and feature withdrawal. They do not prove every pre-admission/in-transaction boundary.",
+        "Word cases compare all words/outbox after reopen; other3routes compare full5table snapshots. Database reopen is not durable provider request-ID/process-death reconciliation.",
+        "Native ordinary manual baseline only; actual foreign-owner native/provider lifecycle remains unproven. No whole W03/R3-05 acceptance."
+      ]
+    },
+    {
+      "id": "A23",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Fresh main/WAL/SHM backup before install; aapt package verified; installed APK hash matches local part08.",
+        "R305Part08 category draft preserved through AIunpaired expand/collapse and saved once.",
+        "Create r308word/book/noun; edit to bookrevised with noun preserved; exact drafts and saved rows observed.",
+        "Exact3row import r308import,book,noun twice plus invalid,,noun; draft preserved through AIunpaired expand/collapse;1accepted1duplicate1rejected.",
+        "First force-stop/relaunch retained category, edited word and import. Cancel delete retained r308word; confirmation deleted correct word; second restart retained import and absence of r308word.",
+        "58tables compared by actual primary keys;category+1 words+2(one tombstone revision3) import+1 rows+3 outbox+5(4upsert1delete);original rows intact.",
+        "Owners/answers/sessions/AIusage unchanged;content/runtimetimestamps andquestrefresh separately recorded.",
+        "Fresh main/WAL/SHM restored BYTEEXACT, isolatedapp force-stopped andpidof absent."
+      ],
+      "evidence": "native-late-verification-r3-05-part08.json",
+      "limits": [
+        "Controlled real SQLite read delay on host; no live provider or native injected latency claim.",
+        "The30cases cover post-commit verification for create/edit/category/import/delete across cover, same-owner session invalidation, disconnect, foreign AI owner, disposal and feature withdrawal. They do not prove every pre-admission/in-transaction boundary.",
+        "Word cases compare all words/outbox after reopen; other3routes compare full5table snapshots. Database reopen is not durable provider request-ID/process-death reconciliation.",
+        "Native ordinary manual baseline only; actual foreign-owner native/provider lifecycle remains unproven. No whole W03/R3-05 acceptance."
+      ]
+    }
+  ],
+  "nextByGroup": {
+    "W03": "Post-commit late verification is now bounded-proven across30cases; do not repeat unchanged mutation/notifier/reconciliation gates. Audit exact A01-A23 boundary map for any remaining actionable pre-admission or in-flight owner/route assertions without inventing arbitrary transaction faults. Native foreign-owner/actual-provider limits remain explicit.",
+    "W01": "Next actionable connection/reauth/lifecycle including route-cover/background and lease/restart exact assertions; inspect managed screen/runtime/host tests and fill missing current-source combinations.",
+    "W02": "Questionnaire/main/drawer connection/lifecycle and account-control applicability/fixture remain. Reuse existing settings evidence under dependency closure.",
+    "remaining": "Then W05-W14/all14nested modes. Preserve215rows/4passed/211remaining IDs. NoR3-06before realR3-05exit."
+  },
+  "remainingScope": "Preserve215rows,4passed,211remainingIDs. W01/W02 and W05-W14/all14nestedmodes remain.",
+  "localReview": "Sole coordinator reviewed normalized diff against part07 ZIP/HEAD base. Verified post-await short-circuit disposal guard, current route, optional session identity, unchanged mutation revision admission and preserved pending result. No subagents."
+}

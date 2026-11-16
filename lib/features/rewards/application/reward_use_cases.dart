@@ -59,6 +59,7 @@ final class RewardUseCases implements RewardAccountReader {
     required int catalogVersion,
     required String idempotencyKey,
     bool Function()? mutationAllowed,
+    String? expectedOwnerId,
   }) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {
@@ -73,7 +74,8 @@ final class RewardUseCases implements RewardAccountReader {
       throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
     }
     final owner = await owners.getOrCreateActiveOwner();
-    if (!(mutationAllowed?.call() ?? true)) {
+    if ((expectedOwnerId != null && owner.id != expectedOwnerId) ||
+        !(mutationAllowed?.call() ?? true)) {
       throw const RewardException(RewardFailureCode.evidenceUnavailable);
     }
 
@@ -133,6 +135,7 @@ final class RewardUseCases implements RewardAccountReader {
     String itemId, {
     required String idempotencyKey,
     bool Function()? mutationAllowed,
+    String? expectedOwnerId,
   }) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {
@@ -143,7 +146,8 @@ final class RewardUseCases implements RewardAccountReader {
       throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
     }
     final owner = await owners.getOrCreateActiveOwner();
-    if (!(mutationAllowed?.call() ?? true)) {
+    if ((expectedOwnerId != null && owner.id != expectedOwnerId) ||
+        !(mutationAllowed?.call() ?? true)) {
       throw const RewardException(RewardFailureCode.evidenceUnavailable);
     }
 

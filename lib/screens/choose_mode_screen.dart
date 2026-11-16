@@ -50,6 +50,7 @@ class ChooseModeScreen extends StatefulWidget {
     this.sessionConfigurationPolicy = const SessionConfigurationPolicy(),
     this.leadingCards = const <Widget>[],
     this.secondaryCards = const <Widget>[],
+    this.focusHome = false,
   });
 
   final FeatureRegistry? featureRegistry;
@@ -57,6 +58,7 @@ class ChooseModeScreen extends StatefulWidget {
   final SessionConfigurationPolicy sessionConfigurationPolicy;
   final List<Widget> leadingCards;
   final List<Widget> secondaryCards;
+  final bool focusHome;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
@@ -64,6 +66,7 @@ class ChooseModeScreen extends StatefulWidget {
 
 class _ChooseModeScreenState extends State<ChooseModeScreen> {
   bool _openingMode = false;
+  bool _showAllModes = false;
 
   @override
   Widget build(BuildContext context) {
@@ -444,28 +447,43 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       _supplementaryCard(context, card),
                     const SizedBox(height: 12),
                   ],
-                  for (final group in visibleGroups) ...[
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: group == visibleGroups.first ? 8 : 24,
-                        bottom: 12,
+                  if (widget.focusHome && visibleGroups.isNotEmpty) ...[
+                    OutlinedButton.icon(
+                      key: const ValueKey('learn-show-all-modes'),
+                      onPressed: () =>
+                          setState(() => _showAllModes = !_showAllModes),
+                      icon: Icon(
+                        _showAllModes ? Icons.expand_less : Icons.grid_view,
                       ),
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          group.key,
-                          style: Theme.of(context).textTheme.titleMedium,
+                      label: Text(
+                        _showAllModes ? 'ซ่อนโหมดฝึก' : 'ดูโหมดฝึกทั้งหมด',
+                      ),
+                    ),
+                    if (_showAllModes) const SizedBox(height: 12),
+                  ],
+                  if (!widget.focusHome || _showAllModes)
+                    for (final group in visibleGroups) ...[
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: group == visibleGroups.first ? 8 : 24,
+                          bottom: 12,
+                        ),
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            group.key,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                         ),
                       ),
-                    ),
-                    _LearningChoiceGrid(
-                      tiles: [
-                        for (final id in group.value)
-                          for (final tile in tiles)
-                            if (tile.glossary.id == id) tile,
-                      ],
-                    ),
-                  ],
+                      _LearningChoiceGrid(
+                        tiles: [
+                          for (final id in group.value)
+                            for (final tile in tiles)
+                              if (tile.glossary.id == id) tile,
+                        ],
+                      ),
+                    ],
                   if (tiles.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),

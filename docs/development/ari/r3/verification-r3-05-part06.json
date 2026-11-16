@@ -1,0 +1,58 @@
+{
+  "taskId": "01a0cfb2-6a0a-7940-9f53-c0aaaef50aa4",
+  "atUtc": "2026-09-23T19:33:33.782360+00:00",
+  "sourceFingerprint": "b6ade277692668fba6de65f332fc9a5c1dc0f949ec786ad84214c639cb88a0c7",
+  "sourceManifest": "source-manifest-r3-05-part06.json",
+  "gate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-9bec91750ef893fa7e315a344a760d2856d62fc6fb12670c02d581884c9d5e7e.json",
+    "sha256": "00a523102a06b92c30d7a3267b9e73f02efc088ba829cbdf851dcb139e12196f",
+    "status": "Passed",
+    "tests": 54,
+    "distinctFiles": 8,
+    "targets": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/category_save_reconciliation_test.dart",
+          "test/screens/import_save_reconciliation_test.dart",
+          "test/screens/offline_vocabulary_journey_test.dart",
+          "test/screens/production_shell_navigation_test.dart",
+          "test/screens/vocabulary_route_withdrawal_test.dart",
+          "test/screens/vocab_list_screen_test.dart",
+          "test/screens/vocabulary_save_reconciliation_test.dart",
+          "test/screens/vocabulary_delete_reconciliation_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "AI",
+        "commandKey": "1d827976ca163f4bffa266e43e6154f730607911a0d3f318f2660d429d380d81"
+      }
+    ],
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "1d827976ca163f4bffa266e43e6154f730607911a0d3f318f2660d429d380d81",
+        "fingerprint": "37329f3ff54e088002f4b9e7d34d8553d5d3a52ee82976c37240561d25fff937",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-23T19:25:02.7419386+00:00",
+        "FinishedAt": "2026-09-23T19:25:33.9275890+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\1d827976ca16-37329f3ff54e-46670c54\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\1d827976ca16-37329f3ff54e-46670c54\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "37329f3ff54e088002f4b9e7d34d8553d5d3a52ee82976c37240561d25fff937",
+        "StdoutHash": "EA13830CD2799B934C429B30C70A24029EF9E5A01ABFD3ACF02952F4C356E909",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "analysis": {
+    "command": "dart analyze lib/screens/categories_page.dart lib/screens/add_multiple_words_screen.dart test/screens/category_save_reconciliation_test.dart test/screens/import_save_reconciliation_test.dart",
+    "result": "No issues found"
+  },
+  "diffCheck": "Affected CRLF-aware diff check exit0",
+  "earlierGatesNotAdditive": "Category2 passed before import; combined48 passed before final brace-lint cleanup; final54 supersedes these",
+  "reusedUnchanged": "Python26 historical plus part03 standalone4 unchanged, not rerun. Shared registry/protocol foundations historical; no new provider certification.",
+  "ownedJobs": []
+}

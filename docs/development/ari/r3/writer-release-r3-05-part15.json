@@ -1,0 +1,15 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "controllerTaskId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "atUtc": "2026-09-23T22:53:52.650846+00:00",
+  "status": "ALL_APPLICATION_AND_COORDINATION_WRITES_RELEASED",
+  "checkpointRevision": 173,
+  "stateRevision": 57,
+  "sourceFingerprint": "1a6fb05ff4c103e1225cab065f90b12b5e58a4009d680548346ed7b909c474cc",
+  "ownedJobs": [],
+  "successorDispatched": false,
+  "nativeRestored": true,
+  "acceptancePaused": true,
+  "dirtyBackup": "backup-r3-05-part15.json",
+  "deferredWork": "See route-audit-r3-05-part15.json; no acceptance work resumes without user priority change."
+}

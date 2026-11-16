@@ -33,6 +33,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _partOfSpeechController;
   String? _cefrLevel;
   bool _saving = false;
+  VocabularyWord? _committedWord;
   String? _formOwner;
   bool _ownerBindingStarted = false;
 
@@ -104,6 +105,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
         children: [
           TextField(
             key: const ValueKey('word-field'),
+            enabled: _committedWord == null,
             controller: _wordController,
             onChanged: (_) => setState(() {}),
             textInputAction: TextInputAction.next,
@@ -116,6 +118,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           const SizedBox(height: 12),
           TextField(
             key: const ValueKey('meaning-field'),
+            enabled: _committedWord == null,
             controller: _meaningController,
             onChanged: (_) => setState(() {}),
             textInputAction: TextInputAction.next,
@@ -128,6 +131,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           const SizedBox(height: 12),
           TextField(
             key: const ValueKey('part-of-speech-field'),
+            enabled: _committedWord == null,
             controller: _partOfSpeechController,
             onChanged: (_) => setState(() {}),
             maxLength: maxPartOfSpeechLength,
@@ -149,12 +153,14 @@ class _AddWordScreenState extends State<AddWordScreen> {
                   (level) => DropdownMenuItem(value: level, child: Text(level)),
                 )
                 .toList(),
-            onChanged: (value) => setState(() => _cefrLevel = value),
+            onChanged: _committedWord == null
+                ? (value) => setState(() => _cefrLevel = value)
+                : null,
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
             key: const ValueKey('save-word'),
-            onPressed: _saving || useCases == null
+            onPressed: _saving || _committedWord != null || useCases == null
                 ? null
                 : () => _save(useCases),
             icon: _saving
@@ -182,7 +188,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
       onForm: _formOwner == null || useCases == null
           ? null
           : (values) {
-              if (!_admitted || _saving) return {'status': 'busy'};
+              if (!_admitted || _saving || _committedWord != null) {
+                return {'status': 'busy'};
+              }
               final level = values['cefrLevel']!;
               if (level.isNotEmpty && !_cefrOptions.contains(level)) {
                 return {'status': 'invalid'};
@@ -223,13 +231,16 @@ class _AddWordScreenState extends State<AddWordScreen> {
     final revision = registry?.snapshot()['revision'];
     bool allowed() =>
         _admitted &&
+        ModalRoute.of(context)?.isCurrent == true &&
         (expectedOwnerId == null ||
             registry?.currentOwner() == expectedOwnerId &&
                 registry?.snapshot()['revision'] == revision);
     setState(() => _saving = true);
     try {
       final VocabularyWord saved;
-      if (widget.word == null) {
+      if (_committedWord != null) {
+        saved = _committedWord!;
+      } else if (widget.word == null) {
         saved = await useCases.createWord(
           CreateWordCommand(
             categoryId: widget.categoryId,
@@ -256,34 +267,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
           mutationAllowed: allowed,
         );
       }
-      final records = await useCases.readPinnedByIds([saved.id]);
-      final persisted = records
-          .where(
-            (w) =>
-                w.id == saved.id &&
-                w.ownerId == saved.ownerId &&
-                w.categoryId == saved.categoryId &&
-                w.spelling == saved.spelling &&
-                w.meaning == saved.meaning &&
-                w.partOfSpeech == saved.partOfSpeech &&
-                w.cefrLevel == saved.cefrLevel &&
-                !w.isDeleted,
-          )
-          .firstOrNull;
-      if (persisted == null) return {'status': 'verification_failed'};
-      if (mounted && Navigator.of(context).canPop()) Navigator.pop(context);
-      return {
-        'status': 'saved',
-        'record': {
-          'wordId': persisted.id,
-          'categoryId': persisted.categoryId,
-          'spelling': persisted.spelling,
-          'meaning': persisted.meaning,
-          'partOfSpeech': persisted.partOfSpeech,
-          'cefrLevel': persisted.cefrLevel,
-          'revision': persisted.localRevision,
-        },
-      };
+      // The mutation completed. Keep its identity even when readback fails;
+      // subsequent requests reconcile this record without writing again.
+      _committedWord = saved;
+      return await _verifySaved(useCases, saved, allowed);
     } on InvalidVocabularyFailure {
       _message('กรุณากรอกข้อมูลให้ครบและไม่เกินความยาวที่กำหนด');
       return {'status': 'invalid'};
@@ -298,6 +285,55 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return {'status': 'failed'};
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<Map<String, Object?>> _verifySaved(
+    VocabularyUseCases useCases,
+    VocabularyWord saved,
+    bool Function() allowed,
+  ) async {
+    try {
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      if (!allowed() || owner.id != saved.ownerId) return {'status': 'stale'};
+      final records = await useCases.readPinnedByIds([saved.id]);
+      // The route or optional session may change while verification is pending.
+      // Retain the committed identity until a current request can reconcile it.
+      if (!allowed()) return {'status': 'stale'};
+      final persisted = records
+          .where(
+            (w) =>
+                w.id == saved.id &&
+                w.ownerId == saved.ownerId &&
+                w.categoryId == saved.categoryId &&
+                w.spelling == saved.spelling &&
+                w.meaning == saved.meaning &&
+                w.partOfSpeech == saved.partOfSpeech &&
+                w.cefrLevel == saved.cefrLevel &&
+                w.localRevision == saved.localRevision &&
+                !w.isDeleted,
+          )
+          .firstOrNull;
+      if (persisted == null) return {'status': 'outcome_unknown'};
+      _committedWord = null;
+      if (mounted && Navigator.of(context).canPop()) Navigator.pop(context);
+      return {
+        'status': 'saved',
+        'record': {
+          'wordId': persisted.id,
+          'categoryId': persisted.categoryId,
+          'spelling': persisted.spelling,
+          'meaning': persisted.meaning,
+          'partOfSpeech': persisted.partOfSpeech,
+          'cefrLevel': persisted.cefrLevel,
+          'revision': persisted.localRevision,
+        },
+      };
+    } catch (_) {
+      _message(
+        'บันทึกแล้ว แต่ยังตรวจสอบผลไม่ได้ กรุณาปิดแล้วตรวจรายการคำศัพท์',
+      );
+      return {'status': 'outcome_unknown'};
     }
   }
 

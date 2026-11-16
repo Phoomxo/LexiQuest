@@ -1,0 +1,19 @@
+{
+  "receivedEntries": 343,
+  "unchangedInheritedEntries": 338,
+  "changedPaths": [
+    "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-runtime-cli-57ac9ed71d1223fb09ad0d8cd5939b9f94cbb0f2c8ed7c37b9054799f92a74e5.json",
+    "docs/design/check-s01-navigation.cjs",
+    "docs/design/lexiquest-full-ux.js",
+    "docs/development/ux-delivery/S01.md",
+    "docs/development/ux-delivery/state.json"
+  ],
+  "verifierScratchReplacement": {
+    "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-runtime-cli-57ac9ed71d1223fb09ad0d8cd5939b9f94cbb0f2c8ed7c37b9054799f92a74e5.json",
+    "originalSha256": "c285c0e56e1024c10d5e5fcf33cd4aea26005cf9b308dec7d994b115b65969ab",
+    "preservedExactBytes": "docs/development/ux-delivery/evidence/S01-K-gate.json",
+    "reason": "Verifier reuses result locator; original K result and logs remain immutable"
+  },
+  "predecessorMutated": false,
+  "selfReview": "Only intended source/test/report/state changes; no independent reviewer claim"
+}
