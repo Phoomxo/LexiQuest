@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiQuest — ต้นแบบ UX/UI ครบระบบ</title>
+  <link rel="stylesheet" href="lexiquest-full-ux.css">
+</head>
+<body>
+  <main class="board">
+    <aside class="intro">
+      <span class="eyebrow">ร่าง UX/UI รอบเต็ม · 24 กันยายน 2569</span>
+      <h1>เรียนอังกฤษ<br>แบบที่คนไทย<br>ใช้ได้จริง</h1>
+      <p>ทุกคำสั่งและเมนูใช้ภาษาไทยที่อ่านง่าย คำอังกฤษปรากฏในเนื้อหาที่กำลังฝึก พร้อมคำอธิบายภาษาไทย ฟีเจอร์เยอะได้ แต่ผู้เรียนเห็นเพียงสิ่งที่ต้องทำต่อ</p>
+      <div class="principles"><span>เริ่มได้ทันที</span><span>ไม่บังคับล็อกอิน</span><span>AI เป็นตัวเลือก</span><span>เมนูไม่ซับซ้อน</span></div>
+      <section class="board-card scenario-box">
+        <h2>ลองสลับสถานการณ์</h2>
+        <div class="scenario-options" role="group" aria-label="สถานการณ์ตัวอย่าง">
+          <button class="scenario active" data-scenario="new">ผู้ใช้ใหม่</button>
+          <button class="scenario" data-scenario="returning">กลับมาเรียนต่อ</button>
+          <button class="scenario" data-scenario="offline">ไม่มีอินเทอร์เน็ต</button>
+        </div>
+        <p>ตัวเลขและคำศัพท์ในร่างเป็นข้อมูลตัวอย่าง การกดปุ่มไม่แตะข้อมูลแอปจริง</p>
+      </section>
+      <section class="board-card">
+        <h2>เส้นทางที่ควรลอง</h2>
+        <ol><li>เริ่มฝึกจากหน้า “วันนี้”</li><li>ไปที่ “ฝึก” → “ลองฝึกหลายแบบ” แล้วเลือกภาพ–เสียง–คำ หรือนักสืบข้อความ</li><li>ลองซ้อมสอบแบบสั้น</li><li>เพิ่มคำศัพท์ส่วนตัว</li><li>ดูแผนเรียนและความก้าวหน้า</li><li>ลองปิด AI หรือสลับออฟไลน์</li></ol>
+      </section>
+    </aside>
+    <section class="device-area" aria-label="ต้นแบบแอปแบบกดได้">
+      <div class="device">
+        <div class="device-inner">
+          <div class="camera-cutout" aria-hidden="true"></div>
+          <div class="status-bar"><span>9:41</span><span>●●● ▰</span></div>
+          <div id="app-screen" class="app-screen" aria-live="polite"></div>
+          <nav class="bottom-nav" aria-label="เมนูหลัก">
+            <button data-route="home" class="active" aria-current="page"><span>⌂</span>วันนี้</button>
+            <button data-route="practice"><span>◇</span>ฝึก</button>
+            <button data-route="words"><span>▤</span>คำศัพท์</button>
+            <button data-route="me"><span>◉</span>ฉัน</button>
+          </nav>
+        </div>
+      </div>
+      <p class="device-caption">กดเมนูในโทรศัพท์จำลองเพื่อไล่ดูทุกหน้าจอ</p>
+    </section>
+    <aside class="coverage">
+      <div class="coverage-head"><span class="eyebrow">แผนที่หน้าจอ</span><h2>ครบทุกส่วนของแอป</h2><p>คลิกหัวข้อเพื่อเปิดหน้าจอที่เกี่ยวข้อง</p></div>
+      <div id="workflow-map" class="workflow-map"></div>
+      <details class="mode-map"><summary>กิจกรรมที่ออกแบบเพิ่ม 6 กลุ่ม</summary><div id="lab-map"></div></details>
+      <details class="mode-map"><summary>วิธีฝึกทั้งหมด 14 แบบ</summary><div id="mode-map"></div></details>
+      <p class="coverage-note">รายการนี้อิงจากทะเบียน 14 กลุ่มงานและ 14 โหมดเดิม เป็นแผนที่สำหรับตรวจร่าง ไม่ใช่เมนูที่ผู้เรียนต้องเห็นทั้งหมดพร้อมกัน</p>
+    </aside>
+  </main>
+  <script src="lexiquest-full-ux.js"></script>
+</body>
+</html>

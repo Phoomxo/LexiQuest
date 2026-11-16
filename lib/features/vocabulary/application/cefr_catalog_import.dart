@@ -16,6 +16,7 @@ final class CefrCatalogImport {
     bool useEditorial = false,
     required String categoryId,
     required String expectedOwnerId,
+    bool Function()? mutationAllowed,
   }) async {
     final entry = catalog.words.singleWhere((word) => word.id == wordId);
     if (entry.practiceUsageNotice != null) {
@@ -44,7 +45,7 @@ final class CefrCatalogImport {
         : '${entry.importNamespace}/${entry.word}/$sourceIndex';
     Future<void> checkOwner() async {
       final owner = await vocabulary.owners.getOrCreateActiveOwner();
-      if (owner.id != expectedOwnerId) {
+      if (owner.id != expectedOwnerId || mutationAllowed?.call() == false) {
         throw StateError('Catalog owner changed');
       }
     }
@@ -91,10 +92,14 @@ final class CefrCatalogImport {
           cefrLevel: entry.cefrLevel,
           source: source,
         ),
+        expectedOwnerId: expectedOwnerId,
+        mutationAllowed: mutationAllowed,
+        enforceMutationAtCommit: true,
       );
     } on DuplicateVocabularyFailure {
       await checkOwner();
       final concurrent = await existing();
+      await checkOwner();
       if (concurrent != null) return concurrent;
       rethrow;
     }

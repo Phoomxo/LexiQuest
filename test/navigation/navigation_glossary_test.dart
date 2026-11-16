@@ -72,9 +72,9 @@ const _expectedEntries = <String, _ExpectedEntry>{
     Icons.menu_book,
   ),
   'home/learn': _ExpectedEntry(
-    'เรียน',
-    'เรียน',
-    'เปิดหน้าเรียน',
+    'ฝึก',
+    'ฝึก',
+    'เปิดหน้าฝึก',
     'เปิดกิจกรรมการเรียนรู้',
     Icons.school_outlined,
     Icons.school,
@@ -128,8 +128,8 @@ const _expectedEntries = <String, _ExpectedEntry>{
     Icons.emoji_events,
   ),
   'home/profile': _ExpectedEntry(
-    'โปรไฟล์',
-    'โปรไฟล์',
+    'ฉัน',
+    'ฉัน',
     'เปิดโปรไฟล์',
     'เปิดโปรไฟล์',
     Icons.person_outlined,

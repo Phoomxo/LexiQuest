@@ -1,0 +1,12 @@
+{
+  "status": "ACTIVE",
+  "holderThreadId": "01a0d486-a2b2-74d0-a33e-5030a379fc97",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\f57c\\LexiQuest",
+  "branch": "feature/ux-s01-ar-f57c",
+  "claimedAtUtc": "2026-09-24T17:48:10.092060+00:00",
+  "currentItem": "S01-AR-bookmark-report-owner-commit",
+  "dispatchId": "ux-s01-ar-20260925-8f3c",
+  "stateRevision": 81,
+  "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-AR-source-receipt.json",
+  "routing": "Astra/medium deterministic fallback; Standard/default requested; runtime tier unexposed; no Jev call"
+}

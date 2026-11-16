@@ -1,0 +1,150 @@
+{
+  "taskId": "01a0d040-3e4f-74b1-b0ca-2adb6050caba",
+  "tablesCompared": 58,
+  "changes": {
+    "content_download_states": {
+      "beforeRows": 2,
+      "afterRows": 2,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": [
+        "updated_at_utc_ms"
+      ]
+    },
+    "quest_instances": {
+      "beforeRows": 3,
+      "afterRows": 4,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "instance_id"
+      ],
+      "changedColumns": []
+    },
+    "quest_objective_progress": {
+      "beforeRows": 3,
+      "afterRows": 4,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": []
+    },
+    "runtime_flags": {
+      "beforeRows": 3,
+      "afterRows": 3,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "key"
+      ],
+      "changedColumns": [
+        "expires_at_utc_ms",
+        "updated_at_utc_ms"
+      ]
+    }
+  },
+  "protectedTablesUnchanged": [
+    "local_owners",
+    "vocabulary_categories",
+    "vocabulary_words",
+    "vocabulary_imports",
+    "vocabulary_import_rows",
+    "answer_attempts",
+    "learning_sessions",
+    "srs_states",
+    "points_ledger_entries",
+    "reward_transactions",
+    "ai_usage_events",
+    "events_v2",
+    "outbox_operations"
+  ],
+  "installedApkSha256": "54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5",
+  "integrity": "ok before and after disposable clones",
+  "pidof": {
+    "exitCode": 1,
+    "stdoutEmpty": true
+  },
+  "restore": "restore.json",
+  "limitations": [
+    "Read-only native progress and quest navigation;no new answers,rewards purchases/equips or history route execution.",
+    "AI panel UNPAIRED;no provider.",
+    "No whole workflow or full learner-data acceptance."
+  ],
+  "uiReconciliation": {
+    "sourceMethod": "FirstAnswerAccuracy.select and weekly Asia/Bangkok filter;positive quizCorrect/questCompletion XP",
+    "correct": 54,
+    "total": 77,
+    "xp": 148,
+    "scope": "Read-only Python reconciliation of copied actual rows against observed UI;not production-reader execution or all schema validation",
+    "quests": [
+      {
+        "state": "active",
+        "current": 0,
+        "target": 5,
+        "period": "daily:2026-09-24"
+      },
+      {
+        "state": "completed",
+        "current": 5,
+        "target": 5,
+        "period": "daily:2026-09-23"
+      },
+      {
+        "state": "expired",
+        "current": 0,
+        "target": 5,
+        "period": "daily:2026-09-22"
+      },
+      {
+        "state": "completed",
+        "current": 5,
+        "target": 5,
+        "period": "daily:2026-09-21"
+      }
+    ]
+  },
+  "observations": [
+    "Progress54/77,70percent,XP148;existing learner-data display,not proficiency. Checkpoint144XP was stale historical description;actual pre/postledgerunchanged.",
+    "Quest active0/5 andcompleted5/5 observed;detail says conditional50XP not earned balance.",
+    "AI panel UNPAIRED.",
+    "Freshoriginal main/WAL/SHM restoredBYTEEXACT;force-stoppedpidofabsentexit1."
+  ],
+  "files": {
+    "build/ari-r3-05/part14-native/adb-stderr.log": "8f4caacf0b5ddf467a5b1dfca99bac4a6becb2aa1e5a828cf19b21d7ef74f5c7",
+    "build/ari-r3-05/part14-native/after.json": "c70b3c2617b5f96c7850833bd106d566fba5eb274a720ec1f56380ed296bce70",
+    "build/ari-r3-05/part14-native/ai-state.xml": "e1584af8a713a24a4172a65471c51057f01b4448cd2e47f7ce445b9dccda4b5c",
+    "build/ari-r3-05/part14-native/back-progress.xml": "8348d41ab2af673286d7914a0ee557bc0816c7c6bb69fd0fd750d0eec7416a62",
+    "build/ari-r3-05/part14-native/backup.json": "75192533ef85f8e3799b1ef619f73f082a77e35aac8f4d108ec871f11728d631",
+    "build/ari-r3-05/part14-native/drawer.xml": "19e56e4b5c6a9475628c41e3742b85c64fae7130be86bc0959bd7a4a3d5ebab5",
+    "build/ari-r3-05/part14-native/launch.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part14-native/learn-return.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part14-native/learn.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part14-native/planning.xml": "045258cd2d7fbb1163a3ca75c708fa3f064e631ff660fd0dc18219c948396850",
+    "build/ari-r3-05/part14-native/progress-bottom.xml": "75e7c6258cd1dcde60365821d2eb9fc28e671b55e18731ed1c2072c6d4b54a2f",
+    "build/ari-r3-05/part14-native/progress-end.xml": "a8a15f9ce6b1f50cd0f6c6fce8f641b442c2d6022e47bbf58dc43a42e41a462d",
+    "build/ari-r3-05/part14-native/progress-final.xml": "f63b1b9632647d6400674d72269d736b9aba2c70c979bdad7904b2d835516deb",
+    "build/ari-r3-05/part14-native/progress-links.xml": "b45cbe4f32ebb14b93be3c2353776a797a54dc4b3a4193013e8e039e9e2e0696",
+    "build/ari-r3-05/part14-native/progress-more.xml": "d6a2ab8982c1ab5afd9c1c07fa8b72ac7451ccc0cbf73a65a32b072ce4ed6511",
+    "build/ari-r3-05/part14-native/progress.xml": "8348d41ab2af673286d7914a0ee557bc0816c7c6bb69fd0fd750d0eec7416a62",
+    "build/ari-r3-05/part14-native/quest-details.xml": "9c385476611f54f2b3b65ed6330117c1a23940d603ffe2d91ff539672c139716",
+    "build/ari-r3-05/part14-native/quests.xml": "a902fbe77359b0ad6085b4ea604fdbc1ce7c2698c22cfd1a479d9213aa804a88",
+    "build/ari-r3-05/part14-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part14-native/storage-comparison.json": "04f1a03d38fe42c76a1b1a85ce675327835e619534fe9596246dcabb2b9cfb98",
+    "build/ari-r3-05/part14-native/ui-storage-reconciliation.json": "8f3ed9d4a0da80bd12c4e241c5928357381ba655e4a991002887a05d3b6eca37"
+  },
+  "sourceApplicability": {
+    "installedManifest": "source-manifest-r3-05-part09.json",
+    "currentManifest": "source-manifest-r3-05-part14.json",
+    "changedLibFilesSinceInstalled": [],
+    "observedBuildOnly": true
+  }
+}

@@ -1,5 +1,7 @@
 # LexiQuest — ดัชนีงานอารี
 
+**การตัดสินใจล่าสุด 24 กันยายน 2569:** ถอนชุดตรวจรับเดิม 215 เกณฑ์ออกจากงานที่ใช้ขับการพัฒนาปัจจุบัน เนื่องจากกำลังออกแบบ UX/โมดูลฝึกใหม่และยกเลิกเส้นทางเชื่อม ChatGPT/MCP สำหรับผู้ใช้ เก็บ `optional-mcp-workflows.json` และหลักฐานทั้งหมดเป็นประวัติ ห้ามนับ PASS เดิมแทนการตรวจของดีไซน์ใหม่ และห้ามกลับไปรัน 215 ข้อโดยอัตโนมัติ แนวทางคัดหลักการที่ยังต้องรักษาและทำทะเบียนตรวจรับใหม่อยู่ที่ [แผนแบบฝึกและ UX](../../design/worksheet-to-play-blueprint.md). ข้อความสถานะเก่าด้านล่างเป็นหลักฐานตามเวลา ไม่ใช่คำสั่งให้เดินแผนเดิมต่อ.
+
 จุดติดตามงานเดียวใน repository · 2026-09-21 · branch `feature/ari-app-device-integration`
 
 **สถานะปัจจุบัน: ต้นแบบแชตและ MCP ผ่านการสาธิตจริงบน Vivo แล้ว — ตอบไทย ถามต่อ อ่านคำศัพท์ เปิดแบบฝึก ยกเลิก และกู้คืนเมื่อออฟไลน์. ยังพึ่งสะพาน USB และยังไม่ใช่การรับรอง production/ทุกเมนู. [รายงาน](app-device-integration.md#chatmcp-live-execution--2026-09-21) · [หลักฐาน](chat-mcp-001.json). V2 เดิมยัง NOT_MET.**
@@ -18,6 +20,7 @@
 - [แผนและข้อกำหนด](../ari-feasibility.md) · [workflow และกติกาสร้าง task](../ari-task-workflow.md)
 - [สถานะปัจจุบันและ task IDs](state.json) · [ผลทดสอบโค้ดเดิม](../ari-feasibility-evidence.json)
 - [รายการนำเข้าพร้อม hash](import-manifest.json) · [หลักฐานทดสอบฉบับเต็ม](evidence/verification/targeted-ai.json)
+- [ผลศึกษา Jev และแผนทดลองแบบไม่ใช้เงินจริง](jev-development-plan.md) · [แผนแบบเครื่องอ่านได้](jev-development-plan.json) · [ผลเรียก Jev จริง](jev-free-probe.json)
 
 ## ตำแหน่ง task
 
@@ -64,3 +67,5 @@ Latest optional-assistance checkpoint: [native evidence](lesson-assistance-006.j
 Category forms and late AI attachment: [checkpoint](category-mcp-007.json). Typed category fill/save and independent local-owner binding implemented; 40 host tests and analysis passed. New native APK built but USB authorization is pending; no native PASS or whole-workflow completion claimed.
 
 Confirmed word deletion: [checkpoint](word-delete-008.json). Exact-target confirmation, owner guards and verified deletion implemented; Flutter42 and Python45 passed. Vivo is offline and native acceptance remains pending; original manual workflows are retained.
+
+R3-04: local context trial and reviewed coordinator fallback complete;55 offline tests PASS. Live workers/Choice and efficiency remain pending. [Report](R3-04.md) · [receipt](r3/receipt-r3-04.json).

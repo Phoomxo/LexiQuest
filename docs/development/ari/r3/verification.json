@@ -1,0 +1,13 @@
+{
+  "status": "PASS_ADOPTION_INTEGRITY_ONLY",
+  "applicationSourceFilesUnchanged": 1778,
+  "uniqueAcceptanceRows": 215,
+  "linkedReceiptsPresent": 88,
+  "dirtyArchiveRoundTrip": true,
+  "trackedPatchReverseCheck": true,
+  "originalDbHashMatches": 3,
+  "scopePlan": "verify-scope Targeted Learning ari_catalog_fixture_test.dart PlanOnly Resume; runtimeVerified false",
+  "testsRerun": false,
+  "wholeProductAcceptance": false,
+  "timestamp": "2026-09-23T16:39:39.658189+00:00"
+}
