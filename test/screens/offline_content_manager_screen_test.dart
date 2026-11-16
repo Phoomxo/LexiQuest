@@ -28,6 +28,429 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'AC dependency replacement refreshes pinned title with same manager',
+    (tester) async {
+      const identity = ContentIdentity(
+        type: ContentType.learningPack,
+        id: 'pack-a',
+        revision: 1,
+      );
+      final manager = _FakeManager([
+        _state(OfflineContentStatus.verified, identity: identity),
+      ]);
+      LearningPackSummary pack(String title) => LearningPackSummary(
+        packId: 'pack-a',
+        revision: 1,
+        title: title,
+        cefrLevel: 'A1',
+        topic: 'travel',
+        skill: 'recognition',
+        goal: 'practice',
+        contentIdentity: identity,
+      );
+      final pending = Completer<LearningPackDetail>();
+      await tester.pumpWidget(
+        _withPackMetadata(manager, pack('old title'), pending: pending),
+      );
+      await tester.pump();
+      await tester.pumpWidget(
+        _withPackMetadata(manager, pack('current title')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('current title'), findsOneWidget);
+      pending.complete(
+        LearningPackDetail(
+          summary: pack('old title'),
+          vocabularyWordIds: const [],
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('current title'), findsOneWidget);
+      expect(find.text('old title'), findsNothing);
+      expect(manager.catalogCalls, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'AC retry recovers pinned catalog without mutations or stale retry',
+    (tester) async {
+      final manager = _FakeManager([_state(OfflineContentStatus.verified)])
+        ..catalogFailures = 1
+        ..pinned.add(_identity);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OfflineContentManagerScreen(
+            manager: manager,
+            canInvoke: () => true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final stale = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('offline-content/retry')),
+          )
+          .onPressed!;
+      stale();
+      await tester.pumpAndSettle();
+      stale();
+      await tester.pumpAndSettle();
+      expect(manager.catalogCalls, 2);
+      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
+      expect(find.text('จำเป็นต่อการเรียนที่กำลังดำเนินอยู่'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('offline-content/remove/pack-a')),
+        findsNothing,
+      );
+      expect(manager.downloaded, isEmpty);
+      expect(manager.removed, isEmpty);
+      expect(manager.repaired, isEmpty);
+    },
+  );
+
+  for (final fail in [false, true]) {
+    testWidgets('AC disposed repair completion is inert failure=$fail', (
+      tester,
+    ) async {
+      final manager = _FakeManager([_state(OfflineContentStatus.quarantined)]);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OfflineContentManagerScreen(
+            manager: manager,
+            canInvoke: () => true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final stale = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('offline-content/repair/pack-a')),
+          )
+          .onPressed!;
+      stale();
+      stale();
+      await tester.pump();
+      expect(manager.repaired, [_identity]);
+      await tester.pumpWidget(const SizedBox());
+      if (fail) {
+        manager.repairCompleter.completeError(StateError('late repair'));
+      } else {
+        manager.repairCompleter.complete(_state(OfflineContentStatus.verified));
+      }
+      stale();
+      await tester.pumpAndSettle();
+      expect(manager.catalogCalls, 1);
+      expect(manager.repaired, [_identity]);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('AC disposed cancel completion is inert failure=$fail', (
+      tester,
+    ) async {
+      final manager = _FakeManager([_state(OfflineContentStatus.downloading)])
+        ..cancelPending = Completer<bool>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OfflineContentManagerScreen(
+            manager: manager,
+            canInvoke: () => true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final stale = tester
+          .widget<TextButton>(
+            find.byKey(const ValueKey('offline-content/cancel/pack-a')),
+          )
+          .onPressed!;
+      stale();
+      stale();
+      await tester.pump();
+      expect(manager.cancelled, [_identity]);
+      await tester.pumpWidget(const SizedBox());
+      if (fail) {
+        manager.cancelPending!.completeError(StateError('late cancel'));
+      } else {
+        manager.cancelPending!.complete(false);
+      }
+      stale();
+      await tester.pumpAndSettle();
+      expect(manager.cancelled, [_identity]);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('AC late canRemove cannot continue metadata after replacement', (
+    tester,
+  ) async {
+    final old = _FakeManager([_state(OfflineContentStatus.verified)])
+      ..canRemovePending = Completer<bool>();
+    final next = _FakeManager([]);
+    Widget screen(_FakeManager manager) => MaterialApp(
+      home: OfflineContentManagerScreen(
+        manager: manager,
+        canInvoke: () => true,
+      ),
+    );
+    await tester.pumpWidget(screen(old));
+    await tester.pump();
+    await tester.pumpWidget(screen(next));
+    await tester.pumpAndSettle();
+    old.canRemovePending!.complete(true);
+    await tester.pumpAndSettle();
+    expect(old.metadataReads, isEmpty);
+    expect(next.metadataReads, isEmpty);
+    expect(
+      find.text('ยังไม่มีแพ็กเนื้อหาที่รองรับการใช้งานออฟไลน์'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'AC old cancellation completion cannot affect replacement download',
+    (tester) async {
+      final old = _FakeManager([_state(OfflineContentStatus.downloading)])
+        ..cancelPending = Completer<bool>();
+      final next = _FakeManager([_state(OfflineContentStatus.downloading)])
+        ..cancelPending = Completer<bool>();
+      Widget screen(_FakeManager manager) => MaterialApp(
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => true,
+        ),
+      );
+      final cancel = find.byKey(
+        const ValueKey('offline-content/cancel/pack-a'),
+      );
+      await tester.pumpWidget(screen(old));
+      await tester.pumpAndSettle();
+      await tester.tap(cancel);
+      await tester.pump();
+      await tester.pumpWidget(screen(next));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextButton>(cancel).onPressed, isNotNull);
+      await tester.tap(cancel);
+      await tester.pump();
+      old.cancelPending!.complete(false);
+      await tester.pumpAndSettle();
+      expect(find.text('ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว'), findsNothing);
+      expect(tester.widget<TextButton>(cancel).onPressed, isNull);
+      next.cancelPending!.complete(true);
+      await tester.pumpAndSettle();
+      expect(next.cancelled, [_identity]);
+    },
+  );
+
+  testWidgets('AC catalog completion after disposal has no metadata work', (
+    tester,
+  ) async {
+    final manager = _FakeManager([])
+      ..catalogPending = Completer<List<OfflineContentState>>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => true,
+        ),
+      ),
+    );
+    await tester.pumpWidget(const SizedBox());
+    manager.catalogPending!.complete([_state(OfflineContentStatus.verified)]);
+    await tester.pumpAndSettle();
+    expect(manager.metadataReads, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('AC catalog retry is read-only, bounded and accessible at 200%', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    final manager = _FakeManager([])..catalogFailures = 2;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final retry = find.byKey(const ValueKey('offline-content/retry'));
+    expect(retry, findsOneWidget);
+    await tester.ensureVisible(retry);
+    expect(
+      tester.getSemantics(retry),
+      matchesSemantics(
+        label: 'ลองอ่านสถานะอีกครั้ง',
+        isButton: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        hasTapAction: true,
+        hasFocusAction: true,
+        isFocusable: true,
+      ),
+    );
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+    expect(find.text('อ่านสถานะเนื้อหาออฟไลน์ไม่ได้'), findsOneWidget);
+    expect(find.textContaining('private failure'), findsNothing);
+    manager.catalogPending = Completer<List<OfflineContentState>>();
+    final callback = tester.widget<FilledButton>(retry).onPressed!;
+    callback();
+    callback();
+    await tester.pump();
+    expect(manager.catalogCalls, 3);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    manager.catalogPending!.complete([]);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('ยังไม่มีแพ็กเนื้อหาที่รองรับการใช้งานออฟไลน์'),
+      findsOneWidget,
+    );
+    expect(manager.downloaded, isEmpty);
+    expect(manager.removed, isEmpty);
+    expect(manager.repaired, isEmpty);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets('AC retry checks live gate and ignores a disposed callback', (
+    tester,
+  ) async {
+    var enabled = true;
+    final manager = _FakeManager([])..catalogFailures = 1;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => enabled,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final retry = tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey('offline-content/retry')),
+        )
+        .onPressed!;
+    enabled = false;
+    retry();
+    await tester.pump();
+    expect(manager.catalogCalls, 1);
+    enabled = true;
+    await tester.pumpWidget(const SizedBox());
+    retry();
+    await tester.pump();
+    expect(manager.catalogCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('AC late catalog never reads replacement manager metadata', (
+    tester,
+  ) async {
+    final old = _FakeManager([])
+      ..catalogPending = Completer<List<OfflineContentState>>();
+    final next = _FakeManager([]);
+    Widget screen(_FakeManager manager) => MaterialApp(
+      home: OfflineContentManagerScreen(
+        manager: manager,
+        canInvoke: () => true,
+      ),
+    );
+    await tester.pumpWidget(screen(old));
+    await tester.pumpWidget(screen(next));
+    await tester.pumpAndSettle();
+    old.catalogPending!.complete([_state(OfflineContentStatus.verified)]);
+    await tester.pumpAndSettle();
+    expect(next.metadataReads, isEmpty);
+    expect(
+      find.text('ยังไม่มีแพ็กเนื้อหาที่รองรับการใช้งานออฟไลน์'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'AC replaced operation cannot clear current busy or show old failure',
+    (tester) async {
+      final old = _FakeManager([_state(OfflineContentStatus.quarantined)]);
+      final next = _FakeManager([_state(OfflineContentStatus.quarantined)]);
+      Widget screen(_FakeManager manager) => MaterialApp(
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => true,
+        ),
+      );
+      await tester.pumpWidget(screen(old));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('offline-content/repair/pack-a')),
+      );
+      await tester.pump();
+      await tester.pumpWidget(screen(next));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('offline-content/repair/pack-a')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('offline-content/repair/pack-a')),
+      );
+      await tester.pump();
+      old.repairCompleter.completeError(StateError('old operation'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('offline-content/busy/pack-a')),
+        findsOneWidget,
+      );
+      expect(next.catalogCalls, 1);
+      next.repairCompleter.complete(_state(OfflineContentStatus.verified));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
+    },
+  );
+
+  testWidgets('AC detached action cannot target replacement manager', (
+    tester,
+  ) async {
+    final old = _FakeManager([_state(OfflineContentStatus.notDownloaded)]);
+    final next = _FakeManager([_state(OfflineContentStatus.notDownloaded)]);
+    Widget screen(_FakeManager manager) => MaterialApp(
+      home: OfflineContentManagerScreen(
+        manager: manager,
+        canInvoke: () => true,
+      ),
+    );
+    await tester.pumpWidget(screen(old));
+    await tester.pumpAndSettle();
+    final stale = tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey('offline-content/download/pack-a')),
+        )
+        .onPressed!;
+    await tester.pumpWidget(screen(next));
+    await tester.pumpAndSettle();
+    stale();
+    await tester.pumpAndSettle();
+    expect(next.downloaded, isEmpty);
+    expect(old.downloaded, isEmpty);
+  });
+
   for (final status in OfflineContentStatus.values) {
     testWidgets('optional offline context reports actual ${status.name}', (
       tester,
@@ -333,8 +756,9 @@ OfflineContentState _state(
 
 Widget _withPackMetadata(
   OfflineContentManager manager,
-  LearningPackSummary pack,
-) {
+  LearningPackSummary pack, {
+  Completer<LearningPackDetail>? pending,
+}) {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
   final research = InertResearchDependencies(database);
@@ -363,7 +787,7 @@ Widget _withPackMetadata(
       Feature.studyPlanning: FeatureState.enabled,
     }),
     studyPlanning: StudyPlanningUseCases(
-      packs: _PackRepository(pack),
+      packs: _PackRepository(pack, pending),
       progress: ProgressUseCases(
         owners: owners,
         queries: DriftProgressQueries(database),
@@ -383,7 +807,8 @@ Widget _withPackMetadata(
 }
 
 final class _PackRepository implements LearningPackRepository {
-  _PackRepository(this.summary);
+  _PackRepository(this.summary, this.pending);
+  final Completer<LearningPackDetail>? pending;
   final LearningPackSummary summary;
   @override
   Future<List<LearningPackSummary>> list(LearningPackFilter filter) async => [
@@ -391,6 +816,7 @@ final class _PackRepository implements LearningPackRepository {
   ];
   @override
   Future<LearningPackDetail> getVersion(String packId, int revision) async =>
+      pending?.future ??
       LearningPackDetail(summary: summary, vocabularyWordIds: const []);
 }
 
@@ -409,13 +835,23 @@ final class _FakeManager
   final cancelled = <ContentIdentity>[];
   bool waitDownload = false;
   final downloadCompleter = Completer<OfflineContentState>();
+  int catalogFailures = 0;
+  int catalogCalls = 0;
+  Completer<List<OfflineContentState>>? catalogPending;
+  final metadataReads = <ContentIdentity>[];
+  Completer<bool>? cancelPending;
+  Completer<bool>? canRemovePending;
 
   @override
-  Future<int> requiredBytes(ContentIdentity identity) async => 4096;
+  Future<int> requiredBytes(ContentIdentity identity) async {
+    metadataReads.add(identity);
+    return 4096;
+  }
 
   @override
   Future<bool> cancelDownload(ContentIdentity identity) async {
     cancelled.add(identity);
+    if (cancelPending != null) return cancelPending!.future;
     downloadCompleter.complete(
       _replace(identity, OfflineContentStatus.interrupted),
     );
@@ -428,11 +864,18 @@ final class _FakeManager
   final repairCompleter = Completer<OfflineContentState>();
 
   @override
-  Future<List<OfflineContentState>> catalog() async => List.of(values);
+  Future<List<OfflineContentState>> catalog() async {
+    catalogCalls++;
+    if (catalogFailures > 0) {
+      catalogFailures--;
+      throw StateError('private failure');
+    }
+    return catalogPending?.future ?? List.of(values);
+  }
 
   @override
   Future<bool> canRemove(ContentIdentity identity) async =>
-      !pinned.contains(identity);
+      canRemovePending?.future ?? !pinned.contains(identity);
 
   @override
   Future<OfflineContentState> download(ContentIdentity identity) async {

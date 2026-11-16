@@ -16,6 +16,78 @@ import 'package:vocab_learning_app/config/m3_theme.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  _recoveryTests();
+  testWidgets(
+    'AM open custom calendar retires source on parent loader replacement',
+    (tester) async {
+      Future<PersonalLearningProfile> first() async => _profile;
+      Future<PersonalLearningProfile> next() async => _empty;
+      Widget app(MasteryProfileLoader loader) =>
+          MaterialApp(home: MasteryDashboardScreen(loader: loader));
+      await tester.pumpWidget(app(first));
+      await tester.pumpAndSettle();
+      await _scrollToCalendarAction(tester);
+      await tester.tap(find.byKey(const Key('learning-calendar-action')));
+      await tester.pumpAndSettle();
+      expect(find.text('1500 วินาที'), findsOneWidget);
+      await tester.pumpWidget(app(next));
+      await tester.pumpAndSettle();
+      expect(find.text('1500 วินาที'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'AM detached calendar action cannot open after loader replacement',
+    (tester) async {
+      var opens = 0;
+      Future<void> open(
+        BuildContext context,
+        LearningCalendarSnapshot calendar,
+      ) async {
+        opens++;
+      }
+
+      Widget app(MasteryProfileLoader loader) => MaterialApp(
+        home: MasteryDashboardScreen(
+          loader: loader,
+          openLearningCalendar: open,
+        ),
+      );
+      await tester.pumpWidget(app(() async => _profile));
+      await tester.pumpAndSettle();
+      await _scrollToCalendarAction(tester);
+      final action = tester
+          .widget<FilledButton>(
+            find.byKey(const Key('learning-calendar-action')),
+          )
+          .onPressed!;
+      await tester.pumpWidget(app(() async => _empty));
+      await tester.pumpAndSettle();
+      action();
+      await tester.pumpAndSettle();
+      expect(opens, 0);
+    },
+  );
+  testWidgets(
+    'AM calendar rereads custom profile instead of captured snapshot',
+    (tester) async {
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MasteryDashboardScreen(
+            loader: () async => ++calls == 1 ? _profile : _empty,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _scrollToCalendarAction(tester);
+      await tester.tap(find.byKey(const Key('learning-calendar-action')));
+      await tester.pumpAndSettle();
+      expect(find.byType(LearningCalendarScreen), findsOneWidget);
+      expect(find.text('0 วินาที'), findsOneWidget);
+      expect(calls, 2);
+    },
+  );
   for (final empty in [false, true]) {
     testWidgets(
       'optional progress context preserves availability empty=$empty',
@@ -564,3 +636,280 @@ LearningCalendarSnapshot _calendar({required bool empty}) =>
         accuracyTrend: const [],
       ),
     );
+
+void _recoveryTests() {
+  testWidgets('S01-AF inactive pending read never renders late profile', (
+    tester,
+  ) async {
+    final active = ValueNotifier(true);
+    addTearDown(active.dispose);
+    final read = Completer<PersonalLearningProfile>();
+    Future<PersonalLearningProfile> load() => read.future;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder<bool>(
+          valueListenable: active,
+          builder: (_, enabled, __) => TickerMode(
+            enabled: enabled,
+            child: MasteryDashboardScreen(loader: load),
+          ),
+        ),
+      ),
+    );
+    active.value = false;
+    await tester.pump();
+    read.complete(_profile);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsNothing);
+  });
+
+  for (final synchronous in [false, true]) {
+    testWidgets(
+      'S01-AF repeated read failures and bounded retry sync=$synchronous',
+      (tester) async {
+        var calls = 0;
+        final pending = Completer<PersonalLearningProfile>();
+        Future<PersonalLearningProfile> load() {
+          calls++;
+          if (calls <= 2) {
+            if (synchronous) throw StateError('private failure');
+            return Future.error(StateError('private failure'));
+          }
+          return pending.future;
+        }
+
+        await tester.pumpWidget(
+          MaterialApp(home: MasteryDashboardScreen(loader: load)),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text('ไม่สามารถอ่านประวัติการเรียนในเครื่องได้'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('private failure'), findsNothing);
+        await tester.tap(find.text('ลองอีกครั้ง'));
+        // An immediate retry error must be observed before the next frame.
+        await tester.idle();
+        expect(tester.takeException(), isNull);
+        await tester.pumpAndSettle();
+        expect(calls, 2);
+        expect(find.byType(FilledButton), findsOneWidget);
+        final retry = tester
+            .widget<FilledButton>(find.byType(FilledButton))
+            .onPressed!;
+        retry();
+        retry();
+        expect(calls, 3);
+        await tester.pump();
+        expect(find.text('ลองอีกครั้ง'), findsNothing);
+        pending.complete(_empty);
+        await tester.pumpAndSettle();
+        retry();
+        expect(calls, 3);
+        expect(find.text('ยังไม่มีคำตอบในสัปดาห์นี้'), findsOneWidget);
+        expect(find.text('0%'), findsNothing);
+      },
+    );
+  }
+  testWidgets('S01-AF retry is readable and semantic at 360px 200 percent', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    var calls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: MasteryDashboardScreen(
+          loader: () async {
+            calls++;
+            if (calls == 1) throw StateError('read');
+            return _profile;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('ลองอีกครั้ง'), findsOneWidget);
+    await tester.ensureVisible(find.text('ลองอีกครั้ง'));
+    await tester.tap(find.text('ลองอีกครั้ง'));
+    await tester.pumpAndSettle();
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+  testWidgets('S01-AF old retry cannot read after loader replacement', (
+    tester,
+  ) async {
+    var oldCalls = 0;
+    var newCalls = 0;
+    Future<PersonalLearningProfile> old() async {
+      oldCalls++;
+      throw StateError('old');
+    }
+
+    final next = Completer<PersonalLearningProfile>();
+    Future<PersonalLearningProfile> replacement() {
+      newCalls++;
+      return next.future;
+    }
+
+    Widget app(MasteryProfileLoader loader) =>
+        MaterialApp(home: MasteryDashboardScreen(loader: loader));
+    await tester.pumpWidget(app(old));
+    await tester.pumpAndSettle();
+    expect(find.byType(FilledButton), findsOneWidget);
+    final retry = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .onPressed!;
+    await tester.pumpWidget(app(replacement));
+    retry();
+    expect(oldCalls, 1);
+    expect(newCalls, 1);
+    next.complete(_profile);
+    await tester.pumpAndSettle();
+    retry();
+    expect(newCalls, 1);
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsOneWidget);
+  });
+  testWidgets('S01-AF inactive tab retires retry and late completion', (
+    tester,
+  ) async {
+    final active = ValueNotifier(true);
+    addTearDown(active.dispose);
+    final late = Completer<PersonalLearningProfile>();
+    var calls = 0;
+    Future<PersonalLearningProfile> load() {
+      calls++;
+      if (calls == 1) return Future.error(StateError('first'));
+      if (calls == 2) return late.future;
+      return Future.value(_empty);
+    }
+
+    final registry = MenuActionRegistry(currentOwner: () => _profile.ownerId);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: active,
+            builder: (_, value, __) => TickerMode(
+              enabled: value,
+              child: MasteryDashboardScreen(loader: load),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(FilledButton), findsOneWidget);
+    final retry = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .onPressed!;
+    retry();
+    await tester.pump();
+    active.value = false;
+    await tester.pump();
+    late.complete(_profile);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsNothing);
+    expect(registry.snapshot()['context'], isEmpty);
+    retry();
+    expect(calls, 2);
+    active.value = true;
+    await tester.pumpAndSettle();
+    expect(calls, 3);
+    expect(find.text('ยังไม่มีคำตอบในสัปดาห์นี้'), findsOneWidget);
+  });
+  for (final exit in ['covered', 'popped', 'disposed']) {
+    testWidgets('S01-AF retained retry is inert when route $exit', (
+      tester,
+    ) async {
+      final nav = GlobalKey<NavigatorState>();
+      var calls = 0;
+      Future<PersonalLearningProfile> load() async {
+        calls++;
+        throw StateError('read');
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: const Scaffold(body: Text('parent')),
+        ),
+      );
+      nav.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => MasteryDashboardScreen(loader: load),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(FilledButton), findsOneWidget);
+      final retry = tester
+          .widget<FilledButton>(find.byType(FilledButton))
+          .onPressed!;
+      if (exit == 'covered') {
+        nav.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('cover')),
+          ),
+        );
+      }
+      if (exit == 'popped') nav.currentState!.pop();
+      if (exit == 'disposed') await tester.pumpWidget(const SizedBox.shrink());
+      retry();
+      expect(calls, 1);
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+    });
+  }
+  for (final retiredError in [false, true]) {
+    testWidgets('S01-AF superseded read outcome ignored error=$retiredError', (
+      tester,
+    ) async {
+      final old = Completer<PersonalLearningProfile>();
+      final replacement = Completer<PersonalLearningProfile>();
+      final registry = MenuActionRegistry(currentOwner: () => _profile.ownerId);
+      Widget app(MasteryProfileLoader loader) => MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: MasteryDashboardScreen(loader: loader)),
+      );
+      await tester.pumpWidget(app(() => old.future));
+      await tester.pumpWidget(app(() => replacement.future));
+      if (retiredError) {
+        old.completeError(StateError('retired'));
+      } else {
+        old.complete(_profile);
+      }
+      await tester.pump();
+      expect(registry.snapshot()['context'], isEmpty);
+      replacement.complete(_empty);
+      await tester.pumpAndSettle();
+      expect(find.text('ยังไม่มีคำตอบในสัปดาห์นี้'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('S01-AF disposed pending error is observed', (tester) async {
+    final pending = Completer<PersonalLearningProfile>();
+    await tester.pumpWidget(
+      MaterialApp(home: MasteryDashboardScreen(loader: () => pending.future)),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    pending.completeError(StateError('retired'));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+}

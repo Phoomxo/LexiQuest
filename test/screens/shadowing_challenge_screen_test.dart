@@ -33,6 +33,69 @@ import '../support/accessibility_semantics_test_support.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('shadowing suppresses context without canonical prompt owner', (
+    tester,
+  ) async {
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    final registry = MenuActionRegistry(currentOwner: () => 'owner-1');
+    await tester.pumpWidget(MenuActionScope(
+      registry: registry,
+      child: MaterialApp(
+        home: ShadowingChallengeScreen(
+          referenceSentence: 'Private reference without provenance',
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(_ManualSpeechGateway()),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Private reference without provenance'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('shadowing-listen-button')),
+        findsOneWidget);
+    expect(registry.snapshot()['context'], isEmpty,
+        reason: 'The AI session owner cannot substitute for prompt provenance');
+    expect(registry.snapshot()['actions'], isEmpty);
+  });
+
+  testWidgets('shadowing owned prompt survives AI reconnect but not owner switch', (
+    tester,
+  ) async {
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    String? aiOwner;
+    final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+    await tester.pumpWidget(MenuActionScope(
+      registry: registry,
+      child: MaterialApp(
+        home: ShadowingChallengeScreen(
+          referenceSentence: 'Owned reference',
+          ownerId: 'owner-1',
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(_ManualSpeechGateway()),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(registry.snapshot()['context'], isEmpty);
+    aiOwner = 'owner-1';
+    final context = (registry.snapshot()['context'] as List).single;
+    expect(jsonDecode(context['value'] as String)['reference'], 'Owned reference');
+    registry.invalidateSession(preserveContext: true);
+    expect(registry.snapshot()['context'], hasLength(1));
+    aiOwner = 'owner-2';
+    expect(registry.snapshot()['context'], isEmpty);
+    expect(find.text('Owned reference'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(registry.snapshot()['context'], isEmpty);
+  });
+
   testWidgets('shadowing saved context waits for persistence acknowledgment', (tester) async {
     final release = Completer<void>();
     final repository = _RetryLearningRepository(

@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 
 import '../domain/vocabulary_category.dart';
@@ -161,7 +163,7 @@ final class VocabularyUseCases {
           word: word,
           mutationAllowed: mutationAllowed,
         );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return result;
   }
 
@@ -181,20 +183,28 @@ final class VocabularyUseCases {
         mutationAllowed?.call() == false) {
       throw const InvalidVocabularyFailure('owner', 'stale operation');
     }
-    final created = await vocabulary.createCategory(
-      VocabularyCategory(
-        id: 'category:${_nextId()}',
-        ownerId: owner.id,
-        name: canonicalName,
-        normalizedName: normalizeVocabularyText(canonicalName),
-        sortOrder: 0,
-        localRevision: 1,
-        isDeleted: false,
-        createdAtUtc: now,
-        updatedAtUtc: now,
-      ),
+    final category = VocabularyCategory(
+      id: 'category:${_nextId()}',
+      ownerId: owner.id,
+      name: canonicalName,
+      normalizedName: normalizeVocabularyText(canonicalName),
+      sortOrder: 0,
+      localRevision: 1,
+      isDeleted: false,
+      createdAtUtc: now,
+      updatedAtUtc: now,
     );
-    onLocalMutation?.call();
+    final repository = vocabulary;
+    final created =
+        mutationAllowed != null &&
+            repository is GuardedVocabularyCategoryRepository
+        ? await (repository as GuardedVocabularyCategoryRepository)
+              .createCategoryWithAdmission(
+                category: category,
+                mutationAllowed: mutationAllowed,
+              )
+        : await repository.createCategory(category);
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return created;
   }
 
@@ -220,29 +230,51 @@ final class VocabularyUseCases {
       normalizedName: normalizeVocabularyText(canonicalName),
       nowUtc: _currentUtc(),
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return renamed;
   }
 
-  Future<void> deleteCategory(String categoryId) async {
+  Future<void> deleteCategory(
+    String categoryId, {
+    String? expectedOwnerId,
+    bool Function()? mutationAllowed,
+  }) async {
     final canonicalCategoryId = _required(
       categoryId,
       'categoryId',
       maxLength: 256,
     );
     final owner = await owners.getOrCreateActiveOwner();
-    await vocabulary.deleteCategory(
-      ownerId: owner.id,
-      categoryId: canonicalCategoryId,
-      nowUtc: _currentUtc(),
-    );
-    onLocalMutation?.call();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        mutationAllowed?.call() == false) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
+    final repository = vocabulary;
+    if (mutationAllowed != null &&
+        repository is GuardedVocabularyCategoryRepository) {
+      await (repository as GuardedVocabularyCategoryRepository)
+          .deleteCategoryWithAdmission(
+            ownerId: owner.id,
+            categoryId: canonicalCategoryId,
+            nowUtc: _currentUtc(),
+            mutationAllowed: mutationAllowed,
+          );
+    } else {
+      await repository.deleteCategory(
+        ownerId: owner.id,
+        categoryId: canonicalCategoryId,
+        nowUtc: _currentUtc(),
+      );
+    }
+    notifyCommittedVocabularyMutation(onLocalMutation);
   }
 
   Future<VocabularyWord> createWord(
     CreateWordCommand command, {
     String? expectedOwnerId,
     bool Function()? mutationAllowed,
+    bool enforceMutationAtCommit = false,
+    int? expectedCategoryRevision,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
     if (expectedOwnerId != null && owner.id != expectedOwnerId ||
@@ -250,21 +282,31 @@ final class VocabularyUseCases {
       throw const InvalidVocabularyFailure('owner', 'stale operation');
     }
     final now = _currentUtc();
-    final created = await vocabulary.createWord(
-      _wordFromInput(
-        id: 'word:${_nextId()}',
-        ownerId: owner.id,
-        categoryId: command.categoryId,
-        spelling: command.spelling,
-        meaning: command.meaning,
-        partOfSpeech: command.partOfSpeech,
-        cefrLevel: command.cefrLevel,
-        source: command.source,
-        createdAtUtc: now,
-        updatedAtUtc: now,
-      ),
+    final word = _wordFromInput(
+      id: 'word:${_nextId()}',
+      ownerId: owner.id,
+      categoryId: command.categoryId,
+      spelling: command.spelling,
+      meaning: command.meaning,
+      partOfSpeech: command.partOfSpeech,
+      cefrLevel: command.cefrLevel,
+      source: command.source,
+      createdAtUtc: now,
+      updatedAtUtc: now,
     );
-    onLocalMutation?.call();
+    final repository = vocabulary;
+    final created =
+        enforceMutationAtCommit &&
+            mutationAllowed != null &&
+            repository is GuardedVocabularyWordCreationRepository
+        ? await (repository as GuardedVocabularyWordCreationRepository)
+              .createWordWithAdmission(
+                expectedCategoryRevision: expectedCategoryRevision,
+                word: word,
+                mutationAllowed: mutationAllowed,
+              )
+        : await repository.createWord(word);
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return created;
   }
 
@@ -272,6 +314,8 @@ final class VocabularyUseCases {
     UpdateWordCommand command, {
     String? expectedOwnerId,
     bool Function()? mutationAllowed,
+    VocabularyWord? expectedWord,
+    int? expectedCategoryRevision,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
     if (expectedOwnerId != null && owner.id != expectedOwnerId ||
@@ -279,21 +323,31 @@ final class VocabularyUseCases {
       throw const InvalidVocabularyFailure('owner', 'stale operation');
     }
     final now = _currentUtc();
-    final updated = await vocabulary.updateWord(
-      _wordFromInput(
-        id: _required(command.id, 'wordId', maxLength: 256),
-        ownerId: owner.id,
-        categoryId: command.categoryId,
-        spelling: command.spelling,
-        meaning: command.meaning,
-        partOfSpeech: command.partOfSpeech,
-        cefrLevel: command.cefrLevel,
-        source: command.source,
-        createdAtUtc: now,
-        updatedAtUtc: now,
-      ),
+    final input = _wordFromInput(
+      id: _required(command.id, 'wordId', maxLength: 256),
+      ownerId: owner.id,
+      categoryId: command.categoryId,
+      spelling: command.spelling,
+      meaning: command.meaning,
+      partOfSpeech: command.partOfSpeech,
+      cefrLevel: command.cefrLevel,
+      source: command.source,
+      createdAtUtc: now,
+      updatedAtUtc: now,
     );
-    onLocalMutation?.call();
+    final repository = vocabulary;
+    final updated =
+        mutationAllowed != null &&
+            repository is GuardedVocabularyWordUpdateRepository
+        ? await (repository as GuardedVocabularyWordUpdateRepository)
+              .updateWordWithAdmission(
+                word: input,
+                mutationAllowed: mutationAllowed,
+                expectedWord: expectedWord,
+                expectedCategoryRevision: expectedCategoryRevision,
+              )
+        : await repository.updateWord(input);
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return updated;
   }
 
@@ -301,6 +355,8 @@ final class VocabularyUseCases {
     String wordId, {
     String? expectedOwnerId,
     bool Function()? mutationAllowed,
+    VocabularyWord? expectedWord,
+    int? expectedCategoryRevision,
   }) async {
     final canonicalWordId = _required(wordId, 'wordId', maxLength: 256);
     final owner = await owners.getOrCreateActiveOwner();
@@ -308,12 +364,26 @@ final class VocabularyUseCases {
         mutationAllowed?.call() == false) {
       throw const InvalidVocabularyFailure('owner', 'stale operation');
     }
-    await vocabulary.deleteWord(
-      ownerId: owner.id,
-      wordId: canonicalWordId,
-      nowUtc: _currentUtc(),
-    );
-    onLocalMutation?.call();
+    final repository = vocabulary;
+    if (mutationAllowed != null &&
+        repository is GuardedVocabularyWordDeletionRepository) {
+      await (repository as GuardedVocabularyWordDeletionRepository)
+          .deleteWordWithAdmission(
+            ownerId: owner.id,
+            wordId: canonicalWordId,
+            nowUtc: _currentUtc(),
+            mutationAllowed: mutationAllowed,
+            expectedWord: expectedWord,
+            expectedCategoryRevision: expectedCategoryRevision,
+          );
+    } else {
+      await vocabulary.deleteWord(
+        ownerId: owner.id,
+        wordId: canonicalWordId,
+        nowUtc: _currentUtc(),
+      );
+    }
+    notifyCommittedVocabularyMutation(onLocalMutation);
   }
 
   VocabularyWord _wordFromInput({
@@ -403,4 +473,20 @@ String _required(String value, String field, {required int maxLength}) {
     );
   }
   return canonical;
+}
+
+/// The repository has already committed both local data and its sync outbox.
+/// A failed optional sync wake-up must not change the mutation's return value.
+/// Later startup/resume/manual sync triggers can drain the retained outbox.
+void notifyCommittedVocabularyMutation(LocalMutationNotifier? notifier) {
+  try {
+    notifier?.call();
+  } on Object catch (_, stackTrace) {
+    developer.log(
+      'Sync notification failed after vocabulary commit; outbox retained.',
+      name: 'lexiquest.vocabulary',
+      level: 900,
+      stackTrace: stackTrace,
+    );
+  }
 }

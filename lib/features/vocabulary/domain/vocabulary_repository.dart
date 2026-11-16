@@ -48,3 +48,50 @@ abstract interface class AtomicVocabularyCreationRepository {
     required bool Function() mutationAllowed,
   });
 }
+
+/// Optional transaction admission for an already selected private category.
+/// Uses the same canonical word creation and rolls back its outbox with it.
+abstract interface class GuardedVocabularyWordCreationRepository {
+  Future<VocabularyWord> createWordWithAdmission({
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+    int? expectedCategoryRevision,
+  });
+}
+
+/// Admission for the existing explicit category commands, within their canonical
+/// transaction. Already committed mutations are never revoked.
+abstract interface class GuardedVocabularyCategoryRepository {
+  Future<VocabularyCategory> createCategoryWithAdmission({
+    required VocabularyCategory category,
+    required bool Function() mutationAllowed,
+  });
+  Future<void> deleteCategoryWithAdmission({
+    required String ownerId,
+    required String categoryId,
+    required DateTime nowUtc,
+    required bool Function() mutationAllowed,
+  });
+}
+
+/// Optional lifetime/snapshot checks around the canonical word deletion.
+abstract interface class GuardedVocabularyWordDeletionRepository {
+  Future<void> deleteWordWithAdmission({
+    required String ownerId,
+    required String wordId,
+    required DateTime nowUtc,
+    required bool Function() mutationAllowed,
+    VocabularyWord? expectedWord,
+    int? expectedCategoryRevision,
+  });
+}
+
+/// Snapshot/lifetime admission around the existing canonical update transaction.
+abstract interface class GuardedVocabularyWordUpdateRepository {
+  Future<VocabularyWord> updateWordWithAdmission({
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+    VocabularyWord? expectedWord,
+    int? expectedCategoryRevision,
+  });
+}

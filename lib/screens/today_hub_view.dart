@@ -103,12 +103,16 @@ final class TodayHubView extends StatefulWidget {
     required this.actions,
     required this.features,
     required this.assessmentAvailable,
+    this.onOpenPractice,
+    this.manualPracticeAvailable = true,
   });
 
   final TodayHubSnapshot snapshot;
   final TodayHubActionDelegate actions;
   final FeatureRegistry features;
   final bool assessmentAvailable;
+  final VoidCallback? onOpenPractice;
+  final bool manualPracticeAvailable;
 
   @override
   State<TodayHubView> createState() => _TodayHubViewState();
@@ -188,22 +192,25 @@ final class _TodayHubViewState extends State<TodayHubView> {
   Widget build(BuildContext context) {
     final snapshot = widget.snapshot;
     final children = <Widget>[
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: OutlinedButton.icon(
-          key: const ValueKey('today-hub-manual-practice'),
-          onPressed: () => AppNavigator.pushPage<void>(
-            context,
-            AppPage<void>(
-              name: 'home/learn',
-              builder: (_) =>
-                  ChooseModeScreen(featureRegistry: widget.features),
-            ),
+      if (widget.manualPracticeAvailable)
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            key: const ValueKey('today-hub-manual-practice'),
+            onPressed:
+                widget.onOpenPractice ??
+                () => AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'home/learn',
+                    builder: (_) =>
+                        ChooseModeScreen(featureRegistry: widget.features),
+                  ),
+                ),
+            icon: const Icon(Icons.grid_view_outlined),
+            label: const Text('เลือกฝึกเอง'),
           ),
-          icon: const Icon(Icons.grid_view_outlined),
-          label: const Text('เลือกฝึกเอง'),
         ),
-      ),
     ];
     final sectionStarts = <int>{};
     for (final section in snapshot.sectionOrder) {

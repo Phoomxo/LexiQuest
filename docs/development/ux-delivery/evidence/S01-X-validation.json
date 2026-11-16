@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "result": "HOST_PASS",
+  "atUtc": "2026-09-24T08:36:15.608537+00:00",
+  "tests": 107,
+  "compatibilityChecks": 3,
+  "inputPins": {
+    "docs/design/lexiquest-full-ux.js": "4d65d592ee6522b19eeea61decca2bd0e8a097719a812c6a0542591a1fefba04",
+    "docs/design/check-s01-navigation.cjs": "b38a09f55bed9e5a5c286db998f06c245400a16febeddfe6e161cb44ff92a559",
+    "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+    "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+    "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+    "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+    "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+    "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+  },
+  "notTested": [
+    "browser/visual",
+    "real keyboard/screen reader",
+    "native drawing/persistence",
+    "learning"
+  ],
+  "red": [
+    "build/ux-delivery/S01-X/red.log"
+  ],
+  "remainingRed": [],
+  "gateResultPath": "docs/development/ux-delivery/evidence/S01-X-gate.json",
+  "gateFingerprint": "27223af3b1b56923704fb134a7704dfa4daae4c463e2f0c521d72138c8e9d9e1",
+  "selfReview": "Self-review only. Three selector boundaries reject invalid values, disconnected/disabled nodes and exam events outside exam before mutation/audio cancellation. Global lab-map remains legitimate navigation from every route. Valid track/task content, audio cancellation and exact per-track drafts retained. Malformed and synthetic stale events are defensive contracts, not observed usability failures.",
+  "recoveryNotes": [],
+  "confirmedRedCount": 9,
+  "newTests": 11,
+  "stderrReview": "Inspected stdout/stderr hashes, 107 host + 3 compatibility PASS; no skip/failure. Stderr module initialization progress only."
+}

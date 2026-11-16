@@ -260,14 +260,31 @@ final class StudyReminderUseCases {
     if (!await _ownerOperationAllows(ownerId)) {
       throw const StudyReminderMutationUnavailable();
     }
+    late final StudyReminderFeatureEligibility openingEligibility;
     try {
-      if (!(await loadFeatureEligibility()).enabled) {
+      openingEligibility = await loadFeatureEligibility();
+      if (!openingEligibility.enabled) {
         return StudyReminderOptInResult.unavailable;
       }
     } on Object {
       _recordFailure(StudyReminderFailureKind.featureEligibility);
       return StudyReminderOptInResult.unavailable;
     }
+    Future<void> requireAdmission() async {
+      if (!mutationAllowed()) throw const StudyReminderMutationUnavailable();
+      if (await repository.activeOwnerId() != ownerId ||
+          !await _ownerOperationAllows(ownerId)) {
+        throw const StudyReminderMutationUnavailable();
+      }
+      final current = await loadFeatureEligibility();
+      if (!current.enabled ||
+          current.epoch != openingEligibility.epoch ||
+          !await _ownerOperationAllows(ownerId) ||
+          await repository.activeOwnerId() != ownerId ||
+          !mutationAllowed())
+        throw const StudyReminderMutationUnavailable();
+    }
+
     if (!await _ensureInitialized()) {
       return StudyReminderOptInResult.unavailable;
     }
@@ -291,6 +308,7 @@ final class StudyReminderUseCases {
     }
     if (permission != ReminderPermissionState.granted) {
       try {
+        await requireAdmission();
         permission = await scheduler.requestPermission();
       } on Object {
         _recordFailure(StudyReminderFailureKind.permissionStatus);
@@ -302,6 +320,7 @@ final class StudyReminderUseCases {
           ? StudyReminderOptInResult.permissionDenied
           : StudyReminderOptInResult.unavailable;
     }
+    await requireAdmission();
     final existing =
         (await repository.listForOwner(ownerId, includeDeleted: true))
             .where(

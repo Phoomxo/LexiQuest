@@ -109,10 +109,13 @@ final class ProgressSnapshot {
 /// Legacy sessions without a pack pin remain in overall progress only.
 final class PackProgressSnapshot {
   const PackProgressSnapshot({
+    this.ownerId,
     required this.sampleSize,
     required this.correctCount,
     required this.completedSessions,
   });
+  /// Canonical query owner; legacy values without provenance cannot be shared.
+  final String? ownerId;
   final int sampleSize;
   final int correctCount;
   final int completedSessions;
