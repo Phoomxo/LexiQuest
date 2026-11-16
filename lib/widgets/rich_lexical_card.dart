@@ -20,6 +20,10 @@ final class RichLexicalCard extends StatefulWidget {
     this.onBookmark,
     this.reportIdentity,
     this.onReport,
+    this.canInteract,
+    this.validateAction,
+    this.onOpenReport,
+    this.expectedOwnerId,
   });
 
   final VocabularyWord word;
@@ -28,6 +32,10 @@ final class RichLexicalCard extends StatefulWidget {
   final BookmarkLearningItemAction? onBookmark;
   final ContentIdentity? reportIdentity;
   final ReportContentAction? onReport;
+  final bool Function()? canInteract;
+  final Future<void> Function()? validateAction;
+  final VoidCallback? onOpenReport;
+  final String? expectedOwnerId;
 
   @override
   State<RichLexicalCard> createState() => _RichLexicalCardState();
@@ -122,6 +130,9 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
               BookmarkLearningItemButton(
                 identity: contract.identity,
                 onSave: contract.action,
+                canInteract: widget.canInteract,
+                validateAction: widget.validateAction,
+                expectedOwnerId: widget.expectedOwnerId,
               ),
               const SizedBox(height: 8),
             ],
@@ -132,18 +143,11 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                 button: true,
                 label: 'รายงานเนื้อหา',
                 enabled: true,
-                onTap: () => _showContentReport(
-                  context,
-                  identity: contract.identity,
-                  action: contract.action,
-                ),
+                onTap: () => _openReport(contract.identity, contract.action),
                 child: ExcludeSemantics(
                   child: OutlinedButton.icon(
-                    onPressed: () => _showContentReport(
-                      context,
-                      identity: contract.identity,
-                      action: contract.action,
-                    ),
+                    onPressed: () =>
+                        _openReport(contract.identity, contract.action),
                     icon: const Icon(Icons.flag_outlined),
                     label: const Text('รายงานเนื้อหา'),
                   ),
@@ -185,6 +189,16 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
         ),
       ),
     );
+  }
+
+  void _openReport(ContentIdentity identity, ReportContentAction action) {
+    if (!mounted || widget.canInteract?.call() == false) return;
+    final open = widget.onOpenReport;
+    if (open != null) {
+      open();
+      return;
+    }
+    _showContentReport(context, identity: identity, action: action);
   }
 
   void _toggleDetails() => setState(() => _expanded = !_expanded);

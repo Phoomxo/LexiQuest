@@ -1,0 +1,161 @@
+{
+  "taskId": "01a0cfd7-68db-7b63-bde0-f60a6014008a",
+  "sourceFingerprint": "33fcf94b6b902063347e71728f61b602fa02b8dd24822f3db7113ce71b412202",
+  "sourceManifest": "source-manifest-r3-05-part08.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part08.apk",
+  "apkSha256": "3d087c9312ef6b78b70e17fe7052aa3b57da89effb5c8b390ffe44a7c832ca58",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "log": "build/ari-r3-05/part08-android-build.log",
+    "sha256": "71a64df5b4060b4a4418bbeb37b65d8d230a10fb2829a37a18adc65e7bf9a5fa",
+    "warning": "Existing Kotlin Gradle warning"
+  },
+  "observed": [
+    "Fresh main/WAL/SHM backup before install; aapt package verified; installed APK hash matches local part08.",
+    "R305Part08 category draft preserved through AIunpaired expand/collapse and saved once.",
+    "Create r308word/book/noun; edit to bookrevised with noun preserved; exact drafts and saved rows observed.",
+    "Exact3row import r308import,book,noun twice plus invalid,,noun; draft preserved through AIunpaired expand/collapse;1accepted1duplicate1rejected.",
+    "First force-stop/relaunch retained category, edited word and import. Cancel delete retained r308word; confirmation deleted correct word; second restart retained import and absence of r308word.",
+    "58tables compared by actual primary keys;category+1 words+2(one tombstone revision3) import+1 rows+3 outbox+5(4upsert1delete);original rows intact.",
+    "Owners/answers/sessions/AIusage unchanged;content/runtimetimestamps andquestrefresh separately recorded.",
+    "Fresh main/WAL/SHM restored BYTEEXACT, isolatedapp force-stopped andpidof absent."
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part08-native/backup.json",
+  "restore": "build/ari-r3-05/part08-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "outbox_operations": {
+        "beforeRows": 359,
+        "afterRows": 364,
+        "added": 5,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "operation_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      "vocabulary_categories": {
+        "beforeRows": 8,
+        "afterRows": 9,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_import_rows": {
+        "beforeRows": 6,
+        "afterRows": 9,
+        "added": 3,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_imports": {
+        "beforeRows": 4,
+        "afterRows": 5,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_words": {
+        "beforeRows": 19,
+        "afterRows": 21,
+        "added": 2,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "fixture": {
+      "categoriesAdded": 1,
+      "wordsAdded": 2,
+      "wordTombstones": 1,
+      "outboxRowsAdded": 5,
+      "wordUpsertOutboxRows": 1,
+      "sameOwner": true
+    },
+    "installedApkSha256": "3d087c9312ef6b78b70e17fe7052aa3b57da89effb5c8b390ffe44a7c832ca58",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "limits": [
+    "Controlled real SQLite read delay on host; no live provider or native injected latency claim.",
+    "The30cases cover post-commit verification for create/edit/category/import/delete across cover, same-owner session invalidation, disconnect, foreign AI owner, disposal and feature withdrawal. They do not prove every pre-admission/in-transaction boundary.",
+    "Word cases compare all words/outbox after reopen; other3routes compare full5table snapshots. Database reopen is not durable provider request-ID/process-death reconciliation.",
+    "Native ordinary manual baseline only; actual foreign-owner native/provider lifecycle remains unproven. No whole W03/R3-05 acceptance."
+  ]
+}

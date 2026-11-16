@@ -1,0 +1,47 @@
+{
+  "taskId": "01a0cf8e-bc26-74e1-879e-0f3a6879e3a3",
+  "atUtc": "2026-09-23T18:55:00.433187+00:00",
+  "sourceFingerprint": "e8cf7cecb5386634168d1798f434e5cff05b6e06adae18bbffc0e10713885e12",
+  "sourceManifest": "source-manifest-r3-05-part04.json",
+  "gate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-8665e95ff47ff14907a9a1828d878d59458112d327384601df80f5fd3f251f95.json",
+    "sha256": "911c1189ba1b74c4cdcdc0cd6a53352772757ba6e626627e951275f553473e41",
+    "status": "Passed",
+    "tests": 34,
+    "distinctFiles": 4,
+    "targets": [
+      "test/screens/vocabulary_delete_reconciliation_test.dart",
+      "test/screens/offline_vocabulary_journey_test.dart",
+      "test/screens/vocab_list_screen_test.dart",
+      "test/screens/vocabulary_route_withdrawal_test.dart"
+    ],
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "fe7ae8d42544127bd03937b8296b69fb3cc9ebe536a1bf4569c2ea3a4ce7bf79",
+        "fingerprint": "a286aadd0b15d4b88069528096fbb728c6b187fd4371f538201432ab871ade03",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-23T18:45:15.0904162+00:00",
+        "FinishedAt": "2026-09-23T18:45:30.5344271+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\fe7ae8d42544-a286aadd0b15-c543f448\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\fe7ae8d42544-a286aadd0b15-c543f448\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "a286aadd0b15d4b88069528096fbb728c6b187fd4371f538201432ab871ade03",
+        "StdoutHash": "85BB883474A8C5E2D429B45A158E05675995C5BC6D4DFA8E6E573C514E39E8A5",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "analysis": {
+    "command": "dart analyze lib/screens/vocab_list_screen.dart test/screens/vocabulary_delete_reconciliation_test.dart",
+    "result": "No issues found"
+  },
+  "diffCheck": "git -c core.whitespace=cr-at-eol diff --check -- lib/screens/vocab_list_screen.dart test/screens/vocabulary_delete_reconciliation_test.dart; exit0",
+  "initialFocusedGreen": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-f394a6a5c9f16891b53417854f7e43008ed92cad0fcc4486a48b2fb10e363942.json",
+    "tests": 1,
+    "note": "Earlier one-case green; final34 includes expanded2cases, not additive"
+  },
+  "reusedUnchanged": "Prior Python26 historical+4fresh, shared owner/registry foundations and settings evidence retained; no protocol/source change and no rerun",
+  "noOwnedJobs": true
+}

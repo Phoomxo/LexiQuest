@@ -48,3 +48,12 @@ abstract interface class AtomicVocabularyCreationRepository {
     required bool Function() mutationAllowed,
   });
 }
+
+/// Optional transaction admission for an already selected private category.
+/// Uses the same canonical word creation and rolls back its outbox with it.
+abstract interface class GuardedVocabularyWordCreationRepository {
+  Future<VocabularyWord> createWordWithAdmission({
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+  });
+}

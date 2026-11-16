@@ -1,0 +1,54 @@
+{
+  "taskId": "01a0cfa2-bb7b-7410-8b01-7f5a3dee5a2d",
+  "atUtc": "2026-09-23T19:13:12.373560+00:00",
+  "sourceFingerprint": "2f3583e87a6e6765f94bbc66ea9e635911e1140f79fa350fd5f9e461d9dbd136",
+  "sourceManifest": "source-manifest-r3-05-part05.json",
+  "productSourceChanged": [
+    "lib/screens/add_vocab_screen.dart"
+  ],
+  "wholeScopeComplete": false,
+  "assertions": [
+    {
+      "id": "A16",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Four real SQLite cases: create/edit x reconcile before restart/restart while unknown",
+        "Foreign owner and disconnected registry expose no actions/context; same-owner reconnect retries read without mutation",
+        "Each unresolved retry retains mutationCalls1; recovery retains1; all rows/outbox identical after reopen",
+        "Existing duplicate test retained; normal successful root-screen operation semantics preserved"
+      ],
+      "evidence": "save-readback-r3-05-part05.json",
+      "limits": [
+        "Only create/edit post-success verification boundary; exceptions inside mutation or its notifier are not certified.",
+        "No durable request-ID protocol across process death; domain rows/outbox persist on SQLite reopen."
+      ]
+    },
+    {
+      "id": "A17",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Fresh main/WAL/SHM backup before install; aapt package verified before isolated install",
+        "Create R305Part05 category and r305save/book/noun word; unpaired AI expand/collapse preserves exact draft",
+        "Edit meaning to bookrevised; save; force-stop/relaunch and revisit exact category shows r305save/bookrevised/noun",
+        "58 tables compared by actual PK: category+1 word+1 outbox+3 (category upsert +2 word upserts), word revision2; old rows intact",
+        "Fresh main/WAL/SHM restored byte-exact; app force-stopped"
+      ],
+      "evidence": "native-save-r3-05-part05.json",
+      "limits": [
+        "No native injected readback fault, connected provider, foreign-owner native account, or whole W03 certification."
+      ]
+    }
+  ],
+  "nextByGroup": {
+    "W01": "Connection/reauth/lifecycle and lease/restart route combinations; unpaired alone does not close these.",
+    "W02": "Questionnaire/main/drawer combinations and explicit applicability/fixture for absent account controls; reuse settings evidence where source closure unchanged.",
+    "W03": "Create/edit and deletion post-success readback now bounded-proven. Next audit category create verification (categories_page.dart _save) and import verifyResult (add_multiple_words_screen.dart _import); reproduce with real storage, fix if RED, targeted/native retest. Mutation/notifier exceptions still unproven; route owner/lifecycle completeness remains.",
+    "W04": "Reuse Python26+4 applicability; native/provider lifecycle still unpaired."
+  },
+  "remainingScope": "Preserve215rows,4passed,211remainingIDs. W05-W14 and all14nested modes remain after actionable W01-W04.",
+  "localReview": "Coordinator reviewed diff, owner admission, pending identity, revision matching, native controls and old successful-save semantics; no subagents per explicit user instruction."
+}

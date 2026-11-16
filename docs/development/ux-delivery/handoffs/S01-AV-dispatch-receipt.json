@@ -1,0 +1,17 @@
+{
+  "dispatchId": "ux-s01-av-20260925-57de",
+  "atUtc": "2026-09-24T19:42:37.051438+00:00",
+  "status": "SETUP_PENDING",
+  "clientThreadId": "client-new-thread:7a77e3ed-9ec7-4cb0-b818-795ec59fcf2c",
+  "hostId": "local",
+  "predecessorThreadId": "01a0d4d2-8d05-7483-bc94-102feed8a18d",
+  "predecessorWriterReleased": true,
+  "sourceStateRevision": 92,
+  "sourceManifestSha256": "f92aaa3f32274080535398edbe4cb336767017b6f670d8a73cb591c8e0516583",
+  "sourceArchiveSha256": "ceea2b477780a8d5f61275fabc048ee2a5e0458a4a9a06750f94b8fe8351c32d",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "routing": "deterministic fallback, not Jev-selected; Standard/default requested, effective runtime tier unexposed",
+  "policy": "Reuse this successor/client ID. Never create a duplicate. This coordination receipt is separate from immutable snapshot."
+}

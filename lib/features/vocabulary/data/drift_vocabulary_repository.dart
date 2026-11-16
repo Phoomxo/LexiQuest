@@ -10,7 +10,10 @@ import '../domain/vocabulary_word.dart';
 import 'packaged_starter_access.dart';
 
 final class DriftVocabularyRepository
-    implements VocabularyRepository, AtomicVocabularyCreationRepository {
+    implements
+        VocabularyRepository,
+        AtomicVocabularyCreationRepository,
+        GuardedVocabularyWordCreationRepository {
   DriftVocabularyRepository(this.database, {this.contentManifests});
 
   static const int categoryWordLimit = 50;
@@ -303,6 +306,29 @@ final class DriftVocabularyRepository
       );
     });
   }
+
+  @override
+  Future<VocabularyWord> createWordWithAdmission({
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+  }) => database.transaction(() async {
+    Future<void> requireCurrent() async {
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).get();
+      if (active.length != 1 ||
+          active.single.id != word.ownerId ||
+          !mutationAllowed()) {
+        throw const InvalidVocabularyFailure('owner', 'stale operation');
+      }
+    }
+
+    await requireCurrent();
+    final result = await createWord(word);
+    // The outer transaction owns both the canonical word and its outbox row.
+    await requireCurrent();
+    return result;
+  });
 
   @override
   Future<VocabularyWord> createWord(VocabularyWord word) async {

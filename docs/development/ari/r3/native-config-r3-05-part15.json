@@ -1,0 +1,15 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "atUtc": "2026-09-23T22:08:42.915410+00:00",
+  "sourcePins": {
+    "lib/main_ari_test.dart": "76122def1896a1c911a29fc3f7c93519cbc8d6fc6ca645110d491b7ea98414e2",
+    "lib/runtime/app_bootstrap.dart": "04740ec0b9a66bdd5c3e164b5adf380546db519946be6a4ab31f705b64f4ee17",
+    "lib/runtime/central_cost_policy.dart": "68f71868eda8181bbdda4cead339d2df7e6b2dd998529c94a122cd5a096a2582",
+    "lib/runtime/learning_preview_feature_registry.dart": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7",
+    "tool/cli/profiles/local-learning-preview.json": "494113f67657e20e300d50c96faa1aad7401fbbb8ddaeb27a53e75c27f460f9c",
+    "android/app/build.gradle.kts": "8f390b8453520003a0184a1d6c0773ccc9a65872a37d73b31204fea3ce57a097"
+  },
+  "finding": "productionCloudSyncEnabledByDefault reads LEXIQUEST_CLOUD_SYNC_ENABLED; production factory passes it to cloudSyncEnabled; CloudSyncPolicyProvider receives buildEnabled. Existing canonical profile true learning preview/false cloud. Android ariLocalTest debug suffix .ariTest; release forbidden.",
+  "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --dart-define-from-file=tool/cli/profiles/local-learning-preview.json --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+  "previousApkSha256": "54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5"
+}

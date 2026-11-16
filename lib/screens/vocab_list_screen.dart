@@ -314,6 +314,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
   ) async {
     if (!_admitted) return;
     var deleting = false;
+    var deletionCommitted = false;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => MenuActionBinding(
@@ -340,6 +341,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
                     dialogContext,
                     useCases,
                     word,
+                    alreadyCommitted: deletionCommitted,
+                    onCommitted: () => deletionCommitted = true,
                   );
                   if (result['status'] == 'deleted' && dialogContext.mounted) {
                     Navigator.pop(dialogContext, false);
@@ -354,21 +357,25 @@ class _VocabListScreenState extends State<VocabListScreen> {
               child: AlertDialog(
                 title: const Text('ลบคำศัพท์'),
                 content: Text(
-                  'ลบ “${word.spelling}” (${word.meaning}) หรือไม่',
+                  deletionCommitted
+                      ? 'ยังยืนยันผลการลบไม่ได้ ปิดหน้าต่างนี้เพื่อตรวจสอบรายการคำศัพท์'
+                      : 'ลบ “${word.spelling}” (${word.meaning}) หรือไม่',
                 ),
                 actions: [
                   MenuActionBinding(
                     id: 'vocabulary/word-delete-cancel',
-                    label: 'ยกเลิกการลบคำศัพท์',
+                    label: deletionCommitted
+                        ? 'ปิดผลการลบคำศัพท์'
+                        : 'ยกเลิกการลบคำศัพท์',
                     ownerId: word.ownerId,
                     onInvoke: cancel,
                     child: TextButton(
                       onPressed: cancel,
-                      child: const Text('ยกเลิก'),
+                      child: Text(deletionCommitted ? 'ปิด' : 'ยกเลิก'),
                     ),
                   ),
                   FilledButton(
-                    onPressed: deleting
+                    onPressed: deleting || deletionCommitted
                         ? null
                         : () => Navigator.pop(dialogContext, true),
                     child: const Text('ลบ'),
@@ -395,8 +402,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Future<Map<String, Object?>> _mcpDeleteWord(
     BuildContext dialogContext,
     VocabularyUseCases useCases,
-    VocabularyWord word,
-  ) async {
+    VocabularyWord word, {
+    required bool alreadyCommitted,
+    required VoidCallback onCommitted,
+  }) async {
     final registry = MenuActionScope.maybeOf(dialogContext);
     final revision = registry?.snapshot()['revision'];
     bool allowed() =>
@@ -406,19 +415,25 @@ class _VocabListScreenState extends State<VocabListScreen> {
         registry?.currentOwner() == word.ownerId &&
         registry?.snapshot()['revision'] == revision;
     if (!allowed()) return {'status': 'stale'};
+    var committed = alreadyCommitted;
     try {
-      await useCases.deleteWord(
-        word.id,
-        expectedOwnerId: word.ownerId,
-        mutationAllowed: allowed,
-      );
+      if (!committed) {
+        await useCases.deleteWord(
+          word.id,
+          expectedOwnerId: word.ownerId,
+          mutationAllowed: allowed,
+        );
+        committed = true;
+        onCommitted();
+      }
       final remaining = await useCases.vocabulary.listAllWords(word.ownerId);
+      if (!allowed()) return {'status': 'stale'};
       if (remaining.any((record) => record.id == word.id)) {
         return {'status': 'verification_failed'};
       }
       return {'status': 'deleted', 'wordId': word.id};
     } catch (_) {
-      return {'status': 'failed'};
+      return {'status': committed ? 'outcome_unknown' : 'failed'};
     }
   }
 }

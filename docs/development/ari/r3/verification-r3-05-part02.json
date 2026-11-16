@@ -1,0 +1,61 @@
+{
+  "taskId": "01a0cf69-4e93-75e1-9976-e3bbb24718ae",
+  "sourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "productSourceChanged": false,
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-b4a421c58c67d3ea32919e9da2e8aa7d288eded9bd4e4ca108ab569cf61d21ef.json",
+      "sha256": "bcf9d6287b358368a51fe30f4a5f3f9b37f89be147d3547c936e8143304dec50",
+      "status": "Passed",
+      "targets": [
+        "test/features/ai_tutor/managed/managed_tutor_test_screen_test.dart",
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/screens/vocab_list_screen_test.dart",
+        "test/screens/vocabulary_route_withdrawal_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/scenarios/production_vocabulary_restart_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "environmentFingerprint": "e82581e40107d174e1c64c62d0b72d07eca4eea4e347159f14935e3de0b194c0",
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/efa755ede940-72ed2134170b-bb83af55/Explicit-Flutter-tests.stdout.log",
+          "sha256": "4c660e24c8646827cfbc62aceb406baf824ba60b278403f9bc0e42147a442a7c"
+        },
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/efa755ede940-72ed2134170b-bb83af55/Explicit-Flutter-tests.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-de9481afeb3c6efed2c33878a72ca43f3df270d141cb1223a3ca42c885220e7b.json",
+      "sha256": "48de27ef9e464e569a18b42df9243b67f432fd0c26e2685c36afb728626098c8",
+      "status": "Passed",
+      "targets": [
+        "test/screens/setting_screen_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/screens/main_navigation_screen_test.dart",
+        "test/features/ai_tutor/managed/full_menu_navigation_test.dart"
+      ],
+      "environmentFingerprint": "e82581e40107d174e1c64c62d0b72d07eca4eea4e347159f14935e3de0b194c0",
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/cc263743f60f-72ed2134170b-caebcbec/Explicit-Flutter-tests.stdout.log",
+          "sha256": "d0fd130afe4332ed383a3aedaf8b4208333027f8d1ef0ee7794d1330d51bbe60"
+        },
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/cc263743f60f-72ed2134170b-caebcbec/Explicit-Flutter-tests.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    }
+  ],
+  "reused": [
+    "unchanged host/runtime/controller from part01 closure",
+    "panel6 and LocalLoginBridge6 with current transitive pins"
+  ],
+  "countsMeaning": "62 and70 executions in distinct target batches; historical overlap not additive coverage; initial audit script defect caused unjustified receipt-missing assumption, retained transparently in route audit.",
+  "noOwnedJobs": true
+}

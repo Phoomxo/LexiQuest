@@ -1,0 +1,193 @@
+{
+  "taskId": "01a0cf50-d495-7a02-b1d2-8090500798da",
+  "sourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "apk": "build/ari-r3-05/ari-r3-05.apk",
+  "apkSha256": "2bf09c7a94ec9d48e8ef87b7788511020021b7dea9eaae83fc71861da1970386",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": "PASS; isolated debug target, no simultaneous Flutter gate",
+  "buildWarnings": [
+    "existing plugin Kotlin migration warning",
+    "SDK XML tool version warning"
+  ],
+  "analysis": "Both affected Dart files: No issues found",
+  "observed": [
+    "Native manual Shadowing opens from learning menu and 1-item/10-minute configuration",
+    "Reference a and listen/speak controls visible; zero-percent lesson",
+    "Fresh unpaired AI notice; same reference and manual controls survive expansion/collapse",
+    "Normal back returns to learning menu",
+    "58 tables compared; one abandoned zero-answer shadowing-configured session; no answer_attempts or ai_usage_events or owner changes",
+    "Fresh original main/WAL/SHM restored byte-exact; app force-stopped"
+  ],
+  "notProven": [
+    "Native missing-owner projection (host regression covers injected boundary)",
+    "Actual provider interpretation and lifecycle",
+    "Successful physical speech recognition or acoustic quality",
+    "Whole workflow or whole mode acceptance"
+  ],
+  "provider": "EXTERNAL_PENDING_FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/native-backup.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changedTables": [
+      {
+        "table": "content_download_states",
+        "beforeRows": 2,
+        "afterRows": 2
+      },
+      {
+        "table": "learning_sessions",
+        "beforeRows": 65,
+        "afterRows": 66
+      },
+      {
+        "table": "quest_instances",
+        "beforeRows": 3,
+        "afterRows": 4
+      },
+      {
+        "table": "quest_objective_progress",
+        "beforeRows": 3,
+        "afterRows": 4
+      },
+      {
+        "table": "runtime_flags",
+        "beforeRows": 3,
+        "afterRows": 3
+      },
+      {
+        "table": "session_configurations",
+        "beforeRows": 13,
+        "afterRows": 13
+      }
+    ],
+    "afterHashes": {
+      "lexiquest.sqlite": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+      "lexiquest.sqlite-wal": "31c6fd72baea719c47c6e23794ba5daac30492900a6384fbf822daae33d19738",
+      "lexiquest.sqlite-shm": "6ba27a3d7d32e8de3808e1b9dc93a80befee6e3a6dee6402a74f8c3fe8f8bc3a"
+    },
+    "integrity": "ok before and after on disposable inspection clones",
+    "assertions": "answer_attempts, ai_usage_events and local_owners unchanged; other named invariant tables checked when present; no transcript/recognition/provider call occurred",
+    "originalSnapshotUnmodified": true,
+    "deltaDetails": {
+      "content_download_states": {
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ],
+        "addedRows": 0,
+        "deletedRows": 0
+      },
+      "runtime_flags": {
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ],
+        "addedRows": 0,
+        "deletedRows": 0
+      },
+      "session_configurations": {
+        "keyColumns": [
+          "owner_id",
+          "mode"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ],
+        "addedRows": 0,
+        "deletedRows": 0
+      },
+      "learning_sessions": {
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [],
+        "addedRows": 1,
+        "deletedRows": 0,
+        "newSession": {
+          "activity_type": "quiz",
+          "state": "abandoned",
+          "correct_count": 0,
+          "wrong_count": 0,
+          "score": null
+        },
+        "configurationMode": "shadowing"
+      },
+      "quest_instances": {
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": [],
+        "addedRows": 1,
+        "deletedRows": 0
+      },
+      "quest_objective_progress": {
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [],
+        "addedRows": 1,
+        "deletedRows": 0
+      }
+    },
+    "explanation": "One manual shadowing start/normal exit creates one abandoned zero-answer session and saves selected configuration. Quest/day refresh and operational timestamps are unrelated startup activity; no answer or AI usage write. All test activity is removed by exact snapshot restore.",
+    "comparisonMethod": "All58 tables compared by complete row tuples; changed-column detail keyed by actual possibly composite SQLite PK with uniqueness assertion."
+  },
+  "restore": "PASS_BYTE_EXACT_ALL_THREE",
+  "restoreHashes": {
+    "lexiquest.sqlite": {
+      "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+      "bytes": 3375104
+    },
+    "lexiquest.sqlite-wal": {
+      "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+      "bytes": 4185952
+    },
+    "lexiquest.sqlite-shm": {
+      "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+      "bytes": 32768
+    }
+  },
+  "artifacts": [
+    {
+      "path": "build/ari-r3-05/02-learn-scroll.xml",
+      "sha256": "eebedcc769b574f98aae2351e67cb146e139d9f147734b30e513facf373bb183"
+    },
+    {
+      "path": "build/ari-r3-05/03-speech-menu.xml",
+      "sha256": "9907de04d5c7036016257ccb0ad64078e30557384c2aa2a62ad137fef815f3b3"
+    },
+    {
+      "path": "build/ari-r3-05/04-shadowing-config.xml",
+      "sha256": "52f221f74d876ce687de715a6b05b590ad4bafecff407e1c98452d4329f85fc8"
+    },
+    {
+      "path": "build/ari-r3-05/05-shadowing-baseline.xml",
+      "sha256": "c13b01ecb98cca5426baaf1ffbd626585dd2a55734d9c3c701b6537602770964"
+    },
+    {
+      "path": "build/ari-r3-05/06-shadowing-unpaired.xml",
+      "sha256": "2a9072c227db0da2bb08219d4be68f796f9ee09e8c8c90b00edad9a3bc79bf32"
+    },
+    {
+      "path": "build/ari-r3-05/07-shadowing-collapsed.xml",
+      "sha256": "c13b01ecb98cca5426baaf1ffbd626585dd2a55734d9c3c701b6537602770964"
+    },
+    {
+      "path": "build/ari-r3-05/08-return.xml",
+      "sha256": "9907de04d5c7036016257ccb0ad64078e30557384c2aa2a62ad137fef815f3b3"
+    }
+  ],
+  "recovery": {
+    "initial": "UIAutomator null root just after startup; invalid dump was not used for taps/claims",
+    "diagnosis": "Foreground was isolated app; screenshot proved loaded manual UI",
+    "correctedMethod": "Compressed hierarchy after observable app readiness, validate dump success before reading; passed",
+    "oemWarning": "Vivo CPU-frequency EACCES warning also appears on successful dumps; not an app failure"
+  },
+  "ownedJobs": []
+}

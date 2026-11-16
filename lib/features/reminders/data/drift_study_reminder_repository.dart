@@ -104,6 +104,7 @@ final class DriftStudyReminderRepository implements StudyReminderRepository {
             .into(database.studyReminders)
             .insert(_companion(reminder, ownerId: ownerId));
         await _appendPlatformIntent(reminder, revision: 1);
+        _requireMutationAllowed(mutationAllowed);
         return;
       }
       if (existing.ownerId != ownerId) {
@@ -141,6 +142,7 @@ final class DriftStudyReminderRepository implements StudyReminderRepository {
         ),
       );
       await _appendPlatformIntent(reminder, revision: revision);
+      _requireMutationAllowed(mutationAllowed);
     });
   }
 
