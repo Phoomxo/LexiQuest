@@ -14,10 +14,12 @@ final class ContentReportSheet extends StatefulWidget {
     super.key,
     required this.identity,
     required this.onSubmit,
+    this.canSubmit,
   });
 
   final ContentIdentity identity;
   final ContentReportSheetSubmit onSubmit;
+  final bool Function()? canSubmit;
 
   @override
   State<ContentReportSheet> createState() => _ContentReportSheetState();
@@ -29,6 +31,9 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
   bool _submitting = false;
   String? _error;
 
+  bool get _canEdit =>
+      mounted && !_submitting && widget.canSubmit?.call() != false;
+
   @override
   void dispose() {
     _comment.dispose();
@@ -36,13 +41,17 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
   }
 
   void _close() {
-    if (_submitting) return;
+    if (!_canEdit) return;
     Navigator.of(context).maybePop();
   }
 
   Future<void> _submit() async {
     final reason = _reason;
-    if (reason == null || _submitting) return;
+    if (!mounted ||
+        reason == null ||
+        _submitting ||
+        widget.canSubmit?.call() == false)
+      return;
     final trimmed = _comment.text.trim();
     final comment = trimmed.isEmpty ? null : trimmed;
     if (comment != null &&
@@ -62,7 +71,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
     });
     try {
       await widget.onSubmit(reason: reason, comment: comment);
-      if (!mounted) return;
+      if (!mounted || widget.canSubmit?.call() == false) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -72,7 +81,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
       );
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || widget.canSubmit?.call() == false) return;
       setState(() => _error = 'ยังยืนยันการส่งรายงานไม่ได้');
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -120,7 +129,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
             RadioGroup<ContentReportReason>(
               groupValue: _reason,
               onChanged: (value) {
-                if (!_submitting) setState(() => _reason = value);
+                if (_canEdit) setState(() => _reason = value);
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

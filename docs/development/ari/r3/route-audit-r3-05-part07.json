@@ -1,0 +1,62 @@
+{
+  "taskId": "01a0cfc4-83a1-7872-80c1-91a93db7ee6d",
+  "atUtc": "2026-09-23T19:53:54.456195+00:00",
+  "sourceFingerprint": "cfda00118a8aeac81310c4d5d8ccb6a5c38a9070680596f27ce01aa8cd81d693",
+  "sourceManifest": "source-manifest-r3-05-part07.json",
+  "productSourceChanged": [
+    "lib/features/vocabulary/application/import_vocabulary.dart",
+    "lib/features/vocabulary/application/vocabulary_use_cases.dart"
+  ],
+  "wholeScopeComplete": false,
+  "assertions": [
+    {
+      "id": "A20",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "16 file-backed tests:8 notifier failures after successful commits +8 SQLite ABORT controls after local writes before outbox insertion; full categories/words/imports/row-results/outbox snapshots survive reopen; aborted snapshots exactly unchanged and notification count0",
+        "10 additional route tests inject notifier failure together with independent post-commit readback faults across create/edit/delete/category/import and both reconciliation-before-restart/restart-while-unknown; previous assertions unchanged",
+        "Existing route assertions still prove fresh request IDs cause read-only reconciliation, owner/disconnect suppression/reconnect, disabled unresolved controls and exact identity/result verification"
+      ],
+      "evidence": "mutation-notifier-r3-05-part07.json",
+      "limits": [
+        "Fault injection is synchronous LocalMutationNotifier; actual bootstrap uses synchronous notifyLocalMutation plus detached SyncTrigger. No claim of production sync outage or async callback error handling.",
+        "Real SQLite ABORT before commit verified; no certification of OS/disk commit-ack ambiguity or arbitrary repository wrappers that throw after commit.",
+        "No durable request-ID/process-death reconciliation protocol; reopened rows prove storage integrity only.",
+        "Native ordinary baseline only, no injected notifier fault/provider claim; route owner/connection/lifecycle and other modes still open."
+      ]
+    },
+    {
+      "id": "A21",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Fresh main/WAL/SHM backup before install; aapt package/activity verified; installed APK hash matches",
+        "R305Part07 category draft retained through AIunpaired expand/collapse, saved once",
+        "r307word created; edit corrects POS to noun and final meaning bookrevised, verified before restart",
+        "Exact3row import r307import,book,noun twice and invalid,,noun; draft retained AIunpaired expand/collapse; result1accepted1duplicate1rejected",
+        "Force-stop/relaunch preserves category, edited word and imported word",
+        "Cancel delete preserves r307word; confirm removes it; second force-stop/relaunch preserves r307import and absence of r307word",
+        "58table comparison:category+1 words+2(one tombstone revision3) import+1 rows+3 outbox+5 (4upsert1delete), originals preserved",
+        "Fresh snapshot restored byte-exact; isolated app force-stopped and pidof absent"
+      ],
+      "evidence": "native-mutation-notifier-r3-05-part07.json",
+      "limits": [
+        "Fault injection is synchronous LocalMutationNotifier; actual bootstrap uses synchronous notifyLocalMutation plus detached SyncTrigger. No claim of production sync outage or async callback error handling.",
+        "Real SQLite ABORT before commit verified; no certification of OS/disk commit-ack ambiguity or arbitrary repository wrappers that throw after commit.",
+        "No durable request-ID/process-death reconciliation protocol; reopened rows prove storage integrity only.",
+        "Native ordinary baseline only, no injected notifier fault/provider claim; route owner/connection/lifecycle and other modes still open."
+      ]
+    }
+  ],
+  "nextByGroup": {
+    "W03": "NEXT audit route-level owner/connection/lifecycle completeness using exact assertions A01-A21 and dependencies. Mutation/notifier audit now bounded-proven:8 methods, synchronous notifier fault isolated, precommit ABORT rollback; do not repeat unchanged gates. Cover route withdrawal/owner swap/reconnect and lease/restart combinations still missing. Arbitrary commit-ack ambiguity is not certified.",
+    "W01": "Connection/reauth/lifecycle plus questionnaire/main/drawer; unpaired alone does not close these.",
+    "W02": "Determine applicability and fixture for absent account controls; reuse settings evidence only when dependency closure unchanged.",
+    "remaining": "Then W05-W14/all14 nested modes; preserve211 IDs and all level requirements; no R3-06 before real R3-05 exit."
+  },
+  "remainingScope": "Preserve215rows,4passed,211remainingIDs. W05-W14 and all14nested modes remain after actionable W01-W04.",
+  "localReview": "Sole coordinator reviewed all8 call sites and transaction boundaries; catch excludes mutations, preserves result/outbox, generic diagnostic excludes error payload; no route product changes, unchanged assertions retained; no subagents."
+}

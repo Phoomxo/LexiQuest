@@ -1,0 +1,20 @@
+{
+  "dispatchId": "ux-s01-ar-20260925-8f3c",
+  "atUtc": "2026-09-24T17:46:43.902184+00:00",
+  "sourceThreadId": "01a0d46a-c8ab-7c70-a056-9156e391ae0c",
+  "writerReleased": true,
+  "sourceImmutable": true,
+  "status": "CLAIMED",
+  "clientThreadId": "client-new-thread:37d66d8c-68fe-499c-81b0-de96134aec99",
+  "hostId": "local",
+  "successorThreadId": "01a0d486-a2b2-74d0-a33e-5030a379fc97",
+  "doNotDispatchAgain": true,
+  "manifestSha256": "2d4ed01204cf0de21224a7eba38d765948eb627bc5319a660f22d2c592d93e49",
+  "archiveSha256": "abea41eb79212b8af178644c34293754c6404ec8e3a60850008f6212e94fab67",
+  "packagingDiagnostic": "Initial overbroad assertion rejected inherited XY/Z checkpoint source-overlay ZIPs. Inspected exact manifest entries, preserved both, resumed packaging without source edits. Final1839 entries validated exact membership/CRC/every byte hash.",
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/f57c/LexiQuest",
+  "successorBranch": "feature/ux-s01-ar-f57c",
+  "successorStateRevision": 81,
+  "claimVerifiedAtUtc": "2026-09-24T17:48:43.144860+00:00",
+  "actualIdSource": "Verified successor source receipt and sole-writer claim in discovered git worktree; task list window omitted project task"
+}

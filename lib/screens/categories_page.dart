@@ -229,6 +229,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   final TextEditingController _controller = TextEditingController();
   String? _formOwner;
   bool _saving = false;
+  VocabularyCategory? _committedCategory;
 
   @override
   void initState() {
@@ -259,17 +260,36 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   }
 
   Future<Map<String, Object?>> _save({String? expectedOwnerId}) async {
-    if (!mounted || !widget.admitted() || _saving) return {'status': 'busy'};
+    if (!mounted ||
+        !widget.admitted() ||
+        _saving ||
+        (expectedOwnerId == null && _committedCategory != null)) {
+      return {'status': 'busy'};
+    }
     final registry = MenuActionScope.maybeOf(context);
     final revision = registry?.snapshot()['revision'];
+    final sessionGeneration = registry?.sessionGeneration;
     bool allowed() =>
         mounted &&
         widget.admitted() &&
         (expectedOwnerId == null ||
             registry?.currentOwner() == expectedOwnerId &&
                 registry?.snapshot()['revision'] == revision);
+    // A successful insert refreshes list bindings and advances the registry
+    // revision. Reconciliation checks the session, owner and route admission;
+    // the pre-mutation guard above still requires the original revision.
+    bool verificationAllowed() =>
+        mounted &&
+        widget.admitted() &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        registry?.currentOwner() == expectedOwnerId &&
+        registry?.sessionGeneration == sessionGeneration;
     setState(() => _saving = true);
     try {
+      final pending = _committedCategory;
+      if (pending != null) {
+        return await _verifySaved(pending, verificationAllowed);
+      }
       final saved = await widget.vocabulary.createCategory(
         _controller.text,
         expectedOwnerId: expectedOwnerId,
@@ -283,6 +303,29 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
         }
         return {'status': 'invoked'};
       }
+      _committedCategory = saved;
+      return await _verifySaved(saved, verificationAllowed);
+    } on InvalidVocabularyFailure {
+      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
+      return {'status': 'invalid'};
+    } on DuplicateVocabularyFailure {
+      _message('มีหมวดหมู่นี้แล้ว');
+      return {'status': 'duplicate'};
+    } catch (_) {
+      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
+      return {'status': 'failed'};
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<Map<String, Object?>> _verifySaved(
+    VocabularyCategory saved,
+    bool Function() allowed,
+  ) async {
+    try {
+      final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
+      if (!allowed() || owner.id != saved.ownerId) return {'status': 'stale'};
       final records = await widget.vocabulary.vocabulary
           .watchCategories(saved.ownerId)
           .first;
@@ -297,7 +340,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                 !record.isDeleted,
           )
           .firstOrNull;
-      if (persisted == null) return {'status': 'verification_failed'};
+      if (persisted == null) return {'status': 'outcome_unknown'};
+      if (!allowed()) return {'status': 'stale'};
+      _committedCategory = null;
       if (mounted && ModalRoute.of(context)?.isCurrent == true) {
         Navigator.pop(context);
       }
@@ -309,17 +354,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           'revision': persisted.localRevision,
         },
       };
-    } on InvalidVocabularyFailure {
-      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
-      return {'status': 'invalid'};
-    } on DuplicateVocabularyFailure {
-      _message('มีหมวดหมู่นี้แล้ว');
-      return {'status': 'duplicate'};
     } catch (_) {
-      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
-      return {'status': 'failed'};
-    } finally {
-      if (mounted) setState(() => _saving = false);
+      _message('บันทึกแล้ว แต่ยังตรวจสอบผลไม่ได้ กรุณาปิดแล้วตรวจหมวดหมู่');
+      return {'status': 'outcome_unknown'};
     }
   }
 
@@ -336,7 +373,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
       onForm: _formOwner == null
           ? null
           : (values) {
-              if (_saving || !widget.admitted()) return {'status': 'busy'};
+              if (_saving || _committedCategory != null || !widget.admitted()) {
+                return {'status': 'busy'};
+              }
               setState(() => _controller.text = values['name']!);
               return {'status': 'filled', 'values': values};
             },
@@ -355,6 +394,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           content: TextField(
             key: const ValueKey('category-name-field'),
             controller: _controller,
+            enabled: !_saving && _committedCategory == null,
             autofocus: true,
             maxLength: maxCategoryNameLength,
             decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
@@ -368,7 +408,9 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
             ),
             FilledButton(
               key: const ValueKey('save-category'),
-              onPressed: _saving ? null : () => _save(),
+              onPressed: _saving || _committedCategory != null
+                  ? null
+                  : () => _save(),
               child: const Text('บันทึก'),
             ),
           ],

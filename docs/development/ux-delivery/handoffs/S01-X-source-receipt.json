@@ -1,0 +1,13 @@
+{
+  "threadId": "01a0d289-6c33-7d71-92d2-0e3c2f9b68c6",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\f72d\\LexiQuest",
+  "branch": "feature/ux-s01-x-f72d",
+  "claimedAtUtc": "2026-09-24T08:31:51.056861+00:00",
+  "verifiedEntries": 446,
+  "manifestSha256": "18cf48975e342f2d3f9b83bd1852095e7c36c37f6bf5246aad1b3a270a1f0330",
+  "archiveSha256": "c65b440e91c4800c4ff6301d252fd39b4efe828a673c7acd7d88adbc5886df48",
+  "predecessorUnmodified": true,
+  "routing": "current-model deterministic fallback; not Jev-selected",
+  "runtimeTier": "not exposed; Standard/default requested; no Fast/priority enabled",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5"
+}

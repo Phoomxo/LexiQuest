@@ -1,0 +1,89 @@
+{
+  "labelled_before_live": true,
+  "cases": [
+    {
+      "id": "ui-wrap",
+      "summary": "A narrow screen clips the submit control. Storage writes and account checks are unaffected.",
+      "expected_category": "ui",
+      "expected_check_group": "widget",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "ui-scale",
+      "summary": "At large text scale the label overlaps the answer field. No data mutation occurs.",
+      "expected_category": "ui",
+      "expected_check_group": "widget",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "storage-loss",
+      "summary": "Saving a draft deletes older persisted answers before the replacement transaction succeeds.",
+      "expected_category": "storage",
+      "expected_check_group": "persistence",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "storage-restart",
+      "summary": "A success message appears after editing a word, but restarting restores the old value.",
+      "expected_category": "storage",
+      "expected_check_group": "persistence",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "owner-late",
+      "summary": "A catalog loads under a local data owner before optional AI connects. Context registration uses the absent AI session identity. Later connection cannot read that mounted catalog.",
+      "expected_category": "owner",
+      "expected_check_group": "owner-isolation",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "owner-switch",
+      "summary": "After switching accounts, the assistant can still read the previous learner progress from a mounted screen.",
+      "expected_category": "owner",
+      "expected_check_group": "owner-isolation",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "async-dispose",
+      "summary": "A delayed lookup invokes a widget update after the route has been disposed.",
+      "expected_category": "async",
+      "expected_check_group": "lifecycle",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "async-order",
+      "summary": "An older search request completes after the latest request and replaces the latest result.",
+      "expected_category": "async",
+      "expected_check_group": "lifecycle",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "config-disabled",
+      "summary": "The required feature is enabled in a test but disabled by its runtime configuration.",
+      "expected_category": "config",
+      "expected_check_group": "configuration",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "config-missing",
+      "summary": "The optional integration endpoint is absent in runtime configuration and initialization reports it unavailable.",
+      "expected_category": "config",
+      "expected_check_group": "configuration",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "unknown-empty",
+      "summary": "The report only says it failed. No steps, error, output, or expected behavior are available.",
+      "expected_category": "insufficient",
+      "expected_check_group": "investigate",
+      "sanitized_reviewed": true
+    },
+    {
+      "id": "unknown-slow",
+      "summary": "A user reports that something felt slow yesterday, without a screen, timing, trace, or reproduction.",
+      "expected_category": "insufficient",
+      "expected_check_group": "investigate",
+      "sanitized_reviewed": true
+    }
+  ]
+}

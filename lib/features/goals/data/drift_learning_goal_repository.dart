@@ -54,6 +54,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
               ),
             );
         await _appendOutbox(ownerId, goal.id, 0, 1, goal.updatedAtUtc);
+        _requireMutationAllowed(mutationAllowed);
         return true;
       }
       if (existing.ownerId != ownerId) {
@@ -113,6 +114,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
         goal.updatedAtUtc,
         isDeleted: goal.isDeleted,
       );
+      _requireMutationAllowed(mutationAllowed);
       return true;
     });
     if (changed) await onLocalMutation?.call();

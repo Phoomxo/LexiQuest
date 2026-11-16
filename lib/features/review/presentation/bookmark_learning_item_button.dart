@@ -11,9 +11,13 @@ final class BookmarkLearningItemButton extends StatefulWidget {
     super.key,
     required this.identity,
     required this.onSave,
+    this.canInteract,
+    this.validateAction,
   });
   final ContentIdentity identity;
   final BookmarkLearningItemAction onSave;
+  final bool Function()? canInteract;
+  final Future<void> Function()? validateAction;
   @override
   State<BookmarkLearningItemButton> createState() =>
       _BookmarkLearningItemButtonState();
@@ -40,7 +44,7 @@ final class _BookmarkLearningItemButtonState
     BookmarkLearningItemAction action, {
     required bool removing,
   }) async {
-    if (_pending) return;
+    if (!mounted || _pending || widget.canInteract?.call() == false) return;
     final generation = _generation;
     final identity = widget.identity;
     setState(() {
@@ -48,15 +52,27 @@ final class _BookmarkLearningItemButtonState
       _message = null;
     });
     try {
+      await widget.validateAction?.call();
+      if (!mounted ||
+          generation != _generation ||
+          widget.canInteract?.call() == false)
+        return;
       await action(identity);
-      if (!mounted || generation != _generation) return;
+      await widget.validateAction?.call();
+      if (!mounted ||
+          generation != _generation ||
+          widget.canInteract?.call() == false)
+        return;
       setState(
         () => _message = removing
             ? 'นำออกจากรายการในเครื่องแล้ว'
             : 'บันทึกไว้ในเครื่องแล้ว',
       );
     } catch (_) {
-      if (!mounted || generation != _generation) return;
+      if (!mounted ||
+          generation != _generation ||
+          widget.canInteract?.call() == false)
+        return;
       setState(
         () => _message = removing
             ? 'นำออกไม่สำเร็จ ลองอีกครั้ง'

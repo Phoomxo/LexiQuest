@@ -1,0 +1,54 @@
+{
+  "status": "MEASURED_LOCAL_COMPONENTS_ONLY",
+  "binarySha256": "d2cc615a0954c23a08ac785f504f014564bf418641e01bcba3087a9cf716fdf0",
+  "fixture": "synthetic only; no source/learner/secrets",
+  "results": [
+    {
+      "component": "repo-map",
+      "exit": 0,
+      "elapsedMs": 14.59,
+      "baselineChars": 372,
+      "outputChars": 238,
+      "requiredMarkers": {
+        "synthetic-r3-04-v1": false,
+        "local_owner_A": false,
+        "reject stale owner_generation": false,
+        "preserve original rows": false,
+        "no resubmit outcome_unknown": false,
+        "change owner while pending": false
+      },
+      "stderr": "",
+      "output": "build/ari-r3-04/repo-map.txt"
+    },
+    {
+      "component": "prune",
+      "exit": 0,
+      "elapsedMs": 16.72,
+      "baselineChars": 2919,
+      "outputChars": 2919,
+      "requiredMarkers": {
+        "synthetic-r3-04-v1": true,
+        "local_owner_A": true,
+        "reject stale owner_generation": true,
+        "preserve original rows": true,
+        "no resubmit outcome_unknown": true,
+        "change owner while pending": true
+      },
+      "stderr": "\n[GODKILLER ZERO : TERMINAL SHIELD] Input: ~729 tokens | Shielded: ~729 tokens | Reduction: 0.0%\n",
+      "output": "build/ari-r3-04/prune.txt"
+    }
+  ],
+  "providerUsage": null,
+  "workerAB": "NOT_RUN_NO_WORKERS",
+  "hook": "NOT_ACTIVATED",
+  "proxy": "NOT_ACTIVATED",
+  "purify": "NOT_RUN",
+  "tokensSaved": null,
+  "decision": "CANONICAL_READS_REQUIRED",
+  "reason": "repo-map only locates symbols and omits required context; prune retains markers but does not reduce this fixture. Efficiency not established.",
+  "baselineSource": "# SOURCE_PIN: synthetic-r3-04-v1\n# OWNER_PROVENANCE: local_owner_A\n# ACCEPTANCE: reject stale owner_generation; preserve original rows; no resubmit outcome_unknown\n# REPRO: change owner while pending; deliver old completion\n\ndef apply_result(owner_generation, active_generation, result):\n    if owner_generation != active_generation:\n        return None\n    return result\n",
+  "pruneFixture": "four requirement lines + 80 INFO framework heartbeat healthy lines + ERROR stale owner completion rejected; original rows unchanged",
+  "repoMapOutput": "=== GODKILLER ZERO : PROJECT RADAR MAP ===\nWorkspace: synthetic | Total files: 1 | Symbols indexed: 1\n\nowner.py:\n  \u2502 L6    Function         apply_result\n\n\n[OK] [REPO MAP GENERATED] Total files: 1, Symbols indexed: 1, Estimated tokens: 38\n",
+  "sourceCoverage": "6/6 canonical, 0/6 repo-map, 6/6 prune",
+  "usageClassification": "binary estimated tokens are not provider telemetry"
+}
