@@ -15,7 +15,11 @@ rule and historical pause notes. Other approved product requirements remain in f
 
 ## 2. Discover paths and preserve the workspace
 
-- Confirm the working directory and branch with read-only Git checks. Use the existing task worktree; create another only for a concrete isolation need.
+- **SINGLE CANONICAL WORKSPACE INVARIANT:**
+  * All development, testing, and inspection MUST occur strictly inside `C:\Users\Phet\Documents\LexiQuest` on branch `main`.
+  * **DO NOT CREATE GIT WORKTREES.** Running `git worktree add` is strictly prohibited under all circumstances.
+  * Do not create or switch to alternate worktree directories under `.codex`, `.claude`, `AppData`, `Desktop`, or temporary locations.
+  * All AI agents (OpenAI Codex, Anthropic Claude, Google Gemini / Antigravity) must treat `C:\Users\Phet\Documents\LexiQuest` as the sole authoritative source of truth.
 - Discover unknown paths with `rg --files` in an existing, bounded directory before reading them. Use `Test-Path -LiteralPath` when existence is uncertain. Do not guess successive filenames or reuse a path from a different checkout.
 - If an approved plan specifies a new file, first confirm that no equivalent implementation exists; then create it in the intended location. A planned file not existing yet is normal.
 - Treat `rg` exit code 1 as "no matches", not a filesystem failure; inspect actual error output for other exits. PowerShell commands may emit errors even when the shell exits 0.
