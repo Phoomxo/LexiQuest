@@ -137,6 +137,16 @@ final class LearningSessionSummary {
   final int score;
 }
 
+final class LearningSessionResult {
+  LearningSessionResult({
+    required this.summary,
+    required Iterable<String> mistakeWordIds,
+  }) : mistakeWordIds = List.unmodifiable(mistakeWordIds);
+
+  final LearningSessionSummary summary;
+  final List<String> mistakeWordIds;
+}
+
 final class ReadingProgressCommand {
   const ReadingProgressCommand({
     required this.eventId,

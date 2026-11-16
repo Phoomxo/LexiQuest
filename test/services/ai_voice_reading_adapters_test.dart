@@ -19,6 +19,17 @@ void main() {
       },
     );
 
+    test('offline passage includes every requested target word', () async {
+      final passage = await AiReadingContentAdapter().generatePassage(
+        cefrLevel: 'B1',
+        targetWords: ['station', 'ticket'],
+        forceOffline: true,
+      );
+
+      expect(passage.passageText, contains('station'));
+      expect(passage.passageText, contains('ticket'));
+    });
+
     test(
       'VoiceReadingAdapter uses OmniVoice when available and native TTS when offline',
       () async {

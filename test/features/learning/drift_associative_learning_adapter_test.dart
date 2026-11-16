@@ -73,6 +73,32 @@ void main() {
       expect(associations.first.content, 'crunchy snack');
     });
 
+    test('saveAssociation rejects an owner that is no longer active', () async {
+      await database.customUpdate(
+        "UPDATE local_owners SET is_active = 0 WHERE id = 'owner-da'",
+        updates: {database.localOwners},
+      );
+      await database.customInsert(
+        "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+        "VALUES ('owner-db', 'localGuest', 1722758400001)",
+      );
+
+      await expectLater(
+        adapter.saveAssociation(
+          AssociationRecord(
+            associationId: 'assoc-stale-owner',
+            ownerId: 'owner-da',
+            wordKey: 'station',
+            type: 'keyword',
+            content: 'stale cue',
+            createdAtUtc: DateTime.utc(2026, 10, 21),
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(await database.select(database.associationRecords).get(), isEmpty);
+    });
+
     test('deleteAssociation removes the row', () async {
       await adapter.saveAssociation(
         AssociationRecord(

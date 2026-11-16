@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 
 /// Six-stage Associative Reading Loop screen.
@@ -29,6 +30,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.associativeLearning,
     this.targetWordIds,
     this.sessionId,
+    this.ownerId,
   });
 
   final String cefrLevel;
@@ -52,6 +54,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
   /// navigating to this screen.
   final String? sessionId;
+  final String? ownerId;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -62,28 +65,34 @@ class _AssociativeReadingSessionScreenState
     extends State<AssociativeReadingSessionScreen>
     with WidgetsBindingObserver {
   static const _stageTitles = <String>[
-    'Stage 1: Supported Reading',
-    'Stage 2: Cue Fading',
-    'Stage 3: Active Recall',
-    'Stage 4: Memory Association',
-    'Stage 5: Context Transfer',
-    'Stage 6: Finish',
+    'ขั้นที่ 1: อ่านพร้อมตัวช่วย',
+    'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+    'ขั้นที่ 3: ทดสอบจากความจำ',
+    'ขั้นที่ 4: สร้างตัวช่วยจำ',
+    'ขั้นที่ 5: แต่งประโยคใหม่',
+    'ขั้นที่ 6: สรุปผล',
   ];
 
   LearningUseCases? _learning;
-  late AssociativeLearningPort _associativeLearning;
+  AssociativeLearningPort? _associativeLearning;
 
   int _currentStage = 1;
   bool _loading = true;
   bool _saving = false;
   bool _completed = false;
+  String? _sessionId;
+  bool _sessionFinished = false;
+  LearningSessionSummary? _sessionSummary;
 
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
   late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
+  late List<bool?> _frozenRecallResults;
+  late List<DateTime?> _recallAttemptTimes;
 
   // Stage 4 — per-word association cue controllers.
   late List<TextEditingController> _cueControllers;
+  late List<DateTime?> _associationCreatedTimes;
 
   String get _documentId {
     final supplied = widget.documentId?.trim();
@@ -104,12 +113,15 @@ class _AssociativeReadingSessionScreenState
       (_) => TextEditingController(),
     );
     _recallResults = List.filled(widget.targetWords.length, null);
+    _frozenRecallResults = List.filled(widget.targetWords.length, null);
+    _recallAttemptTimes = List.filled(widget.targetWords.length, null);
     _cueControllers = List.generate(
       widget.targetWords.length,
       (_) => TextEditingController(),
     );
-    _associativeLearning =
-        widget.associativeLearning ?? InMemoryAssociativeLearningAdapter();
+    _associationCreatedTimes = List.filled(widget.targetWords.length, null);
+    _associativeLearning = widget.associativeLearning;
+    _sessionId = widget.sessionId;
   }
 
   @override
@@ -118,6 +130,9 @@ class _AssociativeReadingSessionScreenState
     if (!_loading || _learning != null) return;
     _learning =
         widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    _associativeLearning ??=
+        AppDependenciesScope.maybeOf(context)?.associativeLearning ??
+        InMemoryAssociativeLearningAdapter();
     final learning = _learning;
     if (learning == null) {
       setState(() => _loading = false);
@@ -165,17 +180,24 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _nextStage() async {
     if (_saving) return;
+    setState(() => _saving = true);
 
     // Stage-specific side effects before advancing.
     if (_currentStage == 3) {
-      await _submitRecallAnswers();
+      if (!await _submitRecallAnswers()) {
+        if (mounted) setState(() => _saving = false);
+        return;
+      }
     } else if (_currentStage == 4) {
-      await _saveAssociations();
+      if (!await _saveAssociations()) {
+        if (mounted) setState(() => _saving = false);
+        return;
+      }
     }
+    if (!mounted) return;
 
     final finishing = _currentStage == 6;
     final nextStage = finishing ? 6 : _currentStage + 1;
-    setState(() => _saving = true);
     final saved = await _checkpoint(
       position: nextStage,
       isCompleted: finishing,
@@ -187,11 +209,42 @@ class _AssociativeReadingSessionScreenState
       return;
     }
     if (finishing) {
+      final learning = _learning;
+      final sessionId = _sessionId;
+      if (learning != null && sessionId != null && !_sessionFinished) {
+        try {
+          final summary = await learning.finishSession(sessionId);
+          if (!_isValidSummary(summary, sessionId)) {
+            throw StateError('invalid reading summary');
+          }
+          _sessionSummary = summary;
+          _sessionFinished = true;
+        } catch (_) {
+          if (mounted) {
+            setState(() => _saving = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('บันทึกผลการอ่านไม่สำเร็จ กรุณาลองอีกครั้ง'),
+              ),
+            );
+          }
+          return;
+        }
+      }
+      if (!mounted) return;
       setState(() {
         _saving = false;
         _completed = true;
       });
-      Navigator.of(context).pop();
+      final summary = _sessionSummary;
+      Navigator.of(context).pop(
+        summary == null
+            ? null
+            : LearningSessionResult(
+                summary: summary,
+                mistakeWordIds: _mistakeWordIds,
+              ),
+      );
       return;
     }
     setState(() {
@@ -202,11 +255,31 @@ class _AssociativeReadingSessionScreenState
 
   // ── Stage 3: Active Recall ─────────────────────────────────────────────────
 
-  Future<void> _submitRecallAnswers() async {
+  Future<bool> _submitRecallAnswers() async {
     final learning = _learning;
-    final sessionId = widget.sessionId;
     final wordIds = widget.targetWordIds;
-    if (learning == null || sessionId == null || wordIds == null) return;
+    if (learning == null || wordIds == null) return true;
+    if (await _ownerForWrite(showFailure: true) == null) return false;
+
+    var sessionId = _sessionId;
+    if (sessionId == null) {
+      try {
+        final session = await learning.startReadingForWords(
+          wordIds: wordIds.values,
+          limit: wordIds.length,
+        );
+        if (session.isEmpty) return true;
+        sessionId = session.id;
+        _sessionId = sessionId;
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('เริ่มบันทึกแบบฝึกอ่านไม่สำเร็จ')),
+          );
+        }
+        return false;
+      }
+    }
 
     final results = <bool?>[];
     for (var i = 0; i < widget.targetWords.length; i++) {
@@ -218,9 +291,10 @@ class _AssociativeReadingSessionScreenState
       }
       final typed = _recallControllers[i].text.trim().toLowerCase();
       final expected = word.trim().toLowerCase();
-      final isCorrect = typed == expected;
+      final isCorrect = _frozenRecallResults[i] ??= typed == expected;
       results.add(isCorrect);
       try {
+        final occurredAtUtc = _recallAttemptTimes[i] ??= DateTime.now().toUtc();
         await learning.recordAnswer(
           sessionId: sessionId,
           wordId: wordId,
@@ -228,41 +302,110 @@ class _AssociativeReadingSessionScreenState
           isCorrect: isCorrect,
           responseTimeMs: null,
           attemptNumber: i + 1,
+          attemptId: 'attempt:$sessionId:associative:$i',
+          occurredAtUtc: occurredAtUtc,
         );
       } catch (_) {
-        // Non-fatal — SRS update failure must not block the reading loop.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง'),
+            ),
+          );
+        }
+        return false;
       }
     }
+    try {
+      final summary = await learning.finishSession(sessionId);
+      if (!_isValidSummary(summary, sessionId)) {
+        throw StateError('invalid reading summary');
+      }
+      _sessionSummary = summary;
+      _sessionFinished = true;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('บันทึกผลการอ่านไม่สำเร็จ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+      return false;
+    }
     if (mounted) setState(() => _recallResults = results);
+    return true;
+  }
+
+  List<String> get _mistakeWordIds {
+    final wordIds = widget.targetWordIds;
+    if (wordIds == null) return const [];
+    final mistakes = <String>{};
+    for (var i = 0; i < widget.targetWords.length; i++) {
+      if (_frozenRecallResults[i] != false) continue;
+      final id = wordIds[widget.targetWords[i]];
+      if (id != null) mistakes.add(id);
+    }
+    return mistakes.toList(growable: false);
+  }
+
+  bool _isValidSummary(LearningSessionSummary summary, String sessionId) {
+    final attempted = _frozenRecallResults.whereType<bool>().length;
+    final correct = _frozenRecallResults
+        .where((result) => result == true)
+        .length;
+    final wrong = attempted - correct;
+    final score = attempted == 0 ? 0 : ((correct * 100) / attempted).round();
+    return summary.id == sessionId &&
+        summary.state == 'completed' &&
+        summary.correctCount == correct &&
+        summary.wrongCount == wrong &&
+        summary.score == score;
   }
 
   // ── Stage 4: Memory Association ────────────────────────────────────────────
 
-  Future<void> _saveAssociations() async {
-    // Resolve owner id: use learning use cases owner if available,
-    // otherwise fall back to 'local' for the in-memory adapter.
-    final ownerId = 'local';
-    final now = DateTime.now().toUtc();
+  Future<bool> _saveAssociations() async {
+    if (_cueControllers.every((controller) => controller.text.trim().isEmpty)) {
+      return true;
+    }
+    final ownerId = await _ownerForWrite(showFailure: true);
+    if (ownerId == null) return false;
+    final associativeLearning =
+        _associativeLearning ?? InMemoryAssociativeLearningAdapter();
 
     for (var i = 0; i < widget.targetWords.length; i++) {
       final cue = _cueControllers[i].text.trim();
       if (cue.isEmpty) continue;
       try {
-        await _associativeLearning.saveAssociation(
+        final word = widget.targetWords[i];
+        final wordIdentity = widget.targetWordIds?[word] ?? i;
+        final createdAtUtc = _associationCreatedTimes[i] ??= DateTime.now()
+            .toUtc();
+        await associativeLearning.saveAssociation(
           AssociationRecord(
             associationId:
-                'assoc:${widget.targetWords[i]}:${now.millisecondsSinceEpoch}:$i',
+                'assoc:$ownerId:$_documentId:${widget.documentRevision}:'
+                '$wordIdentity',
             ownerId: ownerId,
-            wordKey: widget.targetWords[i],
+            wordKey: word,
             type: 'keyword',
             content: cue,
-            createdAtUtc: now,
+            createdAtUtc: createdAtUtc,
           ),
         );
       } catch (_) {
-        // Non-fatal — association save failure must not block the loop.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('บันทึกตัวช่วยจำไม่สำเร็จ กรุณาลองอีกครั้ง'),
+            ),
+          );
+        }
+        return false;
       }
     }
+    return true;
   }
 
   // ── Checkpoint ─────────────────────────────────────────────────────────────
@@ -274,12 +417,14 @@ class _AssociativeReadingSessionScreenState
   }) async {
     final learning = _learning;
     if (learning == null) return true;
+    if (await _ownerForWrite(showFailure: showFailure) == null) return false;
     try {
       await learning.saveReadingProgress(
         documentId: _documentId,
         documentRevision: widget.documentRevision,
         position: position ?? _currentStage,
         isCompleted: isCompleted,
+        expectedOwnerId: widget.ownerId,
       );
       return true;
     } catch (_) {
@@ -294,20 +439,56 @@ class _AssociativeReadingSessionScreenState
     }
   }
 
+  Future<String?> _ownerForWrite({required bool showFailure}) async {
+    final expected = widget.ownerId?.trim();
+    final learning = _learning;
+    if (learning == null) {
+      return expected == null || expected.isEmpty ? null : expected;
+    }
+    try {
+      final current = await learning.owners.getOrCreateActiveOwner();
+      if (expected != null && expected.isNotEmpty && expected != current.id) {
+        if (showFailure) _showOwnerChanged();
+        return null;
+      }
+      return current.id;
+    } catch (_) {
+      if (showFailure) _showOwnerChanged();
+      return null;
+    }
+  }
+
+  void _showOwnerChanged() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('บัญชีผู้เรียนเปลี่ยนแล้ว กรุณาเปิดกิจกรรมใหม่'),
+      ),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Associative Reading (${widget.cefrLevel})')),
+      appBar: AppBar(title: Text('อ่านแบบเชื่อมโยง (${widget.cefrLevel})')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: 'กำลังเตรียมบทอ่านแบบเชื่อมโยง',
+              ),
+            )
           : Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  LinearProgressIndicator(value: _currentStage / 6),
+                  LinearProgressIndicator(
+                    value: _currentStage / 6,
+                    semanticsLabel:
+                        'ความคืบหน้าการอ่านแบบเชื่อมโยง ขั้นตอน $_currentStage จาก 6',
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     _stageTitles[_currentStage - 1],
@@ -317,7 +498,10 @@ class _AssociativeReadingSessionScreenState
                   Expanded(
                     child: SingleChildScrollView(child: _buildStageContent()),
                   ),
-                  if (_saving) const LinearProgressIndicator(),
+                  if (_saving)
+                    const LinearProgressIndicator(
+                      semanticsLabel: 'กำลังบันทึกผลการอ่าน',
+                    ),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _saving || _completed ? null : _nextStage,
@@ -326,8 +510,8 @@ class _AssociativeReadingSessionScreenState
                     ),
                     child: Text(
                       _currentStage < 6
-                          ? 'Complete & Continue'
-                          : 'Finish Session',
+                          ? 'เสร็จแล้ว ไปขั้นถัดไป'
+                          : 'บันทึกและจบการฝึก',
                     ),
                   ),
                 ],
@@ -343,7 +527,7 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Read the passage and notice the target words.'),
+            const Text('อ่านเรื่องและสังเกตคำศัพท์เป้าหมาย'),
             const SizedBox(height: 12),
             Card(
               child: Padding(
@@ -352,14 +536,14 @@ class _AssociativeReadingSessionScreenState
               ),
             ),
             const SizedBox(height: 12),
-            Text('Target Words: ${widget.targetWords.join(', ')}'),
+            Text('คำศัพท์เป้าหมาย: ${widget.targetWords.join(', ')}'),
           ],
         );
 
       // ── Stage 2: Cue Fading ────────────────────────────────────────────────
       case 2:
         return const Text(
-          'Cue Fading: re-read the passage without translations or highlights.',
+          'อ่านเรื่องอีกครั้งโดยไม่ดูคำแปลหรือข้อความที่เน้นไว้',
         );
 
       // ── Stage 3: Active Recall ─────────────────────────────────────────────
@@ -368,7 +552,7 @@ class _AssociativeReadingSessionScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Recall Test: type each target word from memory.',
+              'พิมพ์คำศัพท์เป้าหมายแต่ละคำจากความจำ',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 12),
@@ -379,8 +563,8 @@ class _AssociativeReadingSessionScreenState
                 child: TextField(
                   controller: _recallControllers[i],
                   decoration: InputDecoration(
-                    labelText: 'Word ${i + 1}',
-                    hintText: 'Type from memory',
+                    labelText: 'คำที่ ${i + 1}',
+                    hintText: 'พิมพ์จากความจำ',
                     border: const OutlineInputBorder(),
                     suffixIcon: result == null
                         ? null
@@ -397,7 +581,7 @@ class _AssociativeReadingSessionScreenState
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '${_recallResults.where((r) => r == true).length}/'
-                  '${widget.targetWords.length} correct',
+                  '${widget.targetWords.length} คำถูกต้อง',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ),
@@ -410,7 +594,7 @@ class _AssociativeReadingSessionScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Create a memory keyword or story for each target word.',
+              'สร้างคำใบ้หรือเรื่องสั้นเพื่อช่วยจำคำศัพท์แต่ละคำ',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 12),
@@ -438,7 +622,7 @@ class _AssociativeReadingSessionScreenState
                     TextField(
                       controller: _cueControllers[i],
                       decoration: const InputDecoration(
-                        hintText: 'Keyword, story, or image...',
+                        hintText: 'คำใบ้ เรื่องสั้น หรือภาพที่นึกถึง',
                         border: OutlineInputBorder(),
                       ),
                       maxLines: 2,
@@ -455,11 +639,11 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Use one target word in a new sentence.'),
+            const Text('นำคำศัพท์เป้าหมายหนึ่งคำไปแต่งประโยคใหม่'),
             const SizedBox(height: 12),
             TextField(
               decoration: const InputDecoration(
-                hintText: 'Enter a new sentence',
+                hintText: 'พิมพ์ประโยคใหม่',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -477,14 +661,14 @@ class _AssociativeReadingSessionScreenState
             const Icon(Icons.fact_check_outlined, size: 48),
             const SizedBox(height: 12),
             const Text(
-              'Ready to finish',
+              'พร้อมจบการฝึก',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             if (total > 0)
-              Text('Recall score: $correct / $total')
+              Text('จำได้ถูกต้อง: $correct / $total คำ')
             else
-              const Text('Tap Finish Session to save completion.'),
+              const Text('แตะบันทึกและจบการฝึกเพื่อบันทึกผล'),
           ],
         );
     }

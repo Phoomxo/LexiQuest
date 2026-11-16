@@ -1,14 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../domain/account_contracts.dart';
+import 'google_sign_in_credential_source.dart';
 
 const _authActionUrl =
     'https://vocab-learning-app-219ef.firebaseapp.com/auth/action';
 
-final class FirebaseAccountGateway implements AccountGateway {
-  FirebaseAccountGateway(this.auth);
+final class FirebaseAccountGateway
+    implements AccountGateway, GoogleAccountGateway {
+  FirebaseAccountGateway(FirebaseAuth auth, {GoogleCredentialSource? google})
+    : this._(auth, google);
+
+  FirebaseAccountGateway._(this.auth, this._google);
 
   final FirebaseAuth auth;
+  final GoogleCredentialSource? _google;
+
+  @override
+  bool get googleSignInAvailable => _google != null;
 
   @override
   AccountSession? get currentSession => _session(auth.currentUser);
@@ -34,7 +43,12 @@ final class FirebaseAccountGateway implements AccountGateway {
       if (session == null) {
         throw const AccountException(AccountFailureCode.unknown);
       }
-      await result.user!.sendEmailVerification(_actionSettings());
+      try {
+        await result.user!.sendEmailVerification(_actionSettings());
+      } catch (_) {
+        // Account creation/linking is already committed. The verification
+        // screen exposes an explicit resend instead of misreporting failure.
+      }
       return session;
     } on AccountException {
       rethrow;
@@ -70,6 +84,43 @@ final class FirebaseAccountGateway implements AccountGateway {
   }
 
   @override
+  Future<AccountSession> signInWithGoogle() async {
+    final google = _google;
+    if (google == null) {
+      throw const AccountException(AccountFailureCode.unavailable);
+    }
+    try {
+      final credential = await google.credential();
+      final current = auth.currentUser;
+      UserCredential result;
+      if (current != null && current.isAnonymous) {
+        try {
+          result = await current.linkWithCredential(credential);
+        } on FirebaseAuthException catch (error) {
+          if (error.code != 'credential-already-in-use' &&
+              error.code != 'account-exists-with-different-credential') {
+            rethrow;
+          }
+          result = await auth.signInWithCredential(credential);
+        }
+      } else {
+        result = await auth.signInWithCredential(credential);
+      }
+      final session = _session(result.user);
+      if (session == null) {
+        throw const AccountException(AccountFailureCode.unknown);
+      }
+      return session;
+    } on AccountException {
+      rethrow;
+    } on FirebaseAuthException catch (error) {
+      throw AccountException(_map(error.code));
+    } catch (_) {
+      throw const AccountException(AccountFailureCode.unavailable);
+    }
+  }
+
+  @override
   Future<AccountSession> reload() async {
     final user = auth.currentUser;
     if (user == null) {
@@ -86,6 +137,22 @@ final class FirebaseAccountGateway implements AccountGateway {
       rethrow;
     } on FirebaseAuthException catch (error) {
       throw AccountException(_map(error.code));
+    }
+  }
+
+  @override
+  Future<AccountSession> updateDisplayName(String displayName) async {
+    final user = auth.currentUser;
+    if (user == null || user.isAnonymous) {
+      throw const AccountException(AccountFailureCode.invalidCredential);
+    }
+    try {
+      await user.updateDisplayName(displayName);
+      return _session(user)!;
+    } on FirebaseAuthException catch (error) {
+      throw AccountException(_map(error.code));
+    } catch (_) {
+      throw const AccountException(AccountFailureCode.unavailable);
     }
   }
 
@@ -160,6 +227,7 @@ final class FirebaseAccountGateway implements AccountGateway {
   Future<void> signOut() async {
     try {
       await auth.signOut();
+      await _google?.signOut();
     } on FirebaseAuthException catch (error) {
       throw AccountException(_map(error.code));
     }
@@ -178,6 +246,7 @@ final class FirebaseAccountGateway implements AccountGateway {
       : AccountSession(
           uid: user.uid,
           email: user.email,
+          displayName: user.displayName,
           isAnonymous: user.isAnonymous,
           emailVerified: user.emailVerified,
         );

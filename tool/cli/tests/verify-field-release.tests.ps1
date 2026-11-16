@@ -82,6 +82,14 @@ function New-Device {
     }
 }
 
+function New-RequiredDevices {
+    return @(
+        (New-Device 'low' '1'),
+        (New-Device 'mid' '2'),
+        (New-Device 'high' '3')
+    )
+}
+
 $repoRoot = Split-Path -Parent (
     Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 )
@@ -141,10 +149,7 @@ try {
             supportChannelRef = 'private:support-channel-record'
             researchProtocolRef = 'private:research-protocol'
         }
-        devices = @(
-            (New-Device 'mid' '1'),
-            (New-Device 'high' '2')
-        )
+        devices = @(New-RequiredDevices)
         ownerApproval = [pscustomobject]@{
             approved = $true
             apkSha256 = 'A' * 64
@@ -163,6 +168,71 @@ try {
     )
     Assert-True ($errors.Count -eq 0) `
         'complete, reconciled evidence passes the pure validator'
+
+    $validate = {
+        @(
+            Test-LexiQuestFieldReleaseEvidence `
+                -Evidence $evidence `
+                -ActualApkSha256 ('A' * 64) `
+                -ActualCertificateSha256 ('B' * 64) `
+                -ParticipantPackagePath $tempRoot
+        )
+    }
+
+    $evidence.devices = @(New-RequiredDevices)
+    $evidence.devices += (New-Device 'mid' '4')
+    $errors = @(& $validate)
+    Assert-True ($errors.Count -eq 0) `
+        'an additional valid physical device is allowed'
+
+    foreach ($missingTier in @('low', 'mid', 'high')) {
+        $evidence.devices = @(
+            New-RequiredDevices | Where-Object { $_.tier -ne $missingTier }
+        )
+        $errors = @(& $validate)
+        Assert-True (
+            ($errors -join "`n") -match
+                "At least one $missingTier-tier physical Android device"
+        ) "a missing $missingTier-tier physical device blocks release"
+    }
+
+    foreach ($invalidTier in @('tablet', '   ')) {
+        $evidence.devices = @(New-RequiredDevices)
+        $evidence.devices += (New-Device $invalidTier '4')
+        $errors = @(& $validate)
+        Assert-True (
+            ($errors -join "`n") -match
+                'device tier must be low, mid, or high'
+        ) 'an unknown or blank device tier blocks release'
+    }
+
+    $evidence.devices = @(New-RequiredDevices)
+    $evidence.devices[0].device.physical = $false
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match
+            'low evidence must be from a physical device'
+    ) 'emulator or nonphysical evidence blocks release'
+
+    $evidence.devices = @(New-RequiredDevices)
+    $duplicate = New-Device 'mid' '4'
+    $duplicate.pseudonymousDeviceId = ('11:' * 31) + '11'
+    $evidence.devices += $duplicate
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match
+            'Physical device records must have distinct pseudonymous IDs'
+    ) 'normalized duplicate device identities block release'
+
+    $evidence.devices = @(New-RequiredDevices)
+    $evidence.devices[0].release.apkSha256 = 'D' * 64
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match
+            'low device was not tested with the release APK'
+    ) 'a per-device artifact mismatch blocks release'
+
+    $evidence.devices = @(New-RequiredDevices)
 
     $evidence.cloudControls.budgetAlertsConfigured = $false
     $evidence.cloudControls.budgetAlertsNotApplicable = $true

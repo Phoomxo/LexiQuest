@@ -56,7 +56,7 @@ final class ImportVocabulary {
       final row = rows[index];
       final canonical = canonicalImportRow(row);
       final payloadHash = _sha256(canonical);
-      final failureCode = _validateRow(row);
+      final failureCode = validateVocabularyImportRow(row);
       preparedRows.add(
         PreparedVocabularyImportRow(
           rowNumber: rowNumber,
@@ -121,7 +121,7 @@ String canonicalImportRow(Map<String, String> row) => [
   normalizeVocabularyText(row['partOfSpeech'] ?? ''),
 ].join('\u001f');
 
-String? _validateRow(Map<String, String> row) {
+String? validateVocabularyImportRow(Map<String, String> row) {
   final word = _canonical(row['word'] ?? '');
   final meaning = _canonical(row['meaning'] ?? '');
   final partOfSpeech = _canonical(row['partOfSpeech'] ?? '');

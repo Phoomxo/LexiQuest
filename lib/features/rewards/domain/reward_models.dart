@@ -59,7 +59,7 @@ abstract final class RewardCatalog {
       id: 'headgear_ipa',
       catalogVersion: version,
       kind: RewardItemKind.headgear,
-      name: 'หมวก IPA',
+      name: 'หมวกนักออกเสียง',
       description: 'อุปกรณ์ตกแต่งที่ได้รับจากคะแนนการเรียนจริง',
       price: 100,
     ),
@@ -67,7 +67,7 @@ abstract final class RewardCatalog {
       id: 'weapon_cefr',
       catalogVersion: version,
       kind: RewardItemKind.weapon,
-      name: 'ดาบ CEFR',
+      name: 'ดาบนักไต่ระดับ',
       description: 'อุปกรณ์ตกแต่งสำหรับโปรไฟล์ผู้เรียน',
       price: 120,
     ),
@@ -75,7 +75,7 @@ abstract final class RewardCatalog {
       id: 'armor_srs',
       catalogVersion: version,
       kind: RewardItemKind.armor,
-      name: 'เกราะ SRS',
+      name: 'เกราะช่วยทบทวน',
       description: 'อุปกรณ์ตกแต่งสำหรับโปรไฟล์ผู้เรียน',
       price: 120,
     ),
@@ -105,6 +105,13 @@ final class RewardAccount {
   final int transactionCount;
 }
 
+final class RewardSession {
+  const RewardSession({required this.ownerId, required this.account});
+
+  final String ownerId;
+  final RewardAccount account;
+}
+
 enum PurchaseStatus { purchased, alreadyOwned, replayed }
 
 final class PurchaseResult {
@@ -114,11 +121,30 @@ final class PurchaseResult {
   final RewardAccount account;
 }
 
+enum EquipStatus { equipped, alreadyEquipped, replayed }
+
+final class EquipResult {
+  const EquipResult({required this.status, required this.account});
+
+  final EquipStatus status;
+  final RewardAccount account;
+}
+
+final class RewardAppearance {
+  const RewardAppearance({required this.ownerId, required this.equippedBySlot});
+
+  const RewardAppearance.empty() : ownerId = null, equippedBySlot = const {};
+
+  final String? ownerId;
+  final Map<String, String> equippedBySlot;
+}
+
 enum RewardFailureCode {
   unknownItem,
   staleCatalog,
   insufficientBalance,
   invalidIdempotencyKey,
+  ownerChanged,
   notOwned,
   slotMismatch,
 }

@@ -82,6 +82,7 @@ final class GeminiRestGateway implements GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    GeminiTutorMode mode = GeminiTutorMode.guided,
     String? learningSummary,
     GeminiCancellation? cancellation,
   }) async {
@@ -111,7 +112,8 @@ final class GeminiRestGateway implements GeminiGateway {
                       'You are a concise English tutor. Stay in the requested '
                       'scenario, use CEFR B1-B2 English, correct only material '
                       'errors kindly, never claim to have heard audio, and reply '
-                      'in no more than two short sentences.',
+                      'in no more than two short sentences. '
+                      '${mode == GeminiTutorMode.guided ? 'Give one hint or leading question about the current learner message. Do not reveal the full answer.' : 'Give a short direct answer and a brief reason. Do not require a follow-up question.'}',
                 },
               ],
             },

@@ -47,6 +47,13 @@ case now asserts retry-to-cap (matching the field-proven behavior); the
 - **`verify.ps1` 11/11 PASS**; `flutter test` 1015/1015; `flutter analyze`
   clean (last full run; the H2 refinement adds +0 net tests).
 
+> **UPDATE 2026-08-06:** The GMS-instability half of this inconclusive
+> result is now **CLEARED** — see
+> [`2026-08-06-v12-gms-recovery-auth-verified.md`](./2026-08-06-v12-gms-recovery-auth-verified.md).
+> A second reboot (after GMS auto-updated to 26.28.33) restored the binder
+> identity, and Play Integrity minted a token successfully (4.9 s). The
+> Firestore-write half still needs owner Console confirmation.
+
 ## What is INCONCLUSIVE (needs owner manual confirmation)
 
 **Anonymous Auth → Firestore sync was NOT observed end-to-end in this

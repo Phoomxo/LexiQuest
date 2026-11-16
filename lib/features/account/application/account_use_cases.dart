@@ -16,6 +16,10 @@ final class AccountUseCases {
 
   AccountSession? get currentSession => gateway.currentSession;
 
+  bool get googleSignInAvailable =>
+      gateway is GoogleAccountGateway &&
+      (gateway as GoogleAccountGateway).googleSignInAvailable;
+
   Future<void> reconcileLocalOwner() async {
     final session = gateway.currentSession;
     final owner = await owners.getOrCreateActiveOwner();
@@ -34,11 +38,12 @@ final class AccountUseCases {
     required String email,
     required String password,
   }) async {
+    final previousSession = currentSession;
     final session = await gateway.register(
       email: _email(email),
       password: _password(password),
     );
-    await _bindOrSignOut(session.uid);
+    await _bindOrSignOut(session.uid, previousSession: previousSession);
     return session;
   }
 
@@ -46,15 +51,45 @@ final class AccountUseCases {
     required String email,
     required String password,
   }) async {
+    final previousSession = currentSession;
     final session = await gateway.signIn(
       email: _email(email),
       password: _password(password),
     );
-    await _bindOrSignOut(session.uid);
+    await _bindOrSignOut(session.uid, previousSession: previousSession);
+    return session;
+  }
+
+  Future<AccountSession> signInWithGoogle() async {
+    final google = gateway is GoogleAccountGateway
+        ? gateway as GoogleAccountGateway
+        : null;
+    if (google == null || !google.googleSignInAvailable) {
+      throw const AccountException(AccountFailureCode.unavailable);
+    }
+    final previousSession = currentSession;
+    final session = await google.signInWithGoogle();
+    await _bindOrSignOut(session.uid, previousSession: previousSession);
     return session;
   }
 
   Future<AccountSession> refreshVerification() => gateway.reload();
+
+  Future<AccountSession> updateDisplayName(String value) async {
+    final name = value.trim();
+    if (name.isEmpty ||
+        name.runes.length > 50 ||
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(name)) {
+      throw const AccountException(AccountFailureCode.invalidDisplayName);
+    }
+    final session = currentSession;
+    if (session == null ||
+        session.isAnonymous ||
+        (await owners.getOrCreateActiveOwner()).firebaseUid != session.uid) {
+      throw const AccountException(AccountFailureCode.invalidCredential);
+    }
+    return gateway.updateDisplayName(name);
+  }
 
   Future<void> resendVerification() => gateway.sendVerification();
 
@@ -99,18 +134,29 @@ final class AccountUseCases {
     }
   }
 
-  Future<void> _bindOrSignOut(String uid) async {
+  Future<void> _bindOrSignOut(
+    String uid, {
+    AccountSession? previousSession,
+  }) async {
     try {
-      await _bind(uid);
+      await _bind(uid, previousSession: previousSession);
     } catch (_) {
       await gateway.signOut();
       rethrow;
     }
   }
 
-  Future<void> _bind(String uid) async {
+  Future<void> _bind(String uid, {AccountSession? previousSession}) async {
     final owner = await owners.getOrCreateActiveOwner();
-    await upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
+    var ownerId = owner.id;
+    if (owner.firebaseUid != null &&
+        owner.firebaseUid != uid &&
+        !(previousSession?.isAnonymous == true &&
+            previousSession?.uid == owner.firebaseUid)) {
+      ownerId =
+          (await upgradeGuestOwner.createLocalGuestAfterLogout()).targetOwnerId;
+    }
+    await upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
   }
 
   String _email(String value) {

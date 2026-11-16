@@ -47,7 +47,7 @@
                 <data
                     android:scheme="https"
                     android:host="vocab-learning-app-219ef.firebaseapp.com"
-                    android:pathPrefix="/auth/action"/>
+                    android:pathPrefix="/__/auth/links"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

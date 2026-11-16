@@ -179,17 +179,22 @@ function Test-LexiQuestFieldReleaseEvidence {
     }
 
     $devices = @($Evidence.devices)
-    if ($devices.Count -ne 2) {
-        $errors.Add('Exactly two physical Android device records are required (mid and high tier).')
-    }
     $tiers = @($devices | ForEach-Object { [string]$_.tier })
-    foreach ($tier in @('mid', 'high')) {
-        if (@($tiers | Where-Object { $_ -eq $tier }).Count -ne 1) {
-            $errors.Add("Exactly one $tier-tier device record is required.")
+    $requiredTiers = @('low', 'mid', 'high')
+    foreach ($tier in $requiredTiers) {
+        if (@($tiers | Where-Object { $_ -eq $tier }).Count -lt 1) {
+            $errors.Add(
+                "At least one $tier-tier physical Android device record is required."
+            )
+        }
+    }
+    foreach ($tier in $tiers) {
+        if ($tier -notin $requiredTiers) {
+            $errors.Add('Every device tier must be low, mid, or high.')
         }
     }
     $deviceIds = @($devices | ForEach-Object {
-        ([string]$_.pseudonymousDeviceId).ToUpperInvariant()
+        ConvertTo-NormalizedSha256 $_.pseudonymousDeviceId
     })
     if (@($deviceIds | Sort-Object -Unique).Count -ne $devices.Count) {
         $errors.Add('Physical device records must have distinct pseudonymous IDs.')

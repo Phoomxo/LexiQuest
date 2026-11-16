@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
+import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/adaptive_content_pane.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
 
+enum QuizWordSelectionMode { weakness, sourcePractice }
+
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key, this.categoryId, this.learning});
+  const QuizScreen({
+    super.key,
+    this.categoryId,
+    this.learning,
+    this.wordIds,
+    this.selectionMode = QuizWordSelectionMode.weakness,
+  });
 
   final String? categoryId;
   final LearningUseCases? learning;
+  final List<String>? wordIds;
+  final QuizWordSelectionMode selectionMode;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -26,6 +39,13 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _saving = false;
   String? _selected;
   DateTime? _questionStartedAt;
+  final List<QuizWord> _mistakes = [];
+  String? _attemptId;
+  DateTime? _submittedAtUtc;
+  int? _responseTimeMs;
+  bool _practicingMistakes = false;
+  bool _hintVisible = false;
+  bool _revealed = false;
 
   @override
   void didChangeDependencies() {
@@ -38,52 +58,83 @@ class _QuizScreenState extends State<QuizScreen> {
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
           )
-        : learning.startQuiz(categoryId: widget.categoryId);
-    _load!.then((session) {
-      if (!mounted) return;
-      _session = session;
-      _questionStartedAt = DateTime.now();
-    });
+        : widget.wordIds == null
+        ? learning.startQuiz(categoryId: widget.categoryId)
+        : widget.selectionMode == QuizWordSelectionMode.sourcePractice
+        ? learning.startSourcePracticeForWords(wordIds: widget.wordIds!)
+        : learning.startWeaknessPractice(wordIds: widget.wordIds!);
   }
 
   @override
   Widget build(BuildContext context) {
+    final usesAdaptiveTitle =
+        _title.runes.length > 18 ||
+        MediaQuery.textScalerOf(context).scale(1) >= 2;
     return Scaffold(
-      appBar: AppBar(title: const Text('Quiz คำศัพท์')),
-      body: FutureBuilder<QuizSession>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const _QuizMessage(
-              icon: Icons.error_outline,
-              message:
-                  'เปิด Quiz ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final session = snapshot.data!;
-          if (session.isEmpty) {
-            return const _QuizMessage(
-              icon: Icons.library_add_outlined,
-              message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
-            );
-          }
-          return _buildQuestion(session);
-        },
+      appBar: AppBar(
+        toolbarHeight: usesAdaptiveTitle
+            ? M3Theme.appBarToolbarHeight(context)
+            : null,
+        title: usesAdaptiveTitle
+            ? M3Theme.appBarTitle(context, _title)
+            : Text(_title),
+      ),
+      body: AdaptiveContentPane(
+        child: FutureBuilder<QuizSession>(
+          future: _load,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return _QuizMessage(
+                icon: Icons.error_outline,
+                message:
+                    'เปิดแบบทดสอบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
+                liveRegion: true,
+                actionLabel: 'กลับไปเลือกกิจกรรม',
+                onAction: () => Navigator.maybePop(context),
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังเตรียมแบบทดสอบ',
+                ),
+              );
+            }
+            final session = snapshot.data!;
+            if (session.isEmpty) {
+              return const _QuizMessage(
+                icon: Icons.library_add_outlined,
+                message: 'ยังไม่มีคำศัพท์สำหรับแบบทดสอบ กรุณาเพิ่มคำศัพท์ก่อน',
+              );
+            }
+            _session ??= session;
+            _questionStartedAt ??= DateTime.now();
+            return _buildQuestion(session);
+          },
+        ),
       ),
     );
   }
 
+  String get _title => widget.wordIds == null
+      ? 'แบบทดสอบคำศัพท์'
+      : widget.selectionMode == QuizWordSelectionMode.sourcePractice
+      ? 'แบบทดสอบจากเนื้อหานี้'
+      : 'ฝึกคำที่ผิด';
+
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              'คำถาม ${_index + 1} จาก ${session.questions.length}',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
             Semantics(
               label: 'คำถาม ${_index + 1} จาก ${session.questions.length}',
               child: LinearProgressIndicator(
@@ -91,35 +142,89 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            const Text('เลือกคำแปลที่ตรงกับคำศัพท์'),
+            const SizedBox(height: 12),
             Text(
               question.word.spelling,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 4),
-            Text(
-              question.word.partOfSpeech,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            if (_hintVisible || _answered)
+              Text(
+                question.word.partOfSpeech,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            if (!_answered) ...[
+              if (question.word.partOfSpeech.isNotEmpty)
+                TextButton(
+                  onPressed: _saving || _attemptId != null
+                      ? null
+                      : () => setState(() => _hintVisible = !_hintVisible),
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  child: Text(_hintVisible ? 'ซ่อนคำใบ้' : 'ดูคำใบ้'),
+                ),
+              TextButton(
+                onPressed: _saving || _attemptId != null
+                    ? null
+                    : () => _record(question, null, reveal: true),
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                child: const Text('เฉลยคำตอบ'),
+              ),
+            ],
             const SizedBox(height: 24),
-            ...question.options.map(
-              (option) => Padding(
+            ...question.options.map((option) {
+              final feedbackColors = _answerColors(question, option);
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: FilledButton.tonal(
-                  onPressed: _answered || _saving
+                  onPressed: _answered || _saving || _attemptId != null
                       ? null
                       : () => _record(question, option),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    backgroundColor: _answerColor(question, option),
+                    backgroundColor: feedbackColors?.background,
+                    foregroundColor: feedbackColors?.foreground,
                   ),
                   child: Text(option),
                 ),
+              );
+            }),
+            const SizedBox(height: 16),
+            if (_saving)
+              const LinearProgressIndicator(semanticsLabel: 'กำลังบันทึกคำตอบ'),
+            if (!_answered && !_saving && _attemptId != null)
+              FilledButton.icon(
+                onPressed: () =>
+                    _record(question, _selected, reveal: _revealed),
+                icon: const Icon(Icons.refresh),
+                label: const Text('ลองบันทึกอีกครั้ง'),
               ),
-            ),
-            const Spacer(),
-            if (_saving) const LinearProgressIndicator(),
+            if (_answered) ...[
+              Semantics(
+                liveRegion: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _selected == question.correctAnswer
+                          ? 'ถูกต้อง'
+                          : 'ยังไม่ถูก ลองดูคำแปลอีกครั้ง',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'คำตอบของคุณ: ${_revealed ? 'ไม่ได้ตอบ (ขอเฉลย)' : _selected}',
+                    ),
+                    Text(
+                      '${question.word.spelling} — ${question.correctAnswer}',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (_answered)
               FilledButton(
                 onPressed: _saving ? null : _next,
@@ -135,44 +240,87 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Color? _answerColor(QuizQuestion question, String option) {
+  ({Color background, Color foreground})? _answerColors(
+    QuizQuestion question,
+    String option,
+  ) {
     if (!_answered) return null;
-    if (option == question.correctAnswer) return Colors.green.shade100;
-    if (option == _selected) return Colors.red.shade100;
+    final colors = Theme.of(context).colorScheme;
+    if (option == question.correctAnswer) {
+      if (colors.brightness == Brightness.light) {
+        return (
+          background: Colors.green.shade100,
+          foreground: colors.onSecondaryContainer,
+        );
+      }
+      return (
+        background: colors.tertiaryContainer,
+        foreground: colors.onTertiaryContainer,
+      );
+    }
+    if (option == _selected) {
+      if (colors.brightness == Brightness.light) {
+        return (
+          background: Colors.red.shade100,
+          foreground: colors.onSecondaryContainer,
+        );
+      }
+      return (
+        background: colors.errorContainer,
+        foreground: colors.onErrorContainer,
+      );
+    }
     return null;
   }
 
-  Future<void> _record(QuizQuestion question, String option) async {
+  Future<void> _record(
+    QuizQuestion question,
+    String? option, {
+    bool reveal = false,
+  }) async {
+    if (_saving || _answered) return;
     final learning = _learning;
     final session = _session;
     if (learning == null || session == null) return;
-    final correct = option == question.correctAnswer;
+    if (_attemptId == null) {
+      _selected = option;
+      _revealed = reveal;
+    }
+    final correct = !_revealed && _selected == question.correctAnswer;
+    _submittedAtUtc ??= DateTime.now().toUtc();
+    _responseTimeMs ??= DateTime.now()
+        .difference(_questionStartedAt ?? DateTime.now())
+        .inMilliseconds;
+    _attemptId ??= 'attempt:${const Uuid().v4()}';
     setState(() {
       _saving = true;
-      _selected = option;
     });
-    final elapsed = DateTime.now().difference(
-      _questionStartedAt ?? DateTime.now(),
-    );
     try {
       await learning.recordAnswer(
         sessionId: session.id,
         wordId: question.word.id,
         promptMode: 'meaningChoice',
         isCorrect: correct,
-        responseTimeMs: elapsed.inMilliseconds,
+        responseTimeMs: _responseTimeMs,
         attemptNumber: _index + 1,
+        attemptId: _attemptId,
+        occurredAtUtc: _submittedAtUtc,
       );
       if (!mounted) return;
-      if (correct) {
-        await HapticFeedback.lightImpact();
-      } else {
-        await HapticFeedback.vibrate();
-      }
       setState(() {
         _answered = true;
         _saving = false;
+        if (!correct) _mistakes.add(question.word);
       });
+      try {
+        if (correct) {
+          await HapticFeedback.lightImpact();
+        } else {
+          await HapticFeedback.vibrate();
+        }
+      } catch (_) {
+        // Device feedback must not turn a committed answer into a retry.
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -183,12 +331,18 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _next() async {
+    if (_saving) return;
     final session = _session!;
     if (_index < session.questions.length - 1) {
       setState(() {
         _index++;
         _answered = false;
         _selected = null;
+        _revealed = false;
+        _hintVisible = false;
+        _attemptId = null;
+        _submittedAtUtc = null;
+        _responseTimeMs = null;
         _questionStartedAt = DateTime.now();
       });
       return;
@@ -201,29 +355,62 @@ class _QuizScreenState extends State<QuizScreen> {
         context,
         AppPage<void>(
           name: 'learning/score',
-          builder: (_) => ScoreScreen(
+          builder: (scoreContext) => ScoreScreen(
             correctAnswers: summary.correctCount,
             wrongAnswers: summary.wrongCount,
             score: summary.score,
+            mistakes: List.unmodifiable(_mistakes),
+            onPracticeMistakes: _mistakes.isEmpty
+                ? null
+                : () => _practiceMistakes(scoreContext),
           ),
         ),
-        replace: true,
       );
+      if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
+        const SnackBar(content: Text('จบรอบการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง')),
       );
+    }
+  }
+
+  Future<void> _practiceMistakes(BuildContext scoreContext) async {
+    if (_practicingMistakes) return;
+    _practicingMistakes = true;
+    try {
+      await AppNavigator.pushPage<void>(
+        scoreContext,
+        AppPage<void>(
+          name: 'learning/mistake-practice',
+          builder: (_) => QuizScreen(
+            wordIds: _mistakes.map((word) => word.id).toSet().toList(),
+            learning: _learning,
+          ),
+        ),
+      );
+      if (scoreContext.mounted) Navigator.of(scoreContext).pop();
+    } finally {
+      _practicingMistakes = false;
     }
   }
 }
 
 class _QuizMessage extends StatelessWidget {
-  const _QuizMessage({required this.icon, required this.message});
+  const _QuizMessage({
+    required this.icon,
+    required this.message,
+    this.liveRegion = false,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final IconData icon;
   final String message;
+  final bool liveRegion;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +422,14 @@ class _QuizMessage extends StatelessWidget {
           children: [
             Icon(icon, size: 48),
             const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
+            Semantics(
+              liveRegion: liveRegion,
+              child: Text(message, textAlign: TextAlign.center),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
           ],
         ),
       ),

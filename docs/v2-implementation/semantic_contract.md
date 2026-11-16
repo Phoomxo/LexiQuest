@@ -4,6 +4,8 @@
 **Status:** FROZEN — binding on all code merged after this date  
 **Scope:** All code in `lib/features/`, `lib/data/`, new `lib/services/` additions
 
+**Amendment 001 (C-COIN-LOCAL-1, authorized 2026-10-20):** [Local coin authority](001-local-coin-authority-amendment.md) supersedes the coin balance/source/writer and same-database downgrade definitions below. It does not change XP/mastery, schema or research contracts.
+
 ---
 
 > **Rule:** Any code that uses a term defined below MUST use the V2 definition.  
@@ -72,23 +74,19 @@ final points = await rewardRepo.getXp(ownerId);
 |-------|-------|
 | **Nature** | Spendable virtual currency |
 | **Purpose** | Buy cosmetic items, avatar accessories, convenience boosts — NOT mastery signals |
-| **Source** | `RewardTransactions` ledger via `RewardUseCases.grantCoins()` with `idempotencyKey` |
+| **Source** | `RewardTransactions`: fixed +1 same-owner correct-attempt credits and local-only legacy carry via provenance-checked materialization; no arbitrary public grant API |
 | **Storage** | `RewardTransactions` table (existing) — this is the **sole** coins authority |
 | **Permitted uses** | Shop purchases, streak freeze purchase, cosmetic unlocks |
 | **FORBIDDEN uses** | Unlocking curriculum content, expressing mastery, substituting for XP |
-| **Authority** | `features/rewards` — `DriftRewardRepository` is sole writer |
-| **Balance** | Computed as `SUM(amount) FROM RewardTransactions WHERE ownerId = ?` |
+| **Authority** | `features/rewards`: repository purchase/equip admission and provenance-bound local materializer; remote sync permits purchase/equip only |
+| **Balance** | `SUM(effectiveAmount)` from the canonical deterministic RewardTransactions fold; raw SUM is audit-only (Amendment001) |
 | **Idempotency** | All coin grants MUST use `idempotencyKey` on `RewardTransactions.unique(ownerId, idempotencyKey)` |
 
 **Example — correct:**
 ```dart
-await rewardUseCases.grantCoins(RewardGrantRequest(
-  ownerId: identity.ownerId,
-  amount: 50,
-  sourceEventId: questEvent.eventId,
-  idempotencyKey: 'quest:${questEvent.eventId}:coins',
-  catalogVersion: currentCatalogVersion,
-));
+final account = await rewardRepository.load(identity.ownerId);
+// Fixed provenance-bound local credits are materialized under Amendment001.
+// Quest eligibility remains shadow-only; callers cannot mint an arbitrary amount.
 ```
 
 ---

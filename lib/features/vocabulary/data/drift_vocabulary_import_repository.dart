@@ -44,22 +44,22 @@ final class DriftVocabularyImportRepository
         throw StateError('active import category was not found');
       }
 
-      final existingWords =
+      final storedWords =
           await (database.select(database.vocabularyWords)..where(
                 (row) =>
                     row.ownerId.equals(import.ownerId) &
-                    row.categoryId.equals(import.categoryId) &
-                    row.isDeleted.equals(false),
+                    row.categoryId.equals(import.categoryId),
               ))
               .get();
-      final naturalKeys = existingWords
+      final naturalKeys = storedWords
           .map(
             (word) =>
                 '${word.normalizedSpelling}\u001f${word.normalizedMeaning}',
           )
           .toSet();
       var available =
-          DriftVocabularyRepository.categoryWordLimit - existingWords.length;
+          DriftVocabularyRepository.categoryWordLimit -
+          storedWords.where((word) => !word.isDeleted).length;
       var accepted = 0;
       var duplicates = 0;
       final rejected = <VocabularyImportRowFailure>[];

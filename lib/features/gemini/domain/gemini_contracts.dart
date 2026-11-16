@@ -1,5 +1,7 @@
 import 'dart:async';
 
+enum GeminiTutorMode { guided, direct }
+
 enum GeminiFailureCode {
   missingKey,
   consentRequired,
@@ -50,6 +52,42 @@ final class GeminiSettingsStatus {
   final bool shareLearningSummary;
 }
 
+final class GeminiScope {
+  const GeminiScope({
+    required this.ownerId,
+    required this.firebaseUid,
+    required this.isAnonymous,
+  });
+  final String ownerId;
+  final String? firebaseUid;
+  final bool isAnonymous;
+
+  @override
+  bool operator ==(Object other) =>
+      other is GeminiScope &&
+      ownerId == other.ownerId &&
+      firebaseUid == other.firebaseUid &&
+      isAnonymous == other.isAnonymous;
+  @override
+  int get hashCode => Object.hash(ownerId, firebaseUid, isAnonymous);
+}
+
+final class GeminiConfiguration {
+  const GeminiConfiguration({
+    this.key,
+    this.providerConsent = false,
+    this.shareLearningSummary = false,
+  });
+  final String? key;
+  final bool providerConsent;
+  final bool shareLearningSummary;
+  GeminiSettingsStatus get status => GeminiSettingsStatus(
+    hasKey: key?.trim().isNotEmpty == true,
+    providerConsent: providerConsent,
+    shareLearningSummary: providerConsent && shareLearningSummary,
+  );
+}
+
 final class GeminiTutorReply {
   const GeminiTutorReply({
     required this.text,
@@ -63,13 +101,8 @@ final class GeminiTutorReply {
 }
 
 abstract interface class GeminiSettingsStore {
-  Future<String?> readKey();
-  Future<void> writeKey(String key);
-  Future<void> deleteKey();
-  Future<bool> readProviderConsent();
-  Future<void> writeProviderConsent(bool value);
-  Future<bool> readLearningSummaryConsent();
-  Future<void> writeLearningSummaryConsent(bool value);
+  Future<GeminiConfiguration> read(GeminiScope scope);
+  Future<void> write(GeminiScope scope, GeminiConfiguration configuration);
 }
 
 abstract interface class GeminiGateway {
@@ -81,12 +114,16 @@ abstract interface class GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    GeminiTutorMode mode = GeminiTutorMode.guided,
     String? learningSummary,
     GeminiCancellation? cancellation,
   });
 }
 
 abstract interface class GeminiTutorController {
+  GeminiScope? get scope;
+  int get epoch;
+  Stream<int> get invalidations;
   Future<GeminiSettingsStatus> loadSettings();
 
   Future<void> configure({
@@ -106,6 +143,7 @@ abstract interface class GeminiTutorController {
   Future<GeminiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
+    GeminiTutorMode mode = GeminiTutorMode.guided,
     GeminiCancellation? cancellation,
   });
 

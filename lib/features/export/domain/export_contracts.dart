@@ -7,13 +7,19 @@ final class ExportSelection {
     required this.includeVocabulary,
     required this.includeAttempts,
     required this.includeReading,
+    this.includeRewards = false,
   });
 
   final bool includeVocabulary;
   final bool includeAttempts;
   final bool includeReading;
+  final bool includeRewards;
 
-  bool get isEmpty => !includeVocabulary && !includeAttempts && !includeReading;
+  bool get isEmpty =>
+      !includeVocabulary &&
+      !includeAttempts &&
+      !includeReading &&
+      !includeRewards;
 }
 
 final class ExportArtifact {
@@ -79,9 +85,12 @@ final class ExportCancellation {
   }
 }
 
+typedef ExportWriteRevalidator = Future<void> Function();
+
 abstract interface class ExportArtifactStore {
   Future<ExportSaveResult> save(
     ExportArtifact artifact, {
     required ExportCancellation cancellation,
+    required ExportWriteRevalidator revalidateBeforeWrite,
   });
 }

@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
+import '../widgets/adaptive_content_pane.dart';
+import '../navigation/app_routes.dart';
+import 'device_permission_center_screen.dart';
 
 class ShadowingChallengeScreen extends StatefulWidget {
   const ShadowingChallengeScreen({
@@ -40,6 +44,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   Future<void>? _learningLoad;
   bool _evidenceSaved = false;
   bool _listening = false;
+  bool _starting = false;
+  int _speechEpoch = 0;
   String _transcript = '';
   String? _error;
   TranscriptPronunciationAssessment? _assessment;
@@ -112,6 +118,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
+    if (_starting) return;
     if (_listening) {
       await _speech?.stop();
       if (mounted) setState(() => _listening = false);
@@ -122,7 +129,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งาน');
       return;
     }
+    final epoch = ++_speechEpoch;
     setState(() {
+      _starting = true;
       _error = null;
       _transcript = '';
       _assessment = null;
@@ -131,10 +140,20 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       await speech.start(
         locale: 'en-US',
         onEvent: (event) {
-          if (!mounted) return;
+          if (!mounted || epoch != _speechEpoch) return;
           final reference = _referenceSentence;
           if (reference == null) return;
-          final assessment = speech.assess(target: reference, event: event);
+          late final TranscriptPronunciationAssessment assessment;
+          try {
+            assessment = speech.assess(target: reference, event: event);
+          } on SpeechPracticeException catch (error) {
+            setState(() {
+              _listening = false;
+              _assessment = null;
+              _error = _failureText(error.code);
+            });
+            return;
+          }
           setState(() {
             _transcript = event.transcript;
             _assessment = assessment;
@@ -145,19 +164,28 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           }
         },
         onFailure: (failure) {
-          if (!mounted) return;
+          if (!mounted || epoch != _speechEpoch) return;
           setState(() {
             _listening = false;
+            _assessment = null;
             _error = _failureText(failure);
           });
         },
         onStatus: (status) {
-          if (mounted) setState(() => _listening = status == 'listening');
+          if (mounted && epoch == _speechEpoch) {
+            setState(() => _listening = status == 'listening');
+          }
         },
       );
-      if (mounted) setState(() => _listening = speech.isListening);
+      if (mounted && epoch == _speechEpoch) {
+        setState(() => _listening = speech.isListening);
+      }
     } on SpeechPracticeException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (mounted && epoch == _speechEpoch) {
+        setState(() => _error = _failureText(error.code));
+      }
+    } finally {
+      if (mounted && epoch == _speechEpoch) setState(() => _starting = false);
     }
   }
 
@@ -206,12 +234,19 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _cancelForLifecycle() async {
+    _speechEpoch += 1;
+    if (mounted) {
+      setState(() {
+        _starting = false;
+        _listening = false;
+      });
+    }
     await _speech?.cancel();
-    if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
+    _speechEpoch += 1;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());
     unawaited(_voice.stop());
@@ -224,71 +259,115 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final assessment = _assessment;
     final reference = _referenceSentence;
     return Scaffold(
-      appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            if (reference == null && _error == null)
-              const Center(child: CircularProgressIndicator())
-            else if (reference != null)
-              Text(reference, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              key: const ValueKey<String>('shadowing-play-reference'),
-              onPressed: reference == null ? null : _playReference,
-              icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey<String>('shadowing-listen-button'),
-              onPressed: reference == null ? null : _toggleListening,
-              icon: Icon(_listening ? Icons.stop : Icons.mic),
-              label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
-            ),
-            if (_transcript.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('ข้อความที่ได้ยิน: $_transcript'),
-                      if (assessment != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'ความเหมือนของข้อความ: '
-                          '${assessment.similarityPercent}%',
-                        ),
-                        const Text(
-                          'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
-                        ),
-                        Text(
-                          'เอนจิน: ${assessment.engine} '
-                          '(${assessment.locale})',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
-                          'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
-                        ),
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'ฝึกพูดตามเสียง'),
+      ),
+      body: AdaptiveContentPane(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              if (reference == null && _error == null)
+                const Center(
+                  child: CircularProgressIndicator(
+                    semanticsLabel: 'กำลังเตรียมคำศัพท์สำหรับฝึกพูด',
+                  ),
+                )
+              else if (reference != null)
+                Text(
+                  reference,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                key: const ValueKey<String>('shadowing-play-reference'),
+                onPressed: reference == null ? null : _playReference,
+                icon: const Icon(Icons.volume_up_outlined),
+                label: const Text('ฟังเสียงต้นแบบ (ความเร็วปกติ)'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const ValueKey<String>('shadowing-listen-button'),
+                onPressed: reference == null || _starting
+                    ? null
+                    : _toggleListening,
+                icon: Icon(_listening ? Icons.stop : Icons.mic),
+                label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
+              ),
+              if (_transcript.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ข้อความที่ได้ยิน: $_transcript'),
+                        if (assessment != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'ความเหมือนของข้อความ: '
+                            '${assessment.similarityPercent}%',
+                          ),
+                          const Text(
+                            'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80%',
+                          ),
+                          Text(
+                            'ใช้ระบบรู้จำเสียงของอุปกรณ์ · '
+                            'ภาษาอังกฤษ (สหรัฐฯ)',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'รอบนี้ประเมินจากข้อความที่ระบบฟังได้เท่านั้น '
+                            'ยังไม่ได้วัดระดับเสียงหรือหน่วยเสียง',
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    key: const ValueKey<String>('shadowing-error'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+                if (_error ==
+                    _failureText(
+                      SpeechFailureCode.permissionPermanentlyDenied,
+                    )) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => AppNavigator.pushPage<void>(
+                      context,
+                      AppPage<void>(
+                        name: 'settings/device-permissions',
+                        builder: (_) => const DevicePermissionCenterScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.settings_outlined),
+                    label: const Text('เปิดศูนย์สิทธิ์อุปกรณ์'),
+                  ),
+                ],
+                if (reference == null) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => Navigator.maybePop(context),
+                    child: const Text('กลับไปเลือกกิจกรรม'),
+                  ),
+                ],
+              ],
             ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

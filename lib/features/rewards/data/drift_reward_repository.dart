@@ -15,31 +15,26 @@ final class DriftRewardRepository {
   Future<void> _writeGate = Future<void>.value();
 
   Future<RewardAccount> load(String ownerId) async {
-    final balanceExpression = database.pointsLedgerEntries.amount.sum();
-    final balanceRow =
-        await (database.selectOnly(database.pointsLedgerEntries)
-              ..addColumns([balanceExpression])
-              ..where(database.pointsLedgerEntries.ownerId.equals(ownerId)))
-            .getSingle();
-    final ownedRows = await (database.select(
-      database.ownedRewardItems,
-    )..where((row) => row.ownerId.equals(ownerId))).get();
-    final equippedRows = await (database.select(
-      database.equippedRewardItems,
-    )..where((row) => row.ownerId.equals(ownerId))).get();
-    final transactionCountExpression = database.rewardTransactions.id.count();
-    final transactionRow =
-        await (database.selectOnly(database.rewardTransactions)
-              ..addColumns([transactionCountExpression])
-              ..where(database.rewardTransactions.ownerId.equals(ownerId)))
-            .getSingle();
-    return RewardAccount(
-      balance: balanceRow.read(balanceExpression) ?? 0,
-      catalogVersion: RewardCatalog.version,
-      ownedItemIds: ownedRows.map((row) => row.itemId).toSet(),
-      equippedBySlot: {for (final row in equippedRows) row.slot: row.itemId},
-      transactionCount: transactionRow.read(transactionCountExpression) ?? 0,
-    );
+    return (await projections.readLedger(ownerId)).account;
+  }
+
+  Stream<RewardAppearance> watchAppearance() {
+    final query = database.select(database.localOwners).join([
+      leftOuterJoin(
+        database.equippedRewardItems,
+        database.equippedRewardItems.ownerId.equalsExp(database.localOwners.id),
+      ),
+    ])..where(database.localOwners.isActive.equals(true));
+    return query.watch().map((rows) {
+      if (rows.isEmpty) return const RewardAppearance.empty();
+      final ownerId = rows.first.readTable(database.localOwners).id;
+      final equipped = <String, String>{};
+      for (final row in rows) {
+        final item = row.readTableOrNull(database.equippedRewardItems);
+        if (item != null) equipped[item.slot] = item.itemId;
+      }
+      return RewardAppearance(ownerId: ownerId, equippedBySlot: equipped);
+    });
   }
 
   Future<PurchaseResult> purchase({
@@ -51,6 +46,7 @@ final class DriftRewardRepository {
   }) {
     return _serialized(
       () => database.transaction(() async {
+        _validateItem(item, occurredAtUtc);
         final replay =
             await (database.select(database.rewardTransactions)..where(
                   (row) =>
@@ -59,7 +55,8 @@ final class DriftRewardRepository {
                 ))
                 .getSingleOrNull();
         if (replay != null) {
-          if (replay.itemId != item.id ||
+          if (replay.transactionType != 'purchase' ||
+              replay.itemId != item.id ||
               replay.amount != -item.price ||
               replay.catalogVersion != item.catalogVersion) {
             throw const RewardException(
@@ -71,19 +68,13 @@ final class DriftRewardRepository {
             account: await load(ownerId),
           );
         }
-        final owned =
-            await (database.select(database.ownedRewardItems)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) & row.itemId.equals(item.id),
-                ))
-                .getSingleOrNull();
-        if (owned != null) {
+        final account = await load(ownerId);
+        if (account.ownedItemIds.contains(item.id)) {
           return PurchaseResult(
             status: PurchaseStatus.alreadyOwned,
             account: await load(ownerId),
           );
         }
-        final account = await load(ownerId);
         if (account.balance < item.price) {
           throw const RewardException(RewardFailureCode.insufficientBalance);
         }
@@ -116,25 +107,48 @@ final class DriftRewardRepository {
     );
   }
 
-  Future<RewardAccount> equip({
+  Future<EquipResult> equip({
     required String ownerId,
     required RewardCatalogItem item,
+    required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
   }) {
     return _serialized(
       () => database.transaction(() async {
+        _validateItem(item, occurredAtUtc);
+        final replay =
+            await (database.select(database.rewardTransactions)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.idempotencyKey.equals(idempotencyKey),
+                ))
+                .getSingleOrNull();
+        if (replay != null) {
+          if (replay.transactionType != 'equip' ||
+              replay.itemId != item.id ||
+              replay.amount != 0 ||
+              replay.catalogVersion != item.catalogVersion) {
+            throw const RewardException(
+              RewardFailureCode.invalidIdempotencyKey,
+            );
+          }
+          return EquipResult(
+            status: EquipStatus.replayed,
+            account: await load(ownerId),
+          );
+        }
+        final account = await load(ownerId);
         if (item.price > 0) {
-          final owned =
-              await (database.select(database.ownedRewardItems)..where(
-                    (row) =>
-                        row.ownerId.equals(ownerId) &
-                        row.itemId.equals(item.id),
-                  ))
-                  .getSingleOrNull();
-          if (owned == null) {
+          if (!account.ownedItemIds.contains(item.id)) {
             throw const RewardException(RewardFailureCode.notOwned);
           }
+        }
+        if (account.equippedBySlot[item.slot] == item.id) {
+          return EquipResult(
+            status: EquipStatus.alreadyEquipped,
+            account: account,
+          );
         }
         final epoch = occurredAtUtc.millisecondsSinceEpoch;
         await database
@@ -143,7 +157,7 @@ final class DriftRewardRepository {
               RewardTransactionsCompanion.insert(
                 id: transactionId,
                 ownerId: ownerId,
-                idempotencyKey: 'equip:$transactionId',
+                idempotencyKey: idempotencyKey,
                 transactionType: 'equip',
                 amount: 0,
                 itemId: Value(item.id),
@@ -157,9 +171,25 @@ final class DriftRewardRepository {
           occurredAtUtcMs: epoch,
         );
         await projections.rebuild(ownerId);
-        return load(ownerId);
+        return EquipResult(
+          status: EquipStatus.equipped,
+          account: await load(ownerId),
+        );
       }),
     );
+  }
+
+  void _validateItem(RewardCatalogItem item, DateTime occurredAtUtc) {
+    final canonical = RewardCatalog.byId(item.id);
+    if (canonical == null ||
+        canonical.price != item.price ||
+        canonical.catalogVersion != item.catalogVersion ||
+        canonical.slot != item.slot) {
+      throw const RewardException(RewardFailureCode.staleCatalog);
+    }
+    if (!occurredAtUtc.isUtc || occurredAtUtc.millisecondsSinceEpoch < 0) {
+      throw ArgumentError('reward time must be nonnegative UTC');
+    }
   }
 
   Future<void> _insertOutbox({

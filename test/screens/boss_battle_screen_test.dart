@@ -20,12 +20,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Vocab Titan'), findsOneWidget);
-    expect(find.text('HP: 100 / 100'), findsOneWidget);
+    expect(find.text('พลัง: 100 / 100'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'ephemeral');
     await tester.tap(find.text('โจมตีบอส!'));
     await tester.pumpAndSettle();
 
-    expect(find.text('HP: 65 / 100'), findsOneWidget);
+    expect(find.text('พลัง: 65 / 100'), findsOneWidget);
   });
 }

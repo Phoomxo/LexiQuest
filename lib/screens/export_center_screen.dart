@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/export/domain/export_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/adaptive_content_pane.dart';
 
 class ExportCenterScreen extends StatefulWidget {
   const ExportCenterScreen({super.key, this.exports});
@@ -19,6 +20,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   bool _vocabulary = true;
   bool _attempts = true;
   bool _reading = true;
+  bool _rewards = false;
   bool _busy = false;
   ExportCancellation? _cancellation;
   String? _status;
@@ -46,6 +48,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
           includeVocabulary: _vocabulary,
           includeAttempts: _attempts,
           includeReading: _reading,
+          includeRewards: _rewards,
         ),
         cancellation: cancellation,
       );
@@ -81,95 +84,139 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ส่งออกข้อมูล')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'เลือกรูปแบบไฟล์',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          SegmentedButton<ExportFormat>(
-            segments: const [
-              ButtonSegment(value: ExportFormat.csv, label: Text('CSV')),
-              ButtonSegment(value: ExportFormat.pdf, label: Text('PDF')),
-              ButtonSegment(value: ExportFormat.anki, label: Text('Anki')),
-              ButtonSegment(
-                value: ExportFormat.researchJson,
-                label: Text('Research'),
-              ),
-            ],
-            selected: {_format},
-            onSelectionChanged: _busy
-                ? null
-                : (selection) => setState(() => _format = selection.single),
-          ),
-          const SizedBox(height: 20),
-          Text('เลือกข้อมูล', style: Theme.of(context).textTheme.titleMedium),
-          CheckboxListTile(
-            value: _vocabulary,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _vocabulary = value ?? false),
-            title: const Text('คลังคำศัพท์'),
-            subtitle: const Text('คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา'),
-          ),
-          CheckboxListTile(
-            value: _attempts,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _attempts = value ?? false),
-            title: const Text('ประวัติคำตอบ'),
-            subtitle: const Text('ผลตอบ เวลาตอบ โหมด และ provenance'),
-          ),
-          CheckboxListTile(
-            value: _reading,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _reading = value ?? false),
-            title: const Text('ประวัติการอ่าน'),
-            subtitle: const Text('ตำแหน่ง เอกสาร revision และสถานะอ่านจบ'),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'ไฟล์ระบุ sample size, UTC, schema version, algorithm version '
-            'และรายการข้อมูลที่ไม่รวม โดยไม่ส่งออก API key หรือ token',
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 48,
-            child: _busy
-                ? OutlinedButton.icon(
-                    onPressed: _cancel,
-                    icon: const Icon(Icons.cancel_outlined),
-                    label: const Text('ยกเลิก'),
-                  )
-                : FilledButton.icon(
-                    onPressed: _export,
-                    icon: const Icon(Icons.save_alt_outlined),
-                    label: const Text('สร้างและบันทึกไฟล์'),
+      body: AdaptiveContentPane(
+        maxWidth: AdaptiveContentPane.proseMaxWidth,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'เลือกรูปแบบไฟล์',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final largeText =
+                    MediaQuery.textScalerOf(context).scale(1) > 1.5;
+                return SegmentedButton<ExportFormat>(
+                  segments: const [
+                    ButtonSegment(value: ExportFormat.csv, label: Text('CSV')),
+                    ButtonSegment(value: ExportFormat.pdf, label: Text('PDF')),
+                    ButtonSegment(
+                      value: ExportFormat.anki,
+                      label: Text('Anki'),
+                    ),
+                    ButtonSegment(
+                      value: ExportFormat.researchJson,
+                      label: Text('งานวิจัย'),
+                    ),
+                  ],
+                  selected: {_format},
+                  direction: constraints.maxWidth < 480 && largeText
+                      ? Axis.vertical
+                      : Axis.horizontal,
+                  style: const ButtonStyle(
+                    minimumSize: WidgetStatePropertyAll(Size(48, 48)),
                   ),
-          ),
-          if (_status != null) ...[
-            const SizedBox(height: 16),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                _status!,
-                key: const ValueKey<String>('export-status'),
+                  onSelectionChanged: _busy
+                      ? null
+                      : (selection) {
+                          final format = selection.single;
+                          setState(() {
+                            _format = format;
+                            if (format == ExportFormat.anki ||
+                                format == ExportFormat.researchJson) {
+                              _rewards = false;
+                            }
+                          });
+                        },
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            Text('เลือกข้อมูล', style: Theme.of(context).textTheme.titleMedium),
+            CheckboxListTile(
+              value: _vocabulary,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _vocabulary = value ?? false),
+              title: const Text('คลังคำศัพท์'),
+              subtitle: const Text('คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา'),
+            ),
+            CheckboxListTile(
+              value: _attempts,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _attempts = value ?? false),
+              title: const Text('ประวัติคำตอบ'),
+              subtitle: const Text(
+                'คำตอบ เวลาตอบ รูปแบบการฝึก และแหล่งที่มาของผล',
               ),
             ),
+            CheckboxListTile(
+              value: _reading,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _reading = value ?? false),
+              title: const Text('ประวัติการอ่าน'),
+              subtitle: const Text('ตำแหน่ง รุ่นเอกสาร และสถานะอ่านจบ'),
+            ),
+            if (_format == ExportFormat.csv || _format == ExportFormat.pdf)
+              CheckboxListTile(
+                key: const ValueKey<String>('export-rewards'),
+                value: _rewards,
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _rewards = value ?? false),
+                title: const Text('เหรียญและของตกแต่งส่วนตัว'),
+                subtitle: const Text(
+                  'ประวัติการได้รับและใช้เหรียญ พร้อมของตกแต่ง '
+                  'ใช้ได้เฉพาะ CSV/PDF',
+                ),
+              ),
+            const SizedBox(height: 12),
+            const Text(
+              'ไฟล์ระบุจำนวนข้อมูล วันที่และเวลา รุ่นโครงสร้างข้อมูล '
+              'รุ่นวิธีคำนวณ และรายการข้อมูลที่ไม่รวม '
+              'โดยไม่ส่งออกรหัสลับ',
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: _busy
+                  ? OutlinedButton.icon(
+                      onPressed: _cancel,
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('ยกเลิก'),
+                    )
+                  : FilledButton.icon(
+                      key: const ValueKey<String>('export-create'),
+                      onPressed: _export,
+                      icon: const Icon(Icons.save_alt_outlined),
+                      label: const Text('สร้างและบันทึกไฟล์'),
+                    ),
+            ),
+            if (_status != null) ...[
+              const SizedBox(height: 16),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _status!,
+                  key: const ValueKey<String>('export-status'),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
   String _failureText(ExportFailureCode code) => switch (code) {
     ExportFailureCode.noSelection => 'กรุณาเลือกข้อมูลอย่างน้อยหนึ่งประเภท',
-    ExportFailureCode.noData => 'ไม่มีข้อมูลจริงสำหรับรูปแบบที่เลือก (N=0)',
+    ExportFailureCode.noData => 'ยังไม่มีข้อมูลสำหรับรูปแบบที่เลือก',
     ExportFailureCode.consentRequired =>
-      'ต้องยินยอมเข้าร่วมการทดลองก่อนส่งออกชุดข้อมูลวิจัย',
+      'รูปแบบงานวิจัยใช้ได้เฉพาะเมื่อมีความยินยอมงานวิจัยที่ยังมีผล',
     ExportFailureCode.cancelled => 'ยกเลิกการส่งออกแล้ว',
     ExportFailureCode.permissionDenied => 'ไม่มีสิทธิ์เขียนไฟล์ไปยังตำแหน่งนี้',
     ExportFailureCode.insufficientSpace => 'พื้นที่จัดเก็บไม่เพียงพอ',

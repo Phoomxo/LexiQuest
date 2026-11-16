@@ -6,15 +6,17 @@ import 'package:path_provider/path_provider.dart';
 
 import '../domain/export_contracts.dart';
 
-typedef AndroidExportSaver = Future<String?> Function(ExportArtifact artifact);
+typedef _AndroidExportDestination = ({
+  String destination,
+  String selectionToken,
+});
 
 final class FileSelectorExportStore implements ExportArtifactStore {
-  const FileSelectorExportStore({this.isAndroid, this.androidSaver});
+  const FileSelectorExportStore({this.isAndroid});
 
   static const _androidChannel = MethodChannel('com.lexiquest.app/export');
 
   final bool? isAndroid;
-  final AndroidExportSaver? androidSaver;
 
   bool get _usesAndroidDocumentPicker => isAndroid ?? Platform.isAndroid;
 
@@ -22,10 +24,11 @@ final class FileSelectorExportStore implements ExportArtifactStore {
   Future<ExportSaveResult> save(
     ExportArtifact artifact, {
     required ExportCancellation cancellation,
+    required ExportWriteRevalidator revalidateBeforeWrite,
   }) async {
     cancellation.throwIfCancelled();
     if (_usesAndroidDocumentPicker) {
-      return _saveOnAndroid(artifact, cancellation);
+      return _saveOnAndroid(artifact, cancellation, revalidateBeforeWrite);
     }
     final location = await getSaveLocation(
       suggestedName: artifact.suggestedFileName,
@@ -41,6 +44,8 @@ final class FileSelectorExportStore implements ExportArtifactStore {
       throw const ExportException(ExportFailureCode.cancelled);
     }
     cancellation.throwIfCancelled();
+    await revalidateBeforeWrite();
+    cancellation.throwIfCancelled();
     Directory? stagingDirectory;
     File? partial;
     try {
@@ -52,11 +57,13 @@ final class FileSelectorExportStore implements ExportArtifactStore {
       if (await partial.exists()) await partial.delete();
       await partial.writeAsBytes(artifact.bytes, flush: true);
       cancellation.throwIfCancelled();
+      await revalidateBeforeWrite();
+      cancellation.throwIfCancelled();
       await XFile(
         partial.path,
         mimeType: artifact.mimeType,
       ).saveTo(location.path);
-      cancellation.throwIfCancelled();
+      // shortcut: external writes cannot roll back; upgrade with transactional stores.
       return ExportSaveResult(
         path: location.path,
         bytesWritten: artifact.bytes.length,
@@ -84,17 +91,25 @@ final class FileSelectorExportStore implements ExportArtifactStore {
   Future<ExportSaveResult> _saveOnAndroid(
     ExportArtifact artifact,
     ExportCancellation cancellation,
+    ExportWriteRevalidator revalidateBeforeWrite,
   ) async {
     try {
-      final location = await (androidSaver ?? _saveWithAndroidDocumentPicker)(
-        artifact,
-      );
+      final location = await _selectAndroidDestination(artifact);
       if (location == null) {
         throw const ExportException(ExportFailureCode.cancelled);
       }
-      cancellation.throwIfCancelled();
+      try {
+        cancellation.throwIfCancelled();
+        await revalidateBeforeWrite();
+        cancellation.throwIfCancelled();
+      } catch (_) {
+        await _discardAndroidDestination(location);
+        rethrow;
+      }
+      await _writeAndroidDestination(location, artifact);
+      // shortcut: external writes cannot roll back; upgrade with transactional stores.
       return ExportSaveResult(
-        path: location,
+        path: location.destination,
         bytesWritten: artifact.bytes.length,
       );
     } on ExportException {
@@ -112,12 +127,56 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     }
   }
 
-  Future<String?> _saveWithAndroidDocumentPicker(ExportArtifact artifact) {
-    return _androidChannel.invokeMethod<String>('saveExportFile', {
-      'suggestedName': artifact.suggestedFileName,
-      'mimeType': artifact.mimeType,
+  Future<_AndroidExportDestination?> _selectAndroidDestination(
+    ExportArtifact artifact,
+  ) async {
+    final response = await _androidChannel.invokeMethod<Object?>(
+      'selectExportDestination',
+      {
+        'suggestedName': artifact.suggestedFileName,
+        'mimeType': artifact.mimeType,
+      },
+    );
+    if (response == null) return null;
+    if (response is! Map) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
+    final destination = response['destination'];
+    final selectionToken = response['selectionToken'];
+    if (destination is! String ||
+        destination.trim().isEmpty ||
+        selectionToken is! String ||
+        selectionToken.trim().isEmpty) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
+    return (
+      destination: destination.trim(),
+      selectionToken: selectionToken.trim(),
+    );
+  }
+
+  Future<void> _writeAndroidDestination(
+    _AndroidExportDestination location,
+    ExportArtifact artifact,
+  ) {
+    return _androidChannel.invokeMethod<void>('writeExportFile', {
+      'destination': location.destination,
+      'selectionToken': location.selectionToken,
       'bytes': artifact.bytes,
     });
+  }
+
+  Future<void> _discardAndroidDestination(
+    _AndroidExportDestination location,
+  ) async {
+    try {
+      await _androidChannel.invokeMethod<void>('discardExportDestination', {
+        'destination': location.destination,
+        'selectionToken': location.selectionToken,
+      });
+    } on PlatformException {
+      // The next picker invalidates any stale destination in native state.
+    }
   }
 
   String _extension(String fileName) => fileName.split('.').last;

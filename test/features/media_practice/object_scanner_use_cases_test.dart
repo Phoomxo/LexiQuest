@@ -46,6 +46,51 @@ void main() {
   });
 
   test(
+    'rejects camera initialization that completes without readiness',
+    () async {
+      final camera = _FakeCamera()..completeWithoutReadiness = true;
+      final scanner = ObjectScannerUseCases(
+        camera: camera,
+        deviceModels: _unavailableDeviceModels(),
+        vocabulary: _throwingVocabulary(),
+        preprocessor: _FakePreprocessor(),
+      );
+
+      await expectLater(
+        scanner.initialize(),
+        throwsA(
+          isA<CameraPracticeException>().having(
+            (error) => error.code,
+            'code',
+            CameraFailureCode.initializationFailed,
+          ),
+        ),
+      );
+    },
+  );
+
+  test('rejects camera resume that completes without readiness', () async {
+    final camera = _FakeCamera()..completeWithoutReadiness = true;
+    final scanner = ObjectScannerUseCases(
+      camera: camera,
+      deviceModels: _unavailableDeviceModels(),
+      vocabulary: _throwingVocabulary(),
+      preprocessor: _FakePreprocessor(),
+    );
+
+    await expectLater(
+      scanner.resume(),
+      throwsA(
+        isA<CameraPracticeException>().having(
+          (error) => error.code,
+          'code',
+          CameraFailureCode.initializationFailed,
+        ),
+      ),
+    );
+  });
+
+  test(
     'classifies captured bytes and persists accepted word locally',
     () async {
       final directory = await Directory.systemTemp.createTemp(
@@ -275,6 +320,7 @@ VocabularyUseCases _throwingVocabulary() => VocabularyUseCases(
 
 final class _FakeCamera implements CameraGateway {
   MediaPermissionState permission = MediaPermissionState.granted;
+  bool completeWithoutReadiness = false;
   int initializeCalls = 0;
   @override
   bool isInitialized = false;
@@ -297,7 +343,7 @@ final class _FakeCamera implements CameraGateway {
   @override
   Future<void> initialize() async {
     initializeCalls += 1;
-    isInitialized = true;
+    isInitialized = !completeWithoutReadiness;
   }
 
   @override

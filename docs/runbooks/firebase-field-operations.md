@@ -36,15 +36,28 @@ evidence package; do not commit participant identifiers.
 
 ## Android App Link
 
-The manifest accepts:
+The manifest accepts Firebase Hosting email-action links at:
 
-`https://vocab-learning-app-219ef.firebaseapp.com/auth/action`
+`https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links`
+
+Firebase may deliver this path as a wrapper whose `link` parameter contains
+the percent-encoded Firebase action handler at
+`https://vocab-learning-app-219ef.firebaseapp.com/__/auth/action`. The app
+decodes that parameter once, then requires HTTPS, the exact project host, and
+the exact handler path. A legacy flattened wrapper with `mode` and `oobCode`
+on `/__/auth/links` remains supported.
+
+`/auth/action` remains the state/continue URL supplied through
+`ActionCodeSettings`. Only the app's relative internal route may use that
+path directly. An absolute action or continue URL must use HTTPS and the exact
+project host; untrusted hosts, user-info host confusion, alternate paths,
+double encoding, duplicate action codes, and open redirects fail closed.
 
 After release signing, publish `/.well-known/assetlinks.json` on that host with
 the exact release certificate SHA-256 and package `com.lexiquest.app`. Confirm
 with Android `pm verify-app-links` and a real Firebase verification/reset email.
-The action screen accepts only `oobCode` plus the supported Firebase `mode`;
-invalid or expired codes fail closed.
+The deterministic accepted/rejected contract lives in
+`test/fixtures/email_action_links.json`. Invalid or expired codes fail closed.
 
 ## Cost boundary
 

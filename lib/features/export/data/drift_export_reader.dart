@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../rewards/domain/reward_ledger.dart';
 
 final class ExportVocabularyRow {
   const ExportVocabularyRow({
@@ -67,25 +69,43 @@ final class ExportDataSet {
     required this.vocabulary,
     required this.attempts,
     required this.reading,
+    this.rewards,
   });
 
   final List<ExportVocabularyRow> vocabulary;
   final List<ExportAttemptRow> attempts;
   final List<ExportReadingRow> reading;
+  final RewardLedger? rewards;
 
-  int get recordCount => vocabulary.length + attempts.length + reading.length;
+  int get recordCount =>
+      vocabulary.length +
+      attempts.length +
+      reading.length +
+      (rewards?.effects.length ?? 0);
 }
 
-final class DriftExportReader {
-  const DriftExportReader(this.database);
-
-  final AppDatabase database;
-
+abstract interface class ExportReader {
   Future<ExportDataSet> load({
     required String ownerId,
     required bool vocabulary,
     required bool attempts,
     required bool reading,
+    bool rewards = false,
+  });
+}
+
+final class DriftExportReader implements ExportReader {
+  const DriftExportReader(this.database);
+
+  final AppDatabase database;
+
+  @override
+  Future<ExportDataSet> load({
+    required String ownerId,
+    required bool vocabulary,
+    required bool attempts,
+    required bool reading,
+    bool rewards = false,
   }) async {
     final vocabularyRows = vocabulary
         ? await database
@@ -135,6 +155,9 @@ final class DriftExportReader {
               .get()
         : const <ReadingProgressEntry>[];
     return ExportDataSet(
+      rewards: rewards
+          ? await DriftRewardProjectionRebuilder(database).readLedger(ownerId)
+          : null,
       vocabulary: vocabularyRows
           .map(
             (row) => ExportVocabularyRow(

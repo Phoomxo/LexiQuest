@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_benchmark.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
@@ -41,7 +42,8 @@ void main() {
 
     expect(find.text('apple'), findsOneWidget);
     expect(find.textContaining('91.0%'), findsOneWidget);
-    expect(find.textContaining('model-v1'), findsOneWidget);
+    expect(find.text('ผลจากโมเดลสแกนวัตถุในอุปกรณ์'), findsOneWidget);
+    expect(find.textContaining('model-v1'), findsNothing);
 
     await tester.tap(find.text('เพิ่มเข้าคลัง'));
     await tester.pumpAndSettle();
@@ -71,6 +73,16 @@ void main() {
 
     expect(find.textContaining('สิทธิ์กล้องถูกปิดถาวร'), findsOneWidget);
     expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('object-scanner-error')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.liveRegion == true,
+        ),
+      ),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
       tester
           .widget<FilledButton>(
             find.widgetWithText(FilledButton, 'ถ่ายภาพและวิเคราะห์'),
@@ -78,6 +90,39 @@ void main() {
           .onPressed,
       isNull,
     );
+    expect(find.text('เปิดศูนย์สิทธิ์อุปกรณ์'), findsOneWidget);
+  });
+
+  testWidgets('retries one transient camera initialization failure', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()
+      ..initializeFailure = const CameraPracticeException(
+        CameraFailureCode.initializationFailed,
+      );
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('object-scanner-retry-camera')),
+      200,
+    );
+    expect(find.text('ลองเปิดกล้องอีกครั้ง'), findsOneWidget);
+
+    scanner.initializeFailure = null;
+    await tester.tap(find.text('ลองเปิดกล้องอีกครั้ง'));
+    await tester.pumpAndSettle();
+
+    expect(scanner.initializeCalls, 2);
+    expect(scanner.isReady, isTrue);
   });
 
   testWidgets('clears stale result before a failed new capture', (
@@ -186,8 +231,102 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(scanner.benchmarkCalls, 1);
-    expect(find.textContaining('CPU n=10'), findsOneWidget);
-    expect(find.textContaining('XNNPACK n=10'), findsOneWidget);
+    expect(find.textContaining('โหมดมาตรฐาน · ทดสอบ 10 ครั้ง'), findsOneWidget);
+    expect(
+      find.textContaining('โหมดเร่งความเร็ว · ทดสอบ 10 ครั้ง'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('XNNPACK'), findsNothing);
+    expect(find.textContaining('90% ไม่เกิน'), findsNWidgets(2));
+  });
+
+  for (final size in const [Size(360, 800), Size(412, 915), Size(800, 360)]) {
+    testWidgets('scanner result actions remain reachable at 2x on $size', (
+      tester,
+    ) async {
+      final scanner = _FakeScanner();
+      tester.view
+        ..physicalSize = size
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: ObjectScannerScreen(
+              scanner: scanner,
+              voice: VoiceUseCases(_FakeVoice()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final capture = find.byKey(
+        const ValueKey('object-scanner-capture-button'),
+      );
+      await tester.scrollUntilVisible(capture, 200);
+      await tester.tap(capture);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('เพิ่มเข้าคลัง'), 200);
+
+      expect(find.text('ฟังเสียง'), findsOneWidget);
+      expect(find.text('เพิ่มเข้าคลัง'), findsOneWidget);
+      final title = find.text('สแกนวัตถุ');
+      expect(
+        tester.renderObject<RenderParagraph>(title).didExceedMaxLines,
+        isFalse,
+      );
+      expect(tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight, 96);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('scanner route title stays readable with Back at 2x', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(360, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final scanner = _FakeScanner();
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ObjectScannerScreen(
+                    scanner: scanner,
+                    voice: VoiceUseCases(_FakeVoice()),
+                  ),
+                ),
+              ),
+              child: const Text('เปิดเครื่องสแกน'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('เปิดเครื่องสแกน'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackButton), findsOneWidget);
+    final title = find.text('สแกนวัตถุ');
+    expect(
+      tester.renderObject<RenderParagraph>(title).didExceedMaxLines,
+      isFalse,
+    );
+    expect(tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight, 96);
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -198,6 +337,7 @@ final class _FakeScanner implements ObjectScannerController {
   int pauseCalls = 0;
   int resumeCalls = 0;
   int benchmarkCalls = 0;
+  int initializeCalls = 0;
   @override
   bool isReady = false;
 
@@ -305,6 +445,7 @@ final class _FakeScanner implements ObjectScannerController {
 
   @override
   Future<void> initialize() async {
+    initializeCalls += 1;
     final failure = initializeFailure;
     if (failure != null) throw failure;
     isReady = true;

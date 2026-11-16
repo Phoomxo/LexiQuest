@@ -26,6 +26,7 @@ final class DriftLearningRepository implements LearningRepository {
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,
     String? categoryId,
+    Iterable<String>? wordIds,
     required int limit,
   }) async {
     if (limit < 1 || limit > 100) {
@@ -38,7 +39,8 @@ final class DriftLearningRepository implements LearningRepository {
             row.isDeleted.equals(false) &
             (categoryId == null
                 ? const Constant(true)
-                : row.categoryId.equals(categoryId)),
+                : row.categoryId.equals(categoryId)) &
+            (wordIds == null ? const Constant(true) : row.id.isIn(wordIds)),
       )
       ..orderBy([(row) => OrderingTerm.asc(row.id)])
       ..limit(limit);
@@ -95,7 +97,7 @@ final class DriftLearningRepository implements LearningRepository {
           sessionId: command.sessionId,
         );
         await projections.rebuildAchievements(command.ownerId);
-        await rewardProjections.rebuild(command.ownerId);
+        await _rebuildOptionalRewards(command.ownerId);
         return AnswerRecordResult(inserted: false, srs: srs);
       }
 
@@ -147,7 +149,7 @@ final class DriftLearningRepository implements LearningRepository {
         sessionId: command.sessionId,
       );
       await projections.rebuildAchievements(command.ownerId);
-      await rewardProjections.rebuild(command.ownerId);
+      await _rebuildOptionalRewards(command.ownerId);
       await _appendImmutableOutbox(
         ownerId: command.ownerId,
         entityType: 'attempt',
@@ -284,6 +286,15 @@ final class DriftLearningRepository implements LearningRepository {
   ) {
     _validateReading(command);
     return database.transaction(() async {
+      final activeOwner =
+          await (database.select(database.localOwners)..where(
+                (row) =>
+                    row.id.equals(command.ownerId) & row.isActive.equals(true),
+              ))
+              .getSingleOrNull();
+      if (activeOwner == null) {
+        throw StateError('reading owner is no longer active');
+      }
       final priorEvent = await (database.select(
         database.readingEvents,
       )..where((row) => row.id.equals(command.eventId))).getSingleOrNull();
@@ -377,6 +388,14 @@ final class DriftLearningRepository implements LearningRepository {
           ),
           mode: InsertMode.insertOrIgnore,
         );
+  }
+
+  Future<void> _rebuildOptionalRewards(String ownerId) async {
+    try {
+      await rewardProjections.rebuild(ownerId);
+    } catch (_) {
+      // Reward savepoint rolls back; immutable local learning still commits.
+    }
   }
 
   bool _sameAttempt(db.AnswerAttempt row, RecordAnswerCommand command) {

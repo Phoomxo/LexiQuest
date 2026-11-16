@@ -126,6 +126,11 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     }
     try {
       await camera.initialize();
+      if (!camera.isInitialized) {
+        throw const CameraPracticeException(
+          CameraFailureCode.initializationFailed,
+        );
+      }
       _runtime ??= await deviceModels.openActive(delegate: ModelDelegate.cpu);
     } on ModelLifecycleException {
       await camera.pause();
@@ -256,6 +261,11 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   Future<void> resume() async {
     _checkNotDisposed();
     await camera.resume();
+    if (!camera.isInitialized) {
+      throw const CameraPracticeException(
+        CameraFailureCode.initializationFailed,
+      );
+    }
   }
 
   @override
