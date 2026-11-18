@@ -96,29 +96,23 @@ Use the following distinctions:
 
 ## 8. Multi-Agent Unified Skill Orchestration Blueprint (Mandatory Gated Pipeline)
 
-All AI agents (Codex, Claude, Gemini, Antigravity) must execute development tasks following the deterministic 5-Phase Gated Pipeline. Agents must NOT bypass skills or mix contradictory skills.
+All AI agents (Codex, Claude, Gemini, Antigravity, Cursor) must execute development tasks following the deterministic 5-Phase Gated Pipeline. Agents must NOT bypass skills, mix contradictory skills, or require the user to repeatedly prompt which skills to use.
 
-- **Continuous Memory Layer (`claude-mem`):** Restore context and previous decision history at session start; record completed milestones and state snapshots at session end.
-1. **Gate 0: Scope & Conflict Filtering**
-   - **Strictly Prohibited:** `using-git-worktrees` is hard-blocked. All work occurs in `Documents/LexiQuest` on `main`.
-   - **Out-of-Scope Skills:** Freeze skills unrelated to this repository (`vanguard-*`, `creative-writing-*`, `typescript-*`, `hatch-pet`).
-2. **Gate 1: Architecture, Figma & Design Token Gate (Before Touching Code)**
-   - Must determine UI mode from `DESIGN.md` (Calm Journey, Hub, Practice, Feedback).
-   - Apply `figma-designer` for Design Token (colors, typography scale, spacing) synchronization with Figma.
-   - Apply `mobile-android-design` (Material 3, Compact <600dp Vivo V2041 baseline) and `statechart` (4 distinct states: Loading, Success, Empty, Error).
-   - Apply `principle-model-the-domain` for Data Contracts before implementation.
-3. **Gate 2: Implementation & Anti-Slop Craft Gate**
-   - Apply `taste-skill` (design-taste-frontend) and `impeccable` to eliminate generic AI aesthetic slop and enforce negative space, visual hierarchy, and micro-interactions.
-   - All code edits must enforce the **4-Level Wiring Rule**:
-     1. UI Screen Widget (dispatches intents)
-     2. Application UseCase (must be explicitly registered in `lib/runtime/app_dependencies.dart`)
-     3. Repository Adapter (Clean Architecture isolation)
-     4. Drift SQLite Table (`AppDatabase`) or Storage with proven persistence.
-   - Enforce `principle-boundary-discipline`, `principle-make-operations-idempotent`, and `tdd`. No dummy `onPressed: () {}` or unhandled stubs.
-4. **Gate 3: Empirical Verification & OpenCodeReview Gate (Evidence Before Claims)**
-   - Run `ocr review` (`OpenCodeReview`) on the git diff to detect security flaws, concurrency issues, and code smells.
-   - Enforce `verification-before-completion`: Run `flutter analyze` (0 issues) and interactive widget/integration tests simulating actual button taps and verifying SQLite mutations.
-   - Run `blast-radius` check to ensure no regressions in adjacent modules.
-5. **Gate 4: Clean Delivery Gate**
-   - Use `technical-writing` and `unslop` to report exact file links, wiring locations in `app_dependencies.dart`, and verifiable test execution outputs.
-   - Persist session progress into `claude-mem`.
+### Autonomous Intent-to-Skill Execution Matrix (Prompt-Free Operation)
+Whenever a task is received, the AI agent MUST autonomously match the task intent to the corresponding skill chain without asking for permission:
+
+| User Task / Intent | Autonomous Skill Chain (Executed In Order) | Mandatory Verifiable Artifact |
+|---|---|---|
+| **UI / Screen / Layout / Theme / Widget** | 1. `figma-designer` + `ui-ux-pro-max`<br>2. `taste-skill` (design tokens, contrast, micro-interactions)<br>3. `flutter-build-responsive-layout`<br>4. `flutter-add-widget-test` (simulate tap, scroll, state transition) | Widget test proving real touch interaction + 0 RenderFlex overflow |
+| **Database / State / Backend / API / Logic** | 1. `flutter-apply-architecture-best-practices` (4-layer wiring)<br>2. `dart-use-pattern-matching`<br>3. `dart-add-unit-test`<br>4. Drift SQLite mutation verification | Unit test verifying DB persistence / State update |
+| **Bug / Crash / Overflow / Regression** | 1. `debugging-and-error-recovery`<br>2. `flutter-fix-layout-issues` or `dart-fix-runtime-errors`<br>3. `test-driven-development` | Reproducing test failing first, passing after fix |
+| **QA / Pre-Commit / Verification** | 1. `constraint-driven-development` (audit for lazy stubs/suppressions)<br>2. `dart-run-static-analysis` (`flutter analyze`)<br>3. `verification-before-completion` (`flutter test`)<br>4. `ocr review` (`OpenCodeReview` CLI) | Exit code 0 on all gates + OCR review findings addressed |
+| **Session End / Checkpoint / Delivery** | 1. `technical-writing` + `unslop`<br>2. `claude-mem sync`<br>3. Git commit with Conventional Commits | Claude-mem snapshot + clean working directory |
+
+### Mandatory Execution Invariants
+- **No-Prompt Rule:** The agent MUST NOT ask "Should I run the tests?" or "Do you want a code review?". The matching skill chain is part of the standard contract and must execute autonomously.
+- **Pipeline Automation Script:** Any agent can run the pipeline directly using:
+  `pwsh tool/agent_pipeline.ps1 -Gate <1|2|3|4|5|All>` or `tool\agent_pipeline.bat <Gate>`
+- **Continuous Memory Layer (`claude-mem`):** Restore context and previous decision history at session start (`claude-mem restore`); record completed milestones and state snapshots at session end (`claude-mem sync`).
+- **Single Canonical Workspace:** All work occurs strictly in `C:\Users\Phet\Documents\LexiQuest` on branch `main`. `using-git-worktrees` is strictly hard-blocked.
+- **4-Level Wiring Rule:** Every UI element must wire: UI Widget $\rightarrow$ Application UseCase/Bloc $\rightarrow$ Repository Adapter $\rightarrow$ Drift SQLite Table / API. No dummy handlers `onPressed: () {}`.

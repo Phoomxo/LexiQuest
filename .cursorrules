@@ -1,0 +1,8 @@
+# LexiQuest Cursor Rules
+
+- Adhere strictly to AGENTS.md and CLAUDE.md.
+- Never create git worktrees. All work in `C:\Users\Phet\Documents\LexiQuest` on `main`.
+- Follow the 4-layer architecture: UI Widget -> Application UseCase/Bloc -> Repository -> Drift SQLite / API.
+- Do not leave empty `onPressed: () {}` or TODO stubs.
+- Run `flutter analyze` and `flutter test` to verify changes before marking complete.
+- Verify gates via `tool\agent_pipeline.bat All`.
