@@ -98,22 +98,27 @@ Use the following distinctions:
 
 All AI agents (Codex, Claude, Gemini, Antigravity) must execute development tasks following the deterministic 5-Phase Gated Pipeline. Agents must NOT bypass skills or mix contradictory skills.
 
+- **Continuous Memory Layer (`claude-mem`):** Restore context and previous decision history at session start; record completed milestones and state snapshots at session end.
 1. **Gate 0: Scope & Conflict Filtering**
    - **Strictly Prohibited:** `using-git-worktrees` is hard-blocked. All work occurs in `Documents/LexiQuest` on `main`.
    - **Out-of-Scope Skills:** Freeze skills unrelated to this repository (`vanguard-*`, `creative-writing-*`, `typescript-*`, `hatch-pet`).
-2. **Gate 1: Architecture & Modeling Gate (Before Touching Code)**
+2. **Gate 1: Architecture, Figma & Design Token Gate (Before Touching Code)**
    - Must determine UI mode from `DESIGN.md` (Calm Journey, Hub, Practice, Feedback).
+   - Apply `figma-designer` for Design Token (colors, typography scale, spacing) synchronization with Figma.
    - Apply `mobile-android-design` (Material 3, Compact <600dp Vivo V2041 baseline) and `statechart` (4 distinct states: Loading, Success, Empty, Error).
    - Apply `principle-model-the-domain` for Data Contracts before implementation.
-3. **Gate 2: Implementation & Full-Chain Wiring Gate**
+3. **Gate 2: Implementation & Anti-Slop Craft Gate**
+   - Apply `taste-skill` (design-taste-frontend) and `impeccable` to eliminate generic AI aesthetic slop and enforce negative space, visual hierarchy, and micro-interactions.
    - All code edits must enforce the **4-Level Wiring Rule**:
      1. UI Screen Widget (dispatches intents)
      2. Application UseCase (must be explicitly registered in `lib/runtime/app_dependencies.dart`)
      3. Repository Adapter (Clean Architecture isolation)
      4. Drift SQLite Table (`AppDatabase`) or Storage with proven persistence.
-   - Enforce `principle-boundary-discipline`, `principle-make-operations-idempotent`, and `impeccable`. No dummy `onPressed: () {}` or unhandled stubs.
-4. **Gate 3: Empirical Verification Gate (Evidence Before Claims)**
+   - Enforce `principle-boundary-discipline`, `principle-make-operations-idempotent`, and `tdd`. No dummy `onPressed: () {}` or unhandled stubs.
+4. **Gate 3: Empirical Verification & OpenCodeReview Gate (Evidence Before Claims)**
+   - Run `ocr review` (`OpenCodeReview`) on the git diff to detect security flaws, concurrency issues, and code smells.
    - Enforce `verification-before-completion`: Run `flutter analyze` (0 issues) and interactive widget/integration tests simulating actual button taps and verifying SQLite mutations.
    - Run `blast-radius` check to ensure no regressions in adjacent modules.
 5. **Gate 4: Clean Delivery Gate**
    - Use `technical-writing` and `unslop` to report exact file links, wiring locations in `app_dependencies.dart`, and verifiable test execution outputs.
+   - Persist session progress into `claude-mem`.
